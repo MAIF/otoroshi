@@ -24,6 +24,13 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show informations tab`) },
     },
     {
+      to: `/apis/${id}/actions`,
+      icon: 'fa-bolt',
+      title: 'Actions',
+      tab: 'actions',
+      tooltip: { ...createTooltip(`Show actions tab`) },
+    },
+    {
       to: `/apis/${id}/routes`,
       icon: 'fa-road',
       title: 'Routes',
@@ -95,23 +102,12 @@ const LINKS = (id) =>
     },
   ].filter((link) => !link.enabled);
 
-// function getApiId(pathname) {
-//   let apiId
-//   try {
-//     apiId = pathname.split('/apis')[1].split("/")[1]
-//   } catch (err) {
-//     apiId = ""
-//   }
-//   return apiId
-// }
-
 export default (props) => {
   const location = useLocation();
   const { openedSidebar } = useContext(SidebarContext);
 
   const params = props.params;
 
-  // const apiId = getApiId(location.pathname)
   const currentTab = location.pathname.split('/')[3];
   const noneTabIsActive = !LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
 
@@ -158,69 +154,6 @@ export default (props) => {
             <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
               {openedSidebar && version && version !== 'staging' && (
                 <VersionToggle isDraft={version === 'Draft'} />
-                // <Select
-                //   value={{ value: version, label: version }}
-                //   onChange={(item) => {
-                //     const queryParams = new URLSearchParams(window.location.search);
-                //     queryParams.set('version', item.value);
-                //     history.replaceState(null, null, '?' + queryParams.toString());
-                //     window.location.reload();
-                //   }}
-                //   isClearable={false}
-                //   isSearchable={false}
-                //   components={{
-                //     IndicatorSeparator: () => null,
-                //     SingleValue: ({ children, ...props }) => {
-                //       return (
-                //         <div
-                //           className="d-flex align-items-center m-0"
-                //           style={{
-                //             gap: '.5rem',
-                //           }}
-                //         >
-                //           <span
-                //             className={`badge ${props.data.value === 'Draft' ? 'bg-warning' : 'bg-danger'}`}
-                //           >
-                //             {props.data.label === 'Published' ? 'PROD' : 'DEV'}
-                //           </span>
-                //           {props.data.label}
-                //         </div>
-                //       );
-                //     },
-                //   }}
-                //   options={['Published', 'Draft'].map((r) => ({ value: r, label: r }))}
-                //   styles={{
-                //     control: (baseStyles) => ({
-                //       ...baseStyles,
-                //       border: '1px solid var(--bg-color_level3)',
-                //       color: 'var(--text)',
-                //       backgroundColor: 'var(--bg-color_level2)',
-                //       boxShadow: 'none',
-                //     }),
-                //     valueContainer: (baseStyles) => ({
-                //       ...baseStyles,
-                //       display: 'flex',
-                //     }),
-                //     menu: (baseStyles) => ({
-                //       ...baseStyles,
-                //       margin: 0,
-                //       borderTopLeftRadius: 0,
-                //       borderTopRightRadius: 0,
-                //       backgroundColor: 'var(--bg-color_level2)',
-                //       color: 'var(--text)',
-                //     }),
-                //     option: (provided, { isFocused }) => ({
-                //       ...provided,
-                //       backgroundColor: isFocused
-                //         ? 'var(--bg-color_level2)'
-                //         : 'var(--bg-color_level3)',
-                //     }),
-                //     MenuList: (provided) => ({
-                //       ...provided,
-                //       background: 'red',
-                //     }),
-                //   }}
-                // />
               )}
             </div>
             {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
@@ -235,9 +168,8 @@ export default (props) => {
                     search: location.search,
                   }}
                   {...(tooltip || {})}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                    openedSidebar ? 'ms-3' : ''
-                  } m-0 ${isActive(tab)}`}
+                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    } m-0 ${isActive(tab)}`}
                 >
                   <div style={{ width: '20px' }} className="d-flex justify-content-center">
                     <i className={`fas ${icon}`} />

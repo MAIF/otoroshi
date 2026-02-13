@@ -56,6 +56,7 @@ export default function ApiEditor(props) {
         <SidebarComponent {...props} />
 
         <Switch>
+          <RouteWithProps exact path="/apis/:apiId/actions" component={Actions} props={props} />
           <RouteWithProps exact path="/apis/:apiId/routes" component={Routes} props={props} />
           <RouteWithProps exact path="/apis/:apiId/routes/new" component={NewRoute} props={props} />
           <RouteWithProps
@@ -160,7 +161,7 @@ export default function ApiEditor(props) {
           />
           <RouteWithProps exact path="/apis/:apiId/testing" component={Testing} props={props} />
           <RouteWithProps exact path="/apis/:apiId/new" component={NewAPI} props={props} />
-          <RouteWithProps path="/apis/:apiId/informations" component={Informations} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/informations" component={Informations} props={props} />
           <RouteWithProps exact path="/apis" component={Apis} props={props} />
           <RouteWithProps path="/apis/:apiId" component={Dashboard} props={props} />
         </Switch>
@@ -2696,6 +2697,19 @@ function Apis(props) {
         ),
     },
     {
+      title: 'Version',
+      content: (item) => item.version,
+      cell: (value) => <span
+        className="badge custom-badge api-status-started"
+        style={{
+          fontSize: '.75rem',
+        }}
+      >
+        {value}
+      </span>,
+      notFilterable: true
+    },
+    {
       title: 'State',
       content: (item) => item.state,
       notFilterable: true,
@@ -3222,6 +3236,375 @@ function Informations(props) {
         </Button>
       </DraftOnly>
     </>
+  );
+}
+
+const LIFECYCLE_STEPS = [
+  { key: API_STATE.STAGING, label: 'Staging', icon: 'fas fa-flask', color: 'hsla(184, 9%, 62%, 1)' },
+  { key: API_STATE.PUBLISHED, label: 'Published', icon: 'fas fa-check-circle', color: 'hsla(150, 52%, 51%, 1)' },
+  { key: API_STATE.DEPRECATED, label: 'Deprecated', icon: 'fas fa-exclamation-triangle', color: 'hsla(40, 94%, 58%, 1)' },
+  { key: API_STATE.REMOVED, label: 'Closed', icon: 'fas fa-times-circle', color: 'hsla(0, 75%, 55%, 1)' },
+];
+
+const STATE_PERMISSIONS = {
+  [API_STATE.STAGING]: {
+    allowed: [
+      { icon: 'fas fa-pen', text: 'Edit routes, flows, backends and consumers' },
+      { icon: 'fas fa-vial', text: 'Test the API with testing headers' },
+      { icon: 'fas fa-key', text: 'Create and manage subscriptions' },
+      { icon: 'fas fa-clone', text: 'Duplicate this API' },
+    ],
+    denied: [
+      { icon: 'fas fa-globe', text: 'Receive production traffic' },
+      { icon: 'fas fa-user-plus', text: 'Allow external consumers to subscribe' },
+    ],
+  },
+  [API_STATE.PUBLISHED]: {
+    allowed: [
+      { icon: 'fas fa-globe', text: 'Receive production traffic' },
+      { icon: 'fas fa-user-plus', text: 'Accept new consumer subscriptions' },
+      { icon: 'fas fa-pen', text: 'Edit configuration via draft mode' },
+      { icon: 'fas fa-vial', text: 'Test the API with testing headers' },
+      { icon: 'fas fa-clone', text: 'Duplicate this API' },
+    ],
+    denied: [],
+  },
+  [API_STATE.DEPRECATED]: {
+    allowed: [
+      { icon: 'fas fa-globe', text: 'Serve existing subscriptions and traffic' },
+      { icon: 'fas fa-pen', text: 'Edit configuration via draft mode' },
+      { icon: 'fas fa-clone', text: 'Duplicate this API' },
+    ],
+    denied: [
+      { icon: 'fas fa-user-plus', text: 'Accept new consumer subscriptions' },
+    ],
+  },
+  [API_STATE.REMOVED]: {
+    allowed: [
+      { icon: 'fas fa-undo', text: 'Reopen and move back to staging' },
+      { icon: 'fas fa-clone', text: 'Duplicate this API' },
+    ],
+    denied: [
+      { icon: 'fas fa-globe', text: 'Receive any traffic' },
+      { icon: 'fas fa-user-plus', text: 'Accept new consumer subscriptions' },
+      { icon: 'fas fa-pen', text: 'Edit routes, flows or backends' },
+      { icon: 'fas fa-vial', text: 'Test the API' },
+    ],
+  },
+};
+
+function Actions(props) {
+  const history = useHistory();
+  const { draft, api, item, updateItem: updateAPI } = useDraftOfAPI();
+  const [previewStep, setPreviewStep] = useState(null);
+
+  useEffect(() => {
+    if (item) {
+      props.setTitle({
+        value: 'Actions',
+        noThumbtack: true,
+        children: <VersionBadge />,
+      });
+    }
+  }, [item]);
+
+  if (!item) return <SimpleLoader />;
+
+  const currentState = item.state;
+  const viewedState = previewStep || currentState;
+  const isPreview = previewStep && previewStep !== currentState;
+  const permissions = STATE_PERMISSIONS[viewedState] || STATE_PERMISSIONS[API_STATE.STAGING];
+
+  const onDuplicateAPI = () => {
+    window
+      .newConfirm(
+        'This will create a copy of this API with all its configuration. The new API will start in staging mode.',
+        {
+          title: 'Duplicate API',
+          yesText: 'Duplicate',
+        }
+      )
+      .then((ok) => {
+        if (ok) {
+          // TODO: call backend to duplicate the API
+          console.log('Duplicate API', api.id);
+        }
+      });
+  };
+
+  const transitionTo = (targetState, confirmMessage, confirmTitle, confirmYes) => {
+    window
+      .newConfirm(confirmMessage, {
+        title: confirmTitle,
+        yesText: confirmYes,
+      })
+      .then((ok) => {
+        if (ok) {
+          if (targetState === API_STATE.PUBLISHED && currentState === API_STATE.STAGING) {
+            publishAPI(draft, api, history);
+          } else {
+            updateAPI({
+              ...api,
+              state: targetState,
+            }).then(() => window.location.reload());
+          }
+        }
+      });
+  };
+
+  const stepMeta = LIFECYCLE_STEPS.find((s) => s.key === viewedState);
+
+  return (
+    <div className="actions-page mt-3">
+      {/* Lifecycle section */}
+      <div className="actions-section">
+        <h3 className="actions-section-title">
+          <i className="fas fa-heartbeat me-2" />
+          Lifecycle
+        </h3>
+        <p className="actions-section-description">
+          Manage the lifecycle state of your API. Click any step to preview its permissions.
+        </p>
+
+        {/* Visual stepper */}
+        <div className="actions-lifecycle-stepper">
+          {LIFECYCLE_STEPS.map((step, idx) => {
+            const isCurrent = step.key === currentState;
+            const isViewed = step.key === viewedState;
+            const isPast = LIFECYCLE_STEPS.findIndex((s) => s.key === currentState) > idx;
+            return (
+              <React.Fragment key={step.key}>
+                {idx > 0 && (
+                  <div
+                    className="actions-lifecycle-connector"
+                    style={{
+                      backgroundColor: isPast ? step.color : 'var(--bg-color_level3)',
+                    }}
+                  />
+                )}
+                <div
+                  className={`actions-lifecycle-step ${isCurrent ? 'actions-lifecycle-step--active' : ''} ${isPast ? 'actions-lifecycle-step--past' : ''} ${isViewed && !isCurrent ? 'actions-lifecycle-step--previewed' : ''}`}
+                  onClick={() => setPreviewStep(step.key === previewStep ? null : step.key)}
+                >
+                  <div
+                    className="actions-lifecycle-step-dot"
+                    style={{
+                      borderColor: isCurrent || isPast || isViewed ? step.color : 'var(--bg-color_level3)',
+                      backgroundColor: isCurrent ? step.color : isViewed ? `${step.color}33` : 'transparent',
+                    }}
+                  >
+                    {(isCurrent || isPast) && (
+                      <i
+                        className={step.icon}
+                        style={{ color: isCurrent ? '#fff' : step.color, fontSize: '.7rem' }}
+                      />
+                    )}
+                    {isViewed && !isCurrent && !isPast && (
+                      <i
+                        className="fas fa-eye"
+                        style={{ color: step.color, fontSize: '.6rem' }}
+                      />
+                    )}
+                  </div>
+                  <span
+                    className="actions-lifecycle-step-label"
+                    style={{
+                      color: isViewed ? step.color : undefined,
+                      fontWeight: isViewed ? 700 : 400,
+                    }}
+                  >
+                    {step.label}
+                    {isCurrent && <span className="actions-lifecycle-current-badge">current</span>}
+                  </span>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Preview indicator */}
+        {isPreview && (
+          <div className="actions-preview-banner" style={{ borderLeftColor: stepMeta?.color }}>
+            <i className="fas fa-eye me-2" style={{ color: stepMeta?.color }} />
+            Previewing <strong>{stepMeta?.label}</strong> permissions
+          </div>
+        )}
+
+        {/* Permissions for viewed state */}
+        <div className="actions-permissions">
+          {permissions.allowed.length > 0 && (
+            <div className="actions-permissions-group">
+              <span className="actions-permissions-group-title actions-permissions-group-title--allowed">
+                <i className="fas fa-check-circle me-1" />
+                Allowed
+              </span>
+              <ul className="actions-permissions-list">
+                {permissions.allowed.map((perm, i) => (
+                  <li key={i} className="actions-permission-item actions-permission-item--allowed">
+                    <i className={`${perm.icon} actions-permission-icon actions-permission-icon--allowed`} />
+                    <span>{perm.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {permissions.denied.length > 0 && (
+            <div className="actions-permissions-group">
+              <span className="actions-permissions-group-title actions-permissions-group-title--denied">
+                <i className="fas fa-ban me-1" />
+                Not allowed
+              </span>
+              <ul className="actions-permissions-list">
+                {permissions.denied.map((perm, i) => (
+                  <li key={i} className="actions-permission-item actions-permission-item--denied">
+                    <i className={`${perm.icon} actions-permission-icon actions-permission-icon--denied`} />
+                    <span>{perm.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Transition action cards */}
+        <div className="actions-general-actions">
+          {currentState === API_STATE.STAGING && (
+            <ActionCard
+              icon="fas fa-rocket"
+              title="Publish API"
+              description="Make your API fully available to clients in production"
+              onClick={() =>
+                transitionTo(
+                  API_STATE.PUBLISHED,
+                  'Publishing makes your API fully available to clients. Consumers will be able to subscribe and use it in production.',
+                  'Publish API',
+                  'Publish'
+                )
+              }
+            />
+          )}
+
+          {currentState === API_STATE.PUBLISHED && (
+            <>
+              <ActionCard
+                icon="fas fa-exclamation-triangle"
+                title="Deprecate API"
+                description="Prevent new subscriptions while keeping existing traffic"
+                color="hsla(40, 94%, 58%, 1)"
+                onClick={() =>
+                  transitionTo(
+                    API_STATE.DEPRECATED,
+                    'Deprecating the API will prevent new consumers from subscribing. Existing subscriptions will continue to work.',
+                    'Deprecate API',
+                    'Deprecate'
+                  )
+                }
+              />
+              <ActionCard
+                icon="fas fa-times-circle"
+                title="Close API"
+                description="Shut down the API entirely — all traffic will be rejected"
+                color="hsla(0, 65%, 55%, 1)"
+                onClick={() =>
+                  transitionTo(
+                    API_STATE.REMOVED,
+                    'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
+                    'Close API',
+                    'Close API'
+                  )
+                }
+              />
+            </>
+          )}
+
+          {currentState === API_STATE.DEPRECATED && (
+            <>
+              <ActionCard
+                icon="fas fa-check-circle"
+                title="Re-publish API"
+                description="Make the API available again for new subscriptions"
+                onClick={() =>
+                  transitionTo(
+                    API_STATE.PUBLISHED,
+                    'Re-publishing will make the API available again for new subscriptions.',
+                    'Re-publish API',
+                    'Re-publish'
+                  )
+                }
+              />
+              <ActionCard
+                icon="fas fa-times-circle"
+                title="Close API"
+                description="Shut down the API entirely — all traffic will be rejected"
+                color="hsla(0, 65%, 55%, 1)"
+                onClick={() =>
+                  transitionTo(
+                    API_STATE.REMOVED,
+                    'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
+                    'Close API',
+                    'Close API'
+                  )
+                }
+              />
+            </>
+          )}
+
+          {currentState === API_STATE.REMOVED && (
+            <ActionCard
+              icon="fas fa-undo"
+              title="Reopen API"
+              description="Move the API back to staging — you will need to publish it again"
+              onClick={() =>
+                transitionTo(
+                  API_STATE.STAGING,
+                  'This will move the API back to staging. You will need to publish it again to make it available.',
+                  'Reopen API',
+                  'Move to Staging'
+                )
+              }
+            />
+          )}
+        </div>
+      </div>
+
+      {/* General section */}
+      <div className="actions-section">
+        <h3 className="actions-section-title">
+          <i className="fas fa-cog me-2" />
+          General
+        </h3>
+        <p className="actions-section-description">
+          Other operations you can perform on this API.
+        </p>
+
+        <div className="actions-general-actions">
+          <ActionCard
+            icon="fas fa-clone"
+            title="Duplicate API"
+            description="Create a full copy of this API in staging mode"
+            onClick={onDuplicateAPI}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionCard({ icon, title, description, onClick, color }) {
+  return (
+    <div className="actions-action-card" onClick={onClick}>
+      <div
+        className="actions-action-card-icon"
+        style={{ backgroundColor: `${color || 'rgba(249, 181, 47, 0.15)'}` }}
+      >
+        <i className={icon} style={color ? { color: '#fff' } : undefined} />
+      </div>
+      <div className="actions-action-card-body">
+        <span className="actions-action-card-title">{title}</span>
+        <span className="actions-action-card-description">{description}</span>
+      </div>
+      <i className="fas fa-chevron-right actions-action-card-arrow" />
+    </div>
   );
 }
 
@@ -4113,67 +4496,6 @@ function APIHeader({ api, version, draft }) {
           </span>
         )}
         <APIState value={api.state} />
-
-        {version === 'Published' && (
-          <>
-            {api.state === API_STATE.STAGING && (
-              <Button
-                type="primaryColor"
-                onClick={() => publishAPI(draft, api, history)}
-                className="btn-sm ms-auto"
-                text="Start you API"
-              />
-            )}
-            {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) && (
-              <Button
-                type="primaryColor"
-                onClick={() => {
-                  window
-                    .newConfirm(
-                      api.state === API_STATE.PUBLISHED
-                        ? `New clients will be not allowed to subscribe to any consumers`
-                        : `API will be available again`,
-                      {
-                        title:
-                          api.state === API_STATE.PUBLISHED
-                            ? 'Confirm API deprecation'
-                            : 'Confirm API publication',
-                        yesText:
-                          api.state === API_STATE.PUBLISHED
-                            ? 'Deprecate the API'
-                            : 'Publish the API',
-                      }
-                    )
-                    .then((ok) => {
-                      if (ok) {
-                        updateAPI({
-                          ...api,
-                          state:
-                            api.state === API_STATE.PUBLISHED
-                              ? API_STATE.DEPRECATED
-                              : API_STATE.PUBLISHED,
-                        }).then(() => window.location.reload());
-                      }
-                    });
-                }}
-                className="btn-sm ms-auto"
-                text={api.state === API_STATE.PUBLISHED ? 'Deprecate your API' : 'Publish your API'}
-              />
-            )}
-            {/* {(api.state === API_STATE.PUBLISHED || api.state === API_STATE.DEPRECATED) &&
-                <Button
-                    type='danger'
-                    onClick={() => {
-                        updateAPI({
-                            ...api,
-                            state: API_STATE.DEPRECATED
-                        })
-                            .then(() => window.location.reload())
-                    }}
-                    className='btn-sm ms-auto'
-                    text="Close your API" />} */}
-          </>
-        )}
       </div>
       <div className="d-flex align-items-center gap-1 mb-3">
         <p className="m-0 me-2">{api.description}</p>

@@ -695,13 +695,14 @@ object ApiConsumerSubscription {
      }) flatMap {
       case Some(api) =>
         api.consumers.find(_.id == entity.consumerRef) match {
-          case None                                                             => onError("consumer not found").vfuture
-          case Some(consumer) if consumer.status == ApiConsumerStatus.Published =>
+          case None => onError("consumer not found").vfuture
+          case Some(consumer)
+              if (api.state == ApiStaging || api.state == ApiPublished) && consumer.status == ApiConsumerStatus.Published =>
             addSubscriptionToConsumer(api).map {
               case Some(consumer) => entity.right
               case None           => onError("failed to add subscription to api")
             }
-          case _                                                                => onError("wrong status").vfuture
+          case _    => onError("wrong status").vfuture
         }
       case _         => onError("api not found").vfuture
     }
