@@ -148,16 +148,16 @@ case class NgTreeRouter(
           "",
           scala.collection.mutable.HashMap.empty
         )
-      case None        => findWildcard(domain)
+      case None        => findWildcard(domain, path)
     }
   }
 
-  def findWildcard(domain: String): Option[NgMatchedRoutes] = {
+  def findWildcard(domain: String, path: String): Option[NgMatchedRoutes] = {
     wildcards
       .find { route =>
         RegexPool(route.domain).matches(domain)
       }
-      .flatMap(route => find(route.domain, route.path))
+      .flatMap(route => find(route.domain, path))
   }
 }
 
