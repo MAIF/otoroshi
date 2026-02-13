@@ -103,7 +103,7 @@ case class NgTreeRouter(
           .get(NettyRequestKeys.ListenerExclusiveKey)
           .orElse(attrs.get(otoroshi.plugins.Keys.ForCurrentListenerOnlyKey))
           .getOrElse(false)
-        val finalRoutes            = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
+        val _finalRoutes            = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
           case None                                     =>
             // println("should display on standard listener")
             routes.copy(routes =
@@ -122,9 +122,14 @@ case class NgTreeRouter(
             // println("should display on non exclusive")
             routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(listener)))
         }
+        val finalRoutes = _finalRoutes.copy(routes = _finalRoutes.routes.sortWith {
+          case (routeA, routeB) =>
+            val routeAWeight = routeA.frontend.cookies.size + routeA.frontend.query.size + routeA.frontend.headers.size
+            val routeBWeight = routeB.frontend.cookies.size + routeB.frontend.query.size + routeB.frontend.headers.size
+            routeAWeight > routeBWeight
+        })
         val routeIds               = finalRoutes.routes.map(_.cacheableId)
         attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
-
         finalRoutes.find((r, matchedPath, pathParams, noMoreSegments) =>
           r.matches(
             request,
