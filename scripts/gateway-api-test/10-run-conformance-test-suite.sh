@@ -36,7 +36,7 @@ fi
 
 echo "Running Gateway API conformance tests..."
 
-
+# need to refer to https://gateway-api.sigs.k8s.io/implementations/v1.4/#httproute and https://gateway-api.sigs.k8s.io/implementations/v1.4/#grpcroute
 TESTS=(
     # BackendTLSPolicyConflictResolution
     # BackendTLSPolicyInvalidCACertificateRef
@@ -130,6 +130,13 @@ done
 # go test ./conformance -timeout 30m -v -run TestConformance -args -debug \
 #   --gateway-class=gateway-conformance \
 #   --supported-features=Gateway,HTTPRoute,GRPCRoute
+#   --unsupported-features=HT...
+#   --organization=otoroshi \
+#   --project=otoroshi \
+#   --url=https://github.com/MAIF/otoroshi \
+#   --version=17.13.0 \
+#   --contact=oss@otoroshi.io \
+#   --report-output=./report-oto.yaml
 
 cd "$ORIG_DIR"
 echo "Done."
