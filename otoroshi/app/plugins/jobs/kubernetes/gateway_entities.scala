@@ -68,26 +68,8 @@ case class HTTPRouteMatch(raw: JsValue) {
   lazy val headers: Seq[JsObject]          = (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   lazy val queryParams: Seq[JsObject]      = (raw \ "queryParams").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
   lazy val method: Option[String]          = (raw \ "method").asOpt[String]
-
-  lazy val isPath: Boolean        = path.isDefined && (isPathPrefix || isRegex)
-  lazy val isPathPrefix: Boolean  = pathTypeOpt.contains("PathPrefix")
-  lazy val isRegex: Boolean       = pathTypeOpt.contains("RegularExpression")
-
-  lazy val pathTypeOpt: Option[String] = path.flatMap(p => (p \ "type").asOpt[String])
-  lazy val pathType: String  = pathTypeOpt.getOrElse("PathPrefix")
+  lazy val pathType: String  = path.flatMap(p => (p \ "type").asOpt[String]).getOrElse("PathPrefix")
   lazy val pathValue: String = path.flatMap(p => (p \ "value").asOpt[String]).getOrElse("/")
-
-  /*
-  otoroshi-plugins-kubernetes-gateway-api-sync - Gateway API sync done: 3 routes generated (3 HTTP, 0 gRPC)
-  2026-02-12 19:14:58,308 [info] otoroshi-plugins-kubernetes-gateway-api-job - gateway api watching already ...
-  2026-02-12 19:14:58,308 [info] otoroshi-plugins-kubernetes-gateway-api-sync - Starting Gateway API sync
-  buildDomains: List(*), {"backendRefs":[{"group":"","kind":"Service","name":"infra-backend-v2","port":8080,"weight":1}],"matches":[{"path":{"type":"PathPrefix","value":"/v2"}},{"headers":[{"name":"version","type":"Exact","value":"two"}],"path":{"type":"PathPrefix","value":"/"}}]}
-  yield - hostname: *, matches: Some(PathPrefix) - /v2 - {"path":{"type":"PathPrefix","value":"/v2"}}
-  yield - hostname: *, matches: Some(PathPrefix) - / - {"headers":[{"name":"version","type":"Exact","value":"two"}],"path":{"type":"PathPrefix","value":"/"}}
-
-  yield - hostname: *, matches: Some(PathPrefix) - /v2 - {"path":{"type":"PathPrefix","value":"/v2"}}
-  yield - hostname: *, matches: Some(PathPrefix) - / - {"headers":[{"name":"version","type":"Exact","value":"two"}],"path":{"type":"PathPrefix","value":"/"}}
-   */
 }
 
 case class HTTPRouteBackendRef(raw: JsValue) {
