@@ -710,11 +710,11 @@ object GatewayApiConverter {
     if (m.pathValue == "/") {
       hostnames.map(NgDomainAndPath.apply)
     } else {
-      println(s"buildDomains: ${hostnames}, ${rule.raw.stringify}")
+      //println(s"buildDomains: ${hostnames}, ${rule.raw.stringify}")
       for {
         hostname <- hostnames
       } yield {
-        println(s"yield - hostname: ${hostname}, matches: ${m.pathTypeOpt} - ${m.pathValue} - ${m.raw.stringify}")
+        //println(s"yield - hostname: ${hostname}, matches: ${m.pathTypeOpt} - ${m.pathValue} - ${m.raw.stringify}")
         val path = m.pathValue
         if (path == "/") NgDomainAndPath(hostname)
         else NgDomainAndPath(s"$hostname$path")
