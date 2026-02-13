@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { use, useEffect, useRef, useState } from 'react';
 
 import './index.scss';
 
@@ -261,6 +261,7 @@ export function useDraftOfAPI() {
     tag: version === 'Published' ? 'PROD' : 'DEV',
     setItem: isDraft ? setDraft : setAPI,
     updateItem: isDraft ? updateDraft : updateAPI,
+    isDraft
   };
 }
 
@@ -268,6 +269,8 @@ function Subscriptions(props) {
   const history = useHistory();
   const params = useParams();
   const location = useLocation();
+
+  const { isDraft } = useDraftOfAPI()
 
   const columns = [
     {
@@ -322,7 +325,7 @@ function Subscriptions(props) {
       fetchItems={() => Promise.resolve(rawSubscriptions.data || [])}
       defaultSort="name"
       defaultSortDesc="true"
-      showActions={true}
+      showActions={isDraft}
       showLink={false}
       extractKey={(item) => item.id}
       rowNavigation={true}
@@ -332,18 +335,20 @@ function Subscriptions(props) {
       }
       rawEditUrl={true}
       injectTopBar={() => (
-        <div className="btn-group input-group-btn">
-          <Link
-            className="btn btn-primary btn-sm"
-            to={{
-              pathname: 'subscriptions/new',
-              search: location.search,
-            }}
-          >
-            <i className="fas fa-plus-circle" /> Create new subscription
-          </Link>
-          {props.injectTopBar}
-        </div>
+        <DraftOnly>
+          <div className="btn-group input-group-btn">
+            <Link
+              className="btn btn-primary btn-sm"
+              to={{
+                pathname: 'subscriptions/new',
+                search: location.search,
+              }}
+            >
+              <i className="fas fa-plus-circle" /> Create new subscription
+            </Link>
+            {props.injectTopBar}
+          </div>
+        </DraftOnly>
       )}
     />
   );
@@ -587,7 +592,7 @@ function RouteDesigner(props) {
   const [route, setRoute] = useState();
   const [schema, setSchema] = useState();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [backends, setBackends] = useState([]);
 
@@ -626,17 +631,19 @@ function RouteDesigner(props) {
   return (
     <>
       <PageTitle title={route.name || 'Update the route'} {...props}>
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-auto"
-          onPress={updateRoute}
-          disabled={!route.flow_ref}
-          text={
-            <div className="d-flex align-items-center">
-              Update <VersionBadge size="xs" />
-            </div>
-          }
-        />
+        <DraftOnly>
+          <FeedbackButton
+            type="success"
+            className="d-flex ms-auto"
+            onPress={updateRoute}
+            disabled={!route.flow_ref}
+            text={
+              <div className="d-flex align-items-center">
+                Update <VersionBadge size="xs" />
+              </div>
+            }
+          />
+        </DraftOnly>
       </PageTitle>
       <div
         style={{
@@ -1326,7 +1333,7 @@ function Routes(props) {
     },
   ];
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   useEffect(() => {
     props.setTitle({
@@ -1365,7 +1372,7 @@ function Routes(props) {
       fetchItems={() => Promise.resolve(item.routes || [])}
       defaultSort="name"
       defaultSortDesc="true"
-      showActions={true}
+      showActions={isDraft}
       showLink={false}
       extractKey={(item) => item.id}
       rowNavigation={true}
@@ -1373,18 +1380,20 @@ function Routes(props) {
       itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`)}
       rawEditUrl={true}
       injectTopBar={() => (
-        <div className="btn-group input-group-btn">
-          <Link
-            className="btn btn-primary btn-sm"
-            to={{
-              pathname: 'routes/new',
-              search: location.search,
-            }}
-          >
-            <i className="fas fa-plus-circle" /> Create new route
-          </Link>
-          {props.injectTopBar}
-        </div>
+        <DraftOnly>
+          <div className="btn-group input-group-btn">
+            <Link
+              className="btn btn-primary btn-sm"
+              to={{
+                pathname: 'routes/new',
+                search: location.search,
+              }}
+            >
+              <i className="fas fa-plus-circle" /> Create new route
+            </Link>
+            {props.injectTopBar}
+          </div>
+        </DraftOnly>
       )}
     />
   );
@@ -1425,7 +1434,7 @@ function Backends(props) {
     },
   ];
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   useEffect(() => {
     props.setTitle({
@@ -1463,7 +1472,7 @@ function Backends(props) {
       fetchItems={() => Promise.resolve(item.backends || [])}
       defaultSort="name"
       defaultSortDesc="true"
-      showActions={true}
+      showActions={isDraft}
       showLink={false}
       extractKey={(item) => item.id}
       rowNavigation={true}
@@ -1472,18 +1481,20 @@ function Backends(props) {
       rawEditUrl={true}
       // hideEditButton={(item) => item.name === 'default_backend'}
       injectTopBar={() => (
-        <div className="btn-group input-group-btn">
-          <Link
-            className="btn btn-primary btn-sm"
-            to={{
-              pathname: 'backends/new',
-              search: location.search,
-            }}
-          >
-            <i className="fas fa-plus-circle" /> Create new backend
-          </Link>
-          {props.injectTopBar}
-        </div>
+        <DraftOnly>
+          <div className="btn-group input-group-btn">
+            <Link
+              className="btn btn-primary btn-sm"
+              to={{
+                pathname: 'backends/new',
+                search: location.search,
+              }}
+            >
+              <i className="fas fa-plus-circle" /> Create new backend
+            </Link>
+            {props.injectTopBar}
+          </div>
+        </DraftOnly>
       )}
     />
   );
@@ -1630,16 +1641,18 @@ function EditBackend(props) {
   return (
     <>
       <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
-        <FeedbackButton
-          type="success"
-          className="ms-2 mb-1 d-flex align-items-center"
-          onPress={updateBackend}
-          text={
-            <>
-              Update <VersionBadge size="xs" />
-            </>
-          }
-        />
+        <DraftOnly>
+          <FeedbackButton
+            type="success"
+            className="ms-2 mb-1 d-flex align-items-center"
+            onPress={updateBackend}
+            text={
+              <>
+                Update <VersionBadge size="xs" />
+              </>
+            }
+          />
+        </DraftOnly>
       </PageTitle>
 
       <div
@@ -1712,7 +1725,7 @@ function HttpClientSettings(props) {
     },
   ];
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   useEffect(() => {
     props.setTitle({
@@ -1750,7 +1763,7 @@ function HttpClientSettings(props) {
       fetchItems={() => Promise.resolve(item.clients || [])}
       defaultSort="name"
       defaultSortDesc="true"
-      showActions={true}
+      showActions={isDraft}
       showLink={false}
       extractKey={(item) => item.id}
       rowNavigation={true}
@@ -1760,18 +1773,20 @@ function HttpClientSettings(props) {
       }
       rawEditUrl={true}
       injectTopBar={() => (
-        <div className="btn-group input-group-btn">
-          <Link
-            className="btn btn-primary btn-sm"
-            to={{
-              pathname: 'http-client-settings/new',
-              search: location.search,
-            }}
-          >
-            <i className="fas fa-plus-circle" /> Create new HTTP client settings
-          </Link>
-          {props.injectTopBar}
-        </div>
+        <DraftOnly>
+          <div className="btn-group input-group-btn">
+            <Link
+              className="btn btn-primary btn-sm"
+              to={{
+                pathname: 'http-client-settings/new',
+                search: location.search,
+              }}
+            >
+              <i className="fas fa-plus-circle" /> Create new HTTP client settings
+            </Link>
+            {props.injectTopBar}
+          </div>
+        </DraftOnly>
       )}
     />
   );
@@ -1884,6 +1899,10 @@ function EditHttpClientSettings(props) {
   const [client, setClient] = useState();
 
   useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
+
+  useEffect(() => {
     if (item && !client) {
       setClient(item.clients.find((item) => item.id === params.httpClientSettingsId));
     }
@@ -1904,16 +1923,18 @@ function EditHttpClientSettings(props) {
   return (
     <>
       <PageTitle title="Update Http Client settings" {...props} style={{ paddingBottom: 0 }}>
-        <FeedbackButton
-          type="success"
-          className="ms-2 mb-1 d-flex align-items-center"
-          onPress={updateBackend}
-          text={
-            <>
-              Update <VersionBadge size="xs" />
-            </>
-          }
-        />
+        <DraftOnly>
+          <FeedbackButton
+            type="success"
+            className="ms-2 mb-1 d-flex align-items-center"
+            onPress={updateBackend}
+            text={
+              <>
+                Update <VersionBadge size="xs" />
+              </>
+            }
+          />
+        </DraftOnly>
       </PageTitle>
 
       <div
@@ -2284,13 +2305,15 @@ function EditFlow(props) {
         value={flow}
         onChange={setFlow}
       />
-      <Button
-        type="success"
-        className="btn-sm ms-auto d-flex align-items-center"
-        onClick={updateFlow}
-      >
-        Update <VersionBadge size="xs" className="ms-2" />
-      </Button>
+      <DraftOnly>
+        <Button
+          type="success"
+          className="btn-sm ms-auto d-flex align-items-center"
+          onClick={updateFlow}
+        >
+          Update <VersionBadge size="xs" className="ms-2" />
+        </Button>
+      </DraftOnly>
     </div>
   );
 }
@@ -2845,7 +2868,7 @@ function Flows(props) {
   const history = useHistory();
   const location = useLocation();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const columns = [
     {
@@ -2920,7 +2943,7 @@ function Flows(props) {
       defaultSortDesc="true"
       fetchItems={fetchItems}
       fetchTemplate={fetchTemplate}
-      showActions={true}
+      showActions={isDraft}
       showLink={false}
       extractKey={(item) => item.id}
       rowNavigation={true}
@@ -2929,18 +2952,20 @@ function Flows(props) {
       rawEditUrl={true}
       // hideEditButton={(item) => item.name == 'default_flow'}
       injectTopBar={() => (
-        <div className="btn-group input-group-btn">
-          <Link
-            className="btn btn-primary btn-sm"
-            to={{
-              pathname: 'flows/new',
-              search: location.search,
-            }}
-          >
-            <i className="fas fa-plus-circle" /> Create new Flow
-          </Link>
-          {props.injectTopBar}
-        </div>
+        <DraftOnly>
+          <div className="btn-group input-group-btn">
+            <Link
+              className="btn btn-primary btn-sm"
+              to={{
+                pathname: 'flows/new',
+                search: location.search,
+              }}
+            >
+              <i className="fas fa-plus-circle" /> Create new Flow
+            </Link>
+            {props.injectTopBar}
+          </div>
+        </DraftOnly>
       )}
     />
   );
@@ -3093,7 +3118,7 @@ function Informations(props) {
   const history = useHistory();
   const location = useLocation();
 
-  const { item, setItem, updateItem } = useDraftOfAPI();
+  const { item, setItem, updateItem, isDraft } = useDraftOfAPI();
 
   const schema = {
     location: {
@@ -3198,13 +3223,13 @@ function Informations(props) {
         },
       ],
     },
-    {
+    isDraft ? {
       type: 'group',
       name: 'Danger zone',
       collapsed: true,
       fields: ['danger_zone'],
-    },
-  ];
+    } : null,
+  ].filter(f => f);
 
   const updateAPI = () => {
     updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
@@ -3225,15 +3250,23 @@ function Informations(props) {
   return (
     <>
       <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
-      <Button
-        type="success"
-        className="btn-sm ms-auto d-flex align-items-center"
-        onClick={updateAPI}
-      >
-        Update <VersionBadge size="xs" className="ms-2" />
-      </Button>
+      <DraftOnly>
+        <Button
+          type="success"
+          className="btn-sm ms-auto d-flex align-items-center"
+          onClick={updateAPI}
+        >
+          Update <VersionBadge size="xs" className="ms-2" />
+        </Button>
+      </DraftOnly>
     </>
   );
+}
+
+function DraftOnly({ children }) {
+  const { isDraft } = useDraftOfAPI()
+
+  return isDraft ? children : null
 }
 
 export function VersionBadge({ size, className }) {
@@ -3266,7 +3299,7 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
         {version !== 'Published' && step > 3 && (
           <div className="d-flex align-items-center">
             <Button
-              text="Publish new version"
+              text="Publish this version"
               className="btn-sm mx-2"
               type="primaryColor"
               style={{
@@ -3309,25 +3342,6 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
                           });
                         }
                       });
-                  });
-              }}
-            />
-            <Button
-              text="Reset draft"
-              className="btn-sm"
-              type="danger"
-              onClick={() => {
-                window
-                  .newConfirm(
-                    'Are you sure you reset the draft content to match the published version? All your modifications will be discarded.'
-                  )
-                  .then((ok) => {
-                    if (ok) {
-                      nextClient
-                        .forEntityNext(nextClient.ENTITIES.DRAFTS)
-                        .deleteById(draftWrapper.id)
-                        .then(() => window.location.reload());
-                    }
                   });
               }}
             />
@@ -3498,18 +3512,20 @@ function Dashboard(props) {
                           : ''
                       }
                       actions={
-                        <Button
-                          type="primaryColor"
-                          text="Subscribe"
-                          className="btn-sm"
-                          onClick={() =>
-                            historyPush(
-                              history,
-                              location,
-                              `/apis/${params.apiId}/subscriptions/new`
-                            )
-                          }
-                        />
+                        <DraftOnly>
+                          <Button
+                            type="primaryColor"
+                            text="Subscribe"
+                            className="btn-sm"
+                            onClick={() =>
+                              historyPush(
+                                history,
+                                location,
+                                `/apis/${params.apiId}/subscriptions/new`
+                              )
+                            }
+                          />
+                        </DraftOnly>
                       }
                     />
 
@@ -3529,14 +3545,16 @@ function Dashboard(props) {
                         item.consumers.length <= 0 ? 'API consumers will appear here' : ''
                       }
                       actions={
-                        <Button
-                          type="primaryColor"
-                          text="New Consumer"
-                          className="btn-sm"
-                          onClick={() =>
-                            historyPush(history, location, `/apis/${params.apiId}/consumers/new`)
-                          }
-                        />
+                        <DraftOnly>
+                          <Button
+                            type="primaryColor"
+                            text="New Consumer"
+                            className="btn-sm"
+                            onClick={() =>
+                              historyPush(history, location, `/apis/${params.apiId}/consumers/new`)
+                            }
+                          />
+                        </DraftOnly>
                       }
                     />
                     <ApiConsumersView api={item} />
@@ -3617,25 +3635,27 @@ function Consumer({ consumer }) {
       {open && (
         <div className="d-flex justify-content-between gap-2 align-items-center">
           <div style={{ position: 'relative', flex: 1 }}>
-            <Button
-              type="primaryColor"
-              className="btn-sm"
-              text="Edit"
-              onClick={(e) => {
-                e.stopPropagation();
-                historyPush(
-                  history,
-                  location,
-                  `/apis/${params.apiId}/consumers/${consumer.id}/edit`
-                );
-              }}
-              style={{
-                position: 'absolute',
-                top: '.5rem',
-                right: '.5rem',
-                zIndex: 100,
-              }}
-            />
+            <DraftOnly>
+              <Button
+                type="primaryColor"
+                className="btn-sm"
+                text="Edit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  historyPush(
+                    history,
+                    location,
+                    `/apis/${params.apiId}/consumers/${consumer.id}/edit`
+                  );
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '.5rem',
+                  right: '.5rem',
+                  zIndex: 100,
+                }}
+              />
+            </DraftOnly>
             <JsonObjectAsCodeInput
               editorOnly
               showGutter={false}

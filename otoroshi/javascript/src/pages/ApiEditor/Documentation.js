@@ -53,9 +53,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -122,9 +122,9 @@ function ApiDocumentationPlan(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -161,9 +161,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -192,9 +192,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -229,9 +229,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -256,9 +256,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -268,7 +268,7 @@ function ApiDocumentationSidebar(props) {
 
 export function Documentation(props) {
   const [showJson, setShowJson] = useState(false);
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
   const [code, setCode] = useState('');
   const [newItem, setNewItem] = useState(null);
 
@@ -406,7 +406,8 @@ export function Documentation(props) {
             }}
           />
         </div>
-        <FeedbackButton
+
+        {isDraft ? <FeedbackButton
           type="success"
           className="d-flex ms-auto"
           onPress={updateDoc}
@@ -415,7 +416,7 @@ export function Documentation(props) {
               Update <VersionBadge size="xs" />
             </div>
           }
-        />
+        /> : null}
       </PageTitle>
       {showJson && (
         <MonacoEditor
@@ -437,7 +438,7 @@ export function Documentation(props) {
           onChange={(newValue) => {
             try {
               setNewItem(JSON.parse(newValue));
-            } catch (e) {}
+            } catch (e) { }
           }}
         />
       )}
