@@ -100,14 +100,14 @@ class NgProxyState(env: Env) {
   }
 
   def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] =
-    domainPathTreeRef.get().find(domain, path).map(_.routes)
+    domainPathTreeRef.get().find(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
 
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
     domainPathTreeRef.get().findRoute(request, attrs)(env)
 
   def getDomainRoutes(domain: String, path: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
-    case None        => domainPathTreeRef.get().findWildcard(domain, path).map(_.routes)
+    case None        => domainPathTreeRef.get().findWildcard(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
   }
 
   def globalConfig(): Option[GlobalConfig]                                 = Option(globalConfigRef.get())

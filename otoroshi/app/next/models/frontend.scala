@@ -8,6 +8,7 @@ case class NgDomainAndPath(raw: String) {
   lazy val domain          = parts.head
   lazy val domainLowerCase = parts.head.toLowerCase()
   lazy val path            = if (parts.size == 1) "/" else parts.tail.mkString("/", "/", "")
+  lazy val pathEndsWithSlash = raw.endsWith("/")
   def json: JsValue        = JsString(raw)
 }
 

@@ -381,6 +381,9 @@ class Env(
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
+  lazy val trailingSlashMeansExactSegments: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.router.trailingSlashMeansExactSegments").getOrElse(true)
+
   lazy val metricsEvery: FiniteDuration =
     configuration
       .getOptionalWithFileSupport[Long]("otoroshi.metrics.every")
