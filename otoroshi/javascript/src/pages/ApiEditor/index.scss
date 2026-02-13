@@ -255,10 +255,6 @@
         font-family: Raleway, Helvetica, sans-serif;
     }
 
-    // .metric {
-    //     position: relative;
-    // }
-
     .metric-box {
         height: inherit;
         margin-top: 32px;
@@ -273,11 +269,6 @@
         padding: 0 1rem;
     }
 
-    .metric-text-title {
-        // position: absolute;
-        // top: 6px;
-    }
-
     .metric-text-value {
         font-size: 2rem;
     }
@@ -289,10 +280,6 @@
     .ace_scrollbar {
         display: none;
     }
-
-    // .ace_editor:hover .ace_scrollbar {
-    //     display: block;
-    // }
 
     .progress {
         height: .5rem;
@@ -329,12 +316,7 @@
         display: flex;
         gap: .5rem;
         overflow-x: scroll;
-        // margin-left: auto;
-        // justify-content: flex-end;
-        // flex: 1;
-        // scrollbar-width: none;
     }
-
 
     .objective-link {
         text-decoration: underline;
@@ -345,13 +327,11 @@
         border-radius: 50%;
         min-height: 2.75rem;
         min-width: 2.75rem;
-        border: 2px solid var(--text);
         display: flex;
         align-items: center;
         justify-content: center;
         background-color: rgba(249, 181, 47, 0.18);
         border: none;
-
     }
 
     .objective-card-icon i {
@@ -361,14 +341,12 @@
     }
 
     .objective-card {
-        // margin-left: auto;
         background-color: var(--bg-color_level3);
         display: flex;
         align-items: center;
         justify-content: space-around;
         gap: 1rem;
         padding: 0 2rem;
-
         border-radius: .5rem;
         min-width: 18rem;
     }
@@ -392,6 +370,144 @@
     .objective-card-body>p:last-child {
         cursor: pointer;
     }
+
+    // ── Dashboard Layout ──────────────────────────────────────────────
+
+    .dashboard-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        max-width: 1280px;
+        padding-bottom: 2rem;
+    }
+
+    // Quick stats row
+    .dashboard-stats-row {
+        display: flex;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-quick-stat {
+        flex: 1;
+        min-width: 140px;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        background-color: var(--bg-color_level2);
+        border: 1px solid transparent;
+        border-radius: .75rem;
+        padding: .75rem 1rem;
+        cursor: pointer;
+        transition: border-color .2s, background-color .2s;
+
+        &:hover {
+            border-color: var(--color-primary);
+            background-color: var(--bg-color_level3);
+        }
+    }
+
+    .dashboard-quick-stat-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 50%;
+        background-color: rgba(249, 181, 47, 0.15);
+        flex-shrink: 0;
+
+        i {
+            color: var(--color-primary);
+            font-size: .9rem;
+        }
+    }
+
+    .dashboard-quick-stat-body {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+    }
+
+    .dashboard-quick-stat-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .dashboard-quick-stat-label {
+        font-size: .75rem;
+        color: var(--text);
+        opacity: .6;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    // Two-column grid
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1rem;
+        align-items: start;
+
+        @media (max-width: 960px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .dashboard-main {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        min-width: 0;
+    }
+
+    .dashboard-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        position: sticky;
+        top: 1rem;
+    }
+
+    // Section header with icon
+    .dashboard-section-header {
+        margin-bottom: .75rem;
+    }
+
+    .dashboard-section-icon {
+        color: var(--color-primary);
+        font-size: 1rem;
+        opacity: .8;
+    }
+
+    .dashboard-section-description {
+        margin: .15rem 0 0 0;
+        opacity: .55;
+        font-size: .85rem;
+    }
+
+
+    // Health section
+    .dashboard-health-grid {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    .dashboard-health-day {
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+    }
+
+    .dashboard-health-label {
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        opacity: .5;
+        color: var(--text);
+    }
 }
 
 [aria-disabled~=true],
@@ -413,4 +529,66 @@
 
 .testing-dot--disabled {
     background-color: var(--color-red);
+}
+
+
+// Version toggle button
+.dashboard-version-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem 1rem;
+    border-radius: .5rem;
+    border: 1px solid var(--bg-color_level3);
+    background-color: var(--bg-color_level3);
+    color: var(--text);
+    cursor: pointer;
+    font-size: .85rem;
+    transition: border-color .2s, background-color .2s;
+
+    &:hover {
+        border-color: var(--color-primary);
+    }
+
+    i {
+        font-size: .7rem;
+        opacity: .6;
+        transition: transform .2s;
+    }
+
+    &:hover i {
+        transform: translateX(3px);
+        opacity: 1;
+    }
+}
+
+.dashboard-version-toggle--draft {
+    border-color: hsla(40, 90%, 55%, .35);
+}
+
+.dashboard-version-toggle--prod {
+    border-color: hsla(0, 75%, 55%, .35);
+}
+
+.dashboard-version-toggle-indicator {
+    display: inline-block;
+    padding: .1rem .4rem;
+    border-radius: .25rem;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.dashboard-version-toggle-indicator--draft {
+    background-color: var(--color-primary);
+    color: var(--text);
+}
+
+.dashboard-version-toggle-indicator--prod {
+    background-color: hsla(0, 75%, 55%, 1);
+    color: #fff;
+}
+
+.dashboard-version-toggle-label {
+    font-weight: 500;
 }

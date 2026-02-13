@@ -5,6 +5,7 @@ import { SidebarContext } from '../../apps/BackOfficeApp';
 import Select from 'react-select';
 import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
+import { VersionToggle } from '.';
 
 const LINKS = (id) =>
   [
@@ -156,69 +157,70 @@ export default (props) => {
             )}
             <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
               {openedSidebar && version && version !== 'staging' && (
-                <Select
-                  value={{ value: version, label: version }}
-                  onChange={(item) => {
-                    const queryParams = new URLSearchParams(window.location.search);
-                    queryParams.set('version', item.value);
-                    history.replaceState(null, null, '?' + queryParams.toString());
-                    window.location.reload();
-                  }}
-                  isClearable={false}
-                  isSearchable={false}
-                  components={{
-                    IndicatorSeparator: () => null,
-                    SingleValue: ({ children, ...props }) => {
-                      return (
-                        <div
-                          className="d-flex align-items-center m-0"
-                          style={{
-                            gap: '.5rem',
-                          }}
-                        >
-                          <span
-                            className={`badge ${props.data.value === 'Draft' ? 'bg-warning' : 'bg-danger'}`}
-                          >
-                            {props.data.label === 'Published' ? 'PROD' : 'DEV'}
-                          </span>
-                          {props.data.label}
-                        </div>
-                      );
-                    },
-                  }}
-                  options={['Published', 'Draft'].map((r) => ({ value: r, label: r }))}
-                  styles={{
-                    control: (baseStyles) => ({
-                      ...baseStyles,
-                      border: '1px solid var(--bg-color_level3)',
-                      color: 'var(--text)',
-                      backgroundColor: 'var(--bg-color_level2)',
-                      boxShadow: 'none',
-                    }),
-                    valueContainer: (baseStyles) => ({
-                      ...baseStyles,
-                      display: 'flex',
-                    }),
-                    menu: (baseStyles) => ({
-                      ...baseStyles,
-                      margin: 0,
-                      borderTopLeftRadius: 0,
-                      borderTopRightRadius: 0,
-                      backgroundColor: 'var(--bg-color_level2)',
-                      color: 'var(--text)',
-                    }),
-                    option: (provided, { isFocused }) => ({
-                      ...provided,
-                      backgroundColor: isFocused
-                        ? 'var(--bg-color_level2)'
-                        : 'var(--bg-color_level3)',
-                    }),
-                    MenuList: (provided) => ({
-                      ...provided,
-                      background: 'red',
-                    }),
-                  }}
-                />
+                <VersionToggle isDraft={version === 'Draft'} />
+                // <Select
+                //   value={{ value: version, label: version }}
+                //   onChange={(item) => {
+                //     const queryParams = new URLSearchParams(window.location.search);
+                //     queryParams.set('version', item.value);
+                //     history.replaceState(null, null, '?' + queryParams.toString());
+                //     window.location.reload();
+                //   }}
+                //   isClearable={false}
+                //   isSearchable={false}
+                //   components={{
+                //     IndicatorSeparator: () => null,
+                //     SingleValue: ({ children, ...props }) => {
+                //       return (
+                //         <div
+                //           className="d-flex align-items-center m-0"
+                //           style={{
+                //             gap: '.5rem',
+                //           }}
+                //         >
+                //           <span
+                //             className={`badge ${props.data.value === 'Draft' ? 'bg-warning' : 'bg-danger'}`}
+                //           >
+                //             {props.data.label === 'Published' ? 'PROD' : 'DEV'}
+                //           </span>
+                //           {props.data.label}
+                //         </div>
+                //       );
+                //     },
+                //   }}
+                //   options={['Published', 'Draft'].map((r) => ({ value: r, label: r }))}
+                //   styles={{
+                //     control: (baseStyles) => ({
+                //       ...baseStyles,
+                //       border: '1px solid var(--bg-color_level3)',
+                //       color: 'var(--text)',
+                //       backgroundColor: 'var(--bg-color_level2)',
+                //       boxShadow: 'none',
+                //     }),
+                //     valueContainer: (baseStyles) => ({
+                //       ...baseStyles,
+                //       display: 'flex',
+                //     }),
+                //     menu: (baseStyles) => ({
+                //       ...baseStyles,
+                //       margin: 0,
+                //       borderTopLeftRadius: 0,
+                //       borderTopRightRadius: 0,
+                //       backgroundColor: 'var(--bg-color_level2)',
+                //       color: 'var(--text)',
+                //     }),
+                //     option: (provided, { isFocused }) => ({
+                //       ...provided,
+                //       backgroundColor: isFocused
+                //         ? 'var(--bg-color_level2)'
+                //         : 'var(--bg-color_level3)',
+                //     }),
+                //     MenuList: (provided) => ({
+                //       ...provided,
+                //       background: 'red',
+                //     }),
+                //   }}
+                // />
               )}
             </div>
             {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (

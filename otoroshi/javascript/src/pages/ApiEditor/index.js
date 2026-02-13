@@ -37,7 +37,7 @@ import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCred
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
-import { unsecuredCopyToClipboard } from '../../util';
+import { firstLetterUppercase, unsecuredCopyToClipboard } from '../../util';
 import { Row } from '../../components/Row';
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
@@ -569,16 +569,18 @@ function NewSubscription(props) {
             {error}
           </div>
         )}
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-auto mt-3 d-flex align-items-center"
-          onPress={updateSubscription}
-          text={
-            <>
-              Create <VersionBadge size="xs" />
-            </>
-          }
-        />
+        <DraftOnly>
+          <FeedbackButton
+            type="success"
+            className="d-flex ms-auto mt-3 d-flex align-items-center"
+            onPress={updateSubscription}
+            text={
+              <>
+                Create <VersionBadge size="xs" />
+              </>
+            }
+          />
+        </DraftOnly>
       </div>
     </>
   );
@@ -1211,7 +1213,7 @@ function NewConsumer(props) {
 
   return (
     <>
-      <PageTitle title="New Plan" {...props} style={{ paddingBottom: 0 }} />
+      <PageTitle title="New Consumer" {...props} style={{ paddingBottom: 0 }} />
 
       <div
         style={{
@@ -1225,13 +1227,15 @@ function NewConsumer(props) {
           schema={CONSUMER_FORM_SETTINGS.schema}
           onChange={(newValue) => setConsumer(newValue)}
         />
-        <Button
-          type="success"
-          className="btn-sm ms-auto d-flex align-items-center"
-          onClick={savePlan}
-        >
-          Create <VersionBadge size="xs" className="ms-2" />
-        </Button>
+        <DraftOnly>
+          <Button
+            type="success"
+            className="btn-sm ms-auto d-flex align-items-center"
+            onClick={savePlan}
+          >
+            Create <VersionBadge size="xs" className="ms-2" />
+          </Button>
+        </DraftOnly>
       </div>
     </>
   );
@@ -2407,13 +2411,15 @@ function NewFlow(props) {
         value={flow}
         onChange={setFlow}
       />
-      <Button
-        type="success"
-        className="btn-sm ms-auto d-flex align-items-center"
-        onClick={createFlow}
-      >
-        Create <VersionBadge size="xs" className="ms-2" />
-      </Button>
+      <DraftOnly>
+        <Button
+          type="success"
+          className="btn-sm ms-auto d-flex align-items-center"
+          onClick={createFlow}
+        >
+          Create <VersionBadge size="xs" className="ms-2" />
+        </Button>
+      </DraftOnly>
     </div>
   );
 }
@@ -3069,12 +3075,16 @@ function VersionManager({ api, draft, owner, setState }) {
     },
   };
 
-  const getCompareFlowGroup = (name) => ({
-    type: 'group',
-    name: `${name} ${!mergeData(api[name], draft.content[name]).changed ? '' : `: has changed`}`,
-    collapsed: true,
-    fields: [name],
-  });
+  const getCompareFlowGroup = (name) => {
+    const hasChanged = mergeData(api[name], draft.content[name]).changed
+    return {
+      type: 'group',
+      name: `${firstLetterUppercase(name)} ${!hasChanged ? '' : `: has changed`}`,
+      collapsed: true,
+      fields: [name],
+      hasChanged
+    }
+  }
 
   const flow = [
     {
@@ -3083,20 +3093,23 @@ function VersionManager({ api, draft, owner, setState }) {
       collapsable: false,
       fields: ['version', 'action', 'owner'],
     },
-    getCompareFlowGroup('routes'),
-    getCompareFlowGroup('flows'),
-    getCompareFlowGroup('backends'),
-    getCompareFlowGroup('consumers'),
-    getCompareFlowGroup('subscriptions'),
-    getCompareFlowGroup('deployments'),
-    getCompareFlowGroup('documentation'),
-    {
-      type: 'group',
-      name: `Global: ${!mergeData(api[name], draft.content[name]) ? 'No changes' : `has changed`}`,
-      collapsed: true,
-      fields: ['apiDefinition'],
-    },
-  ];
+    ...[
+      getCompareFlowGroup('routes'),
+      getCompareFlowGroup('flows'),
+      getCompareFlowGroup('backends'),
+      getCompareFlowGroup('consumers'),
+      getCompareFlowGroup('subscriptions'),
+      getCompareFlowGroup('deployments'),
+      getCompareFlowGroup('documentation'),
+      {
+        type: 'group',
+        name: `Global: ${!mergeData(api[name], draft.content[name]) ? '' : `has changed`}`,
+        collapsed: true,
+        fields: ['apiDefinition'],
+        hasChanged: mergeData(api[name], draft.content[name]).changed
+      },
+    ].sort((a, b) => Number(b.hasChanged) - Number(a.hasChanged))
+  ]
 
   return (
     <div className="d-flex flex-column flex-grow gap-3" style={{ maxWidth: 820 }}>
@@ -3327,7 +3340,7 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
                           style: { width: '100%' },
                           noCancel: false,
                           okClassName: 'ms-2',
-                          okLabel: 'I want to publish this API',
+                          okLabel: 'Publish this version',
                         }
                       )
                       .then((deployment) => {
@@ -3391,6 +3404,8 @@ function Dashboard(props) {
 
   const currentStep = getStep();
 
+  const totalSubscriptions = item.consumers.flatMap((c) => c.subscriptions).length;
+
   return (
     <>
       <DashboardTitle
@@ -3402,44 +3417,87 @@ function Dashboard(props) {
         draft={draft}
         step={getStep()}
       />
-      <div className="d-flex flex-column gap-3 pb-10" style={{ maxWidth: 1280 }}>
+      <div className="dashboard-layout">
+        {/* API Header */}
+        <ContainerBlock full highlighted>
+          <APIHeader api={item} version={version} draft={draft} />
+          {version !== 'staging' && (
+            <VersionToggle isDraft={version === 'Draft'} />
+          )}
+        </ContainerBlock>
+
+        {/* Quick Stats Row */}
+        <div className="dashboard-stats-row">
+          <QuickStat
+            icon="fas fa-road"
+            label="Routes"
+            value={item.routes.length}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/routes`)}
+          />
+          <QuickStat
+            icon="fas fa-users"
+            label="Consumers"
+            value={item.consumers.length}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers`)}
+          />
+          <QuickStat
+            icon="fas fa-key"
+            label="Subscriptions"
+            value={totalSubscriptions}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/subscriptions`)}
+          />
+          <QuickStat
+            icon="fas fa-project-diagram"
+            label="Flows"
+            value={item.flows.length}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/flows`)}
+          />
+          <QuickStat
+            icon="fas fa-microchip"
+            label="Backends"
+            value={item.backends.length}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/backends`)}
+          />
+        </div>
+
+        {/* Getting Started */}
         {showGettingStarted && (
           <ProgressCard step={currentStep}>
-            {!hasCreateConsumer && hasCreateRoute && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/consumers/new`}
-                title="Create a consumer"
-                description={
-                  <p className="objective-link">Consumers apply security measures to the API</p>
-                }
-                icon={<i className="fas fa-list" />}
-              />
-            )}
-
             {!hasCreateRoute && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/routes/new`}
-                title="Your own route"
-                description={<p className="objective-link">Create a new Route</p>}
+                title="Create a route"
+                description={<p className="objective-link">Define how traffic reaches your API</p>}
                 icon={<i className="fas fa-road" />}
+              />
+            )}
+
+            {!hasCreateConsumer && hasCreateRoute && (
+              <ObjectiveCard
+                to={`/apis/${params.apiId}/consumers/new`}
+                title="Add a consumer"
+                description={
+                  <p className="objective-link">Apply security measures to the API</p>
+                }
+                icon={<i className="fas fa-users" />}
               />
             )}
 
             {hasCreateRoute && !hasCreateBackend && currentStep >= 4 && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/backends/new`}
-                title="Your own backend"
-                description={<p className="objective-link">Create a new Backend</p>}
-                icon={<i className="fas fa-road" />}
+                title="Add a backend"
+                description={<p className="objective-link">Configure a backend target</p>}
+                icon={<i className="fas fa-microchip" />}
               />
             )}
 
             {hasCreateRoute && hasCreateConsumer && !item.testing.enabled && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/testing`}
-                title="Test your API"
-                description={<p className="objective-link">Learn about testing API</p>}
-                icon={<i className="fas fa-road" />}
+                title="Enable testing"
+                description={<p className="objective-link">Set up API testing</p>}
+                icon={<i className="fas fa-vial" />}
               />
             )}
 
@@ -3448,7 +3506,7 @@ function Dashboard(props) {
                 to={`/apis/${params.apiId}/flows/new`}
                 title="Create a flow"
                 description={
-                  <p className="objective-link">Create group of plugins to apply rules</p>
+                  <p className="objective-link">Add plugin rules and transformations</p>
                 }
                 icon={<i className="fas fa-project-diagram" />}
               />
@@ -3458,130 +3516,186 @@ function Dashboard(props) {
               <ObjectiveCard
                 onClick={() => publishAPI(draft, item, history)}
                 title="Deploy your API"
-                description={<p className="objective-link">Publish your API to the production</p>}
+                description={<p className="objective-link">Publish to production</p>}
                 icon={<i className="fas fa-rocket" />}
               />
             )}
           </ProgressCard>
         )}
-        {item && (
-          <>
-            <div className="d-flex gap-3">
-              <div className="d-flex flex-column flex-grow gap-3" style={{ flex: 1 }}>
-                <ContainerBlock full highlighted>
-                  <APIHeader api={item} version={version} draft={draft} />
 
-                  <ApiStats
-                    url={
-                      version === 'Published'
-                        ? `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000`
-                        : `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
-                    }
-                  />
+        {/* Main two-column grid */}
+        <div className="dashboard-grid">
+          <div className="dashboard-main">
+            {/* Live Metrics */}
+            <ContainerBlock full>
+              <SectionHeader
+                text="Live Metrics"
+                description="Real-time traffic overview"
+                icon="fas fa-chart-line"
+              />
+              <ApiStats
+                url={
+                  version === 'Published'
+                    ? `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${item.id}/live?every=2000`
+                    : `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
+                }
+              />
+            </ContainerBlock>
 
+            {/* Health */}
+            <ContainerBlock full>
+              <SectionHeader
+                text="Health"
+                description="Uptime over the last 3 days"
+                icon="fas fa-heartbeat"
+              />
+              <div className="dashboard-health-grid">
+                <div className="dashboard-health-day">
+                  <span className="dashboard-health-label">Today</span>
                   <Uptime health={item.health?.today} stopTheCountUnknownStatus={false} />
+                </div>
+                <div className="dashboard-health-day">
+                  <span className="dashboard-health-label">Yesterday</span>
                   <Uptime health={item.health?.yesterday} stopTheCountUnknownStatus={false} />
+                </div>
+                <div className="dashboard-health-day">
+                  <span className="dashboard-health-label">2 days ago</span>
                   <Uptime health={item.health?.nMinus2} stopTheCountUnknownStatus={false} />
-                </ContainerBlock>
-
-                {hasCreateRoute && hasCreateConsumer && (
-                  <ContainerBlock
-                    style={{
-                      width: 'initial',
-                    }}
-                  >
-                    <SectionHeader
-                      text="Routes"
-                      description="This API exposes the following routes"
-                    />
-                    <RoutesView api={item} />
-                  </ContainerBlock>
-                )}
-
-                {hasCreateConsumer && (
-                  <ContainerBlock
-                    style={{
-                      width: 'initial',
-                    }}
-                  >
-                    <SectionHeader
-                      text="Subscriptions"
-                      description={
-                        item.consumers.flatMap((c) => c.subscriptions).length <= 0
-                          ? 'Souscriptions will appear here'
-                          : ''
-                      }
-                      actions={
-                        <DraftOnly>
-                          <Button
-                            type="primaryColor"
-                            text="Subscribe"
-                            className="btn-sm"
-                            onClick={() =>
-                              historyPush(
-                                history,
-                                location,
-                                `/apis/${params.apiId}/subscriptions/new`
-                              )
-                            }
-                          />
-                        </DraftOnly>
-                      }
-                    />
-
-                    <SubscriptionsView api={item} />
-                  </ContainerBlock>
-                )}
-
-                {hasCreateConsumer && (
-                  <ContainerBlock
-                    style={{
-                      width: 'initial',
-                    }}
-                  >
-                    <SectionHeader
-                      text="Consumers"
-                      description={
-                        item.consumers.length <= 0 ? 'API consumers will appear here' : ''
-                      }
-                      actions={
-                        <DraftOnly>
-                          <Button
-                            type="primaryColor"
-                            text="New Consumer"
-                            className="btn-sm"
-                            onClick={() =>
-                              historyPush(history, location, `/apis/${params.apiId}/consumers/new`)
-                            }
-                          />
-                        </DraftOnly>
-                      }
-                    />
-                    <ApiConsumersView api={item} />
-                  </ContainerBlock>
-                )}
+                </div>
               </div>
-              {item.flows.length > 0 && item.routes.length > 0 && (
-                <ContainerBlock
-                  style={
-                    {
-                      // flex: .5
-                    }
+            </ContainerBlock>
+
+            {/* Routes Table */}
+            {hasCreateRoute && hasCreateConsumer && (
+              <ContainerBlock full>
+                <SectionHeader
+                  text="Routes"
+                  description="Exposed routes for this API"
+                  icon="fas fa-road"
+                />
+                <RoutesView api={item} />
+              </ContainerBlock>
+            )}
+
+            {/* Subscriptions Table */}
+            {hasCreateConsumer && (
+              <ContainerBlock full>
+                <SectionHeader
+                  text="Subscriptions"
+                  description={
+                    totalSubscriptions <= 0
+                      ? 'Subscriptions will appear here'
+                      : ''
                   }
-                >
-                  <SectionHeader text="Build your API" description="Manage entities for this API" />
-                  <Entities>
-                    <FlowsCard flows={item.flows} />
-                    <BackendsCard backends={item.backends} />
-                    <RoutesCard routes={item.routes} />
-                  </Entities>
-                </ContainerBlock>
-              )}
+                  icon="fas fa-key"
+                  actions={
+                    <DraftOnly>
+                      <Button
+                        type="primaryColor"
+                        text="Subscribe"
+                        className="btn-sm"
+                        onClick={() =>
+                          historyPush(
+                            history,
+                            location,
+                            `/apis/${params.apiId}/subscriptions/new`
+                          )
+                        }
+                      />
+                    </DraftOnly>
+                  }
+                />
+                <SubscriptionsView api={item} />
+              </ContainerBlock>
+            )}
+
+            {/* Consumers Table */}
+            {hasCreateConsumer && (
+              <ContainerBlock full>
+                <SectionHeader
+                  text="Consumers"
+                  description={
+                    item.consumers.length <= 0 ? 'API consumers will appear here' : ''
+                  }
+                  icon="fas fa-users"
+                  actions={
+                    <DraftOnly>
+                      <Button
+                        type="primaryColor"
+                        text="New Consumer"
+                        className="btn-sm"
+                        onClick={() =>
+                          historyPush(history, location, `/apis/${params.apiId}/consumers/new`)
+                        }
+                      />
+                    </DraftOnly>
+                  }
+                />
+                <ApiConsumersView api={item} />
+              </ContainerBlock>
+            )}
+          </div>
+
+          {/* Sidebar: entity nav cards */}
+          {item.flows.length > 0 && item.routes.length > 0 && (
+            <div className="dashboard-sidebar">
+              <ContainerBlock full>
+                <SectionHeader
+                  text="Build your API"
+                  description="Manage entities"
+                  icon="fas fa-cubes"
+                />
+                <Entities>
+                  <FlowsCard flows={item.flows} />
+                  <BackendsCard backends={item.backends} />
+                  <RoutesCard routes={item.routes} />
+                </Entities>
+              </ContainerBlock>
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </>
+  );
+}
+
+function QuickStat({ icon, label, value, onClick }) {
+  return (
+    <div className="dashboard-quick-stat" onClick={onClick}>
+      <div className="dashboard-quick-stat-icon">
+        <i className={icon} />
+      </div>
+      <div className="dashboard-quick-stat-body">
+        <span className="dashboard-quick-stat-value">{value}</span>
+        <span className="dashboard-quick-stat-label">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+export function VersionToggle({ isDraft }) {
+  const switchVersion = () => {
+    const target = isDraft ? 'Published' : 'Draft';
+    const queryParams = new URLSearchParams(window.location.search);
+    queryParams.set('version', target);
+    window.history.replaceState(null, null, '?' + queryParams.toString());
+    window.location.reload();
+  };
+
+  return (
+    <button
+      type="button"
+      className={`dashboard-version-toggle ${isDraft ? 'dashboard-version-toggle--draft' : 'dashboard-version-toggle--prod'}`}
+      onClick={switchVersion}
+    >
+      <span className={`dashboard-version-toggle-indicator ${isDraft ? 'dashboard-version-toggle-indicator--draft' : 'dashboard-version-toggle-indicator--prod'}`}>
+        {isDraft ? 'DEV' : 'PROD'}
+      </span>
+      <span className="dashboard-version-toggle-label">
+        {isDraft ? 'Switch to Production' : 'Switch to Draft'}
+      </span>
+      <i className={`fas ${isDraft ? 'fa-arrow-right' : 'fa-arrow-right'}`} />
+    </button>
   );
 }
 
@@ -4155,14 +4269,17 @@ function APIState({ value }) {
   return null;
 }
 
-function SectionHeader({ text, description, main, actions }) {
+function SectionHeader({ text, description, main, actions, icon }) {
   return (
-    <div>
+    <div className="dashboard-section-header">
       <div className="d-flex align-items-center justify-content-between">
-        {main ? <h1 className="m-0">{text}</h1> : <h3 className="m-0">{text}</h3>}
+        <div className="d-flex align-items-center gap-2">
+          {icon && <i className={`${icon} dashboard-section-icon`} />}
+          {main ? <h1 className="m-0">{text}</h1> : <h3 className="m-0">{text}</h3>}
+        </div>
         {actions}
       </div>
-      <p>{description}</p>
+      {description && <p className="dashboard-section-description">{description}</p>}
     </div>
   );
 }
