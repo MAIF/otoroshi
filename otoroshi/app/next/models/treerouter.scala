@@ -122,7 +122,7 @@ case class NgTreeRouter(
             // println("should display on non exclusive")
             routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(listener)))
         }
-        val finalRoutes = _finalRoutes.copy(routes = _finalRoutes.routes.sortWith {
+        val finalRoutes = if(_finalRoutes.routes.size < 2) _finalRoutes else _finalRoutes.copy(routes = _finalRoutes.routes.sortWith {
           case (routeA, routeB) =>
             val routeAWeight = routeA.frontend.cookies.size + routeA.frontend.query.size + routeA.frontend.headers.size
             val routeBWeight = routeB.frontend.cookies.size + routeB.frontend.query.size + routeB.frontend.headers.size
