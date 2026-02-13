@@ -23,7 +23,6 @@ import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
 import InfoCollapse from '../../components/InfoCollapse';
 import moment from 'moment';
-import semver from 'semver';
 
 import { ApiStats } from './ApiStats';
 import { Documentation } from './Documentation';
@@ -2986,9 +2985,7 @@ function VersionManager({ api, draft, owner, setState }) {
       ...draft.content,
       deployments: [],
     },
-    draftId: draft.id,
-    action: 'patch',
-    version: semver.inc(api.version, 'patch'),
+    draftId: draft.id
   });
 
   const getCompareStep = (field) => ({
@@ -3000,53 +2997,6 @@ function VersionManager({ api, draft, owner, setState }) {
   const schema = {
     location: {
       type: 'location',
-    },
-    version: {
-      type: 'string',
-      label: 'Version',
-    },
-    action: {
-      renderer: (props) => {
-        const version = props.rootValue?.version;
-
-        const nextVersions = {
-          [semver.inc(api.version, 'patch')]: 'patch',
-          [semver.inc(api.version, 'minor')]: 'minor',
-          [semver.inc(api.version, 'major')]: 'major',
-        };
-
-        return (
-          <div>
-            <NgDotsRenderer
-              value={nextVersions[version]}
-              options={['patch', 'minor', 'major']}
-              schema={{
-                props: {
-                  label: 'Action',
-                },
-              }}
-              onChange={(action) => {
-                if (action === 'patch') {
-                  props.rootOnChange({
-                    ...props.rootValue,
-                    version: semver.inc(api.version, 'patch'),
-                  });
-                } else if (action === 'minor') {
-                  props.rootOnChange({
-                    ...props.rootValue,
-                    version: semver.inc(api.version, 'minor'),
-                  });
-                } else {
-                  props.rootOnChange({
-                    ...props.rootValue,
-                    version: semver.inc(api.version, 'major'),
-                  });
-                }
-              }}
-            />
-          </div>
-        );
-      },
     },
     apiRef: {
       type: 'string',
@@ -3087,12 +3037,7 @@ function VersionManager({ api, draft, owner, setState }) {
   }
 
   const flow = [
-    {
-      type: 'group',
-      name: 'Informations',
-      collapsable: false,
-      fields: ['version', 'action', 'owner'],
-    },
+    'owner',
     ...[
       getCompareFlowGroup('routes'),
       getCompareFlowGroup('flows'),
@@ -3112,7 +3057,7 @@ function VersionManager({ api, draft, owner, setState }) {
   ]
 
   return (
-    <div className="d-flex flex-column flex-grow gap-3" style={{ maxWidth: 820 }}>
+    <div className="d-flex flex-column flex-grow gap-3 mt-3" style={{ maxWidth: 820 }}>
       <NgForm
         value={deployment}
         onChange={(data) => {
@@ -3154,6 +3099,10 @@ function Informations(props) {
     description: {
       type: 'string',
       label: 'Description',
+    },
+    version: {
+      type: 'string',
+      label: 'Version'
     },
     metadata: {
       type: 'object',
@@ -3219,8 +3168,8 @@ function Informations(props) {
     'location',
     {
       type: 'group',
-      name: 'Route',
-      fields: ['enabled', 'name', 'description'],
+      name: 'API',
+      fields: ['enabled', 'name', 'description', 'version'],
     },
     {
       type: 'group',
@@ -4109,9 +4058,7 @@ function publishAPI(draft, api, history) {
             ...draft.content,
             deployments: [],
           },
-          draftId: draft.id,
-          action: 'patch',
-          version: semver.inc(api.version, 'patch'),
+          draftId: draft.id
         };
         fetchWrapperNext(
           `/${nextClient.ENTITIES.APIS}/${api.id}/deployments`,

@@ -392,9 +392,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                       case JsError(_)             => Results.NotFound.future
                       case JsSuccess(apiDraft, _) =>
                         val updatedApi = apiDraft.copy(
-                          versions = api.versions :+ deployment.version,
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
-                          version = deployment.version,
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
                           state = if (apiDraft.state == ApiStaging) ApiPublished else api.state
@@ -412,7 +410,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                                 else deployment.owner,
                               at = deployment.at,
                               apiDefinition = deployment.apiDefinition,
-                              version = deployment.version,
+                              version = api.version,
                               `@service` = api.name,
                               `@serviceId` = apiId
                             ).toAnalytics()

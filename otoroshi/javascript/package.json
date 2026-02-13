@@ -59,7 +59,6 @@
     "react-tooltip": "5.29.1",
     "react-zoom-pan-pinch": "^3.7.0",
     "recharts": "^2.15.1",
-    "semver": "^7.7.3",
     "set-value": "4.1.0",
     "showdown": "1.9.1",
     "signals-react-safe": "^1.1.2",
