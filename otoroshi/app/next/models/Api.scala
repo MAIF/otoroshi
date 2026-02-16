@@ -118,8 +118,8 @@ case class ApiFlows(id: String, name: String, consumers: Seq[String] = Seq.empty
 
 object ApiFlows {
   def empty(implicit env: Env): ApiFlows = ApiFlows(
-    "default_flow",
-    "default_flow",
+    "default_plugin_chain",
+    "default_plugin_chain",
     plugins = NgPlugins.apply(
       slots = Seq(
         NgPluginInstance(
@@ -948,6 +948,8 @@ case class Api(
     id: String,
     name: String,
     description: String,
+    domain: String,
+    contextPath: String,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     version: String,
@@ -1181,7 +1183,7 @@ object Api {
             exact = true
           ),
           backend = backend.id,
-          flowRef = "default_flow",
+          flowRef = "default_plugin_chain",
           id = name.getOrElse(sanitize(cleanPath)),
           name = name.getOrElse(cleanPath).some
         )
@@ -1192,6 +1194,8 @@ object Api {
         id = "api_route" + IdGenerator.uuid,
         name = name,
         description = description,
+        domain = domain,
+        contextPath = "/",
         debugFlow = false,
         capture = false,
         exportReporting = false,
@@ -1376,6 +1380,8 @@ object Api {
         id = (json \ "id").asString,
         name = (json \ "name").asString,
         description = (json \ "description").asString,
+        domain = (json \ "domain").asOpt[String].getOrElse(""),
+        contextPath = (json \ "contextPath").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         version = (json \ "version").asOptString.getOrElse("0.0.1"),
@@ -1453,6 +1459,8 @@ trait ApiDataStore extends BasicStore[Api] {
       id = IdGenerator.namedId("api", env),
       name = "New API",
       description = "New API description",
+      domain = "api.oto.tools",
+      contextPath = "/v1",
       metadata = Map.empty,
       tags = Seq.empty,
       version = "0.0.1",

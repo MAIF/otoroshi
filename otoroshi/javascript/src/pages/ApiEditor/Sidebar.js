@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
-import Select from 'react-select';
 import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
 import { VersionToggle } from '.';
@@ -24,6 +23,13 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show informations tab`) },
     },
     {
+      to: `/apis/${id}/api-gateway`,
+      icon: 'fa-shield-halved',
+      title: 'API Gateway',
+      tab: 'api-gateway',
+      tooltip: { ...createTooltip(`Show API Gateway tab`) },
+    },
+    {
       to: `/apis/${id}/actions`,
       icon: 'fa-bolt',
       title: 'Actions',
@@ -31,11 +37,18 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show actions tab`) },
     },
     {
-      to: `/apis/${id}/routes`,
+      to: `/apis/${id}/endpoints`,
       icon: 'fa-road',
-      title: 'Routes',
-      tab: 'routes',
-      tooltip: { ...createTooltip(`Show routes tab`) },
+      title: 'Endpoints',
+      tab: 'endpoints',
+      tooltip: { ...createTooltip(`Show endpoints tab`) },
+    },
+    {
+      to: `/apis/${id}/plugin-chains`,
+      icon: 'fa-project-diagram',
+      title: 'Plugin chains',
+      tab: 'plugin-chains',
+      tooltip: { ...createTooltip(`Show plugin chains tab`) },
     },
     {
       to: `/apis/${id}/backends`,
@@ -52,18 +65,11 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show http client settings tab`) },
     },
     {
-      to: `/apis/${id}/flows`,
-      icon: 'fa-project-diagram',
-      title: 'Flows',
-      tab: 'flows',
-      tooltip: { ...createTooltip(`Show flows tab`) },
-    },
-    {
-      to: `/apis/${id}/consumers`,
+      to: `/apis/${id}/access-modes`,
       icon: 'fa-list',
-      title: 'Consumers',
-      tab: 'Consumers',
-      tooltip: { ...createTooltip(`Show consumers tab`) },
+      title: 'Access modes',
+      tab: 'access-modes',
+      tooltip: { ...createTooltip(`Show access modes tab`) },
     },
     {
       to: `/apis/${id}/subscriptions`,
@@ -72,13 +78,13 @@ const LINKS = (id) =>
       tab: 'Subscriptions',
       tooltip: { ...createTooltip(`Show subscriptions tab`) },
     },
-    // {
-    //     to: `/apis/${id}/playground`,
-    //     icon: 'fa-play',
-    //     title: 'API Playground',
-    //     tab: 'playground',
-    //     tooltip: { ...createTooltip(`Show playground tab`) },
-    // },
+    {
+      to: `/apis/${id}/plans`,
+      icon: 'fa-layer-group',
+      title: 'Plans',
+      tab: 'plan',
+      tooltip: { ...createTooltip(`Show plan tab`) },
+    },
     {
       to: `/apis/${id}/deployments`,
       icon: 'fa-server',
@@ -89,9 +95,9 @@ const LINKS = (id) =>
     {
       to: `/apis/${id}/documentation`,
       icon: 'fa-file',
-      title: 'Documentation',
-      tab: 'documentation',
-      tooltip: { ...createTooltip(`Show documentation tab`) },
+      title: 'Developer portal',
+      tab: 'dev portal',
+      tooltip: { ...createTooltip(`Show dev portal tab`) },
     },
     {
       to: `/apis/${id}/testing`,

@@ -25,7 +25,7 @@ import InfoCollapse from '../../components/InfoCollapse';
 import moment from 'moment';
 
 import { ApiStats } from './ApiStats';
-import { Documentation } from './Documentation';
+import { ApiDocumentationPlans, Documentation } from './Documentation';
 import { PublisDraftModalContent, queryClient } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
 import { useSignalValue } from 'signals-react-safe';
@@ -57,26 +57,28 @@ export default function ApiEditor(props) {
 
         <Switch>
           <RouteWithProps exact path="/apis/:apiId/actions" component={Actions} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/routes" component={Routes} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/routes/new" component={NewRoute} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/api-gateway" component={APIGateway} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/plans" component={ApiDocumentationPlans} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/endpoints" component={Endpoints} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/endpoints/new" component={NewRoute} props={props} />
           <RouteWithProps
             exact
-            path="/apis/:apiId/routes/:routeId/:action"
+            path="/apis/:apiId/endpoints/:routeId/:action"
             component={RouteDesigner}
             props={props}
           />
 
-          <RouteWithProps exact path="/apis/:apiId/consumers" component={Consumers} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/access-modes" component={AccessModes} props={props} />
           <RouteWithProps
             exact
-            path="/apis/:apiId/consumers/new"
-            component={NewConsumer}
+            path="/apis/:apiId/access-modes/new"
+            component={NewAccessMode}
             props={props}
           />
           <RouteWithProps
             exact
-            path="/apis/:apiId/consumers/:consumerId/:action"
-            component={ConsumerDesigner}
+            path="/apis/:apiId/access-modes/:consumerId/:action"
+            component={AccessModeDesigner}
             props={props}
           />
 
@@ -99,18 +101,18 @@ export default function ApiEditor(props) {
             props={props}
           />
 
-          <RouteWithProps exact path="/apis/:apiId/flows" component={Flows} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/flows/new" component={NewFlow} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/plugin-chains" component={PluginChains} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/plugin-chains/new" component={NewPluginChains} props={props} />
           <RouteWithProps
             exact
-            path="/apis/:apiId/flows/:flowId/designer"
-            component={FlowDesigner}
+            path="/apis/:apiId/plugin-chains/:flowId/designer"
+            component={PluginChainsDesigner}
             props={props}
           />
           <RouteWithProps
             exact
-            path="/apis/:apiId/flows/:flowId/:action"
-            component={EditFlow}
+            path="/apis/:apiId/plugin-chains/:flowId/:action"
+            component={EditPluginChains}
             props={props}
           />
 
@@ -441,13 +443,13 @@ const SUBSCRIPTION_FORM_SETTINGS = {
     },
     consumer_ref: {
       type: 'select',
-      label: 'Published consumer',
+      label: 'Published access mode',
       props: {
         options: item.consumers.filter((consumer) => consumer.status === 'published'),
         noOptionsMessage: ({ children, ...props }) => {
           return (
             <components.NoOptionsMessage {...props}>
-              No consumers are published
+              No access modes are published
             </components.NoOptionsMessage>
           );
         },
@@ -594,7 +596,7 @@ function RouteDesigner(props) {
   const [route, setRoute] = useState();
   const [schema, setSchema] = useState();
 
-  const { item, updateItem, isDraft } = useDraftOfAPI();
+  const { item, updateItem } = useDraftOfAPI();
 
   const [backends, setBackends] = useState([]);
 
@@ -625,14 +627,14 @@ function RouteDesigner(props) {
         if (item.id === route.id) return route;
         return item;
       }),
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}/routes`));
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/endpoints`));
   };
 
   if (!route || !item || !schema) return <SimpleLoader />;
 
   return (
     <>
-      <PageTitle title={route.name || 'Update the route'} {...props}>
+      <PageTitle title={route.name || 'Update the endpoint'} {...props}>
         <DraftOnly>
           <FeedbackButton
             type="success"
@@ -669,8 +671,8 @@ const ROUTE_FORM_SETTINGS = {
     return {
       name: {
         type: 'string',
-        label: 'Route name',
-        placeholder: 'My users route',
+        label: 'Endpoint name',
+        placeholder: 'My users endpoint',
       },
       enabled: {
         type: 'box-bool',
@@ -687,13 +689,16 @@ const ROUTE_FORM_SETTINGS = {
       },
       flow_ref: {
         type: 'select',
-        label: 'Flow',
+        label: 'Type',
         props: {
-          options: item.flows,
-          optionsTransformer: {
-            label: 'name',
-            value: 'id',
+          ngOptions: {
+            spread: true,
           },
+          options: [
+            { value: 'InHeader', label: 'Header' },
+            { value: 'InQueryParam', label: 'Query string' },
+            { value: 'InCookie', label: 'Cookie' },
+          ],
         },
       },
       backend: {
@@ -762,9 +767,9 @@ const ROUTE_FORM_SETTINGS = {
       type: 'group',
       collapsable: true,
       collapsed: true,
-      name: '1. Enabled the route',
-      fields: ['enabled'],
-      summaryFields: ['enabled'],
+      name: '1. Global Information',
+      fields: ['enabled', 'name'],
+      summaryFields: ['enabled', 'name'],
     },
     {
       type: 'group',
@@ -777,7 +782,7 @@ const ROUTE_FORM_SETTINGS = {
       type: 'group',
       collapsable: true,
       collapsed: true,
-      name: '3. Add plugins to your route by selecting a flow',
+      name: '3. Add plugins to your endpoint by selecting a plugin chains',
       fields: ['flow_ref'],
       summaryFields: ['flow_ref'],
     },
@@ -788,15 +793,7 @@ const ROUTE_FORM_SETTINGS = {
       name: '4. Configure the backend',
       fields: ['backend'],
       summaryFields: ['backend'],
-    },
-    {
-      type: 'group',
-      collapsable: true,
-      collapsed: true,
-      name: '5. Additional informations',
-      fields: ['name'],
-      summaryFields: ['name'],
-    },
+    }
   ],
 };
 
@@ -852,7 +849,7 @@ function NewRoute(props) {
         .then(({ frontend }) => {
           setRoute({
             ...route,
-            name: 'My first route',
+            name: 'My first endpoint',
             enabled: true,
             frontend,
             backend: item.backends.length && item.backends[0].id,
@@ -891,7 +888,7 @@ function NewRoute(props) {
   );
 }
 
-function Consumers(props) {
+function AccessModes(props) {
   const history = useHistory();
   const params = useParams();
   const location = useLocation();
@@ -908,7 +905,7 @@ function Consumers(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'Consumers',
+      value: 'Access modes',
       noThumbtack: true,
       children: <VersionBadge />,
     });
@@ -927,20 +924,20 @@ function Consumers(props) {
       <Table
         parentProps={{ params }}
         navigateTo={(item) =>
-          historyPush(history, location, `/apis/${params.apiId}/consumers/${item.id}/edit`)
+          historyPush(history, location, `/apis/${params.apiId}/access-modes/${item.id}/edit`)
         }
         navigateOnEdit={(item) =>
-          historyPush(history, location, `/apis/${params.apiId}/consumers/${item.id}/edit`)
+          historyPush(history, location, `/apis/${params.apiId}/access-modes/${item.id}/edit`)
         }
-        selfUrl="consumers"
-        defaultTitle="Consumer"
-        itemName="Consumer"
+        selfUrl="access-modes"
+        defaultTitle="Access mode"
+        itemName="Access mode"
         columns={columns}
         deleteItem={deleteItem}
         fetchTemplate={() =>
           Promise.resolve({
             id: v4(),
-            name: 'New consumer',
+            name: 'New access mode',
             consumer_kind: 'apikey',
             config: {},
           })
@@ -953,18 +950,18 @@ function Consumers(props) {
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
-        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/consumers/${i.id}/edit`)}
+        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/access-modes/${i.id}/edit`)}
         rawEditUrl={true}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
             <Link
               className="btn btn-primary btn-sm"
               to={{
-                pathname: 'consumers/new',
+                pathname: 'access-modes/new',
                 search: location.search,
               }}
             >
-              <i className="fas fa-plus-circle" /> Create new consumer
+              <i className="fas fa-plus-circle" /> Create new access mode
             </Link>
             {props.injectTopBar}
           </div>
@@ -1000,7 +997,7 @@ const TEMPLATES = {
   },
 };
 
-function NewConsumerSettingsForm(props) {
+function NewAccessModeSettingsForm(props) {
   return (
     <NgForm
       value={props.value}
@@ -1014,7 +1011,7 @@ function NewConsumerSettingsForm(props) {
   );
 }
 
-const CONSUMER_FORM_SETTINGS = {
+const ACCESS_MODE_FORM_SETTINGS = {
   schema: {
     name: {
       type: 'string',
@@ -1022,7 +1019,7 @@ const CONSUMER_FORM_SETTINGS = {
     },
     consumer_kind: {
       renderer: (props) => (
-        <Row title="Consumer kind">
+        <Row title="AccessMode kind">
           <NgDotsRenderer
             value={props.value}
             options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
@@ -1053,11 +1050,11 @@ const CONSUMER_FORM_SETTINGS = {
           staging:
             'This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won’t be visible or accessible to users',
           published:
-            'When your plan is finalized, you can publish it to allow API consumers to view and subscribe to it via the APIM Portal. Once published, consumers can use the API through the plan. Published plans remain editable',
+            'When your plan is finalized, you can publish it to allow API access modes to view and subscribe to it via the APIM Portal. Once published, consumers can use the API through the plan. Published plans remain editable',
           deprecated:
             'Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API consumers',
           closed:
-            'Closing a plan terminates all associated subscriptions, and this action is irreversible. API consumers previously subscribed to the plan will no longer have access to the API',
+            'Closing a plan terminates all associated subscriptions, and this action is irreversible. API access modes previously subscribed to the plan will no longer have access to the API',
         };
 
         return (
@@ -1123,7 +1120,7 @@ const CONSUMER_FORM_SETTINGS = {
                 type: 'box-bool',
                 props: {
                   description:
-                    'Allow an apikey and and authentication module to be used on a same path. If disabled, the route can be called without apikey.',
+                    'Allow an apikey and and authentication module to be used on a same path. If disabled, the endpoint can be called without apikey.',
                 },
               },
               validate: {
@@ -1148,7 +1145,7 @@ const CONSUMER_FORM_SETTINGS = {
 
         if (kinds[kind])
           return (
-            <NewConsumerSettingsForm
+            <NewAccessModeSettingsForm
               schema={kinds[kind].schema}
               flow={kinds[kind].flow}
               value={props.rootValue.settings}
@@ -1182,14 +1179,14 @@ const CONSUMER_FORM_SETTINGS = {
   ],
 };
 
-function NewConsumer(props) {
+function NewAccessMode(props) {
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
 
   const [consumer, setConsumer] = useState({
     id: v4(),
-    name: 'New consumer',
+    name: 'New access mode',
     consumer_kind: 'keyless',
     settings: TEMPLATES.keyless,
     status: 'staging',
@@ -1206,7 +1203,7 @@ function NewConsumer(props) {
     return updateItem({
       ...item,
       consumers: [...item.consumers, consumer],
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}/consumers`));
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/access-modes`));
   };
 
   if (!item) return <SimpleLoader />;
@@ -1223,8 +1220,8 @@ function NewConsumer(props) {
       >
         <NgForm
           value={consumer}
-          flow={CONSUMER_FORM_SETTINGS.flow}
-          schema={CONSUMER_FORM_SETTINGS.schema}
+          flow={ACCESS_MODE_FORM_SETTINGS.flow}
+          schema={ACCESS_MODE_FORM_SETTINGS.schema}
           onChange={(newValue) => setConsumer(newValue)}
         />
         <DraftOnly>
@@ -1241,7 +1238,7 @@ function NewConsumer(props) {
   );
 }
 
-function ConsumerDesigner(props) {
+function AccessModeDesigner(props) {
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
@@ -1295,8 +1292,8 @@ function ConsumerDesigner(props) {
       >
         <NgForm
           value={consumer}
-          flow={CONSUMER_FORM_SETTINGS.flow}
-          schema={CONSUMER_FORM_SETTINGS.schema}
+          flow={ACCESS_MODE_FORM_SETTINGS.flow}
+          schema={ACCESS_MODE_FORM_SETTINGS.schema}
           onChange={(newValue) => setConsumer(newValue)}
         />
       </div>
@@ -1304,7 +1301,7 @@ function ConsumerDesigner(props) {
   );
 }
 
-function Routes(props) {
+function Endpoints(props) {
   const history = useHistory();
   const params = useParams();
   const location = useLocation();
@@ -1341,7 +1338,7 @@ function Routes(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'HTTP Routes',
+      value: 'Endpoints',
       noThumbtack: true,
       children: <VersionBadge />,
     });
@@ -1362,14 +1359,14 @@ function Routes(props) {
     <Table
       parentProps={{ params }}
       navigateTo={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/routes/${item.id}/edit`)
+        historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
       }
       navigateOnEdit={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/routes/${item.id}/edit`)
+        historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
       }
-      selfUrl="routes"
-      defaultTitle="Route"
-      itemName="Route"
+      selfUrl="endpoints"
+      defaultTitle="Endpoint"
+      itemName="Endpoint"
       columns={columns}
       deleteItem={deleteItem}
       fetchTemplate={client.template}
@@ -1381,7 +1378,7 @@ function Routes(props) {
       extractKey={(item) => item.id}
       rowNavigation={true}
       hideAddItemAction={true}
-      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/routes/${i.id}/edit`)}
+      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/endpoints/${i.id}/edit`)}
       rawEditUrl={true}
       injectTopBar={() => (
         <DraftOnly>
@@ -1389,11 +1386,11 @@ function Routes(props) {
             <Link
               className="btn btn-primary btn-sm"
               to={{
-                pathname: 'routes/new',
+                pathname: 'endpoints/new',
                 search: location.search,
               }}
             >
-              <i className="fas fa-plus-circle" /> Create new route
+              <i className="fas fa-plus-circle" /> Create new endpoint
             </Link>
             {props.injectTopBar}
           </div>
@@ -2084,10 +2081,10 @@ function Testing(props) {
           }}
         >
           <p style={{ color: 'var(--text)' }}>
-            Testing mode can't be enabled until you have created consumers.
+            Testing mode can't be enabled until you have created access modes.
           </p>
           <hr />
-          <ConsumerCard item={item} />
+          <AccessModeCard item={item} />
         </div>
       </>
     );
@@ -2242,7 +2239,7 @@ function SidebarComponent(props) {
   return null;
 }
 
-function EditFlow(props) {
+function EditPluginChains(props) {
   const history = useHistory();
   const params = useParams();
   const location = useLocation();
@@ -2291,7 +2288,7 @@ function EditFlow(props) {
           return ite;
         }
       }),
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}/flows`));
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/plugin-chains`));
   };
 
   if (!item) return <SimpleLoader />;
@@ -2330,7 +2327,7 @@ const FLOW_FORM_SETTINGS = {
     },
     consumers: {
       type: 'form',
-      label: 'Enabled consumers',
+      label: 'Enabled access modes',
       schema: item.consumers.reduce(
         (acc, item) => ({
           ...acc,
@@ -2357,7 +2354,7 @@ const FLOW_FORM_SETTINGS = {
   ],
 };
 
-function NewFlow(props) {
+function NewPluginChains(props) {
   const history = useHistory();
   const params = useParams();
   const location = useLocation();
@@ -2372,7 +2369,7 @@ function NewFlow(props) {
 
   const [flow, setFlow] = useState({
     id: v4(),
-    name: 'New flow name',
+    name: 'New plugin chains name',
     plugins: [],
     consumers: [],
   });
@@ -2392,7 +2389,7 @@ function NewFlow(props) {
         },
       ],
     }).then(() =>
-      historyPush(history, location, `/apis/${params.apiId}/flows/${flow.id}/designer`)
+      historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${flow.id}/designer`)
     );
   };
 
@@ -2741,7 +2738,7 @@ function Apis(props) {
           <li><strong>Unified dashboard</strong> — monitor traffic, errors, and performance for all routes of the API from a single view.</li>
           <li><strong>Version and deploy</strong> — manage the lifecycle of your API with versioned deployments, making it easy to evolve your API over time.</li>
           <li><strong>Draft and production modes</strong> — work on a draft version of your API, test it, and promote it to production when ready — without impacting live traffic.</li>
-          <li><strong>Manage consumers and subscriptions</strong> — control who can access your API, issue API keys, and track consumer usage.</li>
+          <li><strong>Manage access modes and subscriptions</strong> — control who can access your API, issue API keys, and track access mode usage.</li>
         </ul>
         <p>
           APIs give you the power to operate at scale — instead of managing dozens of individual routes,
@@ -2796,7 +2793,7 @@ function Apis(props) {
   );
 }
 
-function FlowDesigner(props) {
+function PluginChainsDesigner(props) {
   const history = useHistory();
   const params = useParams();
 
@@ -2854,7 +2851,7 @@ function FlowDesigner(props) {
           };
         return flow;
       }),
-    }).then(() => history.replace(`/apis/${params.apiId}/flows`));
+    }).then(() => history.replace(`/apis/${params.apiId}/plugin-chains`));
   };
 
   if (!item || !flow) return <SimpleLoader />;
@@ -2882,7 +2879,7 @@ function linkWithQuery(link) {
   return `${link}${window.location.search}`;
 }
 
-function Flows(props) {
+function PluginChains(props) {
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
@@ -2902,13 +2899,13 @@ function Flows(props) {
       },
       notFilterable: true,
       cell: (_, item) => {
-        if (item.name === 'default_flow') return null;
+        if (item.name === 'default_plugin_chain') return null;
 
         return (
           <Button
             className="btn-sm"
             onClick={() => {
-              historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/designer`);
+              historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/designer`);
             }}
           >
             <i className="fas fa-pencil-ruler" />
@@ -2920,7 +2917,7 @@ function Flows(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'Flows',
+      value: 'Plugin chains',
       noThumbtack: true,
       children: <VersionBadge />,
     });
@@ -2931,7 +2928,7 @@ function Flows(props) {
   const fetchTemplate = () =>
     Promise.resolve({
       id: uuid(),
-      name: 'My new flow',
+      name: 'My new plugin chain',
       plugins: [],
     });
 
@@ -2948,12 +2945,12 @@ function Flows(props) {
     <Table
       parentProps={{ params }}
       navigateTo={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/edit`)
+        historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/edit`)
       }
       navigateOnEdit={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/flows/${item.id}/edit`)
+        historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/edit`)
       }
-      selfUrl={`/apis/${params.apiId}/flows`}
+      selfUrl={`/apis/${params.apiId}/plugin-chains`}
       defaultTitle="Flow"
       itemName="Flow"
       columns={columns}
@@ -2967,20 +2964,19 @@ function Flows(props) {
       extractKey={(item) => item.id}
       rowNavigation={true}
       hideAddItemAction={true}
-      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/flows/${i.id}`)}
+      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/plugin-chains/${i.id}`)}
       rawEditUrl={true}
-      // hideEditButton={(item) => item.name == 'default_flow'}
       injectTopBar={() => (
         <DraftOnly>
           <div className="btn-group input-group-btn">
             <Link
               className="btn btn-primary btn-sm"
               to={{
-                pathname: 'flows/new',
+                pathname: 'plugin-chains/new',
                 search: location.search,
               }}
             >
-              <i className="fas fa-plus-circle" /> Create new Flow
+              <i className="fas fa-plus-circle" /> Create new Plugin chain
             </Link>
             {props.injectTopBar}
           </div>
@@ -3041,9 +3037,15 @@ function VersionManager({ api, draft, owner, setState }) {
 
   const getCompareFlowGroup = (name) => {
     const hasChanged = mergeData(api[name], draft.content[name]).changed
+
+    const migration = {
+      "routes": "endpoints",
+      "consumers": "access modes"
+    }
+
     return {
       type: 'group',
-      name: `${firstLetterUppercase(name)} ${!hasChanged ? '' : `: has changed`}`,
+      name: `${firstLetterUppercase(migration[name] ?? name)} ${!hasChanged ? '' : `: has changed`}`,
       collapsed: true,
       fields: [name],
       hasChanged
@@ -3128,14 +3130,14 @@ function Informations(props) {
     },
     capture: {
       type: 'bool',
-      label: 'Capture route traffic',
+      label: 'Capture endpoint traffic',
       props: {
         labelColumn: 3,
       },
     },
     debug_flow: {
       type: 'bool',
-      label: 'Debug the route',
+      label: 'Debug the endpoint',
       props: {
         labelColumn: 3,
       },
@@ -3249,20 +3251,20 @@ const LIFECYCLE_STEPS = [
 const STATE_PERMISSIONS = {
   [API_STATE.STAGING]: {
     allowed: [
-      { icon: 'fas fa-pen', text: 'Edit routes, flows, backends and consumers' },
+      { icon: 'fas fa-pen', text: 'Edit endpoints, flows, backends and access modes' },
       { icon: 'fas fa-vial', text: 'Test the API with testing headers' },
       { icon: 'fas fa-key', text: 'Create and manage subscriptions' },
       { icon: 'fas fa-clone', text: 'Duplicate this API' },
     ],
     denied: [
       { icon: 'fas fa-globe', text: 'Receive production traffic' },
-      { icon: 'fas fa-user-plus', text: 'Allow external consumers to subscribe' },
+      { icon: 'fas fa-user-plus', text: 'Allow external access modes to subscribe' },
     ],
   },
   [API_STATE.PUBLISHED]: {
     allowed: [
       { icon: 'fas fa-globe', text: 'Receive production traffic' },
-      { icon: 'fas fa-user-plus', text: 'Accept new consumer subscriptions' },
+      { icon: 'fas fa-user-plus', text: 'Accept new subscriptions' },
       { icon: 'fas fa-pen', text: 'Edit configuration via draft mode' },
       { icon: 'fas fa-vial', text: 'Test the API with testing headers' },
       { icon: 'fas fa-clone', text: 'Duplicate this API' },
@@ -3276,7 +3278,7 @@ const STATE_PERMISSIONS = {
       { icon: 'fas fa-clone', text: 'Duplicate this API' },
     ],
     denied: [
-      { icon: 'fas fa-user-plus', text: 'Accept new consumer subscriptions' },
+      { icon: 'fas fa-user-plus', text: 'Accept new subscriptions' },
     ],
   },
   [API_STATE.REMOVED]: {
@@ -3286,12 +3288,86 @@ const STATE_PERMISSIONS = {
     ],
     denied: [
       { icon: 'fas fa-globe', text: 'Receive any traffic' },
-      { icon: 'fas fa-user-plus', text: 'Accept new consumer subscriptions' },
-      { icon: 'fas fa-pen', text: 'Edit routes, flows or backends' },
+      { icon: 'fas fa-user-plus', text: 'Accept new subscriptions' },
+      { icon: 'fas fa-pen', text: 'Edit endpoints, flows or backends' },
       { icon: 'fas fa-vial', text: 'Test the API' },
     ],
   },
 };
+
+function APIGateway(props) {
+
+  const { item, updateItem } = useDraftOfAPI()
+
+  const [state, setState] = useState()
+
+  useEffect(() => {
+    if (item) {
+      setState({
+        domain: item.domain,
+        contextPath: item.contextPath
+      })
+    }
+  }, [item])
+
+  const schema = {
+    explanation: {
+      renderer: () => {
+        return <InfoCollapse title="How domain and context path work" defaultOpen={true}>
+          <p>
+            The <strong>domain</strong> is the host through which your API will be exposed (e.g. <code>api.oto.tools</code>).
+            It defines the entry point that consumers will use to reach your API. You can use any domain
+            that resolves to your Otoroshi instance.
+          </p>
+          <p>
+            The <strong>context path</strong> is a path prefix appended after the domain to scope and version your API
+            (e.g. <code>/v1</code>, <code>/v2</code>). All routes defined within this API will be served under this base path.
+          </p>
+          <p>
+            Together, they form the full base URL of your API: <code>https://api.oto.tools/v1</code>.
+            This means an endpoint defined as <code>/users</code> would be accessible at <code>https://api.oto.tools/v1/users</code>.
+          </p>
+        </InfoCollapse>
+      }
+    },
+    domain: {
+      type: 'string',
+      label: "API Domain",
+      placeholder: "http(s)://api.oto.tools"
+    },
+    contextPath: {
+      type: 'string',
+      label: 'Context path',
+      placeholder: "/v1, /v2, etc"
+    }
+  }
+
+  const update = () => {
+
+  }
+
+  return <>
+    <PageTitle title="API Gateway" {...props}>
+      <FeedbackButton
+        type="success"
+        className="d-flex ms-auto"
+        onPress={update}
+        text={
+          <div className="d-flex align-items-center">
+            Update <VersionBadge size="xs" />
+          </div>
+        }
+      />
+    </PageTitle>
+
+    <NgForm
+      value={state}
+      onChange={setState}
+      schema={schema}
+    />
+  </>
+
+}
 
 function Actions(props) {
   const history = useHistory();
@@ -3494,7 +3570,7 @@ function Actions(props) {
                 onClick={() =>
                   transitionTo(
                     API_STATE.DEPRECATED,
-                    'Deprecating the API will prevent new consumers from subscribing. Existing subscriptions will continue to work.',
+                    'Deprecating the API will prevent new access modes from subscribing. Existing subscriptions will continue to work.',
                     'Deprecate API',
                     'Deprecate'
                   )
@@ -3608,7 +3684,7 @@ function ActionCard({ icon, title, description, onClick, color }) {
   );
 }
 
-function DraftOnly({ children }) {
+export function DraftOnly({ children }) {
   const { isDraft } = useDraftOfAPI()
 
   return isDraft ? children : null
@@ -3708,7 +3784,7 @@ function Dashboard(props) {
 
   const { item, draft, draftWrapper, version, api } = useDraftOfAPI();
 
-  const hasCreateFlow = item && item.flows.filter((f) => f.name !== 'default_flow').length > 0;
+  const hasCreateFlow = item && item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
   const hasCreateBackend =
     item && item.backends.filter((f) => f.name !== 'default_backend').length > 0;
   const hasCreateRoute = item && item.routes.length > 0;
@@ -3762,15 +3838,15 @@ function Dashboard(props) {
         <div className="dashboard-stats-row">
           <QuickStat
             icon="fas fa-road"
-            label="Routes"
+            label="Endpoints"
             value={item.routes.length}
-            onClick={() => historyPush(history, location, `/apis/${params.apiId}/routes`)}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/endpoints`)}
           />
           <QuickStat
             icon="fas fa-users"
             label="Consumers"
             value={item.consumers.length}
-            onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers`)}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/access-modes`)}
           />
           <QuickStat
             icon="fas fa-key"
@@ -3780,9 +3856,9 @@ function Dashboard(props) {
           />
           <QuickStat
             icon="fas fa-project-diagram"
-            label="Flows"
+            label="Plugin chains"
             value={item.flows.length}
-            onClick={() => historyPush(history, location, `/apis/${params.apiId}/flows`)}
+            onClick={() => historyPush(history, location, `/apis/${params.apiId}/plugin-chains`)}
           />
           <QuickStat
             icon="fas fa-microchip"
@@ -3797,8 +3873,8 @@ function Dashboard(props) {
           <ProgressCard step={currentStep}>
             {!hasCreateRoute && (
               <ObjectiveCard
-                to={`/apis/${params.apiId}/routes/new`}
-                title="Create a route"
+                to={`/apis/${params.apiId}/endpoints/new`}
+                title="Create an endpoint"
                 description={<p className="objective-link">Define how traffic reaches your API</p>}
                 icon={<i className="fas fa-road" />}
               />
@@ -3806,8 +3882,8 @@ function Dashboard(props) {
 
             {!hasCreateConsumer && hasCreateRoute && (
               <ObjectiveCard
-                to={`/apis/${params.apiId}/consumers/new`}
-                title="Add a consumer"
+                to={`/apis/${params.apiId}/access-modes/new`}
+                title="Add a access mode"
                 description={
                   <p className="objective-link">Apply security measures to the API</p>
                 }
@@ -3835,8 +3911,8 @@ function Dashboard(props) {
 
             {!hasCreateFlow && item.state === API_STATE.PUBLISHED && (
               <ObjectiveCard
-                to={`/apis/${params.apiId}/flows/new`}
-                title="Create a flow"
+                to={`/apis/${params.apiId}/plugin-chains/new`}
+                title="Create a plugin chains"
                 description={
                   <p className="objective-link">Add plugin rules and transformations</p>
                 }
@@ -3897,12 +3973,12 @@ function Dashboard(props) {
               </div>
             </ContainerBlock>
 
-            {/* Routes Table */}
+            {/* Endpoints Table */}
             {hasCreateRoute && hasCreateConsumer && (
               <ContainerBlock full>
                 <SectionHeader
-                  text="Routes"
-                  description="Exposed routes for this API"
+                  text="Endpoints"
+                  description="Exposed endpoints for this API"
                   icon="fas fa-road"
                 />
                 <RoutesView api={item} />
@@ -3947,7 +4023,7 @@ function Dashboard(props) {
                 <SectionHeader
                   text="Consumers"
                   description={
-                    item.consumers.length <= 0 ? 'API consumers will appear here' : ''
+                    item.consumers.length <= 0 ? 'API access modes will appear here' : ''
                   }
                   icon="fas fa-users"
                   actions={
@@ -3957,13 +4033,13 @@ function Dashboard(props) {
                         text="New Consumer"
                         className="btn-sm"
                         onClick={() =>
-                          historyPush(history, location, `/apis/${params.apiId}/consumers/new`)
+                          historyPush(history, location, `/apis/${params.apiId}/access-modes/new`)
                         }
                       />
                     </DraftOnly>
                   }
                 />
-                <ApiConsumersView api={item} />
+                <ApiAccessModesView api={item} />
               </ContainerBlock>
             )}
           </div>
@@ -3978,9 +4054,9 @@ function Dashboard(props) {
                   icon="fas fa-cubes"
                 />
                 <Entities>
-                  <FlowsCard flows={item.flows} />
+                  <PluginChainsCard flows={item.flows} />
                   <BackendsCard backends={item.backends} />
-                  <RoutesCard routes={item.routes} />
+                  <EndpointsCard routes={item.routes} />
                 </Entities>
               </ContainerBlock>
             </div>
@@ -4031,7 +4107,7 @@ export function VersionToggle({ isDraft }) {
   );
 }
 
-function ApiConsumersView({ api }) {
+function ApiAccessModesView({ api }) {
   return (
     <div>
       <div
@@ -4046,13 +4122,13 @@ function ApiConsumersView({ api }) {
         <div>Kind</div>
       </div>
       {api.consumers.map((consumer) => {
-        return <Consumer key={consumer.id} consumer={consumer} />;
+        return <AccessMode key={consumer.id} consumer={consumer} />;
       })}
     </div>
   );
 }
 
-function Consumer({ consumer }) {
+function AccessMode({ consumer }) {
   const history = useHistory();
   const params = useParams();
   const location = useLocation();
@@ -4091,7 +4167,7 @@ function Consumer({ consumer }) {
                   historyPush(
                     history,
                     location,
-                    `/apis/${params.apiId}/consumers/${consumer.id}/edit`
+                    `/apis/${params.apiId}/access-modes/${consumer.id}/edit`
                   );
                 }}
                 style={{
@@ -4665,19 +4741,19 @@ function BackendsCard({ backends }) {
   );
 }
 
-function ConsumerCard({ item }) {
+function AccessModeCard({ item }) {
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
 
   return (
     <div
-      onClick={() => historyPush(history, location, `/apis/${params.apiId}/consumers/new`)}
+      onClick={() => historyPush(history, location, `/apis/${params.apiId}/access-modes/new`)}
       className="cards apis-cards"
     >
       <div className="cards-body">
         <div className="cards-title d-flex align-items-center justify-content-between">
-          Consumers{' '}
+          Access Modes{' '}
           <span className="badge custom-badge api-status-deprecated">
             <i className="fas fa-list me-2" />
             {item.consumers.length}
@@ -4692,28 +4768,28 @@ function ConsumerCard({ item }) {
   );
 }
 
-function RoutesCard({ routes }) {
+function EndpointsCard({ routes }) {
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
 
   return (
     <div
-      onClick={() => historyPush(history, location, `/apis/${params.apiId}/routes`)}
+      onClick={() => historyPush(history, location, `/apis/${params.apiId}/endpoints`)}
       className="cards apis-cards"
     >
       <div className="cards-body">
         <div className="cards-title d-flex align-items-center justify-content-between">
-          Routes{' '}
+          Endpoints{' '}
           <span className="badge custom-badge api-status-deprecated">
             <i className="fas fa-road me-2" />
             {routes.length}
           </span>
         </div>
         <p className="cards-description relative">
-          Define your <HighlighedRouteText />: connect <HighlighedFrontendText plural /> to{' '}
+          Define your <HighlighedEndpointText />: connect <HighlighedFrontendText plural /> to{' '}
           <HighlighedBackendText plural /> and customize behavior with{' '}
-          <HighlighedFlowsText plural /> like authentication, rate limiting, and transformations.
+          <HighlighedPluginChainsText plural /> like authentication, rate limiting, and transformations.
           <i className="fas fa-chevron-right fa-lg navigate-icon" />
         </p>
       </div>
@@ -4721,19 +4797,19 @@ function RoutesCard({ routes }) {
   );
 }
 
-function FlowsCard({ flows }) {
+function PluginChainsCard({ flows }) {
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
 
   return (
     <div
-      onClick={() => historyPush(history, location, `/apis/${params.apiId}/flows`)}
+      onClick={() => historyPush(history, location, `/apis/${params.apiId}/plugin-chains`)}
       className="cards apis-cards"
     >
       <div className="cards-body">
         <div className="cards-title d-flex align-items-center justify-content-between">
-          Flows{' '}
+          Plugin chains{' '}
           <span className="badge custom-badge api-status-deprecated">
             <i className="fas fa-road me-2" />
             {flows.length}
@@ -4741,7 +4817,7 @@ function FlowsCard({ flows }) {
         </div>
         <p className="cards-description relative">
           Create groups of <HighlighedPluginsText plural /> to apply rules, transformations, and
-          restrictions on <HighlighedRouteText plural />, enabling advanced traffic control and
+          restrictions on <HighlighedEndpointText plural />, enabling advanced traffic control and
           customization.
           <i className="fas fa-chevron-right fa-lg navigate-icon" />
         </p>
@@ -4753,7 +4829,7 @@ function FlowsCard({ flows }) {
 function HighlighedPluginsText({ plural }) {
   const params = useParams();
   return (
-    <HighlighedText text={plural ? 'plugins' : 'plugin'} link={`/apis/${params.apiId}/flows`} />
+    <HighlighedText text={plural ? 'plugins' : 'plugin'} link={`/apis/${params.apiId}/plugin-chains`} />
   );
 }
 
@@ -4777,16 +4853,16 @@ function HighlighedFrontendText({ plural }) {
   );
 }
 
-function HighlighedRouteText({ plural }) {
+function HighlighedEndpointText({ plural }) {
   const params = useParams();
   return (
-    <HighlighedText text={plural ? 'routes' : 'route'} link={`/apis/${params.apiId}/routes`} />
+    <HighlighedText text={plural ? 'endpoints' : 'endpoint'} link={`/apis/${params.apiId}/endpoints`} />
   );
 }
 
-function HighlighedFlowsText({ plural }) {
+function HighlighedPluginChainsText({ plural }) {
   const params = useParams();
-  return <HighlighedText text={plural ? 'flows' : 'flow'} link={`/apis/${params.apiId}/flows`} />;
+  return <HighlighedText text={plural ? 'plugin chains' : 'plugin chain'} link={`/apis/${params.apiId}/plugin-chains`} />;
 }
 
 function HighlighedText({ text, link }) {

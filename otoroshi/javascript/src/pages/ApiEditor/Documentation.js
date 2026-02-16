@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import SimpleLoader from './SimpleLoader';
 import PageTitle from '../../components/PageTitle';
@@ -6,8 +5,9 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import MonacoEditor from '@monaco-editor/react';
 import { Form } from '../../components/inputs/Form';
 
-import { useDraftOfAPI, VersionBadge } from './index';
+import { DraftOnly, useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
+import { NgForm } from '../../components/nginputs';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -63,73 +63,109 @@ function ApiDocumentationResource(props) {
   );
 }
 
-function ApiDocumentationPlan(props) {
-  const flow = [
-    'id',
-    'name',
-    'description',
-    'throttling_quota',
-    'daily_quota',
-    'monthly_quota',
-    'consumer_id',
-    'tags',
-    'metadata',
-  ];
+export function ApiDocumentationPlans(props) {
+
+  const { item, updateItem } = useDraftOfAPI()
+
+  const [documentation, setDocumentation] = useState()
+
+  useEffect(() => {
+    if (item) {
+      setDocumentation(item.documentation)
+    }
+  }, [item])
+
+  if (!item)
+    return null
+
   const schema = {
-    id: {
-      type: 'string',
-      props: { label: 'ID' },
-    },
-    name: {
-      type: 'string',
-      props: { label: 'Name' },
-    },
-    description: {
-      type: 'string',
-      props: { label: 'Description' },
-    },
-    throttling_quota: {
-      type: 'number',
-      props: { label: 'Throttling Quota', suffix: 'per window' },
-    },
-    daily_quota: {
-      type: 'number',
-      props: { label: 'Daily Quota', suffix: 'calls/day' },
-    },
-    monthly_quota: {
-      type: 'number',
-      props: { label: 'Monthly Quota', suffix: 'calls/month' },
-    },
-    consumer_id: {
-      type: 'string',
-      props: { label: 'Consumer Id' },
-    },
-    tags: {
-      type: 'array',
-      props: { label: 'tags' },
-    },
-    metadata: {
-      type: 'object',
-      props: { label: 'Metadata' },
-    },
-  };
-  return (
-    <div className="col-sm-12">
-      <Form
-        flow={flow}
-        schema={schema}
-        value={props.itemValue || props.value}
-        onChange={
-          props.itemValue
-            ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
-            : props.onChange
-        }
-      />
-    </div>
-  );
+    plans: {
+      type: 'form',
+      array: true,
+      label: 'Plans',
+      flow: [
+        'id',
+        'name',
+        'description',
+        'throttling_quota',
+        'daily_quota',
+        'monthly_quota',
+        'consumer_id',
+        'tags',
+        'metadata',
+      ],
+      schema: {
+        id: {
+          type: 'string',
+          label: 'Identifier'
+        },
+        name: {
+          type: 'string',
+          label: 'Name'
+        },
+        description: {
+          type: 'string',
+          label: 'Description'
+        },
+        throttling_quota: {
+          type: 'number',
+          label: 'Throttling Quota',
+          props: { suffix: 'per window' },
+        },
+        daily_quota: {
+          type: 'number',
+          label: 'Daily Quota',
+          props: { suffix: 'calls/day' },
+        },
+        monthly_quota: {
+          type: 'number',
+          label: 'Monthly Quota',
+          props: { suffix: 'calls/month' },
+        },
+        consumer_id: {
+          type: 'select',
+          label: 'Access mode',
+          props: {
+            options: item.consumers.map(consumer => ({ value: consumer.id, label: consumer.name }))
+          },
+        },
+        tags: {
+          type: 'array',
+          label: 'Tags'
+        },
+        metadata: {
+          type: 'object',
+          label: 'Metadata'
+        },
+      }
+    }
+  }
+
+  const updatePlans = () => {
+    return updateItem({
+      ...item,
+      documentation
+    })
+  }
+
+  return <>
+    <PageTitle title="Plans" {...props} style={{ paddingBottom: 0 }}>
+      <DraftOnly>
+        <FeedbackButton
+          type="success"
+          className="ms-2 mb-1 d-flex align-items-center"
+          onPress={updatePlans}
+          text="Save"
+        />
+      </DraftOnly>
+    </PageTitle>
+    <NgForm
+      flow={['plans']}
+      schema={schema}
+      value={documentation}
+      onChange={setDocumentation}
+    />
+  </>
 }
 
 function ApiDocumentationResourceRef(props) {
@@ -381,17 +417,13 @@ export function Documentation(props) {
     banner: {
       type: ApiDocumentationResource,
       props: { label: 'Banner' },
-    },
-    plans: {
-      type: 'array',
-      props: { component: ApiDocumentationPlan },
-    },
+    }
   };
 
   if (!item) return <SimpleLoader />;
   return (
     <>
-      <PageTitle title="Documentation" {...props}>
+      <PageTitle title="Developer portal" {...props}>
         <div className="btn-group" style={{ marginRight: 10 }}>
           <PillButton
             className="mx-auto"
