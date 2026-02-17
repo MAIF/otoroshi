@@ -17,7 +17,7 @@ import { fetchWrapperNext, nextClient, routePorts } from '../../services/BackOff
 import { QueryClientProvider, useQuery } from 'react-query';
 import { Button } from '../../components/Button';
 import NgBackend from '../../forms/ng_plugins/NgBackend';
-import { NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgDotsRenderer, NgForm, NgSelectRenderer, NgStringRenderer } from '../../components/nginputs';
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
@@ -683,27 +683,55 @@ const ROUTE_FORM_SETTINGS = {
       },
       frontend: {
         type: 'form',
-        label: 'Frontend',
-        schema: NgFrontend.schema,
+        label: ' ',
+        schema: {
+          ...NgFrontend.schema,
+          domains: {
+            ...NgFrontend.schema.domains,
+            label: 'Paths',
+          }
+        },
         flow: NgFrontend.flow,
       },
-      flow_ref: {
+      plugin_chain: {
         type: 'select',
-        label: 'Type',
+        label: 'Plugin chain',
         props: {
-          ngOptions: {
-            spread: true,
-          },
-          options: [
-            { value: 'InHeader', label: 'Header' },
-            { value: 'InQueryParam', label: 'Query string' },
-            { value: 'InCookie', label: 'Cookie' },
-          ],
+          options: item.flows.map(r => ({ value: r.id, label: r.name }))
         },
       },
       backend: {
         renderer: (props) => (
           <Row title="Backend">
+            <div>
+              <p>
+                A backend represents the HTTP service that will be called when requests match a endpoint.
+                You can create a backend specifically for a single API and reuse it across multiple endpoints,
+                or create separate backends for each endpoint via the <em>Backends</em> menu.
+              </p>
+              <p>
+                In short, the backend defines where your requests are sent and how Otoroshi forwards them.
+              </p>
+
+              <p>Usage:</p>
+              <ul>
+                <li>
+                  <span className="badge bg-success me-2">LOCAL</span> 
+                  defined directly in this API, only visible here, can be reused across this API's routes
+                </li>
+                <li>
+                  <span className="badge bg-warning me-2">GLOBAL</span> 
+                  defined outside this API, shared across multiple APIs and routes in Otoroshi
+                </li>
+              </ul>
+
+              <p>Example:</p>
+              <ul>
+                <li>You create a LOCAL backend for your "Users API" pointing to <code>https://users.example.com</code></li>
+                <li>You can then assign this backend to all endpoints of your Users API, avoiding duplication</li>
+                <li>Or, if you have different upstream services per endpoint, you can create a dedicated backend for each</li>
+              </ul>
+            </div>
             <NgSelectRenderer
               id="backend_select"
               value={props.rootValue.backend_ref || props.rootValue.backend}
@@ -765,31 +793,31 @@ const ROUTE_FORM_SETTINGS = {
   flow: [
     {
       type: 'group',
-      collapsable: true,
-      collapsed: true,
+      collapsable: false,
+      // collapsed: true,
       name: '1. Global Information',
       fields: ['enabled', 'name'],
       summaryFields: ['enabled', 'name'],
     },
     {
       type: 'group',
-      collapsable: true,
-      collapsed: false,
-      name: '2. Add your domains',
+      collapsable: false,
+      // collapsed: false,
+      name: '2. Endpoint Gateway',
       fields: ['frontend'],
     },
     {
       type: 'group',
-      collapsable: true,
-      collapsed: true,
+      collapsable: false,
+      // collapsed: true,
       name: '3. Add plugins to your endpoint by selecting a plugin chains',
-      fields: ['flow_ref'],
-      summaryFields: ['flow_ref'],
+      fields: ['plugin_chain'],
+      summaryFields: ['plugin_chain'],
     },
     {
       type: 'group',
-      collapsable: true,
-      collapsed: true,
+      collapsable: false,
+      // collapsed: true,
       name: '4. Configure the backend',
       fields: ['backend'],
       summaryFields: ['backend'],
@@ -3296,10 +3324,14 @@ const STATE_PERMISSIONS = {
 };
 
 function APIGateway(props) {
-
   const { item, updateItem } = useDraftOfAPI()
 
   const [state, setState] = useState()
+  const [error, setError] = useState()
+
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, [])
 
   useEffect(() => {
     if (item) {
@@ -3330,6 +3362,23 @@ function APIGateway(props) {
         </InfoCollapse>
       }
     },
+    error: {
+      renderer: () => {
+        if (!error)
+          return null
+        return <div
+          className="my-3 p-3"
+          style={{
+            borderLeft: '2px solid #D5443F',
+            background: '#D5443F',
+            color: 'var(--text)',
+            borderRadius: '.25rem',
+          }}
+        >
+          {error}
+        </div>
+      }
+    },
     domain: {
       type: 'string',
       label: "API Domain",
@@ -3339,32 +3388,66 @@ function APIGateway(props) {
       type: 'string',
       label: 'Context path',
       placeholder: "/v1, /v2, etc"
+    },
+    merge: {
+      renderer: props => {
+        return <Row title="Complete API URL">
+          <NgStringRenderer
+            value={`${props.rootValue?.domain}${props.rootValue?.contextPath}`}
+            label={' '}
+            ngOptions={{ spread: true, readOnly: true }}
+            onChange={() => { }} />
+          <p className='m-0' style={{
+            fontStyle: 'italic'
+          }}>This URL is used to expose your API endpoints</p>
+        </Row>
+      }
     }
   }
 
-  const update = () => {
+  const update = async () => {
 
+    try {
+      if (!state.domain.includes('://')) {
+        setError("Invalid URL format. Please include 'https://' or 'http://' at the beginning.");
+      } else {
+        new URL(state.domain);
+        return updateItem({
+          ...item,
+          ...state
+        })
+      }
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return <>
     <PageTitle title="API Gateway" {...props}>
-      <FeedbackButton
-        type="success"
-        className="d-flex ms-auto"
-        onPress={update}
-        text={
-          <div className="d-flex align-items-center">
-            Update <VersionBadge size="xs" />
-          </div>
-        }
-      />
+      <DraftOnly>
+        <FeedbackButton
+          type="success"
+          className="d-flex ms-auto"
+          onPress={update}
+          text={
+            <div className="d-flex align-items-center">
+              Update <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </DraftOnly>
     </PageTitle>
 
-    <NgForm
-      value={state}
-      onChange={setState}
-      schema={schema}
-    />
+    <div className="actions-page mt-3">
+      <NgForm
+        value={state}
+        onChange={newState => {
+          setState(newState)
+          setError(undefined)
+        }}
+        schema={schema}
+      />
+    </div>
   </>
 
 }
@@ -4430,25 +4513,27 @@ function Subscription({ subscription }) {
       {open && (
         <div className="d-flex justify-content-between gap-2 align-items-center">
           <div style={{ position: 'relative', flex: 1 }}>
-            <Button
-              type="primaryColor"
-              className="btn-sm"
-              text="Edit"
-              onClick={(e) => {
-                e.stopPropagation();
-                historyPush(
-                  history,
-                  location,
-                  `/apis/${params.apiId}/subscriptions/${subscription.id}/edit`
-                );
-              }}
-              style={{
-                position: 'absolute',
-                top: '.5rem',
-                right: '.5rem',
-                zIndex: 100,
-              }}
-            />
+            <DraftOnly>
+              <Button
+                type="primaryColor"
+                className="btn-sm"
+                text="Edit"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  historyPush(
+                    history,
+                    location,
+                    `/apis/${params.apiId}/subscriptions/${subscription.id}/edit`
+                  );
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '.5rem',
+                  right: '.5rem',
+                  zIndex: 100,
+                }}
+              />
+            </DraftOnly>
             <JsonObjectAsCodeInput
               editorOnly
               showGutter={false}

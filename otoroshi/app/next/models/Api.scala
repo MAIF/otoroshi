@@ -93,7 +93,7 @@ object ApiRoute {
         enabled = json.select("enabled").asOptBoolean.getOrElse(true),
         name = json.select("name").asOptString,
         frontend = NgFrontend.readFrom(json \ "frontend"),
-        flowRef = (json \ "flow_ref").asString,
+        flowRef = (json \ "flow_ref").asOpt[String].orElse(json.selectAsOptString("plugin_chain")).getOrElse(""),
         backend = (json \ "backend").as[String]
       )
     } match {
@@ -1353,6 +1353,8 @@ object Api {
       "id"               -> o.id,
       "name"             -> o.name,
       "description"      -> o.description,
+      "domain"           -> o.domain,
+      "contextPath"      -> o.contextPath,
       "metadata"         -> o.metadata,
       "tags"             -> JsArray(o.tags.map(JsString.apply)),
       "version"          -> o.version,

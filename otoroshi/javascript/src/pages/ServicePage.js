@@ -1638,7 +1638,7 @@ export class ServicePage extends Component {
             <BooleanInput
               label="Strip path"
               value={this.state.service.stripPath}
-              help="When matching, strip the matching prefix from the upstream request URL. Defaults to true"
+              help="When matching, strip the matching prefix from the upstream request URL. Defaults: true"
               onChange={(e) => this.changeTheValue('stripPath', e)}
             />
             <BooleanInput
