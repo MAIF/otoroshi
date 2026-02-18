@@ -716,11 +716,11 @@ const ROUTE_FORM_SETTINGS = {
               <p>Usage:</p>
               <ul>
                 <li>
-                  <span className="badge bg-success me-2">LOCAL</span> 
+                  <span className="badge bg-success me-2">LOCAL</span>
                   defined directly in this API, only visible here, can be reused across this API's routes
                 </li>
                 <li>
-                  <span className="badge bg-warning me-2">GLOBAL</span> 
+                  <span className="badge bg-warning me-2">GLOBAL</span>
                   defined outside this API, shared across multiple APIs and routes in Otoroshi
                 </li>
               </ul>
@@ -899,6 +899,24 @@ function NewRoute(props) {
           margin: 'auto',
         }}
       >
+        <InfoCollapse title="What is an Endpoint ?">
+          <ul>
+            <li>
+              <strong>Path & HTTP method</strong> — define the operation
+              (e.g. <code>GET /users</code>, <code>POST /orders</code>).
+            </li>
+            <li>
+              <strong>Plugin chains</strong> — apply a dedicated chain of plugins
+              executed for this endpoint (validation, transformation, rate limiting,
+              custom logic, etc.)
+            </li>
+            <li>
+              <strong>Backend target</strong> — forward traffic to a specific backend
+              service. The endpoint ultimately routes the request to its configured
+              backend after all plugins have been executed.
+            </li>
+          </ul>
+        </InfoCollapse>
         <NgForm flow={ROUTE_FORM_SETTINGS.flow} schema={schema} value={route} onChange={setRoute} />
         <FeedbackButton
           type="success"
@@ -1359,7 +1377,7 @@ function Endpoints(props) {
           </>
         );
       },
-    },
+    }
   ];
 
   const { item, updateItem, isDraft } = useDraftOfAPI();
@@ -1383,7 +1401,25 @@ function Endpoints(props) {
 
   if (!item) return <SimpleLoader />;
 
-  return (
+  return <>
+    <InfoCollapse title="What is an Endpoint?">
+      <p>
+        An Endpoint represents a <strong>concrete operation</strong> exposed by your API.
+        While the API defines the global governance (domain, context path, security, lifecycle),
+        an endpoint defines <strong>how a specific request is matched and processed</strong>.
+      </p>
+      <p>
+        Each endpoint defines a <strong>path</strong> that is automatically
+        concatenated with the API domain and context path.
+        The final exposed URL is therefore: API domain + API context path + Endpoint path
+      </p>
+      <p>
+        For example, if your API is exposed on <code className='me-1'>api.company.com</code>
+        with a context path <code className='me-1'>/v1</code>, and your endpoint path is
+        <code className='me-1'>/users</code>, the resulting public route becomes: <code>https://api.company.com/v1/users</code>
+      </p>
+    </InfoCollapse>
+
     <Table
       parentProps={{ params }}
       navigateTo={(item) =>
@@ -1425,7 +1461,7 @@ function Endpoints(props) {
         </DraftOnly>
       )}
     />
-  );
+  </>
 }
 
 function Backends(props) {
@@ -1561,11 +1597,24 @@ function NewBackend(props) {
       setBackend({
         id: v4(),
         name: 'My new backend',
-        backend: data.backend,
+        backend: {
+          ...data.backend,
+          targets: [
+            {
+              id: "target_1",
+              hostname: "request.otoroshi.io",
+              port: 443,
+              tls: true,
+              weight: 1
+            }
+          ]
+        },
       }),
   });
 
   if (!backend || !item) return <SimpleLoader />;
+
+  console.log(backend)
 
   return (
     <>
@@ -1624,7 +1673,10 @@ function NewBackend(props) {
                 },
                 backend: {
                   type: 'form',
-                  schema: NgBackend.schema,
+                  schema: {
+                    ...NgBackend.schema,
+
+                  },
                   flow: NgBackend.flow.filter((f) => f !== 'client'),
                 },
               },
@@ -2009,38 +2061,48 @@ function EditHttpClientSettings(props) {
 /* HTTP client settings */
 
 function TestingConfiguration(props) {
-  return (
+  return <>
     <Row title="Configuration">
       Enable testing on your API to allow you to call all enabled routes. You just need to pass the
       following specific header when making the calls. This security measure, enforced by Otoroshi,
       prevents unauthorized users from accessing your draft API.
-      <div className="d-flex flex-column gap-2 mt-3">
-        <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
-        <div className="input-group">
-          <input
-            className="form-control"
-            disabled
-            type="text"
-            value={props.rootValue?.headerValue}
-          />
+    </Row>
+    <Row title="Header">
+      <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
+    </Row>
+    <Row title="Value">
+      <div className='d-flex'>
+        <input
+          className="form-control"
+          disabled
+          type="text"
+          value={props.rootValue?.headerValue}
+          style={{
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
+            borderRight: 'none'
+          }}
+        />
 
-          <span
-            className="input-group-text"
-            style={{ cursor: 'pointer' }}
-            title="copy bearer"
-            onClick={() => {
-              props.onSecretRotation({
-                ...props.item.testing,
-                headerValue: v4(),
-              });
-            }}
-          >
-            <i className="fas fa-rotate" />
-          </span>
-        </div>
+        <button
+          className="btn btn-primary"
+          style={{
+            borderTopLeftRadius: 0,
+            borderBottomLeftRadius: 0
+          }}
+          title="copy bearer"
+          onClick={() => {
+            props.onSecretRotation({
+              ...props.item.testing,
+              headerValue: v4(),
+            });
+          }}
+        >
+          <i className="fas fa-rotate" />
+        </button>
       </div>
     </Row>
-  );
+  </>
 }
 
 function Testing(props) {
@@ -2077,7 +2139,7 @@ function Testing(props) {
     },
     routes: {
       renderer: () => (
-        <Row title="Configuration">
+        <Row title="Endpoints">
           <div className="relative">
             <RoutesView api={item} />
           </div>
@@ -3049,9 +3111,14 @@ function VersionManager({ api, draft, owner, setState }) {
     at: {
       type: 'datetime',
     },
+    changes: {
+      renderer: () => {
+        return <p>Changes</p>
+      }
+    },
     routes: getCompareStep('routes'),
     flows: getCompareStep('flows'),
-    backends: getCompareStep('flows'),
+    backends: getCompareStep('backends'),
     consumers: getCompareStep('consumers'),
     subscriptions: getCompareStep('subscriptions'),
     deployments: getCompareStep('deployments'),
@@ -3073,7 +3140,7 @@ function VersionManager({ api, draft, owner, setState }) {
 
     return {
       type: 'group',
-      name: `${firstLetterUppercase(migration[name] ?? name)} ${!hasChanged ? '' : `: has changed`}`,
+      name: firstLetterUppercase(migration[name] ?? name),
       collapsed: true,
       fields: [name],
       hasChanged
@@ -3082,6 +3149,7 @@ function VersionManager({ api, draft, owner, setState }) {
 
   const flow = [
     'owner',
+    'changes',
     ...[
       getCompareFlowGroup('routes'),
       getCompareFlowGroup('flows'),
@@ -3092,12 +3160,14 @@ function VersionManager({ api, draft, owner, setState }) {
       getCompareFlowGroup('documentation'),
       {
         type: 'group',
-        name: `Global: ${!mergeData(api[name], draft.content[name]) ? '' : `has changed`}`,
+        name: 'Global',
         collapsed: true,
         fields: ['apiDefinition'],
         hasChanged: mergeData(api[name], draft.content[name]).changed
       },
-    ].sort((a, b) => Number(b.hasChanged) - Number(a.hasChanged))
+    ]
+      .sort((a, b) => Number(b.hasChanged) - Number(a.hasChanged))
+      .filter(item => item.hasChanged)
   ]
 
   return (
@@ -3111,7 +3181,6 @@ function VersionManager({ api, draft, owner, setState }) {
         schema={schema}
         flow={flow}
       />
-      {/* } */}
     </div>
   );
 }
@@ -3157,24 +3226,23 @@ function Informations(props) {
       label: 'Tags',
     },
     capture: {
-      type: 'bool',
+      type: 'box-bool',
       label: 'Capture endpoint traffic',
       props: {
-        labelColumn: 3,
+        description: 'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.'
       },
     },
     debug_flow: {
-      type: 'bool',
+      type: 'box-bool',
       label: 'Debug the endpoint',
       props: {
-        labelColumn: 3,
       },
     },
     export_reporting: {
-      type: 'bool',
+      type: 'box-bool',
       label: 'Export reporting',
       props: {
-        labelColumn: 3,
+        description: 'Export execution of each steps of the route as RequestFlowReport event. It can be exported using Data Exporters. This feature can have actual impact on CPU and RAM consumption'
       },
     },
     danger_zone: {
@@ -3212,21 +3280,20 @@ function Informations(props) {
     'location',
     {
       type: 'group',
+      collapsable: false,
       name: 'API',
       fields: ['enabled', 'name', 'description', 'version'],
     },
     {
       type: 'group',
       name: 'Misc.',
-      collapsed: false,
+      collapsed: true,
       fields: [
         'tags',
         'metadata',
-        {
-          type: 'grid',
-          name: 'Flags',
-          fields: ['debug_flow', 'export_reporting', 'capture'],
-        },
+        'debug_flow',
+        'export_reporting',
+        'capture'
       ],
     },
     isDraft ? {
@@ -3327,7 +3394,6 @@ function APIGateway(props) {
   const { item, updateItem } = useDraftOfAPI()
 
   const [state, setState] = useState()
-  const [error, setError] = useState()
 
   useEffect(() => {
     props.setTitle(undefined);
@@ -3362,27 +3428,10 @@ function APIGateway(props) {
         </InfoCollapse>
       }
     },
-    error: {
-      renderer: () => {
-        if (!error)
-          return null
-        return <div
-          className="my-3 p-3"
-          style={{
-            borderLeft: '2px solid #D5443F',
-            background: '#D5443F',
-            color: 'var(--text)',
-            borderRadius: '.25rem',
-          }}
-        >
-          {error}
-        </div>
-      }
-    },
     domain: {
       type: 'string',
       label: "API Domain",
-      placeholder: "http(s)://api.oto.tools"
+      placeholder: "api.oto.tools"
     },
     contextPath: {
       type: 'string',
@@ -3405,22 +3454,6 @@ function APIGateway(props) {
     }
   }
 
-  const update = async () => {
-
-    try {
-      if (!state.domain.includes('://')) {
-        setError("Invalid URL format. Please include 'https://' or 'http://' at the beginning.");
-      } else {
-        new URL(state.domain);
-        return updateItem({
-          ...item,
-          ...state
-        })
-      }
-    } catch (err) {
-      setError(err.message);
-    }
-  }
 
   return <>
     <PageTitle title="API Gateway" {...props}>
@@ -3428,7 +3461,10 @@ function APIGateway(props) {
         <FeedbackButton
           type="success"
           className="d-flex ms-auto"
-          onPress={update}
+          onPress={() => updateItem({
+            ...item,
+            ...state
+          })}
           text={
             <div className="d-flex align-items-center">
               Update <VersionBadge size="xs" />
@@ -3441,10 +3477,7 @@ function APIGateway(props) {
     <div className="actions-page mt-3">
       <NgForm
         value={state}
-        onChange={newState => {
-          setState(newState)
-          setError(undefined)
-        }}
+        onChange={setState}
         schema={schema}
       />
     </div>
@@ -3512,6 +3545,8 @@ function Actions(props) {
   };
 
   const stepMeta = LIFECYCLE_STEPS.find((s) => s.key === viewedState);
+
+  const isStaging = item.state === 'staging'
 
   return (
     <div className="actions-page mt-3">
@@ -3625,126 +3660,140 @@ function Actions(props) {
           )}
         </div>
 
-        {/* Transition action cards */}
-        <div className="actions-general-actions">
-          {currentState === API_STATE.STAGING && (
-            <ActionCard
-              icon="fas fa-rocket"
-              title="Publish API"
-              description="Make your API fully available to clients in production"
-              onClick={() =>
-                transitionTo(
-                  API_STATE.PUBLISHED,
-                  'Publishing makes your API fully available to clients. Consumers will be able to subscribe and use it in production.',
-                  'Publish API',
-                  'Publish'
-                )
-              }
-            />
-          )}
-
-          {currentState === API_STATE.PUBLISHED && (
-            <>
+        {!isStaging && <>
+          {/* Transition action cards */}
+          <div className="actions-general-actions">
+            {currentState === API_STATE.STAGING && (
               <ActionCard
-                icon="fas fa-exclamation-triangle"
-                title="Deprecate API"
-                description="Prevent new subscriptions while keeping existing traffic"
-                color="hsla(40, 94%, 58%, 1)"
-                onClick={() =>
-                  transitionTo(
-                    API_STATE.DEPRECATED,
-                    'Deprecating the API will prevent new access modes from subscribing. Existing subscriptions will continue to work.',
-                    'Deprecate API',
-                    'Deprecate'
-                  )
-                }
-              />
-              <ActionCard
-                icon="fas fa-times-circle"
-                title="Close API"
-                description="Shut down the API entirely — all traffic will be rejected"
-                color="hsla(0, 65%, 55%, 1)"
-                onClick={() =>
-                  transitionTo(
-                    API_STATE.REMOVED,
-                    'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
-                    'Close API',
-                    'Close API'
-                  )
-                }
-              />
-            </>
-          )}
-
-          {currentState === API_STATE.DEPRECATED && (
-            <>
-              <ActionCard
-                icon="fas fa-check-circle"
-                title="Re-publish API"
-                description="Make the API available again for new subscriptions"
+                icon="fas fa-rocket"
+                title="Publish API"
+                description="Make your API fully available to clients in production"
                 onClick={() =>
                   transitionTo(
                     API_STATE.PUBLISHED,
-                    'Re-publishing will make the API available again for new subscriptions.',
-                    'Re-publish API',
-                    'Re-publish'
+                    'Publishing makes your API fully available to clients. Consumers will be able to subscribe and use it in production.',
+                    'Publish API',
+                    'Publish'
                   )
                 }
               />
+            )}
+
+            {currentState === API_STATE.PUBLISHED && (
+              <>
+                <ActionCard
+                  icon="fas fa-exclamation-triangle"
+                  title="Deprecate API"
+                  description="Prevent new subscriptions while keeping existing traffic"
+                  color="hsla(40, 94%, 58%, 1)"
+                  onClick={() =>
+                    transitionTo(
+                      API_STATE.DEPRECATED,
+                      'Deprecating the API will prevent new access modes from subscribing. Existing subscriptions will continue to work.',
+                      'Deprecate API',
+                      'Deprecate'
+                    )
+                  }
+                />
+                <ActionCard
+                  icon="fas fa-times-circle"
+                  title="Close API"
+                  description="Shut down the API entirely — all traffic will be rejected"
+                  color="hsla(0, 65%, 55%, 1)"
+                  onClick={() =>
+                    transitionTo(
+                      API_STATE.REMOVED,
+                      'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
+                      'Close API',
+                      'Close API'
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {currentState === API_STATE.DEPRECATED && (
+              <>
+                <ActionCard
+                  icon="fas fa-check-circle"
+                  title="Re-publish API"
+                  description="Make the API available again for new subscriptions"
+                  onClick={() =>
+                    transitionTo(
+                      API_STATE.PUBLISHED,
+                      'Re-publishing will make the API available again for new subscriptions.',
+                      'Re-publish API',
+                      'Re-publish'
+                    )
+                  }
+                />
+                <ActionCard
+                  icon="fas fa-times-circle"
+                  title="Close API"
+                  description="Shut down the API entirely — all traffic will be rejected"
+                  color="hsla(0, 65%, 55%, 1)"
+                  onClick={() =>
+                    transitionTo(
+                      API_STATE.REMOVED,
+                      'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
+                      'Close API',
+                      'Close API'
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {currentState === API_STATE.REMOVED && (
               <ActionCard
-                icon="fas fa-times-circle"
-                title="Close API"
-                description="Shut down the API entirely — all traffic will be rejected"
-                color="hsla(0, 65%, 55%, 1)"
+                icon="fas fa-undo"
+                title="Reopen API"
+                description="Move the API back to staging — you will need to publish it again"
                 onClick={() =>
                   transitionTo(
-                    API_STATE.REMOVED,
-                    'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
-                    'Close API',
-                    'Close API'
+                    API_STATE.STAGING,
+                    'This will move the API back to staging. You will need to publish it again to make it available.',
+                    'Reopen API',
+                    'Move to Staging'
                   )
                 }
               />
-            </>
-          )}
+            )}
+          </div>
+        </>}
+      </div>
 
-          {currentState === API_STATE.REMOVED && (
+      {!isStaging && <>
+        <div className="actions-section">
+          <h3 className="actions-section-title">
+            <i className="fas fa-cog me-2" />
+            General
+          </h3>
+          <p className="actions-section-description">
+            Other operations you can perform on this API.
+          </p>
+
+          <div className="actions-general-actions">
             <ActionCard
-              icon="fas fa-undo"
-              title="Reopen API"
-              description="Move the API back to staging — you will need to publish it again"
-              onClick={() =>
-                transitionTo(
-                  API_STATE.STAGING,
-                  'This will move the API back to staging. You will need to publish it again to make it available.',
-                  'Reopen API',
-                  'Move to Staging'
-                )
-              }
+              icon="fas fa-clone"
+              title="Duplicate API"
+              description="Create a full copy of this API in staging mode"
+              onClick={onDuplicateAPI}
             />
-          )}
+          </div>
         </div>
-      </div>
+      </>}
 
-      {/* General section */}
-      <div className="actions-section">
-        <h3 className="actions-section-title">
-          <i className="fas fa-cog me-2" />
-          General
-        </h3>
-        <p className="actions-section-description">
-          Other operations you can perform on this API.
-        </p>
-
-        <div className="actions-general-actions">
-          <ActionCard
-            icon="fas fa-clone"
-            title="Duplicate API"
-            description="Create a full copy of this API in staging mode"
-            onClick={onDuplicateAPI}
-          />
+      {isStaging &&
+        <div className="actions-section">
+          <h3 className="actions-section-title">
+            <i className="fas fa-cog me-2" />
+            General
+          </h3>
+          <p className="actions-section-description">
+            Actions tabs is not available in staging mode. Please use the publish button from the dashboard.</p>
         </div>
-      </div>
+      }
     </div>
   );
 }
@@ -3800,57 +3849,59 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
         </h3>
       </div>
       <div className="d-flex align-item-center justify-content-between">
-        {version !== 'Published' && step > 3 && (
-          <div className="d-flex align-items-center">
-            <Button
-              text="Publish this version"
-              className="btn-sm mx-2"
-              type="primaryColor"
-              style={{
-                borderColor: 'var(--color-primary)',
-              }}
-              onClick={() => {
-                nextClient
-                  .forEntityNext(nextClient.ENTITIES.APIS)
-                  .findById(props.params.apiId)
-                  .then((api) => {
-                    window
-                      .wizard(
-                        'Version manager',
-                        (ok, cancel, state, setState) => {
-                          return (
-                            <VersionManager
-                              api={api}
-                              draft={draftWrapper}
-                              owner={props.globalEnv.user}
-                              setState={setState}
-                            />
-                          );
-                        },
-                        {
-                          style: { width: '100%' },
-                          noCancel: false,
-                          okClassName: 'ms-2',
-                          okLabel: 'Publish this version',
-                        }
-                      )
-                      .then((deployment) => {
-                        if (deployment) {
-                          fetchWrapperNext(
-                            `/${nextClient.ENTITIES.APIS}/${api.id}/deployments`,
-                            'POST',
-                            deployment,
-                            'apis.otoroshi.io'
-                          ).then(() => {
-                            history.push(`/apis/${api.id}`);
-                          });
-                        }
-                      });
-                  });
-              }}
-            />
-          </div>
-        )}
+        <DraftOnly>
+          {(version === 'Published' || version === 'Deprecated') && step > 3 && (
+            <div className="d-flex align-items-center">
+              <Button
+                text="Publish this version"
+                className="btn-sm mx-2"
+                type="primaryColor"
+                style={{
+                  borderColor: 'var(--color-primary)',
+                }}
+                onClick={() => {
+                  nextClient
+                    .forEntityNext(nextClient.ENTITIES.APIS)
+                    .findById(props.params.apiId)
+                    .then((api) => {
+                      window
+                        .wizard(
+                          'Version manager',
+                          (ok, cancel, state, setState) => {
+                            return (
+                              <VersionManager
+                                api={api}
+                                draft={draftWrapper}
+                                owner={props.globalEnv.user}
+                                setState={setState}
+                              />
+                            );
+                          },
+                          {
+                            style: { width: '100%' },
+                            noCancel: false,
+                            okClassName: 'ms-2',
+                            okLabel: 'Publish this version',
+                          }
+                        )
+                        .then((deployment) => {
+                          if (deployment) {
+                            fetchWrapperNext(
+                              `/${nextClient.ENTITIES.APIS}/${api.id}/deployments`,
+                              'POST',
+                              deployment,
+                              'apis.otoroshi.io'
+                            ).then(() => {
+                              history.push(`/apis/${api.id}`);
+                            });
+                          }
+                        });
+                    });
+                }}
+              />
+            </div>
+          )}
+        </DraftOnly>
       </div>
     </div>
   );
@@ -3865,35 +3916,29 @@ function Dashboard(props) {
     props.setTitle(undefined);
   }, []);
 
-  const { item, draft, draftWrapper, version, api } = useDraftOfAPI();
-
-  const hasCreateFlow = item && item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
-  const hasCreateBackend =
-    item && item.backends.filter((f) => f.name !== 'default_backend').length > 0;
-  const hasCreateRoute = item && item.routes.length > 0;
-  const hasCreateConsumer = item && item.consumers.length > 0;
-  const hasTestingEnabled = item && item.testing.enabled;
-
-  const isStaging = item && item.state === API_STATE.STAGING;
-  const showGettingStarted =
-    item &&
-    item.state !== API_STATE.DEPRECATED &&
-    (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
-
-  const getStep = () => {
-    return (
-      Number(hasCreateFlow) +
-      Number(hasCreateRoute) +
-      Number(hasCreateBackend) +
-      Number(hasCreateConsumer) +
-      Number(hasTestingEnabled) +
-      Number(item?.state === API_STATE.PUBLISHED)
-    );
-  };
+  const { item, draft, draftWrapper, version, api, isDraft } = useDraftOfAPI();
 
   if (!draft || !item) return <SimpleLoader />;
 
-  const currentStep = getStep();
+  const hasCreateFlow = item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
+  const hasCreateBackend = item.backends.filter((f) => f.name !== 'default_backend').length > 0;
+  const hasCreateRoute = item.routes.length > 0;
+  const hasCreateConsumer = item.consumers.length > 0;
+  const hasTestingEnabled = item.testing.enabled;
+  const hasDomainConfigured = !!(item.domain && item.contextPath)
+
+  const isStaging = item.state === API_STATE.STAGING;
+  const showGettingStarted = isDraft && item.state !== API_STATE.DEPRECATED &&
+    (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
+
+  const currentStep =
+    Number(hasCreateFlow) +
+    Number(hasCreateRoute) +
+    Number(hasCreateBackend) +
+    Number(hasCreateConsumer) +
+    Number(hasTestingEnabled) +
+    Number(hasDomainConfigured) +
+    Number(item.state === API_STATE.PUBLISHED);
 
   const totalSubscriptions = item.consumers.flatMap((c) => c.subscriptions).length;
 
@@ -3906,7 +3951,7 @@ function Dashboard(props) {
         api={api}
         draftWrapper={draftWrapper}
         draft={draft}
-        step={getStep()}
+        step={currentStep}
       />
       <div className="dashboard-layout">
         {/* API Header */}
@@ -3954,6 +3999,7 @@ function Dashboard(props) {
         {/* Getting Started */}
         {showGettingStarted && (
           <ProgressCard step={currentStep}>
+
             {!hasCreateRoute && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/endpoints/new`}
@@ -3963,14 +4009,21 @@ function Dashboard(props) {
               />
             )}
 
-            {!hasCreateConsumer && hasCreateRoute && (
+            {hasCreateRoute && !hasCreateConsumer && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/access-modes/new`}
-                title="Add a access mode"
-                description={
-                  <p className="objective-link">Apply security measures to the API</p>
-                }
+                title="Add an access mode"
+                description={<p className="objective-link">Apply security measures to the API</p>}
                 icon={<i className="fas fa-users" />}
+              />
+            )}
+
+            {hasCreateRoute && hasCreateConsumer && !hasDomainConfigured && (
+              <ObjectiveCard
+                to={`/apis/${params.apiId}/api-gateway`}
+                title="Configure the API Gateway"
+                description={<p className="objective-link">Set the domain and context path in the API Gateway tab</p>}
+                icon={<i className="fas fa-network-wired" />}
               />
             )}
 
@@ -3983,7 +4036,7 @@ function Dashboard(props) {
               />
             )}
 
-            {hasCreateRoute && hasCreateConsumer && !item.testing.enabled && (
+            {hasCreateRoute && hasCreateConsumer && !hasTestingEnabled && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/testing`}
                 title="Enable testing"
@@ -3995,15 +4048,13 @@ function Dashboard(props) {
             {!hasCreateFlow && item.state === API_STATE.PUBLISHED && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/plugin-chains/new`}
-                title="Create a plugin chains"
-                description={
-                  <p className="objective-link">Add plugin rules and transformations</p>
-                }
+                title="Create a plugin chain"
+                description={<p className="objective-link">Add plugin rules and transformations</p>}
                 icon={<i className="fas fa-project-diagram" />}
               />
             )}
 
-            {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && (
+            {currentStep >= 3 && item.state !== API_STATE.PUBLISHED && (
               <ObjectiveCard
                 onClick={() => publishAPI(draft, item, history)}
                 title="Deploy your API"
@@ -4011,6 +4062,7 @@ function Dashboard(props) {
                 icon={<i className="fas fa-rocket" />}
               />
             )}
+
           </ProgressCard>
         )}
 
@@ -4183,7 +4235,7 @@ export function VersionToggle({ isDraft }) {
         {isDraft ? 'DEV' : 'PROD'}
       </span>
       <span className="dashboard-version-toggle-label">
-        {isDraft ? 'Switch to Production' : 'Switch to Draft'}
+        {isDraft ? 'View Production' : 'Edit in Draft Mode'}
       </span>
       <i className={`fas ${isDraft ? 'fa-arrow-right' : 'fa-arrow-right'}`} />
     </button>
@@ -4319,13 +4371,9 @@ function RouteItem({ item, api, ports }) {
 
     const domain = item.frontend.domains[idx];
 
-    const domainParts = domain.split('/');
-    const hasPath = domainParts.length > 1;
+    const scheme = isSecured ? 'https://' : 'http://'
 
-    if (isSecured)
-      return `https://${domainParts[0]}:${ports.https}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
-
-    return `http://${domainParts[0]}:${ports.http}${hasPath ? '/' : ''}${domainParts.slice(1).join('/')}`;
+    return `${scheme}${api.domain}:${ports.http}${api.contextPath}${domain}`;
   };
 
   const rawMethods = (frontend.methods || []).filter((m) => m.length);
@@ -4352,9 +4400,9 @@ function RouteItem({ item, api, ports }) {
       let command = value;
 
       if (version === 'Draft' || version === 'staging') {
-        command = `curl ${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`;
+        command = `${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`;
       } else {
-        command = `curl ${method ? `-X ${method}` : ''} ${value}`;
+        command = `${method ? `-X ${method}` : ''} ${value}`;
       }
 
       if (window.isSecureContext && navigator.clipboard) {
@@ -4589,7 +4637,7 @@ function publishAPI(draft, api, history) {
       </>,
       {
         title: 'Production environment',
-        yesText: 'Publish and expose to the world',
+        yesText: 'Publish',
       }
     )
     .then((ok) => {
@@ -4719,7 +4767,7 @@ function Entities({ children }) {
 }
 
 function ProgressCard({ children, step }) {
-  const steps = 6;
+  const steps = 7;
 
   const ref = useRef();
 

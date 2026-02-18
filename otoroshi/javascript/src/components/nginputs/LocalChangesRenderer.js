@@ -50,7 +50,7 @@ export class LocalChangesRenderer extends React.Component {
               this.setState({ folded: false });
             }}
           >
-            Change
+            <i className='fas fa-edit' />
           </Button>
         )}
       </div>

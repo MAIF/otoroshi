@@ -162,28 +162,29 @@ export default (props) => {
                 <VersionToggle isDraft={version === 'Draft'} />
               )}
             </div>
-            {LINKS(params.apiId).map(({ to, icon, title, tooltip, tab }) => (
-              <li
-                className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
-                key={title}
-                aria-disabled={isOnNewAPIView}
-              >
-                <Link
-                  to={{
-                    pathname: to,
-                    search: location.search,
-                  }}
-                  {...(tooltip || {})}
-                  className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
-                    } m-0 ${isActive(tab)}`}
+            {LINKS(params.apiId)
+              .map(({ to, icon, title, tooltip, tab }) => (
+                <li
+                  className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
+                  key={title}
+                  aria-disabled={isOnNewAPIView}
                 >
-                  <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                    <i className={`fas ${icon}`} />
-                  </div>
-                  <div className="title"> {openedSidebar ? title : ''}</div>
-                </Link>
-              </li>
-            ))}
+                  <Link
+                    to={{
+                      pathname: to,
+                      search: location.search,
+                    }}
+                    {...(tooltip || {})}
+                    className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                      } m-0 ${isActive(tab)}`}
+                  >
+                    <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                      <i className={`fas ${icon}`} />
+                    </div>
+                    <div className="title"> {openedSidebar ? title : ''}</div>
+                  </Link>
+                </li>
+              ))}
             {/* {openedSidebar && <p className="sidebar-title mt-3">Monitoring</p>} */}
           </>
         )}

@@ -1002,22 +1002,27 @@ case class Api(
           val draftApis: Option[Api] = optDraft
             .map(draft => Api.format.reads(draft.content))
             .collect {
-              case JsSuccess(api, _) if api.testing.enabled =>
-                api.copy(
-                  backends = api.backends.map(backend =>
+              case JsSuccess(draftApi, _) if draftApi.testing.enabled =>
+                draftApi.copy(
+                  backends = draftApi.backends.map(backend =>
                     backend
                       .copy(backend =
                         backend.backend.copy(
-                          client =
-                            api.clients.find(_.id == backend.client).map(_.client).getOrElse(NgClientConfig.default)
+                          client = draftApi.clients
+                            .find(_.id == backend.client)
+                            .map(_.client)
+                            .getOrElse(NgClientConfig.default)
                         )
                       )
                   ),
-                  routes = api.routes.map(route =>
+                  routes = draftApi.routes.map(route =>
                     route.copy(
                       id = s"testing_route_${route.id}",
                       frontend = route.frontend
-                        .copy(headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue))
+                        .copy(
+                          headers =
+                            route.frontend.headers + (draftApi.testing.headerKey -> draftApi.testing.headerValue)
+                        )
                     )
                   )
                 )
@@ -1066,7 +1071,7 @@ case class Api(
   def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val api = optApi.map(api => api).getOrElse(this)
+    val api: Api = optApi.map(api => api).getOrElse(this)
 
     for {
       globalBackendEntity <- env.datastores.backendsDataStore.findById(apiRoute.backend)
@@ -1094,13 +1099,14 @@ case class Api(
             debugFlow = debugFlow,
             exportReporting = exportReporting,
             groups = Seq("virtual_group_for_" + id) ++ groups,
-            frontend = apiRoute.frontend,
+            frontend = apiRoute.frontend.copy(
+              domains = apiRoute.frontend.domains
+                .map(domain => s"${api.domain}${api.contextPath}${domain.path}")
+                .map(NgDomainAndPath)
+            ),
             backend = backend,
             backendRef = None,
-            plugins = optApi
-              .map(api => api)
-              .getOrElse(this)
-              .flows
+            plugins = api.flows
               .find(_.id == apiRoute.flowRef)
               .map(_.plugins)
               .getOrElse(NgPlugins.empty)
