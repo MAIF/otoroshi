@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>How it works · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/plugins.js"></script>
+<script type="text/javascript" src="../js/ngplugins.js"></script>
+<script type="text/javascript" src="../js/expression-language.js"></script>
+<script type="text/javascript" src="../search/pagefind-ui.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+<link rel="stylesheet" type="text/css" href="../css/plugins.css"/>
+<link rel="stylesheet" type="text/css" href="../search/pagefind-ui.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+latest
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
+    <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
+    <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
+    <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="active page">How it works</a></li>
+  </ul></li>
+  <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
+  <ul>
+    <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+    <li><a href="../how-to-s/create-your-first-api.html" class="page">Create your first API</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column" style="height: 100dvh">
+<nav class="site-nav">
+<div class="title-logo"></div>
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+latest
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../architecture.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../getting-started.html" class="page">Getting Started</a></li>
+  <li><a href="../install/index.html" class="page">Install</a>
+  <ul>
+    <li><a href="../install/get-otoroshi.html" class="page">Get Otoroshi</a></li>
+    <li><a href="../install/setup-otoroshi.html" class="page">Setup Otoroshi</a></li>
+    <li><a href="../install/run-otoroshi.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../entities/index.html" class="page">Main entities</a>
+  <ul>
+    <li><a href="../entities/routes.html" class="page">Routes</a></li>
+    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/backends.html" class="page">Backends</a></li>
+    <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
+    <li><a href="../entities/teams.html" class="page">Teams</a></li>
+    <li><a href="../entities/global-config.html" class="page">Global config</a></li>
+    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
+    <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
+    <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/engine.html" class="page">Proxy engine</a></li>
+    <li><a href="../topics/expression-language.html" class="page">Expression language</a></li>
+    <li><a href="../topics/secrets.html" class="page">Secrets management</a></li>
+    <li><a href="../topics/otoroshi-protocol.html" class="page">The Otoroshi communication protocol</a></li>
+    <li><a href="../topics/tls.html" class="page">TLS</a></li>
+    <li><a href="../topics/user-rights.html" class="page">Otoroshi user rights</a></li>
+    <li><a href="../topics/events-and-analytics.html" class="page">Events and analytics</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring</a></li>
+    <li><a href="../topics/sessions-mgmt.html" class="page">Sessions management</a></li>
+    <li><a href="../topics/wasm-usage.html" class="page">Otoroshi and WASM</a></li>
+    <li><a href="../topics/chaos-engineering.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/pki.html" class="page">Otoroshi&rsquo;s PKI</a></li>
+    <li><a href="../topics/dev-portal.html" class="page">Developer portal with Daikoku</a></li>
+    <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
+    <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
+    <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
+    <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
+    <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
+    <li><a href="../topics/green-score.html" class="page">Green Score</a></li>
+    <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
+    <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
+    <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
+    <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="active page">How it works</a></li>
+  </ul></li>
+  <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
+  <ul>
+    <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
+  </ul></li>
+  <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
+  <ul>
+    <li><a href="../how-to-s/wasm-usage.html" class="page">Using wasm plugins</a></li>
+    <li><a href="../how-to-s/wasmo-installation.html" class="page">Deploy your own Wasmo</a></li>
+    <li><a href="../how-to-s/tailscale-integration.html" class="page">Tailscale integration</a></li>
+    <li><a href="../how-to-s/end-to-end-mtls.html" class="page">End-to-end mTLS</a></li>
+    <li><a href="../how-to-s/export-alerts-using-mailgun.html" class="page">Send alerts using mailgun</a></li>
+    <li><a href="../how-to-s/export-events-to-elastic.html" class="page">Export events to Elasticsearch</a></li>
+    <li><a href="../how-to-s/import-export-otoroshi-datastore.html" class="page">Import and export Otoroshi datastore</a></li>
+    <li><a href="../how-to-s/secure-app-with-auth0.html" class="page">Secure an app with Auth0</a></li>
+    <li><a href="../how-to-s/secure-app-with-keycloak.html" class="page">Secure an app with Keycloak</a></li>
+    <li><a href="../how-to-s/secure-app-with-ldap.html" class="page">Secure an app and/or your Otoroshi UI with LDAP</a></li>
+    <li><a href="../how-to-s/secure-with-apikey.html" class="page">Secure an api with api keys</a></li>
+    <li><a href="../how-to-s/secure-with-oauth1-client.html" class="page">Secure an app with OAuth1 client flow</a></li>
+    <li><a href="../how-to-s/secure-with-oauth2-client-credentials.html" class="page">Secure an app with OAuth2 client_credential flow</a></li>
+    <li><a href="../how-to-s/setup-otoroshi-cluster.html" class="page">Setup an Otoroshi cluster</a></li>
+    <li><a href="../how-to-s/tls-using-lets-encrypt.html" class="page">TLS termination using Let&rsquo;s Encrypt</a></li>
+    <li><a href="../how-to-s/secure-an-app-with-jwt-verifiers.html" class="page">Secure an api with jwt verifiers</a></li>
+    <li><a href="../how-to-s/secure-the-communication-between-a-backend-app-and-otoroshi.html" class="page">Secure the communication between a backend app and Otoroshi</a></li>
+    <li><a href="../how-to-s/tls-termination-using-own-certificates.html" class="page">TLS termination using your own certificates</a></li>
+    <li><a href="../how-to-s/resources-loader.html" class="page">The resources loader</a></li>
+    <li><a href="../how-to-s/custom-log-levels.html" class="page">Log levels customization</a></li>
+    <li><a href="../how-to-s/custom-initial-state.html" class="page">Initial state customization</a></li>
+    <li><a href="../how-to-s/communicate-with-kafka.html" class="page">Communicate with Kafka</a></li>
+    <li><a href="../how-to-s/create-custom-auth-module.html" class="page">Create your Authentication module</a></li>
+    <li><a href="../how-to-s/working-with-eureka.html" class="page">Working with Eureka</a></li>
+    <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
+    <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
+    <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+    <li><a href="../how-to-s/create-your-first-api.html" class="page">Create your first API</a></li>
+  </ul></li>
+  <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
+  <ul>
+    <li><a href="../plugins/plugins.html" class="page">Otoroshi plugins system</a></li>
+    <li><a href="../plugins/create-plugins.html" class="page">Create plugins</a></li>
+    <li><a href="../plugins/built-in-plugins.html" class="page">Built-in plugins</a></li>
+    <li><a href="../plugins/built-in-legacy-plugins.html" class="page">Built-in legacy plugins</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clever-cloud.html" class="page">Clever-Cloud</a></li>
+    <li><a href="../deploy/aws.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+  <li><a href="../search.html" class="page">Search otoroshi documentation</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column with-responsive-left-padding-5-rem">
+
+<header class="site-header expanded row">
+<div class="small-12 column" style="padding: 0">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title"><a href="../index.html">Otoroshi</a> <div>DOCS</div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>How it works</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<p>e Kubernetes Gateway API support</p>
+<p>Starting from version 17.13.0, Otoroshi supports the <a href="https://gateway-api.sigs.k8s.io/">Kubernetes Gateway API</a> specification (v1.4, <code>gateway.networking.k8s.io/v1</code>). This feature enables you to define routing rules using standard Gateway API resources (<code>GatewayClass</code>, <code>Gateway</code>, <code>HTTPRoute</code>, <code>GRPCRoute</code>) and have Otoroshi automatically convert them into native <code>NgRoute</code> entities.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>This feature is currently in <strong>experimental</strong> stage. It covers the core Gateway, HTTPRoute and GRPCRoute use cases but does not yet implement the full specification. See the <a href="#current-limitations">current limitations</a> section for details. We are currently in the process of passing the <a href="https://gateway-api.sigs.k8s.io/concepts/conformance/">conformance suite</a> of the <a href="https://gateway-api.sigs.k8s.io/">Gateway API SIG</a></p></div>
+<h2><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h2>
+<p>Otoroshi implements the Gateway API using a <strong>proxy-existing</strong> approach: Otoroshi does not dynamically provision new listeners or ports based on Gateway resources. Instead, it validates that the <code>Gateway</code> listeners match Otoroshi&rsquo;s actual listening ports and uses hostnames, paths, and headers from <code>HTTPRoute</code> and <code>GRPCRoute</code> resources to generate <code>NgRoute</code> entities.</p>
+<p>The reconciliation loop runs as a background job and works as follows:</p>
+<ol>
+  <li><strong>Fetch</strong> all <code>GatewayClass</code>, <code>Gateway</code>, <code>HTTPRoute</code>, <code>GRPCRoute</code>, <code>ReferenceGrant</code>, and <code>BackendTLSPolicy</code> resources from the Kubernetes API</li>
+  <li><strong>Reconcile GatewayClasses</strong> — accept classes whose <code>controllerName</code> matches Otoroshi&rsquo;s configured controller name</li>
+  <li><strong>Resolve TLS certificates</strong> — for HTTPS listeners with <code>certificateRefs</code>, check if the referenced TLS certificates are already in Otoroshi&rsquo;s cert store and import them from Kubernetes Secrets if needed</li>
+  <li><strong>Reconcile Gateways</strong> — validate that listener ports and protocols are compatible with Otoroshi&rsquo;s actual ports, and verify that TLS certificate references are resolved</li>
+  <li><strong>Resolve BackendTLS CA certificates</strong> — for each <code>BackendTLSPolicy</code> with <code>caCertificateRefs</code>, import the referenced CA certificates into Otoroshi&rsquo;s certificate store</li>
+  <li><strong>Convert HTTPRoutes</strong> — for each rule in each HTTPRoute, generate one <code>NgRoute</code> with the appropriate frontend (domains, paths, headers), backend (targets resolved from Kubernetes Services with ReferenceGrant enforcement and BackendTLSPolicy-based TLS configuration), and plugins (from HTTPRoute filters)</li>
+  <li><strong>Convert GRPCRoutes</strong> — same as HTTPRoute but with gRPC method matching mapped to HTTP/2 paths (<code>/{service}/{method}</code>) and backend targets using HTTP/2 protocol</li>
+  <li><strong>Save routes</strong> — upsert generated routes and delete orphaned ones that are no longer defined</li>
+</ol>
+<p>All generated routes are tagged with <code>otoroshi-provider: kubernetes-gateway-api</code> metadata, making them easy to identify and ensuring clean garbage collection.</p>
+<h3><a href="#watch-mode" name="watch-mode" class="anchor"><span class="anchor-link"></span></a>Watch mode</h3>
+<p>When <code>watch</code> is enabled in the Kubernetes configuration, the Gateway API controller uses Kubernetes watch events to trigger synchronization in near-real-time instead of waiting for the next polling interval. This covers all Gateway API resources (<code>GatewayClass</code>, <code>Gateway</code>, <code>HTTPRoute</code>, <code>GRPCRoute</code>, <code>ReferenceGrant</code>, <code>BackendTLSPolicy</code>) as well as related Kubernetes resources (<code>Secret</code>, <code>Service</code>, <code>Endpoints</code>). The <code>watchGracePeriodSeconds</code> setting prevents excessive syncs by enforcing a minimum delay between consecutive event-driven reconciliations.</p>
+<h2><a href="#prerequisites" name="prerequisites" class="anchor"><span class="anchor-link"></span></a>Prerequisites</h2>
+<ul>
+  <li>Otoroshi 17.13.0 or later, deployed on Kubernetes</li>
+  <li>Gateway API CRDs installed (v1.4+ standard channel)</li>
+  <li>RBAC permissions for the Otoroshi ServiceAccount to read Gateway API resources</li>
+</ul>
+<h3><a href="#installing-gateway-api-crds" name="installing-gateway-api-crds" class="anchor"><span class="anchor-link"></span></a>Installing Gateway API CRDs</h3>
+<p>Install the standard channel CRDs:</p>
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+</code></pre>
+<h3><a href="#rbac" name="rbac" class="anchor"><span class="anchor-link"></span></a>RBAC</h3>
+<p>The Otoroshi ServiceAccount needs the following additional ClusterRole rules for Gateway API resources:</p>
+<pre class="prettyprint"><code class="language-yaml"># EndpointSlices for pod-level target resolution
+- apiGroups: [discovery.k8s.io]
+  resources: [endpointslices]
+  verbs: [get, list, watch]
+# Gateway API — read resources
+- apiGroups: [gateway.networking.k8s.io]
+  resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants, backendtlspolicies]
+  verbs: [get, list, watch]
+# Gateway API — update status subresources
+- apiGroups: [gateway.networking.k8s.io]
+  resources: [gatewayclasses/status, gateways/status, httproutes/status, grpcroutes/status]
+  verbs: [get, update, patch]
+</code></pre>
+<p>or from github</p>
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/rbac-gateway.yaml
+</code></pre>
+<p>These rules must be added to the existing <code>otoroshi-admin-user</code> ClusterRole alongside the existing rules for core resources, ingresses, and Otoroshi CRDs.</p>
+<h3><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDS</h3>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: plugins.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  names:
+    kind: Plugin
+    plural: plugins
+    singular: plugin
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    deprecated: false
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: object
+</code></pre>
+<p>or from github</p>
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/crds-gateway.yaml
+</code></pre>
+<h2><a href="#enabling-gateway-api-support" name="enabling-gateway-api-support" class="anchor"><span class="anchor-link"></span></a>Enabling Gateway API support</h2>
+<p>Gateway API support is controlled through the <code>KubernetesConfig</code> configuration block. You need to:</p>
+<ol>
+  <li>Register the Gateway API controller job</li>
+  <li>Enable the <code>gatewayApi</code> flag in the Kubernetes configuration</li>
+</ol>
+<h3><a href="#configuration-reference" name="configuration-reference" class="anchor"><span class="anchor-link"></span></a>Configuration reference</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Field </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>gatewayApi</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable/disable the Gateway API controller </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiWatch</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Enable/disable the Gateway API controller watch mode </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiControllerName</code> </td>
+      <td>string </td>
+      <td><code>otoroshi.io/gateway-controller</code> </td>
+      <td>The controller name to match in GatewayClass resources </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiHttpListenerPort</code> </td>
+      <td>int </td>
+      <td><code>8080</code> </td>
+      <td>The actual HTTP port Otoroshi listens on </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiHttpsListenerPort</code> </td>
+      <td>int </td>
+      <td><code>8443</code> </td>
+      <td>The actual HTTPS port Otoroshi listens on </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiSyncIntervalSeconds</code> </td>
+      <td>long </td>
+      <td><code>60</code> </td>
+      <td>How often (in seconds) the controller reconciles </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiGatewayServiceName</code> </td>
+      <td>string </td>
+      <td><em>(empty)</em> </td>
+      <td>Kubernetes Service name to resolve for Gateway status addresses. If empty, falls back to <code>otoroshiServiceName</code> </td>
+    </tr>
+    <tr>
+      <td><code>gatewayApiAddresses</code> </td>
+      <td>array </td>
+      <td><code>[]</code> </td>
+      <td>Static addresses for Gateway status. Overrides dynamic service resolution. Array of <code>{&quot;type&quot;:&quot;IPAddress&quot;,&quot;value&quot;:&quot;x.x.x.x&quot;}</code> or <code>{&quot;type&quot;:&quot;Hostname&quot;,&quot;value&quot;:&quot;gw.example.com&quot;}</code> objects </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#using-environment-variable-configuration" name="using-environment-variable-configuration" class="anchor"><span class="anchor-link"></span></a>Using environment variable configuration</h3>
+<p>When deploying with <code>OTOROSHI_INITIAL_CUSTOMIZATION</code>, add the job reference and configuration:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;config&quot;: {
+    &quot;scripts&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;jobRefs&quot;: [
+        &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob&quot;
+      ],
+      &quot;jobConfig&quot;: {
+        &quot;KubernetesConfig&quot;: {
+          &quot;trust&quot;: false,
+          &quot;namespaces&quot;: [&quot;*&quot;],
+          &quot;labels&quot;: {},
+          &quot;namespacesLabels&quot;: {},
+          &quot;defaultGroup&quot;: &quot;default&quot;,
+          &quot;ingresses&quot;: false,
+          &quot;crds&quot;: false,
+          &quot;kubeLeader&quot;: false,
+          &quot;syncIntervalSeconds&quot;: 60,
+          &quot;otoroshiServiceName&quot;: &quot;otoroshi-service&quot;,
+          &quot;otoroshiNamespace&quot;: &quot;otoroshi&quot;,
+          &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+          &quot;gatewayApi&quot;: true,
+          &quot;gatewayApiWatch&quot;: true,
+          &quot;gatewayApiControllerName&quot;: &quot;otoroshi.io/gateway-controller&quot;,
+          &quot;gatewayApiHttpListenerPort&quot;: 8080,
+          &quot;gatewayApiHttpsListenerPort&quot;: 8443,
+          &quot;gatewayApiSyncIntervalSeconds&quot;: 30,
+          &quot;gatewayApiGatewayServiceName&quot;: &quot;&quot;,
+          &quot;gatewayApiAddresses&quot;: []
+        }
+      }
+    }
+  }
+}
+</code></pre><div class="callout note "><div class="callout-title">Note</div>
+<p>The Gateway API controller job can run alongside the existing CRDs controller job (<code>KubernetesOtoroshiCRDsControllerJob</code>). Both share the same <code>KubernetesConfig</code> block.</p></div>
+<h2><a href="#usage" name="usage" class="anchor"><span class="anchor-link"></span></a>Usage</h2>
+<h3><a href="#step-1-create-a-gatewayclass" name="step-1-create-a-gatewayclass" class="anchor"><span class="anchor-link"></span></a>Step 1: Create a GatewayClass</h3>
+<p>The <code>GatewayClass</code> is a cluster-scoped resource that tells Kubernetes which controller handles Gateways of this class. The <code>controllerName</code> must match the value configured in <code>gatewayApiControllerName</code>.</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: otoroshi
+spec:
+  controllerName: otoroshi.io/gateway-controller
+</code></pre>
+<p>Once Otoroshi detects this GatewayClass, it will set its status to <code>Accepted: True</code>.</p>
+<h3><a href="#step-2-create-a-gateway" name="step-2-create-a-gateway" class="anchor"><span class="anchor-link"></span></a>Step 2: Create a Gateway</h3>
+<p>The <code>Gateway</code> declares which listeners (port + protocol + hostname) should accept traffic. Since Otoroshi uses a proxy-existing approach, the <code>port</code> values must match the actual ports Otoroshi listens on (<code>gatewayApiHttpListenerPort</code> and <code>gatewayApiHttpsListenerPort</code>).</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-gateway
+  namespace: default
+spec:
+  gatewayClassName: otoroshi
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 8080
+    hostname: &quot;*.example.com&quot;
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: https
+    protocol: HTTPS
+    port: 8443
+    hostname: &quot;*.example.com&quot;
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: my-tls-secret
+    allowedRoutes:
+      namespaces:
+        from: All
+</code></pre>
+<p><strong>Supported protocols</strong>: <code>HTTP</code> and <code>HTTPS</code>. <code>TLS</code>, <code>TCP</code>, and <code>UDP</code> listeners are accepted in the manifest but will generate a <code>Detached</code> status condition as they are not yet implemented.</p>
+<p><strong>Listener hostname</strong>: acts as a filter. Only HTTPRoutes and GRPCRoutes with matching hostnames will be attached to this listener. Wildcard hostnames (e.g. <code>*.example.com</code>) are supported.</p>
+<p><strong>allowedRoutes.namespaces.from</strong>: controls which namespaces can attach routes to this listener.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Value </th>
+      <th>Behavior </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Same</code> (default) </td>
+      <td>Only routes in the same namespace as the Gateway </td>
+    </tr>
+    <tr>
+      <td><code>All</code> </td>
+      <td>Routes from any namespace </td>
+    </tr>
+    <tr>
+      <td><code>Selector</code> </td>
+      <td>Routes from namespaces matching a label selector </td>
+    </tr>
+  </tbody>
+</table>
+<p>When using <code>Selector</code>, you provide a standard Kubernetes label selector under <code>allowedRoutes.namespaces.selector</code>. Both <code>matchLabels</code> and <code>matchExpressions</code> are supported:</p>
+<pre class="prettyprint"><code class="language-yaml">listeners:
+- name: http
+  protocol: HTTP
+  port: 8080
+  allowedRoutes:
+    namespaces:
+      from: Selector
+      selector:
+        matchLabels:
+          shared-gateway-access: &quot;true&quot;
+        matchExpressions:
+        - key: environment
+          operator: In
+          values: [&quot;staging&quot;, &quot;production&quot;]
+</code></pre>
+<p>This listener only accepts routes from namespaces that have the label <code>shared-gateway-access: &quot;true&quot;</code> <strong>and</strong> an <code>environment</code> label with value <code>staging</code> or <code>production</code>.</p>
+<p>Supported <code>matchExpressions</code> operators: <code>In</code>, <code>NotIn</code>, <code>Exists</code>, <code>DoesNotExist</code>.</p>
+<h3><a href="#step-3-create-an-httproute" name="step-3-create-an-httproute" class="anchor"><span class="anchor-link"></span></a>Step 3: Create an HTTPRoute</h3>
+<p>The <code>HTTPRoute</code> defines routing rules: which requests to match and where to send them.</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+  namespace: default
+spec:
+  parentRefs:
+  - name: my-gateway
+    sectionName: http
+  hostnames:
+  - &quot;api.example.com&quot;
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /v1
+    backendRefs:
+    - name: my-service
+      port: 80
+      weight: 1
+</code></pre>
+<h4><a href="#parent-references" name="parent-references" class="anchor"><span class="anchor-link"></span></a>Parent references</h4>
+<p>Each HTTPRoute declares one or more <code>parentRefs</code> pointing to a Gateway (and optionally a specific listener via <code>sectionName</code>). The effective hostnames for the generated route are the <strong>intersection</strong> of the listener&rsquo;s hostname and the route&rsquo;s hostnames. For example:</p>
+<ul>
+  <li>Listener hostname: <code>*.example.com</code></li>
+  <li>Route hostnames: <code>api.example.com</code>, <code>web.example.com</code></li>
+  <li>Effective: <code>api.example.com</code>, <code>web.example.com</code> (both match the wildcard)</li>
+</ul>
+<h4><a href="#path-matching" name="path-matching" class="anchor"><span class="anchor-link"></span></a>Path matching</h4>
+<table>
+  <thead>
+    <tr>
+      <th>Type </th>
+      <th>Behavior </th>
+      <th>Example </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>PathPrefix</code> (default) </td>
+      <td>Matches paths starting with the value </td>
+      <td><code>/api</code> matches <code>/api</code>, <code>/api/users</code>, <code>/api/v2</code> </td>
+    </tr>
+    <tr>
+      <td><code>Exact</code> </td>
+      <td>Matches the path exactly </td>
+      <td><code>/api</code> matches only <code>/api</code> </td>
+    </tr>
+  </tbody>
+</table>
+<h4><a href="#backend-references" name="backend-references" class="anchor"><span class="anchor-link"></span></a>Backend references</h4>
+<p>Backend references point to Kubernetes <code>Service</code> resources. Otoroshi resolves each service to its <code>clusterIP</code> and uses the specified port. Multiple backends with different <code>weight</code> values enable traffic splitting.</p>
+<pre class="prettyprint"><code class="language-yaml">backendRefs:
+- name: service-v1
+  port: 80
+  weight: 80
+- name: service-v2
+  port: 80
+  weight: 20
+</code></pre>
+<p>This configuration sends 80% of traffic to <code>service-v1</code> and 20% to <code>service-v2</code>.</p>
+<h2><a href="#supported-httproute-filters" name="supported-httproute-filters" class="anchor"><span class="anchor-link"></span></a>Supported HTTPRoute filters</h2>
+<p>Filters allow modifying requests and responses as they pass through a route rule. The following filters are currently supported:</p>
+<h3><a href="#requestheadermodifier" name="requestheadermodifier" class="anchor"><span class="anchor-link"></span></a>RequestHeaderModifier</h3>
+<p>Add, set, or remove request headers:</p>
+<pre class="prettyprint"><code class="language-yaml">filters:
+- type: RequestHeaderModifier
+  requestHeaderModifier:
+    set:
+    - name: X-Custom-Header
+      value: my-value
+    add:
+    - name: X-Additional
+      value: extra-value
+    remove:
+    - X-Unwanted
+</code></pre>
+<h3><a href="#responseheadermodifier" name="responseheadermodifier" class="anchor"><span class="anchor-link"></span></a>ResponseHeaderModifier</h3>
+<p>Add, set, or remove response headers:</p>
+<pre class="prettyprint"><code class="language-yaml">filters:
+- type: ResponseHeaderModifier
+  responseHeaderModifier:
+    set:
+    - name: X-Response-Header
+      value: my-value
+    remove:
+    - X-Internal
+</code></pre>
+<h3><a href="#requestredirect" name="requestredirect" class="anchor"><span class="anchor-link"></span></a>RequestRedirect</h3>
+<p>Redirect the client to a different URL:</p>
+<pre class="prettyprint"><code class="language-yaml">filters:
+- type: RequestRedirect
+  requestRedirect:
+    scheme: https
+    hostname: new.example.com
+    port: 443
+    statusCode: 301
+</code></pre>
+<p>All fields are optional. When omitted, the original request values are preserved using Otoroshi&rsquo;s expression language (<code>${req.host}</code>, <code>${req.uri}</code>, etc.).</p>
+<h3><a href="#urlrewrite" name="urlrewrite" class="anchor"><span class="anchor-link"></span></a>URLRewrite</h3>
+<p>Rewrite the request URL before forwarding to the backend:</p>
+<pre class="prettyprint"><code class="language-yaml">filters:
+- type: URLRewrite
+  urlRewrite:
+    hostname: backend.internal.svc
+    path:
+      type: ReplacePrefixMatch
+      replacePrefixMatch: /v2
+</code></pre>
+<ul>
+  <li><strong>hostname</strong>: changes the <code>Host</code> header sent to the backend</li>
+  <li><strong>path.type</strong>: only <code>ReplacePrefixMatch</code> is currently supported. It strips the matched prefix and replaces it with the new value.</li>
+</ul>
+<h3><a href="#extensionref" name="extensionref" class="anchor"><span class="anchor-link"></span></a>ExtensionRef</h3>
+<p>Reference a custom Otoroshi <code>Plugin</code> resource to inject an arbitrary Otoroshi plugin into the route&rsquo;s plugin chain. This uses the <code>proxy.otoroshi.io/v1</code> CRD.</p>
+<p>First, create a <code>Plugin</code> resource whose <code>spec</code> maps to an Otoroshi <code>NgPluginInstance</code>:</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
+kind: Plugin
+metadata:
+  name: add-custom-headers
+  namespace: default
+spec:
+  plugin: &quot;cp:otoroshi.next.plugins.AdditionalHeadersIn&quot;
+  enabled: true
+  config:
+    headers:
+      X-Custom-From-Plugin: &quot;hello-from-k8s&quot;
+</code></pre>
+<p>Then reference it from an HTTPRoute or GRPCRoute filter:</p>
+<pre class="prettyprint"><code class="language-yaml">filters:
+- type: ExtensionRef
+  extensionRef:
+    group: proxy.otoroshi.io
+    kind: Plugin
+    name: add-custom-headers
+</code></pre>
+<p>The Plugin <code>spec</code> supports all <code>NgPluginInstance</code> fields: <code>plugin</code>, <code>enabled</code>, <code>debug</code>, <code>include</code>, <code>exclude</code>, <code>config</code>, <code>bound_listeners</code>, and <code>plugin_index</code>.</p><div class="callout note "><div class="callout-title">Note</div>
+<p>ExtensionRef only resolves Plugin resources in the <strong>same namespace</strong> as the route (per Gateway API specification). Only the <code>proxy.otoroshi.io/Plugin</code> group/kind is supported; other group/kind combinations will log a warning and be ignored.</p></div>
+<h2><a href="#otoroshi-specific-annotations" name="otoroshi-specific-annotations" class="anchor"><span class="anchor-link"></span></a>Otoroshi-specific annotations</h2>
+<p>While the Gateway API specification covers common routing patterns, you may need Otoroshi-specific settings that are not part of the standard. Otoroshi supports a set of annotations on <code>HTTPRoute</code> and <code>GRPCRoute</code> resources that let you customize the generated <code>NgRoute</code> without leaving the Kubernetes-native workflow.</p>
+<p>All annotations use the prefix <code>proxy.otoroshi.io/</code> and expect JSON-encoded values.</p>
+<h3><a href="#supported-annotations" name="supported-annotations" class="anchor"><span class="anchor-link"></span></a>Supported annotations</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Annotation </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>proxy.otoroshi.io/route-plugins</code> </td>
+      <td>JSON array </td>
+      <td>Additional <code>NgPluginInstance</code> objects to append to the route&rsquo;s plugin chain </td>
+    </tr>
+    <tr>
+      <td><code>proxy.otoroshi.io/route-flags</code> </td>
+      <td>JSON object </td>
+      <td>Override route boolean flags: <code>enabled</code>, <code>debugFlow</code>, <code>capture</code>, <code>exportReporting</code> </td>
+    </tr>
+    <tr>
+      <td><code>proxy.otoroshi.io/route-groups</code> </td>
+      <td>JSON array </td>
+      <td>Override the Otoroshi group IDs for the route </td>
+    </tr>
+    <tr>
+      <td><code>proxy.otoroshi.io/route-bound-listeners</code> </td>
+      <td>JSON array </td>
+      <td>Override the Otoroshi bound listener IDs for the route </td>
+    </tr>
+    <tr>
+      <td><code>proxy.otoroshi.io/route-metadata</code> </td>
+      <td>JSON object </td>
+      <td>Additional key/value metadata merged into the route&rsquo;s metadata </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#adding-plugins-via-annotations" name="adding-plugins-via-annotations" class="anchor"><span class="anchor-link"></span></a>Adding plugins via annotations</h3>
+<p>The <code>route-plugins</code> annotation lets you inject Otoroshi plugins into a route without using ExtensionRef filters. This is useful when you want to add plugins that apply to all rules of a route, or when you prefer annotations over CRD-based Plugin resources.</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-route
+  namespace: default
+  annotations:
+    proxy.otoroshi.io/route-plugins: |
+      [
+        {
+          &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.AdditionalHeadersIn&quot;,
+          &quot;enabled&quot;: true,
+          &quot;config&quot;: {
+            &quot;headers&quot;: {
+              &quot;X-Injected-By&quot;: &quot;annotation&quot;
+            }
+          }
+        },
+        {
+          &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.ApikeyCalls&quot;,
+          &quot;enabled&quot;: true,
+          &quot;config&quot;: {}
+        }
+      ]
+spec:
+  parentRefs:
+  - name: my-gateway
+  hostnames:
+  - &quot;api.example.com&quot;
+  rules:
+  - backendRefs:
+    - name: my-service
+      port: 80
+</code></pre>
+<p>Plugins added via annotations are <strong>appended</strong> after any plugins generated from route filters (RequestHeaderModifier, ResponseHeaderModifier, ExtensionRef, etc.).</p>
+<h3><a href="#controlling-route-flags" name="controlling-route-flags" class="anchor"><span class="anchor-link"></span></a>Controlling route flags</h3>
+<p>The <code>route-flags</code> annotation lets you override boolean flags on the generated route:</p>
+<pre class="prettyprint"><code class="language-yaml">metadata:
+  annotations:
+    proxy.otoroshi.io/route-flags: |
+      {
+        &quot;enabled&quot;: true,
+        &quot;debugFlow&quot;: true,
+        &quot;capture&quot;: false,
+        &quot;exportReporting&quot;: true
+      }
+</code></pre>
+<p>All fields are optional — only the specified flags are overridden, others keep their default values.</p>
+<h3><a href="#setting-groups-and-bound-listeners" name="setting-groups-and-bound-listeners" class="anchor"><span class="anchor-link"></span></a>Setting groups and bound listeners</h3>
+<p>Override which Otoroshi groups or listeners the route belongs to:</p>
+<pre class="prettyprint"><code class="language-yaml">metadata:
+  annotations:
+    proxy.otoroshi.io/route-groups: &#39;[&quot;my-group-1&quot;, &quot;my-group-2&quot;]&#39;
+    proxy.otoroshi.io/route-bound-listeners: &#39;[&quot;listener_0&quot;]&#39;
+</code></pre>
+<h3><a href="#adding-metadata" name="adding-metadata" class="anchor"><span class="anchor-link"></span></a>Adding metadata</h3>
+<p>Merge additional key/value pairs into the route&rsquo;s metadata:</p>
+<pre class="prettyprint"><code class="language-yaml">metadata:
+  annotations:
+    proxy.otoroshi.io/route-metadata: |
+      {
+        &quot;team&quot;: &quot;platform&quot;,
+        &quot;cost-center&quot;: &quot;engineering&quot;,
+        &quot;sla&quot;: &quot;99.9&quot;
+      }
+</code></pre>
+<p>These metadata entries are merged with the default metadata that Otoroshi sets on generated routes (<code>otoroshi-provider</code>, <code>gateway-api-kind</code>, etc.).</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Annotation values must be valid JSON. If a JSON parse error occurs, the annotation is silently ignored and the route is generated with default values. Check the Otoroshi logs for any warnings.</p></div>
+<h2><a href="#tls-certificate-resolution" name="tls-certificate-resolution" class="anchor"><span class="anchor-link"></span></a>TLS certificate resolution</h2>
+<p>HTTPS listeners can reference Kubernetes TLS Secrets via <code>tls.certificateRefs</code>. Otoroshi automatically resolves these references and imports the certificates into its certificate store so that they are available for SNI-based TLS termination.</p>
+<h3><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h3>
+<p>During each reconciliation cycle, for every HTTPS listener with <code>certificateRefs</code>:</p>
+<ol>
+  <li>Otoroshi computes the expected certificate ID using the pattern <code>kubernetes-certs-import-{namespace}-{name}</code></li>
+  <li>If the certificate already exists in Otoroshi&rsquo;s store, no action is needed</li>
+  <li>If the certificate is missing, Otoroshi fetches the Kubernetes Secret and imports it (the Secret must be of type <code>kubernetes.io/tls</code>)</li>
+  <li>The listener status condition <code>ResolvedRefs</code> reflects whether all referenced certificates were successfully resolved</li>
+</ol>
+<h3><a href="#example" name="example" class="anchor"><span class="anchor-link"></span></a>Example</h3>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tls-gateway
+  namespace: default
+spec:
+  gatewayClassName: otoroshi
+  listeners:
+  - name: https
+    protocol: HTTPS
+    port: 8443
+    hostname: &quot;api.example.com&quot;
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: api-tls-cert
+    allowedRoutes:
+      namespaces:
+        from: Same
+</code></pre>
+<p>The referenced Secret must exist in the same namespace (or the namespace specified in the ref) and contain valid TLS data:</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: api-tls-cert
+  namespace: default
+type: kubernetes.io/tls
+data:
+  tls.crt: &lt;base64-encoded certificate&gt;
+  tls.key: &lt;base64-encoded private key&gt;
+</code></pre>
+<p>Once imported, Otoroshi uses its standard SNI matching to select the right certificate for incoming TLS connections — no additional configuration is needed on the route.</p>
+<p>If a referenced Secret does not exist or is not of type <code>kubernetes.io/tls</code>, the listener status will report <code>ResolvedRefs: False</code> with reason <code>InvalidCertificateRef</code>.</p>
+<h2><a href="#grpcroute-support" name="grpcroute-support" class="anchor"><span class="anchor-link"></span></a>GRPCRoute support</h2>
+<p>Otoroshi also supports <code>GRPCRoute</code> resources for routing gRPC traffic. GRPCRoute works similarly to HTTPRoute with the following differences:</p>
+<ul>
+  <li>gRPC method matching is mapped to HTTP/2 paths: <code>/{service}/{method}</code></li>
+  <li>Backend targets automatically use the <strong>HTTP/2</strong> protocol</li>
+  <li>Generated routes are restricted to the <code>POST</code> HTTP method (as required by the gRPC protocol)</li>
+</ul><div class="callout note "><div class="callout-title">Note</div>
+<p>gRPC requires HTTP/2 support. Make sure Otoroshi is running with the Netty server backend, which supports HTTP/2 natively. You can enable it with the <code>OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_ENABLED=true</code> environment variable.</p></div>
+<h3><a href="#grpcroute-example" name="grpcroute-example" class="anchor"><span class="anchor-link"></span></a>GRPCRoute example</h3>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: grpc-route
+  namespace: default
+spec:
+  parentRefs:
+  - name: my-gateway
+    sectionName: http
+  hostnames:
+  - &quot;grpc.example.com&quot;
+  rules:
+  - matches:
+    - method:
+        service: com.example.UserService
+        method: GetUser
+    backendRefs:
+    - name: grpc-user-service
+      port: 50051
+  - matches:
+    - method:
+        service: com.example.OrderService
+    backendRefs:
+    - name: grpc-order-service
+      port: 50051
+</code></pre>
+<p>In this example:</p>
+<ul>
+  <li>The first rule matches requests to <code>com.example.UserService/GetUser</code> exactly (path <code>/com.example.UserService/GetUser</code>)</li>
+  <li>The second rule matches all methods on <code>com.example.OrderService</code> (path prefix <code>/com.example.OrderService/</code>)</li>
+  <li>Both backends are called using HTTP/2</li>
+</ul>
+<h3><a href="#grpc-method-matching" name="grpc-method-matching" class="anchor"><span class="anchor-link"></span></a>gRPC method matching</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Match </th>
+      <th>Generated path </th>
+      <th>Behavior </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>service: com.example.Foo, method: Bar</code> </td>
+      <td><code>/com.example.Foo/Bar</code> </td>
+      <td>Exact match on service and method </td>
+    </tr>
+    <tr>
+      <td><code>service: com.example.Foo</code> (no method) </td>
+      <td><code>/com.example.Foo/</code> </td>
+      <td>Prefix match on all methods of the service </td>
+    </tr>
+    <tr>
+      <td>No method match specified </td>
+      <td><code>/</code> </td>
+      <td>Match all gRPC requests </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#grpcroute-filters" name="grpcroute-filters" class="anchor"><span class="anchor-link"></span></a>GRPCRoute filters</h3>
+<p>GRPCRoute supports the same filter types as HTTPRoute: <code>RequestHeaderModifier</code>, <code>ResponseHeaderModifier</code>, <code>RequestRedirect</code>, <code>URLRewrite</code>, and <code>ExtensionRef</code>.</p>
+<h2><a href="#backendtlspolicy-tls-to-backend-" name="backendtlspolicy-tls-to-backend-" class="anchor"><span class="anchor-link"></span></a>BackendTLSPolicy (TLS to backend)</h2>
+<p>Otoroshi supports <code>BackendTLSPolicy</code> (v1alpha3) for configuring TLS connections from the gateway to backend services. When a BackendTLSPolicy targets a Service, Otoroshi will use TLS when connecting to that service&rsquo;s backends, with proper SNI hostname and CA certificate validation.</p>
+<h3><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h3>
+<p>During each reconciliation cycle, Otoroshi:</p>
+<ol>
+  <li>Fetches all <code>BackendTLSPolicy</code> resources from the cluster</li>
+  <li>For each policy&rsquo;s <code>caCertificateRefs</code>, resolves the referenced Kubernetes Secrets and imports them as CA certificates into Otoroshi&rsquo;s certificate store (using the ID pattern <code>kubernetes-certs-import-{namespace}-{name}</code>)</li>
+  <li>When building backend targets for HTTPRoute or GRPCRoute rules, checks if a BackendTLSPolicy targets the backend Service</li>
+  <li>If a policy matches, configures the target with:
+    <ul>
+      <li><code>tls: true</code> to enable HTTPS connections</li>
+      <li>The policy&rsquo;s <code>validation.hostname</code> as the SNI hostname for the TLS handshake</li>
+      <li>The Service&rsquo;s <code>clusterIP</code> as the actual TCP connection target</li>
+      <li>CA certificates from <code>caCertificateRefs</code> for server certificate validation</li>
+    </ul>
+  </li>
+</ol>
+<h3><a href="#prerequisites" name="prerequisites" class="anchor"><span class="anchor-link"></span></a>Prerequisites</h3>
+<p>BackendTLSPolicy requires the experimental channel Gateway API CRDs:</p>
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+</code></pre>
+<p>Additional RBAC rules are needed:</p>
+<pre class="prettyprint"><code class="language-yaml">- apiGroups: [gateway.networking.k8s.io]
+  resources: [backendtlspolicies]
+  verbs: [get, list, watch]
+</code></pre>
+<h3><a href="#example" name="example" class="anchor"><span class="anchor-link"></span></a>Example</h3>
+<pre class="prettyprint"><code class="language-yaml"># Secret containing the CA certificate for the backend service
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-ca
+  namespace: default
+type: Opaque
+data:
+  ca.crt: &lt;base64-encoded CA certificate&gt;
+---
+# BackendTLSPolicy targeting the backend service
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: backend-tls
+  namespace: default
+spec:
+  targetRefs:
+  - group: &quot;&quot;
+    kind: Service
+    name: my-backend-service
+  validation:
+    hostname: my-backend-service.default.svc.cluster.local
+    caCertificateRefs:
+    - group: &quot;&quot;
+      kind: Secret
+      name: backend-ca
+</code></pre>
+<p>With this configuration, when an HTTPRoute or GRPCRoute references <code>my-backend-service</code>, Otoroshi will:</p>
+<ul>
+  <li>Connect to the service using HTTPS</li>
+  <li>Send <code>my-backend-service.default.svc.cluster.local</code> as the SNI hostname</li>
+  <li>Validate the server certificate against the CA in the <code>backend-ca</code> Secret</li>
+</ul>
+<h3><a href="#wellknowncacertificates" name="wellknowncacertificates" class="anchor"><span class="anchor-link"></span></a>wellKnownCACertificates</h3>
+<p>Instead of providing explicit CA certificates, you can use the JVM&rsquo;s default trust store:</p>
+<pre class="prettyprint"><code class="language-yaml">spec:
+  targetRefs:
+  - group: &quot;&quot;
+    kind: Service
+    name: my-service
+  validation:
+    hostname: my-service.example.com
+    wellKnownCACertificates: &quot;System&quot;
+</code></pre>
+<p>When <code>wellKnownCACertificates</code> is set to <code>&quot;System&quot;</code>, no custom CA certificates are configured and the JVM&rsquo;s built-in trust store is used for server certificate validation.</p>
+<h3><a href="#limitations" name="limitations" class="anchor"><span class="anchor-link"></span></a>Limitations</h3>
+<ul>
+  <li><code>subjectAltNames</code> validation is not supported (Otoroshi&rsquo;s TLS config has no SAN validation field). If specified, a debug warning is logged.</li>
+  <li>BackendTLSPolicy is a v1alpha3 API and may change in future Gateway API releases.</li>
+</ul>
+<h2><a href="#referencegrant-cross-namespace-references-" name="referencegrant-cross-namespace-references-" class="anchor"><span class="anchor-link"></span></a>ReferenceGrant (cross-namespace references)</h2>
+<p>By default, a route can only reference backend Services in <strong>its own namespace</strong>. To reference a Service in a different namespace, a <code>ReferenceGrant</code> resource must exist in the <strong>target namespace</strong> (where the Service lives) that explicitly allows the reference.</p>
+<p>This is a critical security feature that prevents routes in one namespace from accessing Services in another namespace without explicit permission from the target namespace owner.</p>
+<h3><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h3>
+<p>When converting an HTTPRoute or GRPCRoute, Otoroshi checks each <code>backendRef</code>:</p>
+<ol>
+  <li>If the backend Service is in the <strong>same namespace</strong> as the route, the reference is always allowed</li>
+  <li>If the backend Service is in a <strong>different namespace</strong>, Otoroshi looks for a <code>ReferenceGrant</code> in the target namespace that:
+    <ul>
+      <li>Allows the route&rsquo;s kind (<code>HTTPRoute</code> or <code>GRPCRoute</code>) from the route&rsquo;s namespace (in the <code>from</code> list)</li>
+      <li>Allows referencing <code>Service</code> resources, optionally restricted to a specific name (in the <code>to</code> list)</li>
+    </ul>
+  </li>
+  <li>If no matching <code>ReferenceGrant</code> is found, the backend reference is <strong>denied</strong> and excluded from the generated route&rsquo;s targets</li>
+</ol>
+<p>The route&rsquo;s status condition <code>ResolvedRefs</code> is set to <code>False</code> with reason <code>RefNotPermitted</code> when any backend reference is denied.</p>
+<h3><a href="#example" name="example" class="anchor"><span class="anchor-link"></span></a>Example</h3>
+<p>Consider an HTTPRoute in namespace <code>frontend</code> that needs to route traffic to a Service <code>api-svc</code> in namespace <code>backend</code>:</p>
+<pre class="prettyprint"><code class="language-yaml"># HTTPRoute in namespace &quot;frontend&quot;
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: frontend-to-backend
+  namespace: frontend
+spec:
+  parentRefs:
+  - name: my-gateway
+    namespace: default
+  hostnames:
+  - &quot;app.example.com&quot;
+  rules:
+  - backendRefs:
+    - name: api-svc
+      namespace: backend
+      port: 80
+</code></pre>
+<p>Without a ReferenceGrant, this cross-namespace reference would be <strong>denied</strong>. To allow it, create a ReferenceGrant in the <code>backend</code> namespace:</p>
+<pre class="prettyprint"><code class="language-yaml"># ReferenceGrant in namespace &quot;backend&quot; — allows HTTPRoutes from &quot;frontend&quot; to reference Services
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-frontend
+  namespace: backend
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: frontend
+  to:
+  - group: &quot;&quot;
+    kind: Service
+    name: api-svc    # optional: omit to allow all Services in this namespace
+</code></pre>
+<h3><a href="#wildcard-grants" name="wildcard-grants" class="anchor"><span class="anchor-link"></span></a>Wildcard grants</h3>
+<p>If the <code>name</code> field is omitted in the <code>to</code> entry, the grant allows referencing <strong>all</strong> Services in that namespace:</p>
+<pre class="prettyprint"><code class="language-yaml">spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: frontend
+  to:
+  - group: &quot;&quot;
+    kind: Service
+    # no name = wildcard, allows all Services
+</code></pre>
+<h3><a href="#multiple-sources" name="multiple-sources" class="anchor"><span class="anchor-link"></span></a>Multiple sources</h3>
+<p>A single ReferenceGrant can allow references from multiple namespaces and route kinds:</p>
+<pre class="prettyprint"><code class="language-yaml">spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: frontend
+  - group: gateway.networking.k8s.io
+    kind: GRPCRoute
+    namespace: frontend
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: monitoring
+  to:
+  - group: &quot;&quot;
+    kind: Service
+</code></pre>
+<h2><a href="#generated-ngroute-structure" name="generated-ngroute-structure" class="anchor"><span class="anchor-link"></span></a>Generated NgRoute structure</h2>
+<p>Each HTTPRoute or GRPCRoute rule generates one <code>NgRoute</code> in Otoroshi with a deterministic ID:</p>
+<pre><code>kubernetes-gateway-api-{namespace}-{routeName}-rule-{ruleIndex}         # HTTPRoute
+kubernetes-gateway-api-{namespace}-{routeName}-grpc-rule-{ruleIndex}    # GRPCRoute
+</code></pre>
+<p>The generated route includes:</p>
+<ul>
+  <li><strong>Frontend</strong>: domains built from effective hostnames + path, with method matching if specified (gRPC routes are locked to POST)</li>
+  <li><strong>Backend</strong>: targets resolved from backendRefs using Kubernetes Service clusterIPs, with weighted load balancing. GRPCRoute targets use HTTP/2. When a BackendTLSPolicy targets the service, TLS is enabled with SNI and CA validation.</li>
+  <li><strong>Plugins</strong>: converted from route filters (header modifiers, redirections, etc.)</li>
+  <li><strong>Metadata</strong>: <code>otoroshi-provider: kubernetes-gateway-api</code>, <code>gateway-api-kind: HTTPRoute</code> or <code>GRPCRoute</code>, plus <code>kubernetes-name</code>, <code>kubernetes-namespace</code> for traceability</li>
+</ul>
+<h2><a href="#status-updates" name="status-updates" class="anchor"><span class="anchor-link"></span></a>Status updates</h2>
+<p>The controller updates the <code>status</code> subresource on each Gateway API object:</p>
+<ul>
+  <li><strong>GatewayClass</strong>: <code>Accepted: True</code> when the <code>controllerName</code> matches, <code>Accepted: False</code> otherwise</li>
+  <li><strong>Gateway</strong>: <code>Accepted: True/False</code> based on gatewayClassName, <code>Programmed: True/False</code> per-listener based on port/protocol validation</li>
+  <li><strong>HTTPRoute</strong>: per-parent conditions <code>Accepted: True/False</code> and <code>ResolvedRefs: True/False</code>. When <code>ResolvedRefs</code> is <code>False</code>, the reason indicates the cause: <code>RefNotPermitted</code> (missing ReferenceGrant for cross-namespace reference) or <code>BackendNotFound</code> (Service does not exist)</li>
+  <li><strong>GRPCRoute</strong>: same status conditions as HTTPRoute</li>
+</ul>
+<h3><a href="#gateway-addresses" name="gateway-addresses" class="anchor"><span class="anchor-link"></span></a>Gateway addresses</h3>
+<p>The controller reports the network addresses where the Gateway is reachable in the <code>status.addresses</code> field. This allows other tools and users to discover how to reach the gateway programmatically.</p>
+<p><strong>Resolution priority:</strong></p>
+<ol>
+  <li>
+  <p><strong>Static addresses</strong> (<code>gatewayApiAddresses</code>): if configured, these are used directly without any Kubernetes Service lookup.  Useful for bare-metal, NodePort setups, or when an external load balancer IP is known in advance.</p></li>
+  <li>
+  <p><strong>Dynamic service resolution</strong>: the controller looks up a Kubernetes Service to extract its addresses:</p></li>
+</ol>
+<ul>
+  <li>The service is identified by <code>gatewayApiGatewayServiceName</code> (if set), otherwise <code>otoroshiServiceName</code></li>
+  <li>The namespace is always <code>otoroshiNamespace</code></li>
+  <li>For <code>LoadBalancer</code> services: IPs and hostnames from <code>status.loadBalancer.ingress</code> are reported</li>
+  <li>For <code>ClusterIP</code> services (or when no LoadBalancer ingress is available): the <code>spec.clusterIP</code> is reported</li>
+</ul>
+<p><strong>Examples:</strong></p>
+<p>Static override (bare-metal with known external IP):</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;gatewayApiAddresses&quot;: [
+    {&quot;type&quot;: &quot;IPAddress&quot;, &quot;value&quot;: &quot;203.0.113.10&quot;},
+    {&quot;type&quot;: &quot;Hostname&quot;, &quot;value&quot;: &quot;gateway.example.com&quot;}
+  ]
+}
+</code></pre>
+<p>Dedicated LoadBalancer service for gateway traffic:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;gatewayApiGatewayServiceName&quot;: &quot;otoroshi-gateway-lb&quot;
+}
+</code></pre>
+<p>Default behavior (uses <code>otoroshiServiceName</code>): no additional configuration needed.</p>
+<h2><a href="#current-limitations" name="current-limitations" class="anchor"><span class="anchor-link"></span></a>Current limitations</h2>
+<p>The following features are <strong>not yet implemented</strong> in the current experiments:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Feature </th>
+      <th>Status </th>
+      <th>Notes </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>TLSRoute </td>
+      <td>Not implemented </td>
+      <td>Experimental in Gateway API spec </td>
+    </tr>
+    <tr>
+      <td>TCPRoute </td>
+      <td>Not implemented </td>
+      <td>Experimental in Gateway API spec </td>
+    </tr>
+    <tr>
+      <td>UDPRoute </td>
+      <td>Not implemented </td>
+      <td>Experimental in Gateway API spec </td>
+    </tr>
+    <tr>
+      <td>Dynamic listener provisioning </td>
+      <td>Not planned </td>
+      <td>Otoroshi uses a proxy-existing approach; ports must be pre-configured </td>
+    </tr>
+  </tbody>
+</table><div class="callout note "><div class="callout-title">Note</div>
+<p><strong>ReferenceGrant enforcement</strong> is active. Cross-namespace backend references require a <code>ReferenceGrant</code> in the target namespace. See the <a href="kubernetes-gateway-api.html#referencegrant-cross-namespace-references-">ReferenceGrant section</a> for details and examples.</p></div>
+<h2><a href="#troubleshooting" name="troubleshooting" class="anchor"><span class="anchor-link"></span></a>Troubleshooting</h2>
+<h3><a href="#check-resource-status" name="check-resource-status" class="anchor"><span class="anchor-link"></span></a>Check resource status</h3>
+<p>The first thing to verify is the status of your Gateway API resources:</p>
+<pre class="prettyprint"><code class="language-sh"># GatewayClass should show Accepted: True
+kubectl get gatewayclasses otoroshi -o yaml
+
+# Gateway should show Accepted: True and listeners Programmed: True
+kubectl get gateway my-gateway -n default -o yaml
+
+# HTTPRoute should show Accepted: True for each parent
+kubectl get httproute my-route -n default -o yaml
+
+# GRPCRoute should show Accepted: True for each parent
+kubectl get grpcroute my-grpc-route -n default -o yaml
+</code></pre>
+<h3><a href="#check-generated-routes" name="check-generated-routes" class="anchor"><span class="anchor-link"></span></a>Check generated routes</h3>
+<p>You can list all routes generated by the Gateway API controller using the Otoroshi admin API:</p>
+<pre class="prettyprint"><code class="language-sh">curl -s http://otoroshi-api.oto.tools:8080/api/routes \
+  -u admin-api-apikey-id:admin-api-apikey-secret | \
+  jq &#39;.[] | select(.metadata[&quot;otoroshi-provider&quot;] == &quot;kubernetes-gateway-api&quot;) | {id, name}&#39;
+</code></pre>
+<h3><a href="#common-issues" name="common-issues" class="anchor"><span class="anchor-link"></span></a>Common issues</h3>
+<p><strong>Gateway shows <code>Accepted: False</code></strong>: the <code>gatewayClassName</code> does not reference an accepted GatewayClass, or the GatewayClass <code>controllerName</code> does not match the configured <code>gatewayApiControllerName</code>.</p>
+<p><strong>Listener shows <code>Programmed: False</code></strong>: the listener <code>port</code> does not match <code>gatewayApiHttpListenerPort</code> (for HTTP) or <code>gatewayApiHttpsListenerPort</code> (for HTTPS). Remember that Otoroshi does not dynamically open new ports.</p>
+<p><strong>HTTPRoute shows <code>Accepted: False</code></strong>: the parentRef does not match any Gateway/listener, or the listener&rsquo;s <code>allowedRoutes</code> does not permit routes from the HTTPRoute&rsquo;s namespace.</p>
+<p><strong>Route is created but traffic returns 404</strong>: verify that the backend Service exists and has a valid <code>clusterIP</code>. Check that the service port matches the <code>backendRef.port</code>. Also verify that the hostname used in the request matches the effective hostnames of the route.</p>
+<h3><a href="#check-controller-logs" name="check-controller-logs" class="anchor"><span class="anchor-link"></span></a>Check controller logs</h3>
+<p>Look for Gateway API related log entries in the Otoroshi pod:</p>
+<pre class="prettyprint"><code class="language-sh">kubectl -n otoroshi logs deploy/otoroshi | grep -i gateway
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../quick-tutorials/index.html">Quick tutorials</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">
+<h3>On this page</h3>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/kubernetes-gateway-api.html#how-it-works" class="header">How it works</a>
+  <ul>
+    <li><a href="../topics/kubernetes-gateway-api.html#watch-mode" class="header">Watch mode</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#prerequisites" class="header">Prerequisites</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#enabling-gateway-api-support" class="header">Enabling Gateway API support</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#usage" class="header">Usage</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#supported-httproute-filters" class="header">Supported HTTPRoute filters</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#otoroshi-specific-annotations" class="header">Otoroshi-specific annotations</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#tls-certificate-resolution" class="header">TLS certificate resolution</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#grpcroute-support" class="header">GRPCRoute support</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#backendtlspolicy-tls-to-backend-" class="header">BackendTLSPolicy (TLS to backend)</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#referencegrant-cross-namespace-references-" class="header">ReferenceGrant (cross-namespace references)</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#generated-ngroute-structure" class="header">Generated NgRoute structure</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#status-updates" class="header">Status updates</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#current-limitations" class="header">Current limitations</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html#troubleshooting" class="header">Troubleshooting</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2026</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
