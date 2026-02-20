@@ -38,7 +38,7 @@ When `watch` is enabled in the Kubernetes configuration, the Gateway API control
 Install the standard channel CRDs:
 
 ```sh
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+kubectl apply -f 'https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml'
 ```
 
 ### RBAC
@@ -63,7 +63,7 @@ The Otoroshi ServiceAccount needs the following additional ClusterRole rules for
 or from github
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/rbac-gateway.yaml
+kubectl apply -f 'https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/rbac-gateway.yaml'
 ```
 
 These rules must be added to the existing `otoroshi-admin-user` ClusterRole alongside the existing rules for core resources, ingresses, and Otoroshi CRDs.
@@ -96,7 +96,7 @@ spec:
 or from github
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/crds-gateway.yaml
+kubectl apply -f 'https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/crds-gateway.yaml'
 ```
 
 ## Enabling Gateway API support
@@ -658,7 +658,7 @@ During each reconciliation cycle, Otoroshi:
 BackendTLSPolicy requires the experimental channel Gateway API CRDs:
 
 ```sh
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+kubectl apply -f 'https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml'
 ```
 
 Additional RBAC rules are needed:
