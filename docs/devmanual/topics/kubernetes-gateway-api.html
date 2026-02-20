@@ -369,7 +369,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <h3><a href="#installing-gateway-api-crds" name="installing-gateway-api-crds" class="anchor"><span class="anchor-link"></span></a>Installing Gateway API CRDs</h3>
 <p>Install the standard channel CRDs:</p>
-<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f &#39;https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml&#39;
 </code></pre>
 <h3><a href="#rbac" name="rbac" class="anchor"><span class="anchor-link"></span></a>RBAC</h3>
 <p>The Otoroshi ServiceAccount needs the following additional ClusterRole rules for Gateway API resources:</p>
@@ -387,7 +387,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   verbs: [get, update, patch]
 </code></pre>
 <p>or from github</p>
-<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/rbac-gateway.yaml
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f &#39;https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/rbac-gateway.yaml&#39;
 </code></pre>
 <p>These rules must be added to the existing <code>otoroshi-admin-user</code> ClusterRole alongside the existing rules for core resources, ingresses, and Otoroshi CRDs.</p>
 <h3><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDS</h3>
@@ -413,7 +413,7 @@ spec:
         type: object
 </code></pre>
 <p>or from github</p>
-<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/crds-gateway.yaml
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f &#39;https://raw.githubusercontent.com/MAIF/otoroshi/refs/heads/master/kubernetes/kustomize/base/crds-gateway.yaml&#39;
 </code></pre>
 <h2><a href="#enabling-gateway-api-support" name="enabling-gateway-api-support" class="anchor"><span class="anchor-link"></span></a>Enabling Gateway API support</h2>
 <p>Gateway API support is controlled through the <code>KubernetesConfig</code> configuration block. You need to:</p>
@@ -985,7 +985,7 @@ spec:
 </ol>
 <h3><a href="#prerequisites" name="prerequisites" class="anchor"><span class="anchor-link"></span></a>Prerequisites</h3>
 <p>BackendTLSPolicy requires the experimental channel Gateway API CRDs:</p>
-<pre class="prettyprint"><code class="language-sh">kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+<pre class="prettyprint"><code class="language-sh">kubectl apply -f &#39;https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml&#39;
 </code></pre>
 <p>Additional RBAC rules are needed:</p>
 <pre class="prettyprint"><code class="language-yaml">- apiGroups: [gateway.networking.k8s.io]
