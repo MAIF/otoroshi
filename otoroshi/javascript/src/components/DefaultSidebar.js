@@ -202,6 +202,7 @@ export function DefaultSidebar(props) {
             img='apis'
             icon='fa-brush'
             link='/apis'
+            tag={<span className="badge bg-xs bg-warning">ALPHA</span>}
           />
         </div>}
 

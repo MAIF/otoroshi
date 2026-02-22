@@ -37,6 +37,20 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show actions tab`) },
     },
     {
+      to: `/apis/${id}/subscriptions`,
+      icon: 'fa-key',
+      title: 'Subscriptions',
+      tab: 'Subscriptions',
+      tooltip: { ...createTooltip(`Show subscriptions tab`) },
+    },
+    {
+      to: `/apis/${id}/deployments`,
+      icon: 'fa-server',
+      title: 'Deployments',
+      tab: 'deployments',
+      tooltip: { ...createTooltip(`Show deployments tab`) },
+    },
+    {
       to: `/apis/${id}/endpoints`,
       icon: 'fa-road',
       title: 'Endpoints',
@@ -49,6 +63,13 @@ const LINKS = (id) =>
       title: 'Plugin chains',
       tab: 'plugin-chains',
       tooltip: { ...createTooltip(`Show plugin chains tab`) },
+    },
+    {
+      to: `/apis/${id}/access-modes`,
+      icon: 'fa-list',
+      title: 'Access modes',
+      tab: 'access-modes',
+      tooltip: { ...createTooltip(`Show access modes tab`) },
     },
     {
       to: `/apis/${id}/backends`,
@@ -65,32 +86,11 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show http client settings tab`) },
     },
     {
-      to: `/apis/${id}/access-modes`,
-      icon: 'fa-list',
-      title: 'Access modes',
-      tab: 'access-modes',
-      tooltip: { ...createTooltip(`Show access modes tab`) },
-    },
-    {
-      to: `/apis/${id}/subscriptions`,
-      icon: 'fa-key',
-      title: 'Subscriptions',
-      tab: 'Subscriptions',
-      tooltip: { ...createTooltip(`Show subscriptions tab`) },
-    },
-    {
       to: `/apis/${id}/plans`,
       icon: 'fa-layer-group',
       title: 'Plans',
       tab: 'plan',
       tooltip: { ...createTooltip(`Show plan tab`) },
-    },
-    {
-      to: `/apis/${id}/deployments`,
-      icon: 'fa-server',
-      title: 'Deployments',
-      tab: 'deployments',
-      tooltip: { ...createTooltip(`Show deployments tab`) },
     },
     {
       to: `/apis/${id}/documentation`,
@@ -139,7 +139,7 @@ export default (props) => {
           <Link
             to={`/apis`}
             {...createTooltip(`apis - All your apis`)}
-            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0`}
+            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-1' : ''} m-0`}
           >
             <div style={{ width: '20px' }} className="d-flex justify-content-center">
               <i className="fa fa-brush" />
@@ -147,6 +147,7 @@ export default (props) => {
             <div className="d-flex align-items-center">
               {' '}
               {openedSidebar ? 'APIs' : ''}
+              <span className="badge bg-xs bg-warning ms-2">ALPHA</span>
             </div>
           </Link>
         </li>
@@ -157,11 +158,9 @@ export default (props) => {
                 General
               </p>
             )}
-            <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
-              {openedSidebar && version && version !== 'staging' && (
-                <VersionToggle isDraft={version === 'Draft'} />
-              )}
-            </div>
+            {openedSidebar && version && version !== 'staging' && <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
+              <VersionToggle isDraft={version === 'Draft'} />
+            </div>}
             {LINKS(params.apiId)
               .map(({ to, icon, title, tooltip, tab }) => (
                 <li
@@ -175,7 +174,7 @@ export default (props) => {
                       search: location.search,
                     }}
                     {...(tooltip || {})}
-                    className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-3' : ''
+                    className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-1' : ''
                       } m-0 ${isActive(tab)}`}
                   >
                     <div style={{ width: '20px' }} className="d-flex justify-content-center">

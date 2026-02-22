@@ -70,6 +70,7 @@ export function ApiDocumentationPlans(props) {
   const [documentation, setDocumentation] = useState()
 
   useEffect(() => {
+    props.setTitle(undefined)
     if (item) {
       setDocumentation(item.documentation)
     }
@@ -87,6 +88,8 @@ export function ApiDocumentationPlans(props) {
         'id',
         'name',
         'description',
+        'status',
+        'statusDescription',
         'throttling_quota',
         'daily_quota',
         'monthly_quota',
@@ -127,6 +130,36 @@ export function ApiDocumentationPlans(props) {
           label: 'Access mode',
           props: {
             options: item.consumers.map(consumer => ({ value: consumer.id, label: consumer.name }))
+          },
+        },
+        status: {
+          type: 'dots',
+          label: 'Status',
+          props: {
+            options: ['staging', 'published', 'deprecated', 'closed'],
+          },
+        },
+        statusDescription: {
+          renderer: ({ rootValue }) => {
+            const descriptions = {
+              staging:
+                'This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won’t be visible or accessible to users',
+              published:
+                'When your plan is finalized, you can publish it to allow subscriptions through the APIM Portal. Once published, subscriptions can access the API via the plan. Published plans remain editable.',
+              deprecated:
+                'Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API subscriptions',
+              closed:
+                'Closing a plan terminates all associated subscriptions, and this action is irreversible. API subscriptions previously subscribed to the plan will no longer have access to the API',
+            };
+
+            return (
+              <div className="row mb-3" style={{ marginTop: '-1rem' }}>
+                <label className="col-xs-12 col-sm-2 col-form-label" />
+                <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
+                  {descriptions[rootValue?.status]}
+                </div>
+              </div>
+            );
           },
         },
         tags: {
@@ -342,8 +375,6 @@ export function Documentation(props) {
     'footer',
     '>>>Banner',
     'banner',
-    '>>>Plans',
-    'plans',
     '>>>Redirections',
     'redirections',
     '>>>References',

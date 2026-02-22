@@ -624,9 +624,9 @@ GET     /apis/apis.otoroshi.io/v1/apis/:id/routes/:routeId     otoroshi.next.con
 POST    /apis/apis.otoroshi.io/v1/apis/_openapi                                           otoroshi.next.controllers.adminapi.ApisController.fromOpenapi()
 GET     /apis/apis.otoroshi.io/v1/apis/:apiId/http-client-settings/_template              otoroshi.next.controllers.adminapi.ApisController.getHttpClientSettings(apiId)
 POST    /apis/apis.otoroshi.io/v1/apis/:apiId/deployments                                 otoroshi.next.controllers.adminapi.ApisController.createNewVersion(apiId)
-GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_publish              otoroshi.next.controllers.adminapi.ApisController.publishConsumer(apiId, consumerId)
-GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_deprecate            otoroshi.next.controllers.adminapi.ApisController.deprecateConsumer(apiId, consumerId)
-GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_close                otoroshi.next.controllers.adminapi.ApisController.closeConsumer(apiId, consumerId)
+#GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_publish              otoroshi.next.controllers.adminapi.ApisController.publishConsumer(apiId, consumerId)
+#GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_deprecate            otoroshi.next.controllers.adminapi.ApisController.deprecateConsumer(apiId, consumerId)
+#GET     /apis/apis.otoroshi.io/v1/apis/:apiId/consumers/:consumerId/_close                otoroshi.next.controllers.adminapi.ApisController.closeConsumer(apiId, consumerId)
 
 # New admin API - generic apis
 POST    /apis/:group/:version/:entity/_bulk                   otoroshi.api.GenericApiController.bulkCreate(group, version, entity)

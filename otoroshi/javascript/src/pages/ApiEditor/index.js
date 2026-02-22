@@ -165,7 +165,7 @@ export default function ApiEditor(props) {
           <RouteWithProps exact path="/apis/:apiId/new" component={NewAPI} props={props} />
           <RouteWithProps exact path="/apis/:apiId/informations" component={Informations} props={props} />
           <RouteWithProps exact path="/apis" component={Apis} props={props} />
-          <RouteWithProps path="/apis/:apiId" component={Dashboard} props={props} />
+          <RouteWithProps exact path="/apis/:apiId" component={Dashboard} props={props} />
         </Switch>
       </QueryClientProvider>
     </div>
@@ -263,6 +263,8 @@ export function useDraftOfAPI() {
     tag: version === 'Published' ? 'PROD' : 'DEV',
     setItem: isDraft ? setDraft : setAPI,
     updateItem: isDraft ? updateDraft : updateAPI,
+    updateDraft,
+    updateAPI,
     isDraft
   };
 }
@@ -286,7 +288,14 @@ function Subscriptions(props) {
     props.setTitle({
       value: 'Subscriptions',
       noThumbtack: true,
-      children: <VersionBadge />,
+      children: <div
+        className='m-0 ms-2'
+        style={{ fontSize: '1rem' }}
+      >
+        <span className={`badge bg-xs bg-danger`}>
+          PROD
+        </span>
+      </div>,
     });
   }, []);
 
@@ -337,20 +346,18 @@ function Subscriptions(props) {
       }
       rawEditUrl={true}
       injectTopBar={() => (
-        <DraftOnly>
-          <div className="btn-group input-group-btn">
-            <Link
-              className="btn btn-primary btn-sm"
-              to={{
-                pathname: 'subscriptions/new',
-                search: location.search,
-              }}
-            >
-              <i className="fas fa-plus-circle" /> Create new subscription
-            </Link>
-            {props.injectTopBar}
-          </div>
-        </DraftOnly>
+        <div className="btn-group input-group-btn">
+          <Link
+            className="btn btn-primary btn-sm"
+            to={{
+              pathname: 'subscriptions/new',
+              search: location.search,
+            }}
+          >
+            <i className="fas fa-plus-circle" /> Create new subscription
+          </Link>
+          {props.injectTopBar}
+        </div>
       )}
     />
   );
@@ -441,15 +448,15 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       type: 'string',
       label: 'Owner',
     },
-    consumer_ref: {
+    plan_ref: {
       type: 'select',
-      label: 'Published access mode',
+      label: 'Plan',
       props: {
-        options: item.consumers.filter((consumer) => consumer.status === 'published'),
+        options: item.documentation?.plans || [],
         noOptionsMessage: ({ children, ...props }) => {
           return (
             <components.NoOptionsMessage {...props}>
-              No access modes are published
+              No Plans
             </components.NoOptionsMessage>
           );
         },
@@ -477,7 +484,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       type: 'group',
       name: 'Ownership',
       collapsable: false,
-      fields: ['owner_ref', 'consumer_ref', 'token_refs'],
+      fields: ['owner_ref', 'plan_ref', 'token_refs'],
     },
   ],
 };
@@ -497,7 +504,7 @@ function NewSubscription(props) {
   }, []);
 
   useQuery(
-    ['getTemplate'],
+    ['getSubscriptionTemplate'],
     () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
     {
       enabled: !!item,
@@ -512,12 +519,6 @@ function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
-    const consumer = item.consumers.find((consumer) => consumer.id === subscription.consumer_ref);
-
-    if (consumer.state === 'staging' || consumer.state === 'closed') {
-      return alert('attention on est en staging');
-    }
-
     return nextClient
       .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
       .create({
@@ -527,12 +528,7 @@ function NewSubscription(props) {
       })
       .then((res) => {
         if (res && res.error) {
-          if (res.error.includes('wrong status')) {
-            setError("You can't subscribe to an unpublished consumer");
-          } else {
-            setError(res.error);
-          }
-          throw res.error;
+          setError(res.error);
         } else {
           historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
         }
@@ -571,18 +567,16 @@ function NewSubscription(props) {
             {error}
           </div>
         )}
-        <DraftOnly>
-          <FeedbackButton
-            type="success"
-            className="d-flex ms-auto mt-3 d-flex align-items-center"
-            onPress={updateSubscription}
-            text={
-              <>
-                Create <VersionBadge size="xs" />
-              </>
-            }
-          />
-        </DraftOnly>
+        <FeedbackButton
+          type="success"
+          className="d-flex ms-auto mt-3 d-flex align-items-center"
+          onPress={updateSubscription}
+          text={
+            <>
+              Create <VersionBadge size="xs" />
+            </>
+          }
+        />
       </div>
     </>
   );
@@ -693,7 +687,7 @@ const ROUTE_FORM_SETTINGS = {
         },
         flow: NgFrontend.flow,
       },
-      plugin_chain: {
+      flow_ref: {
         type: 'select',
         label: 'Plugin chain',
         props: {
@@ -811,8 +805,8 @@ const ROUTE_FORM_SETTINGS = {
       collapsable: false,
       // collapsed: true,
       name: '3. Add plugins to your endpoint by selecting a plugin chains',
-      fields: ['plugin_chain'],
-      summaryFields: ['plugin_chain'],
+      fields: ['flow_ref'],
+      summaryFields: ['flow_ref'],
     },
     {
       type: 'group',
@@ -871,6 +865,7 @@ function NewRoute(props) {
 
   useEffect(() => {
     if (item) {
+      console.log(item)
       nextClient
         .forEntityNext(nextClient.ENTITIES.ROUTES)
         .template()
@@ -879,7 +874,10 @@ function NewRoute(props) {
             ...route,
             name: 'My first endpoint',
             enabled: true,
-            frontend,
+            frontend: {
+              ...frontend,
+              domains: ['/foo']
+            },
             backend: item.backends.length && item.backends[0].id,
             usingExistingBackend: true,
             flow_ref: item.flows.length && item.flows[0].id,
@@ -1083,44 +1081,6 @@ const ACCESS_MODE_FORM_SETTINGS = {
         </Row>
       ),
     },
-    status: {
-      type: 'dots',
-      label: 'Status',
-      props: {
-        options: ['staging', 'published', 'deprecated', 'closed'],
-      },
-    },
-    description: {
-      renderer: ({ rootValue }) => {
-        const descriptions = {
-          staging:
-            'This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won’t be visible or accessible to users',
-          published:
-            'When your plan is finalized, you can publish it to allow API access modes to view and subscribe to it via the APIM Portal. Once published, consumers can use the API through the plan. Published plans remain editable',
-          deprecated:
-            'Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API consumers',
-          closed:
-            'Closing a plan terminates all associated subscriptions, and this action is irreversible. API access modes previously subscribed to the plan will no longer have access to the API',
-        };
-
-        return (
-          <div className="row mb-3" style={{ marginTop: '-1rem' }}>
-            <label className="col-xs-12 col-sm-2 col-form-label" />
-            <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
-              {descriptions[rootValue?.status]}
-            </div>
-          </div>
-        );
-      },
-    },
-    auto_validation: {
-      type: 'box-bool',
-      label: 'Auto-validation',
-      props: {
-        description:
-          'When creating a customer, you can enable subscription auto-validation to immediately approve subscription requests. If Auto validate subscription is disabled, the API publisher must approve all subscription requests.',
-      },
-    },
     settings: {
       renderer: (props) => {
         const kind = props.rootValue.consumer_kind;
@@ -1214,7 +1174,7 @@ const ACCESS_MODE_FORM_SETTINGS = {
       type: 'group',
       collapsable: false,
       name: 'Plan',
-      fields: ['name', 'consumer_kind', 'status', 'description', 'auto_validation'],
+      fields: ['name', 'consumer_kind'],
     },
     {
       type: 'group',
@@ -2214,6 +2174,7 @@ function Testing(props) {
 
 function Deployments(props) {
   const params = useParams();
+  const version = useSignalValue(signalVersion)
 
   const columns = [
     {
@@ -2244,6 +2205,13 @@ function Deployments(props) {
   }, []);
 
   if (!item) return <SimpleLoader />;
+
+  if (version !== 'Published')
+    return (
+      <div className="alert alert-warning">
+        Deployments are only available in production.
+      </div>
+    );
 
   return (
     <Table
@@ -2413,25 +2381,8 @@ const FLOW_FORM_SETTINGS = {
   schema: (item) => ({
     name: {
       type: 'string',
-      props: { label: 'Name' },
-    },
-    consumers: {
-      type: 'form',
-      label: 'Enabled access modes',
-      schema: item.consumers.reduce(
-        (acc, item) => ({
-          ...acc,
-          [item.id]: {
-            type: 'box-bool',
-            label: item.name,
-            props: {
-              description: item.description || item.consumer_kind,
-            },
-          },
-        }),
-        {}
-      ),
-    },
+      label: 'Plugin chain name'
+    }
   }),
   flow: [
     {
@@ -2439,8 +2390,7 @@ const FLOW_FORM_SETTINGS = {
       name: 'Informations',
       collapsable: false,
       fields: ['name'],
-    },
-    'consumers',
+    }
   ],
 };
 
@@ -2544,7 +2494,7 @@ function NewAPI(props) {
       setValue({
         openapi: 'https://petstore3.swagger.io/api/v3/openapi.json',
         domain: 'petstore.oto.tools',
-        serverURL: undefined,
+        contextPath: '/v1',
         step: 0,
         api: undefined,
       });
@@ -2570,28 +2520,33 @@ function NewAPI(props) {
     },
     openapi: {
       type: 'string',
-      label: 'Openapi URL',
+      label: 'OpenAPI URL',
     },
     domain: {
       type: 'string',
-      label: 'Exposed domain',
+      label: 'API domain',
     },
-    serverURL: {
+    contextPath: {
       type: 'string',
-      label: 'Hostname',
+      label: 'Context path',
     },
-    root: {
+    backendHostname: {
       type: 'string',
-      label: 'The root URL of the target service',
+      label: 'Backend hostname',
+    },
+    backendPath: {
+      type: 'string',
+      label: 'Backend path',
     },
     action: {
-      renderer: () => {
+      renderer: props => {
         return (
           <Row title=" " className="col-sm-10 d-flex align-items-center">
             <Button
               type="primaryColor"
+              disabled={!(props.rootValue.domain && props.rootValue.contextPath && props.rootValue.backendHostname && props.rootValue.backendPath)}
               className="btn-sm"
-              text="Read information from OpenAPI URL"
+              text="Read information from OpenAPI"
               onClick={() => {
                 fetchWrapperNext(
                   `/${nextClient.ENTITIES.APIS}/_openapi`,
@@ -2696,7 +2651,7 @@ function NewAPI(props) {
             type: 'group',
             name: 'OpenAPI',
             collapsable: false,
-            fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
+            fields: ['openapi', 'domain', 'contextPath', 'backendHostname', 'backendPath', 'action'],
           }
           : {
             type: 'group',
@@ -2743,7 +2698,12 @@ function NewAPI(props) {
             <i className="fa fa-chevron-left me-2" />
             Back
           </Button>
-          <Button type="primaryColor" className="btn-sm d-flex" onClick={createApi} text="Create" />
+          <Button type="primaryColor"
+            className="btn-sm d-flex"
+            onClick={createApi}
+            text="Create"
+            disabled={!value.api}
+          />
         </div>
       )}
     </div>
@@ -2941,7 +2901,7 @@ function PluginChainsDesigner(props) {
           };
         return flow;
       }),
-    }).then(() => history.replace(`/apis/${params.apiId}/plugin-chains`));
+    })
   };
 
   if (!item || !flow) return <SimpleLoader />;
@@ -3487,18 +3447,23 @@ function APIGateway(props) {
 
 function Actions(props) {
   const history = useHistory();
-  const { draft, api, item, updateItem: updateAPI } = useDraftOfAPI();
+  const { draft, api, item, updateAPI, updateDraft } = useDraftOfAPI();
   const [previewStep, setPreviewStep] = useState(null);
 
   useEffect(() => {
-    if (item) {
-      props.setTitle({
-        value: 'Actions',
-        noThumbtack: true,
-        children: <VersionBadge />,
-      });
-    }
-  }, [item]);
+    props.setTitle({
+      value: 'Actions',
+      noThumbtack: true,
+      children: <div
+        className='m-0 ms-2'
+        style={{ fontSize: '1rem' }}
+      >
+        <span className={`badge bg-xs bg-danger`}>
+          PROD
+        </span>
+      </div>,
+    });
+  }, []);
 
   if (!item) return <SimpleLoader />;
 
@@ -3535,10 +3500,11 @@ function Actions(props) {
           if (targetState === API_STATE.PUBLISHED && currentState === API_STATE.STAGING) {
             publishAPI(draft, api, history);
           } else {
-            updateAPI({
-              ...api,
-              state: targetState,
-            }).then(() => window.location.reload());
+            Promise.all([
+              updateDraft({ ...item, state: targetState, }),
+              updateAPI({ ...api, state: targetState, })
+            ])
+              .then(() => window.location.reload());
           }
         }
       });
@@ -3830,14 +3796,13 @@ export function VersionBadge({ size, className }) {
       style={{ fontSize: size === 'xs' ? '.75rem' : '1rem' }}
     >
       <span className={`badge bg-xs ${version === 'Published' ? 'bg-danger' : 'bg-warning'}`}>
-        {version === 'Published' ? 'PROD' : 'DEV'}
+        {version === 'Published' ? 'PROD' : 'DRAFT'}
       </span>
     </div>
   );
 }
 
 function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
-  const version = useSignalValue(signalVersion);
   const history = useHistory();
 
   return (
@@ -3850,7 +3815,7 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
       </div>
       <div className="d-flex align-item-center justify-content-between">
         <DraftOnly>
-          {(version === 'Published' || version === 'Deprecated') && step > 3 && (
+          {(item.state === 'published' || item.state === 'deprecated') && step > 3 && (
             <div className="d-flex align-items-center">
               <Button
                 text="Publish this version"

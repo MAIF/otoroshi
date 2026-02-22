@@ -93,7 +93,7 @@ object ApiRoute {
         enabled = json.select("enabled").asOptBoolean.getOrElse(true),
         name = json.select("name").asOptString,
         frontend = NgFrontend.readFrom(json \ "frontend"),
-        flowRef = (json \ "flow_ref").asOpt[String].orElse(json.selectAsOptString("plugin_chain")).getOrElse(""),
+        flowRef = json.selectAsOptString("plugin_chain").orElse(json.selectAsOptString("flow_ref")).getOrElse(""),
         backend = (json \ "backend").as[String]
       )
     } match {
@@ -317,6 +317,12 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val dailyQuota: Long              = raw.select("daily_quota").asOptLong.getOrElse(10000L)
   lazy val monthlyQuota: Long            = raw.select("monthly_quota").asOptLong.getOrElse(100000L)
   lazy val consumerId: Option[String]    = raw.select("consumer_id").asOptString
+  lazy val status: ApiPlanStatus         = raw.select("status").asOptString.getOrElse("published").toLowerCase match {
+    case "staging"    => ApiPlanStatus.Staging
+    case "published"  => ApiPlanStatus.Published
+    case "deprecated" => ApiPlanStatus.Deprecated
+    case "closed"     => ApiPlanStatus.Closed
+  }
   lazy val tags: Seq[String]             = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
   lazy val metadata: Map[String, String] = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
 }
@@ -447,11 +453,8 @@ case class ApiConsumer(
     id: String,
     name: String,
     description: Option[String] = None,
-    autoValidation: Boolean,
     consumerKind: ApiConsumerKind,
-    settings: ApiConsumerSettings,
-    status: ApiConsumerStatus,
-    subscriptions: Seq[ApiConsumerSubscriptionRef] = Seq.empty
+    settings: ApiConsumerSettings
 )
 
 object ApiConsumer {
@@ -461,7 +464,6 @@ object ApiConsumer {
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asOptString,
-        autoValidation = json.select("auto_validation").asOpt[Boolean].getOrElse(false),
         consumerKind = json.select("consumer_kind").asString.toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
@@ -491,18 +493,7 @@ object ApiConsumer {
             ApiConsumerSettings.JWT(
               consumerConfig = (json \ "settings").asOpt(NgJwtVerificationOnlyConfig.format)
             )
-        },
-        status = json.select("status").asString.toLowerCase match {
-          case "staging"    => ApiConsumerStatus.Staging
-          case "published"  => ApiConsumerStatus.Published
-          case "deprecated" => ApiConsumerStatus.Deprecated
-          case "closed"     => ApiConsumerStatus.Closed
-        },
-        subscriptions = json
-          .select("subscriptions")
-          .asOpt[Seq[String]]
-          .map(refs => refs.map(ref => ApiConsumerSubscriptionRef(ref)))
-          .getOrElse(Seq.empty)
+        }
       )
     } match {
       case Failure(ex)    =>
@@ -512,14 +503,11 @@ object ApiConsumer {
     }
 
     override def writes(o: ApiConsumer): JsValue = Json.obj(
-      "id"              -> o.id,
-      "name"            -> o.name,
-      "description"     -> o.description,
-      "auto_validation" -> o.autoValidation,
-      "consumer_kind"   -> o.consumerKind.name,
-      "settings"        -> o.settings.json,
-      "status"          -> o.status.name,
-      "subscriptions"   -> o.subscriptions.map(_.ref)
+      "id"            -> o.id,
+      "name"          -> o.name,
+      "description"   -> o.description,
+      "consumer_kind" -> o.consumerKind.name,
+      "settings"      -> o.settings.json
     )
   }
 }
@@ -570,7 +558,7 @@ case class ApiConsumerSubscription(
     enabled: Boolean,
     dates: ApiConsumerSubscriptionDates,
     ownerRef: String,
-    consumerRef: String,
+    planRef: String,
     apiRef: String,
     subscriptionKind: ApiConsumerKind,
     tokenRefs: Seq[String] // ref to apikey, cert, etc
@@ -581,55 +569,9 @@ case class ApiConsumerSubscription(
   override def theDescription: String           = description
   override def theTags: Seq[String]             = tags
   override def theMetadata: Map[String, String] = metadata
-
-//  def deleteValidatorForApiConsumerSubscription(entity: ApiConsumerSubscription,
-//                                                body: JsValue,
-//                                                singularName: String,
-//                                                id: String,
-//                                                action: DeleteAction,
-//                                                env: Env): Future[Either[JsValue, Unit]] = {
-//    println(s"delete validation foo: ${singularName} - ${id} - ${action} - ${body.prettify}")
-//    id match {
-//      case "foo_2" => Json.obj("error" -> "bad id", "http_status_code" -> 400).leftf
-//      case _ => ().rightf
-//    }
-//  }
 }
 
 object ApiConsumerSubscription {
-
-  def deleteValidator(
-      entity: ApiConsumerSubscription,
-      body: JsValue,
-      singularName: String,
-      id: String,
-      action: DeleteAction,
-      env: Env
-  ): Future[Either[JsValue, Unit]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val e: Env               = env
-
-    env.datastores.apiDataStore.findById(entity.apiRef) flatMap {
-      case Some(api) =>
-        env.datastores.apiDataStore
-          .set(api.copy(consumers = api.consumers.map(consumer => {
-            if (consumer.id == entity.consumerRef) {
-              consumer.copy(subscriptions = consumer.subscriptions.filter(_.ref != id))
-            } else
-              consumer
-          })))
-          .map(_ => ().right)
-      case None      =>
-        Json
-          .obj(
-            "error"            -> "api not found",
-            "http_status_code" -> 404
-          )
-          .as[JsValue]
-          .left
-          .vfuture
-    }
-  }
 
   def writeValidator(
       entity: ApiConsumerSubscription,
@@ -651,61 +593,22 @@ object ApiConsumerSubscription {
       )
       .left
 
-    val isDraft = body.select("draft").asOptBoolean.getOrElse(false)
-
-    def addSubscriptionToConsumer(api: Api): Future[Option[ApiConsumer]] = {
-      val newApi = api.copy(consumers = api.consumers.map(consumer => {
-        if (consumer.id == entity.consumerRef) {
-          if (action == WriteAction.Update) {
-            consumer.copy(subscriptions = consumer.subscriptions.map(subscription => {
-              if (subscription.ref == entity.id) {
-                subscription.copy(entity.id)
-              } else {
-                subscription
+    env.datastores.apiDataStore
+      .findById(entity.apiRef)
+      .map {
+        case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
+          api.documentation match {
+            case Some(documentation) =>
+              documentation.plans.find(_.id == entity.planRef) match {
+                case None                                                                                         => onError("plan not found")
+                case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
+                  entity.right
+                case _                                                                                            => onError("wrong status plan")
               }
-            }))
-          } else {
-            consumer.copy(subscriptions = consumer.subscriptions :+ ApiConsumerSubscriptionRef(entity.id))
+            case None                => onError("plan not found")
           }
-        } else {
-          consumer
-        }
-      }))
-
-      (if (isDraft) {
-         env.datastores.draftsDataStore
-           .findById(entity.apiRef)
-           .map(_.get)
-           .flatMap(draft => env.datastores.draftsDataStore.set(draft.copy(content = newApi.json)))
-       } else {
-         env.datastores.apiDataStore.set(newApi)
-       }) flatMap (result =>
-        if (result) {
-          api.consumers.find(consumer => consumer.id == entity.consumerRef).future
-        } else {
-          None.vfuture
-        }
-      )
-    }
-
-    (if (!isDraft) {
-       env.datastores.apiDataStore.findById(entity.apiRef)
-     } else {
-       env.datastores.draftsDataStore.findById(entity.apiRef).map(_.map(draft => Api.format.reads(draft.content).get))
-     }) flatMap {
-      case Some(api) =>
-        api.consumers.find(_.id == entity.consumerRef) match {
-          case None => onError("consumer not found").vfuture
-          case Some(consumer)
-              if (api.state == ApiStaging || api.state == ApiPublished) && consumer.status == ApiConsumerStatus.Published =>
-            addSubscriptionToConsumer(api).map {
-              case Some(consumer) => entity.right
-              case None           => onError("failed to add subscription to api")
-            }
-          case _    => onError("wrong status").vfuture
-        }
-      case _         => onError("api not found").vfuture
-    }
+        case _                                                                 => onError("wrong status api")
+      }
   }
 
   val format: Format[ApiConsumerSubscription] = new Format[ApiConsumerSubscription] {
@@ -720,7 +623,7 @@ object ApiConsumerSubscription {
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         dates = json.select("dates").as(ApiConsumerSubscriptionDates._fmt),
         ownerRef = json.select("owner_ref").asString,
-        consumerRef = json.select("consumer_ref").asString,
+        planRef = json.select("plan_ref").asString,
         subscriptionKind = json.select("subscription_kind").asString.toLowerCase match {
           case "apikey"  => ApiConsumerKind.Apikey
           case "mtls"    => ApiConsumerKind.Mtls
@@ -745,7 +648,7 @@ object ApiConsumerSubscription {
       "enabled"           -> o.enabled,
       "dates"             -> ApiConsumerSubscriptionDates._fmt.writes(o.dates),
       "owner_ref"         -> o.ownerRef,
-      "consumer_ref"      -> o.consumerRef,
+      "plan_ref"          -> o.planRef,
       "api_ref"           -> o.apiRef,
       "subscription_kind" -> o.subscriptionKind.name,
       "token_refs"        -> o.tokenRefs
@@ -810,24 +713,24 @@ object ApiConsumerSettings {
   }
 }
 
-trait ApiConsumerStatus  {
+trait ApiPlanStatus  {
   def name: String
   def orderPosition: Int
 }
-object ApiConsumerStatus {
-  case object Staging    extends ApiConsumerStatus {
+object ApiPlanStatus {
+  case object Staging    extends ApiPlanStatus {
     override def name: String       = "staging"
     override def orderPosition: Int = 1
   }
-  case object Published  extends ApiConsumerStatus {
+  case object Published  extends ApiPlanStatus {
     override def name: String       = "published"
     override def orderPosition: Int = 2
   }
-  case object Deprecated extends ApiConsumerStatus {
+  case object Deprecated extends ApiPlanStatus {
     override def name: String       = "deprecated"
     override def orderPosition: Int = 3
   }
-  case object Closed     extends ApiConsumerStatus {
+  case object Closed     extends ApiPlanStatus {
     override def name: String       = "closed"
     override def orderPosition: Int = 4
   }
@@ -944,6 +847,7 @@ object ApiTesting {
 }
 
 case class Api(
+    kind: String = "Api",
     location: EntityLocation,
     id: String,
     name: String,
@@ -1038,11 +942,15 @@ case class Api(
                 .map(route => routeToNgRoute(route, this.some)) ++ draftRoutes
             )
             .map(routes => {
-              routes
+              val r = routes
                 .collect { case Some(value) =>
                   value
                 }
                 .filter(_.enabled)
+
+//              println(r.map(_.json))
+
+              r
             })
         })
     }
@@ -1125,7 +1033,8 @@ case class Api(
 
 object Api {
 
-  def fromOpenApi(domain: String, openapi: String, serverURL: Option[String], root: Option[String])(implicit
+  def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(
+      implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Api] = {
@@ -1144,7 +1053,7 @@ object Api {
       val description = json.select("info").select("description").asOpt[String].getOrElse("")
       val version     = json.select("info").select("version").asOpt[String].getOrElse("")
       val targets     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
-        val serverUrl = serverURL.getOrElse(server.selectAsString("url"))
+        val serverUrl = server.selectAsOptString("url").getOrElse("/")
         val serverUri = Uri(serverUrl)
 
         val serverDomain = serverUri.authority.host.toString()
@@ -1165,7 +1074,7 @@ object Api {
         name = s"${name}_backend",
         backend = NgBackend.empty.copy(
           targets = targets,
-          root = root.getOrElse("/"),
+          root = "/",
           rewrite = false,
           loadBalancing = RoundRobin
         ),
@@ -1180,7 +1089,7 @@ object Api {
 
         ApiRoute(
           frontend = NgFrontend(
-            domains = Seq(NgDomainAndPath(s"${domain}${cleanPath}")),
+            domains = Seq(NgDomainAndPath(cleanPath)),
             headers = Map.empty,
             cookies = Map.empty,
             query = Map.empty,
@@ -1201,7 +1110,7 @@ object Api {
         name = name,
         description = description,
         domain = domain,
-        contextPath = "/",
+        contextPath = contextPath,
         debugFlow = false,
         capture = false,
         exportReporting = false,
@@ -1218,9 +1127,7 @@ object Api {
             id = "keyless",
             name = "keyless_consumer",
             consumerKind = Keyless,
-            autoValidation = true,
-            settings = ApiConsumerSettings.Keyless(),
-            status = ApiConsumerStatus.Published
+            settings = ApiConsumerSettings.Keyless()
           )
         )
       )
@@ -1289,11 +1196,6 @@ object Api {
         case None           => flow
       }
     }
-    //    if (!updateConsumerStatus(oldConsumer, consumer)) {
-    //      None
-    //    } else {
-    //      applyConsumerRulesOnApi(consumer, api)
-    //    }
   }
 
 //  def removePluginToFlows[T <: NgPlugin](api: Api, consumer: ApiConsumer)(implicit ct: ClassTag[T]): Api = {
@@ -1334,20 +1236,6 @@ object Api {
     }
   }
 
-  def updateConsumerStatus(oldConsumer: ApiConsumer, consumer: ApiConsumer): Boolean = {
-    // staging     -> published  = ok
-    // published   -> deprecated = ok
-    // deprecated  -> closed     = ok
-    // deprecated  -> published  = ok
-    if (consumer.status == ApiConsumerStatus.Published && oldConsumer.status == ApiConsumerStatus.Deprecated) {
-      true
-    } else if (oldConsumer.status.orderPosition > consumer.status.orderPosition) {
-      false
-    } else {
-      true
-    }
-  }
-
   def fromJsons(value: JsValue): Api =
     try {
       format.reads(value).get
@@ -1356,6 +1244,7 @@ object Api {
     }
   val format: Format[Api]            = new Format[Api] {
     override def writes(o: Api): JsValue             = o.location.jsonWithKey ++ Json.obj(
+      "kind"             -> o.kind,
       "id"               -> o.id,
       "name"             -> o.name,
       "description"      -> o.description,
@@ -1385,6 +1274,7 @@ object Api {
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
         location = otoroshi.models.EntityLocation.readFromKey(json),
+        kind = (json \ "kind").asOpt[String].getOrElse("Api"),
         id = (json \ "id").asString,
         name = (json \ "name").asString,
         description = (json \ "description").asString,
@@ -1512,8 +1402,8 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
     val defaultSubscription = ApiConsumerSubscription(
       location = EntityLocation.default,
       id = IdGenerator.namedId("api-consumer-subscription", env),
-      name = "New API Consumer Subscription",
-      description = "New API Consumer Subscription description",
+      name = "New API Subscription",
+      description = "New API Subscription description",
       metadata = Map.empty,
       tags = Seq.empty,
       enabled = true,
@@ -1526,7 +1416,7 @@ trait ApiConsumerSubscriptionDataStore extends BasicStore[ApiConsumerSubscriptio
         closed_at = DateTime.now()
       ),
       ownerRef = "",
-      consumerRef = "",
+      planRef = "",
       subscriptionKind = ApiConsumerKind.Apikey,
       tokenRefs = Seq.empty,
       apiRef = ""
