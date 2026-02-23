@@ -1,19 +1,19 @@
 package otoroshi.next.catalogs
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
-import otoroshi.next.extensions._
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
+import otoroshi.next.extensions.*
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
@@ -271,7 +271,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
     )
   )
 
-  private def handleDeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+  private def handleDeploy(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
     implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
     implicit val ev  = env
@@ -300,7 +300,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  private def handleTest(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+  private def handleTest(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
     implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
     implicit val ev  = env
@@ -324,7 +324,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  private def handleUndeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+  private def handleUndeploy(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
     implicit val ec  = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
     implicit val ev  = env

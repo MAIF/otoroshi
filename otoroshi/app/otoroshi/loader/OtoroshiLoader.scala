@@ -36,7 +36,6 @@ class OtoroshiLoader extends ApplicationLoader {
     }
     val components = new OtoroshiComponentsInstances(context, None, None, false)
     OtoroshiLoaderHelper.initOpenTelemetryLogger(context.initialConfiguration, components.env)
-    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.handlerRef.set(components.httpRequestHandler)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()

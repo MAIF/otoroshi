@@ -1307,7 +1307,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       root: String = "/apis"
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
 
     import otoroshi.utils.http.Implicits._
 
@@ -1325,7 +1325,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (logger.isDebugEnabled)
             logger.debug(s"watch on ${api} / ${resource} (cluster-scoped) for ${timeout} seconds ! ")
           val cliStart: WSRequest                   = client(s"${root}/$api/$resource")
-          val f: Future[Source[Seq[ByteString], _]] = cliStart
+          val f: Future[Source[Seq[ByteString], ?]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
             )
@@ -1405,7 +1405,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       namespaces: Seq[String],
       timeout: Int,
       stop: => Boolean
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     val gatewayClassSource = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
     val v1NamespacedSource = watchResources(
       namespaces, Seq("gateways", "httproutes", "grpcroutes"), "gateway.networking.k8s.io/v1", timeout, stop

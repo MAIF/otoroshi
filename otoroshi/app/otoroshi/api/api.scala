@@ -561,7 +561,6 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   private lazy val server = components.server
 
   def start(): Otoroshi = {
-    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
@@ -577,7 +576,6 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
 
   def startAndStopOnShutdown(): Otoroshi = {
     components.handlerRef.set(components.httpRequestHandler)
-    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)

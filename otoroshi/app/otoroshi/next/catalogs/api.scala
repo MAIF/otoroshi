@@ -4,12 +4,12 @@ import org.joda.time.DateTime
 import otoroshi.api.{Resource, WriteAction}
 import otoroshi.env.Env
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json.JsError.toJson
-import play.api.libs.json._
-import play.api.mvc.Results
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.libs.json.JsError.toJson
+import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -124,7 +124,7 @@ object RemoteContentParser {
   }
 
   private def parseArray(arr: JsArray, sourceName: String): Seq[RemoteEntity] = {
-    arr.value.flatMap {
+    arr.value.toList.flatMap {
       case obj: JsObject => RemoteEntity.fromJson(sourceName, obj)
       case _             => None
     }

@@ -39,7 +39,7 @@ import otoroshi.storage.{DataStores, DataStoresBuilder}
 import otoroshi.tcp.{RunningServers, TcpService}
 import otoroshi.utils.JsonValidator
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
-import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.syntax.implicits.{BetterSyntax, given}
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
 import play.api.*
 import play.api.http.{HttpConfiguration, HttpRequestHandler}

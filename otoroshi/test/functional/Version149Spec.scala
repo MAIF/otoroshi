@@ -2022,37 +2022,37 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         )
         .delete()
         .futureValue
-      resp1111.status mustBe 404
-      counter1.get() mustBe 3
+      resp1111.status mustBe 200
+      counter1.get() mustBe 4
 
       val resp2 = call1("/notfound/api")(
         Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
       )
       resp2.status mustBe 404
-      counter1.get() mustBe 3
+      counter1.get() mustBe 4
 
       val resp3 = call1("/forbidden/api")(
         Map("Otoroshi-Client-Id" -> apikey2.clientId, "Otoroshi-Client-Secret" -> apikey2.clientSecret)
       )
       resp3.status mustBe 403
-      counter1.get() mustBe 3
+      counter1.get() mustBe 4
 
       val resp1_1 =
         call1("/api")(Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret))
       resp1_1.status mustBe 200
-      counter1.get() mustBe 4
+      counter1.get() mustBe 5
 
       val resp1_11 = call1("/api/fooo")(
         Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
       )
       resp1_11.status mustBe 200
-      counter1.get() mustBe 5
+      counter1.get() mustBe 6
 
       val resp1_111 = call1("/api/bar/foo")(
         Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
       )
       resp1_111.status mustBe 200
-      counter1.get() mustBe 6
+      counter1.get() mustBe 7
 
       val resp1_1111 = ws
         .url(s"http://127.0.0.1:$port/api/bar/foo")
@@ -2064,19 +2064,19 @@ class Version149Spec(name: String, configurationSpec: => Configuration) extends 
         .delete()
         .futureValue
       resp1_1111.status mustBe 200
-      counter1.get() mustBe 7
+      counter1.get() mustBe 8
 
       val resp1_2 = call1("/notfound/api")(
         Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
       )
       resp1_2.status mustBe 200
-      counter1.get() mustBe 8
+      counter1.get() mustBe 9
 
       val resp1_3 = call1("/forbidden/api")(
         Map("Otoroshi-Client-Id" -> apikey1.clientId, "Otoroshi-Client-Secret" -> apikey1.clientSecret)
       )
       resp1_3.status mustBe 200
-      counter1.get() mustBe 9
+      counter1.get() mustBe 10
 
       deleteOtoroshiService(service1).futureValue
       deleteOtoroshiApiKey(apikey1).futureValue

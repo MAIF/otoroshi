@@ -7,14 +7,15 @@ import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_JsValue
 
-import scala.concurrent.duration.DurationInt
 import java.nio.file.{Files, Path}
+import scala.concurrent.duration.DurationInt
 
 class RemoteCatalogsTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def deployWithAdminApi(): Unit = {
 
@@ -66,7 +67,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "/apis/catalogs.otoroshi.io/v1/remote-catalogs",
       Some(catalogJson)
     ).futureValue
-    createStatus mustBe 201
+    createStatus.mustBe(201)
 
     await(2.seconds)
 
@@ -76,14 +77,14 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "/api/extensions/remote-catalogs/_deploy",
       Some(Json.arr(Json.obj("id" -> catalogId, "args" -> Json.obj())))
     ).futureValue
-    deployStatus mustBe 200
+    deployStatus.mustBe(200)
 
     val deployResults = deployBody.as[Seq[JsObject]]
-    deployResults.nonEmpty mustBe true
+    deployResults.nonEmpty.mustBe(true)
     val totalCreated = deployResults.flatMap(r =>
       (r \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(rr => (rr \ "created").asOpt[Int].getOrElse(0))
     ).sum
-    totalCreated > 0 mustBe true
+    (totalCreated > 0).mustBe(true)
 
     await(2.seconds)
 
@@ -92,16 +93,16 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "GET",
       "/api/routes/test-catalog-route-1"
     ).futureValue
-    routeStatus mustBe 200
-    (routeBody \ "metadata" \ "created_by").asOpt[String] mustBe Some(s"remote_catalog=$catalogId")
+    routeStatus.mustBe(200)
+    (routeBody \ "metadata" \ "created_by").asOpt[String].mustBe(Some(s"remote_catalog=$catalogId"))
 
     // Verify backend exists with metadata
     val (backendBody, backendStatus) = otoroshiApiCall(
       "GET",
       "/api/backends/test-catalog-backend-1"
     ).futureValue
-    backendStatus mustBe 200
-    (backendBody \ "metadata" \ "created_by").asOpt[String] mustBe Some(s"remote_catalog=$catalogId")
+    backendStatus.mustBe(200)
+    (backendBody \ "metadata" \ "created_by").asOpt[String].mustBe(Some(s"remote_catalog=$catalogId"))
 
     // Undeploy
     val (undeployBody, undeployStatus) = otoroshiApiCall(
@@ -109,22 +110,22 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "/api/extensions/remote-catalogs/_undeploy",
       Some(Json.arr(Json.obj("id" -> catalogId)))
     ).futureValue
-    undeployStatus mustBe 200
+    undeployStatus.mustBe(200)
 
     val undeployResults = undeployBody.as[Seq[JsObject]]
     val totalDeleted = undeployResults.flatMap(r =>
       (r \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(rr => (rr \ "deleted").asOpt[Int].getOrElse(0))
     ).sum
-    totalDeleted > 0 mustBe true
+    (totalDeleted > 0).mustBe(true)
 
     await(2.seconds)
 
     // Verify entities are gone
     val (_, routeGoneStatus) = otoroshiApiCall("GET", "/api/routes/test-catalog-route-1").futureValue
-    routeGoneStatus mustBe 404
+    routeGoneStatus.mustBe(404)
 
     val (_, backendGoneStatus) = otoroshiApiCall("GET", "/api/backends/test-catalog-backend-1").futureValue
-    backendGoneStatus mustBe 404
+    backendGoneStatus.mustBe(404)
 
     // Cleanup
     otoroshiApiCall("DELETE", s"/apis/catalogs.otoroshi.io/v1/remote-catalogs/$catalogId").futureValue
@@ -170,7 +171,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "/apis/catalogs.otoroshi.io/v1/remote-catalogs",
       Some(catalogJson)
     ).futureValue
-    createStatus mustBe 201
+    createStatus.mustBe(201)
 
     await(2.seconds)
 
@@ -197,15 +198,15 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders("Host" -> "remote-catalog-trigger.oto.tools")
-      .post(Json.stringify(Json.obj()))
+      .post(Json.obj())
       .futureValue
 
-    resp.status mustBe 200
+    resp.status.mustBe(200)
 
     val respJson = resp.json
     val pluginCreated = (respJson \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
       .map(rr => (rr \ "created").asOpt[Int].getOrElse(0)).sum
-    pluginCreated > 0 mustBe true
+    (pluginCreated > 0).mustBe(true)
 
     await(2.seconds)
 
@@ -214,8 +215,8 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "GET",
       "/api/backends/test-catalog-plugin-backend-1"
     ).futureValue
-    backendStatus mustBe 200
-    (backendBody \ "metadata" \ "created_by").asOpt[String] mustBe Some(s"remote_catalog=$catalogId")
+    backendStatus.mustBe(200)
+    (backendBody \ "metadata" \ "created_by").asOpt[String].mustBe(Some(s"remote_catalog=$catalogId"))
 
     // Cleanup: undeploy, delete route, delete catalog, delete temp files
     otoroshiApiCall(
@@ -271,7 +272,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "/apis/catalogs.otoroshi.io/v1/remote-catalogs",
       Some(catalogJson)
     ).futureValue
-    createStatus mustBe 201
+    createStatus.mustBe(201)
 
     await(2.seconds)
 
@@ -300,15 +301,15 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     val resp = ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders("Host" -> "remote-catalog-trigger.oto.tools")
-      .post(Json.stringify(Json.obj()))
+      .post(Json.obj())
       .futureValue
 
-    resp.status mustBe 200
+    resp.status.mustBe(200)
 
     val respJson = resp.json
     val pluginCreated = (respJson \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
       .map(rr => (rr \ "created").asOpt[Int].getOrElse(0)).sum
-    pluginCreated > 0 mustBe true
+    (pluginCreated > 0).mustBe(true)
 
     await(2.seconds)
 
@@ -317,8 +318,8 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "GET",
       "/api/backends/test-catalog-plugin-backend-1"
     ).futureValue
-    backendStatus mustBe 200
-    (backendBody \ "metadata" \ "created_by").asOpt[String] mustBe Some(s"remote_catalog=$catalogId")
+    backendStatus.mustBe(200)
+    (backendBody \ "metadata" \ "created_by").asOpt[String].mustBe(Some(s"remote_catalog=$catalogId"))
 
     // Cleanup: undeploy, delete route, delete catalog, delete temp files
     otoroshiApiCall(

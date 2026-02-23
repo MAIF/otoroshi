@@ -653,14 +653,7 @@ class OIDCAuthToken extends NgAccessValidator {
             attrs = ctx.attrs
           )
           .map(NgAccess.NgDenied.apply)
-      case Some(authModuleConfig) =>
-        val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
-        OIDCAuthToken.getSession(ctx, oauth2Config, config).flatMap {
-          case Left(err) => NgAccess.NgDenied.apply(err).vfuture
-          case Right(v)  => v.vfuture
-        }
-      }
-      case Some(authModuleConfig) if !config.opaque => {
+      case Some(authModuleConfig) if !config.opaque =>
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
         oauth2Config.jwtVerifier match {
           case None               =>
@@ -673,8 +666,8 @@ class OIDCAuthToken extends NgAccessValidator {
                 None,
                 attrs = ctx.attrs
               )
-              .map(NgAccess.NgDenied)
-          case Some(algoSettings) => {
+              .map(NgAccess.NgDenied.apply)
+          case Some(algoSettings) =>
             val jwtVerifier = LocalJwtVerifier(
               enabled = true,
               source = InHeader(config.headerName, "Bearer "),
@@ -696,6 +689,11 @@ class OIDCAuthToken extends NgAccessValidator {
                 case Right(v)  => v.vfuture
               }
           }
+      case Some(authModuleConfig) =>
+        val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
+        OIDCAuthToken.getSession(ctx, oauth2Config, config).flatMap {
+          case Left(err) => NgAccess.NgDenied.apply(err).vfuture
+          case Right(v)  => v.vfuture
         }
     }
   }

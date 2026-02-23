@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
@@ -60,7 +60,7 @@ class KubernetesGatewayApiControllerJob extends Job {
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, _) =>
-        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
+        (env, KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -76,14 +76,14 @@ class KubernetesGatewayApiControllerJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Success(conf) => conf.gatewayApiSyncIntervalSeconds.seconds.some
       case Failure(_)    => 60.seconds.some
     }
   }
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(_)    => Some(false)
       case Success(conf) => if (conf.gatewayApi) None else Some(false)
     }

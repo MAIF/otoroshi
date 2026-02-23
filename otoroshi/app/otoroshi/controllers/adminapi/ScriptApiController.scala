@@ -46,7 +46,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     if (env.scriptingEnabled) {
       f
     } else {
-      InternalServerError(Json.obj("error" -> "Scripting not enabled !")).future
+      Future.successful(InternalServerError(Json.obj("error" -> "Scripting not enabled !")))
     }
   }
 

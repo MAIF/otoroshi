@@ -224,9 +224,7 @@ class NgJwtUserExtractor extends NgPreRouting {
             ctx.attrs
           ) { jwtInjection =>
             jwtInjection.decodedToken match {
-              case None if config.strict => Results.Unauthorized(Json.obj()).future
-              case None if !config.strict  => Results.Ok(Json.obj()).future
-              case Some(token)            =>
+              case Some(token) =>
                 val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                 val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]
                 val strippedJsonToken                 = JsObject(parsedJsonToken.value.filter {
@@ -260,6 +258,9 @@ class NgJwtUserExtractor extends NgPreRouting {
                 val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
                 ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
                 Results.Ok(Json.obj()).future
+              case None        =>
+                if (config.strict) Results.Unauthorized(Json.obj()).future
+                else Results.Ok(Json.obj()).future
             }
           }
           .recover { case e: Throwable =>

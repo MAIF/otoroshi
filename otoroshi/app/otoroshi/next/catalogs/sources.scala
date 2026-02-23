@@ -1,15 +1,20 @@
 package otoroshi.next.catalogs
 
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.Sink
-import akka.stream.{Attributes, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Source, Sink}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Outlet}
+import org.apache.pekko.stream.connectors.s3.MemoryBufferType
+import org.apache.pekko.stream.connectors.s3.ApiVersion
+import org.apache.pekko.stream.connectors.s3.{S3Attributes, S3Settings}
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.Materializer
 import otoroshi.api.Resource
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.readableAsString
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -18,8 +23,8 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util.concurrent.TimeUnit
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 object SourceUtils {
@@ -43,7 +48,7 @@ object SourceUtils {
       sourceName: String,
       allResources: Seq[Resource]
   )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val paths = deployArray.value.flatMap(_.asOpt[String])
+    val paths = deployArray.value.toList.flatMap(_.asOpt[String])
     paths
       .mapAsync { relativePath =>
         fetchRelativePath(relativePath).map {
@@ -69,7 +74,7 @@ object SourceUtils {
 
 class CatalogSourceFile extends CatalogSource {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   private val logger = Logger("otoroshi-remote-catalog-source-file")
 
@@ -217,13 +222,13 @@ class CatalogSourceHttp extends CatalogSource {
     env.Ws
       .url(url)
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body.take(500)}")): Either[JsValue, String]
+          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body[String].take(500)}")): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -271,12 +276,12 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(githubRawHeaders(token): _*)
+      .withHttpHeaders(githubRawHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -293,14 +298,14 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              val files = arr.value.flatMap { item =>
+              val files = arr.value.toList.flatMap { item =>
                 val itemType = item.select("type").asOpt[String].getOrElse("")
                 val itemName = item.select("name").asOpt[String].getOrElse("")
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
@@ -432,12 +437,12 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -459,14 +464,14 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch, "path" -> dirPath, "per_page" -> "100")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              val files = arr.value.flatMap { item =>
+              val files = arr.value.toList.flatMap { item =>
                 val itemType = item.select("type").asOpt[String].getOrElse("")
                 val itemName = item.select("name").asOpt[String].getOrElse("")
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
@@ -605,16 +610,11 @@ class CatalogSourceS3 extends CatalogSource {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[JsValue, String]] = {
-    S3.download(bucket, key)
+    S3.getObject(bucket, key)
       .withAttributes(s3ClientSettingsAttrs(config))
-      .runWith(Sink.head)
-      .flatMap {
-        case None              =>
-          (Left(Json.obj("error" -> s"S3 object not found: $bucket/$key")): Either[JsValue, String]).vfuture
-        case Some((source, _)) =>
-          source.runFold(ByteString.empty)(_ ++ _).map { bs =>
-            Right(bs.utf8String): Either[JsValue, String]
-          }
+      .runFold(ByteString.empty)(_ ++ _)
+      .map { bs =>
+        Right(bs.utf8String): Either[JsValue, String]
       }
       .recover { case e: Throwable =>
         Left(Json.obj("error" -> s"Error fetching S3 object $bucket/$key: ${e.getMessage}")): Either[JsValue, String]
@@ -687,13 +687,13 @@ class CatalogSourceConsulKv extends CatalogSource {
     val params = Seq("raw" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$key")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for key $key")): Either[JsValue, String]
         }
@@ -710,15 +710,15 @@ class CatalogSourceConsulKv extends CatalogSource {
     val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$cleanPrefix")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              val keys = arr.value.flatMap(_.asOpt[String]).filter { key =>
+              val keys = arr.value.toList.flatMap(_.asOpt[String]).filter { key =>
                 val name = key.split("/").lastOption.getOrElse("")
                 name.nonEmpty && SourceUtils.isEntityFile(name)
               }
@@ -835,12 +835,12 @@ class CatalogSourceBitbucket extends CatalogSource {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace/$repo/src/$branch/$filePath"
     env.Ws
       .url(apiUrl)
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -865,7 +865,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("pagelen" -> "100")
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -970,7 +970,7 @@ class CatalogSourceBitbucket extends CatalogSource {
 
 class CatalogSourceGit extends CatalogSource {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   private val logger = Logger("otoroshi-remote-catalog-source-git")
 
@@ -1029,7 +1029,7 @@ class CatalogSourceGit extends CatalogSource {
         err => { stderr = stderr + err + "\n" }
       )
       val envVars = sshEnv(config)
-      val cmd     = Process(Seq("git") ++ args, cwd, envVars: _*)
+      val cmd     = Process(Seq("git") ++ args, cwd, envVars*)
       val code    = cmd.!(processLogger)
       if (code != 0) {
         Left(s"git ${args.head} failed (exit $code): ${stderr.take(500)}")
@@ -1076,7 +1076,7 @@ class CatalogSourceGit extends CatalogSource {
         SourceUtils.isDeployListing(rawContent) match {
           case Some(arr) =>
             val basePath = target.getParentFile.getAbsolutePath
-            val entities: Seq[RemoteEntity] = arr.value.flatMap(_.asOpt[String]).flatMap { relativePath =>
+            val entities = arr.value.toList.flatMap(_.asOpt[String]).flatMap { relativePath =>
               Try {
                 val relFile    = new File(basePath, relativePath)
                 val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)
