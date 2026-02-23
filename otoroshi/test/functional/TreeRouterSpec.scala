@@ -122,7 +122,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
 
           // Test with a GET endpoint
           router
-            .find("api.oto.tools", "/apis/proxy.otoroshi.io/v1/routes/_count", trailingSlashMeansExactSegments = false)
+            .find("api.oto.tools", "/api/services", true)
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)
@@ -130,7 +130,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
           
           // Test with a parameterized GET endpoint
           router
-            .find("api.oto.tools", "/api/cluster/sessions/123", trailingSlashMeansExactSegments = false)
+            .find("api.oto.tools", "/api/apikeys/123/foo", true)
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)
