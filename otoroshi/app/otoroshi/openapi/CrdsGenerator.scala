@@ -103,7 +103,9 @@ class CrdsGenerator(spec: JsValue = Json.obj()) extends Logging {
     "Backend"           -> Json
       .obj("plural" -> "backends", "singular" -> "backend", "entity" -> "otoroshi.next.models.NgBackend"),
     "WasmPlugin"        -> Json
-      .obj("plural" -> "wasm-plugins", "singular" -> "wasm-plugin", "entity" -> "otoroshi.models.WasmPlugin")
+      .obj("plural" -> "wasm-plugins", "singular" -> "wasm-plugin", "entity" -> "otoroshi.models.WasmPlugin"),
+    "Plugin"            -> Json
+      .obj("plural" -> "plugins", "singular" -> "plugin", "entity" -> "otoroshi.next.models.NgPluginInstance")
   )
 
   def run(folderPath: String = "../kubernetes/helm/otoroshi/crds"): Unit = {

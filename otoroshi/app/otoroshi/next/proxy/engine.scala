@@ -1065,7 +1065,7 @@ class ProxyEngine() extends RequestHandler {
         env.proxyState.findRoute(request, attrs)
       } else {
         env.proxyState
-          .getDomainRoutes(request.theDomain)
+          .getDomainRoutes(request.theDomain, request.path)
           .flatMap(
             _.find(
               _.matches(

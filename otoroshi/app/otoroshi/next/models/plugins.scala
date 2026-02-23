@@ -2,6 +2,7 @@ package otoroshi.next.models
 
 import otoroshi.env.Env
 import otoroshi.netty.NettyRequestKeys
+import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.{OverrideHost, WasmJob}
@@ -376,6 +377,7 @@ case class NgContextualPlugins(
   lazy val (allPlugins, filteredPlugins) = currentListenerPLugin
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .filterNot(_.plugin.endsWith(classOf[WorkflowJob].getName))
+    .filterNot(_.plugin.endsWith(classOf[RemoteCatalogJob].getName))
     .partition(_.matches(request))
 
   lazy val requestSinkPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestSink]] = {

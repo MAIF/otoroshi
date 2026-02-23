@@ -117,8 +117,8 @@ case class OverrideLocationHeaderConfig(matchingHostnames: Seq[String] = Seq.emp
 }
 
 object OverrideLocationHeaderConfig {
-  val default = OverrideLocationHeaderConfig()
-  val format = new Format[OverrideLocationHeaderConfig] {
+  val default                        = OverrideLocationHeaderConfig()
+  val format                         = new Format[OverrideLocationHeaderConfig] {
     override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
       OverrideLocationHeaderConfig(
         matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -127,7 +127,7 @@ object OverrideLocationHeaderConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: OverrideLocationHeaderConfig): JsValue = o.json
+    override def writes(o: OverrideLocationHeaderConfig): JsValue             = o.json
   }
   val configFlow: Seq[String]        = Seq("matching_hostnames")
   val configSchema: Option[JsObject] = Some(
@@ -136,7 +136,7 @@ object OverrideLocationHeaderConfig {
         "type"  -> "array",
         "label" -> "Matching hostnames",
         "props" -> Json.obj(
-          "label"  -> "Matching hostnames",
+          "label" -> "Matching hostnames"
         )
       )
     )
@@ -162,8 +162,8 @@ class OverrideLocationHeader extends NgRequestTransformer {
     "This plugin override the current Location header with the current frontend host if the location start with the Host of the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = Some(OverrideLocationHeaderConfig.default)
   override def noJsForm: Boolean                           = true
-  override def configFlow: Seq[String] = OverrideLocationHeaderConfig.configFlow
-  override def configSchema: Option[JsObject] = OverrideLocationHeaderConfig.configSchema
+  override def configFlow: Seq[String]                     = OverrideLocationHeaderConfig.configFlow
+  override def configSchema: Option[JsObject]              = OverrideLocationHeaderConfig.configSchema
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
@@ -178,8 +178,10 @@ class OverrideLocationHeader extends NgRequestTransformer {
             case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) =>
               ctx.otoroshiResponse.rightf
             case Some(location)                                                                         =>
-              val config = ctx.cachedConfig(internalName)(OverrideLocationHeaderConfig.format).getOrElse(OverrideLocationHeaderConfig.default)
-              val backendHost = TargetExpressionLanguage(
+              val config          = ctx
+                .cachedConfig(internalName)(OverrideLocationHeaderConfig.format)
+                .getOrElse(OverrideLocationHeaderConfig.default)
+              val backendHost     = TargetExpressionLanguage(
                 backend.hostname,
                 Some(ctx.request),
                 ctx.route.serviceDescriptor.some,

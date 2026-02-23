@@ -307,7 +307,7 @@ const pluginsArray = [
   WasmWebsocketTransformer,
   JqWebsocketMessageTransformer,
   ZipFileBackend,
-  GrpcWebProxyPlugin
+  GrpcWebProxyPlugin,
 ];
 
 export function addPluginForm(plugin) {

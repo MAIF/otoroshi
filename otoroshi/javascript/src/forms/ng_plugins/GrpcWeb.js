@@ -20,9 +20,5 @@ export default {
       array: true,
     },
   },
-  config_flow: [
-    'allow_services',
-    'allow_methods',
-    'blocked_methods'
-  ],
+  config_flow: ['allow_services', 'allow_methods', 'blocked_methods'],
 };

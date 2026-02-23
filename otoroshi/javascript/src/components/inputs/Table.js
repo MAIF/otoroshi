@@ -612,13 +612,12 @@ class TableComponent extends Component {
 
   createItemAndStay = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    this.props.createItem(this.state.currentItem)
-      .then(() => {
-        urlTo(
-          `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`
-        );
-        this.setState({ showAddForm: false, showEditForm: true });
-      });
+    this.props.createItem(this.state.currentItem).then(() => {
+      urlTo(
+        `/bo/dashboard/${this.props.selfUrl}/edit/${this.props.extractKey(this.state.currentItem)}`
+      );
+      this.setState({ showAddForm: false, showEditForm: true });
+    });
   };
 
   updateItem = (e) => {

@@ -22,6 +22,14 @@ export default {
       type: 'bool',
       label: 'Generate mirroring event',
     },
+    percentage: {
+      type: 'number',
+      label: 'Percentage of requests impacted',
+    },
+    salt: {
+      type: 'string',
+      label: 'Salt for percentage impact',
+    },
   },
-  config_flow: ['to', 'headers', 'enabled', 'capture_response', 'generate_events'],
+  config_flow: ['enabled', 'capture_response', 'generate_events', 'to', 'headers', 'percentage', 'salt'],
 };

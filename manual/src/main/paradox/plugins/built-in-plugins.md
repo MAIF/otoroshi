@@ -4,6 +4,99 @@ Otoroshi next provides some plugins out of the box. Here is the available plugin
 
 <div id="plugins-container"></div>
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployMany }
+
+## Remote Catalog Deploy Many
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeployMany`
+
+### Description
+
+This plugin deploys entities from multiple remote catalogs
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeploySingle }
+
+## Remote Catalog Deploy Single
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeploySingle`
+
+### Description
+
+This plugin deploys entities from a single remote catalog
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployWebhook }
+
+## Remote Catalog Deploy Webhook
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook`
+
+### Description
+
+This plugin handles webhooks from Git providers to deploy entities from remote catalogs
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieIn }
 
 ## Additional cookies in
@@ -4158,7 +4251,9 @@ This plugin will mirror every request to other targets
   "enabled" : true,
   "capture_response" : false,
   "generate_events" : false,
-  "headers" : { }
+  "headers" : { },
+  "salt" : "none",
+  "percentage" : 100
 }
 ```
 
@@ -4544,6 +4639,44 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCJwtVerifier }
+
+## OIDC JWT verification
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OIDCJwtVerifier`
+
+### Description
+
+This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module
+
+
+
+### Default configuration
+
+```json
+{
+  "ref" : null,
+  "source" : null,
+  "custom_response" : false,
+  "custom_response_status" : 401,
+  "custom_response_headers" : { },
+  "custom_response_body" : "{\"error\":\"unauthorized\"}"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OpenFGAValidator }
 
 ## OpenFGA validator
@@ -4614,7 +4747,10 @@ This plugin provide an endpoint to return Otoroshi Authority Information Access 
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4790,7 +4926,10 @@ This plugin provide an endpoint to return Otoroshi JWKS data
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4856,7 +4995,10 @@ This plugin provide an endpoint to act as the Otoroshi OCSP Responder
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -5939,7 +6081,7 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 
 ### Description
 
-Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)
+Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 
 
 
@@ -5960,6 +6102,11 @@ Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protecti
   "csp" : {
     "mode" : "DISABLED",
     "csp" : ""
+  },
+  "referrer_policy" : "DISABLED",
+  "permissions_policy" : {
+    "enabled" : false,
+    "policy" : ""
   }
 }
 ```
@@ -6294,8 +6441,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2026-01-21T16:08:50.881Z",
-  "stop" : "2026-01-22T16:08:50.901Z",
+  "start" : "2026-02-13T11:00:10.425Z",
+  "stop" : "2026-02-14T11:00:10.446Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"

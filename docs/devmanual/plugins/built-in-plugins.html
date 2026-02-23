@@ -68,6 +68,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -98,10 +104,13 @@ latest
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">How it works</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
     <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -201,6 +210,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -231,10 +246,13 @@ latest
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">How it works</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
     <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -326,7 +344,43 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#built-in-plugins" name="built-in-plugins" class="anchor"><span class="anchor-link"></span></a>Built-in plugins</h1>
 <p>Otoroshi next provides some plugins out of the box. Here is the available plugins with their documentation and reference configuration</p>
-<div id="plugins-container"></div><div id="otoroshi.next.plugins.AdditionalCookieIn" class="ng-plugin plugin-hidden pl">
+<div id="plugins-container"></div><div id="otoroshi.next.catalogs.RemoteCatalogDeployMany" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remote-catalog-deploy-many" name="remote-catalog-deploy-many" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Many</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.catalogs.RemoteCatalogDeployMany</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin deploys entities from multiple remote catalogs</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.catalogs.RemoteCatalogDeploySingle" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remote-catalog-deploy-single" name="remote-catalog-deploy-single" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Single</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.catalogs.RemoteCatalogDeploySingle</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin deploys entities from a single remote catalog</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.catalogs.RemoteCatalogDeployWebhook" class="ng-plugin plugin-hidden pl">
+<h2><a href="#remote-catalog-deploy-webhook" name="remote-catalog-deploy-webhook" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Webhook</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>CallBackend</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin handles webhooks from Git providers to deploy entities from remote catalogs</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{ }
+</code></pre></div><div id="otoroshi.next.plugins.AdditionalCookieIn" class="ng-plugin plugin-hidden pl">
 <h2><a href="#additional-cookies-in" name="additional-cookies-in" class="anchor"><span class="anchor-link"></span></a>Additional cookies in</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
 <ul>
@@ -2347,7 +2401,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;enabled&quot; : true,
   &quot;capture_response&quot; : false,
   &quot;generate_events&quot; : false,
-  &quot;headers&quot; : { }
+  &quot;headers&quot; : { },
+  &quot;salt&quot; : &quot;none&quot;,
+  &quot;percentage&quot; : 100
 }
 </code></pre></div><div id="otoroshi.next.plugins.NgUserAgentExtractor" class="ng-plugin plugin-hidden pl">
 <h2><a href="#user-agent-details-extractor" name="user-agent-details-extractor" class="anchor"><span class="anchor-link"></span></a>User-Agent details extractor</h2>
@@ -2551,6 +2607,25 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;jwt&quot; : true
   }
 }
+</code></pre></div><div id="otoroshi.next.plugins.OIDCJwtVerifier" class="ng-plugin plugin-hidden pl">
+<h2><a href="#oidc-jwt-verification" name="oidc-jwt-verification" class="anchor"><span class="anchor-link"></span></a>OIDC JWT verification</h2>
+<h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
+<ul>
+  <li><code>ValidateAccess</code></li>
+</ul>
+<h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
+<p><code>cp:otoroshi.next.plugins.OIDCJwtVerifier</code></p>
+<h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
+<p>This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module</p>
+<h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;ref&quot; : null,
+  &quot;source&quot; : null,
+  &quot;custom_response&quot; : false,
+  &quot;custom_response_status&quot; : 401,
+  &quot;custom_response_headers&quot; : { },
+  &quot;custom_response_body&quot; : &quot;{\&quot;error\&quot;:\&quot;unauthorized\&quot;}&quot;
+}
 </code></pre></div><div id="otoroshi.next.plugins.OpenFGAValidator" class="ng-plugin plugin-hidden pl">
 <h2><a href="#openfga-validator" name="openfga-validator" class="anchor"><span class="anchor-link"></span></a>OpenFGA validator</h2>
 <h3><a href="#defined-on-steps" name="defined-on-steps" class="anchor"><span class="anchor-link"></span></a>Defined on steps</h3>
@@ -2592,7 +2667,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin provide an endpoint to return Otoroshi Authority Information Access for your certificates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;cert_ids&quot; : [ ]
+  &quot;cert_ids&quot; : [ ],
+  &quot;include_algorithms&quot; : false,
+  &quot;rsa_algorithms&quot; : [ ],
+  &quot;es_algorithms&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OtoroshiChallenge" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-challenge-token" name="otoroshi-challenge-token" class="anchor"><span class="anchor-link"></span></a>Otoroshi challenge token</h2>
@@ -2679,7 +2757,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin provide an endpoint to return Otoroshi JWKS data</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;cert_ids&quot; : [ ]
+  &quot;cert_ids&quot; : [ ],
+  &quot;include_algorithms&quot; : false,
+  &quot;rsa_algorithms&quot; : [ ],
+  &quot;es_algorithms&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OtoroshiMetricsEndpoint" class="ng-plugin plugin-hidden pl">
 <h2><a href="#otoroshi-metrics-endpoint" name="otoroshi-metrics-endpoint" class="anchor"><span class="anchor-link"></span></a>Otoroshi Metrics endpoint</h2>
@@ -2707,7 +2788,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin provide an endpoint to act as the Otoroshi OCSP Responder</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;cert_ids&quot; : [ ]
+  &quot;cert_ids&quot; : [ ],
+  &quot;include_algorithms&quot; : false,
+  &quot;rsa_algorithms&quot; : [ ],
+  &quot;es_algorithms&quot; : [ ]
 }
 </code></pre></div><div id="otoroshi.next.plugins.OverrideHost" class="ng-plugin plugin-hidden pl">
 <h2><a href="#override-host-header" name="override-host-header" class="anchor"><span class="anchor-link"></span></a>Override host header</h2>
@@ -3196,7 +3280,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h3><a href="#plugin-reference" name="plugin-reference" class="anchor"><span class="anchor-link"></span></a>Plugin reference</h3>
 <p><code>cp:otoroshi.next.plugins.SecurityHeadersPlugin</code></p>
 <h3><a href="#description" name="description" class="anchor"><span class="anchor-link"></span></a>Description</h3>
-<p>Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)</p>
+<p>Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;frame_options&quot; : &quot;DISABLED&quot;,
@@ -3212,6 +3296,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;csp&quot; : {
     &quot;mode&quot; : &quot;DISABLED&quot;,
     &quot;csp&quot; : &quot;&quot;
+  },
+  &quot;referrer_policy&quot; : &quot;DISABLED&quot;,
+  &quot;permissions_policy&quot; : {
+    &quot;enabled&quot; : false,
+    &quot;policy&quot; : &quot;&quot;
   }
 }
 </code></pre></div><div id="otoroshi.next.plugins.SendOtoroshiHeadersBack" class="ng-plugin plugin-hidden pl">
@@ -3362,8 +3451,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>This plugin can split a portion of the traffic to canary backends between two dates</p>
 <h3><a href="#default-configuration" name="default-configuration" class="anchor"><span class="anchor-link"></span></a>Default configuration</h3>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;start&quot; : &quot;2026-01-21T16:08:50.881Z&quot;,
-  &quot;stop&quot; : &quot;2026-01-22T16:08:50.901Z&quot;,
+  &quot;start&quot; : &quot;2026-02-13T11:00:10.425Z&quot;,
+  &quot;stop&quot; : &quot;2026-02-14T11:00:10.446Z&quot;,
   &quot;increment_percent&quot; : 1,
   &quot;targets&quot; : [ ],
   &quot;root&quot; : &quot;/&quot;
@@ -4297,6 +4386,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../plugins/built-in-plugins.html#built-in-plugins" class="header">Built-in plugins</a>
   <ul>
+    <li><a href="../plugins/built-in-plugins.html#remote-catalog-deploy-many" class="header">Remote Catalog Deploy Many</a></li>
+    <li><a href="../plugins/built-in-plugins.html#remote-catalog-deploy-single" class="header">Remote Catalog Deploy Single</a></li>
+    <li><a href="../plugins/built-in-plugins.html#remote-catalog-deploy-webhook" class="header">Remote Catalog Deploy Webhook</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-cookies-in" class="header">Additional cookies in</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-cookies-out" class="header">Additional cookies out</a></li>
     <li><a href="../plugins/built-in-plugins.html#additional-headers-in" class="header">Additional headers in</a></li>
@@ -4420,6 +4512,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../plugins/built-in-plugins.html#oidc-access-token-validator" class="header">OIDC access_token validator</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-access-token-authentication" class="header">OIDC access_token authentication</a></li>
     <li><a href="../plugins/built-in-plugins.html#oidc-headers" class="header">OIDC headers</a></li>
+    <li><a href="../plugins/built-in-plugins.html#oidc-jwt-verification" class="header">OIDC JWT verification</a></li>
     <li><a href="../plugins/built-in-plugins.html#openfga-validator" class="header">OpenFGA validator</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-aia-endpoint" class="header">Otoroshi AIA endpoint</a></li>
     <li><a href="../plugins/built-in-plugins.html#otoroshi-challenge-token" class="header">Otoroshi challenge token</a></li>

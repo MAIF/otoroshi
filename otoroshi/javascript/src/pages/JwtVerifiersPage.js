@@ -11,6 +11,7 @@ import { YAMLExportButton } from '../components/exporters/YAMLButton';
 import { JsonExportButton } from '../components/exporters/JSONButton';
 import { SquareButton } from '../components/SquareButton';
 import { ENTITIES, FormSelector } from '../components/FormSelector';
+import InfoCollapse from '../components/InfoCollapse';
 
 export class JwtVerifiersPage extends Component {
   state = {
@@ -88,6 +89,31 @@ export class JwtVerifiersPage extends Component {
             disableSelectMode={true}
           />
         )}
+        <InfoCollapse title="What is a JWT Verifier?">
+          <p>
+            A JWT Verifier is a <strong>reusable configuration</strong> that you can attach to your HTTP Routes and APIs
+            to handle JWT (JSON Web Token) processing on the fly. It supports three operating modes:
+          </p>
+          <ul>
+            <li><strong>Verify</strong> — validate incoming JWT tokens against a signing algorithm and key, ensuring they are authentic and haven't been tampered with.</li>
+            <li><strong>Sign</strong> — generate and sign a new JWT token on outgoing requests, injecting claims for your backend services to consume.</li>
+            <li><strong>Verify and re-sign</strong> — verify an incoming token with one algorithm/key, then re-sign it with a different one before forwarding. For example, you can receive a token signed with HMAC (symmetric) from a client and re-sign it with RSA (asymmetric) for your backend — bridging different trust models seamlessly.</li>
+          </ul>
+          <p>
+            JWT Verifiers support both <strong>symmetric</strong> (HMAC) and <strong>asymmetric</strong> (RSA, EC) algorithms,
+            and can use certificates and key pairs managed in Otoroshi's certificate store for signing and verification.
+          </p>
+          <p>
+            Otoroshi also exposes a <strong><code>/.well-known/jwks.json</code></strong> endpoint,
+            available both on Otoroshi itself and on any HTTP Route,
+            allowing your backend services to automatically retrieve the public keys needed to validate tokens
+            signed by Otoroshi — no manual key distribution required.
+          </p>
+          <p>
+            Since verifiers are defined globally, you can share the same JWT configuration across multiple routes and APIs,
+            ensuring consistent token handling throughout your infrastructure.
+          </p>
+        </InfoCollapse>
         <Table
           parentProps={{
             ...this.props,

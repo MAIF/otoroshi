@@ -2440,9 +2440,9 @@ This job will aggregates Tailscale possible online targets
 @@@
 
 
-@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob }
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob }
 
-## Kubernetes Ingress Controller
+## Kubernetes Gateway API Controller
 
 <img class="plugin-logo plugin-hidden" src=""></img>
 
@@ -2453,7 +2453,9 @@ This job will aggregates Tailscale possible online targets
 
 ### Description
 
-This plugin enables Otoroshi as an Ingress Controller
+This plugin enables Kubernetes Gateway API support.
+It watches GatewayClass, Gateway, HTTPRoute, and GRPCRoute resources
+and translates them into Otoroshi NgRoute entities.
 
 ```json
 {
@@ -2504,6 +2506,14 @@ This plugin enables Otoroshi as an Ingress Controller
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2577,6 +2587,194 @@ This plugin enables Otoroshi as an Ingress Controller
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
+    "templates" : {
+      "service-group" : { },
+      "service-descriptor" : { },
+      "apikeys" : { },
+      "global-config" : { },
+      "jwt-verifier" : { },
+      "tcp-service" : { },
+      "certificate" : { },
+      "auth-module" : { },
+      "script" : { },
+      "data-exporters" : { },
+      "organizations" : { },
+      "teams" : { },
+      "admins" : { },
+      "webhooks" : { }
+    }
+  }
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .plugin .plugin-hidden .plugin-kind-job #otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob }
+
+## Kubernetes Ingress Controller
+
+<img class="plugin-logo plugin-hidden" src=""></img>
+
+### Infos
+
+* plugin type: `job`
+* configuration root: `KubernetesConfig`
+
+### Description
+
+This plugin enables Otoroshi as an Ingress Controller
+
+```json
+{
+  "KubernetesConfig" : {
+    "endpoint" : "https://kube.cluster.dev",
+    "token" : "xxx",
+    "userPassword" : "user:password",
+    "caCert" : "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+    "trust" : false,
+    "namespaces" : [ "*" ],
+    "labels" : { },
+    "namespacesLabels" : { },
+    "ingressClasses" : [ "otoroshi" ],
+    "defaultGroup" : "default",
+    "ingresses" : true,
+    "crds" : true,
+    "crdsOverride" : false,
+    "coreDnsIntegration" : false,
+    "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
+    "kubeLeader" : false,
+    "restartDependantDeployments" : true,
+    "useProxyState" : false,
+    "watch" : true,
+    "syncDaikokuApikeysOnly" : false,
+    "kubeSystemNamespace" : "kube-system",
+    "coreDnsConfigMapName" : "coredns",
+    "coreDnsDeploymentName" : "coredns",
+    "corednsPort" : 53,
+    "otoroshiServiceName" : "otoroshi-service",
+    "otoroshiNamespace" : "otoroshi",
+    "clusterDomain" : "cluster.local",
+    "syncIntervalSeconds" : 60,
+    "coreDnsEnv" : null,
+    "watchTimeoutSeconds" : 60,
+    "watchGracePeriodSeconds" : 5,
+    "mutatingWebhookName" : "otoroshi-admission-webhook-injector",
+    "validatingWebhookName" : "otoroshi-admission-webhook-validation",
+    "meshDomain" : "otoroshi.mesh",
+    "openshiftDnsOperatorIntegration" : false,
+    "openshiftDnsOperatorCoreDnsNamespace" : "otoroshi",
+    "openshiftDnsOperatorCoreDnsName" : "otoroshi-dns",
+    "openshiftDnsOperatorCoreDnsPort" : 5353,
+    "kubeDnsOperatorIntegration" : false,
+    "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
+    "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
+    "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
+    "templates" : {
+      "service-group" : { },
+      "service-descriptor" : { },
+      "apikeys" : { },
+      "global-config" : { },
+      "jwt-verifier" : { },
+      "tcp-service" : { },
+      "certificate" : { },
+      "auth-module" : { },
+      "script" : { },
+      "data-exporters" : { },
+      "organizations" : { },
+      "teams" : { },
+      "admins" : { },
+      "webhooks" : { }
+    }
+  }
+}
+```
+
+
+
+### Default configuration
+
+```json
+{
+  "KubernetesConfig" : {
+    "endpoint" : "https://kube.cluster.dev",
+    "token" : "xxx",
+    "userPassword" : "user:password",
+    "caCert" : "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+    "trust" : false,
+    "namespaces" : [ "*" ],
+    "labels" : { },
+    "namespacesLabels" : { },
+    "ingressClasses" : [ "otoroshi" ],
+    "defaultGroup" : "default",
+    "ingresses" : true,
+    "crds" : true,
+    "crdsOverride" : false,
+    "coreDnsIntegration" : false,
+    "coreDnsIntegrationDryRun" : false,
+    "coreDnsAzure" : false,
+    "kubeLeader" : false,
+    "restartDependantDeployments" : true,
+    "useProxyState" : false,
+    "watch" : true,
+    "syncDaikokuApikeysOnly" : false,
+    "kubeSystemNamespace" : "kube-system",
+    "coreDnsConfigMapName" : "coredns",
+    "coreDnsDeploymentName" : "coredns",
+    "corednsPort" : 53,
+    "otoroshiServiceName" : "otoroshi-service",
+    "otoroshiNamespace" : "otoroshi",
+    "clusterDomain" : "cluster.local",
+    "syncIntervalSeconds" : 60,
+    "coreDnsEnv" : null,
+    "watchTimeoutSeconds" : 60,
+    "watchGracePeriodSeconds" : 5,
+    "mutatingWebhookName" : "otoroshi-admission-webhook-injector",
+    "validatingWebhookName" : "otoroshi-admission-webhook-validation",
+    "meshDomain" : "otoroshi.mesh",
+    "openshiftDnsOperatorIntegration" : false,
+    "openshiftDnsOperatorCoreDnsNamespace" : "otoroshi",
+    "openshiftDnsOperatorCoreDnsName" : "otoroshi-dns",
+    "openshiftDnsOperatorCoreDnsPort" : 5353,
+    "kubeDnsOperatorIntegration" : false,
+    "kubeDnsOperatorCoreDnsNamespace" : "otoroshi",
+    "kubeDnsOperatorCoreDnsName" : "otoroshi-dns",
+    "kubeDnsOperatorCoreDnsPort" : 5353,
+    "connectionTimeout" : 5000,
+    "idleTimeout" : 30000,
+    "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2668,6 +2866,14 @@ This plugin enables Otoroshi CRDs Controller
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2741,6 +2947,14 @@ This plugin enables Otoroshi CRDs Controller
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2832,6 +3046,14 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2905,6 +3127,14 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -2996,6 +3226,14 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },
@@ -3069,6 +3307,14 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
     "connectionTimeout" : 5000,
     "idleTimeout" : 30000,
     "callAndStreamTimeout" : 30000,
+    "gatewayApi" : false,
+    "gatewayApiWatch" : true,
+    "gatewayApiControllerName" : "otoroshi.io/gateway-controller",
+    "gatewayApiHttpListenerPort" : [ 80, 8080 ],
+    "gatewayApiHttpsListenerPort" : [ 443, 8443 ],
+    "gatewayApiSyncIntervalSeconds" : 60,
+    "gatewayApiAddresses" : [ ],
+    "gatewayApiGatewayServiceName" : "",
     "templates" : {
       "service-group" : { },
       "service-descriptor" : { },

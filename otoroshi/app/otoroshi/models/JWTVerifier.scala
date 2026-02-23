@@ -535,17 +535,25 @@ case class JWKSAlgoSettings(
                 case Some(values) =>
                   val keys = values.value.flatMap { k =>
                     val jwk = JWK.parse(Json.stringify(k))
-                    Seq(
-                      (s"${jwk.getAlgorithm.getName}${jwk.getKeyID}", jwk),
-                      (jwk.getKeyID, jwk)
-                    )
+                    if (jwk.getAlgorithm != null) {
+                      Seq(
+                        (s"${jwk.getAlgorithm.getName}${jwk.getKeyID}", jwk),
+                        (jwk.getKeyID, jwk)
+                      )
+                    } else {
+                      Seq(
+                        (jwk.getKeyID, jwk)
+                      )
+                    }
                   }.toMap
                   //println(s"keys: ${keys.mkString(",")}")
                   JWKSAlgoSettings.cache.put(url, (stop, keys, false))
+                  //println(s"exists kid: ${keys.contains(kid)}")
+                  //println(s"exist alg+kid: ${keys.contains(alg+kid)}")
                   keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
                     case Some(jwk) =>
                       logger.info(
-                        s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                        s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${Option(jwk.getAlgorithm).map(_.getName).getOrElse("--")}"
                       )
                       algoFromJwk(alg, jwk)
                     case None =>
@@ -585,7 +593,7 @@ case class JWKSAlgoSettings(
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
                 logger.info(
-                  s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                  s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${Option(jwk.getAlgorithm).map(_.getName).getOrElse("--")}"
                 )
                 FastFuture.successful(algoFromJwk(alg, jwk))
               case _      =>
@@ -598,7 +606,7 @@ case class JWKSAlgoSettings(
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
                 logger.info(
-                  s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                  s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${Option(jwk.getAlgorithm).map(_.getName).getOrElse("--")}"
                 )
                 FastFuture.successful(algoFromJwk(alg, jwk))
               case None      =>

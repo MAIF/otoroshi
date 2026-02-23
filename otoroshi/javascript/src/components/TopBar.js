@@ -650,8 +650,8 @@ export class TopBar extends Component {
         options.push({
           action: () => this.routeTo('/routes'),
           env: <span className="fas fa-road" />,
-          label: 'Routes',
-          value: 'All Routes',
+          label: 'HTTP Routes',
+          value: 'All HTTP Routes',
         });
         options.push({
           action: () => this.routeTo('/apis'),
@@ -1266,7 +1266,7 @@ export class TopBar extends Component {
             <span className="fas fa-cubes" /> Service descriptors
           </Link>
           <Link to="/routes" className="dropdown-item">
-            <span className="fas fa-road" /> Routes
+            <span className="fas fa-road" /> HTTP Routes
           </Link>
           <Link to="/backends" className="dropdown-item">
             <span className="fas fa-microchip" /> Backends

@@ -3,7 +3,14 @@ package plugins
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.{AdditionalHeadersIn, EchoBackend, IzanamiV2Proxy, IzanamiV2ProxyConfig, NgHeaderValuesConfig, OverrideHost}
+import otoroshi.next.plugins.{
+  AdditionalHeadersIn,
+  EchoBackend,
+  IzanamiV2Proxy,
+  IzanamiV2ProxyConfig,
+  NgHeaderValuesConfig,
+  OverrideHost
+}
 import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
@@ -34,7 +41,7 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[IzanamiV2Proxy],
           config = NgPluginInstanceConfig(
-           config.json.as[JsObject]
+            config.json.as[JsObject]
           )
         )
       )
@@ -68,7 +75,6 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
     (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
     (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
 
-
     val inputBody = Json.obj("hello" -> "world")
     resp = ws
       .url(s"http://127.0.0.1:$port/features?features=bar")
@@ -86,7 +92,6 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
     (responseBody \ "headers" \ "Izanami-Client-Id").as[String] mustEqual "client-id"
     (responseBody \ "headers" \ "Izanami-Client-Secret").as[String] mustEqual "client-secret"
     Json.parse(base64Decode((responseBody \ "body").as[String])) mustEqual inputBody
-
 
     teardown(Seq(route, targetRoute))
   }
@@ -137,7 +142,6 @@ class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
 
     teardown(Seq(route, targetRoute))
   }
-
 
   def teardown(routes: Seq[NgRoute]) = {
     Future.sequence(routes.map(deleteOtoroshiRoute(_))).futureValue

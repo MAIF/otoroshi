@@ -30,5 +30,7 @@ otoroshi/javascript/stats.json
 /otoroshi/hs_err_*.log
 .scala-build
 *.iml
-
+CLAUDE.md
+_doc-research
+gateway-api-conformance-suite
 logs/

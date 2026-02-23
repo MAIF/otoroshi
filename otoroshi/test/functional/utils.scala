@@ -1722,7 +1722,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None,
       customOtoroshiPort: Option[Int] = None,
       id: String = IdGenerator.uuid,
-      backendHostname: Option[String] = None,
+      backendHostname: Option[String] = None
   ): Future[NgRoute] = {
 
     var _target: Option[TargetService] = None

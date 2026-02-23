@@ -715,7 +715,7 @@ class GatewayRequestHandler(
   def jwks(): Action[AnyContent] =
     actionBuilder.async { req =>
       env.adminExtensions.publicKeys().flatMap { extensionsPublicKeys =>
-        JWKSHelper.jwks(req, Seq.empty).map {
+        JWKSHelper.jwks(req, Seq.empty, true, env.confJwksIncludeAlgorithms, env.confJwksRsaAlgorithms, env.confJwksEsAlgorithms).map {
           case Left(body) if extensionsPublicKeys.isEmpty => Results.NotFound(body)
           case Left(_)                                    =>
             Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))

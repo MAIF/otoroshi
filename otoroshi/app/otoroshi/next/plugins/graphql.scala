@@ -866,7 +866,7 @@ class GraphQLBackend extends NgBackendCall {
                   )
                 })
               )
-              .find("oto.tools", url)
+              .find("oto.tools", url, env.trailingSlashMeansExactSegments)
               .filter(_.noMoreSegments)
               .flatMap { c =>
                 if (c.routes.headOption.nonEmpty)

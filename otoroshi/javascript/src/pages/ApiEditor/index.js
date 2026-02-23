@@ -21,6 +21,7 @@ import { NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginp
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
+import InfoCollapse from '../../components/InfoCollapse';
 import moment from 'moment';
 import semver from 'semver';
 
@@ -358,8 +359,8 @@ function SubscriptionDesigner(props) {
   const { item } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const rawSubscription = useQuery(
     ['getSubscription', params.subscriptionId],
@@ -485,8 +486,8 @@ function NewSubscription(props) {
   const { item, version } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useQuery(
     ['getTemplate'],
@@ -600,8 +601,8 @@ function RouteDesigner(props) {
   );
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && backendsQuery.data !== undefined) {
@@ -761,7 +762,7 @@ const ROUTE_FORM_SETTINGS = {
       collapsable: true,
       collapsed: false,
       name: '2. Add your domains',
-      fields: ['frontend']
+      fields: ['frontend'],
     },
     {
       type: 'group',
@@ -812,8 +813,8 @@ function NewRoute(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && !backendsQuery.isLoading && !schema) {
@@ -1189,8 +1190,8 @@ function NewConsumer(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const savePlan = () => {
     return updateItem({
@@ -1239,8 +1240,8 @@ function ConsumerDesigner(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && !consumer) {
@@ -1329,7 +1330,7 @@ function Routes(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'Routes',
+      value: 'HTTP Routes',
       noThumbtack: true,
       children: <VersionBadge />,
     });
@@ -1498,8 +1499,8 @@ function NewBackend(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const saveBackend = () => {
     return updateItem({
@@ -1608,7 +1609,7 @@ function EditBackend(props) {
   const [backend, setBackend] = useState();
 
   useEffect(() => {
-    props.setTitle(undefined)
+    props.setTitle(undefined);
     if (item && !backend) {
       setBackend(item.backends.find((item) => item.id === params.backendId));
     }
@@ -2642,11 +2643,6 @@ function Apis(props) {
     props.setTitle({
       value: 'APIs',
       noThumbtack: true,
-      children: (
-        <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
-          <span className="badge bg-xs bg-warning">ALPHA</span>
-        </div>
-      ),
     });
   }, []);
 
@@ -2686,6 +2682,30 @@ function Apis(props) {
 
   return (
     <>
+      <InfoCollapse title="What is an API?">
+        <p>
+          An API is one of the <strong>core entities</strong> of Otoroshi's API Management, alongside HTTP Routes.
+          While a HTTP route handles a single routing rule, an API lets you <strong>aggregate multiple routes together</strong> and
+          manage them as a unified whole — same security policies, same plugins, same dashboard.
+        </p>
+        <p>
+          Think of it as a higher-level abstraction that brings structure and governance to your routes.
+          Here is what you can do with APIs:
+        </p>
+        <ul>
+          <li><strong>Group routes under one umbrella</strong> — combine multiple routes (e.g. <code>/users</code>, <code>/products</code>, <code>/orders</code>) into a single API with shared configuration.</li>
+          <li><strong>Apply consistent security</strong> — enforce the same authentication, rate limiting, and access control policies across all routes of the API.</li>
+          <li><strong>Share plugins and patterns</strong> — define plugin chains once at the API level and have them apply to every route, avoiding duplication.</li>
+          <li><strong>Unified dashboard</strong> — monitor traffic, errors, and performance for all routes of the API from a single view.</li>
+          <li><strong>Version and deploy</strong> — manage the lifecycle of your API with versioned deployments, making it easy to evolve your API over time.</li>
+          <li><strong>Draft and production modes</strong> — work on a draft version of your API, test it, and promote it to production when ready — without impacting live traffic.</li>
+          <li><strong>Manage consumers and subscriptions</strong> — control who can access your API, issue API keys, and track consumer usage.</li>
+        </ul>
+        <p>
+          APIs give you the power to operate at scale — instead of managing dozens of individual routes,
+          you manage a single API entity with full control over its lifecycle, security, and observability.
+        </p>
+      </InfoCollapse>
       <Table
         parentProps={{ params }}
         navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
@@ -2802,7 +2822,7 @@ function FlowDesigner(props) {
       <Designer
         history={history}
         value={flow}
-        setValue={(value) => setFlow({ ...value || {} })}
+        setValue={(value) => setFlow({ ...(value || {}) })}
         setSaveButton={() => { }}
       />
     </div>
@@ -3324,8 +3344,8 @@ function Dashboard(props) {
   const location = useLocation();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const { item, draft, draftWrapper, version, api } = useDraftOfAPI();
 
@@ -3337,7 +3357,10 @@ function Dashboard(props) {
   const hasTestingEnabled = item && item.testing.enabled;
 
   const isStaging = item && item.state === API_STATE.STAGING;
-  const showGettingStarted = item && item.state !== API_STATE.DEPRECATED && (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
+  const showGettingStarted =
+    item &&
+    item.state !== API_STATE.DEPRECATED &&
+    (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
 
   const getStep = () => {
     return (
@@ -3417,7 +3440,7 @@ function Dashboard(props) {
               />
             )}
 
-            {currentStep >= 3 && (item?.state !== API_STATE.PUBLISHED) && (
+            {currentStep >= 3 && item?.state !== API_STATE.PUBLISHED && (
               <ObjectiveCard
                 onClick={() => publishAPI(draft, item, history)}
                 title="Deploy your API"

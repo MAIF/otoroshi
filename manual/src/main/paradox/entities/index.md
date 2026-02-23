@@ -139,6 +139,60 @@ Any entity has the following properties
 @ref:[View](./service-descriptors.md)
 @@@
 
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>Remote Catalogs</span>
+<span>Sync entities from remote sources</span>
+</div>
+@ref:[View](./remote-catalogs.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>HTTP Listeners</span>
+<span>Serve traffic on custom ports</span>
+</div>
+@ref:[View](./http-listeners.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>Workflows</span>
+<span>Build automation pipelines</span>
+</div>
+@ref:[View](./workflows.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-plugins.png">
+<div>
+<span>WASM Plugins</span>
+<span>Reusable WebAssembly plugin configurations</span>
+</div>
+@ref:[View](./wasm-plugins.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-services.png">
+<div>
+<span>Error Templates</span>
+<span>Customize error pages for your services</span>
+</div>
+@ref:[View](./error-templates.md)
+@@@
+
+@@@div { .entities }
+<img src="../imgs/entities-security.png">
+<div>
+<span>Otoroshi Admins</span>
+<span>Manage backoffice admin users</span>
+</div>
+@ref:[View](./otoroshi-admins.md)
+@@@
+
 @@@ index
 
 * [Routes](./routes.md)
@@ -155,5 +209,11 @@ Any entity has the following properties
 * [Data exporters](./data-exporters.md)
 * [TCP services](./tcp-services.md)
 * [Service descriptors](./service-descriptors.md)
+* [Remote Catalogs](./remote-catalogs.md)
+* [HTTP Listeners](./http-listeners.md)
+* [Workflows](./workflows.md)
+* [WASM Plugins](./wasm-plugins.md)
+* [Error Templates](./error-templates.md)
+* [Otoroshi Admins](./otoroshi-admins.md)
 
 @@@
