@@ -1756,8 +1756,8 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                   .map(ee => (e.select("patch").asValue, ee))
               }
               .map {
-                case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
-                case (_, Some(e)) => Right(("--", e))
+                case (e, None)            => Left((Json.obj("error" -> "entity not found"), e))
+                case (patchBody, Some(e)) => Right((patchBody, e))
               }
               .filter {
                 case Left(_)            => true
@@ -1771,7 +1771,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(impli
                     .byteString
                     .future
                 case Right((patchBody, entity)) => {
-                  val patchedEntity = patchJson(Json.parse(patchBody), entity)
+                  val patchedEntity = patchJson(patchBody, entity)
                   resource.access.validateToJson(patchedEntity, resource.singularName, ctx.backOfficeUser) match {
                     case JsError(errs)   =>
                       Json

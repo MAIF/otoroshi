@@ -95,7 +95,7 @@ const LINKS = (id) =>
     {
       to: `/apis/${id}/documentation`,
       icon: 'fa-file',
-      title: 'Developer portal',
+      title: 'Documentation',
       tab: 'dev portal',
       tooltip: { ...createTooltip(`Show dev portal tab`) },
     },

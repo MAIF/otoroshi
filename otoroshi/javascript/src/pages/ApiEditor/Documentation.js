@@ -454,7 +454,7 @@ export function Documentation(props) {
   if (!item) return <SimpleLoader />;
   return (
     <>
-      <PageTitle title="Developer portal" {...props}>
+      <PageTitle title="Documentation" {...props}>
         <div className="btn-group" style={{ marginRight: 10 }}>
           <PillButton
             className="mx-auto"

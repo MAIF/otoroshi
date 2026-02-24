@@ -3402,12 +3402,11 @@ function APIGateway(props) {
     },
     merge: {
       renderer: props => {
+        const isDefined = !!props.rootValue?.domain
         return <Row title="Complete API URL">
-          <NgStringRenderer
-            value={`${props.rootValue?.domain}${props.rootValue?.contextPath}`}
-            label={' '}
-            ngOptions={{ spread: true, readOnly: true }}
-            onChange={() => { }} />
+          <p>
+            {isDefined ? `http://${props.rootValue?.domain ?? ""}${props.rootValue?.contextPath ?? ""}` : 'API URL will be displayed when the domain is provided.'}
+          </p>
           <p className='m-0' style={{
             fontStyle: 'italic'
           }}>This URL is used to expose your API endpoints</p>
