@@ -2497,6 +2497,8 @@ function NewAPI(props) {
         contextPath: '/v1',
         step: 0,
         api: undefined,
+        backendHostname: 'petstore3.swagger.io',
+        backendPath: '/api/v3/'
       });
     }
   }, [choice]);
@@ -2942,23 +2944,23 @@ function PluginChains(props) {
       content: (item) => item.name,
     },
     {
-      title: 'Designer',
+      title: 'Information',
       style: {
         textAlign: 'center',
-        width: 90,
+        width: 120,
       },
       notFilterable: true,
       cell: (_, item) => {
-        if (item.name === 'default_plugin_chain') return null;
+        // if (item.name === 'default_plugin_chain') return null;
 
         return (
           <Button
             className="btn-sm"
             onClick={() => {
-              historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/designer`);
+              historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/edit`);
             }}
           >
-            <i className="fas fa-pencil-ruler" />
+            <i className="fas fa-cog" />
           </Button>
         );
       },
@@ -2995,10 +2997,10 @@ function PluginChains(props) {
     <Table
       parentProps={{ params }}
       navigateTo={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/edit`)
+        historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/designer`)
       }
       navigateOnEdit={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/edit`)
+        historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/designer`)
       }
       selfUrl={`/apis/${params.apiId}/plugin-chains`}
       defaultTitle="Flow"
@@ -4365,9 +4367,9 @@ function RouteItem({ item, api, ports }) {
       let command = value;
 
       if (version === 'Draft' || version === 'staging') {
-        command = `${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`;
+        command = `curl ${method ? `-X ${method}` : ''} ${value} -H '${api.testing?.headerKey}: ${api.testing?.headerValue}'`;
       } else {
-        command = `${method ? `-X ${method}` : ''} ${value}`;
+        command = `curl ${method ? `-X ${method}` : ''} ${value}`;
       }
 
       if (window.isSecureContext && navigator.clipboard) {

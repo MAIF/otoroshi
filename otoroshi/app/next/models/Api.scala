@@ -6,7 +6,17 @@ import next.models.ApiConsumerKind.Keyless
 import org.joda.time.DateTime
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
-import otoroshi.models.{EntityLocation, EntityLocationSupport, RoundRobin, ServiceDescriptor}
+import otoroshi.models.{
+  ApiKeyRotation,
+  EntityIdentifier,
+  EntityLocation,
+  EntityLocationSupport,
+  RemainingQuotas,
+  Restrictions,
+  RoundRobin,
+  ServiceDescriptor,
+  ServiceGroupIdentifier
+}
 import otoroshi.next.models._
 import otoroshi.next.plugins._
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
@@ -309,15 +319,143 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
 }
 
+trait ApiDocumentationAccessModeConfiguration
+
+case class ApikeyAccessModeConfiguration(
+    clientIdPattern: Option[String] = None,
+    clientSecretPattern: Option[String] = None,
+    clientNamePattern: Option[String] = None,
+    description: Option[String] = None,
+    authorizedEntities: Seq[EntityIdentifier] = Seq.empty,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    allowClientIdOnly: Boolean = false,
+    throttlingQuota: Long = RemainingQuotas.MaxValue,
+    dailyQuota: Long = RemainingQuotas.MaxValue,
+    monthlyQuota: Long = RemainingQuotas.MaxValue,
+    constrainedServicesOnly: Boolean = false,
+    restrictions: Restrictions = Restrictions(),
+    validUntil: Option[DateTime] = None,
+    rotation: ApiKeyRotation = ApiKeyRotation(),
+    tags: Seq[String] = Seq.empty[String],
+    metadata: Map[String, String] = Map.empty[String, String]
+) extends ApiDocumentationAccessModeConfiguration
+
+object ApikeyAccessModeConfiguration {
+  def fmt: Format[ApikeyAccessModeConfiguration] =
+    new Format[ApikeyAccessModeConfiguration] {
+      override def reads(json: JsValue): JsResult[ApikeyAccessModeConfiguration] = Try {
+        ApikeyAccessModeConfiguration(
+          clientIdPattern = json.selectAsOptString("client_id_pattern"),
+          clientSecretPattern = json.selectAsOptString("client_secret_pattern"),
+          clientNamePattern = json.selectAsOptString("client_name_pattern"),
+          description = (json \ "description").asOpt[String],
+          authorizedEntities = {
+            val authorizations: Seq[EntityIdentifier]     = json
+              .select("authorizations")
+              .asOpt[Seq[JsValue]]
+              .map { values =>
+                values
+                  .collect {
+                    case JsString(value)     => EntityIdentifier.apply(value)
+                    case value @ JsObject(_) => EntityIdentifier.applyModern(value)
+                  }
+                  .collect { case Some(id) =>
+                    id
+                  }
+              }
+              .getOrElse(Seq.empty[EntityIdentifier])
+            val authorizedGroup: Seq[EntityIdentifier]    =
+              (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
+            val authorizedEntities: Seq[EntityIdentifier] =
+              (json \ "authorizedEntities")
+                .asOpt[Seq[String]]
+                .map { identifiers =>
+                  identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
+                    id
+                  }
+                }
+                .getOrElse(Seq.empty[EntityIdentifier])
+            (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
+          },
+          enabled = json.selectAsOptBoolean("enabled").getOrElse(true),
+          readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
+          allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
+          throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+          constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
+          restrictions = Restrictions.format
+            .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(Restrictions()),
+          rotation = ApiKeyRotation.fmt
+            .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(ApiKeyRotation()),
+          validUntil = (json \ "validUntil").asOpt[Long].map(l => new DateTime(l)),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          metadata = (json \ "metadata")
+            .asOpt[Map[String, String]]
+            .map(m => m.filter(_._1.nonEmpty))
+            .getOrElse(Map.empty[String, String])
+        )
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(ur) => JsSuccess(ur)
+      }
+
+      override def writes(apk: ApikeyAccessModeConfiguration): JsValue = {
+        val enabled            = apk.validUntil match {
+          case Some(date) if date.isBeforeNow => false
+          case _                              => apk.enabled
+        }
+        val authGroup: JsValue = apk.authorizedEntities
+          .find {
+            case ServiceGroupIdentifier(_) => true
+            case _                         => false
+          }
+          .map(_.id)
+          .map(JsString.apply)
+          .getOrElse(JsNull) // simulate old behavior
+        Json.obj(
+          "clientIdPattern"         -> apk.clientIdPattern,
+          "clientSecretPattern"     -> apk.clientSecretPattern,
+          "clientNamePattern"       -> apk.clientNamePattern,
+          "description"             -> apk.description,
+          "authorizedGroup"         -> authGroup,
+          "authorizedEntities"      -> JsArray(apk.authorizedEntities.map(_.json)),
+          "authorizations"          -> JsArray(apk.authorizedEntities.map(_.modernJson)),
+          "enabled"                 -> enabled, //apk.enabled,
+          "readOnly"                -> apk.readOnly,
+          "allowClientIdOnly"       -> apk.allowClientIdOnly,
+          "throttlingQuota"         -> apk.throttlingQuota,
+          "dailyQuota"              -> apk.dailyQuota,
+          "monthlyQuota"            -> apk.monthlyQuota,
+          "constrainedServicesOnly" -> apk.constrainedServicesOnly,
+          "restrictions"            -> apk.restrictions.json,
+          "rotation"                -> apk.rotation.json,
+          "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
+          "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
+          "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+        )
+      }
+    }
+}
+
 case class ApiDocumentationPlan(raw: JsObject) {
-  lazy val id: String                    = raw.select("id").asString
-  lazy val name: String                  = raw.select("name").asString
-  lazy val description: String           = raw.select("description").asOptString.getOrElse("No description")
-  lazy val throttlingQuota: Long         = raw.select("throttling_quota").asOptLong.getOrElse(1000L)
-  lazy val dailyQuota: Long              = raw.select("daily_quota").asOptLong.getOrElse(10000L)
-  lazy val monthlyQuota: Long            = raw.select("monthly_quota").asOptLong.getOrElse(100000L)
-  lazy val consumerId: Option[String]    = raw.select("consumer_id").asOptString
-  lazy val status: ApiPlanStatus         = raw.select("status").asOptString.getOrElse("published").toLowerCase match {
+  lazy val accessModeConfigurationType                                              = raw.selectAsOptString("access_mode_configuration_type")
+  lazy val id: String                                                               = raw.selectAsString("id")
+  lazy val name: String                                                             = raw.selectAsString("name")
+  lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
+  lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
+    accessModeConfigurationType match {
+      case Some("apikey") => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
+      case Some("other")  => (raw \ "access_mode_configuration").asOpt(OtherAccessModeConfiguration.fmt)
+      case _              => None
+    }
+
+  lazy val accessModeId: Option[String]  =
+    raw.selectAsOptString("access_mode_id").orElse(raw.select("consumer_id").asOptString)
+  lazy val status: ApiPlanStatus         = raw.selectAsOptString("status").getOrElse("published").toLowerCase match {
     case "staging"    => ApiPlanStatus.Staging
     case "published"  => ApiPlanStatus.Published
     case "deprecated" => ApiPlanStatus.Deprecated
@@ -1056,13 +1194,12 @@ object Api {
         val serverUrl = server.selectAsOptString("url").getOrElse("/")
         val serverUri = Uri(serverUrl)
 
-        val serverDomain = serverUri.authority.host.toString()
-        val tls          = if (openapi.startsWith("https")) { true }
+        val tls  = if (openapi.startsWith("https")) { true }
         else { serverUri.scheme.toLowerCase().contains("https") }
-        val port         = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
+        val port = if (serverUri.authority.port == 0) (if (tls) 443 else 80) else serverUri.authority.port
         NgTarget(
           id = serverUrl,
-          hostname = if (serverDomain.isEmpty) serverUrl else serverDomain,
+          hostname = backendHostname,
           port = port,
           tls = tls
         )
@@ -1074,7 +1211,7 @@ object Api {
         name = s"${name}_backend",
         backend = NgBackend.empty.copy(
           targets = targets,
-          root = "/",
+          root = backendPath,
           rewrite = false,
           loadBalancing = RoundRobin
         ),
