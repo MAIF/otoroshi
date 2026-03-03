@@ -8,6 +8,9 @@ import { Form } from '../../components/inputs/Form';
 import { DraftOnly, useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
 import { NgForm } from '../../components/nginputs';
+import { ApiKeysConstants } from '../ServiceApiKeysPage';
+import { Button } from '../../components/Button';
+import { Row } from '../../components/Row';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -68,6 +71,7 @@ export function ApiDocumentationPlans(props) {
   const { item, updateItem } = useDraftOfAPI()
 
   const [documentation, setDocumentation] = useState()
+  const [accessMode, setAccessMode] = useState()
 
   useEffect(() => {
     props.setTitle(undefined)
@@ -90,10 +94,8 @@ export function ApiDocumentationPlans(props) {
         'description',
         'status',
         'statusDescription',
-        'throttling_quota',
-        'daily_quota',
-        'monthly_quota',
-        'consumer_id',
+        'access_mode_configuration_type',
+        'access_mode_configuration',
         'tags',
         'metadata',
       ],
@@ -110,22 +112,7 @@ export function ApiDocumentationPlans(props) {
           type: 'string',
           label: 'Description'
         },
-        throttling_quota: {
-          type: 'number',
-          label: 'Throttling Quota',
-          props: { suffix: 'per window' },
-        },
-        daily_quota: {
-          type: 'number',
-          label: 'Daily Quota',
-          props: { suffix: 'calls/day' },
-        },
-        monthly_quota: {
-          type: 'number',
-          label: 'Monthly Quota',
-          props: { suffix: 'calls/month' },
-        },
-        consumer_id: {
+        access_mode_configuration_type: {
           type: 'select',
           label: 'Access mode',
           props: {
@@ -136,6 +123,7 @@ export function ApiDocumentationPlans(props) {
           type: 'dots',
           label: 'Status',
           props: {
+            defaultValue: 'staging',
             options: ['staging', 'published', 'deprecated', 'closed'],
           },
         },
@@ -161,6 +149,22 @@ export function ApiDocumentationPlans(props) {
               </div>
             );
           },
+        },
+        access_mode_configuration: {
+          renderer: ({ rootValue, onChange, value }) => {
+            const accessMode = item.consumers.find(consumer => consumer.id === rootValue.access_mode_configuration_type)
+
+            if (!accessMode)
+              return null
+
+            return <Row title="Access mode configuration">
+              <Button type='primaryColor' onClick={() => {
+                setAccessMode({ access_mode_configuration_type: rootValue.access_mode_configuration_type, ...value || {} })
+              }}>
+                Editer {accessMode.name}
+              </Button>
+            </Row>
+          }
         },
         tags: {
           type: 'array',
@@ -192,6 +196,13 @@ export function ApiDocumentationPlans(props) {
         />
       </DraftOnly>
     </PageTitle>
+
+    {accessMode && <AccessModeConfiguration
+      value={accessMode}
+      item={item}
+      hide={() => setAccessMode(undefined)}
+      props={props} />}
+
     <NgForm
       flow={['plans']}
       schema={schema}
@@ -199,6 +210,52 @@ export function ApiDocumentationPlans(props) {
       onChange={setDocumentation}
     />
   </>
+}
+
+function AccessModeConfiguration({ value, item, hide, props }) {
+
+  const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value)
+
+  const accessMode = item.consumers.find(consumer => consumer.id === value.access_mode_configuration_type)
+
+  //   case 'mtls':
+  //   case 'keyless':
+  //     return null
+  //   case 'oauth2':
+  //   case 'jwt':
+  //   default:
+  //     return <div></div>
+
+  return <div className="wizard">
+    <div className="wizard-container">
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '2.5rem',
+        }}
+      >
+        <label style={{ fontSize: '1.15rem' }}>
+          <i
+            className="fas fa-times me-3"
+            onClick={hide}
+            style={{ cursor: 'pointer' }}
+          />
+          <span>Edit {accessMode?.name}</span>
+        </label>
+
+        {accessMode?.consumer_kind === 'apikey' &&
+          <Form
+            value={accessModeConfiguration}
+            flow={ApiKeysConstants.formFlow}
+            schema={ApiKeysConstants.formSchema({ props })}
+            onChange={setAccessModeConfiguration}
+          />
+        }
+      </div>
+    </div>
+  </div>
 }
 
 function ApiDocumentationResourceRef(props) {

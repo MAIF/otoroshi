@@ -38,6 +38,8 @@ import { components } from 'react-select';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { firstLetterUppercase, unsecuredCopyToClipboard } from '../../util';
 import { Row } from '../../components/Row';
+import { YAMLExportButton } from '../../components/exporters/YAMLButton';
+import { JsonExportButton } from '../../components/exporters/JSONButton';
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
   <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
@@ -2704,7 +2706,7 @@ function NewAPI(props) {
             className="btn-sm d-flex"
             onClick={createApi}
             text="Create"
-            disabled={!value.api}
+            disabled={choice !== 'fromScratch' && !value.api}
           />
         </div>
       )}
@@ -3511,6 +3513,61 @@ function Actions(props) {
       });
   };
 
+  const exportJSON = () => {
+    const name = item.id
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
+    const json = JSON.stringify({ ...item, kind: 'apis.otoroshi.io/Api' }, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.id = String(Date.now());
+    a.style.display = 'none';
+    a.download = `api.${name}-${Date.now()}.json`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  }
+
+  const exportYAML = () => {
+    const name = item.id
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
+
+    fetch('/bo/api/json_to_yaml', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apiVersion: 'proxy.otoroshi.io/v1',
+        kind: 'apis.otoroshi.io/Api',
+        metadata: {
+          name,
+        },
+        spec: item,
+      }),
+    })
+      .then((r) => r.text())
+      .then((yaml) => {
+        const blob = new Blob([yaml], { type: 'application/yaml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.id = String(Date.now());
+        a.style.display = 'none';
+        a.download = `api-${name}-${Date.now()}.yaml`;
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 300);
+      });
+  }
+
   const stepMeta = LIFECYCLE_STEPS.find((s) => s.key === viewedState);
 
   const isStaging = item.state === 'staging'
@@ -3730,37 +3787,40 @@ function Actions(props) {
         </>}
       </div>
 
-      {!isStaging && <>
-        <div className="actions-section">
-          <h3 className="actions-section-title">
-            <i className="fas fa-cog me-2" />
-            General
-          </h3>
-          <p className="actions-section-description">
-            Other operations you can perform on this API.
-          </p>
+      <div className="actions-section">
+        <h3 className="actions-section-title">
+          <i className="fas fa-cog me-2" />
+          General
+        </h3>
+        <p className="actions-section-description">
+          Other operations you can perform on this API.
+        </p>
 
-          <div className="actions-general-actions">
-            <ActionCard
-              icon="fas fa-clone"
-              title="Duplicate API"
-              description="Create a full copy of this API in staging mode"
-              onClick={onDuplicateAPI}
-            />
-          </div>
-        </div>
-      </>}
+        <div className="actions-general-actions">
+          {!isStaging ? <ActionCard
+            icon="fas fa-clone"
+            title="Duplicate API"
+            description="Create a full copy of this API in staging mode"
+            onClick={onDuplicateAPI}
+          /> : <p className="actions-section-description">
+            Actions tabs is not available in staging mode. Please use the publish button from the dashboard.
+          </p>}
 
-      {isStaging &&
-        <div className="actions-section">
-          <h3 className="actions-section-title">
-            <i className="fas fa-cog me-2" />
-            General
-          </h3>
-          <p className="actions-section-description">
-            Actions tabs is not available in staging mode. Please use the publish button from the dashboard.</p>
+          <ActionCard
+            icon="fas fa-file-export"
+            title="Export JSON"
+            description="Create a full copy of this API in JSON format"
+            onClick={exportJSON}
+          />
+
+          <ActionCard
+            icon="fas fa-file-export"
+            title="Export YAML"
+            description="Create a full copy of this API in YAML format"
+            onClick={exportYAML}
+          />
         </div>
-      }
+      </div>
     </div>
   );
 }

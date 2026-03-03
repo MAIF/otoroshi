@@ -449,7 +449,10 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
       case Some("apikey") => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
-      case Some("other")  => (raw \ "access_mode_configuration").asOpt(OtherAccessModeConfiguration.fmt)
+//      case Some("mtls")  => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
+//      case Some("keyless")  => (raw \ "access_mode_configuration").asOpt(KeylessAccessModeConfiguration.fmt)
+//      case Some("oauth2")  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
+//      case Some("jwt")  => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
       case _              => None
     }
 
