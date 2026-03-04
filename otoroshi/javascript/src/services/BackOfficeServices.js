@@ -2183,7 +2183,7 @@ export const nextClient = {
     DRAFTS: 'drafts',
     APIS: 'apis',
     GROUPS: 'service-groups',
-    API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions',
+    API_SUBSCRIPTIONS: 'apisubscriptions',
     ROUTE_TEMPLATES: 'route-templates',
   },
   find: (entity) => fetchWrapper(`/${entity}`),

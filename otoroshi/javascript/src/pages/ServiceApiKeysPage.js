@@ -557,7 +557,7 @@ function InfoApikeysCollapse() {
   </InfoCollapse>
 }
 
-export const ApiKeysConstants = {
+const ApiKeysConstants = {
   formSchema: (that) => ({
     _loc: {
       type: 'location',

@@ -69,21 +69,6 @@ export default function ApiEditor(props) {
             component={RouteDesigner}
             props={props}
           />
-
-          <RouteWithProps exact path="/apis/:apiId/access-modes" component={AccessModes} props={props} />
-          <RouteWithProps
-            exact
-            path="/apis/:apiId/access-modes/new"
-            component={NewAccessMode}
-            props={props}
-          />
-          <RouteWithProps
-            exact
-            path="/apis/:apiId/access-modes/:consumerId/:action"
-            component={AccessModeDesigner}
-            props={props}
-          />
-
           <RouteWithProps
             exact
             path="/apis/:apiId/subscriptions"
@@ -117,7 +102,6 @@ export default function ApiEditor(props) {
             component={EditPluginChains}
             props={props}
           />
-
           <RouteWithProps exact path="/apis/:apiId/backends" component={Backends} props={props} />
           <RouteWithProps
             exact
@@ -301,7 +285,7 @@ function Subscriptions(props) {
     });
   }, []);
 
-  const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS);
+  const client = nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS);
 
   const rawSubscriptions = useQuery(['getSubscriptions'], () => {
     return client.findAllWithPagination({
@@ -382,7 +366,7 @@ function SubscriptionDesigner(props) {
     ['getSubscription', params.subscriptionId],
     () =>
       nextClient
-        .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+        .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
         .findById(params.subscriptionId),
     {
       onSuccess: setSubscription,
@@ -391,7 +375,7 @@ function SubscriptionDesigner(props) {
 
   const updateSubscription = () => {
     return nextClient
-      .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+      .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .update(subscription)
       .then(() => historyPush(history, location, `/apis/${params.apiId}/subscriptions`));
   };
@@ -507,7 +491,7 @@ function NewSubscription(props) {
 
   useQuery(
     ['getSubscriptionTemplate'],
-    () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
+    () => nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS).template(),
     {
       enabled: !!item,
       onSuccess: (sub) =>
@@ -522,7 +506,7 @@ function NewSubscription(props) {
 
   const updateSubscription = () => {
     return nextClient
-      .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+      .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .create({
         ...subscription,
         api_ref: params.apiId,
@@ -934,89 +918,6 @@ function NewRoute(props) {
   );
 }
 
-function AccessModes(props) {
-  const history = useHistory();
-  const params = useParams();
-  const location = useLocation();
-
-  const columns = [
-    {
-      title: 'Name',
-      filterId: 'name',
-      content: (item) => item.name,
-    },
-  ];
-
-  const { item, updateItem } = useDraftOfAPI();
-
-  useEffect(() => {
-    props.setTitle({
-      value: 'Access modes',
-      noThumbtack: true,
-      children: <VersionBadge />,
-    });
-  }, []);
-
-  const deleteItem = (newItem) =>
-    updateItem({
-      ...item,
-      consumers: item.consumers.filter((f) => f.id !== newItem.id),
-    });
-
-  if (!item) return <SimpleLoader />;
-
-  return (
-    <>
-      <Table
-        parentProps={{ params }}
-        navigateTo={(item) =>
-          historyPush(history, location, `/apis/${params.apiId}/access-modes/${item.id}/edit`)
-        }
-        navigateOnEdit={(item) =>
-          historyPush(history, location, `/apis/${params.apiId}/access-modes/${item.id}/edit`)
-        }
-        selfUrl="access-modes"
-        defaultTitle="Access mode"
-        itemName="Access mode"
-        columns={columns}
-        deleteItem={deleteItem}
-        fetchTemplate={() =>
-          Promise.resolve({
-            id: v4(),
-            name: 'New access mode',
-            consumer_kind: 'apikey',
-            config: {},
-          })
-        }
-        fetchItems={() => Promise.resolve(item.consumers || [])}
-        defaultSort="name"
-        defaultSortDesc="true"
-        showActions={true}
-        showLink={false}
-        extractKey={(item) => item.id}
-        rowNavigation={true}
-        hideAddItemAction={true}
-        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/access-modes/${i.id}/edit`)}
-        rawEditUrl={true}
-        injectTopBar={() => (
-          <div className="btn-group input-group-btn">
-            <Link
-              className="btn btn-primary btn-sm"
-              to={{
-                pathname: 'access-modes/new',
-                search: location.search,
-              }}
-            >
-              <i className="fas fa-plus-circle" /> Create new access mode
-            </Link>
-            {props.injectTopBar}
-          </div>
-        )}
-      />
-    </>
-  );
-}
-
 const TEMPLATES = {
   apikey: {
     wipe_backend_request: true,
@@ -1043,271 +944,136 @@ const TEMPLATES = {
   },
 };
 
-function NewAccessModeSettingsForm(props) {
-  return (
-    <NgForm
-      value={props.value}
-      onChange={(settings) => {
-        if (settings && JSON.stringify(props.value, null, 2) !== JSON.stringify(settings, null, 2))
-          props.onChange(settings);
-      }}
-      schema={props.schema}
-      flow={props.flow}
-    />
-  );
-}
+// const ACCESS_MODE_FORM_SETTINGS = {
+//   schema: {
+//     name: {
+//       type: 'string',
+//       label: 'Name',
+//     },
+//     consumer_kind: {
+//       renderer: (props) => (
+//         <Row title="AccessMode kind">
+//           <NgDotsRenderer
+//             value={props.value}
+//             options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
+//             ngOptions={{
+//               spread: true,
+//             }}
+//             onChange={(newType) => {
+//               props.rootOnChange({
+//                 ...props.rootValue,
+//                 settings: TEMPLATES[newType],
+//                 consumer_kind: newType,
+//               });
+//             }}
+//           />
+//         </Row>
+//       ),
+//     },
+//     settings: {
+//       renderer: (props) => {
+//         const kind = props.rootValue.consumer_kind;
 
-const ACCESS_MODE_FORM_SETTINGS = {
-  schema: {
-    name: {
-      type: 'string',
-      label: 'Name',
-    },
-    consumer_kind: {
-      renderer: (props) => (
-        <Row title="AccessMode kind">
-          <NgDotsRenderer
-            value={props.value}
-            options={['keyless', 'apikey', 'mtls', 'oauth2', 'jwt']}
-            ngOptions={{
-              spread: true,
-            }}
-            onChange={(newType) => {
-              props.rootOnChange({
-                ...props.rootValue,
-                settings: TEMPLATES[newType],
-                consumer_kind: newType,
-              });
-            }}
-          />
-        </Row>
-      ),
-    },
-    settings: {
-      renderer: (props) => {
-        const kind = props.rootValue.consumer_kind;
+//         const kinds = {
+//           jwt: {
+//             schema: JwtVerificationOnly.config_schema,
+//             flow: JwtVerificationOnly.config_flow,
+//           },
+//           oauth2: {
+//             schema: NgClientCredentialTokenEndpoint.config_schema,
+//             flow: NgClientCredentialTokenEndpoint.config_flow,
+//           },
+//           mtls: {
+//             schema: NgHasClientCertMatchingValidator.config_schema,
+//             flow: NgHasClientCertMatchingValidator.config_flow,
+//           },
+//           apikey: {
+//             schema: {
+//               wipe_backend_request: {
+//                 label: 'Wipe backend request',
+//                 type: 'box-bool',
+//                 props: {
+//                   description: 'Remove the apikey fromcall made to downstream service',
+//                 },
+//               },
+//               update_quotas: {
+//                 label: 'Update quotas',
+//                 type: 'box-bool',
+//                 props: {
+//                   description: 'Each call with an apikey will update its quota',
+//                 },
+//               },
+//               pass_with_user: {
+//                 label: 'Pass with user',
+//                 type: 'box-bool',
+//                 props: {
+//                   description: 'Allow the path to be accessed via an Authentication module',
+//                 },
+//               },
+//               mandatory: {
+//                 label: 'Mandatory',
+//                 type: 'box-bool',
+//                 props: {
+//                   description:
+//                     'Allow an apikey and and authentication module to be used on a same path. If disabled, the endpoint can be called without apikey.',
+//                 },
+//               },
+//               validate: {
+//                 label: 'Validate',
+//                 type: 'box-bool',
+//                 props: {
+//                   description:
+//                     'Check that the api key has not expired, has not reached its quota limits and is authorized to call the Otoroshi service',
+//                 },
+//               },
+//             },
+//           },
+//         };
 
-        const kinds = {
-          jwt: {
-            schema: JwtVerificationOnly.config_schema,
-            flow: JwtVerificationOnly.config_flow,
-          },
-          oauth2: {
-            schema: NgClientCredentialTokenEndpoint.config_schema,
-            flow: NgClientCredentialTokenEndpoint.config_flow,
-          },
-          mtls: {
-            schema: NgHasClientCertMatchingValidator.config_schema,
-            flow: NgHasClientCertMatchingValidator.config_flow,
-          },
-          apikey: {
-            schema: {
-              wipe_backend_request: {
-                label: 'Wipe backend request',
-                type: 'box-bool',
-                props: {
-                  description: 'Remove the apikey fromcall made to downstream service',
-                },
-              },
-              update_quotas: {
-                label: 'Update quotas',
-                type: 'box-bool',
-                props: {
-                  description: 'Each call with an apikey will update its quota',
-                },
-              },
-              pass_with_user: {
-                label: 'Pass with user',
-                type: 'box-bool',
-                props: {
-                  description: 'Allow the path to be accessed via an Authentication module',
-                },
-              },
-              mandatory: {
-                label: 'Mandatory',
-                type: 'box-bool',
-                props: {
-                  description:
-                    'Allow an apikey and and authentication module to be used on a same path. If disabled, the endpoint can be called without apikey.',
-                },
-              },
-              validate: {
-                label: 'Validate',
-                type: 'box-bool',
-                props: {
-                  description:
-                    'Check that the api key has not expired, has not reached its quota limits and is authorized to call the Otoroshi service',
-                },
-              },
-            },
-          },
-        };
+//         const onChange = (settings) => {
+//           if (settings)
+//             props.rootOnChange({
+//               ...props.rootValue,
+//               settings,
+//             });
+//         };
 
-        const onChange = (settings) => {
-          if (settings)
-            props.rootOnChange({
-              ...props.rootValue,
-              settings,
-            });
-        };
+//         if (kinds[kind])
+//           return (
+//             <NewAccessModeSettingsForm
+//               schema={kinds[kind].schema}
+//               flow={kinds[kind].flow}
+//               value={props.rootValue.settings}
+//               onChange={onChange}
+//             />
+//           );
 
-        if (kinds[kind])
-          return (
-            <NewAccessModeSettingsForm
-              schema={kinds[kind].schema}
-              flow={kinds[kind].flow}
-              value={props.rootValue.settings}
-              onChange={onChange}
-            />
-          );
+//         return (
+//           <JsonObjectAsCodeInput
+//             label="Additional informations"
+//             onChange={onChange}
+//             value={props.rootValue.settings}
+//           />
+//         );
+//       },
+//     },
+//   },
+//   flow: [
+//     {
+//       type: 'group',
+//       collapsable: false,
+//       name: 'Plan',
+//       fields: ['name', 'consumer_kind'],
+//     },
+//     {
+//       type: 'group',
+//       collapsable: false,
+//       name: 'Configuration',
+//       fields: ['settings'],
+//     },
+//   ],
+// };
 
-        return (
-          <JsonObjectAsCodeInput
-            label="Additional informations"
-            onChange={onChange}
-            value={props.rootValue.settings}
-          />
-        );
-      },
-    },
-  },
-  flow: [
-    {
-      type: 'group',
-      collapsable: false,
-      name: 'Plan',
-      fields: ['name', 'consumer_kind'],
-    },
-    {
-      type: 'group',
-      collapsable: false,
-      name: 'Configuration',
-      fields: ['settings'],
-    },
-  ],
-};
-
-function NewAccessMode(props) {
-  const params = useParams();
-  const history = useHistory();
-  const location = useLocation();
-
-  const [consumer, setConsumer] = useState({
-    id: v4(),
-    name: 'New access mode',
-    consumer_kind: 'keyless',
-    settings: TEMPLATES.keyless,
-    status: 'staging',
-    subscriptions: [],
-  });
-
-  const { item, updateItem } = useDraftOfAPI();
-
-  useEffect(() => {
-    props.setTitle(undefined);
-  }, []);
-
-  const savePlan = () => {
-    return updateItem({
-      ...item,
-      consumers: [...item.consumers, consumer],
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}/access-modes`));
-  };
-
-  if (!item) return <SimpleLoader />;
-
-  return (
-    <>
-      <PageTitle title="New Consumer" {...props} style={{ paddingBottom: 0 }} />
-
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
-        <NgForm
-          value={consumer}
-          flow={ACCESS_MODE_FORM_SETTINGS.flow}
-          schema={ACCESS_MODE_FORM_SETTINGS.schema}
-          onChange={(newValue) => setConsumer(newValue)}
-        />
-        <DraftOnly>
-          <Button
-            type="success"
-            className="btn-sm ms-auto d-flex align-items-center"
-            onClick={savePlan}
-          >
-            Create <VersionBadge size="xs" className="ms-2" />
-          </Button>
-        </DraftOnly>
-      </div>
-    </>
-  );
-}
-
-function AccessModeDesigner(props) {
-  const params = useParams();
-  const history = useHistory();
-  const location = useLocation();
-
-  const [consumer, setConsumer] = useState();
-
-  const { item, updateItem } = useDraftOfAPI();
-
-  useEffect(() => {
-    props.setTitle(undefined);
-  }, []);
-
-  useEffect(() => {
-    if (item && !consumer) {
-      setConsumer(item.consumers.find((item) => item.id === params.consumerId));
-    }
-  }, [item]);
-
-  const updatePlan = () => {
-    return updateItem({
-      ...item,
-      consumers: item.consumers.map((item) => {
-        if (item.id === consumer.id) return consumer;
-        return item;
-      }),
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}`));
-  };
-
-  if (!item || !consumer) return <SimpleLoader />;
-
-  return (
-    <>
-      <PageTitle title={`Update ${consumer?.name}`} {...props} style={{ paddingBottom: 0 }}>
-        <FeedbackButton
-          type="success"
-          className="ms-2 mb-1 d-flex align-items-center"
-          onPress={updatePlan}
-          text={
-            <>
-              Update <VersionBadge size="xs" className="ms-2" />
-            </>
-          }
-        />
-      </PageTitle>
-
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
-        <NgForm
-          value={consumer}
-          flow={ACCESS_MODE_FORM_SETTINGS.flow}
-          schema={ACCESS_MODE_FORM_SETTINGS.schema}
-          onChange={(newValue) => setConsumer(newValue)}
-        />
-      </div>
-    </>
-  );
-}
 
 function Endpoints(props) {
   const history = useHistory();
@@ -2121,26 +1887,6 @@ function Testing(props) {
       </div>
     );
 
-  if (item.consumers.length === 0)
-    return (
-      <>
-        <div
-          className="alert alert-secondary"
-          role="alert"
-          style={{
-            background: 'var(--bg-color_level2)',
-            borderColor: 'var(--bg-color_level2)',
-          }}
-        >
-          <p style={{ color: 'var(--text)' }}>
-            Testing mode can't be enabled until you have created access modes.
-          </p>
-          <hr />
-          <AccessModeCard item={item} />
-        </div>
-      </>
-    );
-
   return (
     <>
       <div
@@ -2319,16 +2065,7 @@ function EditPluginChains(props) {
           children: <VersionBadge />,
         });
 
-        setFlow({
-          ...currentFlow,
-          consumers: item.consumers.reduce(
-            (acc, item) => ({
-              ...acc,
-              [item.id]: currentFlow.consumers?.includes(item.id),
-            }),
-            {}
-          ),
-        });
+        setFlow(currentFlow);
       }
     }
   }, [item]);
@@ -2338,12 +2075,7 @@ function EditPluginChains(props) {
       ...item,
       flows: item.flows.map((ite) => {
         if (ite.id === params.flowId) {
-          return {
-            ...flow,
-            consumers: Object.entries(flow.consumers)
-              .filter((f) => f[1])
-              .map((f) => f[0]),
-          };
+          return flow
         } else {
           return ite;
         }
@@ -2412,8 +2144,7 @@ function NewPluginChains(props) {
   const [flow, setFlow] = useState({
     id: v4(),
     name: 'New plugin chains name',
-    plugins: [],
-    consumers: [],
+    plugins: []
   });
 
   const { item, updateItem } = useDraftOfAPI();
@@ -2423,12 +2154,7 @@ function NewPluginChains(props) {
       ...item,
       flows: [
         ...item.flows,
-        {
-          ...flow,
-          consumers: Object.entries(flow.consumers)
-            .filter((f) => f[1])
-            .map((f) => f[0]),
-        },
+        flow
       ],
     }).then(() =>
       historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${flow.id}/designer`)
@@ -3083,7 +2809,6 @@ function VersionManager({ api, draft, owner, setState }) {
     routes: getCompareStep('routes'),
     flows: getCompareStep('flows'),
     backends: getCompareStep('backends'),
-    consumers: getCompareStep('consumers'),
     subscriptions: getCompareStep('subscriptions'),
     deployments: getCompareStep('deployments'),
     documentation: getCompareStep('documentation'),
@@ -3098,8 +2823,7 @@ function VersionManager({ api, draft, owner, setState }) {
     const hasChanged = mergeData(api[name], draft.content[name]).changed
 
     const migration = {
-      "routes": "endpoints",
-      "consumers": "access modes"
+      "routes": "endpoints"
     }
 
     return {
@@ -3118,7 +2842,6 @@ function VersionManager({ api, draft, owner, setState }) {
       getCompareFlowGroup('routes'),
       getCompareFlowGroup('flows'),
       getCompareFlowGroup('backends'),
-      getCompareFlowGroup('consumers'),
       getCompareFlowGroup('subscriptions'),
       getCompareFlowGroup('deployments'),
       getCompareFlowGroup('documentation'),
@@ -3378,7 +3101,7 @@ function APIGateway(props) {
         return <InfoCollapse title="How domain and context path work" defaultOpen={true}>
           <p>
             The <strong>domain</strong> is the host through which your API will be exposed (e.g. <code>api.oto.tools</code>).
-            It defines the entry point that consumers will use to reach your API. You can use any domain
+            It defines the entry point that clients will use to reach your API. You can use any domain
             that resolves to your Otoroshi instance.
           </p>
           <p>
@@ -3695,7 +3418,7 @@ function Actions(props) {
                 onClick={() =>
                   transitionTo(
                     API_STATE.PUBLISHED,
-                    'Publishing makes your API fully available to clients. Consumers will be able to subscribe and use it in production.',
+                    'Publishing makes your API fully available to clients. Clients will be able to subscribe and use it in production.',
                     'Publish API',
                     'Publish'
                   )
@@ -3948,25 +3671,25 @@ function Dashboard(props) {
 
   const hasCreateFlow = item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
   const hasCreateBackend = item.backends.filter((f) => f.name !== 'default_backend').length > 0;
-  const hasCreateRoute = item.routes.length > 0;
-  const hasCreateConsumer = item.consumers.length > 0;
+  const hasCreateRoute = item.routes.length;
+  const hasCreatePlan = item.documentation?.plans.length
   const hasTestingEnabled = item.testing.enabled;
   const hasDomainConfigured = !!(item.domain && item.contextPath)
 
   const isStaging = item.state === API_STATE.STAGING;
   const showGettingStarted = isDraft && item.state !== API_STATE.DEPRECATED &&
-    (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
+    (!hasCreateFlow || !hasCreateRoute || isStaging);
 
   const currentStep =
     Number(hasCreateFlow) +
     Number(hasCreateRoute) +
     Number(hasCreateBackend) +
-    Number(hasCreateConsumer) +
     Number(hasTestingEnabled) +
     Number(hasDomainConfigured) +
     Number(item.state === API_STATE.PUBLISHED);
 
-  const totalSubscriptions = item.consumers.flatMap((c) => c.subscriptions).length;
+    // TODO
+  const totalSubscriptions = 0// item.consumers.flatMap((c) => c.subscriptions).length;
 
   return (
     <>
@@ -3995,12 +3718,6 @@ function Dashboard(props) {
             label="Endpoints"
             value={item.routes.length}
             onClick={() => historyPush(history, location, `/apis/${params.apiId}/endpoints`)}
-          />
-          <QuickStat
-            icon="fas fa-users"
-            label="Consumers"
-            value={item.consumers.length}
-            onClick={() => historyPush(history, location, `/apis/${params.apiId}/access-modes`)}
           />
           <QuickStat
             icon="fas fa-key"
@@ -4035,16 +3752,7 @@ function Dashboard(props) {
               />
             )}
 
-            {hasCreateRoute && !hasCreateConsumer && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/access-modes/new`}
-                title="Add an access mode"
-                description={<p className="objective-link">Apply security measures to the API</p>}
-                icon={<i className="fas fa-users" />}
-              />
-            )}
-
-            {hasCreateRoute && hasCreateConsumer && !hasDomainConfigured && (
+            {hasCreateRoute && hasCreatePlan && !hasDomainConfigured && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/api-gateway`}
                 title="Configure the API Gateway"
@@ -4062,7 +3770,7 @@ function Dashboard(props) {
               />
             )}
 
-            {hasCreateRoute && hasCreateConsumer && !hasTestingEnabled && (
+            {hasCreateRoute && hasCreatePlan && !hasTestingEnabled && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/testing`}
                 title="Enable testing"
@@ -4135,7 +3843,7 @@ function Dashboard(props) {
             </ContainerBlock>
 
             {/* Endpoints Table */}
-            {hasCreateRoute && hasCreateConsumer && (
+            {hasCreateRoute && hasCreatePlan && (
               <ContainerBlock full>
                 <SectionHeader
                   text="Endpoints"
@@ -4147,7 +3855,7 @@ function Dashboard(props) {
             )}
 
             {/* Subscriptions Table */}
-            {hasCreateConsumer && (
+            {hasCreatePlan && (
               <ContainerBlock full>
                 <SectionHeader
                   text="Subscriptions"
@@ -4175,32 +3883,6 @@ function Dashboard(props) {
                   }
                 />
                 <SubscriptionsView api={item} />
-              </ContainerBlock>
-            )}
-
-            {/* Consumers Table */}
-            {hasCreateConsumer && (
-              <ContainerBlock full>
-                <SectionHeader
-                  text="Consumers"
-                  description={
-                    item.consumers.length <= 0 ? 'API access modes will appear here' : ''
-                  }
-                  icon="fas fa-users"
-                  actions={
-                    <DraftOnly>
-                      <Button
-                        type="primaryColor"
-                        text="New Consumer"
-                        className="btn-sm"
-                        onClick={() =>
-                          historyPush(history, location, `/apis/${params.apiId}/access-modes/new`)
-                        }
-                      />
-                    </DraftOnly>
-                  }
-                />
-                <ApiAccessModesView api={item} />
               </ContainerBlock>
             )}
           </div>
@@ -4265,119 +3947,6 @@ export function VersionToggle({ isDraft }) {
       </span>
       <i className={`fas ${isDraft ? 'fa-arrow-right' : 'fa-arrow-right'}`} />
     </button>
-  );
-}
-
-function ApiAccessModesView({ api }) {
-  return (
-    <div>
-      <div
-        className="short-table-row"
-        style={{
-          gridTemplateColumns: 'repeat(3, 1fr) 54px 32px',
-        }}
-      >
-        <div>Name</div>
-        <div>Description</div>
-        <div>Status</div>
-        <div>Kind</div>
-      </div>
-      {api.consumers.map((consumer) => {
-        return <AccessMode key={consumer.id} consumer={consumer} />;
-      })}
-    </div>
-  );
-}
-
-function AccessMode({ consumer }) {
-  const history = useHistory();
-  const params = useParams();
-  const location = useLocation();
-  const [open, setOpen] = useState(false);
-
-  const CONSUMER_STATUS_COLORS = {
-    staging: 'info',
-    published: 'success',
-    deprecated: 'warning',
-    closed: 'danger',
-  };
-
-  return (
-    <div
-      className="short-table-row"
-      style={{
-        backgroundColor: 'hsla(184, 9%, 62%, 0.18)',
-        borderColor: 'hsla(184, 9%, 62%, 0.4)',
-        borderRadius: '.5rem',
-        gridTemplateColumns: open ? '1fr' : 'repeat(3, 1fr) 54px 32px',
-      }}
-      onClick={() => {
-        if (!open) setOpen(true);
-      }}
-    >
-      {open && (
-        <div className="d-flex justify-content-between gap-2 align-items-center">
-          <div style={{ position: 'relative', flex: 1 }}>
-            <DraftOnly>
-              <Button
-                type="primaryColor"
-                className="btn-sm"
-                text="Edit"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  historyPush(
-                    history,
-                    location,
-                    `/apis/${params.apiId}/access-modes/${consumer.id}/edit`
-                  );
-                }}
-                style={{
-                  position: 'absolute',
-                  top: '.5rem',
-                  right: '.5rem',
-                  zIndex: 100,
-                }}
-              />
-            </DraftOnly>
-            <JsonObjectAsCodeInput
-              editorOnly
-              showGutter={false}
-              label={undefined}
-              value={consumer}
-            />
-          </div>
-          <i
-            style={{ minWidth: 40 }}
-            className="fas fa-chevron-up fa-lg short-table-navigate-icon"
-            onClick={() => setOpen(false)}
-          />
-        </div>
-      )}
-      {!open && (
-        <>
-          <div>{consumer.name}</div>
-          <div>{consumer.description}</div>
-          <div
-            className={`badge custom-badge bg-${CONSUMER_STATUS_COLORS[consumer.status]}`}
-            style={{
-              width: 'fit-content',
-              border: 'none',
-            }}
-          >
-            {consumer.status}
-          </div>
-          <div
-            className="badge custom-badge bg-success"
-            style={{
-              border: 'none',
-            }}
-          >
-            {consumer.consumer_kind}
-          </div>
-          <i className="fas fa-chevron-right fa-lg short-table-navigate-icon" />
-        </>
-      )}
-    </div>
   );
 }
 
@@ -4523,7 +4092,7 @@ function SubscriptionsView({ api }) {
 
   useEffect(() => {
     nextClient
-      .forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS)
+      .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .findAllWithPagination({
         page: 1,
         pageSize: 5,
@@ -4893,33 +4462,6 @@ function BackendsCard({ backends }) {
         <p className="cards-description" style={{ position: 'relative' }}>
           Design robust, scalable <HighlighedBackendText plural /> with optimized performance,
           security, and seamless front-end integration.
-          <i className="fas fa-chevron-right fa-lg navigate-icon" />
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function AccessModeCard({ item }) {
-  const params = useParams();
-  const history = useHistory();
-  const location = useLocation();
-
-  return (
-    <div
-      onClick={() => historyPush(history, location, `/apis/${params.apiId}/access-modes/new`)}
-      className="cards apis-cards"
-    >
-      <div className="cards-body">
-        <div className="cards-title d-flex align-items-center justify-content-between">
-          Access Modes{' '}
-          <span className="badge custom-badge api-status-deprecated">
-            <i className="fas fa-list me-2" />
-            {item.consumers.length}
-          </span>
-        </div>
-        <p className="cards-description" style={{ position: 'relative' }}>
-          Defines usage limits, features, and access levels for consuming your API.
           <i className="fas fa-chevron-right fa-lg navigate-icon" />
         </p>
       </div>

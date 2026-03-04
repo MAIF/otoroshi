@@ -65,13 +65,6 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show plugin chains tab`) },
     },
     {
-      to: `/apis/${id}/access-modes`,
-      icon: 'fa-list',
-      title: 'Access modes',
-      tab: 'access-modes',
-      tooltip: { ...createTooltip(`Show access modes tab`) },
-    },
-    {
       to: `/apis/${id}/backends`,
       icon: 'fa-server',
       title: 'Backends',

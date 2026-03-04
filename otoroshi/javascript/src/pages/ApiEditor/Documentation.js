@@ -8,9 +8,14 @@ import { Form } from '../../components/inputs/Form';
 import { DraftOnly, useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
 import { NgForm } from '../../components/nginputs';
-import { ApiKeysConstants } from '../ServiceApiKeysPage';
 import { Button } from '../../components/Button';
 import { Row } from '../../components/Row';
+import { ArrayInput } from '../../components/inputs';
+import { RestrictionPath } from '../../components/Restrictions';
+import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
+import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
+import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
+import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -66,6 +71,56 @@ function ApiDocumentationResource(props) {
   );
 }
 
+function AccessModeConfigurationTypeSelector({ onChange, value }) {
+  return (
+    <Row title="Access mode">
+      <div className="d-flex flex-column gap-2 m-2">
+        {[
+          {
+            id: 'keyless',
+            key: 'Keyless',
+            text: 'Open access without any authentication. Clients can call the API freely without providing credentials. Useful for public APIs that do not require identification or rate limiting per client.',
+          },
+          {
+            id: 'mtls',
+            key: 'MTLS',
+            text: 'Mutual TLS authentication requiring the client to present a valid client certificate. Both parties verify each other\'s identity, ensuring a strong level of trust and encryption between the client and the gateway.',
+          },
+          {
+            id: 'oauth2',
+            key: 'OAuth2',
+            text: 'Machine-to-machine authentication using the OAuth 2.0 client credentials flow. The client obtains an access token from an authorization server and includes it in each request to the API.',
+          },
+          {
+            id: 'apikey',
+            key: 'Apikey',
+            text: 'Authentication via a unique API key provided by the client in the request headers or query parameters. Enables identification, rate limiting, and usage tracking per client.',
+          },
+          {
+            id: 'jwt',
+            key: 'JWT',
+            text: 'Authentication using a signed JSON Web Token. The client includes a JWT in the request, which the gateway validates against a trusted issuer to verify identity and granted permissions.',
+          }
+        ].map(({ key, text, id }) => (
+          <button
+            type="button"
+            className={`btn d-flex flex-column ${value === id ? 'btn-primaryColor' : 'btn-quiet'} pb-3`}
+            onClick={() => onChange(id)}
+            key={id}
+          >
+            <div style={{ fontWeight: 'bold', textAlign: 'left' }} className="py-2">
+              {key}
+            </div>
+            <p className="m-0" style={{ textAlign: 'left', fontSize: '.9rem' }}>
+              {text}
+            </p>
+          </button>
+        ))}
+      </div>
+    </Row>
+  );
+}
+
 export function ApiDocumentationPlans(props) {
 
   const { item, updateItem } = useDraftOfAPI()
@@ -113,11 +168,9 @@ export function ApiDocumentationPlans(props) {
           label: 'Description'
         },
         access_mode_configuration_type: {
-          type: 'select',
-          label: 'Access mode',
-          props: {
-            options: item.consumers.map(consumer => ({ value: consumer.id, label: consumer.name }))
-          },
+          renderer: (props) => {
+            return <AccessModeConfigurationTypeSelector onChange={props.onChange} value={props.value} />;
+          }
         },
         status: {
           type: 'dots',
@@ -152,16 +205,17 @@ export function ApiDocumentationPlans(props) {
         },
         access_mode_configuration: {
           renderer: ({ rootValue, onChange, value }) => {
-            const accessMode = item.consumers.find(consumer => consumer.id === rootValue.access_mode_configuration_type)
-
-            if (!accessMode)
+            if (!rootValue.access_mode_configuration_type)
               return null
 
             return <Row title="Access mode configuration">
               <Button type='primaryColor' onClick={() => {
-                setAccessMode({ access_mode_configuration_type: rootValue.access_mode_configuration_type, ...value || {} })
+                setAccessMode({
+                  access_mode_configuration_type: rootValue.access_mode_configuration_type,
+                  ...value || {}
+                })
               }}>
-                Editer {accessMode.name}
+                Editer {value?.name}
               </Button>
             </Row>
           }
@@ -212,19 +266,262 @@ export function ApiDocumentationPlans(props) {
   </>
 }
 
+const ApiKeysConstants = {
+  schema: {
+    enabled: {
+      type: 'bool',
+      label: 'Enabled',
+      props: {
+        placeholder: 'The ApiKey is enabled',
+        help: 'If the API key is disabled, then any call using this API key will fail',
+      },
+    },
+    clientIdPattern: {
+      type: 'string',
+      label: 'ApiKey Id Pattern'
+    },
+    clientNamePattern: {
+      type: 'string',
+      label: 'ApiKey Name Pattern',
+    },
+    description: {
+      type: 'string',
+      label: 'ApiKey description',
+      props: {
+        help: 'A useful description for this apikey',
+        placeholder: `A useful description for this apikey`,
+      },
+    },
+    authorizedEntities: {
+      type: 'array-select',
+      label: 'Authorized on',
+      props: {
+        placeholder: 'The groups/services of the api key',
+        help: 'The groups/services linked to this api key',
+        optionsFrom: '/bo/api/groups-and-services'
+      },
+    },
+    validUntil: {
+      type: 'date',
+      label: 'Valid until',
+      props: {
+        help: 'Auto disable apikey after this date',
+      },
+    },
+    readOnly: {
+      type: 'bool',
+      label: 'Read only',
+      props: {
+        placeholder: 'The ApiKey is read only',
+        help: 'If the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs',
+      },
+    },
+    allowClientIdOnly: {
+      type: 'bool',
+      label: 'Allow pass by clientid only',
+      props: {
+        placeholder: 'Allow pass by clientid only',
+        help: 'Here you allow client to only pass client id in a specific header in order to grant access to the underlying api',
+      },
+    },
+    constrainedServicesOnly: {
+      type: 'bool',
+      label: 'Constrained services only',
+      props: {
+        help: 'This apikey can only be used on services using apikey routing constraints',
+      },
+    },
+    throttlingQuota: {
+      type: 'number',
+      label: 'Throttling quota',
+      props: {
+        placeholder: 'Authorized calls per window',
+        suffix: 'calls per window',
+        help: 'The authorized number of calls per window. See the `otoroshi.throttlingWindow` config. or `OTOROSHI_THROTTLING_WINDOW` environment variable.',
+      },
+    },
+    dailyQuota: {
+      type: 'number',
+      label: 'Daily quota',
+      props: {
+        placeholder: 'Authorized calls per day',
+        suffix: 'calls per day',
+        help: 'The authorized number of calls per day',
+      },
+    },
+    monthlyQuota: {
+      type: 'number',
+      label: 'Monthly quota',
+      props: {
+        placeholder: 'Authorized calls per month',
+        suffix: 'calls per month',
+        help: 'The authorized number of calls per month',
+      },
+    },
+    restrictions: {
+      type: 'form',
+      label: 'Restrictions',
+      schema: {
+        enabled: {
+          type: 'boolean',
+          label: "Enabled"
+        },
+        allowLast: {
+          type: 'boolean',
+          label: 'Allow last'
+        },
+        allowed: {
+          renderer: props => <ArrayInput
+            label="Allowed"
+            value={props.value}
+            help="Allowed paths"
+            component={RestrictionPath}
+            defaultValue={{ method: '*', path: '/.*' }}
+            onChange={props.onChange}
+          />
+        },
+        forbidden: {
+          renderer: props => <ArrayInput
+            label="Forbidden"
+            value={props.value}
+            help="Forbidden paths"
+            component={RestrictionPath}
+            defaultValue={{ method: '*', path: '/.*' }}
+            onChange={props.onChange}
+          />
+        },
+        notFound: {
+          renderer: props => <ArrayInput
+            label="Not Found"
+            value={props.value}
+            help="Not found paths"
+            component={RestrictionPath}
+            defaultValue={{ method: '*', path: '/.*' }}
+            onChange={props.onChange}
+          />
+        }
+      },
+      flow: ['enabled', 'allowLast', 'allowed', 'notFound']
+    },
+    rotation: {
+      type: 'form',
+      label: 'Rotation',
+      schema: {
+        'enabled': {
+          type: 'bool',
+          label: 'Enabled',
+          props: {
+            help: 'Enabled automatic apikey secret rotation',
+          },
+        },
+        'rotationEvery': {
+          type: 'number',
+          label: 'Rotation every',
+          props: {
+            placeholder: 'rotate secrets every',
+            suffix: 'hours',
+            help: 'rotate secrets every',
+          },
+        },
+        'gracePeriod': {
+          type: 'number',
+          label: 'Grace period',
+          props: {
+            placeholder: 'period when both secrets can be used',
+            suffix: 'hours',
+            help: 'period when both secrets can be used',
+          },
+        },
+        'nextSecret': {
+          type: 'string',
+          label: 'Next client secret',
+          props: {
+            disabled: true,
+          },
+        },
+      },
+      flow: ['enabled', 'rotationEvery', 'gracePeriod', 'nextSecret']
+    },
+    metadata: {
+      type: 'object',
+      label: 'Metadata',
+      props: {
+        placeholderKey: 'Metadata Name',
+        placeholderValue: 'Metadata value',
+        help: 'Some useful metadata',
+      },
+    },
+    tags: {
+      type: 'array',
+      label: 'Tags',
+      props: {
+        placeholder: 'admin',
+        help: 'The tags assigned to this apikey',
+      },
+    }
+  }
+}
+
+const AccessModePluginConfigurationForm = {
+  jwt: {
+    schema: JwtVerificationOnly.config_schema,
+    flow: JwtVerificationOnly.config_flow,
+  },
+  oauth2: {
+    schema: NgClientCredentialTokenEndpoint.config_schema,
+    flow: NgClientCredentialTokenEndpoint.config_flow,
+  },
+  mtls: {
+    schema: NgHasClientCertMatchingValidator.config_schema,
+    flow: NgHasClientCertMatchingValidator.config_flow,
+  },
+  apikey: {
+    schema: {
+      wipe_backend_request: {
+        label: 'Wipe backend request',
+        type: 'box-bool',
+        props: {
+          description: 'Remove the apikey fromcall made to downstream service',
+        },
+      },
+      update_quotas: {
+        label: 'Update quotas',
+        type: 'box-bool',
+        props: {
+          description: 'Each call with an apikey will update its quota',
+        },
+      },
+      pass_with_user: {
+        label: 'Pass with user',
+        type: 'box-bool',
+        props: {
+          description: 'Allow the path to be accessed via an Authentication module',
+        },
+      },
+      mandatory: {
+        label: 'Mandatory',
+        type: 'box-bool',
+        props: {
+          description:
+            'Allow an apikey and and authentication module to be used on a same path. If disabled, the endpoint can be called without apikey.',
+        },
+      },
+      validate: {
+        label: 'Validate',
+        type: 'box-bool',
+        props: {
+          description:
+            'Check that the api key has not expired, has not reached its quota limits and is authorized to call the Otoroshi service',
+        },
+      },
+    },
+  },
+};
+
 function AccessModeConfiguration({ value, item, hide, props }) {
 
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value)
-
-  const accessMode = item.consumers.find(consumer => consumer.id === value.access_mode_configuration_type)
-
-  //   case 'mtls':
-  //   case 'keyless':
-  //     return null
-  //   case 'oauth2':
-  //   case 'jwt':
-  //   default:
-  //     return <div></div>
+  const [pluginConfiguration, setPluginConfiguration] = useState(() => value?.pluginConfiguration)
 
   return <div className="wizard">
     <div className="wizard-container">
@@ -236,26 +533,88 @@ function AccessModeConfiguration({ value, item, hide, props }) {
           padding: '2.5rem',
         }}
       >
-        <label style={{ fontSize: '1.15rem' }}>
+        <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
           <i
             className="fas fa-times me-3"
             onClick={hide}
             style={{ cursor: 'pointer' }}
           />
-          <span>Edit {accessMode?.name}</span>
+          <span>Edit {value.access_mode_configuration_type}</span>
         </label>
 
-        {accessMode?.consumer_kind === 'apikey' &&
-          <Form
+        {value.access_mode_configuration_type === 'apikey' && <>
+          <NgForm
             value={accessModeConfiguration}
-            flow={ApiKeysConstants.formFlow}
-            schema={ApiKeysConstants.formSchema({ props })}
+            schema={{
+              ...ApiKeysConstants.schema,
+              pluginConfiguration: {
+                renderer: () => {
+                  return <>
+                    {
+                      AccessModePluginConfigurationForm[value.access_mode_configuration_type] ?
+                        <NewAccessModeSettingsForm
+                          schema={AccessModePluginConfigurationForm[value.access_mode_configuration_type].schema}
+                          flow={AccessModePluginConfigurationForm[value.access_mode_configuration_type].flow}
+                          value={pluginConfiguration}
+                          onChange={setPluginConfiguration}
+                        /> :
+                        <JsonObjectAsCodeInput
+                          label="Additional informations"
+                          onChange={setPluginConfiguration}
+                          value={pluginConfiguration}
+                        />
+                    }
+                  </>
+                }
+              }
+            }}
+            flow={[
+              'enabled',
+              'clientIdPattern',
+              'clientNamePattern',
+              'description',
+              'authorizedEntities',
+              'validUntil',
+              'readOnly',
+              'allowClientIdOnly',
+              'constrainedServicesOnly',
+              'throttlingQuota',
+              'dailyQuota',
+              'monthlyQuota',
+              'restrictions',
+              'rotation',
+              {
+                type: 'group',
+                name: 'Miscellaneous',
+                fields: ['metadata', 'tags']
+              },
+              {
+                type: 'group',
+                name: 'Avancé',
+                fields: ['pluginConfiguration']
+              }
+            ]}
             onChange={setAccessModeConfiguration}
           />
-        }
+
+        </>}
       </div>
     </div>
   </div>
+}
+
+function NewAccessModeSettingsForm(props) {
+  return (
+    <NgForm
+      value={props.value}
+      onChange={(settings) => {
+        if (settings && JSON.stringify(props.value, null, 2) !== JSON.stringify(settings, null, 2))
+          props.onChange(settings);
+      }}
+      schema={props.schema}
+      flow={props.flow}
+    />
+  );
 }
 
 function ApiDocumentationResourceRef(props) {
