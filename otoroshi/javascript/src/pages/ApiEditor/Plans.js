@@ -227,42 +227,7 @@ const AccessModePluginConfigurationForm = {
   mtls: {
     schema: NgHasClientCertMatchingValidator.config_schema,
     flow: NgHasClientCertMatchingValidator.config_flow,
-  },
-  apikey: {
-    schema: {
-      wipe_backend_request: {
-        label: 'Wipe backend request',
-        type: 'box-bool',
-        props: { description: 'Remove the apikey from call made to downstream service' },
-      },
-      update_quotas: {
-        label: 'Update quotas',
-        type: 'box-bool',
-        props: { description: 'Each call with an apikey will update its quota' },
-      },
-      pass_with_user: {
-        label: 'Pass with user',
-        type: 'box-bool',
-        props: { description: 'Allow the path to be accessed via an Authentication module' },
-      },
-      mandatory: {
-        label: 'Mandatory',
-        type: 'box-bool',
-        props: {
-          description:
-            'Allow an apikey and an authentication module to be used on a same path. If disabled, the endpoint can be called without apikey.',
-        },
-      },
-      validate: {
-        label: 'Validate',
-        type: 'box-bool',
-        props: {
-          description:
-            'Check that the api key has not expired, has not reached its quota limits and is authorized to call the Otoroshi service',
-        },
-      },
-    },
-  },
+  }
 };
 
 function AccessModeConfigurationTypeSelector({ onChange, value }) {
@@ -329,9 +294,11 @@ function NewAccessModeSettingsForm(props) {
   );
 }
 
-function AccessModeConfiguration({ value, hide }) {
+function AccessModeConfiguration({ value, hide, onConfirm }) {
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
   const [pluginConfiguration, setPluginConfiguration] = useState(() => value?.pluginConfiguration);
+
+  const accessModeConfigurationType = value.access_mode_configuration_type
 
   return (
     <div className="wizard">
@@ -339,10 +306,10 @@ function AccessModeConfiguration({ value, hide }) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
           <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
             <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
-            <span>Edit {value.access_mode_configuration_type}</span>
+            <span>Edit {accessModeConfigurationType}</span>
           </label>
 
-          {value.access_mode_configuration_type === 'apikey' && (
+          {accessModeConfigurationType === 'apikey' ? (
             <NgForm
               value={accessModeConfiguration}
               schema={{
@@ -350,10 +317,10 @@ function AccessModeConfiguration({ value, hide }) {
                 pluginConfiguration: {
                   renderer: () => (
                     <>
-                      {AccessModePluginConfigurationForm[value.access_mode_configuration_type] ? (
+                      {AccessModePluginConfigurationForm[accessModeConfigurationType] ? (
                         <NewAccessModeSettingsForm
-                          schema={AccessModePluginConfigurationForm[value.access_mode_configuration_type].schema}
-                          flow={AccessModePluginConfigurationForm[value.access_mode_configuration_type].flow}
+                          schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
+                          flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
                           value={pluginConfiguration}
                           onChange={setPluginConfiguration}
                         />
@@ -388,7 +355,56 @@ function AccessModeConfiguration({ value, hide }) {
               ]}
               onChange={setAccessModeConfiguration}
             />
-          )}
+          ) : ['mtls', 'oauth2', 'jwt'].includes(accessModeConfigurationType) ?
+            <NgForm
+              flow={[{
+                type: 'group',
+                name: 'Configuration',
+                collapsable: false,
+                fields: ['pluginConfiguration']
+              }]}
+              schema={{
+                pluginConfiguration: {
+                  renderer: () => (
+                    <>
+                      {AccessModePluginConfigurationForm[accessModeConfigurationType] ? (
+                        <NewAccessModeSettingsForm
+                          schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
+                          flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
+                          value={pluginConfiguration}
+                          onChange={setPluginConfiguration}
+                        />
+                      ) : (
+                        <JsonObjectAsCodeInput
+                          label="Additional informations"
+                          onChange={setPluginConfiguration}
+                          value={pluginConfiguration}
+                        />
+                      )}
+                    </>
+                  ),
+                }
+              }}
+              value={value}
+              onChange={setAccessModeConfiguration}
+            />
+            : null
+          }
+
+        </div>
+
+        <div style={{
+          position: 'sticky',
+          right: '2rem',
+          bottom: 0,
+          left: 0,
+          zIndex: 100000,
+          background: 'var(--bg-color_level1)',
+          borderTop: '1px solid var(--bg-color_level3)'
+        }} className='p-3 d-flex justify-content-end'>
+          <button onClick={() => onConfirm(accessModeConfiguration)} type="btn" className='btn btn-primaryColor'>
+            Save {accessModeConfigurationType}
+          </button>
         </div>
       </div>
     </div>
@@ -472,6 +488,7 @@ function PlanForm({ plan, onChange }) {
       {accessMode && (
         <AccessModeConfiguration
           value={accessMode}
+          onConfirm={onChange}
           hide={() => setAccessMode(undefined)}
         />
       )}
