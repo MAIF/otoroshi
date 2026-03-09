@@ -110,6 +110,7 @@ class NgHasClientCertMatchingApikeyValidator extends NgAccessValidator {
 case class SubIss(sn: String, subject: DN, issuer: DN)
 
 case class NgHasClientCertMatchingValidatorConfig(
+    mandatory: Boolean = true,
     serialNumbers: Seq[String] = Seq.empty,
     subjectDNs: Seq[String] = Seq.empty,
     issuerDNs: Seq[String] = Seq.empty,
@@ -117,6 +118,7 @@ case class NgHasClientCertMatchingValidatorConfig(
     regexIssuerDNs: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
+    "mandatory" -> mandatory,
     "serial_numbers"    -> serialNumbers,
     "subject_dns"       -> subjectDNs,
     "issuer_dns"        -> issuerDNs,
@@ -130,6 +132,7 @@ object NgHasClientCertMatchingValidatorConfig {
     override def writes(o: NgHasClientCertMatchingValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasClientCertMatchingValidatorConfig] = Try {
       NgHasClientCertMatchingValidatorConfig(
+        mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
         serialNumbers = json.select("serial_numbers").asOpt[Seq[String]].getOrElse(Seq.empty),
         subjectDNs = json.select("subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
         issuerDNs = json.select("issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
@@ -192,10 +195,11 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         ) {
           NgAccess.NgAllowed.vfuture
         } else {
-          forbidden(context)
+          forbidden(context)   
         }
       }
-      case _           => forbidden(context)
+      case _ if config.mandatory  => forbidden(context)
+      case _ if !config.mandatory => NgAccess.NgAllowed.vfuture
     }
   }
 }
