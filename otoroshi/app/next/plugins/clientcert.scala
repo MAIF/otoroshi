@@ -174,6 +174,9 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
   }
 
   override def access(context: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = context
+          .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
+          .getOrElse(NgHasClientCertMatchingValidatorConfig())
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
@@ -181,9 +184,6 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         )
       ) match {
       case Some(certs) => {
-        val config = context
-          .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
-          .getOrElse(NgHasClientCertMatchingValidatorConfig())
         if (
           certs.exists { cert =>
             config.serialNumbers.contains(cert.sn) ||
