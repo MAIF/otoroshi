@@ -258,16 +258,35 @@ Fetches entities from a GitHub repository using the GitHub API.
 {
   "source_kind": "github",
   "source_config": {
-    "repo": "https://github.com/owner/repo",  // repository URL
+    "repo": "owner/repo",                      // repository (owner/repo) or organization name
     "branch": "main",                          // branch name (default: main)
     "path": "entities/",                       // file or directory path in the repo
     "token": "ghp_xxx",                        // optional personal access token
-    "base_url": "https://api.github.com"       // API base URL (for GitHub Enterprise)
+    "base_url": "https://api.github.com",      // API base URL (for GitHub Enterprise)
+    "repo_patterns": ["otoroshi-*", "api-*"]   // optional: filter repos when scanning an org
   }
 }
 ```
 
 Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Organization scanning mode
+
+When `repo` is set to an organization or user name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-repo`), Otoroshi will list all repositories in that organization and scan each one for the specified `path`. If a repository does not contain the specified path, it is silently skipped.
+
+The `repo_patterns` option allows filtering which repositories to scan using glob patterns. For example, `["otoroshi-*"]` will only scan repositories whose name starts with `otoroshi-`. If `repo_patterns` is not set, all repositories in the organization are scanned.
+
+```javascript
+{
+  "source_kind": "github",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "ghp_xxx",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
 
 ### GitLab
 
@@ -277,16 +296,35 @@ Fetches entities from a GitLab repository using the GitLab API.
 {
   "source_kind": "gitlab",
   "source_config": {
-    "repo": "group/project",                    // project path (URL-encoded automatically)
+    "repo": "group/project",                    // project path or group name
     "branch": "main",                           // branch name (default: main)
     "path": "entities/",                        // file or directory path in the repo
     "token": "glpat-xxx",                       // optional private token
-    "base_url": "https://gitlab.com"            // GitLab instance URL (for self-hosted)
+    "base_url": "https://gitlab.com",           // GitLab instance URL (for self-hosted)
+    "repo_patterns": ["otoroshi-*"]             // optional: filter projects when scanning a group
   }
 }
 ```
 
 Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Group scanning mode
+
+When `repo` is set to a group name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-project`), Otoroshi will list all projects in that group (including subgroups) and scan each one for the specified `path`. If a project does not contain the specified path, it is silently skipped.
+
+The `repo_patterns` option filters projects by their name (last segment of the path) using glob patterns.
+
+```javascript
+{
+  "source_kind": "gitlab",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "glpat-xxx",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
 
 ### Bitbucket
 
@@ -296,12 +334,13 @@ Fetches entities from a Bitbucket Cloud repository using the Bitbucket API 2.0.
 {
   "source_kind": "bitbucket",
   "source_config": {
-    "repo": "https://bitbucket.org/workspace/repo",  // repository URL
+    "repo": "workspace/repo",                          // repository (workspace/repo) or workspace name
     "branch": "main",                                  // branch name (default: main)
     "path": "entities/",                               // file or directory path
     "token": "xxx",                                    // app password or OAuth token
     "username": "my-user",                             // username (for Basic auth with app password)
-    "base_url": "https://api.bitbucket.org"            // API base URL (for Bitbucket Server)
+    "base_url": "https://api.bitbucket.org",           // API base URL (for Bitbucket Server)
+    "repo_patterns": ["otoroshi-*"]                    // optional: filter repos when scanning a workspace
   }
 }
 ```
@@ -309,6 +348,24 @@ Fetches entities from a Bitbucket Cloud repository using the Bitbucket API 2.0.
 If `username` is provided, authentication uses Basic auth (`username:token`). Otherwise, Bearer token authentication is used.
 
 Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Workspace scanning mode
+
+When `repo` is set to a workspace name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-repo`), Otoroshi will list all repositories in that workspace and scan each one for the specified `path`. If a repository does not contain the specified path, it is silently skipped.
+
+The `repo_patterns` option filters repositories by their slug using glob patterns.
+
+```javascript
+{
+  "source_kind": "bitbucket",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "xxx",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
 
 ### Git (generic)
 

@@ -506,66 +506,148 @@ class CatalogSourceGithub extends CatalogSource {
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
 
+  private def parseOrg(repoUrl: String): Option[String] = {
+    val cleaned = repoUrl.stripSuffix(".git").stripSuffix("/")
+    val path    = if (cleaned.contains("://")) {
+      cleaned.split("://", 2).last.split("/").drop(1).mkString("/")
+    } else cleaned
+    val parts   = path.split("/").filter(_.nonEmpty)
+    if (parts.length == 1) Some(parts(0)) else None
+  }
+
+  private def listOrgRepos(apiBase: String, org: String, token: String, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, Seq[String]]] = {
+    val orgUrl = s"$apiBase/orgs/$org/repos"
+    env.Ws
+      .url(orgUrl)
+      .withQueryStringParameters("per_page" -> "100", "type" -> "all")
+      .withHttpHeaders(githubHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .flatMap { resp =>
+        if (resp.status == 200) {
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+          (Right(repos): Either[JsValue, Seq[String]]).vfuture
+        } else {
+          val userUrl = s"$apiBase/users/$org/repos"
+          env.Ws
+            .url(userUrl)
+            .withQueryStringParameters("per_page" -> "100", "type" -> "all")
+            .withHttpHeaders(githubHeaders(token): _*)
+            .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+            .get()
+            .map { resp2 =>
+              if (resp2.status == 200) {
+                Right(
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                ): Either[JsValue, Seq[String]]
+              } else {
+                Left(Json.obj("error" -> s"Cannot list repos for '$org'")): Either[JsValue, Seq[String]]
+              }
+            }
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing repos for '$org': ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
+  private def fetchFromSingleRepo(
+      apiBase: String,
+      owner: String,
+      repo: String,
+      branch: String,
+      path: String,
+      token: String,
+      allRes: Seq[Resource],
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    if (SourceUtils.hasFileExtension(path)) {
+      fetchFileContent(apiBase, owner, repo, path, branch, token, env).flatMap {
+        case Left(err)         => err.leftf
+        case Right(rawContent) =>
+          SourceUtils.isDeployListing(rawContent) match {
+            case Some(arr) =>
+              val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
+              SourceUtils.resolveDeployListing(
+                arr,
+                relativePath => {
+                  val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
+                  fetchFileContent(apiBase, owner, repo, fullPath, branch, token, env)
+                },
+                s"github://$owner/$repo/$path@$branch",
+                allRes,
+                resolveGlob = Some(glob =>
+                  listAllFilesRecursive(apiBase, owner, repo, branch, token, env).map {
+                    case Left(err)    => Left(err)
+                    case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
+                  }
+                )
+              )
+            case None      =>
+              (Right(
+                SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$path@$branch", allRes)
+              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+          }
+      }
+    } else {
+      listDirectory(apiBase, owner, repo, path, branch, token, env).flatMap {
+        case Left(err)    => err.leftf
+        case Right(files) =>
+          files
+            .mapAsync { filePath =>
+              fetchFileContent(apiBase, owner, repo, filePath, branch, token, env).map {
+                case Left(err)         =>
+                  logger.warn(s"Error fetching $filePath: ${err.toString}")
+                  Seq.empty[RemoteEntity]
+                case Right(rawContent) =>
+                  SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$filePath@$branch", allRes)
+              }
+            }
+            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+      }
+    }
+  }
+
   override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val repoUrl = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
-    val branch  = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
-    val path    = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
-    val token   = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
-    val apiBase =
+    val repoUrl     = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
+    val branch      = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
+    val path        = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
+    val token       = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val apiBase     =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.github.com").stripSuffix("/")
+    val repoPatterns =
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val allRes      = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
-      case None                =>
-        Json.obj("error" -> s"Cannot parse GitHub repo from: $repoUrl").leftf
       case Some((owner, repo)) =>
-        val allRes = env.allResources.resources ++ env.adminExtensions.resources()
-        if (SourceUtils.hasFileExtension(path)) {
-          fetchFileContent(apiBase, owner, repo, path, branch, token, env).flatMap {
-            case Left(err)         => err.leftf
-            case Right(rawContent) =>
-              SourceUtils.isDeployListing(rawContent) match {
-                case Some(arr) =>
-                  val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
-                  SourceUtils.resolveDeployListing(
-                    arr,
-                    relativePath => {
-                      val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
-                      fetchFileContent(apiBase, owner, repo, fullPath, branch, token, env)
-                    },
-                    s"github://$owner/$repo/$path@$branch",
-                    allRes,
-                    resolveGlob = Some(glob =>
-                      listAllFilesRecursive(apiBase, owner, repo, branch, token, env).map {
-                        case Left(err)    => Left(err)
-                        case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
-                      }
-                    )
-                  )
-                case None      =>
-                  (Right(
-                    SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$path@$branch", allRes)
-                  ): Either[JsValue, Seq[RemoteEntity]]).vfuture
-              }
-          }
-        } else {
-          listDirectory(apiBase, owner, repo, path, branch, token, env).flatMap {
-            case Left(err)    => err.leftf
-            case Right(files) =>
-              files
-                .mapAsync { filePath =>
-                  fetchFileContent(apiBase, owner, repo, filePath, branch, token, env).map {
-                    case Left(err)         =>
-                      logger.warn(s"Error fetching $filePath: ${err.toString}")
-                      Seq.empty[RemoteEntity]
-                    case Right(rawContent) =>
-                      SourceUtils.parseEntityContent(rawContent, s"github://$owner/$repo/$filePath@$branch", allRes)
+        fetchFromSingleRepo(apiBase, owner, repo, branch, path, token, allRes, env)
+      case None                =>
+        parseOrg(repoUrl) match {
+          case Some(org) =>
+            listOrgRepos(apiBase, org, token, env).flatMap {
+              case Left(err)    => err.leftf
+              case Right(repos) =>
+                val filtered = if (repoPatterns.nonEmpty)
+                  repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
+                else repos
+                logger.info(s"Scanning ${filtered.size} repos in org '$org' for path '$path'")
+                filtered
+                  .mapAsync { repoName =>
+                    fetchFromSingleRepo(apiBase, org, repoName, branch, path, token, allRes, env).map {
+                      case Left(_)         => Seq.empty[RemoteEntity]
+                      case Right(entities) => entities
+                    }
                   }
-                }
-                .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
-          }
+                  .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+            }
+          case None      =>
+            Json.obj("error" -> s"Cannot parse GitHub repo or organization from: $repoUrl").leftf
         }
     }
   }
@@ -725,67 +807,143 @@ class CatalogSourceGitlab extends CatalogSource {
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
 
+  private def isGroup(repoUrl: String): Boolean = {
+    val cleaned = repoUrl.stripSuffix("/")
+    !cleaned.contains("/")
+  }
+
+  private def listGroupProjects(baseUrl: String, group: String, token: String, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, Seq[String]]] = {
+    val encodedGroup = java.net.URLEncoder.encode(group, "UTF-8")
+    val apiUrl       = s"$baseUrl/api/v4/groups/$encodedGroup/projects"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("per_page" -> "100", "include_subgroups" -> "true")
+      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          resp.json match {
+            case arr: JsArray =>
+              val projects = arr.value.flatMap(_.select("path_with_namespace").asOpt[String])
+              Right(projects): Either[JsValue, Seq[String]]
+            case _            =>
+              Left(Json.obj("error" -> "GitLab API did not return an array for group projects")): Either[
+                JsValue,
+                Seq[String]
+              ]
+          }
+        } else {
+          Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for group projects")): Either[
+            JsValue,
+            Seq[String]
+          ]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing GitLab group projects: ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
+  private def fetchFromSingleProject(
+      baseUrl: String,
+      projectPath: String,
+      branch: String,
+      path: String,
+      token: String,
+      allRes: Seq[Resource],
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    val encodedProject = java.net.URLEncoder.encode(projectPath, "UTF-8")
+    if (SourceUtils.hasFileExtension(path)) {
+      fetchFileContent(baseUrl, encodedProject, path, branch, token, env).flatMap {
+        case Left(err)         => err.leftf
+        case Right(rawContent) =>
+          SourceUtils.isDeployListing(rawContent) match {
+            case Some(arr) =>
+              val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
+              SourceUtils.resolveDeployListing(
+                arr,
+                relativePath => {
+                  val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
+                  fetchFileContent(baseUrl, encodedProject, fullPath, branch, token, env)
+                },
+                s"gitlab://$projectPath/$path@$branch",
+                allRes,
+                resolveGlob = Some(glob =>
+                  listAllFilesRecursive(baseUrl, encodedProject, branch, token, env).map {
+                    case Left(err)    => Left(err)
+                    case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
+                  }
+                )
+              )
+            case None      =>
+              (Right(
+                SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$path@$branch", allRes)
+              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+          }
+      }
+    } else {
+      listDirectory(baseUrl, encodedProject, path, branch, token, env).flatMap {
+        case Left(err)    => err.leftf
+        case Right(files) =>
+          files
+            .mapAsync { filePath =>
+              fetchFileContent(baseUrl, encodedProject, filePath, branch, token, env).map {
+                case Left(err)         =>
+                  logger.warn(s"Error fetching $filePath: ${err.toString}")
+                  Seq.empty[RemoteEntity]
+                case Right(rawContent) =>
+                  SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$filePath@$branch", allRes)
+              }
+            }
+            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+      }
+    }
+  }
+
   override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val repoUrl = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
-    val branch  = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
-    val path    = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
-    val token   = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
-    val baseUrl = catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://gitlab.com")
+    val repoUrl      = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
+    val branch       = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
+    val path         = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
+    val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val baseUrl      = catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://gitlab.com")
+    val repoPatterns =
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
-    parseProjectPath(repoUrl) match {
-      case None              =>
-        Json.obj("error" -> s"Cannot parse GitLab project path from: $repoUrl").leftf
-      case Some(projectPath) =>
-        val encodedProject = java.net.URLEncoder.encode(projectPath, "UTF-8")
-        val allRes         = env.allResources.resources ++ env.adminExtensions.resources()
-        if (SourceUtils.hasFileExtension(path)) {
-          fetchFileContent(baseUrl, encodedProject, path, branch, token, env).flatMap {
-            case Left(err)         => err.leftf
-            case Right(rawContent) =>
-              SourceUtils.isDeployListing(rawContent) match {
-                case Some(arr) =>
-                  val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
-                  SourceUtils.resolveDeployListing(
-                    arr,
-                    relativePath => {
-                      val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
-                      fetchFileContent(baseUrl, encodedProject, fullPath, branch, token, env)
-                    },
-                    s"gitlab://$projectPath/$path@$branch",
-                    allRes,
-                    resolveGlob = Some(glob =>
-                      listAllFilesRecursive(baseUrl, encodedProject, branch, token, env).map {
-                        case Left(err)    => Left(err)
-                        case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
-                      }
-                    )
-                  )
-                case None      =>
-                  (Right(
-                    SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$path@$branch", allRes)
-                  ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+    if (isGroup(repoUrl)) {
+      listGroupProjects(baseUrl, repoUrl, token, env).flatMap {
+        case Left(err)       => err.leftf
+        case Right(projects) =>
+          val filtered = if (repoPatterns.nonEmpty) {
+            projects.filter { p =>
+              val name = p.split("/").lastOption.getOrElse(p)
+              repoPatterns.exists(pat => SourceUtils.matchesGlob(name, pat))
+            }
+          } else projects
+          logger.info(s"Scanning ${filtered.size} projects in group '$repoUrl' for path '$path'")
+          filtered
+            .mapAsync { projectPath =>
+              fetchFromSingleProject(baseUrl, projectPath, branch, path, token, allRes, env).map {
+                case Left(_)         => Seq.empty[RemoteEntity]
+                case Right(entities) => entities
               }
-          }
-        } else {
-          listDirectory(baseUrl, encodedProject, path, branch, token, env).flatMap {
-            case Left(err)    => err.leftf
-            case Right(files) =>
-              files
-                .mapAsync { filePath =>
-                  fetchFileContent(baseUrl, encodedProject, filePath, branch, token, env).map {
-                    case Left(err)         =>
-                      logger.warn(s"Error fetching $filePath: ${err.toString}")
-                      Seq.empty[RemoteEntity]
-                    case Right(rawContent) =>
-                      SourceUtils.parseEntityContent(rawContent, s"gitlab://$projectPath/$filePath@$branch", allRes)
-                  }
-                }
-                .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
-          }
-        }
+            }
+            .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+      }
+    } else {
+      parseProjectPath(repoUrl) match {
+        case None              =>
+          Json.obj("error" -> s"Cannot parse GitLab project path from: $repoUrl").leftf
+        case Some(projectPath) =>
+          fetchFromSingleProject(baseUrl, projectPath, branch, path, token, allRes, env)
+      }
     }
   }
 }
@@ -1210,65 +1368,143 @@ class CatalogSourceBitbucket extends CatalogSource {
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
 
+  private def parseWorkspace(repoUrl: String): Option[String] = {
+    val cleaned = repoUrl.stripSuffix(".git").stripSuffix("/")
+    val path    = if (cleaned.contains("://")) {
+      cleaned.split("://", 2).last.split("/").drop(1).mkString("/")
+    } else cleaned
+    val parts   = path.split("/").filter(_.nonEmpty)
+    if (parts.length == 1) Some(parts(0)) else None
+  }
+
+  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(
+      implicit ec: ExecutionContext
+  ): Future[Either[JsValue, Seq[String]]] = {
+    val apiUrl = s"$apiBase/2.0/repositories/$workspace"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("pagelen" -> "100")
+      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          val repos = resp.json
+            .select("values")
+            .asOpt[Seq[JsObject]]
+            .getOrElse(Seq.empty)
+            .flatMap(_.select("slug").asOpt[String])
+          Right(repos): Either[JsValue, Seq[String]]
+        } else {
+          Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for workspace repos")): Either[
+            JsValue,
+            Seq[String]
+          ]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing Bitbucket workspace repos: ${e.getMessage}")): Either[
+          JsValue,
+          Seq[String]
+        ]
+      }
+  }
+
+  private def fetchFromSingleRepo(
+      apiBase: String,
+      workspace: String,
+      repo: String,
+      branch: String,
+      path: String,
+      token: String,
+      username: String,
+      allRes: Seq[Resource],
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    if (SourceUtils.hasFileExtension(path)) {
+      fetchFileContent(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
+        case Left(err)         => err.leftf
+        case Right(rawContent) =>
+          SourceUtils.isDeployListing(rawContent) match {
+            case Some(arr) =>
+              val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
+              SourceUtils.resolveDeployListing(
+                arr,
+                relativePath => {
+                  val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
+                  fetchFileContent(apiBase, workspace, repo, fullPath, branch, token, username, env)
+                },
+                s"bitbucket://$workspace/$repo/$path@$branch",
+                allRes
+              )
+            case None      =>
+              (Right(
+                SourceUtils.parseEntityContent(rawContent, s"bitbucket://$workspace/$repo/$path@$branch", allRes)
+              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+          }
+      }
+    } else {
+      listDirectory(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
+        case Left(err)    => err.leftf
+        case Right(files) =>
+          files
+            .mapAsync { filePath =>
+              fetchFileContent(apiBase, workspace, repo, filePath, branch, token, username, env).map {
+                case Left(err)         =>
+                  logger.warn(s"Error fetching $filePath: ${err.toString}")
+                  Seq.empty[RemoteEntity]
+                case Right(rawContent) =>
+                  SourceUtils.parseEntityContent(
+                    rawContent,
+                    s"bitbucket://$workspace/$repo/$filePath@$branch",
+                    allRes
+                  )
+              }
+            }
+            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+      }
+    }
+  }
+
   override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val repoUrl  = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
-    val branch   = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
-    val path     = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
-    val token    = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
-    val username = catalog.sourceConfig.select("username").asOpt[String].getOrElse("")
-    val apiBase  =
+    val repoUrl      = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
+    val branch       = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
+    val path         = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
+    val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val username     = catalog.sourceConfig.select("username").asOpt[String].getOrElse("")
+    val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.bitbucket.org").stripSuffix("/")
+    val repoPatterns =
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
-      case None                    =>
-        Json.obj("error" -> s"Cannot parse Bitbucket repo from: $repoUrl").leftf
       case Some((workspace, repo)) =>
-        val allRes = env.allResources.resources ++ env.adminExtensions.resources()
-        if (SourceUtils.hasFileExtension(path)) {
-          fetchFileContent(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
-            case Left(err)         => err.leftf
-            case Right(rawContent) =>
-              SourceUtils.isDeployListing(rawContent) match {
-                case Some(arr) =>
-                  val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
-                  SourceUtils.resolveDeployListing(
-                    arr,
-                    relativePath => {
-                      val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
-                      fetchFileContent(apiBase, workspace, repo, fullPath, branch, token, username, env)
-                    },
-                    s"bitbucket://$workspace/$repo/$path@$branch",
-                    allRes
-                  )
-                case None      =>
-                  (Right(
-                    SourceUtils.parseEntityContent(rawContent, s"bitbucket://$workspace/$repo/$path@$branch", allRes)
-                  ): Either[JsValue, Seq[RemoteEntity]]).vfuture
-              }
-          }
-        } else {
-          listDirectory(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
-            case Left(err)    => err.leftf
-            case Right(files) =>
-              files
-                .mapAsync { filePath =>
-                  fetchFileContent(apiBase, workspace, repo, filePath, branch, token, username, env).map {
-                    case Left(err)         =>
-                      logger.warn(s"Error fetching $filePath: ${err.toString}")
-                      Seq.empty[RemoteEntity]
-                    case Right(rawContent) =>
-                      SourceUtils.parseEntityContent(
-                        rawContent,
-                        s"bitbucket://$workspace/$repo/$filePath@$branch",
-                        allRes
-                      )
+        fetchFromSingleRepo(apiBase, workspace, repo, branch, path, token, username, allRes, env)
+      case None                    =>
+        parseWorkspace(repoUrl) match {
+          case Some(workspace) =>
+            listWorkspaceRepos(apiBase, workspace, token, username, env).flatMap {
+              case Left(err)    => err.leftf
+              case Right(repos) =>
+                val filtered = if (repoPatterns.nonEmpty)
+                  repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
+                else repos
+                logger.info(s"Scanning ${filtered.size} repos in workspace '$workspace' for path '$path'")
+                filtered
+                  .mapAsync { repoName =>
+                    fetchFromSingleRepo(apiBase, workspace, repoName, branch, path, token, username, allRes, env).map {
+                      case Left(_)         => Seq.empty[RemoteEntity]
+                      case Right(entities) => entities
+                    }
                   }
-                }
-                .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
-          }
+                  .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+            }
+          case None            =>
+            Json.obj("error" -> s"Cannot parse Bitbucket repo or workspace from: $repoUrl").leftf
         }
     }
   }
