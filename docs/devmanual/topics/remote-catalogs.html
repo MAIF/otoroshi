@@ -348,7 +348,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h2>
 <p>A Remote Catalog is an entity that defines:</p>
 <ul>
-  <li>A <strong>source</strong> where entity definitions are stored (GitHub, GitLab, Bitbucket, S3, HTTP, local file, Git repository, Consul KV)</li>
+  <li>A <strong>source</strong> where entity definitions are stored (GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg, S3, HTTP, local file, Git repository, Consul KV)</li>
   <li>An optional <strong>scheduling</strong> configuration to automatically sync entities at regular intervals</li>
   <li>A <strong>reconciliation</strong> engine that creates, updates, and deletes local entities to match the remote desired state</li>
 </ul>
@@ -489,7 +489,7 @@ spec:
   <li><code>./project-3/team-*/**.yaml</code> matches all <code>.yaml</code> files under any <code>team-*</code> directory inside <code>project-3</code></li>
   <li><code>./shared/route?.json</code> matches files like <code>route1.json</code>, <code>routeA.json</code>, etc.</li>
 </ul><div class="callout note "><div class="callout-title">Note</div>
-<p>Glob patterns are supported by the following sources: <strong>file</strong>, <strong>git</strong>, <strong>github</strong>, <strong>gitlab</strong>, <strong>s3</strong>, and <strong>consulkv</strong>. The <strong>http</strong> and <strong>bitbucket</strong> sources do not support glob patterns because they lack a directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.</p></div>
+<p>Glob patterns are supported by the following sources: <strong>file</strong>, <strong>git</strong>, <strong>github</strong>, <strong>gitlab</strong>, <strong>gitea</strong>, <strong>forgejo</strong>, <strong>codeberg</strong>, <strong>s3</strong>, and <strong>consulkv</strong>. The <strong>http</strong> and <strong>bitbucket</strong> sources do not support glob patterns because they lack a recursive directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.</p></div>
 <h2><a href="#remote-catalog-configuration" name="remote-catalog-configuration" class="anchor"><span class="anchor-link"></span></a>Remote Catalog configuration</h2>
 <p>A Remote Catalog entity has the following structure:</p>
 <pre class="prettyprint"><code class="language-javascript">{
@@ -621,6 +621,65 @@ spec:
   }
 }
 </code></pre>
+<h3><a href="#gitea" name="gitea" class="anchor"><span class="anchor-link"></span></a>Gitea</h3>
+<p>Fetches entities from a Gitea instance using the Gitea API v1.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;gitea&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;owner/repo&quot;,                        // repository (owner/repo) or organization name
+    &quot;branch&quot;: &quot;main&quot;,                            // branch name (default: main)
+    &quot;path&quot;: &quot;entities/&quot;,                         // file or directory path in the repo
+    &quot;token&quot;: &quot;xxx&quot;,                              // optional personal access token
+    &quot;base_url&quot;: &quot;http://localhost:3000&quot;,          // Gitea instance URL (default: http://localhost:3000)
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]              // optional: filter repos when scanning an org
+  }
+}
+</code></pre>
+<p>Supports webhook-triggered deployments (see the <a href="#webhook-deployment">Webhook deployment</a> section).</p>
+<h4><a href="#organization-scanning-mode" name="organization-scanning-mode" class="anchor"><span class="anchor-link"></span></a>Organization scanning mode</h4>
+<p>When <code>repo</code> is set to an organization or user name (without <code>/</code>, e.g., <code>cloud-apim</code> instead of <code>cloud-apim/my-repo</code>), Otoroshi will list all repositories in that organization and scan each one for the specified <code>path</code>. If a repository does not contain the specified path, it is silently skipped. The API first tries <code>/api/v1/orgs/{org}/repos</code>, then falls back to <code>/api/v1/users/{org}/repos</code>.</p>
+<p>The <code>repo_patterns</code> option filters repositories by name using glob patterns.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;gitea&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;cloud-apim&quot;,
+    &quot;path&quot;: &quot;otoroshi-remote-catalog.yaml&quot;,
+    &quot;token&quot;: &quot;xxx&quot;,
+    &quot;base_url&quot;: &quot;https://my-gitea.example.com&quot;,
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]
+  }
+}
+</code></pre>
+<h3><a href="#forgejo" name="forgejo" class="anchor"><span class="anchor-link"></span></a>Forgejo</h3>
+<p>Fetches entities from a Forgejo instance. Forgejo is a fork of Gitea and uses the same API, so the configuration is identical to Gitea.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;forgejo&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;owner/repo&quot;,                        // repository (owner/repo) or organization name
+    &quot;branch&quot;: &quot;main&quot;,                            // branch name (default: main)
+    &quot;path&quot;: &quot;entities/&quot;,                         // file or directory path in the repo
+    &quot;token&quot;: &quot;xxx&quot;,                              // optional personal access token
+    &quot;base_url&quot;: &quot;http://localhost:3000&quot;,          // Forgejo instance URL (default: http://localhost:3000)
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]              // optional: filter repos when scanning an org
+  }
+}
+</code></pre>
+<p>Supports the same features as Gitea: webhook-triggered deployments, organization scanning, glob patterns in catalog listing files.</p>
+<h3><a href="#codeberg" name="codeberg" class="anchor"><span class="anchor-link"></span></a>Codeberg</h3>
+<p>Fetches entities from Codeberg (a hosted Forgejo instance at codeberg.org). Uses the same Gitea-compatible API.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;codeberg&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;owner/repo&quot;,                        // repository (owner/repo) or organization name
+    &quot;branch&quot;: &quot;main&quot;,                            // branch name (default: main)
+    &quot;path&quot;: &quot;entities/&quot;,                         // file or directory path in the repo
+    &quot;token&quot;: &quot;xxx&quot;,                              // optional personal access token
+    &quot;base_url&quot;: &quot;https://codeberg.org&quot;,          // API base URL (default: https://codeberg.org)
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]              // optional: filter repos when scanning an org
+  }
+}
+</code></pre>
+<p>Supports the same features as Gitea: webhook-triggered deployments, organization scanning, glob patterns in catalog listing files.</p>
 <h3><a href="#git-generic-" name="git-generic-" class="anchor"><span class="anchor-link"></span></a>Git (generic)</h3>
 <p>Clones a Git repository and reads entities from the local clone. Works with any Git hosting provider or self-hosted repository.</p>
 <pre class="prettyprint"><code class="language-javascript">{
@@ -743,14 +802,14 @@ spec:
 }
 </code></pre>
 <h2><a href="#webhook-deployment" name="webhook-deployment" class="anchor"><span class="anchor-link"></span></a>Webhook deployment</h2>
-<p>For Git-based sources (GitHub, GitLab, Bitbucket), you can set up webhook-triggered deployments. This allows Otoroshi to automatically deploy entities when changes are pushed to the repository.</p>
+<p>For Git-based sources (GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg), you can set up webhook-triggered deployments. This allows Otoroshi to automatically deploy entities when changes are pushed to the repository.</p>
 <p>To set this up, create a route in Otoroshi with the <code>Remote Catalog Deploy Webhook</code> plugin and expose it to your Git provider as a webhook URL.</p>
 <h3><a href="#webhook-plugin-configuration" name="webhook-plugin-configuration" class="anchor"><span class="anchor-link"></span></a>Webhook plugin configuration</h3>
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;plugin&quot;: &quot;cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook&quot;,
   &quot;config&quot;: {
     &quot;catalog_refs&quot;: [&quot;my-github-catalog&quot;, &quot;my-gitlab-catalog&quot;],  // catalogs to consider
-    &quot;source_type&quot;: &quot;github&quot;                                       // or &quot;gitlab&quot;, &quot;bitbucket&quot;
+    &quot;source_type&quot;: &quot;github&quot;                                       // or &quot;gitlab&quot;, &quot;bitbucket&quot;, &quot;gitea&quot;, &quot;forgejo&quot;, &quot;codeberg&quot;
   }
 }
 </code></pre>
@@ -766,6 +825,8 @@ spec:
 <p>Set up a webhook in your GitLab project settings. The plugin matches on <code>project.web_url</code> and <code>ref</code> from the push event payload.</p>
 <h3><a href="#bitbucket-webhook" name="bitbucket-webhook" class="anchor"><span class="anchor-link"></span></a>Bitbucket webhook</h3>
 <p>Set up a webhook in your Bitbucket repository settings. The plugin matches on <code>repository.full_name</code> and <code>push.changes[].new.name</code> from the push event payload.</p>
+<h3><a href="#gitea-forgejo-codeberg-webhook" name="gitea-forgejo-codeberg-webhook" class="anchor"><span class="anchor-link"></span></a>Gitea / Forgejo / Codeberg webhook</h3>
+<p>Set up a webhook in your Gitea, Forgejo, or Codeberg repository settings. The webhook payload format is the same across all three platforms. The plugin matches on <code>repository.full_name</code> and <code>ref</code> (branch) from the push event payload, similar to GitHub.</p>
 <h2><a href="#other-plugins" name="other-plugins" class="anchor"><span class="anchor-link"></span></a>Other plugins</h2>
 <p>In addition to the webhook plugin, two other plugins are available for programmatic deployment:</p>
 <h3><a href="#remote-catalog-deploy-single" name="remote-catalog-deploy-single" class="anchor"><span class="anchor-link"></span></a>Remote Catalog Deploy Single</h3>
