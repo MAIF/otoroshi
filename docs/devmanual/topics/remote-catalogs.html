@@ -354,7 +354,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p>When a catalog is deployed, Otoroshi fetches the entity definitions from the remote source, then reconciles them with the local state using a declarative approach similar to tools like Terraform or Kubernetes: the remote source represents the desired state, and Otoroshi converges towards it. Entities managed by a catalog are tagged with a <code>created_by</code> metadata field set to <code>remote_catalog=&lt;catalog_id&gt;</code>, which allows Otoroshi to track ownership and lifecycle of managed entities.</p>
 <h2><a href="#entity-format" name="entity-format" class="anchor"><span class="anchor-link"></span></a>Entity format</h2>
-<p>Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using <code>---</code> as separator) are supported. Each entity must contain at least an <code>id</code> field and a <code>kind</code> field. The <code>kind</code> field should match one of the existing Otoroshi resource kinds (e.g., <code>Route</code>, <code>Backend</code>, <code>ApiKey</code>, <code>Certificate</code>, etc.) including entities provided by Otoroshi extensions. You can also use the fully qualified kind with group prefix, like <code>proxy.otoroshi.io/Route</code>. This is the RECOMMENDED format to perform well !</p>
+<p>Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using <code>---</code> as separator) are supported. Two entity formats are supported: <strong>flat format</strong> and <strong>Kubernetes-style format</strong>.</p>
+<h3><a href="#flat-format" name="flat-format" class="anchor"><span class="anchor-link"></span></a>Flat format</h3>
+<p>Each entity must contain at least an <code>id</code> field and a <code>kind</code> field. The <code>kind</code> field should match one of the existing Otoroshi resource kinds (e.g., <code>Route</code>, <code>Backend</code>, <code>ApiKey</code>, <code>Certificate</code>, etc.) including entities provided by Otoroshi extensions. You can also use the fully qualified kind with group prefix, like <code>proxy.otoroshi.io/Route</code>. This is the RECOMMENDED format to perform well !</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;id&quot;: &quot;my-route-1&quot;,
   &quot;kind&quot;: &quot;Route&quot;,
@@ -384,37 +386,60 @@ backend:
     - hostname: my-backend.internal
       port: 8080
 </code></pre>
-<p>Multiple entities can be placed in a single file:</p>
-<pre class="prettyprint"><code class="language-yaml">id: my-route-1
+<h3><a href="#kubernetes-style-format" name="kubernetes-style-format" class="anchor"><span class="anchor-link"></span></a>Kubernetes-style format</h3>
+<p>Entities can also be written using a Kubernetes-style structure with <code>apiVersion</code>, <code>kind</code> at the root level and the actual entity definition nested under <code>spec</code>:</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
 kind: Route
-name: My Route 1
-frontend:
-  domains:
-    - api1.oto.tools
-backend:
-  targets:
-    - hostname: backend1.internal
-      port: 8080
+spec:
+  id: my-route-1
+  name: My Route
+  frontend:
+    domains:
+      - myapi.oto.tools
+  backend:
+    targets:
+      - hostname: my-backend.internal
+        port: 8080
+</code></pre>
+<p>The <code>kind</code> from the root level is automatically injected into the entity content. If the <code>spec</code> already contains a <code>kind</code> field that matches the root <code>kind</code> (either identical or with a group prefix, e.g., <code>proxy.otoroshi.io/Route</code> for a root <code>kind: Route</code>), the existing <code>kind</code> in <code>spec</code> is preserved.</p>
+<h3><a href="#multiple-entities-in-a-single-file" name="multiple-entities-in-a-single-file" class="anchor"><span class="anchor-link"></span></a>Multiple entities in a single file</h3>
+<p>Multiple entities can be placed in a single file using the YAML multi-document separator <code>---</code>:</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
+kind: Route
+spec:
+  id: my-route-1
+  name: My Route 1
+  frontend:
+    domains:
+      - api1.oto.tools
+  backend:
+    targets:
+      - hostname: backend1.internal
+        port: 8080
 ---
-id: my-route-2
+apiVersion: proxy.otoroshi.io/v1
 kind: Route
-name: My Route 2
-frontend:
-  domains:
-    - api2.oto.tools
-backend:
-  targets:
-    - hostname: backend2.internal
-      port: 8080
+spec:
+  id: my-route-2
+  name: My Route 2
+  frontend:
+    domains:
+      - api2.oto.tools
+  backend:
+    targets:
+      - hostname: backend2.internal
+        port: 8080
 </code></pre>
 <h2><a href="#path-modes" name="path-modes" class="anchor"><span class="anchor-link"></span></a>Path modes</h2>
 <p>When configuring a source, the <code>path</code> parameter determines how entities are fetched:</p>
 <ul>
   <li><strong>File path</strong> (e.g., <code>entities/routes.json</code>): fetches a single file and parses it for entities</li>
   <li><strong>Directory path</strong> (e.g., <code>entities/</code>): lists all <code>.json</code>, <code>.yaml</code>, and <code>.yml</code> files in the directory and parses each one</li>
-  <li><strong>Catalog listing file</strong> (e.g., <code>catalog.json</code>): a JSON file containing an array of relative file paths to fetch</li>
+  <li><strong>Catalog listing file</strong> (e.g., <code>catalog.json</code>): a file containing an array of relative file paths to fetch</li>
 </ul>
-<p>A catalog listing file looks like this:</p>
+<h3><a href="#catalog-listing-file" name="catalog-listing-file" class="anchor"><span class="anchor-link"></span></a>Catalog listing file</h3>
+<p>A catalog listing file can be written in JSON or YAML, using two possible formats.</p>
+<p><strong>Simple array format</strong> (JSON or YAML):</p>
 <pre class="prettyprint"><code class="language-json">[
   &quot;./routes/route1.json&quot;,
   &quot;./route2.yaml&quot;,
@@ -422,7 +447,49 @@ backend:
   &quot;./apikeys/key1.yaml&quot;
 ]
 </code></pre>
-<p>This allows fine-grained control over which files should be imported during deployment.</p>
+<pre class="prettyprint"><code class="language-yaml">- ./routes/route1.json
+- ./route2.yaml
+- ./backends/backend1.json
+- ./apikeys/key1.yaml
+</code></pre>
+<p><strong>Kubernetes-style <code>RemoteCatalogListing</code> format</strong> (JSON or YAML):</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
+kind: RemoteCatalogListing
+spec:
+  catalog_listing:
+    - ./routes/route1.json
+    - ./route2.yaml
+    - ./backends/backend1.json
+    - ./apikeys/key1.yaml
+</code></pre>
+<p>The <code>RemoteCatalogListing</code> format requires both <code>apiVersion: proxy.otoroshi.io/v1</code> and <code>kind: RemoteCatalogListing</code> at the root level. The file paths are listed under <code>spec.catalog_listing</code>.</p>
+<h3><a href="#glob-patterns-in-catalog-listing-files" name="glob-patterns-in-catalog-listing-files" class="anchor"><span class="anchor-link"></span></a>Glob patterns in catalog listing files</h3>
+<p>Catalog listing files support glob/wildcard patterns to match multiple files at once. This is useful when you have a large number of entity files organized in directories and don&rsquo;t want to list each one individually.</p>
+<p>Supported glob syntax:</p>
+<ul>
+  <li><code>*</code> matches any sequence of characters within a single directory (does not cross <code>/</code>)</li>
+  <li><code>**</code> matches any sequence of characters across directories (crosses <code>/</code>)</li>
+  <li><code>?</code> matches any single character</li>
+  <li><code>[abc]</code> matches any character in the set</li>
+</ul>
+<p>Examples:</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1
+kind: RemoteCatalogListing
+spec:
+  catalog_listing:
+    - ./project-1/*.yaml
+    - ./project-2/**.json
+    - ./project-3/team-*/**.yaml
+    - ./shared/route?.json
+</code></pre>
+<p>In this example:</p>
+<ul>
+  <li><code>./project-1/*.yaml</code> matches all <code>.yaml</code> files directly in the <code>project-1</code> directory</li>
+  <li><code>./project-2/**.json</code> matches all <code>.json</code> files in <code>project-2</code> and any subdirectory</li>
+  <li><code>./project-3/team-*/**.yaml</code> matches all <code>.yaml</code> files under any <code>team-*</code> directory inside <code>project-3</code></li>
+  <li><code>./shared/route?.json</code> matches files like <code>route1.json</code>, <code>routeA.json</code>, etc.</li>
+</ul><div class="callout note "><div class="callout-title">Note</div>
+<p>Glob patterns are supported by the following sources: <strong>file</strong>, <strong>git</strong>, <strong>github</strong>, <strong>gitlab</strong>, <strong>s3</strong>, and <strong>consulkv</strong>. The <strong>http</strong> and <strong>bitbucket</strong> sources do not support glob patterns because they lack a directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.</p></div>
 <h2><a href="#remote-catalog-configuration" name="remote-catalog-configuration" class="anchor"><span class="anchor-link"></span></a>Remote Catalog configuration</h2>
 <p>A Remote Catalog entity has the following structure:</p>
 <pre class="prettyprint"><code class="language-javascript">{
@@ -728,7 +795,7 @@ curl -X DELETE &#39;http://otoroshi-api.oto.tools:8080/apis/catalogs.otoroshi.io
   <li>Configure scheduling for automatic synchronization</li>
 </ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../topics/kubernetes-gateway-api.html">How it works</a></p>
+<p><strong>Next:</strong> <a href="../topics/kubernetes-gateway-api.html">Kubernetes Gateway API support</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>

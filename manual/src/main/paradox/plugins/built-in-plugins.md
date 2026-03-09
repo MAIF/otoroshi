@@ -3594,6 +3594,7 @@ Check if client certificate matches the following configuration
 
 ```json
 {
+  "mandatory" : true,
   "serial_numbers" : [ ],
   "subject_dns" : [ ],
   "issuer_dns" : [ ],
@@ -4661,6 +4662,7 @@ This plugin verifies the current request jwt token against OIDC JWT verification
 
 ```json
 {
+  "mandatory" : true,
   "ref" : null,
   "source" : null,
   "custom_response" : false,
@@ -6441,8 +6443,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2026-02-23T14:16:20.081Z",
-  "stop" : "2026-02-24T14:16:20.101Z",
+  "start" : "2026-03-09T17:56:55.949Z",
+  "stop" : "2026-03-10T17:56:55.970Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"
