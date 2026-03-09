@@ -1510,6 +1510,318 @@ class CatalogSourceBitbucket extends CatalogSource {
   }
 }
 
+class CatalogSourceGiteaCompat(
+    override val sourceKind: String,
+    defaultBaseUrl: String
+) extends CatalogSource {
+
+  private val logger = Logger(s"otoroshi-remote-catalog-source-$sourceKind")
+
+  override def supportsWebhook: Boolean = true
+
+  private def parseRepo(repoUrl: String): Option[(String, String)] = {
+    val cleaned = repoUrl.stripSuffix(".git").stripSuffix("/")
+    val parts   = cleaned.split("/")
+    if (parts.length >= 2) {
+      Some((parts(parts.length - 2), parts(parts.length - 1)))
+    } else {
+      None
+    }
+  }
+
+  private def parseOrg(repoUrl: String): Option[String] = {
+    val cleaned = repoUrl.stripSuffix(".git").stripSuffix("/")
+    val path    = if (cleaned.contains("://")) {
+      cleaned.split("://", 2).last.split("/").drop(1).mkString("/")
+    } else cleaned
+    val parts   = path.split("/").filter(_.nonEmpty)
+    if (parts.length == 1) Some(parts(0)) else None
+  }
+
+  private def giteaHeaders(token: String): Seq[(String, String)] = {
+    Seq("User-Agent" -> "Otoroshi-Remote-Catalogs") ++
+    (if (token.nonEmpty) Seq("Authorization" -> s"token $token") else Seq.empty)
+  }
+
+  private def fetchFileContent(
+      baseUrl: String,
+      owner: String,
+      repo: String,
+      filePath: String,
+      branch: String,
+      token: String,
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+    val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/raw/$filePath"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("ref" -> branch)
+      .withHttpHeaders(giteaHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          Right(resp.body): Either[JsValue, String]
+        } else {
+          Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for $filePath")): Either[JsValue, String]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error fetching $filePath from $sourceKind: ${e.getMessage}")): Either[JsValue, String]
+      }
+  }
+
+  private def listAllFilesRecursive(
+      baseUrl: String,
+      owner: String,
+      repo: String,
+      branch: String,
+      token: String,
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+    val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/git/trees/$branch"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("recursive" -> "true")
+      .withHttpHeaders(giteaHeaders(token): _*)
+      .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val files = tree.flatMap { item =>
+            val itemType = item.select("type").asOpt[String].getOrElse("")
+            val itemPath = item.select("path").asOpt[String].getOrElse("")
+            if (itemType == "blob") Some(itemPath) else None
+          }
+          Right(files): Either[JsValue, Seq[String]]
+        } else {
+          Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for recursive tree listing")): Either[
+            JsValue,
+            Seq[String]
+          ]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing $sourceKind tree: ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
+  private def listDirectory(
+      baseUrl: String,
+      owner: String,
+      repo: String,
+      dirPath: String,
+      branch: String,
+      token: String,
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+    val path   = if (dirPath.isEmpty || dirPath == "/") "" else dirPath.stripSuffix("/")
+    val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/contents/$path"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("ref" -> branch)
+      .withHttpHeaders(giteaHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          resp.json match {
+            case arr: JsArray =>
+              val files = arr.value.flatMap { item =>
+                val itemType = item.select("type").asOpt[String].getOrElse("")
+                val itemName = item.select("name").asOpt[String].getOrElse("")
+                val itemPath = item.select("path").asOpt[String].getOrElse("")
+                if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
+              }
+              Right(files): Either[JsValue, Seq[String]]
+            case _ =>
+              Left(Json.obj("error" -> s"$sourceKind API did not return an array for directory listing")): Either[
+                JsValue,
+                Seq[String]
+              ]
+          }
+        } else {
+          Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for directory listing")): Either[
+            JsValue,
+            Seq[String]
+          ]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing $sourceKind directory: ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
+    val repoFullName = payload.select("repository").select("full_name").asOpt[String].getOrElse("")
+    val ref          = payload.select("ref").asOpt[String].getOrElse("")
+    val branch       = ref.replace("refs/heads/", "")
+    val matched      = possibleCatalogs.filter { catalog =>
+      catalog.sourceKind == sourceKind && {
+        val configRepo   = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
+        val configBranch = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
+        parseRepo(configRepo).exists { case (owner, repo) =>
+          s"$owner/$repo" == repoFullName && configBranch == branch
+        }
+      }
+    }
+    matched.rightf
+  }
+
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
+
+  private def listOrgRepos(baseUrl: String, org: String, token: String, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, Seq[String]]] = {
+    val orgUrl = s"$baseUrl/api/v1/orgs/$org/repos"
+    env.Ws
+      .url(orgUrl)
+      .withQueryStringParameters("limit" -> "50")
+      .withHttpHeaders(giteaHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .flatMap { resp =>
+        if (resp.status == 200) {
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+          (Right(repos): Either[JsValue, Seq[String]]).vfuture
+        } else {
+          val userUrl = s"$baseUrl/api/v1/users/$org/repos"
+          env.Ws
+            .url(userUrl)
+            .withQueryStringParameters("limit" -> "50")
+            .withHttpHeaders(giteaHeaders(token): _*)
+            .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+            .get()
+            .map { resp2 =>
+              if (resp2.status == 200) {
+                Right(
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                ): Either[JsValue, Seq[String]]
+              } else {
+                Left(Json.obj("error" -> s"Cannot list repos for '$org' on $sourceKind")): Either[JsValue, Seq[String]]
+              }
+            }
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing repos for '$org' on $sourceKind: ${e.getMessage}")): Either[
+          JsValue,
+          Seq[String]
+        ]
+      }
+  }
+
+  private def fetchFromSingleRepo(
+      baseUrl: String,
+      owner: String,
+      repo: String,
+      branch: String,
+      path: String,
+      token: String,
+      allRes: Seq[Resource],
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    if (SourceUtils.hasFileExtension(path)) {
+      fetchFileContent(baseUrl, owner, repo, path, branch, token, env).flatMap {
+        case Left(err)         => err.leftf
+        case Right(rawContent) =>
+          SourceUtils.isDeployListing(rawContent) match {
+            case Some(arr) =>
+              val basePath = if (path.contains("/")) path.substring(0, path.lastIndexOf('/')) else ""
+              SourceUtils.resolveDeployListing(
+                arr,
+                relativePath => {
+                  val fullPath = if (basePath.nonEmpty) s"$basePath/$relativePath" else relativePath
+                  fetchFileContent(baseUrl, owner, repo, fullPath, branch, token, env)
+                },
+                s"$sourceKind://$owner/$repo/$path@$branch",
+                allRes,
+                resolveGlob = Some(glob =>
+                  listAllFilesRecursive(baseUrl, owner, repo, branch, token, env).map {
+                    case Left(err)    => Left(err)
+                    case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
+                  }
+                )
+              )
+            case None      =>
+              (Right(
+                SourceUtils.parseEntityContent(rawContent, s"$sourceKind://$owner/$repo/$path@$branch", allRes)
+              ): Either[JsValue, Seq[RemoteEntity]]).vfuture
+          }
+      }
+    } else {
+      listDirectory(baseUrl, owner, repo, path, branch, token, env).flatMap {
+        case Left(err)    => err.leftf
+        case Right(files) =>
+          files
+            .mapAsync { filePath =>
+              fetchFileContent(baseUrl, owner, repo, filePath, branch, token, env).map {
+                case Left(err)         =>
+                  logger.warn(s"Error fetching $filePath: ${err.toString}")
+                  Seq.empty[RemoteEntity]
+                case Right(rawContent) =>
+                  SourceUtils.parseEntityContent(rawContent, s"$sourceKind://$owner/$repo/$filePath@$branch", allRes)
+              }
+            }
+            .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+      }
+    }
+  }
+
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+    val repoUrl      = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
+    val branch       = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
+    val path         = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
+    val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val baseUrl      =
+      catalog.sourceConfig.select("base_url").asOpt[String].getOrElse(defaultBaseUrl).stripSuffix("/")
+    val repoPatterns =
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
+
+    parseRepo(repoUrl) match {
+      case Some((owner, repo)) =>
+        fetchFromSingleRepo(baseUrl, owner, repo, branch, path, token, allRes, env)
+      case None                =>
+        parseOrg(repoUrl) match {
+          case Some(org) =>
+            listOrgRepos(baseUrl, org, token, env).flatMap {
+              case Left(err)    => err.leftf
+              case Right(repos) =>
+                val filtered = if (repoPatterns.nonEmpty)
+                  repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
+                else repos
+                logger.info(s"Scanning ${filtered.size} repos in org '$org' on $sourceKind for path '$path'")
+                filtered
+                  .mapAsync { repoName =>
+                    fetchFromSingleRepo(baseUrl, org, repoName, branch, path, token, allRes, env).map {
+                      case Left(_)         => Seq.empty[RemoteEntity]
+                      case Right(entities) => entities
+                    }
+                  }
+                  .map(all => Right(all.flatten): Either[JsValue, Seq[RemoteEntity]])
+            }
+          case None      =>
+            Json.obj("error" -> s"Cannot parse $sourceKind repo or organization from: $repoUrl").leftf
+        }
+    }
+  }
+}
+
+class CatalogSourceGitea extends CatalogSourceGiteaCompat("gitea", "http://localhost:3000")
+class CatalogSourceForgejo extends CatalogSourceGiteaCompat("forgejo", "http://localhost:3000")
+class CatalogSourceCodeberg extends CatalogSourceGiteaCompat("codeberg", "https://codeberg.org")
+
 class CatalogSourceGit extends CatalogSource {
 
   import scala.sys.process._

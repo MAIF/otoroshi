@@ -309,6 +309,9 @@ export function setupRemoteCatalogsExtension(registerExtension) {
                 { label: 'Git', value: 'git' },
                 { label: 'Bitbucket', value: 'bitbucket' },
                 { label: 'Consul KV', value: 'consulkv' },
+                { label: 'Gitea', value: 'gitea' },
+                { label: 'Forgejo', value: 'forgejo' },
+                { label: 'Codeberg', value: 'codeberg' },
               ],
               (i) => i.label
             ),
@@ -614,19 +617,19 @@ export function setupRemoteCatalogsExtension(registerExtension) {
           state.source_kind === 'http' ? 'source_config.headers' : null,
           state.source_kind === 'http' ? 'source_config.timeout' : null,
 
-          state.source_kind === 'github' || state.source_kind === 'gitlab'
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
             ? 'source_config.repo'
             : null,
-          state.source_kind === 'github' || state.source_kind === 'gitlab'
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
             ? 'source_config.branch'
             : null,
-          state.source_kind === 'github' || state.source_kind === 'gitlab'
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
             ? 'source_config.path'
             : null,
-          state.source_kind === 'github' || state.source_kind === 'gitlab'
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
             ? 'source_config.token'
             : null,
-          state.source_kind === 'github' || state.source_kind === 'gitlab'
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
             ? 'source_config.base_url'
             : null,
 

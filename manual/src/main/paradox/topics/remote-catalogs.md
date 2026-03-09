@@ -10,7 +10,7 @@ Changes pushed to a Git repository can be automatically deployed to Otoroshi via
 
 A Remote Catalog is an entity that defines:
 
-- A **source** where entity definitions are stored (GitHub, GitLab, Bitbucket, S3, HTTP, local file, Git repository, Consul KV)
+- A **source** where entity definitions are stored (GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg, S3, HTTP, local file, Git repository, Consul KV)
 - An optional **scheduling** configuration to automatically sync entities at regular intervals
 - A **reconciliation** engine that creates, updates, and deletes local entities to match the remote desired state
 
@@ -188,7 +188,7 @@ In this example:
 - `./shared/route?.json` matches files like `route1.json`, `routeA.json`, etc.
 
 @@@ note
-Glob patterns are supported by the following sources: **file**, **git**, **github**, **gitlab**, **s3**, and **consulkv**. The **http** and **bitbucket** sources do not support glob patterns because they lack a directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.
+Glob patterns are supported by the following sources: **file**, **git**, **github**, **gitlab**, **gitea**, **forgejo**, **codeberg**, **s3**, and **consulkv**. The **http** and **bitbucket** sources do not support glob patterns because they lack a recursive directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.
 @@@
 
 ## Remote Catalog configuration
@@ -367,6 +367,85 @@ The `repo_patterns` option filters repositories by their slug using glob pattern
 }
 ```
 
+### Gitea
+
+Fetches entities from a Gitea instance using the Gitea API v1.
+
+```javascript
+{
+  "source_kind": "gitea",
+  "source_config": {
+    "repo": "owner/repo",                        // repository (owner/repo) or organization name
+    "branch": "main",                            // branch name (default: main)
+    "path": "entities/",                         // file or directory path in the repo
+    "token": "xxx",                              // optional personal access token
+    "base_url": "http://localhost:3000",          // Gitea instance URL (default: http://localhost:3000)
+    "repo_patterns": ["otoroshi-*"]              // optional: filter repos when scanning an org
+  }
+}
+```
+
+Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Organization scanning mode
+
+When `repo` is set to an organization or user name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-repo`), Otoroshi will list all repositories in that organization and scan each one for the specified `path`. If a repository does not contain the specified path, it is silently skipped. The API first tries `/api/v1/orgs/{org}/repos`, then falls back to `/api/v1/users/{org}/repos`.
+
+The `repo_patterns` option filters repositories by name using glob patterns.
+
+```javascript
+{
+  "source_kind": "gitea",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "xxx",
+    "base_url": "https://my-gitea.example.com",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
+
+### Forgejo
+
+Fetches entities from a Forgejo instance. Forgejo is a fork of Gitea and uses the same API, so the configuration is identical to Gitea.
+
+```javascript
+{
+  "source_kind": "forgejo",
+  "source_config": {
+    "repo": "owner/repo",                        // repository (owner/repo) or organization name
+    "branch": "main",                            // branch name (default: main)
+    "path": "entities/",                         // file or directory path in the repo
+    "token": "xxx",                              // optional personal access token
+    "base_url": "http://localhost:3000",          // Forgejo instance URL (default: http://localhost:3000)
+    "repo_patterns": ["otoroshi-*"]              // optional: filter repos when scanning an org
+  }
+}
+```
+
+Supports the same features as Gitea: webhook-triggered deployments, organization scanning, glob patterns in catalog listing files.
+
+### Codeberg
+
+Fetches entities from Codeberg (a hosted Forgejo instance at codeberg.org). Uses the same Gitea-compatible API.
+
+```javascript
+{
+  "source_kind": "codeberg",
+  "source_config": {
+    "repo": "owner/repo",                        // repository (owner/repo) or organization name
+    "branch": "main",                            // branch name (default: main)
+    "path": "entities/",                         // file or directory path in the repo
+    "token": "xxx",                              // optional personal access token
+    "base_url": "https://codeberg.org",          // API base URL (default: https://codeberg.org)
+    "repo_patterns": ["otoroshi-*"]              // optional: filter repos when scanning an org
+  }
+}
+```
+
+Supports the same features as Gitea: webhook-triggered deployments, organization scanning, glob patterns in catalog listing files.
+
 ### Git (generic)
 
 Clones a Git repository and reads entities from the local clone. Works with any Git hosting provider or self-hosted repository.
@@ -529,7 +608,7 @@ Two scheduling modes are available:
 
 ## Webhook deployment
 
-For Git-based sources (GitHub, GitLab, Bitbucket), you can set up webhook-triggered deployments. This allows Otoroshi to automatically deploy entities when changes are pushed to the repository.
+For Git-based sources (GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg), you can set up webhook-triggered deployments. This allows Otoroshi to automatically deploy entities when changes are pushed to the repository.
 
 To set this up, create a route in Otoroshi with the `Remote Catalog Deploy Webhook` plugin and expose it to your Git provider as a webhook URL.
 
@@ -540,7 +619,7 @@ To set this up, create a route in Otoroshi with the `Remote Catalog Deploy Webho
   "plugin": "cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook",
   "config": {
     "catalog_refs": ["my-github-catalog", "my-gitlab-catalog"],  // catalogs to consider
-    "source_type": "github"                                       // or "gitlab", "bitbucket"
+    "source_type": "github"                                       // or "gitlab", "bitbucket", "gitea", "forgejo", "codeberg"
   }
 }
 ```
@@ -562,6 +641,10 @@ Set up a webhook in your GitLab project settings. The plugin matches on `project
 ### Bitbucket webhook
 
 Set up a webhook in your Bitbucket repository settings. The plugin matches on `repository.full_name` and `push.changes[].new.name` from the push event payload.
+
+### Gitea / Forgejo / Codeberg webhook
+
+Set up a webhook in your Gitea, Forgejo, or Codeberg repository settings. The webhook payload format is the same across all three platforms. The plugin matches on `repository.full_name` and `ref` (branch) from the push event payload, similar to GitHub.
 
 ## Other plugins
 

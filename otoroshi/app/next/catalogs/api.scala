@@ -104,6 +104,9 @@ object CatalogSources {
     registerSource("s3", new CatalogSourceS3())
     registerSource("consulkv", new CatalogSourceConsulKv())
     registerSource("bitbucket", new CatalogSourceBitbucket())
+    registerSource("gitea", new CatalogSourceGitea())
+    registerSource("forgejo", new CatalogSourceForgejo())
+    registerSource("codeberg", new CatalogSourceCodeberg())
     registerSource("git", new CatalogSourceGit())
   }
 
