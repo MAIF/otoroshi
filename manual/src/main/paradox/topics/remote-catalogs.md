@@ -18,7 +18,11 @@ When a catalog is deployed, Otoroshi fetches the entity definitions from the rem
 
 ## Entity format
 
-Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using `---` as separator) are supported. Each entity must contain at least an `id` field and a `kind` field. The `kind` field should match one of the existing Otoroshi resource kinds (e.g., `Route`, `Backend`, `ApiKey`, `Certificate`, etc.) including entities provided by Otoroshi extensions. You can also use the fully qualified kind with group prefix, like `proxy.otoroshi.io/Route`. This is the RECOMMENDED format to perform well !
+Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using `---` as separator) are supported. Two entity formats are supported: **flat format** and **Kubernetes-style format**.
+
+### Flat format
+
+Each entity must contain at least an `id` field and a `kind` field. The `kind` field should match one of the existing Otoroshi resource kinds (e.g., `Route`, `Backend`, `ApiKey`, `Certificate`, etc.) including entities provided by Otoroshi extensions. You can also use the fully qualified kind with group prefix, like `proxy.otoroshi.io/Route`. This is the RECOMMENDED format to perform well !
 
 ```json
 {
@@ -54,30 +58,57 @@ backend:
       port: 8080
 ```
 
-Multiple entities can be placed in a single file:
+### Kubernetes-style format
+
+Entities can also be written using a Kubernetes-style structure with `apiVersion`, `kind` at the root level and the actual entity definition nested under `spec`:
 
 ```yaml
-id: my-route-1
+apiVersion: proxy.otoroshi.io/v1
 kind: Route
-name: My Route 1
-frontend:
-  domains:
-    - api1.oto.tools
-backend:
-  targets:
-    - hostname: backend1.internal
-      port: 8080
+spec:
+  id: my-route-1
+  name: My Route
+  frontend:
+    domains:
+      - myapi.oto.tools
+  backend:
+    targets:
+      - hostname: my-backend.internal
+        port: 8080
+```
+
+The `kind` from the root level is automatically injected into the entity content. If the `spec` already contains a `kind` field that matches the root `kind` (either identical or with a group prefix, e.g., `proxy.otoroshi.io/Route` for a root `kind: Route`), the existing `kind` in `spec` is preserved.
+
+### Multiple entities in a single file
+
+Multiple entities can be placed in a single file using the YAML multi-document separator `---`:
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: Route
+spec:
+  id: my-route-1
+  name: My Route 1
+  frontend:
+    domains:
+      - api1.oto.tools
+  backend:
+    targets:
+      - hostname: backend1.internal
+        port: 8080
 ---
-id: my-route-2
+apiVersion: proxy.otoroshi.io/v1
 kind: Route
-name: My Route 2
-frontend:
-  domains:
-    - api2.oto.tools
-backend:
-  targets:
-    - hostname: backend2.internal
-      port: 8080
+spec:
+  id: my-route-2
+  name: My Route 2
+  frontend:
+    domains:
+      - api2.oto.tools
+  backend:
+    targets:
+      - hostname: backend2.internal
+        port: 8080
 ```
 
 ## Path modes
@@ -86,9 +117,13 @@ When configuring a source, the `path` parameter determines how entities are fetc
 
 - **File path** (e.g., `entities/routes.json`): fetches a single file and parses it for entities
 - **Directory path** (e.g., `entities/`): lists all `.json`, `.yaml`, and `.yml` files in the directory and parses each one
-- **Catalog listing file** (e.g., `catalog.json`): a JSON file containing an array of relative file paths to fetch
+- **Catalog listing file** (e.g., `catalog.json`): a file containing an array of relative file paths to fetch
 
-A catalog listing file looks like this:
+### Catalog listing file
+
+A catalog listing file can be written in JSON or YAML, using two possible formats.
+
+**Simple array format** (JSON or YAML):
 
 ```json
 [
@@ -99,7 +134,62 @@ A catalog listing file looks like this:
 ]
 ```
 
-This allows fine-grained control over which files should be imported during deployment.
+```yaml
+- ./routes/route1.json
+- ./route2.yaml
+- ./backends/backend1.json
+- ./apikeys/key1.yaml
+```
+
+**Kubernetes-style `RemoteCatalogListing` format** (JSON or YAML):
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: RemoteCatalogListing
+spec:
+  catalog_listing:
+    - ./routes/route1.json
+    - ./route2.yaml
+    - ./backends/backend1.json
+    - ./apikeys/key1.yaml
+```
+
+The `RemoteCatalogListing` format requires both `apiVersion: proxy.otoroshi.io/v1` and `kind: RemoteCatalogListing` at the root level. The file paths are listed under `spec.catalog_listing`.
+
+### Glob patterns in catalog listing files
+
+Catalog listing files support glob/wildcard patterns to match multiple files at once. This is useful when you have a large number of entity files organized in directories and don't want to list each one individually.
+
+Supported glob syntax:
+
+- `*` matches any sequence of characters within a single directory (does not cross `/`)
+- `**` matches any sequence of characters across directories (crosses `/`)
+- `?` matches any single character
+- `[abc]` matches any character in the set
+
+Examples:
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: RemoteCatalogListing
+spec:
+  catalog_listing:
+    - ./project-1/*.yaml
+    - ./project-2/**.json
+    - ./project-3/team-*/**.yaml
+    - ./shared/route?.json
+```
+
+In this example:
+
+- `./project-1/*.yaml` matches all `.yaml` files directly in the `project-1` directory
+- `./project-2/**.json` matches all `.json` files in `project-2` and any subdirectory
+- `./project-3/team-*/**.yaml` matches all `.yaml` files under any `team-*` directory inside `project-3`
+- `./shared/route?.json` matches files like `route1.json`, `routeA.json`, etc.
+
+@@@ note
+Glob patterns are supported by the following sources: **file**, **git**, **github**, **gitlab**, **s3**, and **consulkv**. The **http** and **bitbucket** sources do not support glob patterns because they lack a directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.
+@@@
 
 ## Remote Catalog configuration
 
