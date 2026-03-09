@@ -14,7 +14,16 @@ import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
+import otoroshi.utils.controllers.{
+  ApiError,
+  BulkControllerHelper,
+  CrudControllerHelper,
+  EntityAndContext,
+  JsonApiError,
+  NoEntityAndContext,
+  OptionalEntityAndContext,
+  SeqEntityAndContext
+}
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.streams.Accumulator

@@ -17,12 +17,48 @@ import scala.util.Try
 case class RemoteEntity(id: String, kind: String, source: String, syncAt: DateTime, content: JsObject)
 
 object RemoteEntity {
-  def fromJson(source: String, json: JsObject): Option[RemoteEntity] = {
+
+  private def isKubeStyle(json: JsObject): Boolean = {
+    json.select("apiVersion").asOpt[String].isDefined &&
+    json.select("kind").asOpt[String].isDefined &&
+    json.select("spec").asOpt[JsObject].isDefined
+  }
+
+  private def fromKubeStyle(source: String, json: JsObject): Option[RemoteEntity] = {
     for {
-      entityId <- json.select("id").asOpt[String]
-        .orElse(json.select("clientId").asOpt[String])
-        .orElse(json.select("serviceId").asOpt[String])
       kind <- json.select("kind").asOpt[String]
+      spec <- json.select("spec").asOpt[JsObject]
+    } yield {
+      val specKind    = spec.select("kind").asOpt[String]
+      val resolvedKind = specKind match {
+        case Some(sk) if sk == kind || sk.endsWith(s"/$kind") => sk
+        case _                                                 => kind
+      }
+      val content  = spec ++ Json.obj("kind" -> resolvedKind)
+      val entityId = content
+        .select("id")
+        .asOpt[String]
+        .orElse(content.select("clientId").asOpt[String])
+        .orElse(content.select("serviceId").asOpt[String])
+        .getOrElse(resolvedKind + "-" + System.nanoTime())
+      RemoteEntity(
+        id = entityId,
+        kind = resolvedKind,
+        source = source,
+        syncAt = DateTime.now(),
+        content = content
+      )
+    }
+  }
+
+  private def fromFlatJson(source: String, json: JsObject): Option[RemoteEntity] = {
+    for {
+      entityId <- json
+                    .select("id")
+                    .asOpt[String]
+                    .orElse(json.select("clientId").asOpt[String])
+                    .orElse(json.select("serviceId").asOpt[String])
+      kind     <- json.select("kind").asOpt[String]
     } yield {
       RemoteEntity(
         id = entityId,
@@ -32,6 +68,11 @@ object RemoteEntity {
         content = json
       )
     }
+  }
+
+  def fromJson(source: String, json: JsObject): Option[RemoteEntity] = {
+    if (isKubeStyle(json)) fromKubeStyle(source, json)
+    else fromFlatJson(source, json)
   }
 }
 
@@ -63,6 +104,9 @@ object CatalogSources {
     registerSource("s3", new CatalogSourceS3())
     registerSource("consulkv", new CatalogSourceConsulKv())
     registerSource("bitbucket", new CatalogSourceBitbucket())
+    registerSource("gitea", new CatalogSourceGitea())
+    registerSource("forgejo", new CatalogSourceForgejo())
+    registerSource("codeberg", new CatalogSourceCodeberg())
     registerSource("git", new CatalogSourceGit())
   }
 
@@ -163,7 +207,7 @@ class RemoteCatalogEngine(env: Env) {
     if (kind.contains("/")) {
       val parts = kind.split("/")
       val group = parts(0)
-      val kd = parts(1)
+      val kd    = parts(1)
       resources.find(r => r.kind == kd && r.group == group)
     } else {
       resources.find(r => r.kind == kind)
@@ -216,16 +260,20 @@ class RemoteCatalogEngine(env: Env) {
     allResources
       .mapAsync { resource =>
         Try {
-          val allEntities = resource.access.allJson()
+          val allEntities     = resource.access.allJson()
           val managedEntities = allEntities.filter { json =>
-            json.select("metadata").asOpt[Map[String, String]]
+            json
+              .select("metadata")
+              .asOpt[Map[String, String]]
               .exists(_.get("created_by").contains(metadataKey))
           }
           if (managedEntities.isEmpty) {
             ReconcileResult(resource.groupKind, 0, 0, 0, Seq.empty).vfuture
           } else {
             val idsToDelete = managedEntities.map { json =>
-              json.select("id").asOpt[String]
+              json
+                .select("id")
+                .asOpt[String]
                 .orElse(json.select("clientId").asOpt[String])
                 .orElse(json.select("serviceId").asOpt[String])
                 .getOrElse("")
@@ -240,11 +288,13 @@ class RemoteCatalogEngine(env: Env) {
       }
       .map { results =>
         val nonEmpty = results.filter(r => r.deleted > 0 || r.errors.nonEmpty)
-        Right(DeployReport(
-          catalogId = catalog.id,
-          results = nonEmpty,
-          timestamp = DateTime.now()
-        )): Either[JsValue, DeployReport]
+        Right(
+          DeployReport(
+            catalogId = catalog.id,
+            results = nonEmpty,
+            timestamp = DateTime.now()
+          )
+        ): Either[JsValue, DeployReport]
       }
   }
 
@@ -268,7 +318,9 @@ class RemoteCatalogEngine(env: Env) {
       ev: Env
   ): Future[DeployReport] = {
     val grouped = env.allResources.resources
-      .map(resource => (resource, remoteEntities.filter(re => re.kind == resource.groupKind || re.kind == resource.kind)))
+      .map(resource =>
+        (resource, remoteEntities.filter(re => re.kind == resource.groupKind || re.kind == resource.kind))
+      )
       .filter(_._2.nonEmpty)
     grouped
       .mapAsync { case (resource, entities) =>
@@ -311,26 +363,44 @@ class RemoteCatalogEngine(env: Env) {
     val remoteIds   = entities.map(_.id).toSet
     entities
       .mapAsync { entity =>
-        val entityId     = entity.id
-        val key          = resource.access.key(entityId)
+        val entityId = entity.id
+        val key      = resource.access.key(entityId)
         resource.access.validateToJson(entity.content, resource.singularName, None.right) match {
-          case err@JsError(_) =>
+          case err @ JsError(_)   =>
             errors = errors :+ s"Error upserting entity $entityId of kind $kind: ${Json.stringify(toJson(err))}"
             ().vfuture
           case JsSuccess(body, _) => {
             val enrichedJson = enrichWithMetadata(body.asObject, metadataKey)
             (resource.access.oneJson(entityId) match {
-              case None    =>
+              case None      =>
                 created += 1
                 if (!dryRun) {
-                  resource.access.create(resource.version.name, resource.singularName, entityId.some, enrichedJson, WriteAction.Create, None).map(_ => ())
+                  resource.access
+                    .create(
+                      resource.version.name,
+                      resource.singularName,
+                      entityId.some,
+                      enrichedJson,
+                      WriteAction.Create,
+                      None
+                    )
+                    .map(_ => ())
                 } else {
                   ().vfuture
                 }
               case Some(old) =>
                 updated += 1
                 if (!dryRun) {
-                  resource.access.create(resource.version.name, resource.singularName, entityId.some, enrichedJson, WriteAction.Update, old.some).map(_ => ())
+                  resource.access
+                    .create(
+                      resource.version.name,
+                      resource.singularName,
+                      entityId.some,
+                      enrichedJson,
+                      WriteAction.Update,
+                      old.some
+                    )
+                    .map(_ => ())
                 } else {
                   ().vfuture
                 }
@@ -339,7 +409,8 @@ class RemoteCatalogEngine(env: Env) {
             }
           }
         }
-      }.flatMap { _ =>
+      }
+      .flatMap { _ =>
         handleDeletions(catalog, kind, resource, remoteIds, metadataKey, dryRun).map { deletedCount =>
           ReconcileResult(kind, created, updated, deletedCount, errors)
         }
@@ -355,13 +426,17 @@ class RemoteCatalogEngine(env: Env) {
       dryRun: Boolean
   )(implicit ec: ExecutionContext, ev: Env): Future[Int] = {
     Try {
-      val allEntities = resource.access.allJson()
+      val allEntities     = resource.access.allJson()
       val managedEntities = allEntities.filter { json =>
-        json.select("metadata").asOpt[Map[String, String]]
+        json
+          .select("metadata")
+          .asOpt[Map[String, String]]
           .exists(_.get("created_by").contains(metadataKey))
       }
-      val toDelete = managedEntities.filter { json =>
-        val entityId = json.select("id").asOpt[String]
+      val toDelete        = managedEntities.filter { json =>
+        val entityId = json
+          .select("id")
+          .asOpt[String]
           .orElse(json.select("clientId").asOpt[String])
           .orElse(json.select("serviceId").asOpt[String])
           .getOrElse("")
@@ -373,7 +448,9 @@ class RemoteCatalogEngine(env: Env) {
         toDelete.size.vfuture
       } else {
         val idsToDelete = toDelete.map { json =>
-          json.select("id").asOpt[String]
+          json
+            .select("id")
+            .asOpt[String]
             .orElse(json.select("clientId").asOpt[String])
             .orElse(json.select("serviceId").asOpt[String])
             .getOrElse("")
@@ -387,7 +464,7 @@ class RemoteCatalogEngine(env: Env) {
   }
 
   private def enrichWithMetadata(json: JsObject, metadataKey: String): JsObject = {
-    val currentMetadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+    val currentMetadata  = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
     val enrichedMetadata = currentMetadata + ("created_by" -> metadataKey)
     json ++ Json.obj("metadata" -> enrichedMetadata)
   }

@@ -34,7 +34,7 @@ case class NgTrafficMirroringConfig(
         "capture_response" -> false,
         "generate_events"  -> false,
         "headers"          -> Map.empty[String, String],
-        "percentage"       -> 100.0,
+        "percentage"       -> 100.0
       )
     )
 ) extends NgPluginConfig {
@@ -45,7 +45,7 @@ case class NgTrafficMirroringConfig(
     "generate_events"  -> legacy.generateEvents,
     "headers"          -> legacy.headers,
     "salt"             -> legacy.salt,
-    "percentage"       -> legacy.percentage,
+    "percentage"       -> legacy.percentage
   )
 }
 

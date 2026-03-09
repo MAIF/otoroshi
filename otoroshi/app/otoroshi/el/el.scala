@@ -97,6 +97,8 @@ object GlobalExpressionLanguage {
         val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
         val matchedInputJwtToken                   = attrs.get(otoroshi.plugins.Keys.MatchedInputTokenKey)
         val matchedOutputJwtToken                  = attrs.get(otoroshi.plugins.Keys.MatchedOutputTokenKey)
+        val matchedRawInputToken                   = attrs.get(otoroshi.plugins.Keys.MatchedRawInputTokenKey)
+        val matchedRawOutputToken                  = attrs.get(otoroshi.plugins.Keys.MatchedRawOutputTokenKey)
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
@@ -371,6 +373,8 @@ object GlobalExpressionLanguage {
               } else {
                 json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
               }
+            case "in_raw_jwt" if matchedRawInputToken.isDefined => matchedRawInputToken.get 
+            case "out_raw_jwt" if matchedRawOutputToken.isDefined => matchedRawOutputToken.get
 
             case r"apikeyjwt.$field(.*)" if field.s.contains(".")           =>
               attrs

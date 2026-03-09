@@ -318,7 +318,7 @@ export function RoutesTable(props) {
         setQueryFilters(
           Object.entries(JSON.parse(atob(rawSearch))).map(([id, value]) => ({ id, value }))
         );
-      } catch (_) { }
+      } catch (_) {}
     }
   };
 
@@ -364,25 +364,43 @@ export function RoutesTable(props) {
         <InfoCollapse title="What is an HTTP Route?">
           <p>
             An HTTP Route is one of the <strong>core entities</strong> of Otoroshi's HTTP Gateway.
-            It acts as a smart reverse proxy rule that sits between your clients and your backend services,
-            giving you full control over every HTTP exchange passing through.
+            It acts as a smart reverse proxy rule that sits between your clients and your backend
+            services, giving you full control over every HTTP exchange passing through.
           </p>
           <p>
-            As long as it speaks HTTP, you can do anything with it — Otoroshi handles the rest.
-            Here are some examples of what you can achieve with routes:
+            As long as it speaks HTTP, you can do anything with it — Otoroshi handles the rest. Here
+            are some examples of what you can achieve with routes:
           </p>
           <ul>
-            <li><strong>Expose a web application</strong> — put your frontend app behind Otoroshi and serve it on a custom domain with TLS termination.</li>
-            <li><strong>Publish and secure REST APIs</strong> — protect your backend APIs with API keys, OAuth2/JWT authentication, rate limiting, and quotas.</li>
-            <li><strong>Add security layers</strong> — enforce CORS policies, IP filtering, mTLS, HMAC signature verification, or any custom security policy through plugins.</li>
-            <li><strong>Transform requests and responses</strong> — rewrite headers, modify payloads, change paths, or adapt protocols on the fly.</li>
-            <li><strong>Monitor and audit traffic</strong> — every call passing through a route can be logged, audited, and exported to your analytics stack.</li>
-            <li><strong>Implement traffic management</strong> — canary deployments, A/B testing, blue/green routing, circuit breaking, and load balancing across multiple targets.</li>
+            <li>
+              <strong>Expose a web application</strong> — put your frontend app behind Otoroshi and
+              serve it on a custom domain with TLS termination.
+            </li>
+            <li>
+              <strong>Publish and secure REST APIs</strong> — protect your backend APIs with API
+              keys, OAuth2/JWT authentication, rate limiting, and quotas.
+            </li>
+            <li>
+              <strong>Add security layers</strong> — enforce CORS policies, IP filtering, mTLS, HMAC
+              signature verification, or any custom security policy through plugins.
+            </li>
+            <li>
+              <strong>Transform requests and responses</strong> — rewrite headers, modify payloads,
+              change paths, or adapt protocols on the fly.
+            </li>
+            <li>
+              <strong>Monitor and audit traffic</strong> — every call passing through a route can be
+              logged, audited, and exported to your analytics stack.
+            </li>
+            <li>
+              <strong>Implement traffic management</strong> — canary deployments, A/B testing,
+              blue/green routing, circuit breaking, and load balancing across multiple targets.
+            </li>
           </ul>
           <p>
-            Each route is fully configurable at runtime — no restart needed.
-            You define <strong>how</strong> traffic comes in (frontend), <strong>where</strong> it goes (backend),
-            and <strong>what happens</strong> along the way (plugins).
+            Each route is fully configurable at runtime — no restart needed. You define{' '}
+            <strong>how</strong> traffic comes in (frontend), <strong>where</strong> it goes
+            (backend), and <strong>what happens</strong> along the way (plugins).
           </p>
         </InfoCollapse>
         <Table

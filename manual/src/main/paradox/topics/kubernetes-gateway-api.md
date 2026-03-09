@@ -1,4 +1,4 @@
-e Kubernetes Gateway API support
+# Kubernetes Gateway API support
 
 Starting from version 17.13.0, Otoroshi supports the [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) specification (v1.4, `gateway.networking.k8s.io/v1`). This feature enables you to define routing rules using standard Gateway API resources (`GatewayClass`, `Gateway`, `HTTPRoute`, `GRPCRoute`) and have Otoroshi automatically convert them into native `NgRoute` entities.
 

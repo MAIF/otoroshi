@@ -57,9 +57,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-        this.props.rawValue.clientId +
-        '/bearer?newSecret=' +
-        this.props.rawValue.clientSecret,
+          this.props.rawValue.clientId +
+          '/bearer?newSecret=' +
+          this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -256,9 +256,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -535,28 +537,47 @@ class DailyRemainingQuotas extends Component {
 }
 
 function InfoApikeysCollapse() {
-  return <InfoCollapse title="What is an API Key?">
-    <p>
-      An API Key is the <strong>main entity for API management</strong> in Otoroshi.
-      It is a unique credential — composed of a <strong>client ID</strong> and a <strong>client secret</strong> —
-      that identifies and authenticates a consumer when calling your protected routes and services.
-    </p>
-    <p>
-      API keys give you fine-grained control over who can access what, how often, and under which conditions.
-      Here are some examples of what you can achieve with them:
-    </p>
-    <ul>
-      <li><strong>Authenticate consumers</strong> — clients present their credentials via HTTP headers, Basic auth, or even client ID only for simpler use cases.</li>
-      <li><strong>Enforce quotas and rate limiting</strong> — set throttling (calls per second), daily, and monthly quotas to control usage and prevent abuse.</li>
-      <li><strong>Restrict access</strong> — limit which routes or services a key can access, restrict by IP address, allowed/forbidden paths, or HTTP methods (e.g. read-only mode).</li>
-      <li><strong>Manage lifecycle</strong> — enable or disable keys instantly, set expiration dates, and rotate secrets automatically with a configurable grace period.</li>
-      <li><strong>Track and audit usage</strong> — monitor consumption in real time, track remaining quotas, and identify which consumer is responsible for each call.</li>
-      <li><strong>Organize with metadata</strong> — tag and annotate keys with custom metadata for easier management across teams and tenants.</li>
-    </ul>
-    <p>
-      Each API key can be scoped to specific routes, services, or groups.
-    </p>
-  </InfoCollapse>
+  return (
+    <InfoCollapse title="What is an API Key?">
+      <p>
+        An API Key is the <strong>main entity for API management</strong> in Otoroshi. It is a
+        unique credential — composed of a <strong>client ID</strong> and a{' '}
+        <strong>client secret</strong> — that identifies and authenticates a consumer when calling
+        your protected routes and services.
+      </p>
+      <p>
+        API keys give you fine-grained control over who can access what, how often, and under which
+        conditions. Here are some examples of what you can achieve with them:
+      </p>
+      <ul>
+        <li>
+          <strong>Authenticate consumers</strong> — clients present their credentials via HTTP
+          headers, Basic auth, or even client ID only for simpler use cases.
+        </li>
+        <li>
+          <strong>Enforce quotas and rate limiting</strong> — set throttling (calls per second),
+          daily, and monthly quotas to control usage and prevent abuse.
+        </li>
+        <li>
+          <strong>Restrict access</strong> — limit which routes or services a key can access,
+          restrict by IP address, allowed/forbidden paths, or HTTP methods (e.g. read-only mode).
+        </li>
+        <li>
+          <strong>Manage lifecycle</strong> — enable or disable keys instantly, set expiration
+          dates, and rotate secrets automatically with a configurable grace period.
+        </li>
+        <li>
+          <strong>Track and audit usage</strong> — monitor consumption in real time, track remaining
+          quotas, and identify which consumer is responsible for each call.
+        </li>
+        <li>
+          <strong>Organize with metadata</strong> — tag and annotate keys with custom metadata for
+          easier management across teams and tenants.
+        </li>
+      </ul>
+      <p>Each API key can be scoped to specific routes, services, or groups.</p>
+    </InfoCollapse>
+  );
 }
 
 const ApiKeysConstants = {
@@ -861,8 +882,9 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
-                }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -949,8 +971,8 @@ export class ServiceApiKeysPage extends Component {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
       : nextClient
-        .forEntityNext(nextClient.ENTITIES.SERVICES)
-        .findById(this.props.params.serviceId);
+          .forEntityNext(nextClient.ENTITIES.SERVICES)
+          .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
         ? this.props.setTitle(this.props.title || `HTTP Routes Apikeys`)
@@ -1011,7 +1033,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-              `routes/${this.props.params.routeId}/apikeys`
+                `routes/${this.props.params.routeId}/apikeys`
               : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
           defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}

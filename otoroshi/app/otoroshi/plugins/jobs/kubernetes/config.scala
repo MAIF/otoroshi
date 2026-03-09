@@ -278,13 +278,18 @@ object KubernetesConfig {
           callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
           gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
           gatewayApiWatch = (conf \ "gatewayApiWatch").asOpt[Boolean].getOrElse(true),
-          gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
+          gatewayApiControllerName = (conf \ "gatewayApiControllerName")
+            .asOpt[String]
             .getOrElse("otoroshi.io/gateway-controller"),
-          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(80, 8080)),
-          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].map(v => Seq(v))
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(443, 8443)),
@@ -388,13 +393,18 @@ object KubernetesConfig {
           callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
           gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
           gatewayApiWatch = (conf \ "gatewayApiWatch").asOpt[Boolean].getOrElse(true),
-          gatewayApiControllerName = (conf \ "gatewayApiControllerName").asOpt[String]
+          gatewayApiControllerName = (conf \ "gatewayApiControllerName")
+            .asOpt[String]
             .getOrElse("otoroshi.io/gateway-controller"),
-          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort").asOpt[Int].map(v => Seq(v))
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(80, 8080)),
-          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort").asOpt[Int].map(v => Seq(v))
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(443, 8443)),

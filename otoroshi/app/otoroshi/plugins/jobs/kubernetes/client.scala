@@ -1406,24 +1406,47 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean
   ): Source[Seq[ByteString], ?] = {
-    val gatewayClassSource = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
-    val v1NamespacedSource = watchResources(
-      namespaces, Seq("gateways", "httproutes", "grpcroutes"), "gateway.networking.k8s.io/v1", timeout, stop
+    val gatewayClassSource     = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
+    val v1NamespacedSource     = watchResources(
+      namespaces,
+      Seq("gateways", "httproutes", "grpcroutes"),
+      "gateway.networking.k8s.io/v1",
+      timeout,
+      stop
     )
-    val referenceGrantSource = watchResources(
-      namespaces, Seq("referencegrants"), "gateway.networking.k8s.io/v1beta1", timeout, stop
+    val referenceGrantSource   = watchResources(
+      namespaces,
+      Seq("referencegrants"),
+      "gateway.networking.k8s.io/v1beta1",
+      timeout,
+      stop
     )
     val backendTLSPolicySource = watchResources(
-      namespaces, Seq("backendtlspolicies"), "gateway.networking.k8s.io/v1alpha3", timeout, stop
+      namespaces,
+      Seq("backendtlspolicies"),
+      "gateway.networking.k8s.io/v1alpha3",
+      timeout,
+      stop
     )
-    val pluginSource = watchResources(
-      namespaces, Seq("plugins"), "proxy.otoroshi.io/v1", timeout, stop
+    val pluginSource           = watchResources(
+      namespaces,
+      Seq("plugins"),
+      "proxy.otoroshi.io/v1",
+      timeout,
+      stop
     )
-    val endpointSliceSource = watchResources(
-      namespaces, Seq("endpointslices"), "discovery.k8s.io/v1", timeout, stop
+    val endpointSliceSource    = watchResources(
+      namespaces,
+      Seq("endpointslices"),
+      "discovery.k8s.io/v1",
+      timeout,
+      stop
     )
-    val kubeSource = watchKubeResources(
-      namespaces, Seq("secrets", "services", "endpoints"), timeout, stop
+    val kubeSource             = watchKubeResources(
+      namespaces,
+      Seq("secrets", "services", "endpoints"),
+      timeout,
+      stop
     )
     gatewayClassSource
       .merge(v1NamespacedSource)
@@ -1465,7 +1488,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchGateways(): Future[Seq[KubernetesGateway]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/gateways"
         else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/gateways"
       val cli: WSRequest = client(path)
@@ -1497,7 +1520,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchHTTPRoutes(): Future[Seq[KubernetesHTTPRoute]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/httproutes"
         else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/httproutes"
       val cli: WSRequest = client(path)
@@ -1529,7 +1552,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchGRPCRoutes(): Future[Seq[KubernetesGRPCRoute]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1/grpcroutes"
         else s"/apis/gateway.networking.k8s.io/v1/namespaces/$namespace/grpcroutes"
       val cli: WSRequest = client(path)
@@ -1559,7 +1582,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchReferenceGrants(): Future[Seq[KubernetesReferenceGrant]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1beta1/referencegrants"
         else s"/apis/gateway.networking.k8s.io/v1beta1/namespaces/$namespace/referencegrants"
       val cli: WSRequest = client(path)
@@ -1591,7 +1614,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchBackendTLSPolicies(): Future[Seq[KubernetesBackendTLSPolicy]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/gateway.networking.k8s.io/v1alpha3/backendtlspolicies"
         else s"/apis/gateway.networking.k8s.io/v1alpha3/namespaces/$namespace/backendtlspolicies"
       val cli: WSRequest = client(path)
@@ -1623,7 +1646,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchPlugins(): Future[Seq[KubernetesPlugin]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/proxy.otoroshi.io/v1/plugins"
         else s"/apis/proxy.otoroshi.io/v1/namespaces/$namespace/plugins"
       val cli: WSRequest = client(path)
@@ -1653,7 +1676,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchEndpointSlices(): Future[Seq[KubernetesEndpointSlice]] = {
     asyncSequence(config.namespaces.map { namespace =>
-      val path =
+      val path           =
         if (namespace == "*") s"/apis/discovery.k8s.io/v1/endpointslices"
         else s"/apis/discovery.k8s.io/v1/namespaces/$namespace/endpointslices"
       val cli: WSRequest = client(path)

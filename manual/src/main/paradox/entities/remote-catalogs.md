@@ -1,6 +1,6 @@
 # Remote Catalogs
 
-A Remote Catalog allows Otoroshi to synchronize entities from external sources such as GitHub, GitLab, Bitbucket, S3, HTTP endpoints, Git repositories, Consul KV stores, or local files. It provides an infrastructure-as-code approach where entity definitions are stored externally and deployed into Otoroshi with full reconciliation (create, update, delete).
+A Remote Catalog allows Otoroshi to synchronize entities from external sources such as GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg, S3, HTTP endpoints, Git repositories, Consul KV stores, or local files. It provides an infrastructure-as-code approach where entity definitions are stored externally and deployed into Otoroshi with full reconciliation (create, update, delete).
 
 ## UI page
 
@@ -12,7 +12,7 @@ You can find all remote catalogs [here](http://otoroshi.oto.tools:8080/bo/dashbo
 * `name`: display name
 * `description`: description of the catalog
 * `enabled`: whether the catalog is active
-* `source_kind`: the type of source to fetch entities from (`http`, `file`, `github`, `gitlab`, `bitbucket`, `git`, `s3`, `consulkv`)
+* `source_kind`: the type of source to fetch entities from (`http`, `file`, `github`, `gitlab`, `bitbucket`, `git`, `s3`, `consulkv`, `gitea`, `forgejo`, `codeberg`)
 * `source_config`: source-specific configuration (URL, token, path, branch, etc.)
 * `scheduling`: optional auto-sync scheduling configuration
     * `enabled`: enable scheduled deployment

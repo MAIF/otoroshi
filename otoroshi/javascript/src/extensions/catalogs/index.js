@@ -22,9 +22,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify([
-              { id: rawValue.id, args: rawValue.test_deploy_args || {} },
-            ]),
+            body: JSON.stringify([{ id: rawValue.id, args: rawValue.test_deploy_args || {} }]),
           })
             .then((r) => r.json())
             .then((data) => {
@@ -188,7 +186,10 @@ export function setupRemoteCatalogsExtension(registerExtension) {
       handleUndeploy = () => {
         const { rawValue } = this.props;
         if (!rawValue || !rawValue.id) return;
-        if (!window.confirm('Are you sure you want to undeploy all entities managed by this catalog?')) return;
+        if (
+          !window.confirm('Are you sure you want to undeploy all entities managed by this catalog?')
+        )
+          return;
         this.setState({ loading: true, result: null }, () => {
           fetch('/extensions/remote-catalogs/_undeploy', {
             method: 'POST',
@@ -298,16 +299,22 @@ export function setupRemoteCatalogsExtension(registerExtension) {
           type: 'select',
           props: {
             label: 'Source kind',
-            possibleValues: _.sortBy([
-              { label: 'HTTP', value: 'http' },
-              { label: 'File', value: 'file' },
-              { label: 'GitHub', value: 'github' },
-              { label: 'GitLab', value: 'gitlab' },
-              { label: 'S3', value: 's3' },
-              { label: 'Git', value: 'git' },
-              { label: 'Bitbucket', value: 'bitbucket' },
-              { label: 'Consul KV', value: 'consulkv' },
-            ], i => i.label)
+            possibleValues: _.sortBy(
+              [
+                { label: 'HTTP', value: 'http' },
+                { label: 'File', value: 'file' },
+                { label: 'GitHub', value: 'github' },
+                { label: 'GitLab', value: 'gitlab' },
+                { label: 'S3', value: 's3' },
+                { label: 'Git', value: 'git' },
+                { label: 'Bitbucket', value: 'bitbucket' },
+                { label: 'Consul KV', value: 'consulkv' },
+                { label: 'Gitea', value: 'gitea' },
+                { label: 'Forgejo', value: 'forgejo' },
+                { label: 'Codeberg', value: 'codeberg' },
+              ],
+              (i) => i.label
+            ),
           },
         },
         // File source fields
@@ -317,10 +324,10 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         },
         'source_config.pre_command': {
           type: 'array',
-          props: { 
-            label: 'Pre-command', 
+          props: {
+            label: 'Pre-command',
             help: 'Command parts to run before fetch (e.g. git, pull, or rsync, or rclone, etc)',
-            placeholder: 'Command parts to run before fetch (e.g. git, pull)' 
+            placeholder: 'Command parts to run before fetch (e.g. git, pull)',
           },
         },
         // HTTP source fields
@@ -355,7 +362,10 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         },
         'source_config.base_url': {
           type: 'string',
-          props: { label: 'API base URL', placeholder: 'https://api.github.com or https://gitlab.com' },
+          props: {
+            label: 'API base URL',
+            placeholder: 'https://api.github.com or https://gitlab.com',
+          },
         },
         // Git source fields
         'source_config.ssh_private_key_path': {
@@ -513,7 +523,12 @@ export function setupRemoteCatalogsExtension(registerExtension) {
                     .then((data) => {
                       this._deploying = null;
                       this.forceUpdate();
-                      if (window.toast) window.toast('Deploy success', `Catalog "${item.name}" deployed successfully`, 'success');
+                      if (window.toast)
+                        window.toast(
+                          'Deploy success',
+                          `Catalog "${item.name}" deployed successfully`,
+                          'success'
+                        );
                     })
                     .catch((err) => {
                       this._deploying = null;
@@ -558,7 +573,12 @@ export function setupRemoteCatalogsExtension(registerExtension) {
                     .then((data) => {
                       this._undeploying = null;
                       this.forceUpdate();
-                      if (window.toast) window.toast('Undeploy success', `Catalog "${item.name}" undeployed successfully`, 'success');
+                      if (window.toast)
+                        window.toast(
+                          'Undeploy success',
+                          `Catalog "${item.name}" undeployed successfully`,
+                          'success'
+                        );
                     })
                     .catch((err) => {
                       this._undeploying = null;
@@ -578,81 +598,88 @@ export function setupRemoteCatalogsExtension(registerExtension) {
         },
       ];
 
-      formFlow = (state) => [
-        '_loc',
-        'id',
-        'name',
-        'description',
-        'tags',
-        'metadata',
-        '<<<Source',
-        'enabled',
-        'source_kind',
+      formFlow = (state) =>
+        [
+          '_loc',
+          'id',
+          'name',
+          'description',
+          'tags',
+          'metadata',
+          '<<<Source',
+          'enabled',
+          'source_kind',
 
-        state.source_kind === 'file' ? 'source_config.path' : null,
-        state.source_kind === 'file' ? 'source_config.pre_command' : null,
+          state.source_kind === 'file' ? 'source_config.path' : null,
+          state.source_kind === 'file' ? 'source_config.pre_command' : null,
 
-        state.source_kind === 'http' ? 'source_config.url' : null,
-        state.source_kind === 'http' ? 'source_config.headers' : null,
-        state.source_kind === 'http' ? 'source_config.timeout' : null,
+          state.source_kind === 'http' ? 'source_config.url' : null,
+          state.source_kind === 'http' ? 'source_config.headers' : null,
+          state.source_kind === 'http' ? 'source_config.timeout' : null,
 
-        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.repo' : null,
-        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.branch' : null,
-        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.path' : null,
-        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.token' : null,
-        (state.source_kind === 'github' || state.source_kind === 'gitlab') ? 'source_config.base_url' : null,
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
+            ? 'source_config.repo'
+            : null,
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
+            ? 'source_config.branch'
+            : null,
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
+            ? 'source_config.path'
+            : null,
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
+            ? 'source_config.token'
+            : null,
+          ['github', 'gitlab', 'gitea', 'forgejo', 'codeberg'].includes(state.source_kind)
+            ? 'source_config.base_url'
+            : null,
 
-        state.source_kind === 'bitbucket' ? 'source_config.repo' : null,
-        state.source_kind === 'bitbucket' ? 'source_config.branch' : null,
-        state.source_kind === 'bitbucket' ? 'source_config.path' : null,
-        state.source_kind === 'bitbucket' ? 'source_config.token' : null,
-        state.source_kind === 'bitbucket' ? 'source_config.username' : null,
-        state.source_kind === 'bitbucket' ? 'source_config.base_url' : null,
+          state.source_kind === 'bitbucket' ? 'source_config.repo' : null,
+          state.source_kind === 'bitbucket' ? 'source_config.branch' : null,
+          state.source_kind === 'bitbucket' ? 'source_config.path' : null,
+          state.source_kind === 'bitbucket' ? 'source_config.token' : null,
+          state.source_kind === 'bitbucket' ? 'source_config.username' : null,
+          state.source_kind === 'bitbucket' ? 'source_config.base_url' : null,
 
-        state.source_kind === 'git' ? 'source_config.repo' : null,
-        state.source_kind === 'git' ? 'source_config.branch' : null,
-        state.source_kind === 'git' ? 'source_config.path' : null,
-        state.source_kind === 'git' ? 'source_config.token' : null,
-        state.source_kind === 'git' ? 'source_config.username' : null,
-        state.source_kind === 'git' ? 'source_config.ssh_private_key_path' : null,
+          state.source_kind === 'git' ? 'source_config.repo' : null,
+          state.source_kind === 'git' ? 'source_config.branch' : null,
+          state.source_kind === 'git' ? 'source_config.path' : null,
+          state.source_kind === 'git' ? 'source_config.token' : null,
+          state.source_kind === 'git' ? 'source_config.username' : null,
+          state.source_kind === 'git' ? 'source_config.ssh_private_key_path' : null,
 
-        state.source_kind === 'consulkv' ? 'source_config.endpoint' : null,
-        state.source_kind === 'consulkv' ? 'source_config.prefix' : null,
-        state.source_kind === 'consulkv' ? 'source_config.token' : null,
-        state.source_kind === 'consulkv' ? 'source_config.dc' : null,
+          state.source_kind === 'consulkv' ? 'source_config.endpoint' : null,
+          state.source_kind === 'consulkv' ? 'source_config.prefix' : null,
+          state.source_kind === 'consulkv' ? 'source_config.token' : null,
+          state.source_kind === 'consulkv' ? 'source_config.dc' : null,
 
-        state.source_kind === 's3' ? 'source_config.bucket' : null,
-        state.source_kind === 's3' ? 'source_config.key' : null,
-        state.source_kind === 's3' ? 'source_config.region' : null,
-        state.source_kind === 's3' ? 'source_config.access' : null,
-        state.source_kind === 's3' ? 'source_config.secret' : null,
-        state.source_kind === 's3' ? 'source_config.endpoint' : null,
+          state.source_kind === 's3' ? 'source_config.bucket' : null,
+          state.source_kind === 's3' ? 'source_config.key' : null,
+          state.source_kind === 's3' ? 'source_config.region' : null,
+          state.source_kind === 's3' ? 'source_config.access' : null,
+          state.source_kind === 's3' ? 'source_config.secret' : null,
+          state.source_kind === 's3' ? 'source_config.endpoint' : null,
 
-        '>>>Source raw config.',
-        'source_config',
-        '>>>Scheduling',
-        'scheduling.enabled',
-        'scheduling.kind',
-        state.scheduling.kind === 'ScheduledEvery' ? 'scheduling.initial_delay' : null,
-        state.scheduling.kind === 'ScheduledEvery' ? 'scheduling.interval' : null,
-        state.scheduling.kind === 'Cron' ? 'scheduling.cron_expression' : null,
-        'scheduling.deploy_args',
-        '>>>Test & Deploy',
-        'test_deploy_args',
-        'test_action',
-        'deploy_action',
-        'undeploy_action',
-      ].filter(i => !!i);
+          '>>>Source raw config.',
+          'source_config',
+          '>>>Scheduling',
+          'scheduling.enabled',
+          'scheduling.kind',
+          state.scheduling.kind === 'ScheduledEvery' ? 'scheduling.initial_delay' : null,
+          state.scheduling.kind === 'ScheduledEvery' ? 'scheduling.interval' : null,
+          state.scheduling.kind === 'Cron' ? 'scheduling.cron_expression' : null,
+          'scheduling.deploy_args',
+          '>>>Test & Deploy',
+          'test_deploy_args',
+          'test_action',
+          'deploy_action',
+          'undeploy_action',
+        ].filter((i) => !!i);
 
       componentDidMount() {
         this.props.setTitle(`All Remote Catalogs`);
       }
 
-      client = BackOfficeServices.apisClient(
-        'catalogs.otoroshi.io',
-        'v1',
-        'remote-catalogs'
-      );
+      client = BackOfficeServices.apisClient('catalogs.otoroshi.io', 'v1', 'remote-catalogs');
 
       render() {
         return React.createElement(
@@ -693,8 +720,7 @@ export function setupRemoteCatalogsExtension(registerExtension) {
             navigateTo: (item) => {
               window.location = `/bo/dashboard/extensions/remote-catalogs/edit/${item.id}`;
             },
-            itemUrl: (item) =>
-              `/bo/dashboard/extensions/remote-catalogs/edit/${item.id}`,
+            itemUrl: (item) => `/bo/dashboard/extensions/remote-catalogs/edit/${item.id}`,
             showActions: true,
             showLink: true,
             rowNavigation: true,

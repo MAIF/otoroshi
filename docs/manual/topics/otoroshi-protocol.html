@@ -68,6 +68,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -98,10 +104,13 @@ latest
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
     <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -201,6 +210,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -231,10 +246,13 @@ latest
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
     <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -326,15 +344,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#the-otoroshi-communication-protocol" name="the-otoroshi-communication-protocol" class="anchor"><span class="anchor-link"></span></a>The Otoroshi communication protocol</h1>
 <p>The exchange protocol secure the communication with an app. When it&rsquo;s enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request. On routes, you will have to use the <code>Otoroshi challenge token</code> plugin to enable it.</p>
-<h3><a href="#v1-challenge" name="v1-challenge" class="anchor"><span class="anchor-link"></span></a>V1 challenge</h3>
+<h2><a href="#v1-challenge" name="v1-challenge" class="anchor"><span class="anchor-link"></span></a>V1 challenge</h2>
 <p>If you enable secure communication for a given service with <code>V1 - simple values exchange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header and return it in a header named <code>Otoroshi-State-Resp</code>. </p><div class="centered-img">
 <img src="../imgs/exchange.png" /></div>
 <p>you can find an example project that implements V1 challenge <a href="https://github.com/MAIF/otoroshi/tree/master/demos/challenge">here</a></p>
-<h3><a href="#v2-challenge" name="v2-challenge" class="anchor"><span class="anchor-link"></span></a>V2 challenge</h3>
+<h2><a href="#v2-challenge" name="v2-challenge" class="anchor"><span class="anchor-link"></span></a>V2 challenge</h2>
 <p>If you enable secure communication for a given service with <code>V2 - signed JWT token exhange</code> activated, you will have to add a filter on the target application that will take the <code>Otoroshi-State</code> header value containing a JWT token, verify it&rsquo;s content signature then extract a claim named <code>state</code> and return a new JWT token in a header named <code>Otoroshi-State-Resp</code> with the <code>state</code> value in a claim named <code>state-resp</code>. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL. The audience of the response token must be <code>Otoroshi</code> and you have to specify <code>iat</code>, <code>nbf</code> and <code>exp</code>.</p><div class="centered-img">
 <img src="../imgs/exchange-2.png" /></div>
 <p>you can find an example project that implements V2 challenge <a href="https://github.com/MAIF/otoroshi/tree/master/demos/challenge">here</a></p>
-<h3><a href="#info-token" name="info-token" class="anchor"><span class="anchor-link"></span></a>Info. token</h3>
+<h2><a href="#info-token" name="info-token" class="anchor"><span class="anchor-link"></span></a>Info. token</h2>
 <p>Otoroshi is also sending a JWT token in a header named <code>Otoroshi-Claim</code> that the target app can validate too. On routes, you will have to use the <code>Otoroshi info. token</code> plugin to enable it.</p>
 <p>The <code>Otoroshi-Claim</code> is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that is more clear and structured.</p>
 <p>By default, the otoroshi jwt token is signed with the <code>otoroshi.claim.sharedKey</code> config property (or using the <code>$CLAIM_SHAREDKEY</code> env. variable) and uses the <code>HMAC512</code> signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the <code>Otoroshi exchange protocol</code> section. </p><div class="centered-img">
@@ -545,6 +563,68 @@ public class OtoroshiFilter implements Filter {
     }
 }</code></pre></dd>
 </dl>
+<h2><a href="#using-otoroshictl-to-bootstrap-a-proxy-implementing-the-otoroshi-protocol" name="using-otoroshictl-to-bootstrap-a-proxy-implementing-the-otoroshi-protocol" class="anchor"><span class="anchor-link"></span></a>Using <code>otoroshictl</code> to bootstrap a proxy implementing the Otoroshi protocol</h2>
+<p>While the protocol can be implemented directly inside your service, <a href="https://cloud-apim.github.io/otoroshictl/"><strong><code>otoroshictl</code></strong></a> from our friends at <a href="https://www.cloud-apim.com/">Cloud AIM</a> provides a convenient way to bootstrap a proxy that implements the protocol on behalf of your application.</p>
+<p>This is particularly useful when:</p>
+<ul>
+  <li>your service cannot be modified,</li>
+  <li>you want to secure local processes,</li>
+  <li>you need a sidecar or tunnel-based architecture,</li>
+  <li>you are exposing services through Otoroshi tunnels or remote proxies.</li>
+</ul>
+<h3><a href="#what-the-proxy-does" name="what-the-proxy-does" class="anchor"><span class="anchor-link"></span></a>What the proxy does</h3>
+<p>A proxy created with <code>otoroshictl challenge proxy</code> acts as an intermediary that:</p>
+<ol>
+  <li>Receives requests forwarded by Otoroshi.</li>
+  <li>Handles the <strong>challenge protocol</strong>:</li>
+</ol>
+<ul>
+  <li>reads the <code>Otoroshi-State</code> header,</li>
+  <li>validates the token (V1 or V2),</li>
+  <li>returns the expected response token in <code>Otoroshi-State-Resp</code>.</li>
+</ul>
+<ol>
+  <li>Validates and exposes the <strong>info token</strong> (<code>Otoroshi-Claim</code>) when enabled.</li>
+  <li>Forwards the request to your local or remote service.</li>
+</ol>
+<p>This allows your service to remain unaware of the protocol while still benefiting from secure communication.</p>
+<h3><a href="#info-token-support" name="info-token-support" class="anchor"><span class="anchor-link"></span></a>Info token support</h3>
+<p>When the <strong>info token</strong> feature is enabled on the route, Otoroshi sends a JWT in the <code>Otoroshi-Claim</code> header containing contextual information about the request and client.</p>
+<p>The proxy generated by <code>otoroshictl</code> can:</p>
+<ul>
+  <li>validate the signature,</li>
+  <li>expose claims to the downstream service,</li>
+  <li>or forward the token unchanged for application-level verification.</li>
+</ul>
+<p>The info token is configurable and signed using the shared key or custom algorithm defined in the route configuration. ([maif.github.io][2])</p>
+<h3><a href="#creating-a-proxy-with-otoroshictl" name="creating-a-proxy-with-otoroshictl" class="anchor"><span class="anchor-link"></span></a>Creating a proxy with <code>otoroshictl</code></h3>
+<p>Example:</p>
+<pre class="prettyprint"><code class="language-bash">otoroshictl challenge proxy \
+  --port 9000 \
+  --backend-host 127.0.0.1 \
+  --backend-port 8080 \
+  --secret &#39;my-secret&#39;
+</code></pre>
+<p>This command:</p>
+<ul>
+  <li>starts a local proxy listening on <code>127.0.0.1:9000</code></li>
+  <li>implements the Otoroshi protocol challenge with HS512 validation (with secret <code>my-secret</code>)</li>
+  <li>forwards traffic to <code>http://localhost:8080</code>.</li>
+</ul>
+<p>You can then configure your Otoroshi route to target this proxy instead of your service directly.</p>
+<h3><a href="#typical-architecture" name="typical-architecture" class="anchor"><span class="anchor-link"></span></a>Typical architecture</h3>
+<pre><code>Client → Otoroshi → otoroshictl proxy → your service
+</code></pre>
+<p>Benefits:</p>
+<ul>
+  <li>zero modification of the service,</li>
+  <li>protocol compliance out of the box,</li>
+  <li>improved security posture,</li>
+  <li>ideal for local development and remote tunnels.</li>
+</ul>
+<h3><a href="#full-documentation" name="full-documentation" class="anchor"><span class="anchor-link"></span></a>Full documentation</h3>
+<p>You can configure a lot of stuff with the <code>otoroshictl challenge command</code> like the header names used for JWT token, the algorithms used (input/output), validation, asymmetric keys, etc. You can pass the options as command line options or environment variables.</p>
+<p>You can find the full documentation of the <code>otoroshictl challenge proxy</code> command <a href="https://cloud-apim.github.io/otoroshictl/docs/tools/proxy">here</a></p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/tls.html">TLS</a></p>
 </div>
@@ -562,6 +642,7 @@ public class OtoroshiFilter implements Filter {
     <li><a href="../topics/otoroshi-protocol.html#v1-challenge" class="header">V1 challenge</a></li>
     <li><a href="../topics/otoroshi-protocol.html#v2-challenge" class="header">V2 challenge</a></li>
     <li><a href="../topics/otoroshi-protocol.html#info-token" class="header">Info. token</a></li>
+    <li><a href="../topics/otoroshi-protocol.html#using-otoroshictl-to-bootstrap-a-proxy-implementing-the-otoroshi-protocol" class="header">Using <code>otoroshictl</code> to bootstrap a proxy implementing the Otoroshi protocol</a></li>
   </ul></li>
 </ul>
 </div>

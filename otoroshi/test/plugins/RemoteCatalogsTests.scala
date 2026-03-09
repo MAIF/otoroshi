@@ -40,7 +40,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
       "frontend" -> Json.obj(
         "domains" -> Json.arr("test-from-catalog.oto.tools")
       ),
-      "backend" -> Json.obj(
+      "backend"  -> Json.obj(
         "targets" -> Json.arr(
           Json.obj("hostname" -> "localhost", "port" -> 8080)
         )
@@ -48,7 +48,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     )
     Files.write(tempRoot.resolve("route.json"), Json.stringify(routeJson).getBytes())
 
-    val catalogId  = s"remote-catalog_${IdGenerator.uuid}"
+    val catalogId   = s"remote-catalog_${IdGenerator.uuid}"
     val catalogJson = Json.obj(
       "id"               -> catalogId,
       "name"             -> "Test File Catalog",
@@ -152,7 +152,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     )
     Files.write(tempRoot.resolve("backend.json"), Json.stringify(backendJson).getBytes())
 
-    val catalogId  = s"remote-catalog_${IdGenerator.uuid}"
+    val catalogId   = s"remote-catalog_${IdGenerator.uuid}"
     val catalogJson = Json.obj(
       "id"               -> catalogId,
       "name"             -> "Test File Catalog Plugin",
@@ -204,8 +204,11 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     resp.status.mustBe(200)
 
     val respJson = resp.json
-    val pluginCreated = (respJson \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-      .map(rr => (rr \ "created").asOpt[Int].getOrElse(0)).sum
+    val pluginCreated = (respJson \ "results")
+      .asOpt[Seq[JsObject]]
+      .getOrElse(Seq.empty)
+      .map(rr => (rr \ "created").asOpt[Int].getOrElse(0))
+      .sum
     (pluginCreated > 0).mustBe(true)
 
     await(2.seconds)
@@ -253,7 +256,7 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     )
     Files.write(tempRoot.resolve("backend.json"), Json.stringify(backendJson).getBytes())
 
-    val catalogId  = s"remote-catalog_${IdGenerator.uuid}"
+    val catalogId   = s"remote-catalog_${IdGenerator.uuid}"
     val catalogJson = Json.obj(
       "id"               -> catalogId,
       "name"             -> "Test File Catalog Plugin",
@@ -285,9 +288,13 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
         NgPluginInstance(
           plugin = NgPluginHelper.pluginId[RemoteCatalogDeployMany],
           config = NgPluginInstanceConfig(
-            Json.obj("catalog_refs" -> Seq(
-              catalogId
-            )).as[JsObject]
+            Json
+              .obj(
+                "catalog_refs" -> Seq(
+                  catalogId
+                )
+              )
+              .as[JsObject]
           )
         )
       ),
@@ -307,8 +314,11 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
     resp.status.mustBe(200)
 
     val respJson = resp.json
-    val pluginCreated = (respJson \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-      .map(rr => (rr \ "created").asOpt[Int].getOrElse(0)).sum
+    val pluginCreated = (respJson \ "results")
+      .asOpt[Seq[JsObject]]
+      .getOrElse(Seq.empty)
+      .map(rr => (rr \ "created").asOpt[Int].getOrElse(0))
+      .sum
     (pluginCreated > 0).mustBe(true)
 
     await(2.seconds)

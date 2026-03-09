@@ -101,7 +101,7 @@ object RemoteCatalog {
     scheduling = RemoteCatalogScheduling.default,
     testDeployArgs = Json.obj()
   )
-  val format = new Format[RemoteCatalog] {
+  val format                    = new Format[RemoteCatalog] {
     override def writes(o: RemoteCatalog): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"               -> o.id,
       "name"             -> o.name,
@@ -143,11 +143,11 @@ trait RemoteCatalogDataStore extends BasicStore[RemoteCatalog]
 class KvRemoteCatalogDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env)
     extends RemoteCatalogDataStore
     with RedisLikeStore[RemoteCatalog] {
-  override def fmt: Format[RemoteCatalog]                   = RemoteCatalog.format
-  override def redisLike(implicit env: Env): RedisLike      = redisCli
-  override def key(id: String): String                      =
+  override def fmt: Format[RemoteCatalog]              = RemoteCatalog.format
+  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def key(id: String): String                 =
     s"${_env.storageRoot}:extensions:${extensionId.cleanup}:remote-catalogs:$id"
-  override def extractId(value: RemoteCatalog): String      = value.id
+  override def extractId(value: RemoteCatalog): String = value.id
 }
 
 class RemoteCatalogAdminExtensionDatastores(env: Env, extensionId: AdminExtensionId) {
@@ -376,17 +376,17 @@ class RemoteCatalogJob(ref: String, config: RemoteCatalogScheduling) extends Job
 
   private val logger = Logger("otoroshi-remote-catalog-job")
 
-  override def core: Boolean                     = true
-  override def name: String                      = "Remote Catalog Job"
-  override def description: Option[String]       = "This job deploys entities from a remote catalog".some
-  override def defaultConfig: Option[JsObject]   = None
-  override def visibility: otoroshi.next.plugins.api.NgPluginVisibility =
+  override def core: Boolean                                               = true
+  override def name: String                                                = "Remote Catalog Job"
+  override def description: Option[String]                                 = "This job deploys entities from a remote catalog".some
+  override def defaultConfig: Option[JsObject]                             = None
+  override def visibility: otoroshi.next.plugins.api.NgPluginVisibility    =
     otoroshi.next.plugins.api.NgPluginVisibility.NgUserLand
   override def categories: Seq[otoroshi.next.plugins.api.NgPluginCategory] =
     Seq(otoroshi.next.plugins.api.NgPluginCategory.Custom("Remote Catalogs"))
-  override def steps: Seq[otoroshi.next.plugins.api.NgStep] = Seq(otoroshi.next.plugins.api.NgStep.Job)
-  override def jobVisibility: JobVisibility      = JobVisibility.UserLand
-  override def starting: JobStarting             = JobStarting.Automatically
+  override def steps: Seq[otoroshi.next.plugins.api.NgStep]                = Seq(otoroshi.next.plugins.api.NgStep.Job)
+  override def jobVisibility: JobVisibility                                = JobVisibility.UserLand
+  override def starting: JobStarting                                       = JobStarting.Automatically
 
   override def uniqueId: JobId                                                 = JobId(s"io.otoroshi.next.catalogs.RemoteCatalogJob#${ref}")
   override def kind: JobKind                                                   = config.kind

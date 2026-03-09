@@ -109,17 +109,17 @@ class KubernetesGatewayApiControllerJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     Try(KubernetesConfig.theConfig(ctx)) match {
-      case Failure(e) =>
+      case Failure(e)                       =>
         logger.error(s"Failed to read KubernetesConfig: ${e.getMessage}")
         ().future
       case Success(conf) if conf.gatewayApi =>
         handleWatch(conf, ctx)
         KubernetesGatewayApiJob.syncGatewayApi(conf, ctx.attrs, !stopCommand.get())
-      case _ =>
+      case _                                =>
         ().future
     }
   }
-  
+
   def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
       env: Env,
       ec: ExecutionContext
@@ -207,50 +207,77 @@ object KubernetesGatewayApiJob {
 
       val result = for {
         // ─── Phase 1: Fetch ──────────────────────────────────────
-        gatewayClasses  <- client.fetchGatewayClasses()
-        gateways        <- client.fetchGateways()
-        httpRoutes      <- client.fetchHTTPRoutes()
-        grpcRoutes          <- client.fetchGRPCRoutes()
-        referenceGrants     <- client.fetchReferenceGrants()
-        backendTLSPolicies  <- client.fetchBackendTLSPolicies()
-        plugins             <- client.fetchPlugins()
-        namespaces          <- client.fetchNamespacesAndFilterLabels()
-        services            <- client.fetchServices()
-        endpoints           <- client.fetchEndpoints()
-        endpointSlices      <- client.fetchEndpointSlices()
+        gatewayClasses     <- client.fetchGatewayClasses()
+        gateways           <- client.fetchGateways()
+        httpRoutes         <- client.fetchHTTPRoutes()
+        grpcRoutes         <- client.fetchGRPCRoutes()
+        referenceGrants    <- client.fetchReferenceGrants()
+        backendTLSPolicies <- client.fetchBackendTLSPolicies()
+        plugins            <- client.fetchPlugins()
+        namespaces         <- client.fetchNamespacesAndFilterLabels()
+        services           <- client.fetchServices()
+        endpoints          <- client.fetchEndpoints()
+        endpointSlices     <- client.fetchEndpointSlices()
 
         // Fetch existing Otoroshi routes managed by this provider
         existingRoutes <- if (conf.useProxyState) env.proxyState.allRoutes().vfuture
                           else env.datastores.routeDataStore.findAll()
-        managedRoutes = existingRoutes.filter(
-          _.metadata.get("otoroshi-provider").contains(PROVIDER)
-        )
+        managedRoutes   = existingRoutes.filter(
+                            _.metadata.get("otoroshi-provider").contains(PROVIDER)
+                          )
 
         // ─── Phase 2: Reconcile GatewayClasses ──────────────────
-        _ <- reconcileGatewayClasses(client, gatewayClasses, conf)
+        _              <- reconcileGatewayClasses(client, gatewayClasses, conf)
 
         // ─── Phase 3: Resolve TLS certificates ──────────────────
         resolvedCerts <- resolveGatewayCertificates(client, gateways, gatewayClasses, conf)
 
         // ─── Phase 4: Reconcile Gateways ────────────────────────
-        acceptedGateways <- reconcileGateways(
-          client, gateways, gatewayClasses, httpRoutes, grpcRoutes, namespaces, conf, resolvedCerts
-        )
+        acceptedGateways  <- reconcileGateways(
+                               client,
+                               gateways,
+                               gatewayClasses,
+                               httpRoutes,
+                               grpcRoutes,
+                               namespaces,
+                               conf,
+                               resolvedCerts
+                             )
 
         // ─── Phase 4.5: Resolve BackendTLS CA certificates ──────
         resolvedCaCertIds <- resolveBackendTLSCACertificates(client, backendTLSPolicies, conf)
 
         // ─── Phase 5: Reconcile HTTPRoutes ──────────────────────
         httpGeneratedRoutes <- reconcileHTTPRoutes(
-          client, httpRoutes, acceptedGateways, services, endpoints, endpointSlices,
-          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
-        )
+                                 client,
+                                 httpRoutes,
+                                 acceptedGateways,
+                                 services,
+                                 endpoints,
+                                 endpointSlices,
+                                 referenceGrants,
+                                 backendTLSPolicies,
+                                 resolvedCaCertIds,
+                                 plugins,
+                                 namespaces,
+                                 conf
+                               )
 
         // ─── Phase 6: Reconcile GRPCRoutes ──────────────────────
         grpcGeneratedRoutes <- reconcileGRPCRoutes(
-          client, grpcRoutes, acceptedGateways, services, endpoints, endpointSlices,
-          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
-        )
+                                 client,
+                                 grpcRoutes,
+                                 acceptedGateways,
+                                 services,
+                                 endpoints,
+                                 endpointSlices,
+                                 referenceGrants,
+                                 backendTLSPolicies,
+                                 resolvedCaCertIds,
+                                 plugins,
+                                 namespaces,
+                                 conf
+                               )
 
         generatedRoutes = httpGeneratedRoutes ++ grpcGeneratedRoutes
 
@@ -260,8 +287,10 @@ object KubernetesGatewayApiJob {
         // ─── Phase 8: Delete orphaned routes ────────────────────
         _ <- deleteOrphanedRoutes(generatedRoutes, managedRoutes)
 
-        _ = logger.info(s"Gateway API sync done: ${generatedRoutes.size} routes generated " +
-          s"(${httpGeneratedRoutes.size} HTTP, ${grpcGeneratedRoutes.size} gRPC)")
+        _ = logger.info(
+              s"Gateway API sync done: ${generatedRoutes.size} routes generated " +
+              s"(${httpGeneratedRoutes.size} HTTP, ${grpcGeneratedRoutes.size} gRPC)"
+            )
       } yield ()
 
       result.andThen {
@@ -324,7 +353,7 @@ object KubernetesGatewayApiJob {
       .filter(_.controllerName == conf.gatewayApiControllerName)
       .map(_.name)
       .toSet
-    val ourGateways = gateways.filter(gw => acceptedClassNames.contains(gw.gatewayClassName))
+    val ourGateways        = gateways.filter(gw => acceptedClassNames.contains(gw.gatewayClassName))
 
     // Collect unique (namespace, name) pairs from HTTPS listener certificateRefs
     val certRefs: Seq[(String, String)] = ourGateways.flatMap { gw =>
@@ -346,30 +375,33 @@ object KubernetesGatewayApiJob {
         .sequence(certRefs.map { case (namespace, name) =>
           val certId = s"kubernetes-certs-import-$namespace-$name".slugifyWithSlash
           val path   = s"$namespace/$name"
-          env.datastores.certificatesDataStore.findById(certId).flatMap {
-            case Some(_) =>
-              // Cert already present in Otoroshi
-              Future.successful(Some(path))
-            case None =>
-              // Try to fetch and import from K8s
-              client.fetchSecret(namespace, name).flatMap {
-                case Some(secret) if secret.theType == "kubernetes.io/tls" =>
-                  val certSecret = secret.cert
-                  KubernetesCertSyncJob.importCerts(Seq(certSecret)).map { _ =>
-                    logger.info(s"Imported TLS certificate $path for Gateway API listener")
-                    Some(path)
-                  }
-                case Some(secret) =>
-                  logger.warn(s"Secret $path is not of type kubernetes.io/tls (got ${secret.theType}), skipping")
-                  Future.successful(None)
-                case None =>
-                  logger.warn(s"TLS Secret $path not found in Kubernetes, cannot resolve certificateRef")
-                  Future.successful(None)
-              }
-          }.recover { case e =>
-            logger.error(s"Failed to resolve certificate $path: ${e.getMessage}")
-            None
-          }
+          env.datastores.certificatesDataStore
+            .findById(certId)
+            .flatMap {
+              case Some(_) =>
+                // Cert already present in Otoroshi
+                Future.successful(Some(path))
+              case None    =>
+                // Try to fetch and import from K8s
+                client.fetchSecret(namespace, name).flatMap {
+                  case Some(secret) if secret.theType == "kubernetes.io/tls" =>
+                    val certSecret = secret.cert
+                    KubernetesCertSyncJob.importCerts(Seq(certSecret)).map { _ =>
+                      logger.info(s"Imported TLS certificate $path for Gateway API listener")
+                      Some(path)
+                    }
+                  case Some(secret)                                          =>
+                    logger.warn(s"Secret $path is not of type kubernetes.io/tls (got ${secret.theType}), skipping")
+                    Future.successful(None)
+                  case None                                                  =>
+                    logger.warn(s"TLS Secret $path not found in Kubernetes, cannot resolve certificateRef")
+                    Future.successful(None)
+                }
+            }
+            .recover { case e =>
+              logger.error(s"Failed to resolve certificate $path: ${e.getMessage}")
+              None
+            }
         })
         .map(_.flatten.toSet)
     }
@@ -411,55 +443,61 @@ object KubernetesGatewayApiJob {
         .sequence(certRefs.map { case (namespace, name) =>
           val certId = s"kubernetes-certs-import-$namespace-$name".slugifyWithSlash
           val path   = s"$namespace/$name"
-          env.datastores.certificatesDataStore.findById(certId).flatMap {
-            case Some(_) =>
-              // CA cert already present in Otoroshi
-              Future.successful(Some(path -> certId))
-            case None =>
-              // Try to fetch the K8s Secret and import the CA certificate
-              client.fetchSecret(namespace, name).flatMap {
-                case Some(secret) =>
-                  val caCrt = secret.data.get("ca.crt")
-                    .orElse(secret.data.get("tls.crt")) // fallback to tls.crt if ca.crt not present
-                  caCrt match {
-                    case Some(certPem) =>
-                      import otoroshi.ssl.Cert
-                      val newCert = Cert(
-                        id = certId,
-                        name = s"K8s BackendTLS CA $namespace/$name",
-                        description = s"CA certificate imported from BackendTLSPolicy for $namespace/$name",
-                        chain = certPem,
-                        privateKey = "",
-                        caRef = None,
-                        autoRenew = false,
-                        client = false,
-                        exposed = false,
-                        revoked = false
-                      ).enrich().copy(
-                        ca = true,
-                        entityMetadata = Map(
-                          "otoroshi-provider"    -> "kubernetes-gateway-api",
-                          "kubernetes-name"      -> name,
-                          "kubernetes-namespace" -> namespace,
-                          "kubernetes-path"      -> path
-                        )
-                      )
-                      newCert.save().map { _ =>
-                        logger.info(s"Imported CA certificate $path for BackendTLSPolicy")
-                        Some(path -> certId)
-                      }
-                    case None =>
-                      logger.warn(s"Secret $path has no ca.crt or tls.crt data, cannot import CA certificate")
-                      Future.successful(None)
-                  }
-                case None =>
-                  logger.warn(s"Secret $path not found in Kubernetes, cannot resolve BackendTLSPolicy caCertificateRef")
-                  Future.successful(None)
-              }
-          }.recover { case e =>
-            logger.error(s"Failed to resolve BackendTLS CA certificate $path: ${e.getMessage}")
-            None
-          }
+          env.datastores.certificatesDataStore
+            .findById(certId)
+            .flatMap {
+              case Some(_) =>
+                // CA cert already present in Otoroshi
+                Future.successful(Some(path -> certId))
+              case None    =>
+                // Try to fetch the K8s Secret and import the CA certificate
+                client.fetchSecret(namespace, name).flatMap {
+                  case Some(secret) =>
+                    val caCrt = secret.data
+                      .get("ca.crt")
+                      .orElse(secret.data.get("tls.crt")) // fallback to tls.crt if ca.crt not present
+                    caCrt match {
+                      case Some(certPem) =>
+                        import otoroshi.ssl.Cert
+                        val newCert = Cert(
+                          id = certId,
+                          name = s"K8s BackendTLS CA $namespace/$name",
+                          description = s"CA certificate imported from BackendTLSPolicy for $namespace/$name",
+                          chain = certPem,
+                          privateKey = "",
+                          caRef = None,
+                          autoRenew = false,
+                          client = false,
+                          exposed = false,
+                          revoked = false
+                        ).enrich()
+                          .copy(
+                            ca = true,
+                            entityMetadata = Map(
+                              "otoroshi-provider"    -> "kubernetes-gateway-api",
+                              "kubernetes-name"      -> name,
+                              "kubernetes-namespace" -> namespace,
+                              "kubernetes-path"      -> path
+                            )
+                          )
+                        newCert.save().map { _ =>
+                          logger.info(s"Imported CA certificate $path for BackendTLSPolicy")
+                          Some(path -> certId)
+                        }
+                      case None          =>
+                        logger.warn(s"Secret $path has no ca.crt or tls.crt data, cannot import CA certificate")
+                        Future.successful(None)
+                    }
+                  case None         =>
+                    logger
+                      .warn(s"Secret $path not found in Kubernetes, cannot resolve BackendTLSPolicy caCertificateRef")
+                    Future.successful(None)
+                }
+            }
+            .recover { case e =>
+              logger.error(s"Failed to resolve BackendTLS CA certificate $path: ${e.getMessage}")
+              None
+            }
         })
         .map(_.flatten.toMap)
     }
@@ -485,18 +523,22 @@ object KubernetesGatewayApiJob {
     if (conf.gatewayApiAddresses.nonEmpty) {
       Future.successful(JsArray(conf.gatewayApiAddresses))
     } else {
-      val svcName = conf.gatewayApiGatewayServiceName.getOrElse(conf.otoroshiServiceName)
+      val svcName      = conf.gatewayApiGatewayServiceName.getOrElse(conf.otoroshiServiceName)
       val svcNamespace = conf.otoroshiNamespace
       client.fetchService(svcNamespace, svcName).map {
-        case None =>
+        case None      =>
           logger.warn(s"Gateway address resolution: Service $svcNamespace/$svcName not found")
           Json.arr()
         case Some(svc) =>
-          val lbIngress = svc.raw.select("status").select("loadBalancer").select("ingress")
-            .asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val lbIngress = svc.raw
+            .select("status")
+            .select("loadBalancer")
+            .select("ingress")
+            .asOpt[Seq[JsObject]]
+            .getOrElse(Seq.empty)
           if (lbIngress.nonEmpty) {
             JsArray(lbIngress.flatMap { ingress =>
-              val ip = (ingress \ "ip").asOpt[String]
+              val ip       = (ingress \ "ip").asOpt[String]
               val hostname = (ingress \ "hostname").asOpt[String]
               ip.map(v => Json.obj("type" -> "IPAddress", "value" -> v))
                 .orElse(hostname.map(v => Json.obj("type" -> "Hostname", "value" -> v)))
@@ -523,120 +565,122 @@ object KubernetesGatewayApiJob {
       .filter(_.controllerName == conf.gatewayApiControllerName)
       .map(_.name)
       .toSet
-    val ourGateways = gateways.filter(gw => acceptedClassNames.contains(gw.gatewayClassName))
+    val ourGateways        = gateways.filter(gw => acceptedClassNames.contains(gw.gatewayClassName))
 
     resolveGatewayAddresses(client, conf).flatMap { addresses =>
-    Future
-      .sequence(ourGateways.map { gw =>
-        val listenerStatuses = gw.listeners.map { listener =>
-          val portOk = listener.protocol match {
-            case "HTTP"  => conf.gatewayApiHttpListenerPort.contains(listener.port)
-            case "HTTPS" => conf.gatewayApiHttpsListenerPort.contains(listener.port)
-            case _       => false
-          }
-          val protocolOk = Seq("HTTP", "HTTPS").contains(listener.protocol)
-
-          // Check TLS certificate resolution for HTTPS listeners
-          val (refsResolved, refsReason, refsMessage) = if (listener.protocol == "HTTPS" && listener.certificateRefs.nonEmpty) {
-            val unresolvedRefs = listener.certificateRefs.filterNot { ref =>
-              val ns   = (ref \ "namespace").asOpt[String].getOrElse(gw.namespace)
-              val name = (ref \ "name").as[String]
-              resolvedCerts.contains(s"$ns/$name")
+      Future
+        .sequence(ourGateways.map { gw =>
+          val listenerStatuses = gw.listeners.map { listener =>
+            val portOk     = listener.protocol match {
+              case "HTTP"  => conf.gatewayApiHttpListenerPort.contains(listener.port)
+              case "HTTPS" => conf.gatewayApiHttpsListenerPort.contains(listener.port)
+              case _       => false
             }
-            if (unresolvedRefs.isEmpty) {
-              ("True", "ResolvedRefs", "All references resolved")
+            val protocolOk = Seq("HTTP", "HTTPS").contains(listener.protocol)
+
+            // Check TLS certificate resolution for HTTPS listeners
+            val (refsResolved, refsReason, refsMessage) =
+              if (listener.protocol == "HTTPS" && listener.certificateRefs.nonEmpty) {
+                val unresolvedRefs = listener.certificateRefs.filterNot { ref =>
+                  val ns   = (ref \ "namespace").asOpt[String].getOrElse(gw.namespace)
+                  val name = (ref \ "name").as[String]
+                  resolvedCerts.contains(s"$ns/$name")
+                }
+                if (unresolvedRefs.isEmpty) {
+                  ("True", "ResolvedRefs", "All references resolved")
+                } else {
+                  val names = unresolvedRefs.map(r => (r \ "name").as[String]).mkString(", ")
+                  ("False", "InvalidCertificateRef", s"Certificate(s) not found: $names")
+                }
+              } else {
+                ("True", "ResolvedRefs", "References resolved")
+              }
+
+            val gwGeneration = gw.raw.select("metadata").select("generation").asOpt[Long]
+
+            // Detect conflicts with other listeners on the same Gateway
+            val conflict = detectListenerConflict(listener, gw.listeners)
+
+            val baseConditions = if (portOk && protocolOk) {
+              Json.arr(
+                conditionJson("Accepted", "True", "Accepted", "Listener accepted", gwGeneration),
+                conditionJson("Programmed", "True", "Programmed", "Listener programmed", gwGeneration),
+                conditionJson("ResolvedRefs", refsResolved, refsReason, refsMessage, gwGeneration)
+              )
+            } else if (!protocolOk) {
+              Json.arr(
+                conditionJson(
+                  "Accepted",
+                  "False",
+                  "UnsupportedProtocol",
+                  s"Protocol ${listener.protocol} not supported",
+                  gwGeneration
+                ),
+                conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
+              )
             } else {
-              val names = unresolvedRefs.map(r => (r \ "name").as[String]).mkString(", ")
-              ("False", "InvalidCertificateRef", s"Certificate(s) not found: $names")
+              Json.arr(
+                conditionJson(
+                  "Accepted",
+                  "False",
+                  "PortUnavailable",
+                  s"Port ${listener.port} does not match Otoroshi listener ports " +
+                  s"(HTTP:${conf.gatewayApiHttpListenerPort.mkString(",")}, HTTPS:${conf.gatewayApiHttpsListenerPort
+                    .mkString(",")})",
+                  gwGeneration
+                ),
+                conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
+              )
             }
-          } else {
-            ("True", "ResolvedRefs", "References resolved")
+
+            val conditions = conflict match {
+              case Some((reason, message)) =>
+                baseConditions :+ conditionJson("Conflicted", "True", reason, message, gwGeneration)
+              case None                    =>
+                baseConditions :+ conditionJson("Conflicted", "False", "NoConflicts", "No conflicts", gwGeneration)
+            }
+
+            // Count routes attached to this specific listener.
+            // A route is attached if its parentRef matches this gateway and listener,
+            // and the listener's allowedRoutes accepts routes from the route's namespace.
+            val attachedRouteCount = countAttachedRoutes(gw, listener, httpRoutes, grpcRoutes, namespaces)
+
+            Json.obj(
+              "name"           -> listener.name,
+              "conditions"     -> conditions,
+              "attachedRoutes" -> attachedRouteCount,
+              "supportedKinds" -> Json.arr(
+                Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "HTTPRoute"),
+                Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "GRPCRoute")
+              )
+            )
           }
 
-          val gwGeneration = gw.raw.select("metadata").select("generation").asOpt[Long]
-
-          // Detect conflicts with other listeners on the same Gateway
-          val conflict = detectListenerConflict(listener, gw.listeners)
-
-          val baseConditions = if (portOk && protocolOk) {
-            Json.arr(
-              conditionJson("Accepted", "True", "Accepted", "Listener accepted", gwGeneration),
-              conditionJson("Programmed", "True", "Programmed", "Listener programmed", gwGeneration),
-              conditionJson("ResolvedRefs", refsResolved, refsReason, refsMessage, gwGeneration)
-            )
-          } else if (!protocolOk) {
-            Json.arr(
+          val gatewayAccepted = listenerStatuses.nonEmpty
+          val gwGen           = gw.raw.select("metadata").select("generation").asOpt[Long]
+          val gatewayStatus   = Json.obj(
+            "conditions" -> Json.arr(
               conditionJson(
                 "Accepted",
-                "False",
-                "UnsupportedProtocol",
-                s"Protocol ${listener.protocol} not supported",
-                gwGeneration
+                if (gatewayAccepted) "True" else "False",
+                if (gatewayAccepted) "Accepted" else "NotReconciled",
+                if (gatewayAccepted) "Gateway accepted by Otoroshi" else "No valid listeners",
+                gwGen
               ),
-              conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
-            )
-          } else {
-            Json.arr(
               conditionJson(
-                "Accepted",
-                "False",
-                "PortUnavailable",
-                s"Port ${listener.port} does not match Otoroshi listener ports " +
-                  s"(HTTP:${conf.gatewayApiHttpListenerPort.mkString(",")}, HTTPS:${conf.gatewayApiHttpsListenerPort.mkString(",")})",
-                gwGeneration
-              ),
-              conditionJson("Programmed", "False", "Invalid", "Listener not programmed", gwGeneration)
-            )
-          }
-
-          val conditions = conflict match {
-            case Some((reason, message)) =>
-              baseConditions :+ conditionJson("Conflicted", "True", reason, message, gwGeneration)
-            case None =>
-              baseConditions :+ conditionJson("Conflicted", "False", "NoConflicts", "No conflicts", gwGeneration)
-          }
-
-          // Count routes attached to this specific listener.
-          // A route is attached if its parentRef matches this gateway and listener,
-          // and the listener's allowedRoutes accepts routes from the route's namespace.
-          val attachedRouteCount = countAttachedRoutes(gw, listener, httpRoutes, grpcRoutes, namespaces)
-
-          Json.obj(
-            "name"           -> listener.name,
-            "conditions"     -> conditions,
-            "attachedRoutes" -> attachedRouteCount,
-            "supportedKinds" -> Json.arr(
-              Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "HTTPRoute"),
-              Json.obj("group" -> "gateway.networking.k8s.io", "kind" -> "GRPCRoute")
-            )
-          )
-        }
-
-        val gatewayAccepted = listenerStatuses.nonEmpty
-        val gwGen = gw.raw.select("metadata").select("generation").asOpt[Long]
-        val gatewayStatus = Json.obj(
-          "conditions" -> Json.arr(
-            conditionJson(
-              "Accepted",
-              if (gatewayAccepted) "True" else "False",
-              if (gatewayAccepted) "Accepted" else "NotReconciled",
-              if (gatewayAccepted) "Gateway accepted by Otoroshi" else "No valid listeners",
-              gwGen
+                "Programmed",
+                if (gatewayAccepted) "True" else "False",
+                if (gatewayAccepted) "Programmed" else "NotReconciled",
+                if (gatewayAccepted) "Gateway programmed" else "Gateway not programmed",
+                gwGen
+              )
             ),
-            conditionJson(
-              "Programmed",
-              if (gatewayAccepted) "True" else "False",
-              if (gatewayAccepted) "Programmed" else "NotReconciled",
-              if (gatewayAccepted) "Gateway programmed" else "Gateway not programmed",
-              gwGen
-            )
-          ),
-          "addresses"  -> addresses,
-          "listeners"  -> JsArray(listenerStatuses)
-        )
+            "addresses"  -> addresses,
+            "listeners"  -> JsArray(listenerStatuses)
+          )
 
-        client.updateGatewayStatus(gw.namespace, gw.name, gatewayStatus).map(_ => gw)
-      })
+          client.updateGatewayStatus(gw.namespace, gw.name, gatewayStatus).map(_ => gw)
+        })
     }
   }
 
@@ -655,7 +699,7 @@ object KubernetesGatewayApiJob {
       listener: GatewayListener,
       allListeners: Seq[GatewayListener]
   ): Option[(String, String)] = {
-    val others = allListeners.filter(_.name != listener.name)
+    val others   = allListeners.filter(_.name != listener.name)
     val samePort = others.filter(_.port == listener.port)
     if (samePort.isEmpty) return None
 
@@ -663,19 +707,27 @@ object KubernetesGatewayApiJob {
     val protocolConflicts = samePort.filter(_.protocol != listener.protocol)
     if (protocolConflicts.nonEmpty) {
       val names = protocolConflicts.map(l => s"${l.name}(${l.protocol})").mkString(", ")
-      return Some(("ProtocolConflict",
-        s"Listener ${listener.name} (${listener.protocol}) conflicts with listeners on same port ${listener.port}: $names"))
+      return Some(
+        (
+          "ProtocolConflict",
+          s"Listener ${listener.name} (${listener.protocol}) conflicts with listeners on same port ${listener.port}: $names"
+        )
+      )
     }
 
     // Check hostname conflicts: same port, same protocol, overlapping hostnames
     val samePortAndProtocol = samePort.filter(_.protocol == listener.protocol)
-    val hostnameConflicts = samePortAndProtocol.filter { other =>
+    val hostnameConflicts   = samePortAndProtocol.filter { other =>
       hostnamesOverlap(listener.hostname, other.hostname)
     }
     if (hostnameConflicts.nonEmpty) {
       val names = hostnameConflicts.map(l => s"${l.name}(${l.hostname.getOrElse("*")})").mkString(", ")
-      return Some(("HostnameConflict",
-        s"Listener ${listener.name} (${listener.hostname.getOrElse("*")}) has overlapping hostname with: $names"))
+      return Some(
+        (
+          "HostnameConflict",
+          s"Listener ${listener.name} (${listener.hostname.getOrElse("*")}) has overlapping hostname with: $names"
+        )
+      )
     }
 
     None
@@ -692,9 +744,9 @@ object KubernetesGatewayApiJob {
    */
   private def hostnamesOverlap(a: Option[String], b: Option[String]): Boolean = {
     (a, b) match {
-      case (None, _) | (_, None)             => true // no hostname means match-all
-      case (Some(ha), Some(hb)) if ha == hb  => true // exact match
-      case (Some(ha), Some(hb))              =>
+      case (None, _) | (_, None)            => true // no hostname means match-all
+      case (Some(ha), Some(hb)) if ha == hb => true // exact match
+      case (Some(ha), Some(hb))             =>
         wildcardMatches(ha, hb) || wildcardMatches(hb, ha)
     }
   }
@@ -723,25 +775,25 @@ object KubernetesGatewayApiJob {
   ): Int = {
     def routeAttaches(parentRefs: Seq[HTTPRouteParentRef], routeNamespace: String): Boolean = {
       parentRefs.exists { ref =>
-        val refGwNamespace = ref.namespace.getOrElse(routeNamespace)
-        val gwMatches = ref.name == gw.name && refGwNamespace == gw.namespace
-        val listenerMatches = ref.sectionName match {
+        val refGwNamespace   = ref.namespace.getOrElse(routeNamespace)
+        val gwMatches        = ref.name == gw.name && refGwNamespace == gw.namespace
+        val listenerMatches  = ref.sectionName match {
           case Some(sn) => sn == listener.name
           case None     => true // no sectionName means all listeners
         }
         val namespaceAllowed = listener.allowedRoutesNamespacesFrom match {
-          case "All"  => true
-          case "Same" => routeNamespace == gw.namespace
+          case "All"      => true
+          case "Same"     => routeNamespace == gw.namespace
           case "Selector" =>
             listener.allowedRoutesNamespacesSelector match {
-              case None => true
+              case None           => true
               case Some(selector) =>
                 namespaces.find(_.name == routeNamespace).exists { ns =>
                   val matchLabels = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
                   matchLabels.forall { case (k, v) => ns.labels.get(k).contains(v) }
                 }
             }
-          case _ => false
+          case _          => false
         }
         gwMatches && listenerMatches && namespaceAllowed
       }
@@ -772,35 +824,44 @@ object KubernetesGatewayApiJob {
 
     Source(httpRoutes.toList)
       .mapAsync(1) { httpRoute =>
-        val result = GatewayApiConverter.httpRouteToNgRoutes(
-          httpRoute, acceptedGateways, services, endpoints, endpointSlices,
-          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
+        val result          = GatewayApiConverter.httpRouteToNgRoutes(
+          httpRoute,
+          acceptedGateways,
+          services,
+          endpoints,
+          endpointSlices,
+          referenceGrants,
+          backendTLSPolicies,
+          resolvedCaCertIds,
+          plugins,
+          namespaces,
+          conf
         )
         val generatedRoutes = result.routes
 
-        val httpRouteGen = httpRoute.raw.select("metadata").select("generation").asOpt[Long]
+        val httpRouteGen   = httpRoute.raw.select("metadata").select("generation").asOpt[Long]
         val parentStatuses = httpRoute.parentRefs.map { parentRef =>
-          val gwNamespace = parentRef.namespace.getOrElse(httpRoute.namespace)
-          val gatewayFound = acceptedGateways.exists(gw =>
-            gw.name == parentRef.name && gw.namespace == gwNamespace
-          )
+          val gwNamespace  = parentRef.namespace.getOrElse(httpRoute.namespace)
+          val gatewayFound = acceptedGateways.exists(gw => gw.name == parentRef.name && gw.namespace == gwNamespace)
 
           // Determine the ResolvedRefs condition with precise reasons:
           //   - RefNotPermitted: a cross-namespace backendRef was denied (missing ReferenceGrant)
           //   - BackendNotFound: a backend Service could not be resolved
           //   - ResolvedRefs: all references resolved successfully
           val (resolvedStatus, resolvedReason, resolvedMessage) = if (result.refNotPermitted) {
-            ("False", "RefNotPermitted",
-              "One or more cross-namespace backend references are denied (missing ReferenceGrant)")
+            (
+              "False",
+              "RefNotPermitted",
+              "One or more cross-namespace backend references are denied (missing ReferenceGrant)"
+            )
           } else if (generatedRoutes.nonEmpty && generatedRoutes.exists(_.backend.targets.isEmpty)) {
-            ("False", "BackendNotFound",
-              "Some backend references could not be resolved to existing Services")
+            ("False", "BackendNotFound", "Some backend references could not be resolved to existing Services")
           } else {
             ("True", "ResolvedRefs", "All references resolved")
           }
 
           Json.obj(
-            "parentRef" -> Json.obj(
+            "parentRef"      -> Json.obj(
               "group"     -> "gateway.networking.k8s.io",
               "kind"      -> "Gateway",
               "namespace" -> gwNamespace,
@@ -850,32 +911,41 @@ object KubernetesGatewayApiJob {
 
     Source(grpcRoutes.toList)
       .mapAsync(1) { grpcRoute =>
-        val result = GatewayApiConverter.grpcRouteToNgRoutes(
-          grpcRoute, acceptedGateways, services, endpoints, endpointSlices,
-          referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, namespaces, conf
+        val result          = GatewayApiConverter.grpcRouteToNgRoutes(
+          grpcRoute,
+          acceptedGateways,
+          services,
+          endpoints,
+          endpointSlices,
+          referenceGrants,
+          backendTLSPolicies,
+          resolvedCaCertIds,
+          plugins,
+          namespaces,
+          conf
         )
         val generatedRoutes = result.routes
 
-        val grpcRouteGen = grpcRoute.raw.select("metadata").select("generation").asOpt[Long]
+        val grpcRouteGen   = grpcRoute.raw.select("metadata").select("generation").asOpt[Long]
         val parentStatuses = grpcRoute.parentRefs.map { parentRef =>
-          val gwNamespace = parentRef.namespace.getOrElse(grpcRoute.namespace)
-          val gatewayFound = acceptedGateways.exists(gw =>
-            gw.name == parentRef.name && gw.namespace == gwNamespace
-          )
+          val gwNamespace  = parentRef.namespace.getOrElse(grpcRoute.namespace)
+          val gatewayFound = acceptedGateways.exists(gw => gw.name == parentRef.name && gw.namespace == gwNamespace)
 
           // Same ResolvedRefs logic as HTTPRoute (see reconcileHTTPRoutes)
           val (resolvedStatus, resolvedReason, resolvedMessage) = if (result.refNotPermitted) {
-            ("False", "RefNotPermitted",
-              "One or more cross-namespace backend references are denied (missing ReferenceGrant)")
+            (
+              "False",
+              "RefNotPermitted",
+              "One or more cross-namespace backend references are denied (missing ReferenceGrant)"
+            )
           } else if (generatedRoutes.nonEmpty && generatedRoutes.exists(_.backend.targets.isEmpty)) {
-            ("False", "BackendNotFound",
-              "Some backend references could not be resolved to existing Services")
+            ("False", "BackendNotFound", "Some backend references could not be resolved to existing Services")
           } else {
             ("True", "ResolvedRefs", "All references resolved")
           }
 
           Json.obj(
-            "parentRef" -> Json.obj(
+            "parentRef"      -> Json.obj(
               "group"     -> "gateway.networking.k8s.io",
               "kind"      -> "Gateway",
               "namespace" -> gwNamespace,
@@ -911,10 +981,10 @@ object KubernetesGatewayApiJob {
       generatedRoutes: Seq[NgRoute],
       existingManagedRoutes: Seq[NgRoute]
   )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val existingMap = existingManagedRoutes.map(r => (r.id, r)).toMap
-    val toSave = generatedRoutes.filter { route =>
+    val existingMap  = existingManagedRoutes.map(r => (r.id, r)).toMap
+    val toSave       = generatedRoutes.filter { route =>
       existingMap.get(route.id) match {
-        case None    => true
+        case None           => true
         case Some(existing) => existing.json != route.json
       }
     }
@@ -938,7 +1008,7 @@ object KubernetesGatewayApiJob {
       existingManagedRoutes: Seq[NgRoute]
   )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val generatedIds = generatedRoutes.map(_.id).toSet
-    val toDelete = existingManagedRoutes
+    val toDelete     = existingManagedRoutes
       .filter(r => r.metadata.get("otoroshi-provider").contains(PROVIDER))
       .filterNot(r => generatedIds.contains(r.id))
     if (toDelete.nonEmpty) {
@@ -975,8 +1045,9 @@ object KubernetesGatewayApiJob {
 object KubernetesGatewayApiJobTest {
   def functionTestRouteConversion()(implicit env: Env, ec: ExecutionContext): Unit = {
     val result = GatewayApiConverter.httpRouteToNgRoutes(
-      httpRoute = KubernetesHTTPRoute(Yaml.parse(
-        """apiVersion: gateway.networking.k8s.io/v1
+      httpRoute = KubernetesHTTPRoute(
+        Yaml
+          .parse("""apiVersion: gateway.networking.k8s.io/v1
           |kind: HTTPRoute
           |metadata:
           |  uid: gateway-conformance-infra/matching
@@ -1006,9 +1077,13 @@ object KubernetesGatewayApiJobTest {
           |    backendRefs:
           |    - name: infra-backend-v2
           |      port: 8080
-          |""".stripMargin).get),
-      gateways = Seq(KubernetesGateway(Yaml.parse(
-        s"""apiVersion: gateway.networking.k8s.io/v1beta1
+          |""".stripMargin)
+          .get
+      ),
+      gateways = Seq(
+        KubernetesGateway(
+          Yaml
+            .parse(s"""apiVersion: gateway.networking.k8s.io/v1beta1
            |kind: Gateway
            |metadata:
            |  uid: gateway-conformance-infra/same-namespace
@@ -1023,9 +1098,14 @@ object KubernetesGatewayApiJobTest {
            |    allowedRoutes:
            |      namespaces:
            |        from: Same
-           |""".stripMargin).get)),
-      services = Seq(KubernetesService(Yaml.parse(
-        s"""apiVersion: v1
+           |""".stripMargin)
+            .get
+        )
+      ),
+      services = Seq(
+        KubernetesService(
+          Yaml
+            .parse(s"""apiVersion: v1
            |kind: Service
            |metadata:
            |  uid: gateway-conformance-infra/infra-backend-v1
@@ -1050,8 +1130,12 @@ object KubernetesGatewayApiJobTest {
            |    appProtocol: kubernetes.io/ws
            |    port: 8082
            |    targetPort: 3000
-           |""".stripMargin).get), KubernetesService(Yaml.parse(
-        s"""apiVersion: v1
+           |""".stripMargin)
+            .get
+        ),
+        KubernetesService(
+          Yaml
+            .parse(s"""apiVersion: v1
            |kind: Service
            |metadata:
            |  uid: gateway-conformance-infra/infra-backend-v2
@@ -1065,7 +1149,10 @@ object KubernetesGatewayApiJobTest {
            |  - protocol: TCP
            |    port: 8080
            |    targetPort: 3000
-           |""".stripMargin).get)),
+           |""".stripMargin)
+            .get
+        )
+      ),
       endpoints = Seq.empty,
       endpointSlices = Seq.empty,
       referenceGrants = Seq.empty,

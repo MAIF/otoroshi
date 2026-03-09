@@ -141,10 +141,7 @@ export default (props) => {
             <div style={{ width: '20px' }} className="d-flex justify-content-center">
               <i className="fa fa-brush" />
             </div>
-            <div className="d-flex align-items-center">
-              {' '}
-              {openedSidebar ? 'APIs' : ''}
-            </div>
+            <div className="d-flex align-items-center"> {openedSidebar ? 'APIs' : ''}</div>
           </Link>
         </li>
         {!isOnApisHome && (

@@ -112,6 +112,7 @@ rules:
       - green-scores
       - coraza-configs
       - http-listeners
+      - plugins
     verbs:
       - get
       - list

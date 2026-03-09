@@ -31,5 +31,13 @@ export default {
       label: 'Salt for percentage impact',
     },
   },
-  config_flow: ['enabled', 'capture_response', 'generate_events', 'to', 'headers', 'percentage', 'salt'],
+  config_flow: [
+    'enabled',
+    'capture_response',
+    'generate_events',
+    'to',
+    'headers',
+    'percentage',
+    'salt',
+  ],
 };

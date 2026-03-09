@@ -25,8 +25,8 @@ import scala.util.Try
  *                         because no matching ReferenceGrant exists in the target namespace
  */
 case class RouteConversionResult(
-  routes: Seq[NgRoute],
-  refNotPermitted: Boolean
+    routes: Seq[NgRoute],
+    refNotPermitted: Boolean
 )
 
 object GatewayApiConverter {
@@ -72,15 +72,27 @@ object GatewayApiConverter {
     val effectiveHostnames = resolveEffectiveHostnames(httpRoute.hostnames, matchingGateways)
 
     val routes = httpRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
-      ruleToNgRoute(httpRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
-        endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
+      ruleToNgRoute(
+        httpRoute,
+        rule,
+        ruleIdx,
+        effectiveHostnames,
+        services,
+        endpoints,
+        endpointSlices,
+        referenceGrants,
+        backendTLSPolicies,
+        resolvedCaCertIds,
+        plugins,
+        conf
+      )
     }
 
     // Check if any cross-namespace backendRef was denied due to missing ReferenceGrant.
     // This is checked separately (without logging) to provide accurate status reporting
     // without duplicating the warnings already emitted by isBackendRefAllowed in buildTargets.
     val allBackendRefs = httpRoute.rules.flatMap(_.backendRefs)
-    val refDenied = hasDeniedCrossNamespaceRefs(allBackendRefs, httpRoute.namespace, "HTTPRoute", referenceGrants)
+    val refDenied      = hasDeniedCrossNamespaceRefs(allBackendRefs, httpRoute.namespace, "HTTPRoute", referenceGrants)
 
     RouteConversionResult(routes, refNotPermitted = refDenied)
   }
@@ -119,12 +131,24 @@ object GatewayApiConverter {
     val effectiveHostnames = resolveEffectiveHostnames(grpcRoute.hostnames, matchingGateways)
 
     val routes = grpcRoute.rules.zipWithIndex.flatMap { case (rule, ruleIdx) =>
-      grpcRuleToNgRoute(grpcRoute, rule, ruleIdx, effectiveHostnames, services, endpoints,
-        endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds, plugins, conf)
+      grpcRuleToNgRoute(
+        grpcRoute,
+        rule,
+        ruleIdx,
+        effectiveHostnames,
+        services,
+        endpoints,
+        endpointSlices,
+        referenceGrants,
+        backendTLSPolicies,
+        resolvedCaCertIds,
+        plugins,
+        conf
+      )
     }
 
     val allBackendRefs = grpcRoute.rules.flatMap(_.backendRefs)
-    val refDenied = hasDeniedCrossNamespaceRefs(allBackendRefs, grpcRoute.namespace, "GRPCRoute", referenceGrants)
+    val refDenied      = hasDeniedCrossNamespaceRefs(allBackendRefs, grpcRoute.namespace, "GRPCRoute", referenceGrants)
 
     RouteConversionResult(routes, refNotPermitted = refDenied)
   }
@@ -175,19 +199,19 @@ object GatewayApiConverter {
       case "Same"     => routeNamespace == gateway.namespace
       case "Selector" =>
         listener.allowedRoutesNamespacesSelector match {
-          case None =>
+          case None           =>
             // No selector means match all namespaces (per K8s convention: empty selector matches everything)
             true
           case Some(selector) =>
             namespaces.find(_.name == routeNamespace) match {
-              case None =>
+              case None     =>
                 logger.warn(s"Namespace $routeNamespace not found, rejecting route for listener ${listener.name}")
                 false
               case Some(ns) =>
                 matchesLabelSelector(ns.labels, selector)
             }
         }
-      case _ => false
+      case _          => false
     }
   }
 
@@ -199,7 +223,7 @@ object GatewayApiConverter {
    * matchExpressions: operators In, NotIn, Exists, DoesNotExist
    */
   private def matchesLabelSelector(labels: Map[String, String], selector: JsObject): Boolean = {
-    val matchLabels = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
+    val matchLabels      = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
     val matchExpressions = (selector \ "matchExpressions").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
 
     val labelsMatch = matchLabels.forall { case (key, value) =>
@@ -211,11 +235,11 @@ object GatewayApiConverter {
       val operator = (expr \ "operator").as[String]
       val values   = (expr \ "values").asOpt[Seq[String]].getOrElse(Seq.empty)
       operator match {
-        case "In"            => labels.get(key).exists(values.contains)
-        case "NotIn"         => labels.get(key).forall(v => !values.contains(v))
-        case "Exists"        => labels.contains(key)
-        case "DoesNotExist"  => !labels.contains(key)
-        case other =>
+        case "In"           => labels.get(key).exists(values.contains)
+        case "NotIn"        => labels.get(key).forall(v => !values.contains(v))
+        case "Exists"       => labels.contains(key)
+        case "DoesNotExist" => !labels.contains(key)
+        case other          =>
           logger.warn(s"Unknown label selector operator: $other")
           false
       }
@@ -280,14 +304,22 @@ object GatewayApiConverter {
   )(implicit env: Env): Seq[NgRoute] = {
 
     rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
-
-      val routeId = s"kubernetes-gateway-api-${httpRoute.namespace}-${httpRoute.name}-rule-$ruleIdx-match-${mtchIdx}"
+      val routeId   = s"kubernetes-gateway-api-${httpRoute.namespace}-${httpRoute.name}-rule-$ruleIdx-match-${mtchIdx}"
         .replace("/", "-")
         .replace(".", "-")
       val routeName = s"${httpRoute.namespace}/${httpRoute.name} rule $ruleIdx match $mtchIdx"
 
       val domains = buildDomains(effectiveHostnames, rule, mtch)
-      val targets = buildTargets(httpRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
+      val targets = buildTargets(
+        httpRoute,
+        rule,
+        services,
+        endpoints,
+        endpointSlices,
+        referenceGrants,
+        backendTLSPolicies,
+        resolvedCaCertIds
+      )
       val plugins = buildPlugins(
         filters = rule.filters,
         routeNamespace = httpRoute.namespace,
@@ -296,7 +328,7 @@ object GatewayApiConverter {
         endpoints = endpoints,
         endpointSlices = endpointSlices,
         referenceGrants = referenceGrants,
-        k8sPlugins = k8sPlugins,
+        k8sPlugins = k8sPlugins
       )
 
       if (targets.isEmpty) {
@@ -307,7 +339,7 @@ object GatewayApiConverter {
       val methods = mtch.method.toSeq
 
       // Check for URLRewrite path rewriting
-      val urlRewriteFilter = rule.filters.find(_.filterType == "URLRewrite")
+      val urlRewriteFilter         = rule.filters.find(_.filterType == "URLRewrite")
       val (stripPath, backendRoot) = urlRewriteFilter.flatMap(_.urlRewrite) match {
         case Some(rewrite) =>
           val pathRewrite = (rewrite \ "path").asOpt[JsObject]
@@ -315,16 +347,16 @@ object GatewayApiConverter {
             case Some(pr) if (pr \ "type").asOpt[String].contains("ReplacePrefixMatch") =>
               val replacement = (pr \ "replacePrefixMatch").asOpt[String].getOrElse("/")
               (true, replacement)
-            case Some(pr) if (pr \ "type").asOpt[String].contains("ReplaceFullPath") =>
+            case Some(pr) if (pr \ "type").asOpt[String].contains("ReplaceFullPath")    =>
               // logger.warn(
               //   s"HTTPRoute ${httpRoute.path} rule $ruleIdx uses ReplaceFullPath which is not fully supported, " +
               //     "using path as backend root"
               // )
               val replacement = (pr \ "replaceFullPath").asOpt[String].getOrElse("/")
               (false, replacement)
-            case _ => (false, "/")
+            case _                                                                      => (false, "/")
           }
-        case None => (false, "/")
+        case None          => (false, "/")
       }
 
       val route = NgRoute(
@@ -334,12 +366,12 @@ object GatewayApiConverter {
         description = s"Generated from Gateway API HTTPRoute ${httpRoute.path}",
         tags = Seq.empty,
         metadata = Map(
-          "otoroshi-provider" -> "kubernetes-gateway-api",
-          "kubernetes-name" -> httpRoute.name,
+          "otoroshi-provider"    -> "kubernetes-gateway-api",
+          "kubernetes-name"      -> httpRoute.name,
           "kubernetes-namespace" -> httpRoute.namespace,
-          "kubernetes-path" -> httpRoute.path,
-          "kubernetes-uid" -> httpRoute.uid,
-          "gateway-api-kind" -> "HTTPRoute"
+          "kubernetes-path"      -> httpRoute.path,
+          "kubernetes-uid"       -> httpRoute.uid,
+          "gateway-api-kind"     -> "HTTPRoute"
         ),
         enabled = true,
         debugFlow = false,
@@ -352,13 +384,13 @@ object GatewayApiConverter {
           headers = mtch.headers.map { o =>
             o.select("type").asOpt[String] match {
               case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
-              case _ => (o.select("name").asString, o.select("value").asString)
+              case _                         => (o.select("name").asString, o.select("value").asString)
             }
           }.toMap,
           query = mtch.queryParams.map { o =>
             o.select("type").asOpt[String] match {
               case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
-              case _ => (o.select("name").asString, o.select("value").asString)
+              case _                         => (o.select("name").asString, o.select("value").asString)
             }
           }.toMap,
           cookies = Map.empty,
@@ -404,14 +436,23 @@ object GatewayApiConverter {
   )(implicit env: Env): Seq[NgRoute] = {
 
     rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
-
-      val routeId = s"kubernetes-gateway-api-${grpcRoute.namespace}-${grpcRoute.name}-grpc-rule-$ruleIdx-match-${mtchIdx}"
-        .replace("/", "-")
-        .replace(".", "-")
+      val routeId   =
+        s"kubernetes-gateway-api-${grpcRoute.namespace}-${grpcRoute.name}-grpc-rule-$ruleIdx-match-${mtchIdx}"
+          .replace("/", "-")
+          .replace(".", "-")
       val routeName = s"${grpcRoute.namespace}/${grpcRoute.name} grpc rule $ruleIdx"
 
       val domains = buildGrpcDomains(effectiveHostnames, rule, mtch)
-      val targets = buildGrpcTargets(grpcRoute, rule, services, endpoints, endpointSlices, referenceGrants, backendTLSPolicies, resolvedCaCertIds)
+      val targets = buildGrpcTargets(
+        grpcRoute,
+        rule,
+        services,
+        endpoints,
+        endpointSlices,
+        referenceGrants,
+        backendTLSPolicies,
+        resolvedCaCertIds
+      )
       val plugins = buildPlugins(
         filters = rule.filters,
         routeNamespace = grpcRoute.namespace,
@@ -420,7 +461,7 @@ object GatewayApiConverter {
         endpoints = endpoints,
         endpointSlices = endpointSlices,
         referenceGrants = referenceGrants,
-        k8sPlugins = k8sPlugins,
+        k8sPlugins = k8sPlugins
       )
 
       if (targets.isEmpty) {
@@ -437,12 +478,12 @@ object GatewayApiConverter {
         description = s"Generated from Gateway API GRPCRoute ${grpcRoute.path}",
         tags = Seq.empty,
         metadata = Map(
-          "otoroshi-provider" -> "kubernetes-gateway-api",
-          "kubernetes-name" -> grpcRoute.name,
+          "otoroshi-provider"    -> "kubernetes-gateway-api",
+          "kubernetes-name"      -> grpcRoute.name,
           "kubernetes-namespace" -> grpcRoute.namespace,
-          "kubernetes-path" -> grpcRoute.path,
-          "kubernetes-uid" -> grpcRoute.uid,
-          "gateway-api-kind" -> "GRPCRoute"
+          "kubernetes-path"      -> grpcRoute.path,
+          "kubernetes-uid"       -> grpcRoute.uid,
+          "gateway-api-kind"     -> "GRPCRoute"
         ),
         enabled = true,
         debugFlow = false,
@@ -455,7 +496,7 @@ object GatewayApiConverter {
           headers = mtch.headers.map { o =>
             o.select("type").asOpt[String] match {
               case Some("RegularExpression") => (o.select("name").asString, s"Regex(${o.select("value").asString})")
-              case _ => (o.select("name").asString, o.select("value").asString)
+              case _                         => (o.select("name").asString, o.select("value").asString)
             }
           }.toMap,
           query = Map.empty,
@@ -505,7 +546,8 @@ object GatewayApiConverter {
     val annots = entity.annotations
 
     // route-flags: override boolean flags on the route
-    val flagged = annots.get(s"${ANNOTATION_PREFIX}route-flags")
+    val flagged = annots
+      .get(s"${ANNOTATION_PREFIX}route-flags")
       .flatMap(v => Try(Json.parse(v)).toOption)
       .flatMap(_.asOpt[JsObject]) match {
       case Some(flags) =>
@@ -515,41 +557,45 @@ object GatewayApiConverter {
           capture = (flags \ "capture").asOpt[Boolean].getOrElse(route.capture),
           exportReporting = (flags \ "exportReporting").asOpt[Boolean].getOrElse(route.exportReporting)
         )
-      case None => route
+      case None        => route
     }
 
     // route-groups: override Otoroshi groups
-    val grouped = annots.get(s"${ANNOTATION_PREFIX}route-groups")
+    val grouped = annots
+      .get(s"${ANNOTATION_PREFIX}route-groups")
       .flatMap(v => Try(Json.parse(v)).toOption)
       .flatMap(_.asOpt[Seq[String]]) match {
       case Some(groups) if groups.nonEmpty => flagged.copy(groups = groups)
-      case _ => flagged
+      case _                               => flagged
     }
 
     // route-bound-listeners: override bound listeners
-    val listenered = annots.get(s"${ANNOTATION_PREFIX}route-bound-listeners")
+    val listenered = annots
+      .get(s"${ANNOTATION_PREFIX}route-bound-listeners")
       .flatMap(v => Try(Json.parse(v)).toOption)
       .flatMap(_.asOpt[Seq[String]]) match {
       case Some(listeners) if listeners.nonEmpty => grouped.copy(boundListeners = listeners)
-      case _ => grouped
+      case _                                     => grouped
     }
 
     // route-metadata: merge additional metadata
-    val metadated = annots.get(s"${ANNOTATION_PREFIX}route-metadata")
+    val metadated = annots
+      .get(s"${ANNOTATION_PREFIX}route-metadata")
       .flatMap(v => Try(Json.parse(v)).toOption)
       .flatMap(_.asOpt[Map[String, String]]) match {
       case Some(extra) if extra.nonEmpty => listenered.copy(metadata = listenered.metadata ++ extra)
-      case _ => listenered
+      case _                             => listenered
     }
 
     // route-plugins: append additional plugin instances
-    val plugined = annots.get(s"${ANNOTATION_PREFIX}route-plugins")
+    val plugined = annots
+      .get(s"${ANNOTATION_PREFIX}route-plugins")
       .flatMap(v => Try(Json.parse(v)).toOption)
       .flatMap(_.asOpt[JsArray]) match {
       case Some(arr) =>
         val extraPlugins = arr.value.map(NgPluginInstance.readFrom)
         metadated.copy(plugins = NgPlugins(metadated.plugins.slots ++ extraPlugins))
-      case None => metadated
+      case None      => metadated
     }
 
     plugined
@@ -567,7 +613,7 @@ object GatewayApiConverter {
         if (svc == "*" && method == "*") Seq("/")
         else if (method == "*") Seq(s"/$svc/")
         else Seq(s"/$svc/$method")
-      case None => Seq("/")
+      case None     => Seq("/")
     }).distinct
 
     if (paths.isEmpty || paths == Seq("/")) {
@@ -578,7 +624,8 @@ object GatewayApiConverter {
         path     <- paths
       } yield {
         if (path == "/") NgDomainAndPath(hostname)
-        else if (m.method.exists(_.matchIsRegex)) NgDomainAndPath(s"$hostname$path") // TODO: not an actual regex match FIXME
+        else if (m.method.exists(_.matchIsRegex))
+          NgDomainAndPath(s"$hostname$path") // TODO: not an actual regex match FIXME
         else NgDomainAndPath(s"$hostname$path")
       }
     }
@@ -673,24 +720,32 @@ object GatewayApiConverter {
           val service = services.find(_.path == svcPath)
           service match {
             case Some(svc) =>
-              val port = backendRef.port.getOrElse(50051)
+              val port    = backendRef.port.getOrElse(50051)
               val targets = resolveEndpointSliceTargets(
-                backendRef.name, svcNamespace, port, backendRef.weight,
-                HttpProtocols.HTTP_2_0, endpointSlices
+                backendRef.name,
+                svcNamespace,
+                port,
+                backendRef.weight,
+                HttpProtocols.HTTP_2_0,
+                endpointSlices
               ).getOrElse {
-                Seq(NgTarget(
-                  id = s"${svcPath}:$port",
-                  hostname = svc.clusterIP,
-                  port = port,
-                  tls = false,
-                  weight = backendRef.weight,
-                  protocol = HttpProtocols.HTTP_2_0,
-                  predicate = otoroshi.models.AlwaysMatch,
-                  ipAddress = None
-                ))
+                Seq(
+                  NgTarget(
+                    id = s"${svcPath}:$port",
+                    hostname = svc.clusterIP,
+                    port = port,
+                    tls = false,
+                    weight = backendRef.weight,
+                    protocol = HttpProtocols.HTTP_2_0,
+                    predicate = otoroshi.models.AlwaysMatch,
+                    ipAddress = None
+                  )
+                )
               }
-              targets.map(t => applyBackendTLSPolicy(t, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
-            case None =>
+              targets.map(t =>
+                applyBackendTLSPolicy(t, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds)
+              )
+            case None      =>
               logger.warn(s"Service $svcPath not found for backendRef in GRPCRoute ${grpcRoute.path}")
               Seq.empty
           }
@@ -741,9 +796,7 @@ object GatewayApiConverter {
   ): Option[KubernetesBackendTLSPolicy] = {
     policies.find { policy =>
       policy.namespace == serviceNamespace &&
-      policy.targetRefs.exists(ref =>
-        ref.kind == "Service" && ref.name == serviceName
-      )
+      policy.targetRefs.exists(ref => ref.kind == "Service" && ref.name == serviceName)
     }
   }
 
@@ -760,10 +813,10 @@ object GatewayApiConverter {
       resolvedCaCertIds: Map[String, String]
   ): NgTarget = {
     findBackendTLSPolicy(serviceName, serviceNamespace, policies) match {
-      case None => target
+      case None         => target
       case Some(policy) =>
         policy.validation match {
-          case None => target
+          case None             => target
           case Some(validation) =>
             if (validation.subjectAltNames.nonEmpty) {
               logger.debug(
@@ -832,23 +885,31 @@ object GatewayApiConverter {
           val service = services.find(_.path == svcPath)
           service match {
             case Some(svc) =>
-              val port = backendRef.port.getOrElse(80)
+              val port    = backendRef.port.getOrElse(80)
               val targets = resolveEndpointSliceTargets(
-                backendRef.name, svcNamespace, port, backendRef.weight,
-                HttpProtocols.HTTP_1_1, endpointSlices
+                backendRef.name,
+                svcNamespace,
+                port,
+                backendRef.weight,
+                HttpProtocols.HTTP_1_1,
+                endpointSlices
               ).getOrElse {
-                Seq(NgTarget(
-                  id = s"${svcPath}:$port",
-                  hostname = svc.clusterIP,
-                  port = port,
-                  tls = false,
-                  weight = backendRef.weight,
-                  protocol = HttpProtocols.HTTP_1_1,
-                  predicate = otoroshi.models.AlwaysMatch,
-                  ipAddress = None
-                ))
+                Seq(
+                  NgTarget(
+                    id = s"${svcPath}:$port",
+                    hostname = svc.clusterIP,
+                    port = port,
+                    tls = false,
+                    weight = backendRef.weight,
+                    protocol = HttpProtocols.HTTP_1_1,
+                    predicate = otoroshi.models.AlwaysMatch,
+                    ipAddress = None
+                  )
+                )
               }
-              targets.map(t => applyBackendTLSPolicy(t, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds))
+              targets.map(t =>
+                applyBackendTLSPolicy(t, backendRef.name, svcNamespace, backendTLSPolicies, resolvedCaCertIds)
+              )
             case None      =>
               logger.warn(s"Service $svcPath not found for backendRef in HTTPRoute ${httpRoute.path}")
               Seq.empty
@@ -859,15 +920,15 @@ object GatewayApiConverter {
   }
 
   private def buildTargetFromBackendRef(
-    routeNamespace: String,
-    routePath: String,
-    backendRef: HTTPRouteBackendRef,
-    services: Seq[KubernetesService],
-    endpoints: Seq[KubernetesEndpoint],
-    endpointSlices: Seq[KubernetesEndpointSlice] = Seq.empty,
-    referenceGrants: Seq[KubernetesReferenceGrant],
-    backendTLSPolicies: Seq[KubernetesBackendTLSPolicy] = Seq.empty,
-    resolvedCaCertIds: Map[String, String] = Map.empty
+      routeNamespace: String,
+      routePath: String,
+      backendRef: HTTPRouteBackendRef,
+      services: Seq[KubernetesService],
+      endpoints: Seq[KubernetesEndpoint],
+      endpointSlices: Seq[KubernetesEndpointSlice] = Seq.empty,
+      referenceGrants: Seq[KubernetesReferenceGrant],
+      backendTLSPolicies: Seq[KubernetesBackendTLSPolicy] = Seq.empty,
+      resolvedCaCertIds: Map[String, String] = Map.empty
   ): Option[NgTarget] = {
     val backendKind = backendRef.kind.getOrElse("Service")
     if (backendKind != "Service") {
@@ -882,10 +943,14 @@ object GatewayApiConverter {
         val service = services.find(_.path == svcPath)
         service match {
           case Some(svc) =>
-            val port = backendRef.port.getOrElse(80)
+            val port   = backendRef.port.getOrElse(80)
             val target = resolveEndpointSliceTargets(
-              backendRef.name, svcNamespace, port, backendRef.weight,
-              HttpProtocols.HTTP_1_1, endpointSlices
+              backendRef.name,
+              svcNamespace,
+              port,
+              backendRef.weight,
+              HttpProtocols.HTTP_1_1,
+              endpointSlices
             ).flatMap(_.headOption).getOrElse {
               NgTarget(
                 id = s"${svcPath}:$port",
@@ -1014,14 +1079,14 @@ object GatewayApiConverter {
       if (!allowed) {
         logger.warn(
           s"$routeKind $routePath references Service ${svcNamespace}/${backendRef.name} " +
-            s"across namespaces but no matching ReferenceGrant was found in namespace $svcNamespace. " +
-            s"The backend reference is DENIED. To allow this, create a ReferenceGrant in " +
-            s"namespace $svcNamespace that permits $routeKind from namespace $routeNamespace."
+          s"across namespaces but no matching ReferenceGrant was found in namespace $svcNamespace. " +
+          s"The backend reference is DENIED. To allow this, create a ReferenceGrant in " +
+          s"namespace $svcNamespace that permits $routeKind from namespace $routeNamespace."
         )
       } else {
         logger.debug(
           s"$routeKind $routePath cross-namespace reference to Service ${svcNamespace}/${backendRef.name} " +
-            s"is allowed by a ReferenceGrant in namespace $svcNamespace."
+          s"is allowed by a ReferenceGrant in namespace $svcNamespace."
         )
       }
       allowed
@@ -1045,7 +1110,7 @@ object GatewayApiConverter {
       referenceGrants: Seq[KubernetesReferenceGrant]
   ): Boolean = {
     backendRefs.exists { ref =>
-      val backendKind = ref.kind.getOrElse("Service")
+      val backendKind  = ref.kind.getOrElse("Service")
       val svcNamespace = ref.namespace.getOrElse(routeNamespace)
       // Only check Service-kind refs that are actually cross-namespace
       backendKind == "Service" &&
@@ -1080,27 +1145,37 @@ object GatewayApiConverter {
 
         case "RequestHeaderModifier" =>
           filter.requestHeaderModifier.toSeq.flatMap { mod =>
-            val setHeaders = (mod \ "set").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-              .map(h => (h \ "name").as[String] -> (h \ "value").as[String]).toMap
-            val addHeaders = (mod \ "add").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-              .map(h => (h \ "name").as[String] -> (h \ "value").as[String]).toMap
+            val setHeaders    = (mod \ "set")
+              .asOpt[Seq[JsObject]]
+              .getOrElse(Seq.empty)
+              .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
+              .toMap
+            val addHeaders    = (mod \ "add")
+              .asOpt[Seq[JsObject]]
+              .getOrElse(Seq.empty)
+              .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
+              .toMap
             val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty)
 
             val allHeaders = setHeaders ++ addHeaders
             val addPlugin  = if (allHeaders.nonEmpty) {
-              Seq(NgPluginInstance(
-                plugin = "cp:otoroshi.next.plugins.AdditionalHeadersIn",
-                enabled = true,
-                config = NgPluginInstanceConfig(Json.obj("headers" -> allHeaders))
-              ))
+              Seq(
+                NgPluginInstance(
+                  plugin = "cp:otoroshi.next.plugins.AdditionalHeadersIn",
+                  enabled = true,
+                  config = NgPluginInstanceConfig(Json.obj("headers" -> allHeaders))
+                )
+              )
             } else Seq.empty
 
             val removePlugin = if (removeHeaders.nonEmpty) {
-              Seq(NgPluginInstance(
-                plugin = "cp:otoroshi.next.plugins.RemoveHeadersIn",
-                enabled = true,
-                config = NgPluginInstanceConfig(Json.obj("header_names" -> removeHeaders))
-              ))
+              Seq(
+                NgPluginInstance(
+                  plugin = "cp:otoroshi.next.plugins.RemoveHeadersIn",
+                  enabled = true,
+                  config = NgPluginInstanceConfig(Json.obj("header_names" -> removeHeaders))
+                )
+              )
             } else Seq.empty
 
             addPlugin ++ removePlugin
@@ -1108,27 +1183,37 @@ object GatewayApiConverter {
 
         case "ResponseHeaderModifier" =>
           filter.responseHeaderModifier.toSeq.flatMap { mod =>
-            val setHeaders = (mod \ "set").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-              .map(h => (h \ "name").as[String] -> (h \ "value").as[String]).toMap
-            val addHeaders = (mod \ "add").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-              .map(h => (h \ "name").as[String] -> (h \ "value").as[String]).toMap
+            val setHeaders    = (mod \ "set")
+              .asOpt[Seq[JsObject]]
+              .getOrElse(Seq.empty)
+              .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
+              .toMap
+            val addHeaders    = (mod \ "add")
+              .asOpt[Seq[JsObject]]
+              .getOrElse(Seq.empty)
+              .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
+              .toMap
             val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty)
 
             val allHeaders = setHeaders ++ addHeaders
             val addPlugin  = if (allHeaders.nonEmpty) {
-              Seq(NgPluginInstance(
-                plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
-                enabled = true,
-                config = NgPluginInstanceConfig(Json.obj("headers" -> allHeaders))
-              ))
+              Seq(
+                NgPluginInstance(
+                  plugin = "cp:otoroshi.next.plugins.AdditionalHeadersOut",
+                  enabled = true,
+                  config = NgPluginInstanceConfig(Json.obj("headers" -> allHeaders))
+                )
+              )
             } else Seq.empty
 
             val removePlugin = if (removeHeaders.nonEmpty) {
-              Seq(NgPluginInstance(
-                plugin = "cp:otoroshi.next.plugins.RemoveHeadersOut",
-                enabled = true,
-                config = NgPluginInstanceConfig(Json.obj("header_names" -> removeHeaders))
-              ))
+              Seq(
+                NgPluginInstance(
+                  plugin = "cp:otoroshi.next.plugins.RemoveHeadersOut",
+                  enabled = true,
+                  config = NgPluginInstanceConfig(Json.obj("header_names" -> removeHeaders))
+                )
+              )
             } else Seq.empty
 
             addPlugin ++ removePlugin
@@ -1142,11 +1227,13 @@ object GatewayApiConverter {
             val statusCode = (redir \ "statusCode").asOpt[Int].getOrElse(302)
             val portSuffix = port.map(p => s":$p").getOrElse("")
             val to         = s"${scheme.getOrElse("https")}://${hostname.getOrElse("$${req.host}")}$portSuffix$${req.uri}"
-            Seq(NgPluginInstance(
-              plugin = "cp:otoroshi.next.plugins.Redirection",
-              enabled = true,
-              config = NgPluginInstanceConfig(Json.obj("code" -> statusCode, "to" -> to))
-            ))
+            Seq(
+              NgPluginInstance(
+                plugin = "cp:otoroshi.next.plugins.Redirection",
+                enabled = true,
+                config = NgPluginInstanceConfig(Json.obj("code" -> statusCode, "to" -> to))
+              )
+            )
           }
 
         case "URLRewrite" =>
@@ -1160,33 +1247,45 @@ object GatewayApiConverter {
                 config = NgPluginInstanceConfig(Json.obj("headers" -> Json.obj("Host" -> host)))
               )
             }
-            // Path rewriting is handled in ruleToNgRoute via stripPath + backend.root
+          // Path rewriting is handled in ruleToNgRoute via stripPath + backend.root
           }
 
         case "RequestMirror" =>
           filter.requestMirror.toSeq.flatMap { rewrite =>
-            val percent = (rewrite \ "percent").asOpt[Int].map(_.toDouble)
-            val fraction = (rewrite \ "fraction").asOpt[JsObject]
-            val finalPercent: Double = percent.orElse {
-              for {
-                fr <- fraction
-                numerator <- (fr \ "numerator").asOpt[Int].map(_.toDouble)
-                denominator <- (fr \ "denominator").asOpt[Int].map(_.toDouble)
-              } yield numerator / denominator
-            }.getOrElse(100.0)
-            val backendRef = HTTPRouteBackendRef((rewrite \ "backendRef").asObject)
-            buildTargetFromBackendRef(routeNamespace, routePath, backendRef, services, endpoints, endpointSlices, referenceGrants).map { target =>
+            val percent              = (rewrite \ "percent").asOpt[Int].map(_.toDouble)
+            val fraction             = (rewrite \ "fraction").asOpt[JsObject]
+            val finalPercent: Double = percent
+              .orElse {
+                for {
+                  fr          <- fraction
+                  numerator   <- (fr \ "numerator").asOpt[Int].map(_.toDouble)
+                  denominator <- (fr \ "denominator").asOpt[Int].map(_.toDouble)
+                } yield numerator / denominator
+              }
+              .getOrElse(100.0)
+            val backendRef           = HTTPRouteBackendRef((rewrite \ "backendRef").asObject)
+            buildTargetFromBackendRef(
+              routeNamespace,
+              routePath,
+              backendRef,
+              services,
+              endpoints,
+              endpointSlices,
+              referenceGrants
+            ).map { target =>
               NgPluginInstance(
                 plugin = "cp:otoroshi.next.plugins.NgTrafficMirroring",
                 enabled = true,
-                config = NgPluginInstanceConfig(Json.obj(
-                  "to"               -> target.baseUrl,
-                  "enabled"          -> true,
-                  "capture_response" -> false,
-                  "generate_events"  -> false,
-                  "headers"          -> Map.empty[String, String],
-                  "percentage"       -> finalPercent,
-                ))
+                config = NgPluginInstanceConfig(
+                  Json.obj(
+                    "to"               -> target.baseUrl,
+                    "enabled"          -> true,
+                    "capture_response" -> false,
+                    "generate_events"  -> false,
+                    "headers"          -> Map.empty[String, String],
+                    "percentage"       -> finalPercent
+                  )
+                )
               )
             }
           }
@@ -1198,9 +1297,10 @@ object GatewayApiConverter {
             val name  = (ref \ "name").as[String]
             if (group == "proxy.otoroshi.io" && kind == "Plugin") {
               k8sPlugins.find(p => p.name == name && p.namespace == routeNamespace) match {
-                case Some(plugin) if plugin.spec.select("plugins").isDefined => plugin.spec.select("plugins").as[Seq[JsObject]].map(o => NgPluginInstance.readFrom(o))
-                case Some(plugin) => Seq(NgPluginInstance.readFrom(plugin.spec))
-                case None =>
+                case Some(plugin) if plugin.spec.select("plugins").isDefined =>
+                  plugin.spec.select("plugins").as[Seq[JsObject]].map(o => NgPluginInstance.readFrom(o))
+                case Some(plugin)                                            => Seq(NgPluginInstance.readFrom(plugin.spec))
+                case None                                                    =>
                   logger.warn(s"ExtensionRef Plugin '$name' not found in namespace $routeNamespace for $routePath")
                   Seq.empty
               }

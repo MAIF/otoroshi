@@ -105,7 +105,7 @@ case class NgTreeRouter(
           .get(NettyRequestKeys.ListenerExclusiveKey)
           .orElse(attrs.get(otoroshi.plugins.Keys.ForCurrentListenerOnlyKey))
           .getOrElse(false)
-        val _finalRoutes            = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
+        val _finalRoutes           = request.attrs.get(NettyRequestKeys.ListenerIdKey) match {
           case None                                     =>
             // println("should display on standard listener")
             routes.copy(routes =
@@ -124,12 +124,16 @@ case class NgTreeRouter(
             // println("should display on non exclusive")
             routes.copy(routes = routes.routes.filter(r => r.notBoundToListener || r.boundToListener(listener)))
         }
-        val finalRoutes = if(_finalRoutes.routes.size < 2) _finalRoutes else _finalRoutes.copy(routes = _finalRoutes.routes.sortWith {
-          case (routeA, routeB) =>
-            val routeAWeight = routeA.frontend.cookies.size + routeA.frontend.query.size + routeA.frontend.headers.size
-            val routeBWeight = routeB.frontend.cookies.size + routeB.frontend.query.size + routeB.frontend.headers.size
-            routeAWeight > routeBWeight
-        })
+        val finalRoutes            =
+          if (_finalRoutes.routes.size < 2) _finalRoutes
+          else
+            _finalRoutes.copy(routes = _finalRoutes.routes.sortWith { case (routeA, routeB) =>
+              val routeAWeight =
+                routeA.frontend.cookies.size + routeA.frontend.query.size + routeA.frontend.headers.size
+              val routeBWeight =
+                routeB.frontend.cookies.size + routeB.frontend.query.size + routeB.frontend.headers.size
+              routeAWeight > routeBWeight
+            })
         val routeIds               = finalRoutes.routes.map(_.cacheableId)
         attrs.put(otoroshi.next.plugins.Keys.MatchedRoutesKey -> routeIds)
         finalRoutes.find((r, matchedPath, pathParams, noMoreSegments) =>
@@ -229,7 +233,7 @@ case class NgTreeNodePath(
       endsWithSlash: Boolean,
       path: String,
       pathParams: scala.collection.mutable.HashMap[String, String],
-      trailingSlashMeansExactSegments: Boolean,
+      trailingSlashMeansExactSegments: Boolean
   ): Option[NgMatchedRoutes] = {
     segments.headOption match {
       case None if routes.isEmpty => None
@@ -293,15 +297,24 @@ case class NgTreeNodePath(
                       .applyOnIf(sw) { pt =>
                         // here returned matched routes can't have more possible segments or you will match anything
                         if (trailingSlashMeansExactSegments) {
-                          pt.copy(tree = TrieMap.empty, routes = pt.routes.filterNot(_.frontend.domains.forall { domain =>
-                            val pathNoLeadingSlash = domain.path.replaceFirst("/", "")
-                            domain.pathEndsWithSlash || pathNoLeadingSlash.startsWith(head)
-                          }))
+                          pt.copy(
+                            tree = TrieMap.empty,
+                            routes = pt.routes.filterNot(_.frontend.domains.forall { domain =>
+                              val pathNoLeadingSlash = domain.path.replaceFirst("/", "")
+                              domain.pathEndsWithSlash || pathNoLeadingSlash.startsWith(head)
+                            })
+                          )
                         } else {
                           pt.copy(tree = TrieMap.empty)
                         }
                       }
-                      .find(segments.tail, endsWithSlash, s"$path/$head", pathParams, trailingSlashMeansExactSegments) match {
+                      .find(
+                        segments.tail,
+                        endsWithSlash,
+                        s"$path/$head",
+                        pathParams,
+                        trailingSlashMeansExactSegments
+                      ) match {
                       case None if routes.isEmpty => None
                       case None                   =>
                         NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
@@ -320,7 +333,13 @@ case class NgTreeNodePath(
           case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty =>
             NgMatchedRoutes(ptree.routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree)                                          =>
-            ptree.find(segments.tail, endsWithSlash, s"$path/$head", pathParams, trailingSlashMeansExactSegments) match {
+            ptree.find(
+              segments.tail,
+              endsWithSlash,
+              s"$path/$head",
+              pathParams,
+              trailingSlashMeansExactSegments
+            ) match {
               case None if routes.isEmpty => None
               case None                   =>
                 NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
@@ -536,15 +555,23 @@ object NgTreeRouter_Test {
     )
     val router = NgTreeRouter.build(routes)
     router.json.prettify.debugPrintln
-    router.find("test-tree-router-next-gen.oto.tools", "/api/contracts/1234/items", trailingSlashMeansExactSegments = true).map { mroute =>
-      println(mroute.path)
-      println(mroute.pathParams)
-    }
+    router
+      .find("test-tree-router-next-gen.oto.tools", "/api/contracts/1234/items", trailingSlashMeansExactSegments = true)
+      .map { mroute =>
+        println(mroute.path)
+        println(mroute.pathParams)
+      }
     println("-------")
-    router.find("test-tree-router-next-gen.oto.tools", "/api/contracts/1234/items/foo/bar", trailingSlashMeansExactSegments = true).map { mroute =>
-      println(mroute.path)
-      println(mroute.pathParams)
-    }
+    router
+      .find(
+        "test-tree-router-next-gen.oto.tools",
+        "/api/contracts/1234/items/foo/bar",
+        trailingSlashMeansExactSegments = true
+      )
+      .map { mroute =>
+        println(mroute.path)
+        println(mroute.pathParams)
+      }
   }
 
   def testRealLifeRouter(): Unit = {
@@ -602,11 +629,29 @@ object NgTreeRouter_Test {
 
     println(router.json.prettify)
 
-    router.find("foo-ildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true).map(_.routes.map(_.name)).debugPrintln
-    router.find("foo-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true).map(_.routes.map(_.name)).debugPrintln
-    router.find("foo1-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true).map(_.routes.map(_.name)).debugPrintln
-    router.find("foo2-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true).map(_.routes.map(_.name)).debugPrintln
-    router.find("foo-bar-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true).map(_.routes.map(_.name)).debugPrintln
-    router.find("foo-bar-quix-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true).map(_.routes.map(_.name)).debugPrintln
+    router
+      .find("foo-ildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true)
+      .map(_.routes.map(_.name))
+      .debugPrintln
+    router
+      .find("foo-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true)
+      .map(_.routes.map(_.name))
+      .debugPrintln
+    router
+      .find("foo1-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true)
+      .map(_.routes.map(_.name))
+      .debugPrintln
+    router
+      .find("foo2-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true)
+      .map(_.routes.map(_.name))
+      .debugPrintln
+    router
+      .find("foo-bar-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true)
+      .map(_.routes.map(_.name))
+      .debugPrintln
+    router
+      .find("foo-bar-quix-wildcard-next-gen.oto.tools", "/api", trailingSlashMeansExactSegments = true)
+      .map(_.routes.map(_.name))
+      .debugPrintln
   }
 }

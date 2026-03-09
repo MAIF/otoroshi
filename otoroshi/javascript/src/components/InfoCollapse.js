@@ -32,11 +32,7 @@ export default function InfoCollapse({ title, icon, children, defaultOpen = fals
           style={{ fontSize: 12, color: '#17a2b8' }}
         />
       </div>
-      {open && (
-        <div style={{ padding: '0 15px 10px 15px' }}>
-          {children}
-        </div>
-      )}
+      {open && <div style={{ padding: '0 15px 10px 15px' }}>{children}</div>}
     </div>
   );
 }
