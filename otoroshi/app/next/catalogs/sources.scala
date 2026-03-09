@@ -8,6 +8,7 @@ import akka.util.ByteString
 import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.libs.json._
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
@@ -30,10 +31,23 @@ object SourceUtils {
     RemoteContentParser.parseRawContent(rawContent, sourceName, allResources)
   }
 
+  private def isStringArray(value: JsValue): Option[JsArray] = value match {
+    case arr: JsArray if arr.value.nonEmpty && arr.value.forall(_.isInstanceOf[JsString]) => Some(arr)
+    case _                                                                                => None
+  }
+
+  private def extractDeployListing(json: JsValue): Option[JsArray] = {
+    isStringArray(json).orElse {
+      json match {
+        case obj: JsObject => obj.select("spec").select("catalog_listing").asOpt[JsArray].flatMap(isStringArray)
+        case _             => None
+      }
+    }
+  }
+
   def isDeployListing(rawContent: String): Option[JsArray] = {
-    Try(Json.parse(rawContent)).toOption.flatMap {
-      case arr: JsArray if arr.value.nonEmpty && arr.value.forall(_.isInstanceOf[JsString]) => Some(arr)
-      case _                                                                                => None
+    Try(Json.parse(rawContent)).toOption.flatMap(extractDeployListing).orElse {
+      Yaml.parse(rawContent).flatMap(extractDeployListing)
     }
   }
 
