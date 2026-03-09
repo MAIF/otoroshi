@@ -39,7 +39,14 @@ object SourceUtils {
   private def extractDeployListing(json: JsValue): Option[JsArray] = {
     isStringArray(json).orElse {
       json match {
-        case obj: JsObject => obj.select("spec").select("catalog_listing").asOpt[JsArray].flatMap(isStringArray)
+        case obj: JsObject =>
+          val hasApiVersion = obj.select("apiVersion").asOpt[String].contains("proxy.otoroshi.io/v1")
+          val hasKind       = obj.select("kind").asOpt[String].contains("RemoteCatalogListing")
+          if (hasApiVersion && hasKind) {
+            obj.select("spec").select("catalog_listing").asOpt[JsArray].flatMap(isStringArray)
+          } else {
+            None
+          }
         case _             => None
       }
     }
