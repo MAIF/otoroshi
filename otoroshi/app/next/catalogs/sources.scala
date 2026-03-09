@@ -17,8 +17,9 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.{FileSystems, Files, Path}
 import java.util.concurrent.TimeUnit
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.util.Try
@@ -62,20 +63,94 @@ object SourceUtils {
       deployArray: JsArray,
       fetchRelativePath: String => Future[Either[JsValue, String]],
       sourceName: String,
-      allResources: Seq[Resource]
+      allResources: Seq[Resource],
+      resolveGlob: Option[String => Future[Either[JsValue, Seq[String]]]] = None
   )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val paths = deployArray.value.flatMap(_.asOpt[String])
-    paths
-      .mapAsync { relativePath =>
-        fetchRelativePath(relativePath).map {
-          case Left(err)         =>
-            logger.warn(s"Error fetching $relativePath from $sourceName: ${err.toString}")
-            Seq.empty[RemoteEntity]
-          case Right(rawContent) =>
-            parseEntityContent(rawContent, s"$sourceName/$relativePath", allResources)
+    val rawPaths = deployArray.value.flatMap(_.asOpt[String])
+    rawPaths
+      .mapAsync { path =>
+        if (isGlobPattern(path) && resolveGlob.isDefined) {
+          resolveGlob.get(path).flatMap {
+            case Left(err)            =>
+              logger.warn(s"Error resolving glob $path from $sourceName: ${err.toString}")
+              Seq.empty[RemoteEntity].vfuture
+            case Right(resolvedPaths) =>
+              resolvedPaths.mapAsync { relativePath =>
+                fetchRelativePath(relativePath).map {
+                  case Left(err)         =>
+                    logger.warn(s"Error fetching $relativePath from $sourceName: ${err.toString}")
+                    Seq.empty[RemoteEntity]
+                  case Right(rawContent) =>
+                    parseEntityContent(rawContent, s"$sourceName/$relativePath", allResources)
+                }
+              }.map(_.flatten)
+          }
+        } else {
+          fetchRelativePath(path).map {
+            case Left(err)         =>
+              logger.warn(s"Error fetching $path from $sourceName: ${err.toString}")
+              Seq.empty[RemoteEntity]
+            case Right(rawContent) =>
+              parseEntityContent(rawContent, s"$sourceName/$path", allResources)
+          }
         }
       }
       .map(entities => Right(entities.flatten): Either[JsValue, Seq[RemoteEntity]])
+  }
+
+  def isGlobPattern(path: String): Boolean = {
+    path.contains("*") || path.contains("?") || (path.contains("[") && path.contains("]"))
+  }
+
+  def globToRegex(glob: String): String = {
+    val clean  = glob.stripPrefix("./")
+    val result = new StringBuilder("^")
+    var i      = 0
+    while (i < clean.length) {
+      if (i < clean.length - 1 && clean(i) == '*' && clean(i + 1) == '*') {
+        result.append(".*")
+        i += 2
+        if (i < clean.length && clean(i) == '/') i += 1
+      } else {
+        clean(i) match {
+          case '*' => result.append("[^/]*")
+          case '?' => result.append("[^/]")
+          case '.' => result.append("\\.")
+          case c   => result.append(java.util.regex.Pattern.quote(c.toString))
+        }
+        i += 1
+      }
+    }
+    result.append("$").toString()
+  }
+
+  def matchesGlob(path: String, pattern: String): Boolean = {
+    path.matches(globToRegex(pattern))
+  }
+
+  def resolveLocalGlob(baseDir: File, globPattern: String): Seq[String] = {
+    val clean   = globPattern.stripPrefix("./")
+    val matcher = FileSystems.getDefault.getPathMatcher("glob:" + clean)
+    Try {
+      Files
+        .walk(baseDir.toPath)
+        .iterator()
+        .asScala
+        .filter(p => Files.isRegularFile(p))
+        .map(p => baseDir.toPath.relativize(p))
+        .filter(p => matcher.matches(p) && isEntityFile(p.getFileName.toString))
+        .map(_.toString)
+        .toSeq
+    }.getOrElse(Seq.empty)
+  }
+
+  def resolveRemoteGlob(allFiles: Seq[String], basePath: String, globPattern: String): Seq[String] = {
+    allFiles.flatMap { file =>
+      val relativeOpt = if (basePath.isEmpty) Some(file)
+                        else if (file.startsWith(basePath + "/")) Some(file.stripPrefix(basePath + "/"))
+                        else None
+      relativeOpt.filter(r => matchesGlob(r, globPattern))
+    }
   }
 
   def isEntityFile(name: String): Boolean = {
@@ -168,7 +243,10 @@ class CatalogSourceFile extends CatalogSource {
                     }
                   },
                   s"file://$path",
-                  allRes
+                  allRes,
+                  resolveGlob = Some(glob =>
+                    (Right(SourceUtils.resolveLocalGlob(new File(basePath), glob)): Either[JsValue, Seq[String]]).vfuture
+                  )
                 )
               case None      =>
                 (Right(SourceUtils.parseEntityContent(rawContent, s"file://$path", allRes)): Either[JsValue, Seq[
@@ -322,6 +400,42 @@ class CatalogSourceGithub extends CatalogSource {
       }
   }
 
+  private def listAllFilesRecursive(
+      apiBase: String,
+      owner: String,
+      repo: String,
+      branch: String,
+      token: String,
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+    val apiUrl = s"$apiBase/repos/$owner/$repo/git/trees/$branch"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("recursive" -> "1")
+      .withHttpHeaders(githubHeaders(token): _*)
+      .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val files = tree.flatMap { item =>
+            val itemType = item.select("type").asOpt[String].getOrElse("")
+            val itemPath = item.select("path").asOpt[String].getOrElse("")
+            if (itemType == "blob") Some(itemPath) else None
+          }
+          Right(files): Either[JsValue, Seq[String]]
+        } else {
+          Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for recursive tree listing")): Either[
+            JsValue,
+            Seq[String]
+          ]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing GitHub tree: ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
   private def listDirectory(
       apiBase: String,
       owner: String,
@@ -422,7 +536,13 @@ class CatalogSourceGithub extends CatalogSource {
                       fetchFileContent(apiBase, owner, repo, fullPath, branch, token, env)
                     },
                     s"github://$owner/$repo/$path@$branch",
-                    allRes
+                    allRes,
+                    resolveGlob = Some(glob =>
+                      listAllFilesRecursive(apiBase, owner, repo, branch, token, env).map {
+                        case Left(err)    => Left(err)
+                        case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
+                      }
+                    )
                   )
                 case None      =>
                   (Right(
@@ -496,6 +616,48 @@ class CatalogSourceGitlab extends CatalogSource {
       }
       .recover { case e: Throwable =>
         Left(Json.obj("error" -> s"Error fetching $filePath from GitLab: ${e.getMessage}")): Either[JsValue, String]
+      }
+  }
+
+  private def listAllFilesRecursive(
+      baseUrl: String,
+      encodedProject: String,
+      branch: String,
+      token: String,
+      env: Env
+  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+    val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/tree"
+    env.Ws
+      .url(apiUrl)
+      .withQueryStringParameters("ref" -> branch, "recursive" -> "true", "per_page" -> "100")
+      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          resp.json match {
+            case arr: JsArray =>
+              val files = arr.value.flatMap { item =>
+                val itemType = item.select("type").asOpt[String].getOrElse("")
+                val itemPath = item.select("path").asOpt[String].getOrElse("")
+                if (itemType == "blob") Some(itemPath) else None
+              }
+              Right(files): Either[JsValue, Seq[String]]
+            case _            =>
+              Left(Json.obj("error" -> "GitLab API did not return an array for recursive tree listing")): Either[
+                JsValue,
+                Seq[String]
+              ]
+          }
+        } else {
+          Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for recursive tree listing")): Either[
+            JsValue,
+            Seq[String]
+          ]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing GitLab tree: ${e.getMessage}")): Either[JsValue, Seq[String]]
       }
   }
 
@@ -593,7 +755,13 @@ class CatalogSourceGitlab extends CatalogSource {
                       fetchFileContent(baseUrl, encodedProject, fullPath, branch, token, env)
                     },
                     s"gitlab://$projectPath/$path@$branch",
-                    allRes
+                    allRes,
+                    resolveGlob = Some(glob =>
+                      listAllFilesRecursive(baseUrl, encodedProject, branch, token, env).map {
+                        case Left(err)    => Left(err)
+                        case Right(files) => Right(SourceUtils.resolveRemoteGlob(files, basePath, glob))
+                      }
+                    )
                   )
                 case None      =>
                   (Right(
@@ -659,6 +827,20 @@ class CatalogSourceS3 extends CatalogSource {
     S3Attributes.settings(settings)
   }
 
+  private def listAllKeys(bucket: String, prefix: String, config: JsObject, env: Env)(implicit
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[JsValue, Seq[String]]] = {
+    S3.listBucket(bucket, Some(prefix))
+      .withAttributes(s3ClientSettingsAttrs(config))
+      .map(_.key)
+      .runWith(Sink.seq)
+      .map(keys => Right(keys.toSeq): Either[JsValue, Seq[String]])
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing S3 objects: ${e.getMessage}")): Either[JsValue, Seq[String]]
+      }
+  }
+
   private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(implicit
       ec: ExecutionContext,
       mat: Materializer
@@ -705,7 +887,13 @@ class CatalogSourceS3 extends CatalogSource {
                   fetchS3Object(bucket, fullKey, catalog.sourceConfig, env)
                 },
                 s"s3://$bucket/$key",
-                allRes
+                allRes,
+                resolveGlob = Some(glob =>
+                  listAllKeys(bucket, if (baseKey.nonEmpty) baseKey + "/" else "", catalog.sourceConfig, env).map {
+                    case Left(err)   => Left(err)
+                    case Right(keys) => Right(SourceUtils.resolveRemoteGlob(keys, baseKey, glob))
+                  }
+                )
               )
             case None      =>
               (Right(SourceUtils.parseEntityContent(rawContent, s"s3://$bucket/$key", allRes)): Either[JsValue, Seq[
@@ -760,6 +948,40 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
       .recover { case e: Throwable =>
         Left(Json.obj("error" -> s"Error fetching key $key from Consul: ${e.getMessage}")): Either[JsValue, String]
+      }
+  }
+
+  private def listAllKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(implicit
+      ec: ExecutionContext
+  ): Future[Either[JsValue, Seq[String]]] = {
+    val cleanPrefix = prefix.stripSuffix("/") + "/"
+    val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
+    env.Ws
+      .url(s"$endpoint/v1/kv/$cleanPrefix")
+      .withQueryStringParameters(params: _*)
+      .withHttpHeaders(consulHeaders(token): _*)
+      .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
+      .get()
+      .map { resp =>
+        if (resp.status == 200) {
+          resp.json match {
+            case arr: JsArray =>
+              Right(arr.value.flatMap(_.asOpt[String])): Either[JsValue, Seq[String]]
+            case _            =>
+              Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[
+                String
+              ]]
+          }
+        } else if (resp.status == 404) {
+          Right(Seq.empty[String]): Either[JsValue, Seq[String]]
+        } else {
+          Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for key listing")): Either[JsValue, Seq[
+            String
+          ]]
+        }
+      }
+      .recover { case e: Throwable =>
+        Left(Json.obj("error" -> s"Error listing keys from Consul: ${e.getMessage}")): Either[JsValue, Seq[String]]
       }
   }
 
@@ -829,7 +1051,13 @@ class CatalogSourceConsulKv extends CatalogSource {
                     fetchRawKey(endpoint, fullKey, token, dc, env)
                   },
                   s"consul://$endpoint/$prefix",
-                  allRes
+                  allRes,
+                  resolveGlob = Some(glob =>
+                    listAllKeys(endpoint, if (basePrefix.nonEmpty) basePrefix else prefix, token, dc, env).map {
+                      case Left(err)   => Left(err)
+                      case Right(keys) => Right(SourceUtils.resolveRemoteGlob(keys, basePrefix, glob))
+                    }
+                  )
                 )
               case None      =>
                 (Right(SourceUtils.parseEntityContent(rawContent, s"consul://$endpoint/$prefix", allRes)): Either[
@@ -1157,8 +1385,17 @@ class CatalogSourceGit extends CatalogSource {
         val rawContent = new String(Files.readAllBytes(target.toPath), StandardCharsets.UTF_8)
         SourceUtils.isDeployListing(rawContent) match {
           case Some(arr) =>
-            val basePath                    = target.getParentFile.getAbsolutePath
-            val entities: Seq[RemoteEntity] = arr.value.flatMap(_.asOpt[String]).flatMap { relativePath =>
+            val basePath  = target.getParentFile.getAbsolutePath
+            val baseDir_  = new File(basePath)
+            val rawPaths  = arr.value.flatMap(_.asOpt[String])
+            val resolved  = rawPaths.flatMap { relativePath =>
+              if (SourceUtils.isGlobPattern(relativePath)) {
+                SourceUtils.resolveLocalGlob(baseDir_, relativePath)
+              } else {
+                Seq(relativePath)
+              }
+            }
+            val entities: Seq[RemoteEntity] = resolved.flatMap { relativePath =>
               Try {
                 val relFile    = new File(basePath, relativePath)
                 val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)
