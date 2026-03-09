@@ -873,7 +873,7 @@ object OIDCJwtVerifierConfig {
       ),
       "ref"                     -> Json.obj(
         "type"  -> "select",
-        "label" -> s"Auth. modules",
+        "label" -> s"Auth. module",
         "props" -> Json.obj(
           "optionsFrom"        -> "/bo/api/proxy/apis/security.otoroshi.io/v1/auth-modules",
           "optionsTransformer" -> Json.obj(
