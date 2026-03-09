@@ -540,45 +540,87 @@ spec:
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;source_kind&quot;: &quot;github&quot;,
   &quot;source_config&quot;: {
-    &quot;repo&quot;: &quot;https://github.com/owner/repo&quot;,  // repository URL
+    &quot;repo&quot;: &quot;owner/repo&quot;,                      // repository (owner/repo) or organization name
     &quot;branch&quot;: &quot;main&quot;,                          // branch name (default: main)
     &quot;path&quot;: &quot;entities/&quot;,                       // file or directory path in the repo
     &quot;token&quot;: &quot;ghp_xxx&quot;,                        // optional personal access token
-    &quot;base_url&quot;: &quot;https://api.github.com&quot;       // API base URL (for GitHub Enterprise)
+    &quot;base_url&quot;: &quot;https://api.github.com&quot;,      // API base URL (for GitHub Enterprise)
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;, &quot;api-*&quot;]   // optional: filter repos when scanning an org
   }
 }
 </code></pre>
 <p>Supports webhook-triggered deployments (see the <a href="#webhook-deployment">Webhook deployment</a> section).</p>
+<h4><a href="#organization-scanning-mode" name="organization-scanning-mode" class="anchor"><span class="anchor-link"></span></a>Organization scanning mode</h4>
+<p>When <code>repo</code> is set to an organization or user name (without <code>/</code>, e.g., <code>cloud-apim</code> instead of <code>cloud-apim/my-repo</code>), Otoroshi will list all repositories in that organization and scan each one for the specified <code>path</code>. If a repository does not contain the specified path, it is silently skipped.</p>
+<p>The <code>repo_patterns</code> option allows filtering which repositories to scan using glob patterns. For example, <code>[&quot;otoroshi-*&quot;]</code> will only scan repositories whose name starts with <code>otoroshi-</code>. If <code>repo_patterns</code> is not set, all repositories in the organization are scanned.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;github&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;cloud-apim&quot;,
+    &quot;path&quot;: &quot;otoroshi-remote-catalog.yaml&quot;,
+    &quot;token&quot;: &quot;ghp_xxx&quot;,
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]
+  }
+}
+</code></pre>
 <h3><a href="#gitlab" name="gitlab" class="anchor"><span class="anchor-link"></span></a>GitLab</h3>
 <p>Fetches entities from a GitLab repository using the GitLab API.</p>
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;source_kind&quot;: &quot;gitlab&quot;,
   &quot;source_config&quot;: {
-    &quot;repo&quot;: &quot;group/project&quot;,                    // project path (URL-encoded automatically)
+    &quot;repo&quot;: &quot;group/project&quot;,                    // project path or group name
     &quot;branch&quot;: &quot;main&quot;,                           // branch name (default: main)
     &quot;path&quot;: &quot;entities/&quot;,                        // file or directory path in the repo
     &quot;token&quot;: &quot;glpat-xxx&quot;,                       // optional private token
-    &quot;base_url&quot;: &quot;https://gitlab.com&quot;            // GitLab instance URL (for self-hosted)
+    &quot;base_url&quot;: &quot;https://gitlab.com&quot;,           // GitLab instance URL (for self-hosted)
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]             // optional: filter projects when scanning a group
   }
 }
 </code></pre>
 <p>Supports webhook-triggered deployments (see the <a href="#webhook-deployment">Webhook deployment</a> section).</p>
+<h4><a href="#group-scanning-mode" name="group-scanning-mode" class="anchor"><span class="anchor-link"></span></a>Group scanning mode</h4>
+<p>When <code>repo</code> is set to a group name (without <code>/</code>, e.g., <code>cloud-apim</code> instead of <code>cloud-apim/my-project</code>), Otoroshi will list all projects in that group (including subgroups) and scan each one for the specified <code>path</code>. If a project does not contain the specified path, it is silently skipped.</p>
+<p>The <code>repo_patterns</code> option filters projects by their name (last segment of the path) using glob patterns.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;gitlab&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;cloud-apim&quot;,
+    &quot;path&quot;: &quot;otoroshi-remote-catalog.yaml&quot;,
+    &quot;token&quot;: &quot;glpat-xxx&quot;,
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]
+  }
+}
+</code></pre>
 <h3><a href="#bitbucket" name="bitbucket" class="anchor"><span class="anchor-link"></span></a>Bitbucket</h3>
 <p>Fetches entities from a Bitbucket Cloud repository using the Bitbucket API 2.0.</p>
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;source_kind&quot;: &quot;bitbucket&quot;,
   &quot;source_config&quot;: {
-    &quot;repo&quot;: &quot;https://bitbucket.org/workspace/repo&quot;,  // repository URL
+    &quot;repo&quot;: &quot;workspace/repo&quot;,                          // repository (workspace/repo) or workspace name
     &quot;branch&quot;: &quot;main&quot;,                                  // branch name (default: main)
     &quot;path&quot;: &quot;entities/&quot;,                               // file or directory path
     &quot;token&quot;: &quot;xxx&quot;,                                    // app password or OAuth token
     &quot;username&quot;: &quot;my-user&quot;,                             // username (for Basic auth with app password)
-    &quot;base_url&quot;: &quot;https://api.bitbucket.org&quot;            // API base URL (for Bitbucket Server)
+    &quot;base_url&quot;: &quot;https://api.bitbucket.org&quot;,           // API base URL (for Bitbucket Server)
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]                    // optional: filter repos when scanning a workspace
   }
 }
 </code></pre>
 <p>If <code>username</code> is provided, authentication uses Basic auth (<code>username:token</code>). Otherwise, Bearer token authentication is used.</p>
 <p>Supports webhook-triggered deployments (see the <a href="#webhook-deployment">Webhook deployment</a> section).</p>
+<h4><a href="#workspace-scanning-mode" name="workspace-scanning-mode" class="anchor"><span class="anchor-link"></span></a>Workspace scanning mode</h4>
+<p>When <code>repo</code> is set to a workspace name (without <code>/</code>, e.g., <code>cloud-apim</code> instead of <code>cloud-apim/my-repo</code>), Otoroshi will list all repositories in that workspace and scan each one for the specified <code>path</code>. If a repository does not contain the specified path, it is silently skipped.</p>
+<p>The <code>repo_patterns</code> option filters repositories by their slug using glob patterns.</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;source_kind&quot;: &quot;bitbucket&quot;,
+  &quot;source_config&quot;: {
+    &quot;repo&quot;: &quot;cloud-apim&quot;,
+    &quot;path&quot;: &quot;otoroshi-remote-catalog.yaml&quot;,
+    &quot;token&quot;: &quot;xxx&quot;,
+    &quot;repo_patterns&quot;: [&quot;otoroshi-*&quot;]
+  }
+}
+</code></pre>
 <h3><a href="#git-generic-" name="git-generic-" class="anchor"><span class="anchor-link"></span></a>Git (generic)</h3>
 <p>Clones a Git repository and reads entities from the local clone. Works with any Git hosting provider or self-hosted repository.</p>
 <pre class="prettyprint"><code class="language-javascript">{
