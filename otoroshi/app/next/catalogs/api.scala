@@ -17,7 +17,36 @@ import scala.util.Try
 case class RemoteEntity(id: String, kind: String, source: String, syncAt: DateTime, content: JsObject)
 
 object RemoteEntity {
-  def fromJson(source: String, json: JsObject): Option[RemoteEntity] = {
+
+  private def isKubeStyle(json: JsObject): Boolean = {
+    json.select("apiVersion").asOpt[String].isDefined &&
+    json.select("kind").asOpt[String].isDefined &&
+    json.select("spec").asOpt[JsObject].isDefined
+  }
+
+  private def fromKubeStyle(source: String, json: JsObject): Option[RemoteEntity] = {
+    for {
+      kind <- json.select("kind").asOpt[String]
+      spec <- json.select("spec").asOpt[JsObject]
+    } yield {
+      val content  = spec ++ Json.obj("kind" -> kind)
+      val entityId = content
+        .select("id")
+        .asOpt[String]
+        .orElse(content.select("clientId").asOpt[String])
+        .orElse(content.select("serviceId").asOpt[String])
+        .getOrElse(kind + "-" + System.nanoTime())
+      RemoteEntity(
+        id = entityId,
+        kind = kind,
+        source = source,
+        syncAt = DateTime.now(),
+        content = content
+      )
+    }
+  }
+
+  private def fromFlatJson(source: String, json: JsObject): Option[RemoteEntity] = {
     for {
       entityId <- json
                     .select("id")
@@ -34,6 +63,11 @@ object RemoteEntity {
         content = json
       )
     }
+  }
+
+  def fromJson(source: String, json: JsObject): Option[RemoteEntity] = {
+    if (isKubeStyle(json)) fromKubeStyle(source, json)
+    else fromFlatJson(source, json)
   }
 }
 
