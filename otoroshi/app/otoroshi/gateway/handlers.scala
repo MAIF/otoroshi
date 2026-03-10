@@ -725,9 +725,10 @@ class GatewayRequestHandler(
             env.confJwksEsAlgorithms
           )
           .map {
-            case Left(body) if extensionsPublicKeys.isEmpty => Results.NotFound(body)
+            case Left(body) if extensionsPublicKeys.isEmpty  => Results.NotFound(body)
             case Left(_) if extensionsPublicKeys.nonEmpty   =>
               Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
+            case Left(_)                                    => Results.NotFound(Json.obj("error" -> "no keys found"))
             case Right(keys)                                => Results.Ok(Json.obj("keys" -> JsArray(keys ++ extensionsPublicKeys.map(_.raw))))
           }
       }

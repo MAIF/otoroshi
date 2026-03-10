@@ -52,6 +52,8 @@ object Keys {
   val StatusOverrideKey: TypedKey[Int]                       = TypedKey[Int]("otoroshi.core.StatusOverride")
   val MatchedInputTokenKey: TypedKey[JsValue]                = TypedKey[JsValue]("otoroshi.core.MatchedInputToken")
   val MatchedOutputTokenKey: TypedKey[JsValue]               = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
+  val MatchedRawInputTokenKey: TypedKey[String]              = TypedKey[String]("otoroshi.core.MatchedRawInputToken")
+  val MatchedRawOutputTokenKey: TypedKey[String]             = TypedKey[String]("otoroshi.core.MatchedRawOutputToken")
   val StrippedPathKey: TypedKey[String]                      = TypedKey[String]("otoroshi.core.StrippedPath")
   val ResponseEndPromiseKey: TypedKey[Promise[Done]]         = TypedKey[Promise[Done]]("otoroshi.core.ResponseEndPromise")
   val ForCurrentListenerOnlyKey: TypedKey[Boolean]           = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")

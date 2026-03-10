@@ -201,8 +201,9 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         } else {
           forbidden(context)   
         }
-      case _ if config.mandatory  => forbidden(context)
-      case _ if !config.mandatory => NgAccess.NgAllowed.vfuture
+      case None if config.mandatory  => forbidden(context)
+      case None if !config.mandatory => NgAccess.NgAllowed.vfuture
+      case _                         => NgAccess.NgAllowed.vfuture
     }
   }
 }

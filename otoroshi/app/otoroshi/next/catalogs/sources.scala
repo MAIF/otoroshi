@@ -24,7 +24,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{FileSystems, Files, Path}
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.given
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -71,7 +71,7 @@ object SourceUtils {
       allResources: Seq[Resource],
       resolveGlob: Option[String => Future[Either[JsValue, Seq[String]]]] = None
   )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val rawPaths = deployArray.value.flatMap(_.asOpt[String])
+    val rawPaths = deployArray.value.flatMap(_.asOpt[String]).toSeq
     rawPaths
       .mapAsync { path =>
         if (isGlobPattern(path) && resolveGlob.isDefined) {
@@ -417,7 +417,7 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("recursive" -> "1")
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -527,7 +527,7 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(orgUrl)
       .withQueryStringParameters("per_page" -> "100", "type" -> "all")
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .flatMap { resp =>
@@ -539,7 +539,7 @@ class CatalogSourceGithub extends CatalogSource {
           env.Ws
             .url(userUrl)
             .withQueryStringParameters("per_page" -> "100", "type" -> "all")
-            .withHttpHeaders(githubHeaders(token): _*)
+            .withHttpHeaders(githubHeaders(token)*)
             .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
             .get()
             .map { resp2 =>
@@ -717,7 +717,7 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch, "recursive" -> "true", "per_page" -> "100")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -728,7 +728,7 @@ class CatalogSourceGitlab extends CatalogSource {
                 val itemType = item.select("type").asOpt[String].getOrElse("")
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "blob") Some(itemPath) else None
-              }
+              }.toSeq
               Right(files): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for recursive tree listing")): Either[
@@ -825,14 +825,14 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("per_page" -> "100", "include_subgroups" -> "true")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              val projects = arr.value.flatMap(_.select("path_with_namespace").asOpt[String])
+              val projects = arr.value.flatMap(_.select("path_with_namespace").asOpt[String]).toSeq
               Right(projects): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for group projects")): Either[
@@ -1116,15 +1116,15 @@ class CatalogSourceConsulKv extends CatalogSource {
     val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$cleanPrefix")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              Right(arr.value.flatMap(_.asOpt[String])): Either[JsValue, Seq[String]]
+              Right(arr.value.flatMap(_.asOpt[String]).toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[
                 String
@@ -1384,7 +1384,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("pagelen" -> "100")
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1556,7 +1556,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1583,7 +1583,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("recursive" -> "true")
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1621,7 +1621,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1633,7 +1633,7 @@ class CatalogSourceGiteaCompat(
                 val itemName = item.select("name").asOpt[String].getOrElse("")
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
-              }
+              }.toSeq
               Right(files): Either[JsValue, Seq[String]]
             case _ =>
               Left(Json.obj("error" -> s"$sourceKind API did not return an array for directory listing")): Either[
@@ -1684,7 +1684,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(orgUrl)
       .withQueryStringParameters("limit" -> "50")
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .flatMap { resp =>
@@ -1696,7 +1696,7 @@ class CatalogSourceGiteaCompat(
           env.Ws
             .url(userUrl)
             .withQueryStringParameters("limit" -> "50")
-            .withHttpHeaders(giteaHeaders(token): _*)
+            .withHttpHeaders(giteaHeaders(token)*)
             .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
             .get()
             .map { resp2 =>
@@ -1952,7 +1952,7 @@ class CatalogSourceGit extends CatalogSource {
                 logger.warn(s"Cannot read file $relativePath from git repo")
                 Seq.empty[RemoteEntity]
               }
-            }
+            }.toSeq
             Right(entities): Either[JsValue, Seq[RemoteEntity]]
           case None      =>
             Right(SourceUtils.parseEntityContent(rawContent, s"git://${target.getPath}", allRes)): Either[JsValue, Seq[

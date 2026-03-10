@@ -419,7 +419,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New PostgreSQL exporter config",
           metadata = Map.empty,
           enabled = false,
-          location = EntityLocation.ownEntityLocation(ctx)(env),
+          location = EntityLocation.ownEntityLocation(ctx)(using env),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = PostgresExporterSettings(

@@ -936,8 +936,8 @@ class OIDCJwtVerifier extends NgAccessValidator {
                 sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
                   tuple
                 } match {
-                  case None if !config.mandatory => NgAccess.NgAllowed.vfuture
-                  case None if config.mandatory  =>
+                  case None if !config.mandatory  => NgAccess.NgAllowed.vfuture
+                  case None /* config.mandatory */ =>
                     NgAccess
                       .NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found"))))
                       .vfuture
@@ -970,9 +970,9 @@ class OIDCJwtVerifier extends NgAccessValidator {
                         }
                       }
                       .map {
-                        case Left(result) if config.mandatory => NgAccess.NgAllowed
-                        case Left(result) if !config.mandatory => NgAccess.NgDenied(customResult.getOrElse(result))
-                        case Right(r)     => r
+                        case Left(_) if config.mandatory      => NgAccess.NgAllowed
+                        case Left(result)                     => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Right(r)                         => r
                       }
                 }
               }

@@ -2138,13 +2138,13 @@ object Exporters {
   }
 
   class PostgresExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-      extends DefaultDataExporter(config)(ec, env) {
+      extends DefaultDataExporter(config)(using ec, env) {
 
     import otoroshi.storage.drivers.reactivepg.pgimplicits._
     import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
     import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
     import io.vertx.core.json.JsonObject
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters.given
 
     private val poolRef = new AtomicReference[PgPool](null)
 
