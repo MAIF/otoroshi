@@ -1,21 +1,20 @@
 package otoroshi.utils.syntax
 
+import com.auth0.jwt.interfaces.DecodedJWT
+import com.github.blemale.scaffeine.Cache
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.auth0.jwt.interfaces.DecodedJWT
-import com.github.blemale.scaffeine.Cache
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
-import java.util.{Base64 => JavaBase64}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.WSProxyServerJson
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool, TypedMap}
-import play.api.libs.json._
+import otoroshi.utils.*
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
 import play.api.{ConfigLoader, Configuration, Logger}
@@ -26,6 +25,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.security.cert.{CertificateFactory, X509Certificate}
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.TraversableOnce
@@ -256,7 +256,7 @@ object implicits {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
   implicit class BetterString(private val obj: String)         extends AnyVal {
-    import otoroshi.utils.string.Implicits._
+    import otoroshi.utils.string.Implicits.given
     def slugify: String                                        = obj.slug
     def slugifyWithSlash: String                               = obj.slug2
     def wildcard: Regex                                        = RegexPool.apply(obj)
@@ -499,7 +499,7 @@ object implicits {
   }
   implicit class BetterConfiguration(val configuration: Configuration) extends AnyVal {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     private def readFromFile[A](path: String, loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
       val file = new File(path)
@@ -706,20 +706,6 @@ object implicits {
           a + b
         }
         sum / seq.size
-      }
-    }
-
-    def findFirstSome[B](f: A => Option[B]): Option[B] = {
-      if (seq.isEmpty) {
-        None
-      } else {
-        for (a <- seq) {
-          val res = f(a)
-          if (res.isDefined) {
-            return res
-          }
-        }
-        None
       }
     }
 

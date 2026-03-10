@@ -1,16 +1,16 @@
 package otoroshi.next.workflow
 
+import com.auth0.jwt.JWT
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.BodyHelper
 import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.wasm.{WasmConfig, WasmUtils}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}

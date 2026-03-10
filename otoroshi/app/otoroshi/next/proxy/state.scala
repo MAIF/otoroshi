@@ -1,22 +1,22 @@
 package otoroshi.next.proxy
 
 import com.github.blemale.scaffeine.Scaffeine
-import next.models.{Api, ApiConsumerSubscription}
+import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
-import otoroshi.next.plugins._
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginHelper}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.TimeUnit
@@ -58,6 +58,7 @@ class NgProxyState(env: Env) {
   private val drafts                   = new UnboundedTrieMap[String, Draft]()
   private val apis                     = new UnboundedTrieMap[String, Api]()
   private val apiConsumerSubscriptions = new UnboundedTrieMap[String, ApiConsumerSubscription]()
+  private val routeTemplates           = new UnboundedTrieMap[String, RouteTemplate]()
   private val tryItEnabledReports      = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -97,20 +98,21 @@ class NgProxyState(env: Env) {
   }
 
   def findRoutes(domain: String, path: String): Option[Seq[NgRoute]] =
-    domainPathTreeRef.get().find(domain, path).map(_.routes)
+    domainPathTreeRef.get().find(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
 
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
     domainPathTreeRef.get().findRoute(request, attrs)(using env)
 
-  def getDomainRoutes(domain: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
+  def getDomainRoutes(domain: String, path: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
-    case None        => domainPathTreeRef.get().findWildcard(domain).map(_.routes)
+    case None        => domainPathTreeRef.get().findWildcard(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
   }
 
   def globalConfig(): Option[GlobalConfig]                                 = Option(globalConfigRef.get())
   def wasmPlugin(id: String): Option[WasmPlugin]                           = wasmPlugins.get(id)
   def draft(id: String): Option[Draft]                                     = drafts.get(id)
   def apiConsumerSubscription(id: String): Option[ApiConsumerSubscription] = apiConsumerSubscriptions.get(id)
+  def routeTemplate(id: String): Option[RouteTemplate]                     = routeTemplates.get(id)
   def api(id: String): Option[Api]                                         = apis.get(id)
   def script(id: String): Option[Script]                                   = scripts.get(id)
   def backend(id: String): Option[NgBackend]                               = backends.get(id)
@@ -137,6 +139,7 @@ class NgProxyState(env: Env) {
   def allWasmPlugins(): Seq[WasmPlugin]                           = wasmPlugins.values.toSeq
   def allDrafts(): Seq[Draft]                                     = drafts.values.toSeq
   def allApiConsumerSubscriptions(): Seq[ApiConsumerSubscription] = apiConsumerSubscriptions.values.toSeq
+  def allRouteTemplates(): Seq[RouteTemplate]                     = routeTemplates.values.toSeq
   def allApis(): Seq[Api]                                         = apis.values.toSeq
   def allScripts(): Seq[Script]                                   = scripts.values.toSeq
   def allRawRoutes(): Seq[NgRoute]                                = raw_routes.values.toSeq
@@ -211,6 +214,12 @@ class NgProxyState(env: Env) {
     apiConsumerSubscriptions
       .addAll(values.map(v => (v.id, v)))
       .remAll(apiConsumerSubscriptions.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateRouteTemplates(values: Seq[RouteTemplate]): Unit = {
+    routeTemplates
+      .addAll(values.map(v => (v.id, v)))
+      .remAll(routeTemplates.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateApis(values: Seq[Api]): Unit = {
@@ -583,6 +592,7 @@ class NgProxyState(env: Env) {
       wasmPlugins              <- env.datastores.wasmPluginsDataStore.findAllAndFillSecrets()
       drafts                   <- env.datastores.draftsDataStore.findAll()
       apiConsumerSubscriptions <- env.datastores.apiConsumerSubscriptionDataStore.findAll()
+      routeTemplates           <- env.datastores.routeTemplateDataStore.findAll()
       apis                     <- env.datastores.apiDataStore.findAll()
       croutes                  <- if (dev) {
                                     NgRouteComposition
@@ -643,6 +653,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updateWasmPlugins(wasmPlugins)
       env.proxyState.updateDrafts(drafts)
       env.proxyState.updateApiConsumerSubscriptions(apiConsumerSubscriptions)
+      env.proxyState.updateRouteTemplates(routeTemplates)
       env.proxyState.updateApis(apis)
       env.proxyState.updateNgBackends(backends)
       env.proxyState.updateNgSRouteCompositions(routescomp)
@@ -691,8 +702,8 @@ class NgProxyStateLoaderJob extends Job {
 
 class NgInternalStateMonitor extends Job {
 
-  import squants.information._
-  import squants.time._
+  import squants.information.*
+  import squants.time.*
 
   private val logger = Logger("otoroshi-internal-state-monitor")
 

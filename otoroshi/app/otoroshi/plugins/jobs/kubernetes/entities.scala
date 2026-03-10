@@ -3,16 +3,15 @@ package otoroshi.plugins.jobs.kubernetes
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.models.NgRoute
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import play.api.Logger
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
+import scala.collection.MapView
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.collection.MapView
 
 trait KubernetesEntity {
   def raw: JsValue

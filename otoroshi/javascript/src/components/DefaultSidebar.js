@@ -138,8 +138,10 @@ export function DefaultSidebar(props) {
       .sort((a, b) => a.title.localeCompare(b.title))
   );
 
-  if (window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/') &&
-    window.location.pathname !== '/bo/dashboard/extensions/workflows/workflows') {
+  if (
+    window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/') &&
+    window.location.pathname !== '/bo/dashboard/extensions/workflows/workflows'
+  ) {
     return null;
   }
 
@@ -179,6 +181,32 @@ export function DefaultSidebar(props) {
           }, 50); // delay to avoid simple click
         }}
       >
+        {openedSidebar && !onRouteTab && (
+          <div className="mb-2">
+            <p className="sidebar-title">Gateway Management</p>
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="HTTP Routes"
+              description="All your routes"
+              img="routes"
+              icon="fa-road"
+              link="/routes"
+            />
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="APIs"
+              description="All apis"
+              img="apis"
+              icon="fa-brush"
+              link="/apis"
+            />
+          </div>
+        )}
+
         {openedSidebar && !onRouteTab && shortcuts.length > 0 && (
           <p className="sidebar-title">Shortcuts</p>
         )}
@@ -203,8 +231,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                          clientY: client.clientY - start.clientY,
+                        }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -498,8 +526,9 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
-        }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -573,6 +602,51 @@ function SidebarLink({
         onClick={removeShortcut}
         title="Remove shortcut"
       />
+    </li>
+  );
+}
+
+function CoreSidebarLink({
+  openedSidebar,
+  clearSidebar,
+  title,
+  description,
+  text,
+  icon,
+  rootClassName,
+  ...props
+}) {
+  const path = props.path || props.link;
+  const iconTitle = description ? `${title} - ${description}` : title;
+
+  return (
+    <li
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
+      style={{
+        border: openedSidebar ? '2px solid transparent' : 'none',
+      }}
+    >
+      {path.indexOf('http') < 0 && (
+        <Link
+          to={`/${path}`.replace('//', '/')}
+          className={`nav-link ${rootClassName(path)}`}
+          {...createTooltip(text)}
+          onClick={clearSidebar}
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
+        >
+          <CustomIcon icon={icon} title={iconTitle} />{' '}
+          <span
+            style={{ marginTop: '4px' }}
+            className="d-flex align-items-center"
+            title={iconTitle}
+          >
+            {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+            <div className="ms-2">{props.tag}</div>
+          </span>
+        </Link>
+      )}
     </li>
   );
 }

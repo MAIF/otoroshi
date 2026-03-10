@@ -1,29 +1,29 @@
 package otoroshi.storage.drivers.cassandra
 
-import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{TimeUnit, _}
-import java.util.regex.Pattern
+import com.codahale.metrics.*
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
+import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.codahale.metrics._
-import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
-import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader
-import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import play.api.{Configuration, Logger}
-import otoroshi.storage._
+import otoroshi.storage.*
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
+import otoroshi.utils.syntax.implicits.given
+import play.api.{Configuration, Logger}
 
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{TimeUnit, *}
+import java.util.regex.Pattern
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.syntax.implicits._
 
 trait RawGetRedis {
   def rawGet(key: String): Future[Option[(String, Long, Any)]]
@@ -37,8 +37,8 @@ object CassImplicits {
 
   implicit class EnhancedAsyncResultSet(val rsf: AsyncResultSet) extends AnyVal {
 
-    import scala.jdk.CollectionConverters._
-    import scala.compat.java8.FutureConverters._
+    import scala.compat.java8.FutureConverters.given
+    import scala.jdk.CollectionConverters.given
 
     def list()(using mat: Materializer): Future[Seq[Row]] = {
       val ref  = new AtomicReference[AsyncResultSet](rsf)
@@ -82,10 +82,10 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 ) extends RedisLike
     with RawGetRedis {
 
-  import CassImplicits._
+  import CassImplicits.given
 
-  import scala.jdk.CollectionConverters._
-  import scala.compat.java8.FutureConverters._
+  import scala.compat.java8.FutureConverters.given
+  import scala.jdk.CollectionConverters.given
 
   private val metrics = new MetricRegistry()
 

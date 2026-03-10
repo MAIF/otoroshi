@@ -82,6 +82,7 @@ export function setupHttpListenersExtension(registerExtension) {
               { label: 'None', value: 'none' },
               { label: 'Want', value: 'want' },
               { label: 'Need', value: 'need' },
+              { label: 'Dynamic', value: 'dynamic' },
             ],
           },
         },
@@ -170,7 +171,7 @@ export function setupHttpListenersExtension(registerExtension) {
       }
 
       client = BackOfficeServices.apisClient(
-        'http-listeners.extensions.otoroshi.io',
+        'http-listeners.proxy.otoroshi.io',
         'v1',
         'http-listeners'
       );

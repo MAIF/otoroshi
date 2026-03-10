@@ -5,10 +5,10 @@ import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.{NgLegacyApikeyCall, _}
-import otoroshi.next.plugins.api._
-import otoroshi.next.plugins.wrappers._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
+import otoroshi.next.plugins.wrappers.*
+import otoroshi.next.plugins.*
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.proxy.{NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
@@ -17,13 +17,13 @@ import otoroshi.script.{NamedPlugin, PluginType}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.gzip.GzipConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 

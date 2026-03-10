@@ -2182,7 +2182,9 @@ export const nextClient = {
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
     APIS: 'apis',
+    GROUPS: 'service-groups',
     API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions',
+    ROUTE_TEMPLATES: 'route-templates',
   },
   find: (entity) => fetchWrapper(`/${entity}`),
   findAll: (entity, { page, pageSize, sorted, filtered } = { page: 1 }) => {

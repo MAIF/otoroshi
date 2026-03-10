@@ -7,19 +7,21 @@ import otoroshi.jobs.newengine.NewEngine
 import otoroshi.models.GlobalConfig
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.{Configuration, Logger}
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class AnonymousReportingJobConfig(
     enabled: Boolean,
@@ -27,7 +29,9 @@ case class AnonymousReportingJobConfig(
     url: String,
     timeout: Duration,
     proxy: Option[WSProxyServer],
-    tlsConfig: NgTlsConfig
+    tlsConfig: NgTlsConfig,
+    additionalData: JsObject,
+    logErrors: Boolean = true
 )
 
 object AnonymousReportingJobConfig {
@@ -37,7 +41,9 @@ object AnonymousReportingJobConfig {
     url = "https://reporting.otoroshi.io/ingest",
     timeout = 60.seconds,
     proxy = None,
-    tlsConfig = NgTlsConfig.default
+    tlsConfig = NgTlsConfig.default,
+    additionalData = Json.obj(),
+    logErrors = true
   )
 
   def fromEnv(env: Env): AnonymousReportingJobConfig = {
@@ -74,12 +80,17 @@ object AnonymousReportingJobConfig {
             encoding = configuration.getOptionalWithFileSupport[String]("proxy.encoding"),
             nonProxyHosts = None
           )
-        }
+        },
+      additionalData = Json.obj()
     )
   }
 }
 
 object AnonymousReportingJob {
+
+  private val ref                                                    = new AtomicReference[AnonymousReportingJobConfig](null)
+  def setProgrammaticConfig(conf: AnonymousReportingJobConfig): Unit = ref.set(conf)
+  def programmaticConfig(): Option[AnonymousReportingJobConfig]      = Option(ref.get())
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
     (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
@@ -111,7 +122,10 @@ object AnonymousReportingJob {
     }
   }
 
-  def buildReport(globalConfig: GlobalConfig)(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(using
+      env: Env,
+      ec: ExecutionContext
+  ): Future[JsValue] = {
     (for {
       members                   <- env.datastores.clusterStateDataStore.getMembers()
       calls                     <- env.datastores.serviceDescriptorDataStore.globalCalls()
@@ -143,6 +157,9 @@ object AnonymousReportingJob {
       val pluginsPlugins             = if (globalConfig.plugins.enabled) globalConfig.plugins.refs else Seq.empty
       val plugins                    = routePlugins ++ scriptPlugins ++ pluginsPlugins
       val counting                   = plugins.groupBy(identity).view.mapValues(v => JsNumber(v.size))
+      val genericEntities            = JsObject(env.allResources.resources.map { res =>
+        (s"${res.group}/${res.pluralName}", res.access.all().size.json)
+      }.toMap)
       Json.obj(
         "@timestamp"           -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(DateTime.now()),
         "timestamp_str"        -> DateTime.now().toString(),
@@ -154,6 +171,9 @@ object AnonymousReportingJob {
         "os"                   -> env.os.json,
         "datastore"            -> env.datastoreKind,
         "env"                  -> env.env,
+        "additional_data"      -> Try(reportingConfig.additionalData.stringify.evaluateEl(attrs).parseJson).toOption
+          .getOrElse(Json.obj())
+          .asValue,
         "features"             -> Json.obj(
           "snow_monkey"      -> globalConfig.snowMonkeyConfig.enabled,
           "clever_cloud"     -> globalConfig.cleverSettings.isDefined,
@@ -217,6 +237,7 @@ object AnonymousReportingJob {
             )
           })
         ),
+        "generic_entities"     -> genericEntities,
         "entities"             -> Json.obj(
           "scripts"               -> Json.obj(
             "count"   -> env.proxyState.allScripts().size,
@@ -456,41 +477,49 @@ class AnonymousReportingJob extends Job {
 
   override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val config       = AnonymousReportingJobConfig.fromEnv(env)
-    if (config.enabled && globalConfig.anonymousReporting) {
-      if (showLog.compareAndSet(true, false)) {
-        displayYouCanDisableLog()
-      }
-      AnonymousReportingJob.buildReport(globalConfig).flatMap { report =>
-        if (env.isDev) logger.debug(report.prettify)
-        val req = if (config.tlsConfig.enabled) {
-          env.MtlsWs.url(config.url, config.tlsConfig.legacy)
-        } else {
-          env.Ws.url(config.url)
-        }
-        req
-          .withFollowRedirects(config.redirect)
-          .withRequestTimeout(config.timeout)
-          .applyOnWithOpt(config.proxy) { case (r, proxy) =>
-            r.withProxyServer(proxy)
-          }
-          .post(report)
-          .map { resp =>
-            if (resp.status != 200 && resp.status != 201 && resp.status != 204) {
-              logger.error(s"error while sending anonymous reports: ${resp.status} - ${resp.body}")
-            }
-          }
-          .recover { case e: Throwable =>
-            logger.error("error while sending anonymous reports", e)
-            ()
-          }
-      }
-    } else {
-      displayPleaseEnableLog()
-      ().vfuture
+    val cfg_config   = AnonymousReportingJobConfig.fromEnv(env)
+    val prog_config  = AnonymousReportingJob.programmaticConfig()
+    val config       = prog_config match {
+      case Some(programmaticConfig) =>
+        showLog.set(false)
+        programmaticConfig
+      case None                     => cfg_config
     }
-  }.recover { case e: Throwable =>
-    logger.error("error job anonymous reports", e)
-    ()
+    (if (prog_config.isDefined || (config.enabled && globalConfig.anonymousReporting)) {
+       if (showLog.compareAndSet(true, false)) {
+         if (config.logErrors) displayYouCanDisableLog()
+       }
+       AnonymousReportingJob.buildReport(globalConfig, config, ctx.attrs).flatMap { report =>
+         if (env.isDev) logger.debug(report.prettify)
+         val req = if (config.tlsConfig.enabled) {
+           env.MtlsWs.url(config.url, config.tlsConfig.legacy)
+         } else {
+           env.Ws.url(config.url)
+         }
+         req
+           .withFollowRedirects(config.redirect)
+           .withRequestTimeout(config.timeout)
+           .applyOnWithOpt(config.proxy) { case (r, proxy) =>
+             r.withProxyServer(proxy)
+           }
+           .post(report)
+           .map { resp =>
+             if (resp.status != 200 && resp.status != 201 && resp.status != 204) {
+               if (config.logErrors)
+                 logger.error(s"error while sending anonymous reports: ${resp.status} - ${resp.body}")
+             }
+           }
+           .recover { case e: Throwable =>
+             if (config.logErrors) logger.error("error while sending anonymous reports", e)
+             ()
+           }
+       }
+     } else {
+       if (config.logErrors) displayPleaseEnableLog()
+       ().vfuture
+     }).recover { case e: Throwable =>
+      if (config.logErrors) logger.error("error job anonymous reports", e)
+      ()
+    }
   }
 }

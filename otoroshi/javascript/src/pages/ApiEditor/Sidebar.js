@@ -79,6 +79,13 @@ const LINKS = (id) =>
       tooltip: { ...createTooltip(`Show deployments tab`) },
     },
     {
+      to: `/apis/${id}/documentation`,
+      icon: 'fa-file',
+      title: 'Documentation',
+      tab: 'documentation',
+      tooltip: { ...createTooltip(`Show documentation tab`) },
+    },
+    {
       to: `/apis/${id}/testing`,
       icon: 'fa-play',
       title: 'Testing',
@@ -87,28 +94,35 @@ const LINKS = (id) =>
     },
   ].filter((link) => !link.enabled);
 
+// function getApiId(pathname) {
+//   let apiId
+//   try {
+//     apiId = pathname.split('/apis')[1].split("/")[1]
+//   } catch (err) {
+//     apiId = ""
+//   }
+//   return apiId
+// }
+
 export default (props) => {
   const location = useLocation();
+  const { openedSidebar } = useContext(SidebarContext);
 
   const params = props.params;
 
-  const { openedSidebar } = useContext(SidebarContext);
-
-  const currentTab = location.pathname.split('/').slice(-1)[0];
-
-  const noneTabIsActive = !LINKS().find((r) => r.tab === currentTab);
-
-  const isActive = (tab) => {
-    if (tab === 'overview' && noneTabIsActive) return 'active';
-
-    return currentTab === tab ? 'active' : null;
-  };
+  // const apiId = getApiId(location.pathname)
+  const currentTab = location.pathname.split('/')[3];
+  const noneTabIsActive = !LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
 
   const isOnApisHome = location.pathname.endsWith('/apis');
-
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
-
   const version = useSignalValue(signalVersion);
+
+  const isActive = (tab) => {
+    if (tab.toLowerCase() === 'overview' && noneTabIsActive) return 'active';
+
+    return currentTab?.toLowerCase() === tab.toLowerCase() ? 'active' : null;
+  };
 
   return (
     <div
@@ -127,13 +141,7 @@ export default (props) => {
             <div style={{ width: '20px' }} className="d-flex justify-content-center">
               <i className="fa fa-brush" />
             </div>
-            <div className="d-flex align-items-center">
-              {' '}
-              {openedSidebar ? 'APIs' : ''}
-              <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
-                <span className="badge bg-xs bg-warning">ALPHA</span>
-              </div>
-            </div>
+            <div className="d-flex align-items-center"> {openedSidebar ? 'APIs' : ''}</div>
           </Link>
         </li>
         {!isOnApisHome && (

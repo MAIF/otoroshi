@@ -7,7 +7,7 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}

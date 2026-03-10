@@ -8,15 +8,15 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.el.GlobalExpressionLanguage.expressionReplacer
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
-import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter, NgTreeRouter_Test}
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter, NgTreeRouter_Test}
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import java.util.UUID
@@ -336,7 +336,7 @@ class MockResponses extends NgBackendCall {
           )
         })
       )
-      .find("oto.tools", ctx.request.path)
+      .find("oto.tools", ctx.request.path, env.trailingSlashMeansExactSegments)
       .filter(_.noMoreSegments)
       .flatMap { c =>
         if (c.routes.headOption.nonEmpty)
@@ -345,8 +345,8 @@ class MockResponses extends NgBackendCall {
           None
       }
       .map(result => {
-        import kaleidoscope.*
         import anticipation.Text
+        import kaleidoscope.*
 
         val route    = result.routes.headOption.get
         val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)

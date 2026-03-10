@@ -68,6 +68,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -95,6 +101,16 @@ latest
     <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
+    <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
+  </ul></li>
+  <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
+  <ul>
+    <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -125,6 +141,7 @@ latest
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
     <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+    <li><a href="../how-to-s/create-your-first-api.html" class="page">Create your first API</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -193,6 +210,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -220,6 +243,16 @@ latest
     <li><a href="../topics/http-listeners.html" class="page">Custom HTTP Listeners</a></li>
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
+    <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
+  </ul></li>
+  <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
+  <ul>
+    <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -250,6 +283,7 @@ latest
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
     <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+    <li><a href="../how-to-s/create-your-first-api.html" class="page">Create your first API</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -1066,7 +1100,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2025</span>
+<span class="text">&copy; 2026</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

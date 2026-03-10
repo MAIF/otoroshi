@@ -1,27 +1,26 @@
 package otoroshi.events
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult}
+import org.joda.time.DateTime
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
-import otoroshi.models._
-import org.joda.time.DateTime
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService
 import otoroshi.utils.TypedMap
+import otoroshi.utils.json.JsonImplicits.given
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.utils.json.JsonImplicits.{jodaDateTimeWrapper, jodaDateTimeReads, jodaDateTimeWrites}
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
+import play.api.libs.json.*
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -179,16 +178,16 @@ trait AnalyticEvent extends OtoroshiEvent {
   override def toEnrichedJson(using _env: Env, ec: ExecutionContext): Future[JsValue] = {
     val jsonObject = toJson.as[JsObject]
     val uaDetails  = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
-      case Some(details) => details
+      case Some(details) => details.future
       case None          =>
         fromUserAgent match {
-          case None     => JsNull
+          case None     => JsNull.future
           case Some(ua) =>
             _env.datastores.globalConfigDataStore.latestSafe match {
-              case None                                              => JsNull
-              case Some(config) if !config.userAgentSettings.enabled => JsNull
+              case None                                              => JsNull.future
+              case Some(config) if !config.userAgentSettings.enabled => JsNull.future
               case Some(config)                                      =>
-                config.userAgentSettings.find(ua) match {
+                config.userAgentSettings.find(ua).map {
                   case None          => JsNull
                   case Some(details) => details
                 }
@@ -212,9 +211,13 @@ trait AnalyticEvent extends OtoroshiEvent {
             }
         }
     }
-    fOrigin.map(originDetails =>
+
+    for {
+      originDetails <- fOrigin
+      ua            <- uaDetails
+    } yield {
       jsonObject ++ Json.obj(
-        "user-agent-details" -> uaDetails,
+        "user-agent-details" -> ua,
         "origin-details"     -> originDetails,
         "instance-number"    -> _env.number,
         "instance-name"      -> _env.name,
@@ -230,7 +233,7 @@ trait AnalyticEvent extends OtoroshiEvent {
           case _                  => "none"
         })
       )
-    )
+    }
   }
 
   def toAnalytics()(using env: Env): Unit = {
@@ -368,6 +371,9 @@ case class GatewayEvent(
     env: String,
     backendDuration: Long,
     duration: Long,
+    requestStreamingDuration: Long,
+    responseStreamingDuration: Long,
+    backendResponseStreamingDuration: Long,
     overhead: Long,
     cbDuration: Long,
     overheadWoCb: Long,
@@ -404,48 +410,51 @@ case class GatewayEvent(
 object GatewayEvent {
   def writes(o: GatewayEvent, env: Env): JsValue =
     Json.obj(
-      "@type"              -> o.`@type`,
-      "@id"                -> o.`@id`,
-      "@timestamp"         -> o.`@timestamp`,
-      "@callAt"            -> o.`@calledAt`,
-      "reqId"              -> o.reqId,
-      "parentReqId"        -> o.parentReqId.map(l => JsString(l)).getOrElse(JsNull).as[JsValue],
-      "protocol"           -> o.protocol,
-      "to"                 -> Location.format.writes(o.to),
-      "target"             -> Location.format.writes(o.target),
-      "url"                -> o.url,
-      "method"             -> o.method,
-      "from"               -> o.from,
-      "@env"               -> o.env,
-      "backendDuration"    -> o.backendDuration,
-      "duration"           -> o.duration,
-      "overhead"           -> o.overhead,
-      "data"               -> DataInOut.fmt.writes(o.data),
-      "status"             -> o.status,
-      "responseChunked"    -> o.responseChunked,
-      "headers"            -> o.headers.map(Header.format.writes),
-      "headersOut"         -> o.headersOut.map(Header.format.writes),
-      "identity"           -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
-      "gwError"            -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "err"                -> o.err,
-      "@serviceId"         -> o.`@serviceId`,
-      "@service"           -> o.`@service`,
-      "descriptor"         -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
-      "route"              -> o.route.map(_.json).getOrElse(JsNull).as[JsValue],
-      "matcheJwtVerifier"  -> o.matchedJwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "@product"           -> o.`@product`,
-      "remainingQuotas"    -> o.remainingQuotas,
-      "viz"                -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
-      "cbDuration"         -> o.cbDuration,
-      "overheadWoCb"       -> o.overheadWoCb,
-      "callAttempts"       -> o.callAttempts,
-      "clientCertChain"    -> o.clientCertChain,
-      "userAgentInfo"      -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
-      "geolocationInfo"    -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
-      "extrasData"         -> o.extraAnalyticsData.getOrElse(JsNull).as[JsValue],
-      "otoroshiHeadersIn"  -> o.otoroshiHeadersIn.map(Header.format.writes),
-      "otoroshiHeadersOut" -> o.otoroshiHeadersOut.map(Header.format.writes),
-      "extraInfos"         -> o.extraInfos.getOrElse(JsNull).as[JsValue]
+      "@type"                            -> o.`@type`,
+      "@id"                              -> o.`@id`,
+      "@timestamp"                       -> o.`@timestamp`,
+      "@callAt"                          -> o.`@calledAt`,
+      "reqId"                            -> o.reqId,
+      "parentReqId"                      -> o.parentReqId.map(l => JsString(l)).getOrElse(JsNull).as[JsValue],
+      "protocol"                         -> o.protocol,
+      "to"                               -> Location.format.writes(o.to),
+      "target"                           -> Location.format.writes(o.target),
+      "url"                              -> o.url,
+      "method"                           -> o.method,
+      "from"                             -> o.from,
+      "@env"                             -> o.env,
+      "backendDuration"                  -> o.backendDuration,
+      "duration"                         -> o.duration,
+      "requestStreamingDuration"         -> o.requestStreamingDuration,
+      "responseStreamingDuration"        -> o.responseStreamingDuration,
+      "backendResponseStreamingDuration" -> o.backendResponseStreamingDuration,
+      "overhead"                         -> o.overhead,
+      "data"                             -> DataInOut.fmt.writes(o.data),
+      "status"                           -> o.status,
+      "responseChunked"                  -> o.responseChunked,
+      "headers"                          -> o.headers.map(Header.format.writes),
+      "headersOut"                       -> o.headersOut.map(Header.format.writes),
+      "identity"                         -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
+      "gwError"                          -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "err"                              -> o.err,
+      "@serviceId"                       -> o.`@serviceId`,
+      "@service"                         -> o.`@service`,
+      "descriptor"                       -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
+      "route"                            -> o.route.map(_.json).getOrElse(JsNull).as[JsValue],
+      "matcheJwtVerifier"                -> o.matchedJwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "@product"                         -> o.`@product`,
+      "remainingQuotas"                  -> o.remainingQuotas,
+      "viz"                              -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
+      "cbDuration"                       -> o.cbDuration,
+      "overheadWoCb"                     -> o.overheadWoCb,
+      "callAttempts"                     -> o.callAttempts,
+      "clientCertChain"                  -> o.clientCertChain,
+      "userAgentInfo"                    -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
+      "geolocationInfo"                  -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
+      "extrasData"                       -> o.extraAnalyticsData.getOrElse(JsNull).as[JsValue],
+      "otoroshiHeadersIn"                -> o.otoroshiHeadersIn.map(Header.format.writes),
+      "otoroshiHeadersOut"               -> o.otoroshiHeadersOut.map(Header.format.writes),
+      "extraInfos"                       -> o.extraInfos.getOrElse(JsNull).as[JsValue]
     )
 }
 

@@ -1,41 +1,32 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import org.apache.pekko.stream.Materializer
-
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import otoroshi.cluster.ClusterMode
 import com.google.common.base.CaseFormat
-import otoroshi.env.Env
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
-import otoroshi.models._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
-import otoroshi.next.models.{
-  NgBackend,
-  NgClientConfig,
-  NgDomainAndPath,
-  NgFrontend,
-  NgPluginInstance,
-  NgRoute,
-  NgTarget
-}
+import otoroshi.cluster.ClusterMode
+import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
-import otoroshi.script._
-import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{Result, Results}
+import otoroshi.script.*
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{RegexPool, TypedMap}
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.{Result, Results}
 
-import scala.concurrent.duration._
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

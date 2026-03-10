@@ -11,9 +11,9 @@ import otoroshi.events.{DataInOut, GatewayEvent, Header, Location}
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.http.Implicits.BetterStandaloneWSResponse
-import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.HttpEntity
 import play.api.http.websocket.Message as PlayWSMessage
 import play.api.libs.json.{JsObject, Json}
@@ -227,6 +227,9 @@ class ForwardTrafficHandler extends RequestHandler {
               from = request.theIpAddress,
               env = env.env,
               backendDuration = calldur,
+              requestStreamingDuration = -1L,
+              responseStreamingDuration = -1L,
+              backendResponseStreamingDuration = -1L,
               duration = duration,
               overhead = overhead,
               cbDuration = 0,

@@ -3,15 +3,14 @@ package otoroshi.utils.jwk
 import com.auth0.jwk.{GuavaCachedJwkProvider, Jwk, JwkProvider, UrlJwkProvider}
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.collect.Maps
-import java.util.{Base64 => JavaBase64}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.{JsArray, JsObject, Json}
 
 import java.security.KeyFactory
 import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 import java.security.spec.X509EncodedKeySpec
-import java.util.Collections
-import scala.jdk.CollectionConverters._
+import java.util.{Collections, Base64 as JavaBase64}
+import scala.jdk.CollectionConverters.given
 
 object StringJwkProvider {
   def fromValues(map: java.util.Map[String, AnyRef]): Jwk = {

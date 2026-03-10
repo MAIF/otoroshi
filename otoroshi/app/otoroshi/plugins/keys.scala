@@ -4,7 +4,7 @@ import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgTarget
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey
@@ -12,6 +12,7 @@ import play.api.mvc.RequestHeader
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Promise
+import scala.concurrent.duration.FiniteDuration
 
 case class AttributeSetter[A](key: play.api.libs.typedmap.TypedKey[? <: A], f: JsValue => ? <: A)
 
@@ -30,6 +31,8 @@ object Keys {
   val ExtraAnalyticsDataKey: TypedKey[JsObject]           = TypedKey[JsObject]("otoroshi.plugins.ExtraAnalyticsData")
 
   val CaptureRequestBodyKey: TypedKey[ByteString]            = TypedKey[ByteString]("otoroshi.core.CaptureRequestBody")
+  val RequestStreamDurationKey: TypedKey[Long]               = TypedKey[Long]("otoroshi.core.RequestStreamDuration")
+  val BackendsResponseStreamDurationKey: TypedKey[Long]      = TypedKey[Long]("otoroshi.core.BackendResponseStreamDuration")
   val RequestTimestampKey: TypedKey[DateTime]                = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestKey: TypedKey[RequestHeader]                    = TypedKey[RequestHeader]("otoroshi.core.Request")
   val RequestStartKey: TypedKey[Long]                        = TypedKey[Long]("otoroshi.core.RequestStart")
@@ -49,6 +52,8 @@ object Keys {
   val StatusOverrideKey: TypedKey[Int]                       = TypedKey[Int]("otoroshi.core.StatusOverride")
   val MatchedInputTokenKey: TypedKey[JsValue]                = TypedKey[JsValue]("otoroshi.core.MatchedInputToken")
   val MatchedOutputTokenKey: TypedKey[JsValue]               = TypedKey[JsValue]("otoroshi.core.MatchedOutputToken")
+  val MatchedRawInputTokenKey: TypedKey[String]              = TypedKey[String]("otoroshi.core.MatchedRawInputToken")
+  val MatchedRawOutputTokenKey: TypedKey[String]             = TypedKey[String]("otoroshi.core.MatchedRawOutputToken")
   val StrippedPathKey: TypedKey[String]                      = TypedKey[String]("otoroshi.core.StrippedPath")
   val ResponseEndPromiseKey: TypedKey[Promise[Done]]         = TypedKey[Promise[Done]]("otoroshi.core.ResponseEndPromise")
   val ForCurrentListenerOnlyKey: TypedKey[Boolean]           = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")

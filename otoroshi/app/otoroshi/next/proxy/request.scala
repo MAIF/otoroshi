@@ -1,11 +1,11 @@
 package otoroshi.next.proxy
 
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -146,7 +146,9 @@ class BackOfficeRequest(
 
   override def connection: RemoteConnection = new BackOfficeRemoteConnection(request)
   override def target: RequestTarget        = new BackOfficeRequestTarget(newUri)
-  override def headers: Headers             = Headers.apply(((request.headers.headers.toMap ++ addHeaders.toMap).toSeq)*)
+  override def headers: Headers             = Headers.apply(
+    (request.headers.headers.filterNot(_._1.toLowerCase() == "x-forwarded-host").toMap ++ addHeaders.toMap).toSeq *
+  )
 
   override def version: String             = request.version
   override def attrs: TypedMap             = request.attrs

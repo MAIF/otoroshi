@@ -9,12 +9,12 @@ import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, MultiTh
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder
 import io.netty.handler.ssl.ApplicationProtocolNegotiator
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
-import io.netty.incubator.codec.http3._
-import io.netty.incubator.codec.quic._
+import io.netty.incubator.codec.http3.*
+import io.netty.incubator.codec.quic.*
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
-import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import org.apache.pekko.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
 import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
@@ -24,10 +24,10 @@ import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.mvc.MultipartFormData
 import reactor.core.publisher.{Flux, Sinks}
 
@@ -35,11 +35,11 @@ import java.io.File
 import java.net.{InetSocketAddress, URI}
 import java.nio.charset.StandardCharsets
 import java.util
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
-import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
@@ -56,7 +56,7 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
     sslContext.newEngine(alloc, peerHost, peerPort)
   override def isClient: Boolean                                                                  = sslContext.isClient
   override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
-  @SuppressWarnings(Array("deprecation")) // todo needs to be removed when the underlying method is also removed
+  @SuppressWarnings(Array("Deprecation")) // todo needs to be removed when the underlying method is also removed
   override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator =
     sslContext.applicationProtocolNegotiator()
   override def sessionContext(): QuicSslSessionContext                        = sslContext.sessionContext()

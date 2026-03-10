@@ -1,11 +1,11 @@
 package otoroshi.next.plugins.api
 
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.{ContentType, StatusCodes, Uri}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, PrivateAppsUser, Target}
@@ -16,20 +16,13 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
-import play.api.libs.json._
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage as PlayWSBinaryMessage, TextMessage as PlayWSTextMessage}
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
@@ -551,6 +544,33 @@ trait NgRouter extends NgPlugin {
   def findRoute(ctx: NgRouterContext)(using env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = None
 }
 
+trait RequestTransformerErrors {
+
+  def request: RequestHeader
+  def route: NgRoute
+  def attrs: TypedMap
+  def report: NgExecutionReport
+
+  def errorResponse[A](status: Results.Status, message: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[Result, A]] = {
+    Errors
+      .craftResponseResult(
+        message = message,
+        status = status,
+        req = request,
+        maybeDescriptor = None,
+        maybeCauseId = None,
+        duration = report.getDurationNow(),
+        overhead = report.getOverheadInNow(),
+        attrs = attrs,
+        maybeRoute = route.some
+      )
+      .map(r => Left(r))
+  }
+}
+
 case class NgBeforeRequestContext(
     snowflake: String,
     route: NgRoute,
@@ -604,7 +624,8 @@ case class NgTransformerRequestContext(
     sequence: NgReportPluginSequence,
     markPluginItem: (NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue) => Unit,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"        -> snowflake,
     "raw_request"      -> rawRequest.json,
@@ -653,7 +674,8 @@ case class NgTransformerResponseContext(
     sequence: NgReportPluginSequence,
     markPluginItem: (NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue) => Unit,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
     "raw_response"      -> rawResponse.json,
@@ -702,7 +724,8 @@ case class NgTransformerErrorContext(
     attrs: TypedMap,
     report: NgExecutionReport,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
     "maybe_cause_id"    -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -779,6 +802,33 @@ trait NgRequestTransformer extends NgPlugin {
   }
 }
 
+trait NgAccessContextErrors {
+
+  def request: RequestHeader
+  def route: NgRoute
+  def attrs: TypedMap
+  def report: NgExecutionReport
+
+  def deniedAccess(status: Results.Status, message: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[NgAccess] = {
+    Errors
+      .craftResponseResult(
+        message = message,
+        status = status,
+        req = request,
+        maybeDescriptor = None,
+        maybeCauseId = None,
+        duration = report.getDurationNow(),
+        overhead = report.getOverheadInNow(),
+        attrs = attrs,
+        maybeRoute = route.some
+      )
+      .map(r => NgAccess.NgDenied(r))
+  }
+}
+
 case class NgAccessContext(
     snowflake: String,
     request: RequestHeader,
@@ -792,7 +842,9 @@ case class NgAccessContext(
     sequence: NgReportPluginSequence,
     markPluginItem: (NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue) => Unit,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with NgAccessContextErrors
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     "apikey"        -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
@@ -967,7 +1019,7 @@ case class NgbBackendCallContext(
 
 case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Option[WSResponse]) {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
   def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
@@ -1361,18 +1413,20 @@ case class NgWebsocketPluginContext(
     snowflake: String,
     idx: Int = 0,
     request: RequestHeader,
+    otoroshiRequest: NgPluginHttpRequest,
     route: NgRoute,
     attrs: TypedMap,
     target: Target
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
-    "snowflake" -> snowflake,
-    "idx"       -> idx,
-    "request"   -> JsonHelpers.requestToJson(request, attrs),
-    "config"    -> config,
-    "target"    -> target.json,
-    "attrs"     -> attrs.json
+    "snowflake"        -> snowflake,
+    "idx"              -> idx,
+    "request"          -> JsonHelpers.requestToJson(request, attrs),
+    "otoroshi_request" -> otoroshiRequest.json,
+    "config"           -> config,
+    "target"           -> target.json,
+    "attrs"            -> attrs.json
   )
 }
 
@@ -1396,7 +1450,6 @@ object WebsocketMessage {
       case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
-      case _                                                                      => ByteString.empty.future
     }
     override def str()(using m: Materializer, ec: ExecutionContext): Future[String]       = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
@@ -1407,7 +1460,6 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.utf8String)
-      case _                                                                      => "".future
     }
 
     override def size()(using m: Materializer, ec: ExecutionContext): Future[Int] = data match {
@@ -1419,7 +1471,6 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.size)
-      case _                                                                      => 0.future
     }
 
     override def isBinary: Boolean = !data.isText
@@ -1436,7 +1487,6 @@ object WebsocketMessage {
           source
             .runFold(ByteString.empty)((concat, str) => concat ++ str)
             .map(data => PlayWSBinaryMessage(data))
-        case other                                                                  => throw new RuntimeException(s"Unkown message type $other")
       }
     }
     override def asAkka(using env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
@@ -1540,7 +1590,7 @@ trait NgWebsocketPlugin extends NgPlugin {
 
 trait NgWebsocketBackendPlugin extends NgPlugin {
 
-  import play.api.http.websocket.{Message => PlayWSMessage}
+  import play.api.http.websocket.Message as PlayWSMessage
 
   def callBackendOrError(
       ctx: NgWebsocketPluginContext

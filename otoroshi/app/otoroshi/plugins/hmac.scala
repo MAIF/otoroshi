@@ -4,7 +4,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger

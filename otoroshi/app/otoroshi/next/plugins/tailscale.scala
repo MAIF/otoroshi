@@ -4,14 +4,14 @@ import io.netty.channel.unix.DomainSocketAddress
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.script._
+import otoroshi.next.plugins.api.*
+import otoroshi.script.*
 import otoroshi.ssl.{Cert, PemHeaders}
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{OS, RegexPool}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import reactor.netty.http.client.{HttpClient, HttpClientResponse}
 import reactor.netty.resources.DefaultLoopResourcesHelper

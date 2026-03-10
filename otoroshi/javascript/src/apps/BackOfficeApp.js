@@ -69,6 +69,7 @@ import { NgFormPlayground } from '../components/nginputs';
 import { NgSelectRenderer } from '../components/nginputs';
 import Loader from '../components/Loader';
 import { globalConfig } from 'antd/lib/config-provider';
+import { RouteTemplatesPage } from '../pages/RouteTemplatesPage';
 
 class ServiceDescriptorsMigrationPopup extends Component {
   render() {
@@ -727,6 +728,33 @@ class BackOfficeAppContainer extends Component {
                         }
                       />
                       <Route
+                        path="/route-templates/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates/:taction"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
                         path="/lines/:lineId/services/:serviceId"
                         component={(props) =>
                           this.decorate(ServicePage, {
@@ -1032,6 +1060,7 @@ const BackOfficeAppContainerWithRouter = withRouter(BackOfficeAppContainer);
 export class BackOfficeApp extends Component {
   render() {
     return (
+      // See constant defined in app/env/Env.scala
       <Router basename="/bo/dashboard">
         <BackOfficeAppContainerWithRouter />
       </Router>

@@ -1,14 +1,14 @@
 import org.apache.pekko.stream.Materializer
-import com.auth0.jwt._
+import com.auth0.jwt.*
 import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.interfaces._
+import com.auth0.jwt.interfaces.*
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.typedmap._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.libs.typedmap.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 object OtoroshiFilter {
   object Attrs {

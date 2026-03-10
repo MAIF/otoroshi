@@ -1,15 +1,16 @@
 package otoroshi.security
 
-import java.nio.charset.StandardCharsets
-import java.util.{Base64, Date}
 import com.auth0.jwt.algorithms.Algorithm
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.AlgoSettings
-import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
-import play.api.libs.json._
-import java.util.{Base64 => JavaBase64}
+import play.api.libs.json.*
+
+import java.nio.charset.StandardCharsets
+import java.util.Base64 as JavaBase64
+import java.util.{Base64, Date}
 
 case class OtoroshiClaim(
     iss: String,                          // issuer

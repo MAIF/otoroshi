@@ -3,13 +3,13 @@ package otoroshi.storage.stores
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthConfigsDataStore, AuthModuleConfig}
 import otoroshi.env.Env
-import otoroshi.models._
-import play.api.libs.json.{Format, JsValue, Json}
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}
+import play.api.libs.json.{Format, JsValue, Json}
 
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 
 class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
     extends AuthConfigsDataStore

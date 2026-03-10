@@ -1,27 +1,16 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.ApiAction
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
+import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import otoroshi.ssl.Cert
+import otoroshi.utils.controllers.*
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class CertificatesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)

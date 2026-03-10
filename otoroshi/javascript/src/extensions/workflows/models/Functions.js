@@ -18,6 +18,9 @@ import { NeqOperator } from '../operators/NeqOperator';
 import { ArrayAtOperator } from '../operators/ArrayAtOperator';
 import { ArrayPageOperator } from '../operators/ArrayPageOperator';
 import { MapGetOperator } from '../operators/MapGetOperator';
+import { MapRenameOperator } from '../operators/MapRenameOperator';
+import { MapIsEmptyOperator } from '../operators/MapIsEmptyOperator';
+import { ArrayIsEmptyOperator } from '../operators/ArrayIsEmptyOperator';
 import { MemRefOperator } from '../operators/MemRefOperator';
 import { EncodeBase64Operator } from '../operators/EncodeBase64Operator';
 import { NotOperator } from '../operators/NotOperator';
@@ -68,32 +71,35 @@ const OVERLOADED_NODES = {
   returned: ReturnedNode,
   start: StartNode,
   $mem_ref: MemRefOperator,
-  '$array_append': ArrayAppendOperator,
-  '$array_drop': ArrayDropOperator,
-  '$array_prepend': ArrayPrependOperator,
-  '$array_at': ArrayAtOperator,
-  '$array_del': ArrayDelOperator,
-  '$array_page': ArrayPageOperator,
-  '$projection': ProjectionOperator,
-  '$map_put': MapPutOperator,
-  '$map_get': MapGetOperator,
-  '$map_del': MapDelOperator,
-  '$json_parse': JsonParseOperator,
-  '$is_truthy': IsTruthyOperator,
-  '$is_falsy': IsFalsyOperator,
-  '$contains': ContainsOperator,
-  '$neq': NeqOperator,
-  '$encode_base64': EncodeBase64Operator,
-  '$decode_base64': DecodeBase64Operator,
-  '$not': NotOperator,
-  '$str_split': StrSplitOperator,
+  $array_append: ArrayAppendOperator,
+  $array_drop: ArrayDropOperator,
+  $array_prepend: ArrayPrependOperator,
+  $array_at: ArrayAtOperator,
+  $array_del: ArrayDelOperator,
+  $array_page: ArrayPageOperator,
+  $projection: ProjectionOperator,
+  $map_put: MapPutOperator,
+  $map_get: MapGetOperator,
+  $map_rename: MapRenameOperator,
+  $map_is_empty: MapIsEmptyOperator,
+  $array_is_empty: ArrayIsEmptyOperator,
+  $map_del: MapDelOperator,
+  $json_parse: JsonParseOperator,
+  $is_truthy: IsTruthyOperator,
+  $is_falsy: IsFalsyOperator,
+  $contains: ContainsOperator,
+  $neq: NeqOperator,
+  $encode_base64: EncodeBase64Operator,
+  $decode_base64: DecodeBase64Operator,
+  $not: NotOperator,
+  $str_split: StrSplitOperator,
   'core.workflow_call': WorkflowFunction,
   'core.send_mail': SendMailFunction,
   'core.log': LogFunction,
   end: EndNode,
   while: WhileNode,
   async: AsyncNode,
-  error: StopAndErrorNode
+  error: StopAndErrorNode,
 };
 
 function getNodeCategory(categories, node) {
@@ -146,7 +152,7 @@ export function NODES_BY_CATEGORIES(nodes, categories) {
   );
 }
 
-export const NODES = (documentation) => {
+export const NODES = (documentation, extensionOverloads) => {
   let defaultValues = [
     ...documentation.nodes.map((n) => ({
       ...n,
@@ -172,7 +178,41 @@ export const NODES = (documentation) => {
   ];
 
   const items = Object.fromEntries(
-    Object.entries(OVERLOADED_NODES).map(([key, node]) => {
+    Object.entries({
+      ...OVERLOADED_NODES,
+      ...extensionOverloads.nodes.reduce((acc, n) => {
+        return {
+          ...acc,
+          [n.name]: {
+            ...n,
+            node: true,
+            schema: n.form_schema,
+            kind: n.kind || n.name,
+          },
+        };
+      }, {}),
+      ...extensionOverloads.operators.reduce((acc, ope) => {
+        return {
+          ...acc,
+          [ope.name]: {
+            ...ope,
+            operators: true,
+            schema: ope.form_schema,
+            kind: ope.kind || ope.name,
+          },
+        };
+      }, {}),
+      ...extensionOverloads.functions.map((acc, func) => {
+        return {
+          ...acc,
+          [func.name]: {
+            ...func,
+            category: 'functions',
+            schema: func.form_schema,
+          },
+        };
+      }, {}),
+    }).map(([key, node]) => {
       const defaultValue = defaultValues.find((n) => n.name === key);
 
       if (defaultValue) defaultValues = defaultValues.filter((f) => f.name !== key);
@@ -182,17 +222,28 @@ export const NODES = (documentation) => {
         {
           ...(defaultValue || {}),
           ...node,
+          kind: defaultValue?.kind || defaultValue?.name || node.name || node.kind,
         },
       ];
     })
   );
 
   defaultValues.forEach((node) => {
-    items[node.name] = {
-      ...node,
-      kind: node.kind || node.name,
-    };
+    if (!items[node.name])
+      items[node.name] = {
+        ...node,
+        kind: node.kind || node.name,
+      };
   });
+
+  // [...extensionOverloads.nodes, ...extensionOverloads.operators, ...extensionOverloads.functions].map(node => {
+  //   if (!items[node.name]) {
+  //     items[node.name] = {
+  //       ...node,
+  //       kind: node.kind || node.name,
+  //     };
+  //   }
+  // })
 
   return items;
 };

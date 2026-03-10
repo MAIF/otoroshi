@@ -6,8 +6,8 @@ import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}

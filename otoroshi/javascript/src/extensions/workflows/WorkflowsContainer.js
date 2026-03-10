@@ -10,6 +10,8 @@ import { WorkflowsDesigner } from './WorkflowsDesigner';
 import { WorkflowSidebar } from './WorkflowSidebar';
 import { NODES, NODES_BY_CATEGORIES, nodesCatalogSignal } from './models/Functions';
 import { UserDefinedFunction } from './functions/UserDefinedFunction';
+import { getExtensions } from '../../backoffice';
+import { NoteNode } from './nodes/Note';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,98 +52,106 @@ export function WorkflowsContainer(props) {
 }
 
 function Container(props) {
-  const params = useParams()
-  const [rawWorkflow, setRawWorkflow] = useState()
+  const params = useParams();
+  const [rawWorkflow, setRawWorkflow] = useState();
 
-  const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows')
+  const client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
-  const workflow = useQuery(['getWorkflow', params.workflowId, params.functionName],
-    () => {
-      return client
-        .findById(params.workflowId)
-        .then(workflow => {
-          setRawWorkflow(workflow)
-          if (params.functionName)
-            return {
-              name: params.functionName,
-              functions: {},
-              orphans: {
-                nodes: [],
-                edges: []
-              },
-              tags: [],
-              config: workflow.functions[params.functionName]
-            }
-          return workflow
-        })
-    })
+  const workflow = useQuery(['getWorkflow', params.workflowId, params.functionName], () => {
+    return client.findById(params.workflowId).then((workflow) => {
+      setRawWorkflow(workflow);
+      if (params.functionName)
+        return {
+          name: params.functionName,
+          functions: {},
+          orphans: {
+            nodes: [],
+            edges: [],
+          },
+          tags: [],
+          config: workflow.functions[params.functionName],
+        };
+      return workflow;
+    });
+  });
 
-  const workflows = useQuery('getWorkflows', () => client.findAll())
+  const workflows = useQuery('getWorkflows', () => client.findAll());
 
-  const documentation = useQuery('getDoc', BackOfficeServices.getWorkflowDocs)
+  const documentation = useQuery('getDoc', BackOfficeServices.getWorkflowDocs);
 
   useEffect(() => {
     if (workflow.data)
       props.setSidebarContent(
         <WorkflowSidebar {...props} params={params} workflow={workflow.data} />
-      )
-  }, [workflow.isLoading])
+      );
+  }, [workflow.isLoading]);
 
   if (!(workflow.isLoading || documentation.isLoading || workflows.isLoading)) {
-    let nodes = NODES(documentation.data)
+    const extensionOverloads = Object.values(getExtensions()).reduce(
+      (acc, ext) => {
+        return {
+          nodes: [...acc.nodes, ...(ext.workflowNodes || [])],
+          functions: [...acc.functions, ...(ext.workflowFunctions || [])],
+          operators: [...acc.operators, ...(ext.workflowOperators || [])],
+        };
+      },
+      { nodes: [], functions: [], operators: [] }
+    );
+
+    let nodes = NODES(documentation.data, extensionOverloads);
+    nodes[NoteNode.kind] = NoteNode;
 
     Object.entries(workflow.data.functions || {})
       .map(([functionName, value]) => UserDefinedFunction(functionName, value))
-      .map(functionData => {
-        nodes[functionData.name] = functionData
-      })
+      .map((functionData) => {
+        nodes[functionData.name] = functionData;
+      });
 
     nodesCatalogSignal.value = {
       nodes,
+      extensionOverloads: Object.values(getExtensions()).reduce((acc, ext) => {
+        return (ext.workflowNodes || []).reduce((ac, node) => {
+          return {
+            ...ac,
+            [node.name]: node,
+          };
+        }, acc);
+      }, {}),
       categories: NODES_BY_CATEGORIES(nodes, documentation.data.categories),
       workflows: workflows.data,
       workflow: workflow.data,
       rawWorkflow,
-      updateWorkflow: data => {
+      updateWorkflow: (data) => {
         const newWorkflow = {
           ...nodesCatalogSignal.value.rawWorkflow,
           ...data,
-        }
-        nodesCatalogSignal.value.rawWorkflow = newWorkflow
-      }
-    }
+        };
+        nodesCatalogSignal.value.rawWorkflow = newWorkflow;
+      },
+    };
   }
 
-  const handleSave = (config, orphans) => {
+  const handleSave = (config, orphans, notes) => {
     if (params.functionName)
       return client.update({
         ...nodesCatalogSignal.value.rawWorkflow,
         functions: Object.fromEntries(
-          Object
-            .entries(rawWorkflow.functions)
-            .map(([key, value]) => {
-              if (key === params.functionName) {
-                return [
-                  key,
-                  config
-                  // {
-                  //   ...value,
-                  //   config,
-                  //   orphans
-                  // }
-                ]
-              }
-              return [key, value]
-            })
-        )
-      })
+          Object.entries(rawWorkflow.functions).map(([key, value]) => {
+            if (key === params.functionName) {
+              return [key, config];
+            }
+            return [key, value];
+          })
+        ),
+      });
     else
       return client.update({
         ...nodesCatalogSignal.value.rawWorkflow,
         config,
-        orphans
-      })
-  }
+        orphans,
+        notes,
+      });
+  };
 
   return (
     <Loader
@@ -154,9 +164,7 @@ function Container(props) {
       }
     >
       <ReactFlowProvider>
-        <WorkflowsDesigner {...props}
-          workflow={workflow.data}
-          handleSave={handleSave} />
+        <WorkflowsDesigner {...props} workflow={workflow.data} handleSave={handleSave} />
       </ReactFlowProvider>
     </Loader>
   );

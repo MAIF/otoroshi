@@ -1,10 +1,10 @@
 package otoroshi.next.plugins
 
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}

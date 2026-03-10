@@ -1,22 +1,22 @@
 package otoroshi.plugins.jq
 
+import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.body.BodyUtils
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsBoolean, JsObject, JsString, Json}
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Request, RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 
 // MIGRATED
 class JqBodyTransformer extends RequestTransformer {

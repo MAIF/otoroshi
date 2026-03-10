@@ -162,7 +162,7 @@ export class JwtVerifier extends Component {
 
     return (
       <div>
-        {this.props.showHeader && (
+        {false && this.props.showHeader && (
           <Header
             isConfigView={isConfigView}
             onChange={(isConfigView) => this.setState({ isConfigView })}
@@ -330,7 +330,7 @@ export class LocationSettings extends Component {
           />,
           <TextInput
             label={this.props.sign ? `Prepend value` : `Remove value`}
-            placeholder="Bearer "
+            placeholder="example: Bearer "
             value={location.remove}
             help={(this.props.sign ? 'Remove' : 'Prepend') + ' a value inside the header value'}
             onChange={(e) => changeTheValue(path + '.remove', e)}

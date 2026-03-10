@@ -3,7 +3,7 @@ package otoroshi.netty
 import com.github.blemale.scaffeine.Scaffeine
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpRequest
-import io.netty.handler.codec.http.cookie.{DefaultCookie, ServerCookieDecoder, Cookie => NettyCookie}
+import io.netty.handler.codec.http.cookie.{DefaultCookie, ServerCookieDecoder, Cookie as NettyCookie}
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -12,7 +12,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.typedmap.{TypedKey, TypedMap}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import reactor.core.publisher.Flux
 import reactor.netty.http.server.HttpServerRequest
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl.{SSLPeerUnverifiedException, SSLSession}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.Try
 
 object NettyRequestKeys {

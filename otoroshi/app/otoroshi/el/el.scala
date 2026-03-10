@@ -1,27 +1,26 @@
 package otoroshi.el
 
+import anticipation.Text
+import kaleidoscope.*
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import org.joda.time.DateTime
-import play.api.Logger
-import play.api.libs.json.*
-import play.api.mvc.RequestHeader
-
-import scala.util.Try
-import otoroshi.utils.http.RequestImplicits.*
-import kaleidoscope.*
-import anticipation.Text
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.DN
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
-import otoroshi.utils.syntax.implicits.*
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.RequestHeader
 
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.util.Try
 
 object GlobalExpressionLanguage {
 
@@ -67,6 +66,16 @@ object GlobalExpressionLanguage {
     )
   }
 
+  private def jsValueToString(value: JsValue): String = value match {
+    case JsString(s)       => s
+    case JsNumber(s)       => s.toString()
+    case JsTrue            => "true"
+    case JsFalse           => "false"
+    case JsNull            => "null"
+    case obj @ JsObject(_) => obj.stringify
+    case arr @ JsArray(_)  => arr.stringify
+  }
+
   def apply(
       value: String,
       req: Option[RequestHeader],
@@ -86,6 +95,10 @@ object GlobalExpressionLanguage {
         val userAgentDetails                       = attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey)
         val geolocDetails                          = attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey)
         val matchedRoute                           = attrs.get(otoroshi.next.plugins.Keys.MatchedRouteKey)
+        val matchedInputJwtToken                   = attrs.get(otoroshi.plugins.Keys.MatchedInputTokenKey)
+        val matchedOutputJwtToken                  = attrs.get(otoroshi.plugins.Keys.MatchedOutputTokenKey)
+        val matchedRawInputToken                   = attrs.get(otoroshi.plugins.Keys.MatchedRawInputTokenKey)
+        val matchedRawOutputToken                  = attrs.get(otoroshi.plugins.Keys.MatchedRawOutputTokenKey)
         lazy val headCert: Option[X509Certificate] = req.flatMap(_.clientCertificateChain).flatMap(_.headOption)
         Try {
           expressionReplacer.replaceOn(value) {
@@ -296,11 +309,11 @@ object GlobalExpressionLanguage {
             case r"req.pathparams.$field(.*)" if matchedRoute.isDefined                   =>
               matchedRoute.get.pathParams.getOrElse(field.s, s"no-path-param-${field.s}")
 
-            case "apikey.name" if apiKey.isDefined                              => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                                => apiKey.get.clientId
-            case "apikey.clientId" if apiKey.isDefined                          => apiKey.get.clientId
-            case "apikey.json.pretty" if apiKey.isDefined                       => apiKey.get.lightJson.prettify
-            case "apikey.json" if apiKey.isDefined                              => apiKey.get.lightJson.stringify
+            case "apikey.name" if apiKey.isDefined                                  => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                                    => apiKey.get.clientId
+            case "apikey.clientId" if apiKey.isDefined                              => apiKey.get.clientId
+            case "apikey.json.pretty" if apiKey.isDefined                           => apiKey.get.lightJson.prettify
+            case "apikey.json" if apiKey.isDefined                                  => apiKey.get.lightJson.stringify
             case r"apikey.metadata.$field(.*):$dv(.*)" if apiKey.isDefined    =>
               apiKey.get.metadata.get(field.s).getOrElse(dv.s)
             case r"apikey.metadata.$field(.*)" if apiKey.isDefined            =>
@@ -311,7 +324,7 @@ object GlobalExpressionLanguage {
               Option(apiKey.get.tags.apply(field.s.toInt)).getOrElse(s"no-tag-$field")
             case r"apikey.json.pretty" if apiKey.isDefined                    =>
               apiKey.get.lightJson.prettify
-            case r"apikey.json" if apiKey.isDefined                           =>
+            case r"apikey.json" if apiKey.isDefined                                 =>
               apiKey.get.lightJson.stringify
 
             // for jwt comptab only
@@ -329,6 +342,39 @@ object GlobalExpressionLanguage {
               context.get(field.s).orElse(context.get(field2.s)).getOrElse(s"no-token-$field-$field2")
             case r"token.$field(.*):$dv(.*)"                                  => context.getOrElse(field.s, dv.s)
             case r"token.$field(.*)"                                          => context.getOrElse(field.s, s"no-token-$field")
+            case r"in_jwt.$field(.*):$dv(.*)" if matchedInputJwtToken.isDefined   =>
+              val json = matchedInputJwtToken.get
+              if (field.s.contains(".")) {
+                json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
+              } else {
+                json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
+              }
+            
+            case r"in_jwt.$field(.*)" if matchedInputJwtToken.isDefined            =>
+              val json = matchedInputJwtToken.get
+              if (field.s.contains(".")) {
+                json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
+              } else {
+                json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
+              }
+        
+            case r"out_jwt.$field(.*):$dv(.*)" if matchedOutputJwtToken.isDefined =>
+              val json = matchedOutputJwtToken.get
+              if (field.s.contains(".")) {
+                json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
+              } else {
+                json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv.s)
+              }
+            
+            case r"out_jwt.$field(.*)" if matchedOutputJwtToken.isDefined          =>
+              val json = matchedOutputJwtToken.get
+              if (field.s.contains(".")) {
+                json.at(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
+              } else {
+                json.select(field.s).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field.s}")
+              }
+            case "in_raw_jwt" if matchedRawInputToken.isDefined => matchedRawInputToken.get 
+            case "out_raw_jwt" if matchedRawOutputToken.isDefined => matchedRawOutputToken.get
 
             case r"apikeyjwt.$field(.*)" if field.s.contains(".")           =>
               attrs

@@ -1,7 +1,7 @@
 package otoroshi.api.schema
 
 import org.json4s.JValue
-import org.json4s.JsonDSL._
+import org.json4s.JsonDSL.*
 
 // Built-in type mapper for Scala Enumerations
 object ScalaEnumerationMapper extends TypeMapper {

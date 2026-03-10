@@ -6,14 +6,7 @@ import org.apache.pekko.stream.scaladsl.{Flow, Tcp}
 import org.apache.pekko.util.ByteString
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep,
-  NgTunnelHandler,
-  NgTunnelHandlerContext
-}
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.utils.udp.{Datagram, UdpClient}
 import play.api.Logger
@@ -126,7 +119,7 @@ class UdpTunnel extends NgTunnelHandler {
       ctx: NgTunnelHandlerContext
   )(using env: Env, ec: ExecutionContext): Flow[Message, Message, ?] = {
     import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
-    import GraphDSL.Implicits._
+    import GraphDSL.Implicits.given
     val base64decoder                   = java.util.Base64.getDecoder
     val base64encoder                   = java.util.Base64.getEncoder
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get

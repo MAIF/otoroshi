@@ -9,22 +9,22 @@ import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import otoroshi.models.Target
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.ResponseImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{RequestHeader, Result}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util._
+import scala.util.*
 
 case class NgTrafficMirroringConfig(
     legacy: MirroringPluginConfig = MirroringPluginConfig(
@@ -32,7 +32,9 @@ case class NgTrafficMirroringConfig(
         "to"               -> "https://foo.bar.dev",
         "enabled"          -> true,
         "capture_response" -> false,
-        "generate_events"  -> false
+        "generate_events"  -> false,
+        "headers"          -> Map.empty[String, String],
+        "percentage"       -> 100.0
       )
     )
 ) extends NgPluginConfig {
@@ -40,7 +42,10 @@ case class NgTrafficMirroringConfig(
     "to"               -> legacy.to,
     "enabled"          -> legacy.enabled,
     "capture_response" -> legacy.shouldCaptureResponse,
-    "generate_events"  -> legacy.generateEvents
+    "generate_events"  -> legacy.generateEvents,
+    "headers"          -> legacy.headers,
+    "salt"             -> legacy.salt,
+    "percentage"       -> legacy.percentage
   )
 }
 
@@ -160,28 +165,34 @@ case class NgRequestContext(
 
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
-    given ec: ExecutionContext = env.otoroshiExecutionContext
-    given ev: Env              = env
-    given mat: Materializer    = env.otoroshiMaterializer
-    val req                           = request
-    val currentReqHasBody             = req.theHasBody
-    val httpRequest                   = otoRequest.get()
-    val uri                           = Uri(config.legacy.to)
-    val url                           = httpRequest.uri.copy(
+    implicit val ec       = env.otoroshiExecutionContext
+    implicit val ev       = env
+    implicit val mat      = env.otoroshiMaterializer
+    val req               = request
+    val currentReqHasBody = req.theHasBody
+    val httpRequest       = otoRequest.get()
+    val uri               = Uri(config.legacy.to)
+    val url               = httpRequest.uri.copy(
       scheme = uri.scheme,
       authority = uri.authority.copy(
         host = uri.authority.host,
         port = uri.authority.port
       )
     )
-    val mReq                          = httpRequest.copy(
+
+    val configHeaders = config.legacy.headers.filterNot(_._1 == "Host")
+    val host: String  = config.legacy.headers.getOrElse("Host", url.authority.host.toString())
+
+    val mReq = httpRequest.copy(
       url = url.toString(),
-      headers = httpRequest.headers.filterNot(_._1 == "Host") ++ Seq("Host" -> url.authority.host.toString())
+      headers = httpRequest.headers.filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders
     )
+
     mirroredRequest.set(mReq)
-    val finalTarget: Target           = Target(host = url.authority.host.toString(), scheme = url.scheme)
-    val globalConfig                  = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
-    val clientReq                     = route.useAkkaHttpClient match {
+    val finalTarget: Target =
+      Target(host = url.authority.host.toString(), scheme = url.scheme, port = url.effectivePort.some)
+    val globalConfig        = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
+    val clientReq           = route.useAkkaHttpClient match {
       case _ if finalTarget.mtlsConfig.mtls =>
         env.gatewayClient.akkaUrlWithTarget(
           UrlSanitizer.sanitize(url.toString()),
@@ -204,38 +215,45 @@ case class NgRequestContext(
     val body                          =
       if (currentReqHasBody) InMemoryBody(input.get())
       else EmptyBody
-    val builder: WSRequest            = clientReq
+
+    val builder: WSRequest = clientReq
       .withRequestTimeout(
         route.backend.client.legacy.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
       )
       .withMethod(httpRequest.method)
       .withHttpHeaders(
-        (httpRequest.headers.toSeq ++ Seq("Host" -> url.authority.host.toString()))*
+        (httpRequest.headers.toSeq
+          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders)*
       )
       .withCookies(httpRequest.cookies*)
       .withFollowRedirects(false)
       .withMaybeProxyServer(
         route.backend.client.legacy.proxy.orElse(globalConfig.proxies.services)
       )
-    val builderWithBody               = if (currentReqHasBody) {
+    val builderWithBody    = if (currentReqHasBody) {
       builder.withBody(body)
     } else {
       builder
     }
-    builderWithBody.stream().map { resp =>
-      if (config.legacy.shouldCaptureResponse) {
-        resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { mb =>
-          mirroredBody.set(mb)
+    builderWithBody
+      .stream()
+      .map { resp =>
+        if (config.legacy.shouldCaptureResponse) {
+          resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { mb =>
+            mirroredBody.set(mb)
+            mirroredResp.set(resp)
+            mirrorDone.trySuccess(())
+          }
+        } else {
+          resp.ignore()
+          mirroredBody.set(ByteString.empty)
           mirroredResp.set(resp)
           mirrorDone.trySuccess(())
         }
-      } else {
-        resp.ignore()
-        mirroredBody.set(ByteString.empty)
-        mirroredResp.set(resp)
-        mirrorDone.trySuccess(())
       }
-    }
+      .recover { case e =>
+        println(s"[ERROR] ${e.getMessage}")
+      }
   }
 }
 
@@ -256,9 +274,10 @@ class NgTrafficMirroring extends NgRequestTransformer {
       ctx: NgBeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = ctx.cachedConfig(internalName)(NgTrafficMirroringConfig.format).getOrElse(NgTrafficMirroringConfig())
-    if (cfg.legacy.shouldBeMirrored(ctx.request)) {
-      val done       = Promise[Unit]()
-      val mirrorDone = Promise[Unit]()
+
+    if (cfg.legacy.shouldBeMirrored(ctx.route.id, ctx.request)) {
+      val done       = Promise[Unit]
+      val mirrorDone = Promise[Unit]
       val context    = NgRequestContext(
         id = ctx.snowflake,
         request = ctx.request,

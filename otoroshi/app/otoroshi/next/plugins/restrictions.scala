@@ -2,9 +2,9 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.models.{RestrictionPath, Restrictions}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

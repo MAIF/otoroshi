@@ -1,13 +1,13 @@
 package otoroshi.storage.stores
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{ChaosDataStore, Outage, ServiceDescriptor, SnowMonkeyConfig}
-import org.joda.time.DateTime
-import play.api.libs.json.{JsSuccess, Json}
 import otoroshi.storage.RedisLike
+import play.api.libs.json.{JsSuccess, Json}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {

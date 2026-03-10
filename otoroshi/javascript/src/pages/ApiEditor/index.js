@@ -21,10 +21,12 @@ import { NgDotsRenderer, NgForm, NgSelectRenderer } from '../../components/nginp
 import { BackendForm } from '../RouteDesigner/BackendNode';
 import NgFrontend from '../../forms/ng_plugins/NgFrontend';
 
+import InfoCollapse from '../../components/InfoCollapse';
 import moment from 'moment';
 import semver from 'semver';
 
 import { ApiStats } from './ApiStats';
+import { Documentation } from './Documentation';
 import { PublisDraftModalContent, queryClient } from '../../components/Drafts/DraftEditor';
 import { mergeData } from '../../components/Drafts/Compare/utils';
 import { useSignalValue } from 'signals-react-safe';
@@ -151,6 +153,12 @@ export default function ApiEditor(props) {
             component={Deployments}
             props={props}
           />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/documentation"
+            component={Documentation}
+            props={props}
+          />
           <RouteWithProps exact path="/apis/:apiId/testing" component={Testing} props={props} />
           <RouteWithProps exact path="/apis/:apiId/new" component={NewAPI} props={props} />
           <RouteWithProps path="/apis/:apiId/informations" component={Informations} props={props} />
@@ -162,7 +170,7 @@ export default function ApiEditor(props) {
   );
 }
 
-function useDraftOfAPI() {
+export function useDraftOfAPI() {
   const params = useParams();
   const version = useSignalValue(signalVersion);
 
@@ -275,8 +283,6 @@ function Subscriptions(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    // return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS);
@@ -351,6 +357,10 @@ function SubscriptionDesigner(props) {
   const [subscription, setSubscription] = useState();
 
   const { item } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
 
   const rawSubscription = useQuery(
     ['getSubscription', params.subscriptionId],
@@ -475,7 +485,11 @@ function NewSubscription(props) {
 
   const { item, version } = useDraftOfAPI();
 
-  const templatesQuery = useQuery(
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
+
+  useQuery(
     ['getTemplate'],
     () => nextClient.forEntityNext(nextClient.ENTITIES.API_CONSUMER_SUBSCRIPTIONS).template(),
     {
@@ -585,6 +599,10 @@ function RouteDesigner(props) {
       onSuccess: setBackends,
     }
   );
+
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && backendsQuery.data !== undefined) {
@@ -795,6 +813,10 @@ function NewRoute(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
+
+  useEffect(() => {
     if (item && !backendsQuery.isLoading && !schema) {
       setSchema(ROUTE_FORM_SETTINGS.schema(item, backends));
     }
@@ -881,7 +903,6 @@ function Consumers(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    return () => props.setTitle('');
   }, []);
 
   const deleteItem = (newItem) =>
@@ -1168,11 +1189,15 @@ function NewConsumer(props) {
 
   const { item, updateItem } = useDraftOfAPI();
 
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
+
   const savePlan = () => {
     return updateItem({
       ...item,
       consumers: [...item.consumers, consumer],
-    }).then(() => historyPush(history, location, `/apis/${params.apiId}`));
+    }).then(() => historyPush(history, location, `/apis/${params.apiId}/consumers`));
   };
 
   if (!item) return <SimpleLoader />;
@@ -1213,6 +1238,10 @@ function ConsumerDesigner(props) {
   const [consumer, setConsumer] = useState();
 
   const { item, updateItem } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && !consumer) {
@@ -1301,12 +1330,10 @@ function Routes(props) {
 
   useEffect(() => {
     props.setTitle({
-      value: 'Routes',
+      value: 'HTTP Routes',
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    // return () => props.setTitle(undefined);
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.APIS);
@@ -1406,8 +1433,6 @@ function Backends(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle('');
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS);
@@ -1472,6 +1497,10 @@ function NewBackend(props) {
   const [backend, setBackend] = useState();
 
   const { item, updateItem } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
 
   const saveBackend = () => {
     return updateItem({
@@ -1580,6 +1609,7 @@ function EditBackend(props) {
   const [backend, setBackend] = useState();
 
   useEffect(() => {
+    props.setTitle(undefined);
     if (item && !backend) {
       setBackend(item.backends.find((item) => item.id === params.backendId));
     }
@@ -1690,8 +1720,6 @@ function HttpClientSettings(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    return () => props.setTitle('');
   }, []);
 
   const client = nextClient.forEntityNext(nextClient.ENTITIES.BACKEND_CLIENTS);
@@ -1875,7 +1903,7 @@ function EditHttpClientSettings(props) {
 
   return (
     <>
-      <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
+      <PageTitle title="Update Http Client settings" {...props} style={{ paddingBottom: 0 }}>
         <FeedbackButton
           type="success"
           className="ms-2 mb-1 d-flex align-items-center"
@@ -1970,8 +1998,6 @@ function Testing(props) {
 
   useEffect(() => {
     props.setTitle('Testing mode');
-
-    // return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2103,7 +2129,6 @@ function Deployments(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    // return () => props.setTitle(undefined);
   }, []);
 
   if (!item) return <SimpleLoader />;
@@ -2217,14 +2242,13 @@ function EditFlow(props) {
           consumers: item.consumers.reduce(
             (acc, item) => ({
               ...acc,
-              [item.id]: currentFlow.consumers.includes(item.id),
+              [item.id]: currentFlow.consumers?.includes(item.id),
             }),
             {}
           ),
         });
       }
     }
-    // return () => props.setTitle(undefined);
   }, [item]);
 
   const updateFlow = () => {
@@ -2317,8 +2341,6 @@ function NewFlow(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    // return () => props.setTitle(undefined);
   }, []);
 
   const [flow, setFlow] = useState({
@@ -2373,68 +2395,6 @@ function NewFlow(props) {
   );
 }
 
-function OpenAPILoader(props) {
-  const history = useHistory();
-  const location = useLocation();
-
-  const schema = {
-    openapi: {
-      type: 'string',
-      label: 'Openapi URL',
-    },
-    domain: {
-      type: 'string',
-      label: 'Exposed domain',
-    },
-    serverURL: {
-      type: 'string',
-      label: 'Server URL',
-    },
-    root: {
-      type: 'string',
-      label: 'The root URL of the target service',
-    },
-    action: {
-      renderer: () => (
-        <Row title="Server URL" className="col-sm-10 d-flex align-items-center">
-          <Button
-            type="primaryColor"
-            className="btn-sm"
-            text="Read file"
-            onClick={() => {
-              fetchWrapperNext(
-                `/${nextClient.ENTITIES.APIS}/_openapi`,
-                'POST',
-                props.value,
-                'apis.otoroshi.io'
-              ).then((api) => {
-                props.setValue({
-                  ...props.value,
-                  serverURL:
-                    api.backends?.length > 0 && api.backends[0].backend.targets.length > 0
-                      ? api.backends[0].backend.targets[0].hostname
-                      : '',
-                  root:
-                    api.backends?.length > 0 && api.backends[0].root ? api.backends[0].root : '',
-                  api,
-                });
-              });
-            }}
-          />
-        </Row>
-      ),
-    },
-  };
-
-  let flow = ['openapi', 'domain', 'action'];
-
-  if (props.value.serverURL) {
-    flow = ['openapi', 'domain', 'serverURL', 'root'];
-  }
-
-  return <NgForm value={props.value} flow={flow} onChange={props.setValue} schema={schema} />;
-}
-
 function NewAPI(props) {
   const history = useHistory();
   const location = useLocation();
@@ -2446,7 +2406,6 @@ function NewAPI(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-    // return () => props.setTitle(undefined);
   }, []);
 
   const [value, setValue] = useState();
@@ -2494,7 +2453,54 @@ function NewAPI(props) {
       props: { label: 'Description' },
     },
     openapi: {
-      renderer: (_) => <OpenAPILoader value={value} setValue={setValue} />,
+      type: 'string',
+      label: 'Openapi URL',
+    },
+    domain: {
+      type: 'string',
+      label: 'Exposed domain',
+    },
+    serverURL: {
+      type: 'string',
+      label: 'Hostname',
+    },
+    root: {
+      type: 'string',
+      label: 'The root URL of the target service',
+    },
+    action: {
+      renderer: () => {
+        return (
+          <Row title=" " className="col-sm-10 d-flex align-items-center">
+            <Button
+              type="primaryColor"
+              className="btn-sm"
+              text="Read information from OpenAPI URL"
+              onClick={() => {
+                fetchWrapperNext(
+                  `/${nextClient.ENTITIES.APIS}/_openapi`,
+                  'POST',
+                  value,
+                  'apis.otoroshi.io'
+                ).then((api) => {
+                  const hasBackends = api.backends?.length > 0;
+                  const firstBackend = hasBackends ? api.backends[0] : undefined;
+
+                  setValue({
+                    ...value,
+                    serverURL:
+                      hasBackends && firstBackend.backend.targets.length > 0
+                        ? firstBackend.backend.targets[0].hostname
+                        : '',
+                    root: hasBackends && firstBackend.root ? firstBackend.root : '',
+                    api,
+                  });
+                });
+              }}
+            />
+          </Row>
+        );
+      },
     },
     picker: {
       renderer: (_) => {
@@ -2574,7 +2580,7 @@ function NewAPI(props) {
                 type: 'group',
                 name: 'OpenAPI',
                 collapsable: false,
-                fields: ['openapi'],
+                fields: ['openapi', 'domain', 'action', 'serverURL', 'root'],
               }
             : {
                 type: 'group',
@@ -2629,7 +2635,6 @@ function NewAPI(props) {
 }
 
 function Apis(props) {
-  const ref = useRef();
   const params = useParams();
   const history = useHistory();
   const location = useLocation();
@@ -2638,13 +2643,7 @@ function Apis(props) {
     props.setTitle({
       value: 'APIs',
       noThumbtack: true,
-      children: (
-        <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
-          <span className="badge bg-xs bg-warning">ALPHA</span>
-        </div>
-      ),
     });
-    // return () => props.setTitle(undefined);
   }, []);
 
   const columns = [
@@ -2683,8 +2682,55 @@ function Apis(props) {
 
   return (
     <>
+      <InfoCollapse title="What is an API?">
+        <p>
+          An API is one of the <strong>core entities</strong> of Otoroshi's API Management,
+          alongside HTTP Routes. While a HTTP route handles a single routing rule, an API lets you{' '}
+          <strong>aggregate multiple routes together</strong> and manage them as a unified whole —
+          same security policies, same plugins, same dashboard.
+        </p>
+        <p>
+          Think of it as a higher-level abstraction that brings structure and governance to your
+          routes. Here is what you can do with APIs:
+        </p>
+        <ul>
+          <li>
+            <strong>Group routes under one umbrella</strong> — combine multiple routes (e.g.{' '}
+            <code>/users</code>, <code>/products</code>, <code>/orders</code>) into a single API
+            with shared configuration.
+          </li>
+          <li>
+            <strong>Apply consistent security</strong> — enforce the same authentication, rate
+            limiting, and access control policies across all routes of the API.
+          </li>
+          <li>
+            <strong>Share plugins and patterns</strong> — define plugin chains once at the API level
+            and have them apply to every route, avoiding duplication.
+          </li>
+          <li>
+            <strong>Unified dashboard</strong> — monitor traffic, errors, and performance for all
+            routes of the API from a single view.
+          </li>
+          <li>
+            <strong>Version and deploy</strong> — manage the lifecycle of your API with versioned
+            deployments, making it easy to evolve your API over time.
+          </li>
+          <li>
+            <strong>Draft and production modes</strong> — work on a draft version of your API, test
+            it, and promote it to production when ready — without impacting live traffic.
+          </li>
+          <li>
+            <strong>Manage consumers and subscriptions</strong> — control who can access your API,
+            issue API keys, and track consumer usage.
+          </li>
+        </ul>
+        <p>
+          APIs give you the power to operate at scale — instead of managing dozens of individual
+          routes, you manage a single API entity with full control over its lifecycle, security, and
+          observability.
+        </p>
+      </InfoCollapse>
       <Table
-        ref={ref}
         parentProps={{ params }}
         navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
         navigateOnEdit={(item) => historyPush(history, location, `/apis/${item.id}`)}
@@ -2712,6 +2758,7 @@ function Apis(props) {
           <div className="btn-group input-group-btn">
             <Link
               className="btn btn-primary btn-sm"
+              to="#"
               onClick={() => {
                 nextClient
                   .forEntityNext(nextClient.ENTITIES.APIS)
@@ -2775,13 +2822,14 @@ function FlowDesigner(props) {
   }, [item]);
 
   const saveFlow = () => {
-    const { id, name, plugins } = ref.current.value;
+    const { id, name, plugins } = ref.current;
 
     return updateItem({
       ...item,
       flows: item.flows.map((flow) => {
         if (flow.id === id)
           return {
+            ...flow,
             id,
             name,
             plugins,
@@ -2798,7 +2846,7 @@ function FlowDesigner(props) {
       <Designer
         history={history}
         value={flow}
-        setValue={(value) => setFlow({ value })}
+        setValue={(value) => setFlow({ ...(value || {}) })}
         setSaveButton={() => {}}
       />
     </div>
@@ -2858,8 +2906,6 @@ function Flows(props) {
       noThumbtack: true,
       children: <VersionBadge />,
     });
-
-    // return () => props.setTitle(undefined);
   }, []);
 
   const fetchItems = (_) => Promise.resolve(item.flows);
@@ -3014,6 +3060,7 @@ function VersionManager({ api, draft, owner, setState }) {
     consumers: getCompareStep('consumers'),
     subscriptions: getCompareStep('subscriptions'),
     deployments: getCompareStep('deployments'),
+    documentation: getCompareStep('documentation'),
     apiDefinition: {
       renderer: () => {
         return <PublisDraftModalContent draft={draft.content} currentItem={api} />;
@@ -3041,6 +3088,7 @@ function VersionManager({ api, draft, owner, setState }) {
     getCompareFlowGroup('consumers'),
     getCompareFlowGroup('subscriptions'),
     getCompareFlowGroup('deployments'),
+    getCompareFlowGroup('documentation'),
     {
       type: 'group',
       name: `Global: ${!mergeData(api[name], draft.content[name]) ? 'No changes' : `has changed`}`,
@@ -3193,8 +3241,6 @@ function Informations(props) {
         noThumbtack: true,
         children: <VersionBadge />,
       });
-
-      // return () => props.setTitle(undefined);
     }
   }, [item]);
 
@@ -3214,7 +3260,7 @@ function Informations(props) {
   );
 }
 
-function VersionBadge({ size, className }) {
+export function VersionBadge({ size, className }) {
   const version = useSignalValue(signalVersion);
   return (
     <div
@@ -3321,6 +3367,10 @@ function Dashboard(props) {
   const history = useHistory();
   const location = useLocation();
 
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
+
   const { item, draft, draftWrapper, version, api } = useDraftOfAPI();
 
   const hasCreateFlow = item && item.flows.filter((f) => f.name !== 'default_flow').length > 0;
@@ -3331,7 +3381,10 @@ function Dashboard(props) {
   const hasTestingEnabled = item && item.testing.enabled;
 
   const isStaging = item && item.state === API_STATE.STAGING;
-  const showGettingStarted = !hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging;
+  const showGettingStarted =
+    item &&
+    item.state !== API_STATE.DEPRECATED &&
+    (!hasCreateFlow || !hasCreateConsumer || !hasCreateRoute || isStaging);
 
   const getStep = () => {
     return (
@@ -4190,13 +4243,13 @@ function ObjectiveCard({ title, description, icon, to, onClick }) {
       <div className="objective-card-icon">{icon}</div>
       <div className="objective-card-body">
         <p>{title}</p>
-        <div
+        <p
           onClick={() => {
             onClick ? onClick() : historyPush(history, location, to);
           }}
         >
           {description}
-        </div>
+        </p>
       </div>
     </div>
   );

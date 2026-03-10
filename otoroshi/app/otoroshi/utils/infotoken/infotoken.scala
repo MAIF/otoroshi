@@ -1,15 +1,15 @@
 package otoroshi.utils.infotoken
 
 import com.auth0.jwt.JWT
-import otoroshi.env._
-import otoroshi.models._
-
-import scala.concurrent.duration._
-import play.api.mvc.RequestHeader
-import play.api.libs.json._
 import org.joda.time.DateTime
-import otoroshi.security._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.env.*
+import otoroshi.models.*
+import otoroshi.security.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.mvc.RequestHeader
+
+import scala.concurrent.duration.*
 
 case class AddFieldsSettings(fields: Map[String, String])
 
@@ -26,7 +26,7 @@ object InfoTokenHelper {
       sub: Option[String] = None,
       addFields: Option[AddFieldsSettings]
   )(using env: Env): OtoroshiClaim = {
-    import otoroshi.ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits.given
     val clientCertChain = requestHeader
       .flatMap(_.clientCertificateChain)
       .map(chain =>

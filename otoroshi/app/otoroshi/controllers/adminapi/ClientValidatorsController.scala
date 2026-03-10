@@ -4,7 +4,7 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.ssl.ClientCertificateValidator
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
 import play.api.libs.json.{JsError, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 

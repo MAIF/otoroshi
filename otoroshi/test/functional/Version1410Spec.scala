@@ -1,21 +1,21 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.security.IdGenerator
 import play.api.Configuration
 import play.api.libs.json.Json
-import otoroshi.security.IdGenerator
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
@@ -24,7 +24,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
   given system: ActorSystem = ActorSystem("otoroshi-test")
   implicit lazy val env: Env = otoroshiComponents.env
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   override def getTestConfiguration(configuration: Configuration): Configuration =
     Configuration(

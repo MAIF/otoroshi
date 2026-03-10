@@ -68,6 +68,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="active page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -96,6 +102,15 @@ latest
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
+  </ul></li>
+  <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
+  <ul>
+    <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -126,6 +141,7 @@ latest
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
     <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+    <li><a href="../how-to-s/create-your-first-api.html" class="page">Create your first API</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -194,6 +210,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="active page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -222,6 +244,15 @@ latest
     <li><a href="../topics/deprecating-sd.html" class="page">Sunsetting Service Descriptors</a></li>
     <li><a href="../topics/workflows.html" class="page">Otoroshi Workflows</a></li>
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
+    <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
+    <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
+  </ul></li>
+  <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
+  <ul>
+    <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -252,6 +283,7 @@ latest
     <li><a href="../how-to-s/instantiate-waf-coraza.html" class="page">Instantiate a WAF with Coraza</a></li>
     <li><a href="../how-to-s/zip-backend-plugin.html" class="page">Quickly expose a website and static files</a></li>
     <li><a href="../how-to-s/calling-otoroshi-from-a-frontend.html" class="page">Calling Otoroshi from a Frontend</a></li>
+    <li><a href="../how-to-s/create-your-first-api.html" class="page">Create your first API</a></li>
   </ul></li>
   <li><a href="../plugins/index.html" class="page">Otoroshi plugins</a>
   <ul>
@@ -310,7 +342,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#service-descriptors" name="service-descriptors" class="anchor"><span class="anchor-link"></span></a>Service descriptors</h1>
+<h1><a href="#service-descriptors" name="service-descriptors" class="anchor"><span class="anchor-link"></span></a>Service descriptors</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Service Descriptors are now deprecated and will sunset soon (probably in 2026). You can use <a href="routes.html">Routes</a> instead. You can read more about sunsetting Service Descriptors <a href="../topics/deprecating-sd.html">here</a>. </p></div>
 <p>Services or service descriptor, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). </p><div class="centered-img">
 <img src="../imgs/models-service.png" /></div>
 <p>Let’s say you have an API exposed on <a href="http://192.168.0.42">http://192.168.0.42</a> and I want to expose it on <a href="https://my.api.foo">https://my.api.foo</a>. Otoroshi will proxy all calls to <a href="https://my.api.foo">https://my.api.foo</a> and forward them to <a href="http://192.168.0.42">http://192.168.0.42</a>. While doing that, it will also log everyhting, control accesses, etc.</p>
@@ -399,6 +432,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Hmac secret</code>: used to verify the token</li>
   <li><code>Base64 encoded secret</code>: if enabled, the extracted token will be base64 decoded before it is verifier</li>
 </ul>
+<p>You can check the <a href="../topics/otoroshi-protocol.html">Otoroshi communication protocol</a> page for more informations about it. </p>
 <h3><a href="#authentication" name="authentication" class="anchor"><span class="anchor-link"></span></a>Authentication</h3>
 <ul>
   <li><code>Enforce user authentication</code>: when enabled, user will be allowed to use the service (UI) only if they are registered users of the chosen authentication module.</li>
@@ -586,7 +620,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>Configuration</code>: the configuration of each enabled plugin, split by names and grouped in the same configuration object.</li>
 </ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../topics/index.html">Detailed topics</a></p>
+<p><strong>Next:</strong> <a href="../entities/remote-catalogs.html">Remote Catalogs</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -664,7 +698,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <!--
 <div class="copyright">
-<span class="text">&copy; 2025</span>
+<span class="text">&copy; 2026</span>
 <a href="https://www.example.com" class="logo">logo</a>
 </div>
 -->

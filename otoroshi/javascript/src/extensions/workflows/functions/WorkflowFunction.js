@@ -10,15 +10,17 @@ export const WorkflowFunction = {
     workflow_id: {
       renderer: (props) => {
         const options = [
-          ...(Object.values(nodesCatalogSignal.value.workflow.functions)
-            .map(func => ({ ...func, self: true })) || []),
-          ...nodesCatalogSignal.value.workflows
-        ]
+          ...(Object.values(nodesCatalogSignal.value.workflow.functions).map((func) => ({
+            ...func,
+            self: true,
+          })) || []),
+          ...nodesCatalogSignal.value.workflows,
+        ];
 
         return (
           <Row title="Workflow">
             <NgSelectRenderer
-              value={options.find(option => option.id === props.value)}
+              value={options.find((option) => option.id === props.value)}
               placeholder="Select an existing workflow"
               label={' '}
               ngOptions={{
@@ -38,7 +40,9 @@ export const WorkflowFunction = {
                         properties.selectOption(properties.data);
                       }}
                     >
-                      <span className={`badge ${properties.data.value.self ? 'bg-warning' : 'bg-success'}`}>
+                      <span
+                        className={`badge ${properties.data.value.self ? 'bg-warning' : 'bg-success'}`}
+                      >
                         {properties.data.value.self ? 'LOCAL' : 'GLOBAL'}
                       </span>
                       {properties.data.label}
@@ -59,9 +63,7 @@ export const WorkflowFunction = {
                 },
               }}
               options={options}
-              optionsTransformer={(arr) =>
-                arr.map((item) => ({ label: item.name, value: item }))
-              }
+              optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item }))}
             />
           </Row>
         );

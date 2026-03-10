@@ -1,19 +1,19 @@
 package otoroshi.plugins.useragent
 
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import org.apache.pekko.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
 import otoroshi.script.*
 import otoroshi.utils.cache.Caches
+import otoroshi.utils.future.Implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits.*
 
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -21,35 +21,45 @@ import scala.util.{Failure, Success, Try}
 
 object UserAgentHelper {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 
   private given ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
-  private val parserInitializing       = new AtomicBoolean(false)
-  private val parserInitializationDone = new AtomicBoolean(false)
-  private val parserRef                = new AtomicReference[UserAgentParser]()
+  private val parserFuture             = new AtomicReference[Future[UserAgentParser]]()
   private val cache                    = Caches.expireAfterWrite[String, Option[JsObject]](10.minutes, 999)
 
-  def userAgentDetails(ua: String)(using env: Env): Option[JsObject] = {
-    env.metrics.withTimer("otoroshi.plugins.useragent.details") {
-      if (parserInitializing.compareAndSet(false, true)) {
-        val start = System.currentTimeMillis()
-        logger.info("Initializing User-Agent parser ...")
-        Future {
-          parserRef.set(new UserAgentService().loadParser()) // blocking for a looooooong time !
-          parserInitializationDone.set(true)
+  private def ensureInitialized(): Future[UserAgentParser] = {
+    Option(parserFuture.get()) match {
+      case Some(future) => future
+      case None         =>
+        val start  = System.currentTimeMillis()
+        val future = Future {
+          logger.info("Initializing User-Agent parser ...")
+          val parser = new UserAgentService().loadParser()
+          logger.info("end initializing ...")
+          parser
         }.andThen {
           case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
           case Failure(e) => logger.error("User-Agent parser initialization failed", e)
         }
-      }
+
+        if (parserFuture.compareAndSet(null, future)) {
+          future
+        } else {
+          parserFuture.get()
+        }
+    }
+  }
+
+  def userAgentDetails(ua: String)(using env: Env): Future[Option[JsObject]] = {
+    env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       cache.getIfPresent(ua) match {
-        case details @ Some(_)                      => details.flatten
-        case None if parserInitializationDone.get() =>
-          Try(parserRef.get().parse(ua)) match {
-            case Failure(e)            =>
-              cache.put(ua, None)
+        case Some(value)       => value.future
+        case None              =>
+          ensureInitialized().map { parser =>
+          Try(parser.parse(ua)) match {
+            case Failure(e)            => cache.put(ua, None)
             case Success(capabilities) =>
               val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
                 (field.name().toLowerCase(), JsString(value))
@@ -57,7 +67,7 @@ object UserAgentHelper {
               cache.put(ua, details)
           }
           cache.getIfPresent(ua).flatten
-        case _                                      => None // initialization in progress
+        }
       }
     }
   }
@@ -104,12 +114,12 @@ class UserAgentExtractor extends PreRouting {
     ctx.request.headers.get("User-Agent") match {
       case None     => funit
       case Some(ua) =>
-        UserAgentHelper.userAgentDetails(ua) match {
-          case None       => funit
+        UserAgentHelper.userAgentDetails(ua).map {
+          case None       => ()
           case Some(info) =>
             if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-            funit
+            ()
         }
     }
   }

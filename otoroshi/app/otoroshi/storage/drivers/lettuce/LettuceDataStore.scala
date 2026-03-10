@@ -1,37 +1,44 @@
 package otoroshi.storage.drivers.lettuce
 
+import com.typesafe.config.ConfigFactory
+import io.lettuce.core.cluster.RedisClusterClient
+import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
+import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
+import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
+import next.models.{
+  ApiConsumerSubscriptionDataStore,
+  ApiDataStore,
+  KvApiConsumerSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import io.lettuce.core.cluster.RedisClusterClient
-import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
-import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
-import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage._
-import otoroshi.storage.stores._
+import otoroshi.storage.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.given
 
 class LettuceDataStores(
     configuration: Configuration,
@@ -101,13 +108,34 @@ class LettuceDataStores(
       .ioThreadPoolSize(ioThreadPoolSize)
       .build()
   }
+  lazy val usePool                = configuration
+    .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.enabled")
+    .getOrElse(false)
+  lazy val useReactive            = configuration
+    .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.reactive")
+    .getOrElse(false)
 
   lazy val redis: LettuceRedis = {
 
+    val clientOptions = ClientOptions
+      .builder()
+      .autoReconnect(true)
+      .pingBeforeActivateConnection(true)
+      .build()
+
     def standardConnection() = {
       val client = RedisClient.create(resources, nodesRaw.head)
+      client.setOptions(clientOptions)
       clientRef.set(client)
-      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client)
+      if (usePool) {
+        if (useReactive) {
+          new ReactivePooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        } else {
+          new PooledLettuceRedisStandaloneAndSentinels(redisActorSystem, client, nodesRaw.head, env)
+        }
+      } else {
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, client, env)
+      }
     }
 
     redisConnection match {
@@ -121,15 +149,17 @@ class LettuceDataStores(
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
-      case "master-replicas"                =>
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient, env)
+      
+      case "master-replicas"                => 
         val redisClient = RedisClient.create(resources)
         val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
-      case "cluster"                        =>
+        new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient, env)
+      
+      case "cluster"                        => 
         // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
         // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
         val redisClient = RedisClusterClient.create(resources, nodes)
@@ -232,6 +262,9 @@ class LettuceDataStores(
 
   private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
   override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

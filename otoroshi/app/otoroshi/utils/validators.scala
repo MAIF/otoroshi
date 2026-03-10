@@ -3,7 +3,7 @@ package otoroshi.utils
 import io.otoroshi.wasm4s.scaladsl.{BasicWasmConfiguration, WasmSource, WasmSourceKind}
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue}
-import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsSuccess, JsValue, Json}
+import play.api.libs.json.*
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt

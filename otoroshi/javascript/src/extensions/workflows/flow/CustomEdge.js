@@ -1,10 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  getSimpleBezierPath,
-  useReactFlow,
-} from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, getSimpleBezierPath, useReactFlow } from '@xyflow/react';
 // import { useSignalValue } from 'signals-react-safe';
 // import { edgeHighlights } from '../WorkflowsDesigner';
 
@@ -69,7 +64,7 @@ function bezierPathLength(d, steps = 10) {
   const nums = d.match(/-?\d+(\.\d+)?/g).map(Number);
 
   if (nums.length !== 8) {
-    throw new Error("Expected path like Mx,y Cx1,y1 x2,y2 x3,y3");
+    throw new Error('Expected path like Mx,y Cx1,y1 x2,y2 x3,y3');
   }
 
   const [x0, y0, x1, y1, x2, y2, x3, y3] = nums;
@@ -110,7 +105,6 @@ function bezierPathLength(d, steps = 10) {
   return length;
 }
 
-
 export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
   const { setEdges } = useReactFlow();
   const [edgePath, labelX, labelY] = getSimpleBezierPath({
@@ -122,15 +116,15 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
 
   useEffect(() => listeners(id), [id]);
 
-  const { highlighted, error } = data || {}
+  const { highlighted, error } = data || {};
 
-  const length = useMemo(() => bezierPathLength(edgePath), [sourceX, sourceY, targetX, targetY])
+  const length = useMemo(() => bezierPathLength(edgePath), [sourceX, sourceY, targetX, targetY]);
 
   const styles = {
-    animationDelay: `${(highlighted || error) || .1}s`,
+    animationDelay: `${highlighted || error || 0.1}s`,
     strokeDasharray: highlighted || error ? length : undefined,
     strokeDashoffset: highlighted || error ? length : undefined,
-  }
+  };
 
   return (
     <>
@@ -145,7 +139,7 @@ export function CustomEdge({ id, sourceX, sourceY, targetX, targetY, data }) {
           style={{
             position: 'absolute',
             transform: `translate(-50%, -120%) translate(${labelX}px,${labelY}px)`,
-            pointerEvents: 'all'
+            pointerEvents: 'all',
           }}
           className="nodrag nopan d-flex-center gap-1 edge-label-renderer"
           id={`react-flow__edgelabel-renderer-data-${id}`}

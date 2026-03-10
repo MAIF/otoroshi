@@ -1,6 +1,7 @@
 package otoroshi.api.schema
 
 import org.json4s.JValue
+
 import java.security.MessageDigest
 
 // Configuration

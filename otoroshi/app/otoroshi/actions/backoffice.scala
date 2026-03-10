@@ -7,15 +7,14 @@ import otoroshi.auth.GenericOauth2Module
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
 import otoroshi.gateway.Errors
-import otoroshi.models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
+import otoroshi.models.{BackOfficeUser, EntityLocationSupport, RightsChecker, TenantId}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.Json
+import play.api.mvc.*
 import play.api.mvc.Results.Status
-import play.api.mvc._
-import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

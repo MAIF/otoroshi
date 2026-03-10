@@ -1,5 +1,10 @@
 # Service descriptors
 
+
+@@@ warning
+Service Descriptors are now deprecated and will sunset soon (probably in 2026). You can use @ref:[Routes](./routes.md) instead. You can read more about sunsetting Service Descriptors @ref:[here](../topics/deprecating-sd.md). 
+@@@
+
 Services or service descriptor, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). 
 
 @@@ div { .centered-img }
@@ -89,6 +94,8 @@ Let’s say you have an API exposed on http://192.168.0.42 and I want to expose 
 * `SHA Size`: Word size for the SHA-2 hash function used
 * `Hmac secret`: used to verify the token
 * `Base64 encoded secret`: if enabled, the extracted token will be base64 decoded before it is verifier
+
+You can check the @ref:[Otoroshi communication protocol](../topics/otoroshi-protocol.md) page for more informations about it. 
 
 ### Authentication
 

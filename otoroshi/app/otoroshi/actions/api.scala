@@ -1,25 +1,25 @@
 package otoroshi.actions
 
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicReference
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import next.models.Api
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, _}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.models.*
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.mvc._
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
-import otoroshi.utils.http.RequestImplicits._
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
+import java.util.Base64
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -104,7 +104,6 @@ trait ApiActionContextCapable {
                     adminEntityValidators = Map.empty
                   )
                   Right(user.some)
-                case _                => Left("You're not authorized here (invalid setup) ! ")
               }
             case Some(userJwt) =>
               Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {

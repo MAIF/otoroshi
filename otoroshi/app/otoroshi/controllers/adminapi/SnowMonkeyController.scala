@@ -3,19 +3,15 @@ package otoroshi.controllers.adminapi
 import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.SnowMonkeyConfig
-import otoroshi.models.RightsChecker
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsSuccess, Json}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import otoroshi.events.*
+import otoroshi.models.{RightsChecker, SnowMonkeyConfig}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
-import play.api.mvc
-import play.api.libs.json.JsValue
-import play.api.mvc.AnyContent
 
 class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {

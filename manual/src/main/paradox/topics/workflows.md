@@ -1,6 +1,6 @@
 # Otoroshi Workflows
 
-Workflows in Otoroshi provide a powerful way to describe and execute sequences of logic using a JSON-based pseudo-language. Think of it as a lightweight alternative to tools like n8n or Apache NiFi — without the GUI (yet). Workflows let you orchestrate actions, transform data, trigger functions, and control flow based on conditional logic, all within the Otoroshi ecosystem.
+Workflows in Otoroshi provide a powerful way to describe and execute sequences of logic using a JSON-based pseudo-language. Think of it as a lightweight alternative to tools like n8n or Apache NiFi. Workflows let you orchestrate actions, transform data, trigger functions, and control flow based on conditional logic, all within the Otoroshi ecosystem.
 
 ## Key Concepts
 

@@ -6,7 +6,7 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.env.Env
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.utils.TypedMap
 import play.api.Configuration
 
@@ -108,7 +108,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
     }
 
     "find route fast" in {
-      import otoroshi.utils.syntax.implicits._
+      import otoroshi.utils.syntax.implicits.given
       NgRouteComposition
         .fromOpenApi(
           "api.oto.tools",
@@ -122,7 +122,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
 
           // Test with a GET endpoint
           router
-            .find("api.oto.tools", "/apis/proxy.otoroshi.io/v1/routes/_count")
+            .find("api.oto.tools", "/api/services", true)
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)
@@ -130,7 +130,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
           
           // Test with a parameterized GET endpoint
           router
-            .find("api.oto.tools", "/api/cluster/sessions/123")
+            .find("api.oto.tools", "/api/apikeys/123/foo", true)
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)

@@ -12,6 +12,7 @@ import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
 import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import InfoCollapse from '../components/InfoCollapse';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -255,9 +256,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
             rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
             rawValue.clientSecret
           }' http://xxxxxx --include`}
         />
@@ -535,6 +536,50 @@ class DailyRemainingQuotas extends Component {
   }
 }
 
+function InfoApikeysCollapse() {
+  return (
+    <InfoCollapse title="What is an API Key?">
+      <p>
+        An API Key is the <strong>main entity for API management</strong> in Otoroshi. It is a
+        unique credential — composed of a <strong>client ID</strong> and a{' '}
+        <strong>client secret</strong> — that identifies and authenticates a consumer when calling
+        your protected routes and services.
+      </p>
+      <p>
+        API keys give you fine-grained control over who can access what, how often, and under which
+        conditions. Here are some examples of what you can achieve with them:
+      </p>
+      <ul>
+        <li>
+          <strong>Authenticate consumers</strong> — clients present their credentials via HTTP
+          headers, Basic auth, or even client ID only for simpler use cases.
+        </li>
+        <li>
+          <strong>Enforce quotas and rate limiting</strong> — set throttling (calls per second),
+          daily, and monthly quotas to control usage and prevent abuse.
+        </li>
+        <li>
+          <strong>Restrict access</strong> — limit which routes or services a key can access,
+          restrict by IP address, allowed/forbidden paths, or HTTP methods (e.g. read-only mode).
+        </li>
+        <li>
+          <strong>Manage lifecycle</strong> — enable or disable keys instantly, set expiration
+          dates, and rotate secrets automatically with a configurable grace period.
+        </li>
+        <li>
+          <strong>Track and audit usage</strong> — monitor consumption in real time, track remaining
+          quotas, and identify which consumer is responsible for each call.
+        </li>
+        <li>
+          <strong>Organize with metadata</strong> — tag and annotate keys with custom metadata for
+          easier management across teams and tenants.
+        </li>
+      </ul>
+      <p>Each API key can be scoped to specific routes, services, or groups.</p>
+    </InfoCollapse>
+  );
+}
+
 const ApiKeysConstants = {
   formSchema: (that) => ({
     _loc: {
@@ -699,8 +744,8 @@ const ApiKeysConstants = {
       props: {
         label: 'Throttling quota',
         placeholder: 'Authorized calls per window',
-        suffix: 'calls per sec.',
-        help: 'The authorized number of calls per window',
+        suffix: 'calls per window',
+        help: 'The authorized number of calls per window. See the `otoroshi.throttlingWindow` config. or `OTOROSHI_THROTTLING_WINDOW` environment variable.',
       },
     },
     dailyQuota: {
@@ -930,7 +975,7 @@ export class ServiceApiKeysPage extends Component {
           .findById(this.props.params.serviceId);
     fu.then((service) => {
       this.onRoutes
-        ? this.props.setTitle(this.props.title || `Routes Apikeys`)
+        ? this.props.setTitle(this.props.title || `HTTP Routes Apikeys`)
         : this.props.setTitle(`Service Apikeys`);
       this.setState({ service, loading: false }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
@@ -944,7 +989,7 @@ export class ServiceApiKeysPage extends Component {
     });
   }
 
-  fetchAllApiKeys = () => {
+  fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchApiKeysForPage(
       this.props.params.serviceId || this.props.params.routeId
     );
@@ -982,6 +1027,7 @@ export class ServiceApiKeysPage extends Component {
   render() {
     return (
       <Loader loading={this.state.loading}>
+        <InfoApikeysCollapse />
         <Table
           parentProps={this.props}
           selfUrl={
@@ -998,7 +1044,10 @@ export class ServiceApiKeysPage extends Component {
               .then((apk) => ({
                 ...apk,
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-                authorizedEntities: (this.state.service.groups || []).map((g) => 'group_' + g),
+                authorizedEntities: [
+                  //...(this.state.service.groups || []).map((g) => 'group_' + g), // Here we authorize the group by default, can be dangerous
+                  `route_${this.props.params.routeId}`, // just authorize the route
+                ],
               }))
           }
           _defaultValue={() => ({
@@ -1013,6 +1062,8 @@ export class ServiceApiKeysPage extends Component {
             authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
           })}
           itemName="ApiKey"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           formSchema={ApiKeysConstants.formSchema(this)}
           formFlow={ApiKeysConstants.formFlow}
           columns={ApiKeysConstants.columns(this)}
@@ -1205,11 +1256,14 @@ export class ApiKeysPage extends Component {
 
     return (
       <Loader loading={this.state.loading}>
+        <InfoApikeysCollapse />
         <Table
           ref={this.ref}
           parentProps={this.props}
           selfUrl={`apikeys`}
           defaultTitle="All apikeys"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)

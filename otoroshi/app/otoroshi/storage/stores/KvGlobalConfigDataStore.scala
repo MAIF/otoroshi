@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.script.Script
 import otoroshi.security.Auth0Config
@@ -12,9 +12,9 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Success
 
@@ -45,18 +45,22 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   ): Future[Long] = {
 
     @inline
-    def actualCall() =
-      redisCli.incrby(s"${_env.storageRoot}:throttling:perip:$ipAddress", 1L).flatMap { secCalls =>
-        if (!callsForIpAddressCache.containsKey(ipAddress)) {
-          callsForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(secCalls))
-        } else {
-          callsForIpAddressCache.get(ipAddress).set(secCalls)
-        }
-        redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith { case _ =>
-          callsForIpAddressCache.remove(ipAddress)
-          redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", _env.throttlingWindow)
-        } map (_ => secCalls)
+    def actualCall() = {
+      val key = s"${_env.storageRoot}:throttling:perip:$ipAddress"
+      redisCli.incrby(key, 1L).flatMap { secCalls =>
+        callsForIpAddressCache
+          .computeIfAbsent(ipAddress, _ => new java.util.concurrent.atomic.AtomicLong(0))
+          .set(secCalls)
+
+        redisCli
+          .pttl(key)
+          .filter(_ > -1)
+          .recoverWith { case _ =>
+            callsForIpAddressCache.remove(ipAddress)
+            redisCli.expire(key, _env.throttlingWindow)
+          } map (_ => secCalls)
       }
+    }
 
     if (callsForIpAddressCache.containsKey(ipAddress)) {
       for {

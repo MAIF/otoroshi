@@ -1,26 +1,26 @@
 package otoroshi.events.impl
 
-import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.{ActorMaterializer, Materializer}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
+import otoroshi.env.Env
+import otoroshi.events.*
 import otoroshi.jobs.updates.Version
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Environment, Logger}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.ws.WSBodyWritables._
 
+import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -465,7 +465,6 @@ object ElasticTemplates                 {
       )
     )
     .prettify
-    .debugPrintln
 }
 
 object ElasticWritesAnalytics {
@@ -548,7 +547,7 @@ object ElasticVersion       {
 
 object ElasticUtils {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   // private def indexUri: String = {
   //   val df = ISODateTimeFormat.date().print(DateTime.now())
@@ -704,9 +703,6 @@ object ElasticUtils {
                   r.ignore()
                   if (logger.isDebugEnabled) logger.debug("Otoroshi template updated")
                   ElasticWritesAnalytics.initialized(config, version)
-                case _                             =>
-                  if (logger.isDebugEnabled) logger.debug("Otoroshi template updated")
-                  ElasticWritesAnalytics.initialized(config, version)
               }
               tplCreated.map(_ => ())
             case 404 =>
@@ -719,9 +715,6 @@ object ElasticUtils {
                   logger.error("Error creating template", e)
                 case Success(r)                    =>
                   r.ignore()
-                  if (logger.isDebugEnabled) logger.debug("Otoroshi template created")
-                  ElasticWritesAnalytics.initialized(config, version)
-                case _                             =>
                   if (logger.isDebugEnabled) logger.debug("Otoroshi template created")
                   ElasticWritesAnalytics.initialized(config, version)
               }
@@ -788,7 +781,7 @@ object ElasticUtils {
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   lazy val logger: Logger = Logger("otoroshi-analytics-writes-elastic")
 
@@ -873,7 +866,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     val indexWithDate           = if (config.indexSettings.clientSide) s"$index-$df" else index
     val indexClause             = Json.stringify(
       Json.obj(
-        "index" -> Json
+        config.indexSettings.action -> Json
           .obj("_index" -> indexWithDate)
           .applyOnIf(version.underSeven)(_ ++ Json.obj("_type" -> `type`))
       )
@@ -2032,8 +2025,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                              .applyOnIf(version.underEight) { obj => obj ++ Json.obj("interval" -> "day") }
                              .applyOnIf(version.aboveOrEqualsEight) { obj =>
                                obj ++ Json.obj("calendar_interval" -> "day")
-                             }
-                             .debugPrintln,
+                             },
                            "aggs"           -> Json.obj(
                              "status" -> Json.obj(
                                "terms" -> Json.obj(

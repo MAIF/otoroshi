@@ -13,8 +13,8 @@ import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits.*
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.libs.ws.WSBodyWritables.*

@@ -4,8 +4,8 @@ import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject}
 

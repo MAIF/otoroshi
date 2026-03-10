@@ -6,9 +6,9 @@ import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.CorsSettings
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.util.concurrent.TimeUnit
@@ -102,6 +102,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 
     if (req.method == "OPTIONS" && req.headers.get("Access-Control-Request-Method").isDefined) {
+      println("preflight request")
       // handle cors preflight request
       if (cors.legacy.shouldNotPass(req)) {
         Errors

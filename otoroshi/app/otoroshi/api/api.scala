@@ -4,8 +4,7 @@ import ch.qos.logback.classic.LoggerContext
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
-import next.models.{Api, ApiConsumerSubscription}
-import org.apache.commons.lang3.math.NumberUtils
+import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -38,11 +37,12 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.storage.DataStores
 import otoroshi.tcp.TcpService
-import otoroshi.utils.JsonValidator
+import otoroshi.utils.EntityFiltering.PaginatedContent
+import otoroshi.utils.{EntityFiltering, JsonValidator}
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.json.{JsonOperationsHelper, JsonPatchHelpers}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
 import play.api.http.{DefaultHttpFilters, HttpEntity, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
@@ -57,8 +57,6 @@ import play.core.parsers.FormUrlEncodedParser
 import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import otoroshi.utils.EntityFiltering
-import otoroshi.utils.EntityFiltering.PaginatedContent
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
@@ -96,7 +94,7 @@ object OtoroshiLoaderHelper {
 
   def waitForReadiness(components: EnvContainer): Unit = {
 
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
 
     given ec: ExecutionContext = components.env.otoroshiExecutionContext
     given scheduler: Scheduler = components.env.otoroshiScheduler
@@ -563,7 +561,6 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   private lazy val server = components.server
 
   def start(): Otoroshi = {
-    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
@@ -579,7 +576,6 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
 
   def startAndStopOnShutdown(): Otoroshi = {
     components.handlerRef.set(components.httpRequestHandler)
-    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
     OtoroshiLoaderHelper.waitForReadiness(components)
@@ -1210,13 +1206,17 @@ class OtoroshiResources(env: Env) {
       "error-templates",
       "proxy.otoroshi.io",
       ResourceVersion("v1", served = true, deprecated = false, storage = true),
-      GenericResourceAccessApii[ErrorTemplate](
+      GenericResourceAccessApiWithState[ErrorTemplate](
         ErrorTemplate.fmt,
         classOf[ErrorTemplate],
         env.datastores.errorTemplateDataStore.key,
         env.datastores.errorTemplateDataStore.extractId,
         json => json.select("serviceId").asString,
-        () => "serviceId"
+        () => "serviceId",
+        (v, p, ctx) => env.datastores.errorTemplateDataStore.template(env).json,
+        stateAll = () => Seq.empty,
+        stateOne = id => env.proxyState.errorTemplate(id),
+        stateUpdate = seq => env.proxyState.updateErrorTemplates(seq)
       )
     ),
     //////
@@ -1648,8 +1648,29 @@ class OtoroshiResources(env: Env) {
         writeValidator = ApiConsumerSubscription.writeValidator,
         deleteValidator = ApiConsumerSubscription.deleteValidator
       )
+    ),
+    //////
+    Resource(
+      "RouteTemplate",
+      "route-templates",
+      "route-template",
+      "proxy.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[RouteTemplate](
+        RouteTemplate.format,
+        classOf[RouteTemplate],
+        env.datastores.routeTemplateDataStore.key,
+        env.datastores.routeTemplateDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.routeTemplateDataStore.template(env).json,
+        stateAll = () => env.proxyState.allRouteTemplates(),
+        stateOne = id => env.proxyState.routeTemplate(id),
+        stateUpdate = seq => env.proxyState.updateRouteTemplates(seq)
+      )
     )
   ) ++ env.adminExtensions.resources()
+
 }
 
 class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
@@ -1754,11 +1775,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
                     case str if str == "null"                                     => JsNull
                     case str if str == "true"                                     => JsBoolean(true)
                     case str if str == "false"                                    => JsBoolean(false)
-                    case str if str.startsWith("{") && str.endsWith("}")          => Json.parse(str).asObject
-                    case str if str.startsWith("[") && str.endsWith("]")          => Json.parse(str).asArray
-                    case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
-                    case str if NumberUtils.isCreatable(str)                      => JsNumber(BigDecimal(str))
-                    case str                                                      => JsString(str)
+                    case str if str.startsWith("{") && str.endsWith("}")                        => Json.parse(str).asObject
+                    case str if str.startsWith("[") && str.endsWith("]")                        => Json.parse(str).asArray
+                    case str if Try(BigDecimal(str)).isSuccess && str.contains(".")             => JsNumber(BigDecimal(str))
+                    case str if Try(BigDecimal(str)).isSuccess                                  => JsNumber(BigDecimal(str))
+                    case str                                                                    => JsString(str)
                   }
                 )
               case (key, value)         => (key, value)
@@ -1794,11 +1815,11 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
             case str if str == "null"                                     => JsNull
             case str if str == "true"                                     => JsBoolean(true)
             case str if str == "false"                                    => JsBoolean(false)
-            case str if str.startsWith("{") && str.endsWith("}")          => Json.parse(str).asObject
-            case str if str.startsWith("[") && str.endsWith("]")          => Json.parse(str).asArray
-            case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
-            case str if NumberUtils.isCreatable(str)                      => JsNumber(BigDecimal(str))
-            case str                                                      => JsString(str)
+            case str if str.startsWith("{") && str.endsWith("}")              => Json.parse(str).asObject
+            case str if str.startsWith("[") && str.endsWith("]")              => Json.parse(str).asArray
+            case str if Try(BigDecimal(str)).isSuccess && str.contains(".")   => JsNumber(BigDecimal(str))
+            case str if Try(BigDecimal(str)).isSuccess                        => JsNumber(BigDecimal(str))
+            case str                                                          => JsString(str)
           }.toMap
           Right(jsonValues.toSeq.foldLeft(default) {
             case (obj, (key, value)) if key.contains(".") =>
@@ -2310,7 +2331,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
               }
               .map {
                 case (e, None)    => Left((Json.obj("error" -> "entity not found"), e))
-                case (_, Some(e)) => Right(("--", e))
+                case (patchBody, Some(e)) => Right((patchBody, e))
               }
               .filter {
                 case Left(_)            => true
@@ -2324,7 +2345,7 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
                     .byteString
                     .future
                 case Right((patchBody, entity)) =>
-                  val patchedEntity = patchJson(Json.parse(patchBody), entity)
+                  val patchedEntity = patchJson(patchBody, entity)
                   resource.access.validateToJson(patchedEntity, resource.singularName, ctx.backOfficeUser) match {
                     case JsError(errs)   =>
                       Json

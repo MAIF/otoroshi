@@ -1,9 +1,9 @@
 package otoroshi.utils.crypto
 
 import java.nio.charset.StandardCharsets
+import java.util.Base64 as JavaBase64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import java.util.{Base64 => JavaBase64}
 
 object Signatures {
 

@@ -1,21 +1,21 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
+import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.api.NgAccess.NgAllowed
-import otoroshi.next.plugins.api._
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{Result, Results}
 
@@ -167,7 +167,9 @@ object NgMultiAuthModuleConfig {
 
     override def writes(o: NgMultiAuthModuleConfig): JsValue = Json.obj(
       "pass_with_apikey" -> o.passWithApikey,
-      "auth_modules"     -> o.modules
+      "auth_modules"     -> o.modules,
+      "use_email_prompt" -> o.useEmailPrompt,
+      "users_groups"     -> o.usersGroups
     )
   }
 }
@@ -177,17 +179,12 @@ class MultiAuthModule extends NgAccessValidator {
   private val logger                                      = Logger("otoroshi-next-plugins-multi-auth-module")
   private val configReads: Reads[NgMultiAuthModuleConfig] = NgMultiAuthModuleConfig.format
 
-  override def steps: Seq[NgStep] = Seq(NgStep.ValidateAccess)
-
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
-
-  override def visibility: NgPluginVisibility = NgPluginVisibility.NgUserLand
-
-  override def multiInstance: Boolean = true
-
-  override def core: Boolean = true
-
-  override def name: String = "Multi Authentication"
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean            = true
+  override def core: Boolean                     = true
+  override def name: String                      = "Multi Authentication"
 
   override def description: Option[String] =
     "This plugin applies an authentication module from a list of selected modules".some
@@ -241,16 +238,28 @@ class MultiAuthModule extends NgAccessValidator {
     }
   }
 
+  private def getHashAndRedirectURI(ctx: NgAccessContext)(using env: Env) = {
+    val req             = ctx.request
+    val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
+    val redirect = {
+      if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
+      else baseRedirect
+    }
+    val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
+    val descriptorId    = ctx.route.legacy.id
+    val hash            = env.sign(s"route=${descriptorId}&redirect=${encodedRedirect}")
+
+    (hash, encodedRedirect)
+  }
+
   private def redirectToAuthModule(ctx: NgAccessContext, useEmailPrompt: Boolean)(using env: Env) = {
-    val redirect = ctx.request
-      .getQueryString("redirect")
-      .getOrElse(s"${ctx.request.theProtocol}://${ctx.request.theHost}${ctx.request.relativeUri}")
+    val (hash, encodedRedirect) = getHashAndRedirectURI(ctx)
 
     if (useEmailPrompt) {
       NgAccess
         .NgDenied(
           Results.Redirect(
-            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=$redirect"
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/simple-login?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash"
           )
         )
         .vfuture
@@ -258,7 +267,7 @@ class MultiAuthModule extends NgAccessValidator {
       NgAccess
         .NgDenied(
           Results.Redirect(
-            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=$redirect"
+            s"${env.rootScheme + env.privateAppsHost + env.privateAppsPort}/privateapps/generic/choose-provider?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash"
           )
         )
         .vfuture
@@ -289,18 +298,11 @@ class MultiAuthModule extends NgAccessValidator {
             ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> paUsr)
             NgAccess.NgAllowed.vfuture
           case None        =>
-            val req             = ctx.request
-            val baseRedirect    = s"${req.theProtocol}://${req.theHost}${req.relativeUri}"
-            val redirect        =
-              if (env.allowRedirectQueryParamOnLogin) req.getQueryString("redirect").getOrElse(baseRedirect)
-              else baseRedirect
-            val encodedRedirect = Base64.getUrlEncoder.encodeToString(redirect.getBytes(StandardCharsets.UTF_8))
-            val descriptorId    = ctx.route.legacy.id
-            val hash            = env.sign(s"desc=$descriptorId&redirect=$encodedRedirect")
-            val redirectTo      =
+            val (hash, encodedRedirect) = getHashAndRedirectURI(ctx)
+            val redirectTo              =
               env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
                 .confidentialAppLoginPage()
-                .url + s"?desc=$descriptorId&redirect=$encodedRedirect&hash=$hash"
+                .url + s"?route=${ctx.route.id}&redirect=$encodedRedirect&hash=$hash&ref=${authModuleId}"
             if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
             NgAccess
               .NgDenied(
@@ -586,7 +588,7 @@ object BasicAuthCallerConfig {
   val format: Format[BasicAuthCallerConfig] = new Format[BasicAuthCallerConfig] {
     override def writes(o: BasicAuthCallerConfig): JsValue = Json.obj(
       "username"          -> o.username,
-      "passaword"         -> o.password,
+      "password"          -> o.password,
       "headerName"        -> o.headerName,
       "headerValueFormat" -> o.headerValueFormat
     )
@@ -702,9 +704,16 @@ class SimpleBasicAuth extends NgAccessValidator {
   override def configFlow: Seq[String]        = SimpleBasicAuthConfig.configFlow
   override def configSchema: Option[JsObject] = SimpleBasicAuthConfig.configSchema
 
+  private def safeCheckPassword(password: String, hashed: String): Boolean = {
+    try {
+      BCrypt.checkpw(password, hashed)
+    } catch {
+      case _: IllegalArgumentException => false
+    }
+  }
+
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config                =
-      ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads(_)).getOrElse(SimpleBasicAuthConfig())
+    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
       .latest()
       .plugins
@@ -821,7 +830,7 @@ object BasicAuthWithAuthModuleConfig {
         "type"  -> "select",
         "label" -> "Auth. module",
         "props" -> Json.obj(
-          "optionsFrom"        -> "/bo/api/proxy/api/auths",
+          "optionsFrom"        -> "/bo/api/proxy/api/auths?types=basic&types=ldap",
           "optionsTransformer" -> Json.obj(
             "label" -> "name",
             "value" -> "id"

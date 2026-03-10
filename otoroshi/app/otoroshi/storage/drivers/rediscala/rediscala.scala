@@ -1,30 +1,37 @@
 package otoroshi.storage.drivers.rediscala
 
+import com.typesafe.config.ConfigFactory
+import next.models.{
+  ApiConsumerSubscriptionDataStore,
+  ApiDataStore,
+  KvApiConsumerSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage._
-import otoroshi.storage.stores._
+import otoroshi.storage.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
-import redis._
+import redis.*
 import redis.util.CRC16
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -475,6 +482,9 @@ abstract class AbstractRedisDataStores(
 
   private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
   override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore                      = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: KvRouteTemplateDataStore = _routeTemplateDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

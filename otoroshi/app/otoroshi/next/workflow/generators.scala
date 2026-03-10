@@ -1,7 +1,7 @@
 package otoroshi.next.workflow
 
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
 object WorkflowGenerators {
 

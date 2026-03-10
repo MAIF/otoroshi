@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
 import io.netty.incubator.codec.http3.Http3
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.netty.ReactorNettyServerConfig
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.ExecutionContext

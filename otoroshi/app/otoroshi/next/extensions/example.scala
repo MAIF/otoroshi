@@ -1,19 +1,19 @@
 package otoroshi.next.extensions
 
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import com.nimbusds.jose.jwk.Curve
-import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
-import otoroshi.api._
+import otoroshi.api.*
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.storage._
+import otoroshi.models.*
+import otoroshi.storage.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 import play.api.{Configuration, Environment, Logger}
 import storage.drivers.generic.{GenericDataStores, GenericRedisLike, GenericRedisLikeBuilder}

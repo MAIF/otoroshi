@@ -1,9 +1,8 @@
 package otoroshi.gateway
 
-import java.util.concurrent.atomic.AtomicLong
-
 import org.apache.pekko.http.scaladsl.util.FastFuture
 
+import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.Future
 
 trait RequestsDataStore {

@@ -4,17 +4,8 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.GlobalJwtVerifier
-import otoroshi.utils.controllers.{
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
-import play.api.libs.json._
+import otoroshi.utils.controllers.*
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}

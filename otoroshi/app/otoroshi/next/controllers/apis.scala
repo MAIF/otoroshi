@@ -1,24 +1,23 @@
 package otoroshi.next.controllers.adminapi
 
+import next.models.*
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiStaging}
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
 import scala.+:
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
-import play.api.libs.json.JsValue
+import scala.concurrent.{ExecutionContext, Future}
 
 class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env) extends AbstractController(cc) {
 

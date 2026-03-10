@@ -1,42 +1,8 @@
 package otoroshi.next.models
 
 import otoroshi.utils.syntax.implicits.BetterJsValue
-import play.api.libs.json.{
-  Format,
-  JsArray,
-  JsBoolean,
-  JsError,
-  JsNull,
-  JsNumber,
-  JsObject,
-  JsString,
-  JsSuccess,
-  JsValue,
-  Json
-}
-import sangria.ast.{
-  Argument,
-  BigDecimalValue,
-  BigIntValue,
-  BooleanValue,
-  Directive,
-  Document,
-  FieldDefinition,
-  FloatValue,
-  InputValueDefinition,
-  IntValue,
-  InterfaceTypeDefinition,
-  ListType,
-  ListValue,
-  NamedType,
-  NotNullType,
-  NullValue,
-  ObjectTypeDefinition,
-  StringValue,
-  TypeDefinition,
-  TypeSystemDefinition,
-  Value
-}
+import play.api.libs.json.*
+import sangria.ast.*
 import sangria.schema.Schema
 
 import scala.util.Try
@@ -54,7 +20,6 @@ object GraphQLFormats {
           o.value.map(arg => jsonToArgumentValue(arg, isJsonDirectiveArgument)).toVector
         ) // TODO - manage ListValue recursively
     case o: JsObject      => StringValue(Json.stringify(o))
-    case _                => StringValue("")
   }
 
   def argumentValueToJson(value: Value): JsValue = value match {

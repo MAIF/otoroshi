@@ -1,18 +1,20 @@
 package otoroshi.events.pulsar
 
-import com.sksamuel.pulsar4s._
+import org.apache.pulsar.client.api.{PulsarClient as ApachePulsarClient, Producer as ApacheProducer, Consumer as ApacheConsumer, Schema}
 import org.apache.pulsar.client.impl.auth.{AuthenticationBasic, AuthenticationToken}
-import PulsarPlayJsonSchema._
-import play.api.libs.json._
+import otoroshi.events.pulsar.PulsarPlayJsonSchema.*
+import play.api.libs.json.*
 
 object PulsarSetting {
-  def client(_env: otoroshi.env.Env, config: PulsarConfig): PulsarClient = {
+  def client(_env: otoroshi.env.Env, config: PulsarConfig): ApachePulsarClient = {
+    val builder = ApachePulsarClient
+      .builder()
+      .serviceUrl(config.uri)
+
     if (config.mtlsConfig.mtls) {
       val (_, jks, password) = config.mtlsConfig.toJKS(using _env)
 
-      val builder = org.apache.pulsar.client.api.PulsarClient
-        .builder()
-        .serviceUrl(config.uri)
+      builder
         .enableTlsHostnameVerification(false)
         .allowTlsInsecureConnection(config.mtlsConfig.trustAll)
         .tlsTrustStoreType("JKS")
@@ -21,40 +23,31 @@ object PulsarSetting {
         .useKeyStoreTls(true)
 
       config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
-
-      new DefaultPulsarClient(builder.build())
     } else {
-      val c = PulsarClientConfig(
-        serviceUrl = config.uri,
-        authentication = {
-          config.token
-            .map(token => new AuthenticationToken(token))
-            .orElse(for {
-              username <- config.username
-              password <- config.password
-            } yield {
-              val auth = new AuthenticationBasic()
-              auth.configure(Json.stringify(Json.obj("userId" -> username, "password" -> password)))
-              auth
-            })
-        }
-      )
-      PulsarClient(c)
+      config.token
+        .map(token => builder.authentication(new AuthenticationToken(token)))
+        .orElse(for {
+          username <- config.username
+          password <- config.password
+        } yield {
+          val auth = new AuthenticationBasic()
+          auth.configure(Json.stringify(Json.obj("userId" -> username, "password" -> password)))
+          builder.authentication(auth)
+        })
     }
+
+    builder.build()
   }
 
-  def producer(_env: otoroshi.env.Env, config: PulsarConfig): Producer[JsValue] = {
-
-    val topic          = Topic(s"persistent://${config.tenant}/${config.namespace}/${config.topic}")
-    val producerConfig = ProducerConfig(topic)
-    val cli            = client(_env, config)
-    cli.producer[JsValue](producerConfig)
+  def producer(_env: otoroshi.env.Env, config: PulsarConfig): ApacheProducer[JsValue] = {
+    val topic = s"persistent://${config.tenant}/${config.namespace}/${config.topic}"
+    val cli   = client(_env, config)
+    cli.newProducer(playSchema[JsValue]).topic(topic).create()
   }
 
-  def consumer(_env: otoroshi.env.Env, config: PulsarConfig): Consumer[JsValue] = {
-    val topic          = Topic(s"persistent://${config.tenant}/${config.namespace}/${config.topic}")
-    val consumerConfig = ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("otoroshi"))
-    val cli            = client(_env, config)
-    cli.consumer[JsValue](consumerConfig)
+  def consumer(_env: otoroshi.env.Env, config: PulsarConfig): ApacheConsumer[JsValue] = {
+    val topic = s"persistent://${config.tenant}/${config.namespace}/${config.topic}"
+    val cli   = client(_env, config)
+    cli.newConsumer(playSchema[JsValue]).topic(topic).subscriptionName("otoroshi").subscribe()
   }
 }

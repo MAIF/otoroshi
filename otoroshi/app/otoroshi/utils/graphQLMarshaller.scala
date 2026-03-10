@@ -1,7 +1,7 @@
 package otoroshi.utils
 
-import play.api.libs.json._
-import sangria.marshalling._
+import play.api.libs.json.*
+import sangria.marshalling.*
 
 import scala.util.Try
 
@@ -77,7 +77,7 @@ object JsonMarshaller extends PlayJsonSupportLowPrioImplicits {
 
     override def isScalarNode(node: JsValue): Boolean = node match {
       case _: JsValue => true
-      case _          => false
+      case null       => false
     }
 
     override def isVariableNode(node: JsValue): Boolean = false

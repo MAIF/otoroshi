@@ -1,7 +1,7 @@
 package functional
 
-import org.apache.pekko.stream.Materializer
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
