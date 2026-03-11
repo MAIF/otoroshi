@@ -30,6 +30,13 @@ const LINK_GROUPS = (id) => [
     label: 'API Gateway',
     links: [
       {
+        to: `/apis/${id}/api-gateway`,
+        icon: 'fa-cog',
+        title: 'Exposition',
+        tab: 'api-gateway',
+        tooltip: { ...createTooltip(`Show exposition tab`) },
+      },
+      {
         to: `/apis/${id}/endpoints`,
         icon: 'fa-road',
         title: 'Endpoints',

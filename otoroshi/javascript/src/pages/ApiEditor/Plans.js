@@ -15,7 +15,9 @@ import { useDraftOfAPI, historyPush } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
 import { v4 } from 'uuid';
 import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
-import { subscribeToPlan } from '../../services/BackOfficeServices';
+import { findAuthConfigById, subscribeToPlan } from '../../services/BackOfficeServices';
+import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
+import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
 
 const STATUS_BADGES = {
   staging: { label: 'Staging', cls: 'api-status-started' },
@@ -187,16 +189,39 @@ const AccessModePluginConfigurationForm = {
     flow: ApikeyCalls.config_flow,
   },
   jwt: {
-    schema: JwtVerificationOnly.config_schema,
-    flow: ['verifier'],
+    schema: NgJwtUserExtractor.config_schema,
+    flow: ['verifier', 'name_path', 'email_path', 'meta_path'],
   },
-  oauth2: {
+  'oauth2-local': {
     schema: NgClientCredentialTokenEndpoint.config_schema,
     flow: NgClientCredentialTokenEndpoint.config_flow,
   },
+  'oauth2-remote': {
+    schema: {
+      verifier: {
+        label: 'Authentication module',
+        type: 'AuthenticationWizard',
+        props: {
+          componentLauncher: SelectorWizardLauncher,
+          componentsProps: {
+            entityName: 'Authentication configuration',
+            entityField: 'authentication',
+            findById: findAuthConfigById,
+          },
+        },
+      }
+    },
+    flow: ['verifier'],
+  },
   mtls: {
     schema: NgHasClientCertMatchingValidator.config_schema,
-    flow: NgHasClientCertMatchingValidator.config_flow,
+    flow: [
+      // 'serial_numbers',
+      // 'subject_dns',
+      // 'issuer_dns',
+      'regex_subject_dns',
+      'regex_issuer_dns'
+    ],
   },
   keyless: {
     schema: {},
@@ -220,8 +245,13 @@ function AccessModeConfigurationTypeSelector({ onChange, value }) {
             text: "Mutual TLS authentication requiring the client to present a valid client certificate. Both parties verify each other's identity, ensuring a strong level of trust and encryption between the client and the gateway.",
           },
           {
-            id: 'oauth2',
-            key: 'OAuth2',
+            id: 'oauth2-local',
+            key: 'OAuth2 Local (using authentication module and jwt verifier)',
+            text: 'Machine-to-machine authentication using the OAuth 2.0 client credentials flow. The client obtains an access token from an authorization server and includes it in each request to the API.',
+          },
+          {
+            id: 'oauth2-remote',
+            key: 'OAuth2 Remote',
             text: 'Machine-to-machine authentication using the OAuth 2.0 client credentials flow. The client obtains an access token from an authorization server and includes it in each request to the API.',
           },
           {
@@ -301,7 +331,7 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
 
   const accessModeConfigurationType = value.access_mode_configuration_type
 
-  if (['mtls', 'oauth2', 'jwt'].includes(accessModeConfigurationType))
+  if (['mtls', 'oauth2-local', 'oauth2-remote', 'jwt'].includes(accessModeConfigurationType))
     return <AccessModeConfigurationExceptApikey value={value} hide={hide} onConfirm={onConfirm} />
 
   return <AccessModeLayout
@@ -332,9 +362,6 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
 function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value)
   const accessModeConfigurationType = value.access_mode_configuration_type
-
-  if (!['mtls', 'oauth2', 'jwt'].includes(accessModeConfigurationType))
-    return null
 
   return <AccessModeLayout
     accessModeConfigurationType={accessModeConfigurationType}
@@ -457,8 +484,6 @@ function PlanForm({ plan, onChange }) {
     { type: 'group', name: 'Rate Limiting & Quotas', collapsable: false, fields: ['rateLimiting'] },
     { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
   ];
-
-  console.log(accessMode)
 
   return (
     <>
@@ -604,7 +629,7 @@ export function Plans(props) {
         rawEditUrl={true}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
-            <Link className="btn btn-primary btn-sm" to="plans/new">
+            <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
               <i className="fas fa-plus-circle" /> Create new plan
             </Link>
           </div>
@@ -642,8 +667,6 @@ export function PlanEditor(props) {
   useEffect(() => {
     props.setTitle(undefined);
   }, []);
-
-  console.log(plan)
 
   if (!item || !plan) return <SimpleLoader />;
 
