@@ -105,6 +105,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -341,7 +343,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#proxy-engine" name="proxy-engine" class="anchor"><span class="anchor-link"></span></a>Proxy engine</h1>
-<p>Starting from the <code>1.5.3</code> release, otoroshi offers a new plugin that implements the next generation of the proxy engine. This engine has been designed based on our 5 years experience building, maintaining and running the previous one. It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. </p>
+<p>Starting from the <code>1.5.3</code> release (Feb 14, 2022), otoroshi offers a new plugin that implements the next generation of the proxy engine. This engine has been designed based on our 5 years experience building, maintaining and running the previous one. It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. </p>
 <p>The new engine is fully plugin oriented in order to spend CPU cycles only on useful stuff. You can enable this plugin only on some domain names so you can easily A/B test the new engine. The new proxy engine is designed to be more reactive and more efficient generally. It is also designed to be very efficient on path routing where it wasn&rsquo;t the old engines strong suit.</p>
 <p>Starting from version <code>16.0.0</code>, this engine will be enabled by default on any new otoroshi cluster. In a future version, the engine will be enabled for any new or exisiting otoroshi cluster.</p>
 <h2><a href="#enabling-the-new-engine" name="enabling-the-new-engine" class="anchor"><span class="anchor-link"></span></a>Enabling the new engine</h2>

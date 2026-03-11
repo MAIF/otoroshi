@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.13.0] - 2026-02-23
+
+
+https://github.com/MAIF/otoroshi/milestone/135?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.12.0...v17.13.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.13.0
+
+
+### Added 
+
+- Add config. options to expose public keys with algorithms in JWKS (#2429 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Experimental support for k8s Gateway api (#2437 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Search a JWK in a JWKS can fail when alg not present (#2428 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router most specific path matching does not work with wildcard domains (#2444 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router does not prioritize routes with query/header/cookie matching in the final stage of the routing pipeline (#2445 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router should treat trailing slash in frontend domains as exact segment match (#2446 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Strict mode of the `JWT user extractor plugin` is broken (#2455 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.12.0] - 2026-01-28
 
 

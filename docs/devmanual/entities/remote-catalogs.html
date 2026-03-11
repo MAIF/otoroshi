@@ -105,6 +105,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -341,7 +343,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#remote-catalogs" name="remote-catalogs" class="anchor"><span class="anchor-link"></span></a>Remote Catalogs</h1>
-<p>A Remote Catalog allows Otoroshi to synchronize entities from external sources such as GitHub, GitLab, Bitbucket, S3, HTTP endpoints, Git repositories, Consul KV stores, or local files. It provides an infrastructure-as-code approach where entity definitions are stored externally and deployed into Otoroshi with full reconciliation (create, update, delete).</p>
+<p>A Remote Catalog allows Otoroshi to synchronize entities from external sources such as GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg, S3, HTTP endpoints, Git repositories, Consul KV stores, or local files. It provides an infrastructure-as-code approach where entity definitions are stored externally and deployed into Otoroshi with full reconciliation (create, update, delete).</p>
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all remote catalogs <a href="http://otoroshi.oto.tools:8080/bo/dashboard/extensions/remote-catalogs">here</a></p>
 <h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
@@ -350,7 +352,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>name</code>: display name</li>
   <li><code>description</code>: description of the catalog</li>
   <li><code>enabled</code>: whether the catalog is active</li>
-  <li><code>source_kind</code>: the type of source to fetch entities from (<code>http</code>, <code>file</code>, <code>github</code>, <code>gitlab</code>, <code>bitbucket</code>, <code>git</code>, <code>s3</code>, <code>consulkv</code>)</li>
+  <li><code>source_kind</code>: the type of source to fetch entities from (<code>http</code>, <code>file</code>, <code>github</code>, <code>gitlab</code>, <code>bitbucket</code>, <code>git</code>, <code>s3</code>, <code>consulkv</code>, <code>gitea</code>, <code>forgejo</code>, <code>codeberg</code>)</li>
   <li><code>source_config</code>: source-specific configuration (URL, token, path, branch, etc.)</li>
   <li><code>scheduling</code>: optional auto-sync scheduling configuration
     <ul>

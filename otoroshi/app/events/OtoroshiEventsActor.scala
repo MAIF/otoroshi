@@ -2129,6 +2129,121 @@ object Exporters {
       }
     }
   }
+
+  class PostgresExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(ec, env) {
+
+    import otoroshi.storage.drivers.reactivepg.pgimplicits._
+    import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+    import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
+    import io.vertx.core.json.JsonObject
+    import scala.collection.JavaConverters._
+
+    private val poolRef = new AtomicReference[PgPool](null)
+
+    private def buildConnectOptions(settings: PostgresExporterSettings): PgConnectOptions = {
+      settings.uri match {
+        case Some(uri) => PgConnectOptions.fromUri(uri)
+        case None      =>
+          new PgConnectOptions()
+            .setHost(settings.host)
+            .setPort(settings.port)
+            .setDatabase(settings.database)
+            .setUser(settings.user)
+            .setPassword(settings.password)
+            .applyOnIf(settings.ssl)(_.setSslMode(SslMode.REQUIRE))
+      }
+    }
+
+    private def initTable(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+      pool
+        .query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};")
+        .executeAsync()
+        .flatMap { _ =>
+          pool
+            .query(s"""
+              |CREATE TABLE IF NOT EXISTS ${settings.schema}.${settings.table} (
+              |  id         TEXT        NOT NULL,
+              |  timestamp  TIMESTAMPTZ NOT NULL,
+              |  service    TEXT        NOT NULL DEFAULT '',
+              |  service_id TEXT        NOT NULL DEFAULT '',
+              |  env        TEXT        NOT NULL DEFAULT '',
+              |  event      JSONB       NOT NULL DEFAULT '{}'::jsonb,
+              |  PRIMARY KEY (id)
+              |);
+            """.stripMargin)
+            .executeAsync()
+        }
+        .map(_ => ())
+    }
+
+    override def start(): Future[Unit] = {
+      exporter[PostgresExporterSettings].map { settings =>
+        val pool = PgPool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
+        poolRef.set(pool)
+        initTable(pool, settings).recover {
+          case e: Throwable =>
+            logger.error(
+              s"[postgres-exporter] Error while initializing table '${settings.schema}.${settings.table}'",
+              e
+            )
+        }
+      }.getOrElse(FastFuture.successful(()))
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(poolRef.getAndSet(null)).foreach(_.close())
+      FastFuture.successful(())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      Option(poolRef.get()) match {
+        case None       => FastFuture.successful(ExportResult.ExportResultFailure("PostgreSQL pool not initialized"))
+        case Some(pool) =>
+          exporter[PostgresExporterSettings] match {
+            case None           => FastFuture.successful(ExportResult.ExportResultFailure("Bad config type!"))
+            case Some(settings) =>
+              val tuples: java.util.List[VertxTuple] = events.map { event =>
+                val id        = event.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
+                val timestamp = event
+                  .select("@timestamp")
+                  .asOpt[Long]
+                  .map(ts => java.time.Instant.ofEpochMilli(ts).atOffset(java.time.ZoneOffset.UTC))
+                  .orElse(
+                    event
+                      .select("@timestamp")
+                      .asOpt[String]
+                      .flatMap(s => scala.util.Try(java.time.OffsetDateTime.parse(s)).toOption)
+                  )
+                  .getOrElse(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC))
+                val service   = event.select("@service").asOpt[String].getOrElse("")
+                val serviceId = event.select("@serviceId").asOpt[String].getOrElse("")
+                val envStr    = event.select("@env").asOpt[String].getOrElse("")
+                VertxTuple.from(
+                  Array[AnyRef](id, timestamp, service, serviceId, envStr, new JsonObject(Json.stringify(event)))
+                )
+              }.asJava
+              pool
+                .preparedQuery(
+                  s"""INSERT INTO ${settings.schema}.${settings.table} (id, timestamp, service, service_id, env, event)
+                     |VALUES ($$1, $$2, $$3, $$4, $$5, $$6::jsonb)
+                     |ON CONFLICT (id) DO NOTHING;""".stripMargin
+                )
+                .executeBatch(tuples)
+                .scala
+                .map(_ => ExportResult.ExportResultSuccess: ExportResult)
+                .recover {
+                  case e: Throwable =>
+                    logger.error(
+                      s"[postgres-exporter] Error while inserting events into '${settings.schema}.${settings.table}'",
+                      e
+                    )
+                    ExportResult.ExportResultFailure(e.getMessage)
+                }
+          }
+      }
+    }
+  }
 }
 
 class DataExporterUpdateJob extends Job {

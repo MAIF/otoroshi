@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.12.0",
+    "version" : "17.13.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:35393",
+    "url" : "http://otoroshi-api.oto.tools:38721",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -91,6 +91,9 @@
     "name" : "route-template",
     "description" : "all the operations about the route-template entity"
   }, {
+    "name" : "remote-catalog",
+    "description" : "all the operations about the remote-catalog entity"
+  }, {
     "name" : "workflow",
     "description" : "all the operations about the workflow entity"
   }, {
@@ -129,6 +132,9 @@
   }, {
     "name" : "apis.otoroshi.io",
     "description" : "all the operations in the apis.otoroshi.io group"
+  }, {
+    "name" : "catalogs.otoroshi.io",
+    "description" : "all the operations in the catalogs.otoroshi.io group"
   }, {
     "name" : "plugins.otoroshi.io",
     "description" : "all the operations in the plugins.otoroshi.io group"
@@ -1169,6 +1175,251 @@
                   "items" : {
                     "$ref" : "#/components/schemas/security.otoroshi.io.AuthModuleUser"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/catalogs.otoroshi.io/v1/remote-catalogs/_bulk" : {
+      "post" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Create multiple RemoteCatalog at the same time",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.bulk_create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Update multiple RemoteCatalog at the same time",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.bulk_update",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Update (using json-patch) multiple RemoteCatalog at the same time",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.bulk_patch",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkPatchBody"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Delete multiple RemoteCatalog at the same time",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.bulk_delete",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
                 }
               }
             }
@@ -10692,6 +10943,66 @@
         }
       }
     },
+    "/apis/catalogs.otoroshi.io/v1/remote-catalogs/_count" : {
+      "get" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Get number of entity of kind RemoteCatalog",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.count",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resources count",
+                  "type" : "object",
+                  "properties" : {
+                    "count" : {
+                      "type" : "number",
+                      "description" : "the number of resources"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/snowmonkey/_stop" : {
       "post" : {
         "tags" : [ "snowmonkey" ],
@@ -13619,6 +13930,60 @@
         }
       }
     },
+    "/apis/catalogs.otoroshi.io/v1/remote-catalogs/_template" : {
+      "get" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Return a template of a resource of kind RemoteCatalog",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.template",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind RemoteCatalog",
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/apis/events.otoroshi.io/v1/data-exporters/{id}" : {
       "get" : {
         "tags" : [ "data-exporter", "events.otoroshi.io" ],
@@ -13992,6 +14357,124 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/organize.otoroshi.io.Organization"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/catalogs.otoroshi.io/v1/remote-catalogs" : {
+      "get" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Find all possible RemoteCatalog entities",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.findAll",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Creates a RemoteCatalog",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
               }
             }
           }
@@ -14560,6 +15043,267 @@
               "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/security.otoroshi.io.AuthModuleUser"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/catalogs.otoroshi.io/v1/remote-catalogs/{id}" : {
+      "get" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Find resource of kind RemoteCatalog by its id",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.findById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind RemoteCatalog",
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Updates a specific RemoteCatalog using its id",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.updateById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Updates (using json-patch) a specific RemoteCatalog using its id",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.pathById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "remote-catalog", "catalogs.otoroshi.io" ],
+        "summary" : "Deletes a specific RemoteCatalog using its id",
+        "operationId" : "catalogs.otoroshi.io.RemoteCatalog.deleteById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/catalogs.otoroshi.io.RemoteCatalog"
                 }
               }
             }
@@ -23108,6 +23852,60 @@
         "title" : "Api consumer subscription",
         "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "dates", "ownerRef", "consumerRef", "apiRef", "subscriptionKind", "tokenRefs" ]
       },
+      "catalogs.otoroshi.io.RemoteCatalog" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "sourceKind" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "sourceConfig" : {
+            "$ref" : "#/components/schemas/jsobject"
+          },
+          "scheduling" : {
+            "$ref" : "#/components/schemas/remotecatalogscheduling"
+          },
+          "testDeployArgs" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Remote catalog",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "sourceKind", "sourceConfig", "scheduling", "testDeployArgs" ]
+      },
       "leastconnections" : {
         "type" : "object",
         "properties" : { },
@@ -28123,6 +28921,35 @@
         "type" : "object",
         "properties" : { },
         "title" : "Data exporter config type kafka"
+      },
+      "remotecatalogscheduling" : {
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "kind" : {
+            "$ref" : "#/components/schemas/jobkind"
+          },
+          "instantiation" : {
+            "$ref" : "#/components/schemas/jobinstantiation"
+          },
+          "initialDelay" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "interval" : {
+            "$ref" : "#/components/schemas/finiteduration"
+          },
+          "cronExpression" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "deployArgs" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Remote catalog scheduling",
+        "required" : [ "enabled", "kind", "instantiation", "deployArgs" ]
       },
       "mtlsconfig" : {
         "type" : "object",

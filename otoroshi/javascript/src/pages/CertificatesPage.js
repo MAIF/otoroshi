@@ -204,7 +204,7 @@ class Commands extends Component {
   componentDidMount() {
     const cert = this.props.rawValue.chain
       ? this.props.rawValue.chain.split('-----END CERTIFICATE-----')[0] +
-      '-----END CERTIFICATE-----'
+        '-----END CERTIFICATE-----'
       : '';
     this.setState({
       fullChainUrl: URL.createObjectURL(
@@ -855,26 +855,43 @@ export class CertificatesPage extends Component {
       <>
         <InfoCollapse title="What is a Certificate?">
           <p>
-            Otoroshi embeds its own <strong>Public Key Infrastructure (PKI)</strong> and also lets you
-            import and use <strong>external certificates and Certificate Authorities</strong>.
+            Otoroshi embeds its own <strong>Public Key Infrastructure (PKI)</strong> and also lets
+            you import and use <strong>external certificates and Certificate Authorities</strong>.
             Whether you generate everything internally or bring your own certs from an external CA,
             Otoroshi manages them all from one place.
           </p>
-          <p>
-            Certificates are used throughout Otoroshi for multiple purposes:
-          </p>
+          <p>Certificates are used throughout Otoroshi for multiple purposes:</p>
           <ul>
-            <li><strong>TLS termination</strong> — serve your HTTP Routes and APIs over HTTPS with auto-generated, imported, or externally signed certificates.</li>
-            <li><strong>Mutual TLS (mTLS)</strong> — enforce client certificate authentication between Otoroshi and your backend services, or between consumers and the gateway.</li>
-            <li><strong>Asymmetric JWT signing</strong> — use key pairs (RSA, EC) to sign and verify JWT tokens with asymmetric cryptography, replacing shared secrets with public/private key security.</li>
-            <li><strong>Certificate Authority (CA)</strong> — create your own CA hierarchy within Otoroshi, or import external CA certificates to trust and validate third-party chains.</li>
-            <li><strong>Auto-renewal</strong> — certificates managed by the built-in PKI can be automatically renewed before expiration.</li>
-            <li><strong>Let's Encrypt integration</strong> — request and auto-renew certificates from Let's Encrypt for your public-facing domains.</li>
+            <li>
+              <strong>TLS termination</strong> — serve your HTTP Routes and APIs over HTTPS with
+              auto-generated, imported, or externally signed certificates.
+            </li>
+            <li>
+              <strong>Mutual TLS (mTLS)</strong> — enforce client certificate authentication between
+              Otoroshi and your backend services, or between consumers and the gateway.
+            </li>
+            <li>
+              <strong>Asymmetric JWT signing</strong> — use key pairs (RSA, EC) to sign and verify
+              JWT tokens with asymmetric cryptography, replacing shared secrets with public/private
+              key security.
+            </li>
+            <li>
+              <strong>Certificate Authority (CA)</strong> — create your own CA hierarchy within
+              Otoroshi, or import external CA certificates to trust and validate third-party chains.
+            </li>
+            <li>
+              <strong>Auto-renewal</strong> — certificates managed by the built-in PKI can be
+              automatically renewed before expiration.
+            </li>
+            <li>
+              <strong>Let's Encrypt integration</strong> — request and auto-renew certificates from
+              Let's Encrypt for your public-facing domains.
+            </li>
           </ul>
           <p>
-            You can import existing certificates (PEM, PKCS12), add external CA chains to your trust store,
-            generate self-signed ones, create full internal CA hierarchies,
-            or use key pairs for token signing — all manageable at runtime from this page.
+            You can import existing certificates (PEM, PKCS12), add external CA chains to your trust
+            store, generate self-signed ones, create full internal CA hierarchies, or use key pairs
+            for token signing — all manageable at runtime from this page.
           </p>
         </InfoCollapse>
         <Table
@@ -1128,15 +1145,15 @@ export class NewCertificateForm extends Component {
               possibleValues={
                 this.state.keyType === 'RSA'
                   ? [
-                    { label: '2048', value: 2048 },
-                    { label: '4096', value: 4096 },
-                    { label: '6144', value: 6144 },
-                  ]
+                      { label: '2048', value: 2048 },
+                      { label: '4096', value: 4096 },
+                      { label: '6144', value: 6144 },
+                    ]
                   : [
-                    { label: 'P256', value: 256 },
-                    { label: 'P384', value: 384 },
-                    { label: 'P521', value: 521 },
-                  ]
+                      { label: 'P256', value: 256 },
+                      { label: 'P384', value: 384 },
+                      { label: 'P521', value: 521 },
+                    ]
               }
             />
             <SelectInput
@@ -1147,16 +1164,16 @@ export class NewCertificateForm extends Component {
               possibleValues={
                 this.state.keyType === 'RSA'
                   ? [
-                    { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
-                    { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
-                    { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
-                    { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
-                  ]
+                      { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
+                      { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
+                      { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
+                      { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
+                    ]
                   : [
-                    { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
-                    { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
-                    { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
-                  ]
+                      { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
+                      { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
+                      { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
+                    ]
               }
             />
             <SelectInput

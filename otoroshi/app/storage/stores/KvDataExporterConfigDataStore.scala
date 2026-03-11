@@ -414,6 +414,29 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             tlsConfig = NgTlsConfig()
           )
         )
+      case Some("postgresql")     =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Postgres,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New PostgreSQL exporter config",
+          desc = "New PostgreSQL exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = PostgresExporterSettings(
+            host = "localhost",
+            port = 5432,
+            database = "otoroshi",
+            user = "otoroshi",
+            password = "otoroshi",
+            schema = "public",
+            table = "otoroshi_events",
+            poolSize = 5,
+            ssl = false
+          )
+        )
       case _                      =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,

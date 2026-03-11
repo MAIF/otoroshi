@@ -10,7 +10,7 @@ Changes pushed to a Git repository can be automatically deployed to Otoroshi via
 
 A Remote Catalog is an entity that defines:
 
-- A **source** where entity definitions are stored (GitHub, GitLab, Bitbucket, S3, HTTP, local file, Git repository, Consul KV)
+- A **source** where entity definitions are stored (GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg, S3, HTTP, local file, Git repository, Consul KV)
 - An optional **scheduling** configuration to automatically sync entities at regular intervals
 - A **reconciliation** engine that creates, updates, and deletes local entities to match the remote desired state
 
@@ -18,7 +18,11 @@ When a catalog is deployed, Otoroshi fetches the entity definitions from the rem
 
 ## Entity format
 
-Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using `---` as separator) are supported. Each entity must contain at least an `id` field and a `kind` field. The `kind` field should match one of the existing Otoroshi resource kinds (e.g., `Route`, `Backend`, `ApiKey`, `Certificate`, etc.) including entities provided by Otoroshi extensions. You can also use the fully qualified kind with group prefix, like `proxy.otoroshi.io/Route`. This is the RECOMMENDED format to perform well !
+Remote entities can be defined in JSON or YAML format. Multi-document YAML files (using `---` as separator) are supported. Two entity formats are supported: **flat format** and **Kubernetes-style format**.
+
+### Flat format
+
+Each entity must contain at least an `id` field and a `kind` field. The `kind` field should match one of the existing Otoroshi resource kinds (e.g., `Route`, `Backend`, `ApiKey`, `Certificate`, etc.) including entities provided by Otoroshi extensions. You can also use the fully qualified kind with group prefix, like `proxy.otoroshi.io/Route`. This is the RECOMMENDED format to perform well !
 
 ```json
 {
@@ -54,30 +58,57 @@ backend:
       port: 8080
 ```
 
-Multiple entities can be placed in a single file:
+### Kubernetes-style format
+
+Entities can also be written using a Kubernetes-style structure with `apiVersion`, `kind` at the root level and the actual entity definition nested under `spec`:
 
 ```yaml
-id: my-route-1
+apiVersion: proxy.otoroshi.io/v1
 kind: Route
-name: My Route 1
-frontend:
-  domains:
-    - api1.oto.tools
-backend:
-  targets:
-    - hostname: backend1.internal
-      port: 8080
+spec:
+  id: my-route-1
+  name: My Route
+  frontend:
+    domains:
+      - myapi.oto.tools
+  backend:
+    targets:
+      - hostname: my-backend.internal
+        port: 8080
+```
+
+The `kind` from the root level is automatically injected into the entity content. If the `spec` already contains a `kind` field that matches the root `kind` (either identical or with a group prefix, e.g., `proxy.otoroshi.io/Route` for a root `kind: Route`), the existing `kind` in `spec` is preserved.
+
+### Multiple entities in a single file
+
+Multiple entities can be placed in a single file using the YAML multi-document separator `---`:
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: Route
+spec:
+  id: my-route-1
+  name: My Route 1
+  frontend:
+    domains:
+      - api1.oto.tools
+  backend:
+    targets:
+      - hostname: backend1.internal
+        port: 8080
 ---
-id: my-route-2
+apiVersion: proxy.otoroshi.io/v1
 kind: Route
-name: My Route 2
-frontend:
-  domains:
-    - api2.oto.tools
-backend:
-  targets:
-    - hostname: backend2.internal
-      port: 8080
+spec:
+  id: my-route-2
+  name: My Route 2
+  frontend:
+    domains:
+      - api2.oto.tools
+  backend:
+    targets:
+      - hostname: backend2.internal
+        port: 8080
 ```
 
 ## Path modes
@@ -86,9 +117,13 @@ When configuring a source, the `path` parameter determines how entities are fetc
 
 - **File path** (e.g., `entities/routes.json`): fetches a single file and parses it for entities
 - **Directory path** (e.g., `entities/`): lists all `.json`, `.yaml`, and `.yml` files in the directory and parses each one
-- **Catalog listing file** (e.g., `catalog.json`): a JSON file containing an array of relative file paths to fetch
+- **Catalog listing file** (e.g., `catalog.json`): a file containing an array of relative file paths to fetch
 
-A catalog listing file looks like this:
+### Catalog listing file
+
+A catalog listing file can be written in JSON or YAML, using two possible formats.
+
+**Simple array format** (JSON or YAML):
 
 ```json
 [
@@ -99,7 +134,62 @@ A catalog listing file looks like this:
 ]
 ```
 
-This allows fine-grained control over which files should be imported during deployment.
+```yaml
+- ./routes/route1.json
+- ./route2.yaml
+- ./backends/backend1.json
+- ./apikeys/key1.yaml
+```
+
+**Kubernetes-style `RemoteCatalogListing` format** (JSON or YAML):
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: RemoteCatalogListing
+spec:
+  catalog_listing:
+    - ./routes/route1.json
+    - ./route2.yaml
+    - ./backends/backend1.json
+    - ./apikeys/key1.yaml
+```
+
+The `RemoteCatalogListing` format requires both `apiVersion: proxy.otoroshi.io/v1` and `kind: RemoteCatalogListing` at the root level. The file paths are listed under `spec.catalog_listing`.
+
+### Glob patterns in catalog listing files
+
+Catalog listing files support glob/wildcard patterns to match multiple files at once. This is useful when you have a large number of entity files organized in directories and don't want to list each one individually.
+
+Supported glob syntax:
+
+- `*` matches any sequence of characters within a single directory (does not cross `/`)
+- `**` matches any sequence of characters across directories (crosses `/`)
+- `?` matches any single character
+- `[abc]` matches any character in the set
+
+Examples:
+
+```yaml
+apiVersion: proxy.otoroshi.io/v1
+kind: RemoteCatalogListing
+spec:
+  catalog_listing:
+    - ./project-1/*.yaml
+    - ./project-2/**.json
+    - ./project-3/team-*/**.yaml
+    - ./shared/route?.json
+```
+
+In this example:
+
+- `./project-1/*.yaml` matches all `.yaml` files directly in the `project-1` directory
+- `./project-2/**.json` matches all `.json` files in `project-2` and any subdirectory
+- `./project-3/team-*/**.yaml` matches all `.yaml` files under any `team-*` directory inside `project-3`
+- `./shared/route?.json` matches files like `route1.json`, `routeA.json`, etc.
+
+@@@ note
+Glob patterns are supported by the following sources: **file**, **git**, **github**, **gitlab**, **gitea**, **forgejo**, **codeberg**, **s3**, and **consulkv**. The **http** and **bitbucket** sources do not support glob patterns because they lack a recursive directory listing API. When a glob pattern is used with a source that does not support it, the pattern is treated as a literal path.
+@@@
 
 ## Remote Catalog configuration
 
@@ -168,16 +258,35 @@ Fetches entities from a GitHub repository using the GitHub API.
 {
   "source_kind": "github",
   "source_config": {
-    "repo": "https://github.com/owner/repo",  // repository URL
+    "repo": "owner/repo",                      // repository (owner/repo) or organization name
     "branch": "main",                          // branch name (default: main)
     "path": "entities/",                       // file or directory path in the repo
     "token": "ghp_xxx",                        // optional personal access token
-    "base_url": "https://api.github.com"       // API base URL (for GitHub Enterprise)
+    "base_url": "https://api.github.com",      // API base URL (for GitHub Enterprise)
+    "repo_patterns": ["otoroshi-*", "api-*"]   // optional: filter repos when scanning an org
   }
 }
 ```
 
 Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Organization scanning mode
+
+When `repo` is set to an organization or user name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-repo`), Otoroshi will list all repositories in that organization and scan each one for the specified `path`. If a repository does not contain the specified path, it is silently skipped.
+
+The `repo_patterns` option allows filtering which repositories to scan using glob patterns. For example, `["otoroshi-*"]` will only scan repositories whose name starts with `otoroshi-`. If `repo_patterns` is not set, all repositories in the organization are scanned.
+
+```javascript
+{
+  "source_kind": "github",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "ghp_xxx",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
 
 ### GitLab
 
@@ -187,16 +296,35 @@ Fetches entities from a GitLab repository using the GitLab API.
 {
   "source_kind": "gitlab",
   "source_config": {
-    "repo": "group/project",                    // project path (URL-encoded automatically)
+    "repo": "group/project",                    // project path or group name
     "branch": "main",                           // branch name (default: main)
     "path": "entities/",                        // file or directory path in the repo
     "token": "glpat-xxx",                       // optional private token
-    "base_url": "https://gitlab.com"            // GitLab instance URL (for self-hosted)
+    "base_url": "https://gitlab.com",           // GitLab instance URL (for self-hosted)
+    "repo_patterns": ["otoroshi-*"]             // optional: filter projects when scanning a group
   }
 }
 ```
 
 Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Group scanning mode
+
+When `repo` is set to a group name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-project`), Otoroshi will list all projects in that group (including subgroups) and scan each one for the specified `path`. If a project does not contain the specified path, it is silently skipped.
+
+The `repo_patterns` option filters projects by their name (last segment of the path) using glob patterns.
+
+```javascript
+{
+  "source_kind": "gitlab",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "glpat-xxx",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
 
 ### Bitbucket
 
@@ -206,12 +334,13 @@ Fetches entities from a Bitbucket Cloud repository using the Bitbucket API 2.0.
 {
   "source_kind": "bitbucket",
   "source_config": {
-    "repo": "https://bitbucket.org/workspace/repo",  // repository URL
+    "repo": "workspace/repo",                          // repository (workspace/repo) or workspace name
     "branch": "main",                                  // branch name (default: main)
     "path": "entities/",                               // file or directory path
     "token": "xxx",                                    // app password or OAuth token
     "username": "my-user",                             // username (for Basic auth with app password)
-    "base_url": "https://api.bitbucket.org"            // API base URL (for Bitbucket Server)
+    "base_url": "https://api.bitbucket.org",           // API base URL (for Bitbucket Server)
+    "repo_patterns": ["otoroshi-*"]                    // optional: filter repos when scanning a workspace
   }
 }
 ```
@@ -219,6 +348,103 @@ Fetches entities from a Bitbucket Cloud repository using the Bitbucket API 2.0.
 If `username` is provided, authentication uses Basic auth (`username:token`). Otherwise, Bearer token authentication is used.
 
 Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Workspace scanning mode
+
+When `repo` is set to a workspace name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-repo`), Otoroshi will list all repositories in that workspace and scan each one for the specified `path`. If a repository does not contain the specified path, it is silently skipped.
+
+The `repo_patterns` option filters repositories by their slug using glob patterns.
+
+```javascript
+{
+  "source_kind": "bitbucket",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "xxx",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
+
+### Gitea
+
+Fetches entities from a Gitea instance using the Gitea API v1.
+
+```javascript
+{
+  "source_kind": "gitea",
+  "source_config": {
+    "repo": "owner/repo",                        // repository (owner/repo) or organization name
+    "branch": "main",                            // branch name (default: main)
+    "path": "entities/",                         // file or directory path in the repo
+    "token": "xxx",                              // optional personal access token
+    "base_url": "http://localhost:3000",          // Gitea instance URL (default: http://localhost:3000)
+    "repo_patterns": ["otoroshi-*"]              // optional: filter repos when scanning an org
+  }
+}
+```
+
+Supports webhook-triggered deployments (see the [Webhook deployment](#webhook-deployment) section).
+
+#### Organization scanning mode
+
+When `repo` is set to an organization or user name (without `/`, e.g., `cloud-apim` instead of `cloud-apim/my-repo`), Otoroshi will list all repositories in that organization and scan each one for the specified `path`. If a repository does not contain the specified path, it is silently skipped. The API first tries `/api/v1/orgs/{org}/repos`, then falls back to `/api/v1/users/{org}/repos`.
+
+The `repo_patterns` option filters repositories by name using glob patterns.
+
+```javascript
+{
+  "source_kind": "gitea",
+  "source_config": {
+    "repo": "cloud-apim",
+    "path": "otoroshi-remote-catalog.yaml",
+    "token": "xxx",
+    "base_url": "https://my-gitea.example.com",
+    "repo_patterns": ["otoroshi-*"]
+  }
+}
+```
+
+### Forgejo
+
+Fetches entities from a Forgejo instance. Forgejo is a fork of Gitea and uses the same API, so the configuration is identical to Gitea.
+
+```javascript
+{
+  "source_kind": "forgejo",
+  "source_config": {
+    "repo": "owner/repo",                        // repository (owner/repo) or organization name
+    "branch": "main",                            // branch name (default: main)
+    "path": "entities/",                         // file or directory path in the repo
+    "token": "xxx",                              // optional personal access token
+    "base_url": "http://localhost:3000",          // Forgejo instance URL (default: http://localhost:3000)
+    "repo_patterns": ["otoroshi-*"]              // optional: filter repos when scanning an org
+  }
+}
+```
+
+Supports the same features as Gitea: webhook-triggered deployments, organization scanning, glob patterns in catalog listing files.
+
+### Codeberg
+
+Fetches entities from Codeberg (a hosted Forgejo instance at codeberg.org). Uses the same Gitea-compatible API.
+
+```javascript
+{
+  "source_kind": "codeberg",
+  "source_config": {
+    "repo": "owner/repo",                        // repository (owner/repo) or organization name
+    "branch": "main",                            // branch name (default: main)
+    "path": "entities/",                         // file or directory path in the repo
+    "token": "xxx",                              // optional personal access token
+    "base_url": "https://codeberg.org",          // API base URL (default: https://codeberg.org)
+    "repo_patterns": ["otoroshi-*"]              // optional: filter repos when scanning an org
+  }
+}
+```
+
+Supports the same features as Gitea: webhook-triggered deployments, organization scanning, glob patterns in catalog listing files.
 
 ### Git (generic)
 
@@ -382,7 +608,7 @@ Two scheduling modes are available:
 
 ## Webhook deployment
 
-For Git-based sources (GitHub, GitLab, Bitbucket), you can set up webhook-triggered deployments. This allows Otoroshi to automatically deploy entities when changes are pushed to the repository.
+For Git-based sources (GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg), you can set up webhook-triggered deployments. This allows Otoroshi to automatically deploy entities when changes are pushed to the repository.
 
 To set this up, create a route in Otoroshi with the `Remote Catalog Deploy Webhook` plugin and expose it to your Git provider as a webhook URL.
 
@@ -393,7 +619,7 @@ To set this up, create a route in Otoroshi with the `Remote Catalog Deploy Webho
   "plugin": "cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook",
   "config": {
     "catalog_refs": ["my-github-catalog", "my-gitlab-catalog"],  // catalogs to consider
-    "source_type": "github"                                       // or "gitlab", "bitbucket"
+    "source_type": "github"                                       // or "gitlab", "bitbucket", "gitea", "forgejo", "codeberg"
   }
 }
 ```
@@ -415,6 +641,10 @@ Set up a webhook in your GitLab project settings. The plugin matches on `project
 ### Bitbucket webhook
 
 Set up a webhook in your Bitbucket repository settings. The plugin matches on `repository.full_name` and `push.changes[].new.name` from the push event payload.
+
+### Gitea / Forgejo / Codeberg webhook
+
+Set up a webhook in your Gitea, Forgejo, or Codeberg repository settings. The webhook payload format is the same across all three platforms. The plugin matches on `repository.full_name` and `ref` (branch) from the push event payload, similar to GitHub.
 
 ## Other plugins
 

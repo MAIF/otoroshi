@@ -105,6 +105,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -341,7 +343,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#sunsetting-service-descriptors" name="sunsetting-service-descriptors" class="anchor"><span class="anchor-link"></span></a>Sunsetting Service Descriptors</h1>
-<p>For more than 2 years, after the <a href="engine.html">rewrite of the proxy engine</a> in <code>v1.5.3</code>, Service Descriptors has been deprecated.</p>
+<p>For more than 4 years, after the <a href="engine.html">rewrite of the proxy engine</a> in <code>v1.5.3</code> (Feb 14, 2022), Service Descriptors has been deprecated.</p>
 <p>Now (v17.0.0) it&rsquo;s time to go ahead and provide some migration tools to help users getting rid of Service Descriptor in favor of routes before completely removing support of Service Descriptors in v18.0.0 (probably in 2026). Under the hood the new proxy engine already convert your Service Descriptors to Route in order to route traffic to your backends. The idea here is to remove the Service Descriptor entity in favor of the Route entity and let the user adapt their workflows and automations.</p>
 <p>If you still have Service Descriptors in you database, otoroshi will warn you in the logs</p><div class="centered-img">
 <img src="../imgs/sd-migration-logs.png" /></div>

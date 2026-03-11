@@ -225,8 +225,8 @@ class NgJwtUserExtractor extends NgPreRouting {
             ctx.attrs
           ) { jwtInjection =>
             jwtInjection.decodedToken match {
-              case None if !config.strict => Results.Unauthorized(Json.obj()).future
-              case None if config.strict  => Results.Ok(Json.obj()).future
+              case None if config.strict  => Results.Unauthorized(Json.obj()).future
+              case None if !config.strict => Results.Ok(Json.obj()).future
               case Some(token)            => {
                 val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                 val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]

@@ -649,7 +649,92 @@ object ApiBlueprint {
   case object Websocket extends ApiBlueprint { def name: String = "Websocket" }
 }
 
+<<<<<<< HEAD
 case class ApiSubscriptionDates(
+=======
+case class ApiConsumer(
+    id: String,
+    name: String,
+    description: Option[String] = None,
+    autoValidation: Boolean,
+    consumerKind: ApiConsumerKind,
+    settings: ApiConsumerSettings,
+    status: ApiConsumerStatus,
+    subscriptions: Seq[ApiConsumerSubscriptionRef] = Seq.empty
+)
+
+object ApiConsumer {
+  val _fmt: Format[ApiConsumer] = new Format[ApiConsumer] {
+    override def reads(json: JsValue): JsResult[ApiConsumer] = Try {
+      ApiConsumer(
+        id = json.select("id").asString,
+        name = json.select("name").asString,
+        description = json.select("description").asOptString,
+        autoValidation = json.select("auto_validation").asOpt[Boolean].getOrElse(false),
+        consumerKind = json.select("consumer_kind").asString.toLowerCase match {
+          case "apikey"  => ApiConsumerKind.Apikey
+          case "mtls"    => ApiConsumerKind.Mtls
+          case "keyless" => ApiConsumerKind.Keyless
+          case "oauth2"  => ApiConsumerKind.OAuth2
+          case "jwt"     => ApiConsumerKind.JWT
+        },
+        settings = json.select("consumer_kind").asString.toLowerCase match {
+          case "apikey"  =>
+            ApiConsumerSettings.Apikey(
+              wipeBackendRequest = (json \ "settings" \ "wipe_backend_request").asOptBoolean.getOrElse(true),
+              validate = (json \ "settings" \ "validate").asOptBoolean.getOrElse(true),
+              mandatory = (json \ "settings" \ "mandatory").asOptBoolean.getOrElse(true),
+              passWithUser = (json \ "settings" \ "pass_with_user").asOptBoolean.getOrElse(false),
+              updateQuotas = (json \ "settings" \ "update_quotas").asOptBoolean.getOrElse(true)
+            )
+          case "mtls"    =>
+            ApiConsumerSettings.Mtls(
+              consumerConfig = (json \ "settings").asOpt(NgHasClientCertMatchingValidatorConfig.format)
+            )
+          case "keyless" => ApiConsumerSettings.Keyless()
+          case "oauth2"  =>
+            ApiConsumerSettings.OAuth2(
+              consumerConfig = (json \ "settings").asOpt(NgClientCredentialTokenEndpointConfig.format)
+            )
+          case "jwt"     =>
+            ApiConsumerSettings.JWT(
+              consumerConfig = (json \ "settings").asOpt(NgJwtVerificationOnlyConfig.format)
+            )
+        },
+        status = json.select("status").asOptString.getOrElse("staging").toLowerCase match {
+          case "staging"    => ApiConsumerStatus.Staging
+          case "published"  => ApiConsumerStatus.Published
+          case "deprecated" => ApiConsumerStatus.Deprecated
+          case "closed"     => ApiConsumerStatus.Closed
+        },
+        subscriptions = json
+          .select("subscriptions")
+          .asOpt[Seq[String]]
+          .map(refs => refs.map(ref => ApiConsumerSubscriptionRef(ref)))
+          .getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: ApiConsumer): JsValue = Json.obj(
+      "id"              -> o.id,
+      "name"            -> o.name,
+      "description"     -> o.description,
+      "auto_validation" -> o.autoValidation,
+      "consumer_kind"   -> o.consumerKind.name,
+      "settings"        -> o.settings.json,
+      "status"          -> o.status.name,
+      "subscriptions"   -> o.subscriptions.map(_.ref)
+    )
+  }
+}
+
+case class ApiConsumerSubscriptionDates(
+>>>>>>> master
     created_at: DateTime,
     processed_at: DateTime,
     started_at: DateTime,

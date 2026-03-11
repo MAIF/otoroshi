@@ -366,6 +366,25 @@ const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props 
   </div>
 );
 
+const TunnelHandlerNode = ({ selectedNode, tunnelHandler, isPluginEnabled, ...props }) => (
+  <div
+    className="main-view tunnel-handler-button"
+    style={{
+      opacity: !selectedNode ? 1 : selectedNode.id === tunnelHandler.id ? 1 : 0.25,
+    }}
+  >
+    <NodeElement
+      element={tunnelHandler}
+      selectedNode={selectedNode}
+      hideLink={false}
+      disableBorder={false}
+      bold={false}
+      enabled={isPluginEnabled(tunnelHandler)}
+      {...props}
+    />
+  </div>
+);
+
 const InBoundFlow = (props) => (
   <div className="col-sm-6 flex-column">
     <div className="main-view">{props.children}</div>
@@ -1507,6 +1526,22 @@ class Designer extends React.Component {
             .filter((p) => !!p)
         : [];
 
+    const tunnelNodes =
+      route && route.plugins
+        ? route.plugins
+          .map((p) => {
+            const id = p.plugin;
+            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+            if (pluginDef) {
+              if (pluginDef.plugin_steps.indexOf('HandlesTunnel') > -1) {
+                return { ...p, ...pluginDef };
+              }
+            }
+            return null;
+          })
+          .filter((p) => !!p)
+        : [];
+
     const ownTemplates = getOwnTemplates(
       plugins,
       this.setNodes,
@@ -1699,6 +1734,48 @@ class Designer extends React.Component {
                           key={node.id}
                           isPluginEnabled={this.isPluginEnabled}
                           backendCall={node}
+                          selectedNode={selectedNode}
+                          hideLink={!node.plugin_backend_call_delegates}
+                          setSelectedNode={() => {
+                            if (!this.state.alertModal.show) {
+                              this.setState({ selectedNode: node });
+                            }
+                          }}
+                          onRemove={this.removeNode}
+                        />
+                      ))}
+                      {false && !backendCall.plugin_backend_call_delegates && (
+                        <div style={{ height: 10 }}></div>
+                      )}
+                    </>
+                  )}
+                  {tunnelNodes.length > 0 && (
+                    <>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '100%',
+                        }}
+                      >
+                        <span
+                          className="badge bg-warning text-dark"
+                          style={{
+                            width: '100%',
+                            opacity: !selectedNode ? 1 : 0.25,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          HandlesTunnel
+                        </span>
+                        <Hr highlighted={!selectedNode} />
+                      </div>
+                      {tunnelNodes.map((node) => (
+                        <TunnelHandlerNode
+                          key={node.id}
+                          isPluginEnabled={this.isPluginEnabled}
+                          tunnelHandler={node}
                           selectedNode={selectedNode}
                           hideLink={!node.plugin_backend_call_delegates}
                           setSelectedNode={() => {

@@ -118,8 +118,9 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
-                    }`}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
                   optionsTransformer={(arr) => {
                     return arr.map((item) => {
                       if (item.label) {
@@ -443,25 +444,38 @@ export class DataExportersPage extends Component {
         </button> */}
         <InfoCollapse title="What is a Data Exporter?">
           <p>
-            A Data Exporter lets you <strong>monitor and export all events</strong> happening inside Otoroshi
-            in real time. Every HTTP call, every authentication, every error, every admin action — everything
-            that passes through the gateway generates events that can be streamed to your observability stack.
+            A Data Exporter lets you <strong>monitor and export all events</strong> happening inside
+            Otoroshi in real time. Every HTTP call, every authentication, every error, every admin
+            action — everything that passes through the gateway generates events that can be
+            streamed to your observability stack.
           </p>
-          <p>
-            Otoroshi supports a wide range of export targets out of the box:
-          </p>
+          <p>Otoroshi supports a wide range of export targets out of the box:</p>
           <ul>
-            <li><strong>Elasticsearch</strong> — index events for search, dashboards, and alerting with Kibana.</li>
-            <li><strong>Kafka</strong> — stream events to topics for real-time processing pipelines.</li>
-            <li><strong>Webhooks</strong> — push events to any HTTP endpoint of your choice.</li>
-            <li><strong>File</strong> — write events to local files for simple logging or debugging.</li>
-            <li><strong>Pulsar, custom</strong> — connect to additional backends depending on your infrastructure.</li>
+            <li>
+              <strong>Elasticsearch</strong> — index events for search, dashboards, and alerting
+              with Kibana.
+            </li>
+            <li>
+              <strong>Kafka</strong> — stream events to topics for real-time processing pipelines.
+            </li>
+            <li>
+              <strong>Webhooks</strong> — push events to any HTTP endpoint of your choice.
+            </li>
+            <li>
+              <strong>File</strong> — write events to local files for simple logging or debugging.
+            </li>
+            <li>
+              <strong>Pulsar, custom</strong> — connect to additional backends depending on your
+              infrastructure.
+            </li>
           </ul>
           <p>
-            Each exporter can be configured with <strong>filters</strong> to select which event types to export,
-            <strong>projections</strong> to reshape the data before sending, and <strong>buffering</strong> options
-            to control throughput and batch size. You can run multiple exporters in parallel,
-            each targeting a different system with different filters.
+            Each exporter can be configured with <strong>filters</strong> to select which event
+            types to export,
+            <strong>projections</strong> to reshape the data before sending, and{' '}
+            <strong>buffering</strong> options to control throughput and batch size. You can run
+            multiple exporters in parallel, each targeting a different system with different
+            filters.
           </p>
         </InfoCollapse>
         <Table
@@ -2566,6 +2580,55 @@ const possibleExporterConfigFormValues = {
       topic: {
         type: 'bool',
         props: { label: 'Destination is a topic' },
+      },
+    },
+  },
+  postgresql: {
+    label: 'PostgreSQL',
+    flow: ['uri', 'host', 'port', 'database', 'user', 'password', 'schema', 'table', 'pool_size', 'ssl'],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Connection URI',
+          placeholder: 'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+        },
+      },
+      host: {
+        type: 'string',
+        props: { label: 'Host', placeholder: 'localhost' },
+      },
+      port: {
+        type: 'number',
+        props: { label: 'Port' },
+      },
+      database: {
+        type: 'string',
+        props: { label: 'Database' },
+      },
+      user: {
+        type: 'string',
+        props: { label: 'User' },
+      },
+      password: {
+        type: 'password',
+        props: { label: 'Password' },
+      },
+      schema: {
+        type: 'string',
+        props: { label: 'Schema', placeholder: 'otoroshi' },
+      },
+      table: {
+        type: 'string',
+        props: { label: 'Table', placeholder: 'otoroshi_events' },
+      },
+      pool_size: {
+        type: 'number',
+        props: { label: 'Pool size' },
+      },
+      ssl: {
+        type: 'bool',
+        props: { label: 'SSL (REQUIRE mode)' },
       },
     },
   },

@@ -813,6 +813,7 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
 }
 
 case class OIDCJwtVerifierConfig(
+    mandatory: Boolean = true,
     ref: Option[String] = None,
     source: Option[JwtTokenLocation] = None,
     user: Boolean = false,
@@ -835,6 +836,7 @@ case class OIDCJwtVerifierConfig(
 
 object OIDCJwtVerifierConfig {
   val configFlow                     = Seq(
+    "mandatory",
     "ref",
     "user",
     "custom_response",
@@ -845,6 +847,10 @@ object OIDCJwtVerifierConfig {
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
+      "mandatory" -> Json.obj(
+        "type" -> "bool",
+        "label" -> "Mandatory"
+      ),
       "user"                    -> Json.obj(
         "type"  -> "bool",
         "label" -> "Use as connected user"
@@ -873,7 +879,7 @@ object OIDCJwtVerifierConfig {
       ),
       "ref"                     -> Json.obj(
         "type"  -> "select",
-        "label" -> s"Auth. modules",
+        "label" -> s"Auth. module",
         "props" -> Json.obj(
           "optionsFrom"        -> "/bo/api/proxy/apis/security.otoroshi.io/v1/auth-modules",
           "optionsTransformer" -> Json.obj(
@@ -887,6 +893,7 @@ object OIDCJwtVerifierConfig {
   val format                         = new Format[OIDCJwtVerifierConfig] {
     override def reads(json: JsValue): JsResult[OIDCJwtVerifierConfig] = Try {
       OIDCJwtVerifierConfig(
+        mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
         ref = json.select("ref").asOpt[String],
         user = json.select("user").asOptBoolean.getOrElse(false),
         source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
@@ -901,6 +908,7 @@ object OIDCJwtVerifierConfig {
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: OIDCJwtVerifierConfig): JsValue             = Json.obj(
+      "mandatory" -> o.mandatory,
       "ref"                     -> o.ref.map(_.json).getOrElse(JsNull).asValue,
       "source"                  -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
       "custom_response"         -> o.customResponse,
@@ -950,7 +958,8 @@ class OIDCJwtVerifier extends NgAccessValidator {
                 sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
                   tuple
                 } match {
-                  case None                  =>
+                  case None if !config.mandatory => NgAccess.NgAllowed.vfuture
+                  case None if config.mandatory  =>
                     NgAccess
                       .NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found"))))
                       .vfuture
@@ -983,7 +992,8 @@ class OIDCJwtVerifier extends NgAccessValidator {
                         }
                       }
                       .map {
-                        case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Left(result) if config.mandatory => NgAccess.NgAllowed
+                        case Left(result) if !config.mandatory => NgAccess.NgDenied(customResult.getOrElse(result))
                         case Right(r)     => r
                       }
                 }

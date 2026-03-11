@@ -105,6 +105,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -246,6 +247,7 @@ latest
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
     <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
@@ -1861,6 +1863,11 @@ otoroshi {
   secret = &quot;verysecretvaluethatyoumustoverwrite&quot; # the secret used to sign sessions
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
+  router {
+    # means that a domain ending with /v2/ should match /v2, /v2/, /v2/foo, /v2/foo/bar but not /v2foo
+    trailingSlashMeansExactSegments = true
+    trailingSlashMeansExactSegments = ${?OTOROSHI_ROUTER_TRAILING_SLASH_MEANS_EXACT_SEGEMENTS}
+  }
   jwks {
     include-algorithms = false
     include-algorithms = ${?OTOROSHI_JWKS_INCLUDE_ALGORITHMS}
@@ -3328,6 +3335,9 @@ otoroshi {
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED} # enable global maintenance mode
   secret = ${?OTOROSHI_SECRET}  # the secret used to sign sessions
   admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}  # the secret for admin api
+  router {
+    trailingSlashMeansExactSegments = ${?OTOROSHI_ROUTER_TRAILING_SLASH_MEANS_EXACT_SEGEMENTS}
+  }
   jwks {
     include-algorithms = ${?OTOROSHI_JWKS_INCLUDE_ALGORITHMS}
     rsa-algorithms = ${?OTOROSHI_JWKS_RSA_ALGORITHMS}

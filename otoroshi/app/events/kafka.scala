@@ -192,6 +192,12 @@ object KafkaSettings {
             p.withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
               .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
           }
+          .applyOnIf(!config.hostValidation)(
+            _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
+          )
+          .applyOnIf(config.mtlsConfig.trustAll)(
+            _.withProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "")
+          )
       }
       case _ =>
         entity

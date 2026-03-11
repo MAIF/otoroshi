@@ -334,7 +334,7 @@ class MockResponses extends NgBackendCall {
           )
         })
       )
-      .find("oto.tools", ctx.request.path)
+      .find("oto.tools", ctx.request.path, env.trailingSlashMeansExactSegments)
       .filter(_.noMoreSegments)
       .flatMap { c =>
         if (c.routes.headOption.nonEmpty)

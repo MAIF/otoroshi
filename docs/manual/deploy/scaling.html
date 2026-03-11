@@ -68,6 +68,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -98,10 +104,13 @@ latest
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
     <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -201,6 +210,12 @@ latest
     <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
     <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
+    <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
+    <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
+    <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
+    <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
@@ -231,10 +246,13 @@ latest
     <li><a href="../topics/circuit-breaker.html" class="page">🛡️ Circuit Breaker in Otoroshi</a></li>
     <li><a href="../topics/durations.html" class="page">⏱️ Understanding GatewayEvent Durations in Otoroshi</a></li>
     <li><a href="../topics/workflows-editor.html" class="page">Workflows Editor</a></li>
+    <li><a href="../topics/remote-catalogs.html" class="page">Remote Catalogs</a></li>
+    <li><a href="../topics/kubernetes-gateway-api.html" class="page">Kubernetes Gateway API support</a></li>
   </ul></li>
   <li><a href="../quick-tutorials/index.html" class="page">Quick tutorials</a>
   <ul>
     <li><a href="../quick-tutorials/one-header-to-rule-them-all.html" class="page">One header to rule them all</a></li>
+    <li><a href="../quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures.html" class="page">Stop Sharing Your Secrets: Switch to Asymmetric Signatures</a></li>
   </ul></li>
   <li><a href="../how-to-s/index.html" class="page">How to&rsquo;s</a>
   <ul>
@@ -441,9 +459,9 @@ server {
     timeout client          1m
 
 frontend front_nodes_https
-    bind *:443
+    bind *:443 ssl crt /etc/haproxy/all-certs/ alpn h2,http/1.1 ssl-min-ver TLSv1.2
     mode http
-    default_backend back_https_nodes
+    default_backend back_http_nodes
     timeout client          1m
 
 backend back_http_nodes
@@ -456,19 +474,6 @@ backend back_http_nodes
     server node1 192.168.1.40:8080
     server node2 192.168.1.41:8080
     server node3 192.168.1.42:8080
-    timeout connect        10s
-    timeout server          1m
-
-backend back_https_nodes
-    mode http
-    balance roundrobin
-    option forwardfor
-    http-request set-header X-Forwarded-Port %[dst_port]
-    http-request add-header X-Forwarded-Proto https if { ssl_fc }
-    http-request set-header X-Client-IP %[src]
-    server node1 192.168.1.40:8443
-    server node2 192.168.1.41:8443
-    server node3 192.168.1.42:8443
     timeout connect        10s
     timeout server          1m</code></pre></dd>
   <dt>HA Proxy L4</dt>
