@@ -699,8 +699,8 @@ export function Dashboard(props) {
 
   const hasCreateFlow = item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
   const hasCreateBackend = item.backends.filter((f) => f.name !== 'default_backend').length > 0;
-  const hasCreateRoute = item.routes.length;
-  const hasCreatePlan = item.documentation?.plans.length
+  const hasCreateRoute = item.routes.length > 0;
+  const hasCreatePlan = item.documentation?.plans.length > 0
   const hasTestingEnabled = item.testing.enabled;
   const hasDomainConfigured = !!(item.domain && item.contextPath)
 

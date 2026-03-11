@@ -1017,9 +1017,7 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _ctx) => env.datastores.draftsDataStore.template(env).json,
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
-        stateUpdate = seq => env.proxyState.updateDrafts(seq),
-        writeValidator = Draft.writeValidator
-//        deleteValidator = Draft.deleteValidator,
+        stateUpdate = seq => env.proxyState.updateDrafts(seq)
       )
     ),
     //////
@@ -1039,9 +1037,7 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _a) => env.datastores.apiDataStore.template(env).json,
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
-        stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = (entity, body, oldEntity, singularName, id, action, env) =>
-          Api.writeValidator(entity, body, oldEntity, singularName, id, action, env)
+        stateUpdate = seq => env.proxyState.updateApis(seq)
       )
     ),
     //////

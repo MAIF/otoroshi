@@ -327,7 +327,7 @@ case class JWTAccessModeConfiguration(
 ) extends ApiDocumentationAccessModeConfiguration
 
 object JWTAccessModeConfiguration {
-  def fmt() = new Format[JWTAccessModeConfiguration] {
+  def fmt = new Format[JWTAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[JWTAccessModeConfiguration] = Try {
       JWTAccessModeConfiguration(
         verifier = json.select("verifier").asOpt[String],
@@ -471,18 +471,18 @@ object ApikeyAccessModeConfiguration {
 }
 
 case class ApiDocumentationPlan(raw: JsObject) {
-  lazy val accessModeConfigurationType                                              = raw.selectAsOptString("access_mode_configuration_type")
+  lazy val accessModeConfigurationType                                              = raw.selectAsString("access_mode_configuration_type")
   lazy val id: String                                                               = raw.selectAsString("id")
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
-      case Some("apikey") => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
+      case "apikey" => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
 //      case Some("mtls")  => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
 //      case Some("keyless")  => (raw \ "access_mode_configuration").asOpt(KeylessAccessModeConfiguration.fmt)
 //      case Some("oauth2")  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
-      case Some("jwt")    => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
-      case _              => None
+      case "jwt"    => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
+      case _        => None
     }
   lazy val status: ApiPlanStatus                                                    = raw.selectAsOptString("status").getOrElse("published").toLowerCase match {
     case "staging"    => ApiPlanStatus.Staging
@@ -1031,65 +1031,122 @@ case class Api(
     }
   }
 
+  private def addSecurityOnDrafRoute(route: ApiRoute, api: Api) = {
+    route.copy(
+      id = s"testing_route_${route.id}",
+      frontend = route.frontend
+        .copy(
+          headers = route.frontend.headers + (api.testing.headerKey -> api.testing.headerValue)
+        )
+    )
+  }
+
+  private def replaceBackendClientIdByRealBackend(backend: ApiBackend, api: Api): NgBackend = {
+    backend.backend.copy(
+      client = api.clientsBackendConfig
+        .find(_.id == backend.client)
+        .map(_.client)
+        .getOrElse(NgClientConfig.default)
+    )
+  }
+
+  private def buildDraftRoutes()(implicit env: Env): Future[Seq[RouteWithApi]] = {
+    implicit val ec = env.otoroshiExecutionContext
+
+    env.datastores.draftsDataStore
+      .findById(id)
+      .map {
+        case Some(draft) => Api.format.reads(draft.content)
+        case None        => JsError("draft not found")
+      }
+      .flatMap { draft =>
+        val optApi = draft.asOpt
+          .filter(api => api.enabled && api.testing.enabled)
+          .map { draftApi =>
+            draftApi
+              .copy(
+                backends = draftApi.backends
+                  .map(backend => backend.copy(backend = replaceBackendClientIdByRealBackend(backend, draftApi))),
+                routes = draftApi.routes.map(route => addSecurityOnDrafRoute(route, draftApi))
+              )
+          }
+
+        optApi match {
+          case Some(api) =>
+            Future
+              .sequence(api.routes.map(route => routeToNgRoute(route, api.some)))
+              .map(routes => routes.flatten.map(route => RouteWithApi(route, api)))
+          case None      => Seq.empty.future
+        }
+      }
+  }
+
+  case class RouteWithApi(route: NgRoute, api: Api)
+
+  private def addPluginsToFlow(plugins: NgPlugins, pluginsWithConfig: Seq[PluginWithConfig] = Seq.empty): NgPlugins = {
+    pluginsWithConfig.foldLeft(plugins) { case (acc, pluginWithConfig: PluginWithConfig) =>
+      acc.add(
+        NgPluginInstance(
+          plugin = pluginWithConfig.pluginId,
+          include = Seq.empty,
+          exclude = Seq.empty,
+          config = NgPluginInstanceConfig(pluginWithConfig.config)
+        )
+      )
+    }
+  }
+
+  case class PluginWithConfig(pluginId: String, config: JsObject = Json.obj())
+
+  private def applyPlan(route: NgRoute, plan: ApiDocumentationPlan): NgRoute = {
+    val plugins = plan.accessModeConfigurationType match {
+      case "apikey"        => Seq(PluginWithConfig(pluginId[ApikeyCalls]))
+      case "jwt"           => Seq(PluginWithConfig(pluginId[NgJwtUserExtractor]))
+      case "mtls"          => Seq(PluginWithConfig(pluginId[NgHasClientCertMatchingValidator]))
+      case "oauth2-local"  => Seq(PluginWithConfig(pluginId[ApikeyCalls]))
+      case "oauth2-remote" => Seq(PluginWithConfig(pluginId[OIDCJwtVerifier]))
+      // "keyless"
+      case _               => Seq.empty
+    }
+
+    route.copy(
+      plugins = addPluginsToFlow(route.plugins, plugins)
+    )
+  }
+
+  private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
+
+    routeWithApi.api.documentation
+      .map { documentation =>
+        documentation.plans.foldLeft(routeWithApi.route) { case (route, plan) => applyPlan(route, plan) }
+      }
+
+    routeWithApi.route
+  }
+
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
     implicit val ec = env.otoroshiExecutionContext
 
-    if (state == ApiRemoved || !enabled) {
+    val isPublishable = state != ApiRemoved && !enabled
+
+    if (!isPublishable) {
       Seq.empty.vfuture
     } else {
-      env.datastores.draftsDataStore
-        .findById(id)
-        .flatMap(optDraft => {
-          val draftApis: Option[Api] = optDraft
-            .map(draft => Api.format.reads(draft.content))
-            .collect {
-              case JsSuccess(draftApi, _) if draftApi.testing.enabled =>
-                draftApi.copy(
-                  backends = draftApi.backends.map(backend =>
-                    backend
-                      .copy(backend =
-                        backend.backend.copy(
-                          client = draftApi.clientsBackendConfig
-                            .find(_.id == backend.client)
-                            .map(_.client)
-                            .getOrElse(NgClientConfig.default)
-                        )
-                      )
-                  ),
-                  routes = draftApi.routes.map(route =>
-                    route.copy(
-                      id = s"testing_route_${route.id}",
-                      frontend = route.frontend
-                        .copy(
-                          headers =
-                            route.frontend.headers + (draftApi.testing.headerKey -> draftApi.testing.headerValue)
-                        )
-                    )
-                  )
-                )
-            }
+      for {
+        draftRoutes  <- buildDraftRoutes()
+        routeFutures <- Future
+                          .sequence(
+                            routes
+                              .filter(_ => (state == ApiPublished || state == ApiDeprecated) && enabled)
+                              .map { route => routeToNgRoute(route, this.some) }
+                          )
+                          .map { routes => routes.flatten.map(route => RouteWithApi(route, this)) }
+      } yield {
+        val all                  = routeFutures ++ draftRoutes
+        val apisWithPlanPolicies = all.map(applyPlansPolicies)
 
-          val draftRoutes =
-            draftApis.map(api => api.routes.map(route => routeToNgRoute(route, api.some))).getOrElse(Seq.empty)
-
-          Future
-            .sequence(
-              routes
-                .filter(_ => state == ApiPublished || state == ApiDeprecated)
-                .map(route => routeToNgRoute(route, this.some)) ++ draftRoutes
-            )
-            .map(routes => {
-              val r = routes
-                .collect { case Some(value) =>
-                  value
-                }
-                .filter(_.enabled)
-
-//              println(r.map(_.json))
-
-              r
-            })
-        })
+        apisWithPlanPolicies
+      }
     }
   }
 
@@ -1261,31 +1318,6 @@ object Api {
         flows = Seq(ApiFlows.empty(env)),
         groups = Seq.empty
       )
-    }
-  }
-
-  def writeValidator(
-      newApi: Api,
-      _body: JsValue,
-      oldEntity: Option[(Api, JsValue)],
-      _singularName: String,
-      _id: Option[String],
-      action: WriteAction,
-      env: Env
-  ): Future[Either[JsValue, Api]] = {
-    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
-    implicit val e: Env               = env
-
-    if (action == WriteAction.Update) {
-      // newApi.flows.
-      // keyless :
-      // mtls :
-      // apikey :
-      // oauth2 :
-      // jwt :
-      newApi.rightf
-    } else {
-      newApi.rightf
     }
   }
 
