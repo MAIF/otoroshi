@@ -47,8 +47,15 @@ export default {
     'verifier',
     'fail_if_absent',
     'custom_response',
-    'custom_response_status',
-    'custom_response_headers',
-    'custom_response_body',
+    {
+      type: 'group',
+      visible: props => props?.custom_response,
+      title: 'Custom response information',
+      fields: [
+        'custom_response_status',
+        'custom_response_headers',
+        'custom_response_body'
+      ]
+    }
   ],
 };

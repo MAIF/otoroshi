@@ -41,7 +41,7 @@ export function HttpClientSettings(props) {
   const deleteItem = (newItem) =>
     updateItem({
       ...item,
-      clients: item.clients.filter((f) => f.id !== newItem.id),
+      clients_backend_config: item.clients_backend_config.filter((f) => f.id !== newItem.id),
     });
 
   if (!item) return <SimpleLoader />;
@@ -61,7 +61,7 @@ export function HttpClientSettings(props) {
       columns={columns}
       deleteItem={deleteItem}
       fetchTemplate={client.template}
-      fetchItems={() => Promise.resolve(item.clients || [])}
+      fetchItems={() => Promise.resolve(item.clients_backend_config || [])}
       defaultSort="name"
       defaultSortDesc="true"
       showActions={isDraft}
@@ -105,7 +105,7 @@ export function NewHttpClientSettings(props) {
   const saveBackend = () => {
     return updateItem({
       ...item,
-      clients: [...item.clients, client],
+      clients_backend_config: [...item.clients_backend_config, client],
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/http-client-settings`));
   };
 
@@ -205,14 +205,14 @@ export function EditHttpClientSettings(props) {
 
   useEffect(() => {
     if (item && !client) {
-      setClient(item.clients.find((item) => item.id === params.httpClientSettingsId));
+      setClient(item.clients_backend_config.find((item) => item.id === params.httpClientSettingsId));
     }
   }, [item]);
 
   const updateBackend = () => {
     return updateItem({
       ...item,
-      clients: item.clients.map((item) => {
+      clients_backend_config: item.clients_backend_config.map((item) => {
         if (item.id === client.id) return client;
         return item;
       }),

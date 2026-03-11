@@ -266,6 +266,34 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     Ok(NgClientConfig.default.json).future
   }
 
+  def subscribe(apiId: String, planId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to subscribe to a plan of an API",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"  -> apiId,
+              "planId" -> planId
+            )
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None      => Results.NotFound.future
+          case Some(api) => Ok(Json.obj("message" -> "foo")).future
+        }
+      }
+    }
+  }
+
   def createNewVersion(apiId: String) = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canReadService(apiId) {

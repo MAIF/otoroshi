@@ -13,50 +13,55 @@ import { VersionBadge } from './DraftOnly';
 import { MAX_WIDTH } from './constants';
 
 const SUBSCRIPTION_FORM_SETTINGS = {
-  schema: (item) => ({
-    location: {
-      type: 'location',
-    },
-    name: {
-      type: 'string',
-      label: 'Name',
-    },
-    description: {
-      type: 'string',
-      label: 'Description',
-    },
-    enabled: {
-      type: 'boolean',
-      label: 'Enabled',
-    },
-    owner_ref: {
-      type: 'string',
-      label: 'Owner',
-    },
-    plan_ref: {
-      type: 'select',
-      label: 'Plan',
-      props: {
-        options: item.documentation?.plans || [],
-        noOptionsMessage: ({ children, ...props }) => {
-          return (
-            <components.NoOptionsMessage {...props}>
-              No Plans
-            </components.NoOptionsMessage>
-          );
-        },
-        optionsTransformer: {
-          value: 'id',
-          label: 'name',
+  schema: (item) => {
+    return {
+      location: {
+        type: 'location',
+      },
+      name: {
+        type: 'string',
+        label: 'Name',
+      },
+      description: {
+        type: 'string',
+        label: 'Description',
+      },
+      enabled: {
+        type: 'boolean',
+        label: 'Enabled',
+      },
+      owner_ref: {
+        label: 'Owner',
+        type: 'select',
+        props: {
+          options: item.clients.map(({ id, name }) => ({ value: id, label: name }))
+        }
+      },
+      plan_ref: {
+        type: 'select',
+        label: 'Plan',
+        props: {
+          options: item.documentation?.plans || [],
+          noOptionsMessage: ({ children, ...props }) => {
+            return (
+              <components.NoOptionsMessage {...props}>
+                No Plans
+              </components.NoOptionsMessage>
+            );
+          },
+          optionsTransformer: {
+            value: 'id',
+            label: 'name',
+          },
         },
       },
-    },
-    token_refs: {
-      array: true,
-      label: 'Token refs',
-      type: 'string',
-    },
-  }),
+      token_refs: {
+        array: true,
+        label: 'Token refs',
+        type: 'string',
+      },
+    }
+  },
   flow: [
     'location',
     {
@@ -86,7 +91,7 @@ export function Subscriptions(props) {
       title: 'Name',
       filterId: 'name',
       content: (item) => item.name,
-    },
+    }
   ];
 
   useEffect(() => {
@@ -275,8 +280,8 @@ export function NewSubscription(props) {
         } else {
           historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
         }
-      });
-  };
+      })
+  }
 
   return (
     <>

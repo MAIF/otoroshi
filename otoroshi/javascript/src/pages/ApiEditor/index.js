@@ -19,6 +19,7 @@ import { Testing } from './Testing';
 import { NewAPI, Apis } from './Apis';
 import { Informations } from './Informations';
 import { Dashboard } from './Dashboard';
+import { ClientEditor, Clients } from './Clients';
 
 const RouteWithProps = ({ component: Component, ...rest }) => (
   <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
@@ -48,6 +49,9 @@ export default function ApiEditor(props) {
             component={RouteDesigner}
             props={props}
           />
+          <RouteWithProps exact path="/apis/:apiId/clients" component={Clients} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/clients/new" component={ClientEditor} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/clients/:planId/:action" component={ClientEditor} props={props} />
           <RouteWithProps
             exact
             path="/apis/:apiId/subscriptions"

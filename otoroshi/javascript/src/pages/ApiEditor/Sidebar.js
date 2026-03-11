@@ -6,100 +6,124 @@ import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
 import { VersionToggle } from '.';
 
-const LINKS = (id) =>
-  [
-    {
-      to: `/apis/${id}`,
-      icon: 'fa-file-alt',
-      title: 'Overview',
-      tab: 'overview',
-      tooltip: { ...createTooltip(`Show overview tab`) },
-    },
-    {
-      to: `/apis/${id}/informations`,
-      icon: 'fa-file-alt',
-      title: 'Informations',
-      tab: 'informations',
-      tooltip: { ...createTooltip(`Show informations tab`) },
-    },
-    {
-      to: `/apis/${id}/api-gateway`,
-      icon: 'fa-shield-halved',
-      title: 'API Gateway',
-      tab: 'api-gateway',
-      tooltip: { ...createTooltip(`Show API Gateway tab`) },
-    },
-    {
-      to: `/apis/${id}/actions`,
-      icon: 'fa-bolt',
-      title: 'Actions',
-      tab: 'actions',
-      tooltip: { ...createTooltip(`Show actions tab`) },
-    },
-    {
-      to: `/apis/${id}/subscriptions`,
-      icon: 'fa-key',
-      title: 'Subscriptions',
-      tab: 'Subscriptions',
-      tooltip: { ...createTooltip(`Show subscriptions tab`) },
-    },
-    {
-      to: `/apis/${id}/deployments`,
-      icon: 'fa-server',
-      title: 'Deployments',
-      tab: 'deployments',
-      tooltip: { ...createTooltip(`Show deployments tab`) },
-    },
-    {
-      to: `/apis/${id}/endpoints`,
-      icon: 'fa-road',
-      title: 'Endpoints',
-      tab: 'endpoints',
-      tooltip: { ...createTooltip(`Show endpoints tab`) },
-    },
-    {
-      to: `/apis/${id}/plugin-chains`,
-      icon: 'fa-project-diagram',
-      title: 'Plugin chains',
-      tab: 'plugin-chains',
-      tooltip: { ...createTooltip(`Show plugin chains tab`) },
-    },
-    {
-      to: `/apis/${id}/backends`,
-      icon: 'fa-server',
-      title: 'Backends',
-      tab: 'backends',
-      tooltip: { ...createTooltip(`Show backends tab`) },
-    },
-    {
-      to: `/apis/${id}/http-client-settings`,
-      icon: 'fa-gamepad',
-      title: 'HTTP client settings',
-      tab: 'http-client-settings',
-      tooltip: { ...createTooltip(`Show http client settings tab`) },
-    },
-    {
-      to: `/apis/${id}/plans`,
-      icon: 'fa-layer-group',
-      title: 'Plans',
-      tab: 'plan',
-      tooltip: { ...createTooltip(`Show plan tab`) },
-    },
-    {
-      to: `/apis/${id}/documentation`,
-      icon: 'fa-file',
-      title: 'Documentation',
-      tab: 'dev portal',
-      tooltip: { ...createTooltip(`Show dev portal tab`) },
-    },
-    {
-      to: `/apis/${id}/testing`,
-      icon: 'fa-play',
-      title: 'Testing',
-      tab: 'testing',
-      tooltip: { ...createTooltip(`Show testing tab`) },
-    },
-  ].filter((link) => !link.enabled);
+const LINK_GROUPS = (id) => [
+  {
+    label: 'General',
+    links: [
+      {
+        to: `/apis/${id}`,
+        icon: 'fa-file-alt',
+        title: 'Dashboard',
+        tab: 'overview',
+        tooltip: { ...createTooltip(`Show overview tab`) },
+      },
+      {
+        to: `/apis/${id}/informations`,
+        icon: 'fa-file-alt',
+        title: 'Informations',
+        tab: 'informations',
+        tooltip: { ...createTooltip(`Show informations tab`) },
+      },
+    ],
+  },
+  {
+    label: 'API Gateway',
+    links: [
+      {
+        to: `/apis/${id}/endpoints`,
+        icon: 'fa-road',
+        title: 'Endpoints',
+        tab: 'endpoints',
+        tooltip: { ...createTooltip(`Show endpoints tab`) },
+      },
+      {
+        to: `/apis/${id}/backends`,
+        icon: 'fa-server',
+        title: 'Backends',
+        tab: 'backends',
+        tooltip: { ...createTooltip(`Show backends tab`) },
+      },
+      {
+        to: `/apis/${id}/http-client-settings`,
+        icon: 'fa-gamepad',
+        title: 'HTTP client settings',
+        tab: 'http-client-settings',
+        tooltip: { ...createTooltip(`Show http client settings tab`) },
+      },
+      {
+        to: `/apis/${id}/plugin-chains`,
+        icon: 'fa-project-diagram',
+        title: 'Plugin chains',
+        tab: 'plugin-chains',
+        tooltip: { ...createTooltip(`Show plugin chains tab`) },
+      },
+    ],
+  },
+  {
+    label: 'API Management',
+    links: [
+      {
+        to: `/apis/${id}/plans`,
+        icon: 'fa-layer-group',
+        title: 'Plans',
+        tab: 'plan',
+        tooltip: { ...createTooltip(`Show plan tab`) },
+      },
+      {
+        to: `/apis/${id}/clients`,
+        icon: 'fa-users',
+        title: 'Clients',
+        tab: 'Clients',
+        tooltip: { ...createTooltip(`Show clients tab`) },
+        isProd: true
+      },
+      {
+        to: `/apis/${id}/subscriptions`,
+        icon: 'fa-key',
+        title: 'Subscriptions',
+        tab: 'Subscriptions',
+        tooltip: { ...createTooltip(`Show subscriptions tab`) },
+        isProd: true
+      },
+      {
+        to: `/apis/${id}/documentation`,
+        icon: 'fa-file',
+        title: 'Documentation',
+        tab: 'dev portal',
+        tooltip: { ...createTooltip(`Show dev portal tab`) },
+      },
+    ],
+  },
+  {
+    label: 'Operations',
+    links: [
+      {
+        to: `/apis/${id}/actions`,
+        icon: 'fa-bolt',
+        title: 'Actions',
+        tab: 'actions',
+        tooltip: { ...createTooltip(`Show actions tab`) },
+        isProd: true
+      },
+      {
+        to: `/apis/${id}/deployments`,
+        icon: 'fa-server',
+        title: 'Deployments',
+        tab: 'deployments',
+        tooltip: { ...createTooltip(`Show deployments tab`) },
+      },
+      {
+        to: `/apis/${id}/testing`,
+        icon: 'fa-play',
+        title: 'Testing',
+        tab: 'testing',
+        tooltip: { ...createTooltip(`Show testing tab`) },
+      },
+    ],
+  },
+];
+
+const ALL_LINKS = (id) => LINK_GROUPS(id).flatMap((g) => g.links);
 
 export default (props) => {
   const location = useLocation();
@@ -108,7 +132,7 @@ export default (props) => {
   const params = props.params;
 
   const currentTab = location.pathname.split('/')[3];
-  const noneTabIsActive = !LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
+  const noneTabIsActive = !ALL_LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
 
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
@@ -146,38 +170,46 @@ export default (props) => {
         </li>
         {!isOnApisHome && (
           <>
-            {openedSidebar && (
-              <p className="sidebar-title mt-3" aria-disabled={isOnNewAPIView}>
-                General
-              </p>
-            )}
             {openedSidebar && version && version !== 'staging' && <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
               <VersionToggle isDraft={version === 'Draft'} />
             </div>}
-            {LINKS(params.apiId)
-              .map(({ to, icon, title, tooltip, tab }) => (
-                <li
-                  className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
-                  key={title}
-                  aria-disabled={isOnNewAPIView}
-                >
-                  <Link
-                    to={{
-                      pathname: to,
-                      search: location.search,
-                    }}
-                    {...(tooltip || {})}
-                    className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-1' : ''
-                      } m-0 ${isActive(tab)}`}
+            {LINK_GROUPS(params.apiId).map((group) => (
+              <React.Fragment key={group.label}>
+                {openedSidebar && (
+                  <p className="sidebar-title mt-3" aria-disabled={isOnNewAPIView}>
+                    {group.label}
+                  </p>
+                )}
+                {group.links.map(({ to, icon, title, tooltip, tab, isProd }) => (
+                  <li
+                    className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
+                    key={title}
+                    aria-disabled={isOnNewAPIView}
                   >
-                    <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                      <i className={`fas ${icon}`} />
-                    </div>
-                    <div className="title"> {openedSidebar ? title : ''}</div>
-                  </Link>
-                </li>
-              ))}
-            {/* {openedSidebar && <p className="sidebar-title mt-3">Monitoring</p>} */}
+                    <Link
+                      to={{
+                        pathname: to,
+                        search: location.search,
+                      }}
+                      {...(tooltip || {})}
+                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-1' : ''
+                        } m-0 ${isActive(tab)}`}
+                    >
+                      <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                        <i className={`fas ${icon}`} />
+                      </div>
+                      <div className="title"> {openedSidebar ? title : ''}</div>
+
+                      {isProd && openedSidebar && <span className='dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto' style={{
+                        color: 'var(--text) !important'
+                      }}>
+                        PROD
+                      </span>}
+                    </Link>
+                  </li>
+                ))}
+              </React.Fragment>
+            ))}
           </>
         )}
       </ul>

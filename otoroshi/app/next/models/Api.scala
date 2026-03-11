@@ -317,6 +317,42 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
 
 trait ApiDocumentationAccessModeConfiguration
 
+case class JWTAccessModeConfiguration(
+    verifier: Option[String] = None,
+    failIfAbsent: Boolean = true,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends ApiDocumentationAccessModeConfiguration
+
+object JWTAccessModeConfiguration {
+  def fmt() = new Format[JWTAccessModeConfiguration] {
+    override def reads(json: JsValue): JsResult[JWTAccessModeConfiguration] = Try {
+      JWTAccessModeConfiguration(
+        verifier = json.select("verifier").asOpt[String],
+        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: JWTAccessModeConfiguration): JsValue             = Json.obj(
+      "verifier"                -> o.verifier,
+      "fail_if_absent"          -> o.failIfAbsent,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
+    )
+  }
+}
+
 case class ApikeyAccessModeConfiguration(
     clientIdPattern: Option[String] = None,
     clientNamePattern: Option[String] = None,
@@ -445,7 +481,7 @@ case class ApiDocumentationPlan(raw: JsObject) {
 //      case Some("mtls")  => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
 //      case Some("keyless")  => (raw \ "access_mode_configuration").asOpt(KeylessAccessModeConfiguration.fmt)
 //      case Some("oauth2")  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
-//      case Some("jwt")  => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
+      case Some("jwt")    => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
       case _              => None
     }
   lazy val status: ApiPlanStatus                                                    = raw.selectAsOptString("status").getOrElse("published").toLowerCase match {
@@ -512,6 +548,39 @@ case class ApiDocumentation(
     tags: Seq[String] = Seq.empty
 ) {
   def json: JsValue = ApiDocumentation._fmt.writes(this)
+}
+
+case class ApiClient(
+    id: String,
+    name: String,
+    description: Option[String] = None,
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty
+)
+
+object ApiClient {
+  def format = new Format[ApiClient] {
+    override def reads(json: JsValue): JsResult[ApiClient] = Try {
+      ApiClient(
+        id = json.selectAsString("id"),
+        name = json.selectAsString("name"),
+        description = json.selectAsOptString("description"),
+        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: ApiClient): JsValue = Json.obj(
+      "id"          -> o.id,
+      "name"        -> o.name,
+      "description" -> o.description,
+      "tags"        -> o.tags,
+      "metadata"    -> o.metadata
+    )
+  }
 }
 
 object ApiDocumentation {
@@ -690,7 +759,7 @@ object ApiSubscription {
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         dates = json.select("dates").as(ApiSubscriptionDates._fmt),
-        ownerRef = json.select("owner_ref").asString,
+        ownerRef = json.selectAsString("owner_ref"),
         planRef = json.select("plan_ref").asString,
         subscriptionKind = json.select("subscription_kind").asString.toLowerCase match {
           case "apikey"  => ApiKind.Apikey
@@ -820,7 +889,7 @@ object ApiBackend {
         )
       )
     ),
-    client = "default_client"
+    client = "default_backend_client"
   )
 
   val _fmt: Format[ApiBackend] = new Format[ApiBackend] {
@@ -829,7 +898,7 @@ object ApiBackend {
         id = json.select("id").asString,
         name = json.select("name").asString,
         backend = json.select("backend").as(NgBackend.fmt),
-        client = json.select("client").asOpt[String].getOrElse("default_client")
+        client = json.select("client").asOpt[String].getOrElse("default_backend_client")
       )
     } match {
       case Failure(ex)    =>
@@ -853,8 +922,8 @@ case class ApiBackendClient(id: String, name: String, client: NgClientConfig)
 object ApiBackendClient {
 
   val defaultClient = ApiBackendClient(
-    id = "default_client",
-    name = "default_client",
+    id = "default_backend_client",
+    name = "default_backend_client",
     client = NgClientConfig.default
   )
 
@@ -936,9 +1005,10 @@ case class Api(
     routes: Seq[ApiRoute] = Seq.empty,
     backends: Seq[ApiBackend] = Seq.empty,
     flows: Seq[ApiFlows] = Seq.empty,
-    clients: Seq[ApiBackendClient] = Seq.empty,
+    clientsBackendConfig: Seq[ApiBackendClient] = Seq.empty,
     documentation: Option[ApiDocumentation] = None,
     deployments: Seq[ApiDeployment] = Seq.empty,
+    clients: Seq[ApiClient] = Seq.empty,
     testing: ApiTesting
     // TODO: monitoring and heath ????
 ) extends EntityLocationSupport {
@@ -979,7 +1049,7 @@ case class Api(
                     backend
                       .copy(backend =
                         backend.backend.copy(
-                          client = draftApi.clients
+                          client = draftApi.clientsBackendConfig
                             .find(_.id == backend.client)
                             .map(_.client)
                             .getOrElse(NgClientConfig.default)
@@ -1057,7 +1127,9 @@ case class Api(
         .orElse(
           apiBackend.map(back =>
             back.backend
-              .copy(client = api.clients.find(_.id == back.client).map(_.client).getOrElse(NgClientConfig.default))
+              .copy(client =
+                api.clientsBackendConfig.find(_.id == back.client).map(_.client).getOrElse(NgClientConfig.default)
+              )
           )
         )
         .map(backend =>
@@ -1144,7 +1216,7 @@ object Api {
           rewrite = false,
           loadBalancing = RoundRobin
         ),
-        client = "default_client"
+        client = "default_backend_client"
       )
 
       val routes: Seq[ApiRoute] = paths.value.toSeq.map { case (path, obj) =>
@@ -1205,14 +1277,13 @@ object Api {
     implicit val e: Env               = env
 
     if (action == WriteAction.Update) {
-      oldEntity
-        .map(_._1.vfuture)
-        .getOrElse(env.datastores.apiDataStore.findById(newApi.id).map(_.get))
-        .map(api => {
-          // newApi.copy(flows = newApi.flows.map(flow => applyConsumersOnFlow(flow, api))).right
-          // TODO - check plans and apply plugins on flow depending on access mode on plans
-          newApi.right
-        })
+      // newApi.flows.
+      // keyless :
+      // mtls :
+      // apikey :
+      // oauth2 :
+      // jwt :
+      newApi.rightf
     } else {
       newApi.rightf
     }
@@ -1226,31 +1297,32 @@ object Api {
     }
   val format: Format[Api]            = new Format[Api] {
     override def writes(o: Api): JsValue             = o.location.jsonWithKey ++ Json.obj(
-      "kind"             -> o.kind,
-      "id"               -> o.id,
-      "name"             -> o.name,
-      "description"      -> o.description,
-      "domain"           -> o.domain,
-      "contextPath"      -> o.contextPath,
-      "metadata"         -> o.metadata,
-      "tags"             -> JsArray(o.tags.map(JsString.apply)),
-      "version"          -> o.version,
-      "debug_flow"       -> o.debugFlow,
-      "capture"          -> o.capture,
-      "export_reporting" -> o.exportReporting,
-      "groups"           -> o.groups,
-      "state"            -> o.state.name,
-      "enabled"          -> o.enabled,
-      "blueprint"        -> o.blueprint.name,
-      "routes"           -> o.routes.map(ApiRoute._fmt.writes),
-      "backends"         -> o.backends.map(ApiBackend._fmt.writes),
-      "flows"            -> o.flows.map(ApiFlows._fmt.writes),
-      "clients"          -> (if (o.clients.isEmpty) { Seq(ApiBackendClient.defaultClient) }
-                    else o.clients).map(ApiBackendClient._fmt.writes),
-      "documentation"    -> o.documentation.map(ApiDocumentation._fmt.writes),
-      "deployments"      -> o.deployments.map(ApiDeployment._fmt.writes),
-      "versions"         -> o.versions,
-      "testing"          -> ApiTesting._fmt.writes(o.testing)
+      "kind"                   -> o.kind,
+      "id"                     -> o.id,
+      "name"                   -> o.name,
+      "description"            -> o.description,
+      "domain"                 -> o.domain,
+      "contextPath"            -> o.contextPath,
+      "metadata"               -> o.metadata,
+      "tags"                   -> JsArray(o.tags.map(JsString.apply)),
+      "version"                -> o.version,
+      "debug_flow"             -> o.debugFlow,
+      "capture"                -> o.capture,
+      "export_reporting"       -> o.exportReporting,
+      "groups"                 -> o.groups,
+      "state"                  -> o.state.name,
+      "enabled"                -> o.enabled,
+      "blueprint"              -> o.blueprint.name,
+      "routes"                 -> o.routes.map(ApiRoute._fmt.writes),
+      "backends"               -> o.backends.map(ApiBackend._fmt.writes),
+      "flows"                  -> o.flows.map(ApiFlows._fmt.writes),
+      "clients_backend_config" -> (if (o.clientsBackendConfig.isEmpty) { Seq(ApiBackendClient.defaultClient) }
+                                   else o.clientsBackendConfig).map(ApiBackendClient._fmt.writes),
+      "documentation"          -> o.documentation.map(ApiDocumentation._fmt.writes),
+      "deployments"            -> o.deployments.map(ApiDeployment._fmt.writes),
+      "versions"               -> o.versions,
+      "testing"                -> ApiTesting._fmt.writes(o.testing),
+      "clients"                -> o.clients.map(ApiClient.format.writes)
     )
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
@@ -1299,7 +1371,7 @@ object Api {
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiFlows._fmt.reads(v).asOpt))
           .getOrElse(Seq.empty),
-        clients = (json \ "clients")
+        clientsBackendConfig = (json \ "clients_backend_config")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
@@ -1316,7 +1388,11 @@ object Api {
         testing = json
           .select("testing")
           .asOpt(ApiTesting._fmt.reads)
-          .getOrElse(ApiTesting())
+          .getOrElse(ApiTesting()),
+        clients = (json \ "clients")
+          .asOpt[Seq[JsValue]]
+          .map(_.flatMap(v => ApiClient.format.reads(v).asOpt))
+          .getOrElse(Seq.empty)
       )
     } match {
       case Failure(ex)    =>
@@ -1348,7 +1424,8 @@ trait ApiDataStore extends BasicStore[Api] {
       routes = Seq.empty,
       backends = Seq(ApiBackend.empty(env)),
       flows = Seq(ApiFlows.empty(env)),
-      clients = Seq(ApiBackendClient.defaultClient),
+      clients = Seq.empty,
+      clientsBackendConfig = Seq(ApiBackendClient.defaultClient),
       documentation = None,
       deployments = Seq.empty,
       testing = ApiTesting()

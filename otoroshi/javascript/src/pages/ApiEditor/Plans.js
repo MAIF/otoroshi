@@ -7,7 +7,6 @@ import PageTitle from '../../components/PageTitle';
 import { Row } from '../../components/Row';
 import { ArrayInput, Table } from '../../components/inputs';
 import { RestrictionPath } from '../../components/Restrictions';
-import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
@@ -15,6 +14,8 @@ import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
 import { v4 } from 'uuid';
+import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
+import { subscribeToPlan } from '../../services/BackOfficeServices';
 
 const STATUS_BADGES = {
   staging: { label: 'Staging', cls: 'api-status-started' },
@@ -33,14 +34,6 @@ const ACCESS_MODE_LABELS = {
 
 const ApiKeysConstants = {
   schema: {
-    enabled: {
-      type: 'bool',
-      label: 'Enabled',
-      props: {
-        placeholder: 'The ApiKey is enabled',
-        help: 'If the API key is disabled, then any call using this API key will fail',
-      },
-    },
     clientIdPattern: {
       type: 'string',
       label: 'ApiKey Id Pattern',
@@ -94,33 +87,6 @@ const ApiKeysConstants = {
       label: 'Constrained services only',
       props: {
         help: 'This apikey can only be used on services using apikey routing constraints',
-      },
-    },
-    throttlingQuota: {
-      type: 'number',
-      label: 'Throttling quota',
-      props: {
-        placeholder: 'Authorized calls per window',
-        suffix: 'calls per window',
-        help: 'The authorized number of calls per window. See the `otoroshi.throttlingWindow` config. or `OTOROSHI_THROTTLING_WINDOW` environment variable.',
-      },
-    },
-    dailyQuota: {
-      type: 'number',
-      label: 'Daily quota',
-      props: {
-        placeholder: 'Authorized calls per day',
-        suffix: 'calls per day',
-        help: 'The authorized number of calls per day',
-      },
-    },
-    monthlyQuota: {
-      type: 'number',
-      label: 'Monthly quota',
-      props: {
-        placeholder: 'Authorized calls per month',
-        suffix: 'calls per month',
-        help: 'The authorized number of calls per month',
       },
     },
     restrictions: {
@@ -216,9 +182,13 @@ const ApiKeysConstants = {
 };
 
 const AccessModePluginConfigurationForm = {
+  apikey: {
+    schema: ApikeyCalls.config_schema,
+    flow: ApikeyCalls.config_flow,
+  },
   jwt: {
     schema: JwtVerificationOnly.config_schema,
-    flow: JwtVerificationOnly.config_flow,
+    flow: ['verifier'],
   },
   oauth2: {
     schema: NgClientCredentialTokenEndpoint.config_schema,
@@ -227,6 +197,10 @@ const AccessModePluginConfigurationForm = {
   mtls: {
     schema: NgHasClientCertMatchingValidator.config_schema,
     flow: NgHasClientCertMatchingValidator.config_flow,
+  },
+  keyless: {
+    schema: {},
+    flow: []
   }
 };
 
@@ -294,121 +268,88 @@ function NewAccessModeSettingsForm(props) {
   );
 }
 
-function AccessModeConfiguration({ value, hide, onConfirm }) {
-  const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
-  const [pluginConfiguration, setPluginConfiguration] = useState(() => value?.pluginConfiguration);
-
-  const accessModeConfigurationType = value.access_mode_configuration_type
-
-  return (
-    <div className="wizard">
-      <div className="wizard-container">
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem' }}>
-          <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
-            <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
-            <span>Edit {accessModeConfigurationType}</span>
-          </label>
-
-          {accessModeConfigurationType === 'apikey' ? (
-            <NgForm
-              value={accessModeConfiguration}
-              schema={{
-                ...ApiKeysConstants.schema,
-                pluginConfiguration: {
-                  renderer: () => (
-                    <>
-                      {AccessModePluginConfigurationForm[accessModeConfigurationType] ? (
-                        <NewAccessModeSettingsForm
-                          schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
-                          flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
-                          value={pluginConfiguration}
-                          onChange={setPluginConfiguration}
-                        />
-                      ) : (
-                        <JsonObjectAsCodeInput
-                          label="Additional informations"
-                          onChange={setPluginConfiguration}
-                          value={pluginConfiguration}
-                        />
-                      )}
-                    </>
-                  ),
-                },
-              }}
-              flow={[
-                'enabled',
-                'clientIdPattern',
-                'clientNamePattern',
-                'description',
-                'authorizedEntities',
-                'validUntil',
-                'readOnly',
-                'allowClientIdOnly',
-                'constrainedServicesOnly',
-                'throttlingQuota',
-                'dailyQuota',
-                'monthlyQuota',
-                'restrictions',
-                'rotation',
-                { type: 'group', name: 'Miscellaneous', fields: ['metadata', 'tags'] },
-                { type: 'group', name: 'Avancé', fields: ['pluginConfiguration'] },
-              ]}
-              onChange={setAccessModeConfiguration}
-            />
-          ) : ['mtls', 'oauth2', 'jwt'].includes(accessModeConfigurationType) ?
-            <NgForm
-              flow={[{
-                type: 'group',
-                name: 'Configuration',
-                collapsable: false,
-                fields: ['pluginConfiguration']
-              }]}
-              schema={{
-                pluginConfiguration: {
-                  renderer: () => (
-                    <>
-                      {AccessModePluginConfigurationForm[accessModeConfigurationType] ? (
-                        <NewAccessModeSettingsForm
-                          schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
-                          flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
-                          value={pluginConfiguration}
-                          onChange={setPluginConfiguration}
-                        />
-                      ) : (
-                        <JsonObjectAsCodeInput
-                          label="Additional informations"
-                          onChange={setPluginConfiguration}
-                          value={pluginConfiguration}
-                        />
-                      )}
-                    </>
-                  ),
-                }
-              }}
-              value={value}
-              onChange={setAccessModeConfiguration}
-            />
-            : null
-          }
-
-        </div>
+function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfirm }) {
+  return <div className="wizard">
+    <div className="wizard-container">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem', paddingBottom: '5rem' }}>
+        <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
+          <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
+          <span>Edit {accessModeConfigurationType}</span>
+        </label>
+        {children}
 
         <div style={{
-          position: 'sticky',
+          position: 'fixed',
           right: '2rem',
           bottom: 0,
           left: 0,
-          zIndex: 100000,
+          zIndex: 1000,
           background: 'var(--bg-color_level1)',
           borderTop: '1px solid var(--bg-color_level3)'
         }} className='p-3 d-flex justify-content-end'>
-          <button onClick={() => onConfirm(accessModeConfiguration)} type="btn" className='btn btn-primaryColor'>
+          <button onClick={onConfirm} type="btn" className='btn btn-primaryColor'>
             Save {accessModeConfigurationType}
           </button>
         </div>
       </div>
     </div>
-  );
+  </div>
+}
+
+function AccessModeConfiguration({ value, hide, onConfirm }) {
+  const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
+
+  const accessModeConfigurationType = value.access_mode_configuration_type
+
+  if (['mtls', 'oauth2', 'jwt'].includes(accessModeConfigurationType))
+    return <AccessModeConfigurationExceptApikey value={value} hide={hide} onConfirm={onConfirm} />
+
+  return <AccessModeLayout
+    hide={hide}
+    accessModeConfigurationType={accessModeConfigurationType}
+    onConfirm={() => onConfirm(accessModeConfiguration)}>
+    <NgForm
+      value={accessModeConfiguration}
+      schema={ApiKeysConstants.schema}
+      flow={[
+        'clientIdPattern',
+        'clientNamePattern',
+        'description',
+        'authorizedEntities',
+        'validUntil',
+        'readOnly',
+        'allowClientIdOnly',
+        'constrainedServicesOnly',
+        'restrictions',
+        'rotation',
+        { type: 'group', name: 'Miscellaneous', fields: ['metadata', 'tags'] }
+      ]}
+      onChange={setAccessModeConfiguration}
+    />
+  </AccessModeLayout>
+}
+
+function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
+  const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value)
+  const accessModeConfigurationType = value.access_mode_configuration_type
+
+  if (!['mtls', 'oauth2', 'jwt'].includes(accessModeConfigurationType))
+    return null
+
+  return <AccessModeLayout
+    accessModeConfigurationType={accessModeConfigurationType}
+    onConfirm={() => onConfirm(accessModeConfiguration)}
+    hide={hide}>
+    <NewAccessModeSettingsForm
+      schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
+      flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
+      value={accessModeConfiguration.pluginConfiguration}
+      onChange={pluginConfiguration => setAccessModeConfiguration({
+        ...accessModeConfiguration,
+        pluginConfiguration
+      })}
+    />
+  </AccessModeLayout>
 }
 
 function PlanForm({ plan, onChange }) {
@@ -455,14 +396,15 @@ function PlanForm({ plan, onChange }) {
     access_mode_configuration: {
       renderer: ({ rootValue, value }) => {
         if (!rootValue.access_mode_configuration_type) return null;
+
         return (
           <Row title="Access mode configuration">
             <Button
               type="primaryColor"
               onClick={() => {
                 setAccessMode({
-                  access_mode_configuration_type: rootValue.access_mode_configuration_type,
                   ...(value || {}),
+                  access_mode_configuration_type: rootValue.access_mode_configuration_type,
                 });
               }}
             >
@@ -472,6 +414,38 @@ function PlanForm({ plan, onChange }) {
         );
       },
     },
+    rateLimiting: {
+      type: 'form',
+      label: ' ',
+      props: {
+        ngOptions: {
+          spread: true
+        }
+      },
+      schema: {
+        strategy: {
+          type: 'select',
+          label: 'Strategy',
+          props: {
+            defaultValue: 'LegacyThrottlingStrategyConfig',
+            options: [
+              { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
+              { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+              { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
+            ],
+          }
+        },
+        perIp: {
+          type: 'bool',
+          label: 'Per IP'
+        },
+        customPattern: {
+          type: 'string',
+          label: 'Custom group via expression (header, JWT claim)'
+        }
+      },
+      flow: []
+    },
     tags: { type: 'array', label: 'Tags' },
     metadata: { type: 'object', label: 'Metadata' },
   };
@@ -480,15 +454,24 @@ function PlanForm({ plan, onChange }) {
     { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
     { type: 'group', name: 'Lifecycle', collapsable: false, fields: ['status', 'statusDescription'] },
     { type: 'group', name: 'Access Mode', collapsable: false, fields: ['access_mode_configuration_type', 'access_mode_configuration'] },
+    { type: 'group', name: 'Rate Limiting & Quotas', collapsable: false, fields: ['rateLimiting'] },
     { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
   ];
+
+  console.log(accessMode)
 
   return (
     <>
       {accessMode && (
         <AccessModeConfiguration
           value={accessMode}
-          onConfirm={onChange}
+          onConfirm={data => {
+            onChange({
+              ...plan,
+              access_mode_configuration: data
+            })
+            setAccessMode(undefined)
+          }}
           hide={() => setAccessMode(undefined)}
         />
       )}
@@ -497,10 +480,23 @@ function PlanForm({ plan, onChange }) {
   );
 }
 
+function SubscriptionModal({ ok, cancel, plan, api }) {
+
+  useEffect(() => {
+    subscribeToPlan(api.id, plan.id)
+      .then(res => console.log(res))
+  }, [])
+
+  return <div>
+    Subscribing ...
+  </div>
+}
+
+
 export function Plans(props) {
   const params = useParams();
   const history = useHistory();
-  const { item } = useDraftOfAPI();
+  const { item, version } = useDraftOfAPI();
 
   useEffect(() => {
     props.setTitle({
@@ -533,30 +529,61 @@ export function Plans(props) {
           ? <span className="badge custom-badge api-status-started">
             {ACCESS_MODE_LABELS[plan.access_mode_configuration_type] || plan.access_mode_configuration_type}
           </span>
-          : <span style={{ color: 'var(--text-muted)' }}>—</span>
+          : <span>—</span>
       }
     },
     {
       title: 'Status',
       notFilterable: true,
       cell: (_, plan) => {
-        return <span className={`badge custom-badge ${STATUS_BADGES[plan.status]?.cls}`}>
+        return STATUS_BADGES[plan.status] ? <span className={`badge custom-badge ${STATUS_BADGES[plan.status]?.cls}`}>
           {STATUS_BADGES[plan.status]?.label || plan.status}
-        </span>
+        </span> : null
       }
+    },
+    {
+      title: 'Subscribe',
+      notFilterable: true,
+      cell: (_, plan) => <Button type='primary' className='btn-sm' onClick={() => {
+        window.wizard(
+          'Subscribe to plan',
+          (ok, cancel) => (
+            <SubscriptionModal
+              ok={ok}
+              cancel={cancel}
+              plan={plan}
+              api={item}
+            />
+          ),
+          {
+            additionalClass: 'modal-xl',
+            style: { width: '100%' },
+            noCancel: true,
+            okLabel: 'Subscribe'
+          }
+        );
+      }}>
+        Subscribe
+      </Button>
     }
   ]
 
   const deleteItem = plan => {
-
+    return updateItem({
+      ...item,
+      documentation: {
+        ...documentation,
+        plans: item.plans.filter(c => c.id !== plan.id)
+      }
+    })
   }
 
   return (
     <>
       <Table
         parentProps={{ params }}
-        navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit`)}
-        navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit`)}
+        navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
+        navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
         selfUrl="plans"
         defaultTitle="Plans"
         itemName="Plan"
@@ -573,7 +600,7 @@ export function Plans(props) {
         extractKey={(item) => item.id}
         rowNavigation={true}
         hideAddItemAction={true}
-        itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit`}
+        itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
         rawEditUrl={true}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
@@ -626,10 +653,11 @@ export function PlanEditor(props) {
     const plans = isNew
       ? [...(item.documentation?.plans || []), plan]
       : item.documentation.plans.map((p) => (p.id === plan.id ? plan : p));
-    return updateItem({ ...item, documentation: { ...item.documentation, plans } }).then(back);
+    return updateItem({ ...item, documentation: { ...item.documentation, plans } })
+      .then(back);
   };
 
-  return <div style={{ maxWidth: 1050 }}>
+  return <div>
     <PageTitle title={isNew ? 'New Plan' : plan.name} {...props}>
       <DraftOnly>
         <FeedbackButton
