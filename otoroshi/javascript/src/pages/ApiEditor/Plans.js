@@ -26,6 +26,29 @@ const STATUS_BADGES = {
   closed: { label: 'Closed', cls: 'api-status-removed' },
 };
 
+const CURRENCIES = [
+  { code: "EUR", name: "Euro", symbol: "€" },
+  { code: "USD", name: "United States Dollar", symbol: "$" },
+  { code: "GBP", name: "British Pound Sterling", symbol: "£" },
+  { code: "JPY", name: "Japanese Yen", symbol: "¥" },
+  { code: "CHF", name: "Swiss Franc", symbol: "CHF" },
+  { code: "AUD", name: "Australian Dollar", symbol: "A$" },
+  { code: "CAD", name: "Canadian Dollar", symbol: "C$" },
+  { code: "CNY", name: "Chinese Yuan Renminbi", symbol: "¥" },
+  { code: "SEK", name: "Swedish Krona", symbol: "kr" },
+  { code: "NZD", name: "New Zealand Dollar", symbol: "NZ$" },
+  { code: "MXN", name: "Mexican Peso", symbol: "$" },
+  { code: "SGD", name: "Singapore Dollar", symbol: "S$" },
+  { code: "HKD", name: "Hong Kong Dollar", symbol: "HK$" },
+  { code: "NOK", name: "Norwegian Krone", symbol: "kr" },
+  { code: "KRW", name: "South Korean Won", symbol: "₩" },
+  { code: "TRY", name: "Turkish Lira", symbol: "₺" },
+  { code: "INR", name: "Indian Rupee", symbol: "₹" },
+  { code: "RUB", name: "Russian Ruble", symbol: "₽" },
+  { code: "BRL", name: "Brazilian Real", symbol: "R$" },
+  { code: "ZAR", name: "South African Rand", symbol: "R" }
+];
+
 const ACCESS_MODE_LABELS = {
   keyless: 'Keyless',
   apikey: 'API Key',
@@ -453,12 +476,7 @@ function PlanForm({ plan, onChange }) {
     },
     rateLimiting: {
       type: 'form',
-      label: ' ',
-      props: {
-        ngOptions: {
-          spread: true
-        }
-      },
+      label: 'Rate Limiting & Quotas',
       schema: {
         strategy: {
           type: 'select',
@@ -481,7 +499,49 @@ function PlanForm({ plan, onChange }) {
           label: 'Custom group via expression (header, JWT claim)'
         }
       },
-      flow: []
+      flow: ['strategy', 'perIp', 'customPattern']
+    },
+    pricing: {
+      type: 'form',
+      label: 'Pricing',
+      flow: ['enabled', 'name', 'price', 'currency', 'params'],
+      schema: {
+        enabled: {
+          type: 'bool',
+          label: "Enabled",
+        },
+        name: {
+          visible: props => props.enabled,
+          type: 'string',
+          label: 'Name'
+        },
+        price: {
+          visible: props => props.enabled,
+          type: 'number',
+          label: 'Price'
+        },
+        currency: {
+          visible: props => props.enabled,
+          type: 'select',
+          label: 'Currency',
+          props: {
+            options: CURRENCIES.map(({ code, name, symbol }) => ({
+              value: code,
+              label: `${name} - ${symbol}`
+            }))
+          }
+        },
+        params: {
+          visible: props => props.enabled,
+          type: 'code',
+          label: 'Extra parameters',
+          props: {
+            ngOptions: {
+              spread: true,
+            }
+          }
+        }
+      },
     },
     tags: { type: 'array', label: 'Tags' },
     metadata: { type: 'object', label: 'Metadata' },
@@ -491,7 +551,8 @@ function PlanForm({ plan, onChange }) {
     { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
     { type: 'group', name: 'Lifecycle', collapsable: false, fields: ['status', 'statusDescription'] },
     { type: 'group', name: 'Access Mode', collapsable: false, fields: ['access_mode_configuration_type', 'access_mode_configuration'] },
-    { type: 'group', name: 'Rate Limiting & Quotas', collapsable: false, fields: ['rateLimiting'] },
+    'rateLimiting',
+    'pricing',
     { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
   ];
 

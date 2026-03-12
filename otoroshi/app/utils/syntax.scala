@@ -423,6 +423,7 @@ object implicits {
     def selectAsOptLong(path: String): Option[Long]       = obj.select(path).asOptLong
     def selectAsOptObject(path: String): Option[JsObject] = obj.select(path).asOpt[JsObject]
     def selectAsOptArray(path: String): Option[JsArray]   = obj.select(path).asOpt[JsArray]
+    def selectAsOptValue(path: String): Option[JsValue]   = obj.select(path).asOpt[JsValue]
   }
   implicit class BetterFuture[A](private val obj: Future[A])           extends AnyVal {
     def block(atMost: Duration): A                                            = Await.result(obj, atMost)

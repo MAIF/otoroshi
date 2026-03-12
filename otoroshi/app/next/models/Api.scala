@@ -731,15 +731,19 @@ object ApiSubscriptionDates {
 
 case class ApiPricing(
     id: String,
+    enabled: Boolean,
     name: String,
     price: Double,
-    currency: String
+    currency: String,
+    params: JsValue
 ) {
   def json = Json.obj(
     "id"       -> id,
+    "enabled"  -> enabled,
     "name"     -> name,
     "price"    -> price,
-    "currency" -> currency
+    "currency" -> currency,
+    "params"   -> params
   )
 }
 
@@ -750,8 +754,10 @@ object ApiPricing {
       ApiPricing(
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
+        enabled = json.selectAsBoolean("enabled"),
         price = json.selectAsDouble("price"),
-        currency = json.selectAsString("currency")
+        currency = json.selectAsString("currency"),
+        params = json.selectAsOptValue("params").getOrElse(Json.obj())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
