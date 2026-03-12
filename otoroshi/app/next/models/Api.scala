@@ -380,6 +380,29 @@ object OAuth2RemoteAccessModeConfiguration {
   }
 }
 
+case class OAuth2AccessModeConfiguration(
+    defaultKeyPair: String,
+    expiration: Int
+) extends ApiDocumentationAccessModeConfiguration
+
+object OAuth2AccessModeConfiguration {
+  def fmt = new Format[OAuth2AccessModeConfiguration] {
+    override def reads(json: JsValue): JsResult[OAuth2AccessModeConfiguration] = Try {
+      OAuth2AccessModeConfiguration(
+        defaultKeyPair = json.selectAsString("default_key_pair"),
+        expiration = json.selectAsInt("expiration")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2AccessModeConfiguration): JsValue             = Json.obj(
+      "default_key_pair" -> o.defaultKeyPair,
+      "expiration"       -> o.expiration
+    )
+  }
+}
+
 case class ApikeyAccessModeConfiguration(
     clientIdPattern: Option[String] = None,
     clientNamePattern: Option[String] = None,
@@ -495,13 +518,13 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val id: String                                                               = raw.selectAsString("id")
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
+  lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(ApiPricing.format)
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
       case "jwt"           => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
       case "mtls"          => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
-//      case Some("keyless")  => (raw \ "access_mode_configuration").asOpt(KeylessAccessModeConfiguration.fmt)
-//      case "oauth2-local"  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
+      case "oauth2-local"  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
       case "oauth2-remote" => (raw \ "access_mode_configuration").asOpt(OAuth2RemoteAccessModeConfiguration.fmt)
       case _               => None
     }
@@ -703,6 +726,39 @@ object ApiSubscriptionDates {
       "ending_at"    -> o.ending_at.getMillis,
       "closed_at"    -> o.closed_at.getMillis
     )
+  }
+}
+
+case class ApiPricing(
+    id: String,
+    name: String,
+    price: Double,
+    currency: String
+) {
+  def json = Json.obj(
+    "id"       -> id,
+    "name"     -> name,
+    "price"    -> price,
+    "currency" -> currency
+  )
+}
+
+object ApiPricing {
+  def format = new Format[ApiPricing] {
+
+    override def reads(json: JsValue): JsResult[ApiPricing] = Try {
+      ApiPricing(
+        id = json.selectAsString("id"),
+        name = json.selectAsString("name"),
+        price = json.selectAsDouble("price"),
+        currency = json.selectAsString("currency")
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: ApiPricing): JsValue = o.json
   }
 }
 
@@ -1152,9 +1208,19 @@ case class Api(
   private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
     routeWithApi.api.documentation
       .map { documentation =>
-        val route = documentation.plans.foldLeft(routeWithApi.route) { case (route, plan) => applyPlan(route, plan) }
+        val route = documentation.plans
+          .filter(plan => plan.status == ApiPlanStatus.Published)
+          .foldLeft(routeWithApi.route) { case (route, plan) =>
+            applyPlan(route, plan)
+          }
 
-        if (documentation.plans.exists(plan => plan.accessModeConfigurationType != "keyless")) {
+        if (
+          documentation.plans
+            .exists(plan =>
+              plan.accessModeConfigurationType != "keyless" &&
+              plan.status == ApiPlanStatus.Published
+            )
+        ) {
           route.copy(
             plugins = addPluginsToFlow(
               route.plugins,

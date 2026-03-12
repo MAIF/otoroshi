@@ -226,6 +226,10 @@ const AccessModePluginConfigurationForm = {
   keyless: {
     schema: {},
     flow: []
+  },
+  public: {
+    schema: {},
+    flow: []
   }
 };
 
@@ -240,13 +244,18 @@ function AccessModeConfigurationTypeSelector({ onChange, value }) {
             text: 'Open access without any authentication. Clients can call the API freely without providing credentials. Useful for public APIs that do not require identification or rate limiting per client.',
           },
           {
+            id: 'public',
+            key: 'Public',
+            text: 'Public plan available to all developers. Clients can subscribe directly from the developer portal without requiring manual approval.'
+          },
+          {
             id: 'mtls',
             key: 'MTLS',
             text: "Mutual TLS authentication requiring the client to present a valid client certificate. Both parties verify each other's identity, ensuring a strong level of trust and encryption between the client and the gateway.",
           },
           {
             id: 'oauth2-local',
-            key: 'OAuth2 Local (using authentication module and jwt verifier)',
+            key: 'OAuth2 Local',
             text: 'Machine-to-machine authentication using the OAuth 2.0 client credentials flow. The client obtains an access token from an authorization server and includes it in each request to the API.',
           },
           {
@@ -331,7 +340,7 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
 
   const accessModeConfigurationType = value.access_mode_configuration_type
 
-  if (['mtls', 'oauth2-local', 'oauth2-remote', 'jwt'].includes(accessModeConfigurationType))
+  if (['mtls', 'oauth2-local', 'oauth2-remote', 'jwt', 'public', 'keyless'].includes(accessModeConfigurationType))
     return <AccessModeConfigurationExceptApikey value={value} hide={hide} onConfirm={onConfirm} />
 
   return <AccessModeLayout
@@ -421,6 +430,7 @@ function PlanForm({ plan, onChange }) {
       ),
     },
     access_mode_configuration: {
+      visible: props => !['keyless', 'public'].includes(props?.access_mode_configuration_type),
       renderer: ({ rootValue, value }) => {
         if (!rootValue.access_mode_configuration_type) return null;
 
@@ -435,7 +445,7 @@ function PlanForm({ plan, onChange }) {
                 });
               }}
             >
-              Edit {rootValue.access_mode_configuration_type}
+              Edit the configuration
             </Button>
           </Row>
         );
