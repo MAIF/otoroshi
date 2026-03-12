@@ -511,17 +511,17 @@ function PlanForm({ plan, onChange }) {
           label: "Enabled",
         },
         name: {
-          visible: props => props.enabled,
+          visible: props => props?.enabled,
           type: 'string',
           label: 'Name'
         },
         price: {
-          visible: props => props.enabled,
+          visible: props => props?.enabled,
           type: 'number',
           label: 'Price'
         },
         currency: {
-          visible: props => props.enabled,
+          visible: props => props?.enabled,
           type: 'select',
           label: 'Currency',
           props: {
@@ -532,7 +532,7 @@ function PlanForm({ plan, onChange }) {
           }
         },
         params: {
-          visible: props => props.enabled,
+          visible: props => props?.enabled,
           type: 'code',
           label: 'Extra parameters',
           props: {
