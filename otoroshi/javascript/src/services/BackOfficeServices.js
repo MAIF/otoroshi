@@ -2084,6 +2084,20 @@ export function jsonToGraphqlSchema(schema, types) {
     }),
   }).then((r) => r.json());
 }
+
+export function subscribeToPlan(apiId, planId) {
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/plans/${planId}/subscribe`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({})
+  })
+    .then((r) => r.json());
+}
+
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) => {
@@ -2183,7 +2197,7 @@ export const nextClient = {
     DRAFTS: 'drafts',
     APIS: 'apis',
     GROUPS: 'service-groups',
-    API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions',
+    API_SUBSCRIPTIONS: 'apisubscriptions',
     ROUTE_TEMPLATES: 'route-templates',
   },
   find: (entity) => fetchWrapper(`/${entity}`),

@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import SimpleLoader from './SimpleLoader';
 import PageTitle from '../../components/PageTitle';
@@ -53,78 +52,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
-            : props.onChange
-        }
-      />
-    </div>
-  );
-}
-
-function ApiDocumentationPlan(props) {
-  const flow = [
-    'id',
-    'name',
-    'description',
-    'throttling_quota',
-    'daily_quota',
-    'monthly_quota',
-    'consumer_id',
-    'tags',
-    'metadata',
-  ];
-  const schema = {
-    id: {
-      type: 'string',
-      props: { label: 'ID' },
-    },
-    name: {
-      type: 'string',
-      props: { label: 'Name' },
-    },
-    description: {
-      type: 'string',
-      props: { label: 'Description' },
-    },
-    throttling_quota: {
-      type: 'number',
-      props: { label: 'Throttling Quota', suffix: 'per window' },
-    },
-    daily_quota: {
-      type: 'number',
-      props: { label: 'Daily Quota', suffix: 'calls/day' },
-    },
-    monthly_quota: {
-      type: 'number',
-      props: { label: 'Monthly Quota', suffix: 'calls/month' },
-    },
-    consumer_id: {
-      type: 'string',
-      props: { label: 'Consumer Id' },
-    },
-    tags: {
-      type: 'array',
-      props: { label: 'tags' },
-    },
-    metadata: {
-      type: 'object',
-      props: { label: 'Metadata' },
-    },
-  };
-  return (
-    <div className="col-sm-12">
-      <Form
-        flow={flow}
-        schema={schema}
-        value={props.itemValue || props.value}
-        onChange={
-          props.itemValue
-            ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -161,9 +91,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -192,9 +122,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -229,9 +159,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -256,9 +186,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -268,7 +198,7 @@ function ApiDocumentationSidebar(props) {
 
 export function Documentation(props) {
   const [showJson, setShowJson] = useState(false);
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
   const [code, setCode] = useState('');
   const [newItem, setNewItem] = useState(null);
 
@@ -306,8 +236,6 @@ export function Documentation(props) {
     'footer',
     '>>>Banner',
     'banner',
-    '>>>Plans',
-    'plans',
     '>>>Redirections',
     'redirections',
     '>>>References',
@@ -381,11 +309,7 @@ export function Documentation(props) {
     banner: {
       type: ApiDocumentationResource,
       props: { label: 'Banner' },
-    },
-    plans: {
-      type: 'array',
-      props: { component: ApiDocumentationPlan },
-    },
+    }
   };
 
   if (!item) return <SimpleLoader />;
@@ -406,7 +330,8 @@ export function Documentation(props) {
             }}
           />
         </div>
-        <FeedbackButton
+
+        {isDraft ? <FeedbackButton
           type="success"
           className="d-flex ms-auto"
           onPress={updateDoc}
@@ -415,7 +340,7 @@ export function Documentation(props) {
               Update <VersionBadge size="xs" />
             </div>
           }
-        />
+        /> : null}
       </PageTitle>
       {showJson && (
         <MonacoEditor
@@ -437,7 +362,7 @@ export function Documentation(props) {
           onChange={(newValue) => {
             try {
               setNewItem(JSON.parse(newValue));
-            } catch (e) {}
+            } catch (e) { }
           }}
         />
       )}

@@ -287,16 +287,14 @@ const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
   <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
-      {env && (
-        <input
-          onChange={(e) => ''}
-          type="text"
-          className="form-control"
-          value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
-            rawValue.clientId + ':' + rawValue.clientSecret
-          )}' http://xxxxxx --include`}
-        />
-      )}
+      <input
+        onChange={(e) => ''}
+        type="text"
+        className="form-control"
+        value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
+          rawValue.clientId + ':' + rawValue.clientSecret
+        )}' http://xxxxxx --include`}
+      />
     </div>
   </div>
 );
@@ -643,6 +641,10 @@ const ApiKeysConstants = {
     curlCommandWithBasicAuth: {
       type: CurlCommandWithBasicAuth,
       props: { label: 'Curl Command with Basic Auth. Header', env: that.props.env },
+    },
+    apikeyBearer: {
+      type: ApikeyBearer,
+      props: { label: 'Curl Command with Apikey header as bearer', env: that.props.env },
     },
     clientName: {
       type: 'string',

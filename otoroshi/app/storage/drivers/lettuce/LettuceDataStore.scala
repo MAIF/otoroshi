@@ -12,9 +12,9 @@ import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaC
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
 import next.models.{
-  ApiConsumerSubscriptionDataStore,
+  ApiSubscriptionDataStore,
   ApiDataStore,
-  KvApiConsumerSubscriptionDataStore,
+  KvApiSubscriptionDataStore,
   KvApiDataStore,
   KvRouteTemplateDataStore,
   RouteTemplateDataStore
@@ -260,8 +260,8 @@ class LettuceDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  private lazy val _apiSubscriptionDataStore                              = new KvApiSubscriptionDataStore(redis, env)
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore

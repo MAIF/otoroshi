@@ -3,7 +3,7 @@ package otoroshi.api
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
-import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
+import next.models.{Api, ApiSubscription, RouteTemplate}
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
@@ -1017,9 +1017,7 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _ctx) => env.datastores.draftsDataStore.template(env).json,
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
-        stateUpdate = seq => env.proxyState.updateDrafts(seq),
-        writeValidator = Draft.writeValidator
-//        deleteValidator = Draft.deleteValidator,
+        stateUpdate = seq => env.proxyState.updateDrafts(seq)
       )
     ),
     //////
@@ -1039,31 +1037,28 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _a) => env.datastores.apiDataStore.template(env).json,
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
-        stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = (entity, body, oldEntity, singularName, id, action, env) =>
-          Api.writeValidator(entity, body, oldEntity, singularName, id, action, env)
+        stateUpdate = seq => env.proxyState.updateApis(seq)
       )
     ),
     //////
     Resource(
-      "ApiConsumerSubscription",
-      "apiconsumersubscriptions",
-      "apiconsumersubscription",
+      "ApiSubscription",
+      "apisubscriptions",
+      "apisubscription",
       "apis.otoroshi.io",
       ResourceVersion("v1", true, false, true),
-      GenericResourceAccessApiWithStateAndWriteValidation[ApiConsumerSubscription](
-        ApiConsumerSubscription.format,
-        classOf[ApiConsumerSubscription],
-        env.datastores.apiConsumerSubscriptionDataStore.key,
-        env.datastores.apiConsumerSubscriptionDataStore.extractId,
+      GenericResourceAccessApiWithStateAndWriteValidation[ApiSubscription](
+        ApiSubscription.format,
+        classOf[ApiSubscription],
+        env.datastores.apiSubscriptionDataStore.key,
+        env.datastores.apiSubscriptionDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (_v, _p, _a) => env.datastores.apiConsumerSubscriptionDataStore.template(env).json,
-        stateAll = () => env.proxyState.allApiConsumerSubscriptions(),
-        stateOne = id => env.proxyState.apiConsumerSubscription(id),
-        stateUpdate = seq => env.proxyState.updateApiConsumerSubscriptions(seq),
-        writeValidator = ApiConsumerSubscription.writeValidator,
-        deleteValidator = ApiConsumerSubscription.deleteValidator
+        (_v, _p, _a) => env.datastores.apiSubscriptionDataStore.template(env).json,
+        stateAll = () => env.proxyState.allApiSubscriptions(),
+        stateOne = id => env.proxyState.apiSubscription(id),
+        stateUpdate = seq => env.proxyState.updateApiSubscriptions(seq),
+        writeValidator = ApiSubscription.writeValidator
       )
     ),
     //////
