@@ -17,7 +17,7 @@ You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/bac
 | `rewrite` | boolean | `false` | When enabled, the request path is completely replaced by `root`. Supports @ref[expression language](../topics/expression-language.md) for dynamic rewriting |
 | `load_balancing` | object | `{"type": "RoundRobin"}` | Load balancing algorithm (see [below](#load-balancing)) |
 | `health_check` | object | `null` | Optional health check configuration (see [below](#health-check)) |
-| `client` | object | - | HTTP client settings (see [below](#client-settings)) |
+| `client` | object |     | HTTP client settings (see [below](#client-settings)) |
 
 ### Full path rewrite
 
@@ -32,15 +32,15 @@ Each target represents a downstream server that Otoroshi can forward requests to
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | string | - | Unique identifier of the target |
-| `hostname` | string | - | Hostname of the target (without scheme) |
-| `port` | number | - | Port of the target |
-| `tls` | boolean | - | Call the target via HTTPS |
+| `id` | string |     | Unique identifier of the target |
+| `hostname` | string |     | Hostname of the target (without scheme) |
+| `port` | number |     | Port of the target |
+| `tls` | boolean |     | Call the target via HTTPS |
 | `weight` | number | `1` | Weight used by the load balancing strategy to distribute traffic |
 | `protocol` | string | `HTTP/1.1` | Protocol: `HTTP/1.0`, `HTTP/1.1`, `HTTP/2.0`, or `HTTP/3.0` |
 | `predicate` | object | `AlwaysMatch` | Predicate function to filter this target based on request properties |
 | `ip_address` | string | `null` | IP address of the target (optional, for DNS bypass) |
-| `tls_config` | object | - | TLS settings for this specific target (see below) |
+| `tls_config` | object |     | TLS settings for this specific target (see below) |
 | `backup` | boolean | `false` | If `true`, this target is only used when all primary (non-backup) targets are unavailable |
 
 ### Target TLS settings
@@ -81,7 +81,7 @@ Each target represents a downstream server that Otoroshi can forward requests to
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `enabled` | boolean | `false` | Enable periodic health checks |
-| `url` | string | - | The URL to call for health checks |
+| `url` | string |     | The URL to call for health checks |
 
 When enabled, Otoroshi periodically calls the health check URL. Unhealthy targets can be temporarily removed from the load balancing pool.
 
@@ -113,7 +113,7 @@ Client settings control how Otoroshi connects to backend targets.
 | `global_timeout` | number | `30000` | Maximum duration (ms) for the entire call including retries |
 | `sample_interval` | number | `2000` | Delay (ms) between retries. Multiplied by `backoff_factor` at each retry |
 | `custom_timeouts` | array of object | `[]` | Path-specific timeout overrides (see below) |
-| `cache_connection_settings` | object | - | Connection caching settings (see below) |
+| `cache_connection_settings` | object |     | Connection caching settings (see below) |
 | `proxy` | object | `null` | HTTP proxy settings for reaching the backend |
 
 ### Custom timeouts
