@@ -55,18 +55,18 @@
 * Over 200 built-in middlewares (plugins) covering: (@ref:[built-in plugins](./plugins/built-in-plugins.md))
     * circuit breakers (with configurable thresholds) (@ref:[circuit breaker](./topics/circuit-breaker.md))
     * automatic retries (with exponential backoff)
-    * response caching
-    * gzip and brotli compression
-    * request and response headers manipulation
-    * request and response cookies manipulation
-    * CORS handling
-    * body transformation (jq, regex, XML/JSON conversion, SOAP)
-    * query string transformation
+    * response caching (@ref:[built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.NgResponseCache))
+    * gzip and brotli compression (@ref:[gzip](./plugins/built-in-plugins.md#otoroshi.next.plugins.GzipResponseCompressor), @ref:[brotli](./plugins/built-in-plugins.md#otoroshi.next.plugins.BrotliResponseCompressor))
+    * request and response headers manipulation (@ref:[input](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalHeadersIn), @ref:[output](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalHeadersOut))
+    * request and response cookies manipulation (@ref:[input](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalCookieInt), @ref:[output](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalCookieOut))
+    * CORS handling (@ref:[CORS](./plugins/built-in-plugins.md#otoroshi.next.plugins.Cors))
+    * body transformation (jq, regex, XML/JSON conversion, SOAP) (@ref:[built-in plugins](./plugins/built-in-plugins.md))
+    * query string transformation (@ref:[built-in plugins](./plugins/built-in-plugins.md))
     * GraphQL composition (@ref:[GraphQL composer](./topics/graphql-composer.md))
-    * HTML patching
-    * redirection
-    * maintenance and build modes
-    * static responses and mocks
+    * HTML patching (@ref:[built-in plugins](./plugins/built-in-plugins.md))
+    * redirection (@ref:[built-in plugins](./plugins/built-in-plugins.md))
+    * maintenance and build modes (@ref:[built-in plugins](./plugins/built-in-plugins.md))
+    * static responses and mocks (@ref:[built-in plugins](./plugins/built-in-plugins.md))
     * etc
 * Support middlewares compiled to WASM (using Extism) (@ref:[WASM plugins](./entities/wasm-plugins.md), @ref:[WASM usage](./topics/wasm-usage.md))
 * Support Open Policy Agent policies for traffic control (via WASM) (@ref:[WASM usage](./topics/wasm-usage.md))
