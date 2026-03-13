@@ -1,221 +1,393 @@
-# Data exporters
+# Data Exporters
 
-The data exporters are the way to export alerts and events from Otoroshi to an external storage.
+Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems.
 
-To try them, you can folllow @ref[this tutorial](../how-to-s/export-alerts-using-mailgun.md).
+To try them out, you can follow @ref[this tutorial](../how-to-s/export-alerts-using-mailgun.md).
 
-## Common fields
+## UI page
 
-* `Type`: the type of event exporter
-* `Enabled`: enabled or not the exporter
-* `Name`: given name to the exporter
-* `Description`: the data exporter description
-* `Tags`: list of tags associated to the module
-* `Metadata`: list of metadata associated to the module
+You can find all data exporters [here](http://otoroshi.oto.tools:8080/bo/dashboard/exporters)
 
-All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.
+## Properties
 
-* `Filtering and projection` : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It's composed of `Filtering` and `Projection` fields. To get a full usage of this elements, read @ref:[this section](#matching-and-projections)
-* `Queue details`: set of fields to adjust the workers of the exporter. 
-  * `Buffer size`: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.
-  * `JSON conversion workers`: number of workers used to transform events to JSON format in paralell
-  * `Send workers`: number of workers used to send transformed events
-  * `Group size`: chunk up this stream into groups of elements received within a time window (the time window is the next field)
-  * `Group duration`: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent
-  
-For the last part, the `Exporter configuration` will be detail individually.
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `id` | string | - | Unique identifier |
+| `name` | string | - | Display name |
+| `description` | string | - | Description |
+| `enabled` | boolean | `true` | Whether the exporter is active |
+| `typ` | string | - | The type of exporter (see [exporter types](#exporter-types)) |
+| `tags` | array of string | `[]` | Tags |
+| `metadata` | object | `{}` | Key/value metadata |
+| `filtering` | object | - | Event filtering configuration (see [below](#matching-and-projections)) |
+| `projection` | object | `{}` | Projection to export only specific fields |
+| `bufferSize` | number | `5000` | Number of events to keep in memory buffer |
+| `jsonWorkers` | number | `1` | Number of workers for JSON serialization |
+| `sendWorkers` | number | `1` | Number of workers for sending events |
+| `groupSize` | number | `100` | Number of events to batch together |
+| `groupDuration` | number | `30000` | Maximum wait time (ms) before sending a batch |
+| `config` | object | - | Exporter-specific configuration |
 
 ## Matching and projections
 
-**Filtering** is used to **include** or **exclude** some kind of events and alerts. For each include and exclude field, you can add a list of key-value. 
+### Filtering
 
-Let's say we only want to keep Otoroshi alerts
+**Filtering** is used to **include** or **exclude** specific types of events and alerts. Each include/exclude entry is a key-value match.
+
+Example: only keep Otoroshi alerts:
+
 ```json
 { "include": [{ "@type": "AlertEvent" }] }
 ```
 
-Otoroshi provides a list of rules to keep only events with specific values. We will use the following event to illustrate.
+Otoroshi provides rules to filter events based on their content. Given this example event:
 
 ```json
 {
- "foo": "bar",
- "type": "AlertEvent",
- "alert": "big-alert",
- "status": 200,
- "codes": ["a", "b"],
- "inner": {
-   "foo": "bar",
-   "bar": "foo"
- }
+  "foo": "bar",
+  "type": "AlertEvent",
+  "alert": "big-alert",
+  "status": 200,
+  "codes": ["a", "b"],
+  "inner": {
+    "foo": "bar",
+    "bar": "foo"
+  }
 }
 ```
-
-The rules apply with the previous example as event.
 
 @@@div { #filtering }
 &nbsp;
 @@@
 
+### Projection
 
-
-**Projection** is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, **only** the listed fields will be exported.
+**Projection** is a list of fields to export. If empty, all fields are exported. If specified, **only** the listed fields will be included in exported events.
 
 @@@div { #projection }
 &nbsp;
 @@@
 
-## Elastic
+## Exporter types
 
-With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with [elastic read in global config](./global-config.html#analytics-elastic-dashboard-datasource-read-)
+### Elastic
 
-* `Cluster URI`: Elastic cluster URI
-* `Index`: Elastic index 
-* `Type`: Event type (not needed for elasticsearch above 6.x)
-* `User`: Elastic User (optional)
-* `Password`: Elastic password (optional)
-* `Version`: Elastic version (optional, if none provided it will be fetched from cluster)
-* `Apply template`: Automatically apply index template
-* `Check Connection`: Button to test the configuration. It will displayed a modal with checked point, and if the case of it's successfull, it will displayed the found version of the Elasticsearch and the index used
-* `Manually apply index template`: try to put the elasticsearch template by calling the api of elasticsearch
-* `Show index template`: try to retrieve the current index template presents in elasticsearch
-* `Client side temporal indexes handling`: When enabled, Otoroshi will manage the creation of indexes. When it's disabled, Otoroshi will push in the same index
-* `One index per`: When the previous field is enabled, you can choose the interval of time between the creation of a new index in elasticsearch 
-* `Custom TLS Settings`: Enable the TLS configuration for the communication with Elasticsearch
-  * `TLS loose`: if enabled, will block all untrustful ssl configs
-  * `TrustAll`: allows any server certificates even the self-signed ones
-  * `Client certificates`: list of client certificates used to communicate with elasticsearch
-  * `Trusted certificates`: list of trusted certificates received from elasticsearch
+Sends events in batch to an Elasticsearch cluster. Can be used with the @ref[elastic analytics dashboard](./global-config.md#analytics-elastic-dashboard-datasource-read-).
 
-## Webhook 
+| Property | Type | Description |
+|----------|------|-------------|
+| `uris` | array of string | Elasticsearch cluster URIs |
+| `index` | string | Index name |
+| `type` | string | Event type (not needed for ES 6.x+) |
+| `user` | string | Username (optional) |
+| `password` | string | Password (optional) |
+| `version` | string | Elasticsearch version (auto-detected if not set) |
+| `applyTemplate` | boolean | Automatically apply index template |
+| `indexSettings.clientSide` | boolean | Otoroshi manages index creation over time |
+| `indexSettings.interval` | string | Index rotation interval: `Day`, `Week`, `Month`, or `Year` |
+| `indexSettings.numberOfShards` | number | Number of shards |
+| `indexSettings.numberOfReplicas` | number | Number of replicas |
+| `mtlsConfig` | object | Custom TLS settings |
 
-With this kind of exporter, every matching event will be sent to a URL (in batch) using a POST method and an JSON array body.
+### Webhook
 
-* `Alerts hook URL`: url used to post events
-* `Hook Headers`: headers add to the post request
-* `Custom TLS Settings`: Enable the TLS configuration for the communication with Elasticsearch
-  * `TLS loose`: if enabled, will block all untrustful ssl configs
-  * `TrustAll`: allows any server certificates even the self-signed ones
-  * `Client certificates`: list of client certificates used to communicate with elasticsearch
-  * `Trusted certificates`: list of trusted certificates received from elasticsearch
+Sends events in batch to an HTTP endpoint using POST with a JSON array body.
 
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | URL to post events to |
+| `headers` | object | HTTP headers to include |
+| `tlsConfig` | object | Custom TLS settings |
 
-## Pulsar 
+### Kafka
 
-With this kind of exporter, every matching event will be sent to an [Apache Pulsar topic](https://pulsar.apache.org/)
+Sends events to an [Apache Kafka](https://kafka.apache.org/) topic. See @ref[Kafka tutorials](../how-to-s/communicate-with-kafka.md).
 
+| Property | Type | Description |
+|----------|------|-------------|
+| `servers` | array of string | Kafka broker addresses |
+| `topic` | string | Kafka topic name |
+| `sasl` | object | SASL authentication (username, password, mechanism: `PLAIN`/`SCRAM-SHA-256`/`SCRAM-SHA-512`) |
+| `keypass` | string | Keystore password |
+| `keystore` | string | Keystore path |
+| `truststore` | string | Truststore path |
+| `tlsConfig` | object | Custom TLS settings |
 
-* `Pulsar URI`: URI of the pulsar server
-* `Custom TLS Settings`: Enable the TLS configuration for the communication with Elasticsearch
-  * `TLS loose`: if enabled, will block all untrustful ssl configs
-  * `TrustAll`: allows any server certificates even the self-signed ones
-  * `Client certificates`: list of client certificates used to communicate with elasticsearch
-  * `Trusted certificates`: list of trusted certificates received from elasticsearch
-* `Pulsar tenant`: tenant on the pulsar server
-* `Pulsar namespace`:  namespace on the pulsar server
-* `Pulsar topic`: topic on the pulsar server
+### Pulsar
 
-## Kafka 
+Sends events to an [Apache Pulsar](https://pulsar.apache.org/) topic.
 
-With this kind of exporter, every matching event will be sent to an [Apache Kafka topic](https://kafka.apache.org/). You can find few @ref[tutorials](../how-to-s/communicate-with-kafka.md) about the connection between Otoroshi and Kafka based on docker images.
+| Property | Type | Description |
+|----------|------|-------------|
+| `uri` | string | Pulsar server URI |
+| `tenant` | string | Pulsar tenant |
+| `namespace` | string | Pulsar namespace |
+| `topic` | string | Pulsar topic |
+| `tlsConfig` | object | Custom TLS settings |
 
-* `Kafka Servers`: the list of servers to contact to connect the Kafka client with the Kafka cluster
-* `Kafka topic`: the topic on which Otoroshi alerts will be sent
+### Splunk
 
-By default, Kafka is installed with no authentication. Otoroshi supports the following authentication mechanisms and protocols for Kafka brokers.
+Sends events to a Splunk HTTP Event Collector (HEC).
 
-### SASL
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | Splunk HEC URL |
+| `token` | string | HEC token |
+| `index` | string | Splunk index (optional) |
+| `type` | string | Event source type (optional) |
+| `headers` | object | Additional HTTP headers |
+| `tlsConfig` | object | Custom TLS settings |
 
-The Simple Authentication and Security Layer (SASL) [RFC4422] is a
-method for adding authentication support to connection-based
-protocols.
+### Datadog
 
-* `SASL username`: the client username  
-* `SASL password`: the client username  
-* `SASL Mechanism`: 
-     * `PLAIN`: SASL/PLAIN uses a simple username and password for authentication.
-     * `SCRAM-SHA-256` and `SCRAM-SHA-512`: SASL/SCRAM uses usernames and passwords stored in ZooKeeper. Credentials are created during installation.
+Sends events to Datadog via the Datadog API.
 
-### SSL 
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Datadog API host (e.g., `https://api.datadoghq.eu`) |
+| `apiKey` | string | Datadog API key |
+| `applicationKey` | string | Application key (optional) |
+| `headers` | object | Additional HTTP headers |
+| `tlsConfig` | object | Custom TLS settings |
 
-* `Kafka keypass`: the keystore password if you use a keystore/truststore to connect to Kafka cluster
-* `Kafka keystore path`: the keystore path on the server if you use a keystore/truststore to connect to Kafka cluster
-* `Kafka truststore path`: the truststore path on the server if you use a keystore/truststore to connect to Kafka cluster
-* `Custom TLS Settings`: enable the TLS configuration for the communication with Elasticsearch
-    * `TLS loose`: if enabled, will block all untrustful ssl configs
-    * `TrustAll`: allows any server certificates even the self-signed ones
-    * `Client certificates`: list of client certificates used to communicate with elasticsearch
-    * `Trusted certificates`: list of trusted certificates received from elasticsearch
+### New Relic
 
-### SASL + SSL
+Sends events to New Relic via their API.
 
-This mechanism uses the SSL configuration and the SASL configuration.
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | New Relic API URL |
+| `licenseKey` | string | New Relic license key |
+| `accountId` | string | New Relic account ID |
+| `headers` | object | Additional HTTP headers |
+| `tlsConfig` | object | Custom TLS settings |
 
-## Mailer 
+### File
 
-With this kind of exporter, every matching event will be sent in batch as an email (using one of the following email provider)
+Writes events to local files.
 
-Otoroshi supports 5 exporters of email type.
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | string | File path to write events |
+| `maxFileSize` | number | Maximum file size in bytes. When reached, a new timestamped file is created |
+| `maxNumberOfFile` | number | Maximum number of files to retain |
+
+### S3
+
+Writes events to an S3-compatible object store.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `maxFileSize` | number | Maximum size per file |
+| `maxNumberOfFile` | number | Maximum number of files |
+| `config` | object | S3 configuration (bucket, region, credentials, endpoint) |
+
+### GoReplay file
+
+Writes events in `.gor` format compatible with [GoReplay](https://goreplay.org/).
+
+@@@ warning
+This exporter only catches `TrafficCaptureEvent`. These events are generated when a route has the `capture` flag enabled. See @ref[engine docs](../topics/engine.md).
+@@@
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | string | File path |
+| `maxFileSize` | number | Maximum file size |
+| `captureRequests` | boolean | Capture HTTP requests |
+| `captureResponses` | boolean | Capture HTTP responses |
+
+### GoReplay S3
+
+Same as GoReplay file but writes to an S3-compatible store.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `s3` | object | S3 configuration |
+| `maxFileSize` | number | Maximum file size |
+| `captureRequests` | boolean | Capture HTTP requests |
+| `captureResponses` | boolean | Capture HTTP responses |
+| `preferBackendRequest` | boolean | Prefer backend request over client request |
+| `preferBackendResponse` | boolean | Prefer backend response over client response |
+| `methods` | array of string | HTTP methods to capture |
+
+### TCP
+
+Sends events over raw TCP connections.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Target host |
+| `port` | number | Target port |
+| `unixSocket` | string | Unix socket path (alternative to host/port) |
+| `connectTimeout` | number | Connection timeout (ms) |
+| `tls` | object | TLS configuration |
+
+### UDP
+
+Sends events over UDP.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Target host |
+| `port` | number | Target port |
+| `unixSocket` | string | Unix socket path (alternative to host/port) |
+| `connectTimeout` | number | Connection timeout (ms) |
+
+### Syslog
+
+Sends events to a syslog server.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Syslog server host |
+| `port` | number | Syslog server port |
+| `protocol` | string | Protocol: `tcp` or `udp` |
+| `unixSocket` | string | Unix socket path |
+| `connectTimeout` | number | Connection timeout (ms) |
+| `tls` | object | TLS configuration (for TCP) |
+
+### JMS
+
+Sends events to a JMS (Java Message Service) queue or topic.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | JMS connection URL |
+| `name` | string | Queue/topic name |
+| `topic` | boolean | If `true`, sends to a topic; otherwise to a queue |
+| `username` | string | JMS username |
+| `password` | string | JMS password |
+
+### PostgreSQL
+
+Writes events to a PostgreSQL database.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `uri` | string | Full connection URI (alternative to individual fields) |
+| `host` | string | Database host |
+| `port` | number | Database port |
+| `database` | string | Database name |
+| `user` | string | Username |
+| `password` | string | Password |
+| `schema` | string | Schema name |
+| `table` | string | Table name |
+| `poolSize` | number | Connection pool size |
+| `ssl` | boolean | Enable SSL |
+
+### Workflow
+
+Routes events to an Otoroshi @ref[workflow](./workflows.md) for custom processing.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ref` | string | Workflow ID to invoke |
 
 ### Console
 
-Nothing to add. The events will be write on the standard output.
+Writes events to the standard output. No additional configuration needed.
 
-### Generic
+### WASM
 
-* `Mailer url`: URL used to push events
-* `Headers`: headers add to the push requests
-* `Email addresses`: recipients of the emails
+Processes events through a WebAssembly plugin.
 
-### Mailgun
+| Property | Type | Description |
+|----------|------|-------------|
+| `wasmRef` | string | Reference to a @ref[WASM plugin](./wasm-plugins.md) entity |
+| `params` | object | Additional parameters passed to the WASM function |
 
-* `EU`: is EU server ? if enabled, *https://api.eu.mailgun.net/* will be used, otherwise, the US URL will be used : *https://api.mailgun.net/*
-* `Mailgun api key`: API key of the mailgun account
-* `Mailgun domain`: domain name of the mailgun account
-* `Email addresses`: recipients of the emails
+### OTLP Metrics
 
-### Mailjet
+Exports metrics using the OpenTelemetry Protocol (OTLP).
 
-* `Public api key`: public key of the mailjet account
-* `Private api key`: private key of the mailjet account
-* `Email addresses`: recipients of the emails
+| Property | Type | Description |
+|----------|------|-------------|
+| `otlp` | object | OTLP endpoint configuration (URL, headers, protocol) |
+| `tags` | object | Custom metric tags/labels |
+| `metrics` | array of object | Metric definitions to export |
 
-### Sendgrid
+### OTLP Logs
 
-* `Sendgrid api key`: api key of the sendgrid account
-* `Email addresses`: recipients of the emails
+Exports logs using the OpenTelemetry Protocol (OTLP).
 
-## File 
+| Property | Type | Description |
+|----------|------|-------------|
+| `otlp` | object | OTLP endpoint configuration (URL, headers, protocol) |
 
-* `File path`: path where the logs will be write 
-* `Max file size`: when size is reached, Otoroshi will create a new file postfixed by the current timestamp
+### Custom Metrics
 
-## GoReplay file
+Exposes custom metrics on the `/metrics` endpoint.
 
-With this kind of exporter, every matching event will be sent to a `.gor` file compatible with [GoReplay](https://goreplay.org/). 
+| Property | Type | Description |
+|----------|------|-------------|
+| `tags` | object | Custom metric labels |
+| `metrics` | array of object | Metric definitions |
 
-@@@ warning
-this exporter will only be able to catch `TrafficCaptureEvent`. Those events are created when a route (or the global config) of the @ref:[new proxy engine](../topics/engine.md) is setup to capture traffic using the `capture` flag.
-@@@
+### Metrics
 
-* `File path`: path where the logs will be write 
-* `Max file size`: when size is reached, Otoroshi will create a new file postfixed by the current timestamp
-* `Capture requests`: capture http requests in the `.gor` file
-* `Capture responses`: capture http responses in the `.gor` file
+Rewrites metric labels exposed on the `/metrics` endpoint.
 
-## Console 
+| Property | Type | Description |
+|----------|------|-------------|
+| `labels` | object | Map of existing label names to new label names |
 
-Nothing to add. The events will be write on the standard output.
+### Mailer
 
-## Custom 
+Sends events as email using one of the following providers:
 
-This type of exporter let you the possibility to write your own exporter with your own rules. To create an exporter, we need to navigate to the plugins page, and to create a new item of type exporter.
+#### Console mailer
 
-When it's done, the exporter will be visible in this list.
+Writes emails to the standard output (for testing).
 
-* `Exporter config.`: the configuration of the custom exporter.
+#### Generic mailer
 
-## Metrics 
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | URL to push events |
+| `headers` | object | HTTP headers |
+| `to` | array of string | Recipient email addresses |
 
-This plugin is useful to rewrite the metric labels exposed on the `/metrics` endpoint.
+#### Mailgun
 
-* `Labels`: list of metric labels. Each pair contains an existing field name and the new name.
+| Property | Type | Description |
+|----------|------|-------------|
+| `eu` | boolean | Use EU server (`api.eu.mailgun.net`) instead of US |
+| `apiKey` | string | Mailgun API key |
+| `domain` | string | Mailgun domain |
+| `to` | array of string | Recipient email addresses |
+
+#### Mailjet
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `publicKey` | string | Mailjet public API key |
+| `privateKey` | string | Mailjet private API key |
+| `to` | array of string | Recipient email addresses |
+
+#### Sendgrid
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `apiKey` | string | Sendgrid API key |
+| `to` | array of string | Recipient email addresses |
+
+### Custom exporter
+
+Allows using a custom exporter plugin. Create a plugin of type "exporter" on the plugins page, then select it here.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ref` | string | Reference to the custom exporter plugin |
+| `config` | object | Exporter configuration |
+
+## Admin API
+
+```
+GET    /api/data-exporter-configs           # List all data exporters
+POST   /api/data-exporter-configs           # Create a data exporter
+GET    /api/data-exporter-configs/:id       # Get a data exporter
+PUT    /api/data-exporter-configs/:id       # Update a data exporter
+DELETE /api/data-exporter-configs/:id       # Delete a data exporter
+PATCH  /api/data-exporter-configs/:id       # Partially update a data exporter
+```
