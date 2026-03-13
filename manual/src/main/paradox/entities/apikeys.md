@@ -16,11 +16,11 @@ You can find all API keys [here](http://otoroshi.oto.tools:8080/bo/dashboard/api
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `clientId` | string | - | Unique random identifier for this API key |
-| `clientSecret` | string | - | Random secret used to validate the API key |
-| `clientName` | string | - | Display name of the API key (used for debugging) |
+| `clientId` | string |     | Unique random identifier for this API key |
+| `clientSecret` | string |     | Random secret used to validate the API key |
+| `clientName` | string |     | Display name of the API key (used for debugging) |
 | `description` | string | `""` | Description of the API key |
-| `authorizedEntities` | array of string | - | Groups, routes, services, and APIs this key is authorized on |
+| `authorizedEntities` | array of string |     | Groups, routes, services, and APIs this key is authorized on |
 | `enabled` | boolean | `true` | Whether the API key is active. Disabled keys reject all calls |
 | `readOnly` | boolean | `false` | If enabled, only `GET`, `HEAD`, and `OPTIONS` methods are allowed |
 | `allowClientIdOnly` | boolean | `false` | Allow clients to authenticate with only the client ID (in a specific header), without the secret |
