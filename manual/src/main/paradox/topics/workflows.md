@@ -1089,17 +1089,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitAttenuationFunction (biscuit.extensions.cloud-apim.com.biscuit_attenuation)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-file-signature"></span>`Write a file (core.file_write)`
 
 This function writes a file
