@@ -40,9 +40,9 @@ The `steps` field defines at which points in the proxy engine pipeline this WASM
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `source` | object | - | The WASM source definition (see source types below) |
+| `source` | object |     | The WASM source definition (see source types below) |
 | `memoryPages` | number | `50` | Number of memory pages allocated to the WASM VM |
-| `functionName` | string | - | Name of the function to invoke (optional, defaults to step-specific name) |
+| `functionName` | string |     | Name of the function to invoke (optional, defaults to step-specific name) |
 | `config` | object | `{}` | Key-value configuration passed to the WASM plugin at runtime |
 | `instances` | number | `1` | Number of concurrent WASM VM instances |
 | `wasi` | boolean | `false` | Enable WebAssembly System Interface support |
@@ -50,8 +50,8 @@ The `steps` field defines at which points in the proxy engine pipeline this WASM
 | `httpWasm` | boolean | `false` | Enable HTTP WASM mode |
 | `allowedHosts` | array of string | `[]` | Hostnames the WASM plugin is allowed to call via HTTP |
 | `allowedPaths` | object | `{}` | File paths the WASM plugin is allowed to access (path -> permissions) |
-| `killOptions` | object | - | VM termination options for resource management |
-| `authorizations` | object | - | Fine-grained access control for the WASM plugin (see below) |
+| `killOptions` | object |     | VM termination options for resource management |
+| `authorizations` | object |     | Fine-grained access control for the WASM plugin (see below) |
 
 ## Source types
 
