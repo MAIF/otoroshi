@@ -802,17 +802,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ModerationCallFunction (extensions.com.cloud-apim.llm-extension.moderation_call)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-cogs"></span>`Compute a resume token for the current workflow (core.compute_resume_token)`
 
 This function computes a resume token for the current workflow
