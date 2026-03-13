@@ -12,21 +12,21 @@ You can find all data exporters [here](http://otoroshi.oto.tools:8080/bo/dashboa
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | string | - | Unique identifier |
-| `name` | string | - | Display name |
-| `description` | string | - | Description |
+| `id` | string |     | Unique identifier |
+| `name` | string |     | Display name |
+| `description` | string |     | Description |
 | `enabled` | boolean | `true` | Whether the exporter is active |
-| `typ` | string | - | The type of exporter (see [exporter types](#exporter-types)) |
+| `typ` | string |     | The type of exporter (see [exporter types](#exporter-types)) |
 | `tags` | array of string | `[]` | Tags |
 | `metadata` | object | `{}` | Key/value metadata |
-| `filtering` | object | - | Event filtering configuration (see [below](#matching-and-projections)) |
+| `filtering` | object |     | Event filtering configuration (see [below](#matching-and-projections)) |
 | `projection` | object | `{}` | Projection to export only specific fields |
 | `bufferSize` | number | `5000` | Number of events to keep in memory buffer |
 | `jsonWorkers` | number | `1` | Number of workers for JSON serialization |
 | `sendWorkers` | number | `1` | Number of workers for sending events |
 | `groupSize` | number | `100` | Number of events to batch together |
 | `groupDuration` | number | `30000` | Maximum wait time (ms) before sending a batch |
-| `config` | object | - | Exporter-specific configuration |
+| `config` | object |     | Exporter-specific configuration |
 
 ## Matching and projections
 
