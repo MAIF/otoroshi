@@ -1204,17 +1204,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreSearchFunction (extensions.com.cloud-apim.llm-extension.vector_store_search)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-bullhorn"></span>`Emit an event (core.emit_event)`
 
 This function emits an event
