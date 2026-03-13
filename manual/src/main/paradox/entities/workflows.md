@@ -8,68 +8,182 @@ You can find all workflows [here](http://otoroshi.oto.tools:8080/bo/dashboard/ex
 
 ## Properties
 
-* `id`: unique identifier of the workflow
-* `name`: display name of the workflow
-* `description`: description of the workflow
-* `tags`: list of tags associated to the workflow
-* `metadata`: list of metadata associated to the workflow
-* `config`: the root node configuration of the workflow (a JSON object describing the node graph)
-* `job`: optional job scheduling configuration (see below)
-* `functions`: a map of custom reusable functions defined within the workflow
-* `test_payload`: a JSON object used as input when testing the workflow from the UI
-* `orphans`: disconnected nodes and edges stored by the visual editor
-* `notes`: visual annotations placed on the workflow canvas in the editor
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | string | Unique identifier of the workflow |
+| `name` | string | Display name of the workflow |
+| `description` | string | Description of the workflow |
+| `tags` | array of string | Tags associated to the workflow |
+| `metadata` | object | Key/value metadata associated to the workflow |
+| `config` | object | The root node configuration (JSON object describing the node graph) |
+| `job` | object | Optional job scheduling configuration (see below) |
+| `functions` | object | Map of custom reusable functions defined within the workflow |
+| `test_payload` | object | JSON object used as input when testing the workflow from the UI |
+| `orphans` | object | Disconnected nodes and edges stored by the visual editor |
+| `notes` | array | Visual annotations placed on the workflow canvas in the editor |
 
 ## Job configuration
 
 A workflow can optionally be scheduled as a periodic job:
 
-* `enabled`: is the job scheduling enabled
-* `cron`: a cron expression defining when the workflow should run (e.g., `*/5 * * * * ?` for every 5 seconds)
-* `config`: additional job configuration
+| Property | Type | Description |
+|----------|------|-------------|
+| `enabled` | boolean | Whether the job scheduling is enabled |
+| `cron` | string | A cron expression defining when the workflow should run (e.g., `*/5 * * * * ?` for every 5 seconds) |
+| `config` | object | Additional job configuration |
 
 ## Node types
 
 Workflows are composed of nodes. Each node has a type that determines its behavior:
 
-* `workflow`: a sequential execution of child nodes
-* `call`: invoke a built-in or custom function
-* `assign`: assign a value to a variable in workflow memory
-* `value`: return a static value
-* `if`: conditional branching (if/then/else)
-* `switch`: multi-path conditional branching based on value matching
-* `foreach`: iterate over an array and execute a node for each element
-* `map`: transform each element of an array
-* `filter`: filter elements of an array based on a predicate
-* `flatmap`: transform and flatten arrays
-* `parallel`: execute multiple nodes in parallel
-* `while`: loop while a condition is true
-* `try`: try/catch/finally error handling
-* `error`: raise an error
-* `wait`: wait for a specified duration
-* `pause`: pause workflow execution
-* `end`: terminate the workflow
-* `jump`: jump to another node in the workflow
-* `async`: execute a node asynchronously
-* `breakpoint`: debugging breakpoint in the visual editor
+### Control flow
 
-## Functions
+| Node type | Description |
+|-----------|-------------|
+| `workflow` | Sequential execution of child nodes |
+| `if` | Conditional branching (if/then/else) |
+| `switch` | Multi-path conditional branching based on value matching |
+| `foreach` | Iterate over an array and execute a node for each element |
+| `map` | Transform each element of an array |
+| `filter` | Filter elements of an array based on a predicate |
+| `flatmap` | Transform and flatten arrays |
+| `parallel` | Execute multiple nodes in parallel |
+| `while` | Loop while a condition is true |
+| `try` | Try/catch/finally error handling |
+| `jump` | Jump to another node in the workflow |
+| `async` | Execute a node asynchronously |
 
-Workflows provide a rich set of built-in functions that can be called from `call` nodes. These include:
+### Data
 
-* **HTTP**: `http_client` for making HTTP requests
-* **Storage**: `store_get`, `store_set`, `store_del`, `store_keys`, `store_match` for persistent key-value storage
-* **State**: `state_get`, `state_get_all` for accessing Otoroshi proxy state
-* **Configuration**: `config_read` for reading Otoroshi configuration
-* **Files**: `file_read`, `file_write`, `file_del` for file system operations
-* **WASM**: `wasm_call` for calling WASM functions
-* **Workflows**: `workflow_call` for calling other workflows
-* **Events**: `emit_event` for emitting custom events
-* **Email**: `send_mail` for sending emails
-* **System**: `system_call` for executing system commands
-* **Logging**: `log` for logging messages
+| Node type | Description |
+|-----------|-------------|
+| `call` | Invoke a built-in or custom function |
+| `assign` | Assign a value to a variable in workflow memory |
+| `value` | Return a static value |
+
+### Execution control
+
+| Node type | Description |
+|-----------|-------------|
+| `error` | Raise an error |
+| `wait` | Wait for a specified duration |
+| `pause` | Pause workflow execution |
+| `end` | Terminate the workflow |
+| `breakpoint` | Debugging breakpoint in the visual editor |
+
+## Built-in functions
+
+Workflows provide a rich set of built-in functions that can be called from `call` nodes:
+
+| Category | Functions | Description |
+|----------|-----------|-------------|
+| **HTTP** | `http_client` | Make HTTP requests to any endpoint |
+| **Storage** | `store_get`, `store_set`, `store_del`, `store_keys`, `store_match` | Persistent key-value storage operations |
+| **State** | `state_get`, `state_get_all` | Access Otoroshi proxy state (routes, backends, certificates, etc.) |
+| **Configuration** | `config_read` | Read Otoroshi global configuration |
+| **Files** | `file_read`, `file_write`, `file_del` | File system operations |
+| **WASM** | `wasm_call` | Call WebAssembly functions |
+| **Workflows** | `workflow_call` | Call other workflows (composition) |
+| **Events** | `emit_event` | Emit custom events to the data exporter pipeline |
+| **Email** | `send_mail` | Send emails |
+| **System** | `system_call` | Execute system commands |
+| **Logging** | `log` | Log messages to the Otoroshi logger |
 
 You can also define custom functions in the `functions` map of the workflow entity.
+
+## JSON example
+
+Here is a simple workflow that fetches data from an HTTP endpoint and logs the result:
+
+```json
+{
+  "id": "workflow_fetch_and_log",
+  "name": "Fetch and log",
+  "description": "Fetches data from an API and logs the response",
+  "tags": ["example"],
+  "metadata": {},
+  "config": {
+    "type": "workflow",
+    "nodes": [
+      {
+        "type": "call",
+        "id": "fetch_data",
+        "function": "http_client",
+        "args": {
+          "url": "https://api.example.com/data",
+          "method": "GET",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      },
+      {
+        "type": "call",
+        "id": "log_result",
+        "function": "log",
+        "args": {
+          "message": "${nodes.fetch_data.response.body}"
+        }
+      }
+    ]
+  },
+  "job": {
+    "enabled": false,
+    "cron": "0 */5 * * * ?",
+    "config": {}
+  },
+  "functions": {},
+  "test_payload": {},
+  "orphans": { "nodes": [], "edges": [] },
+  "notes": []
+}
+```
+
+## Scheduled workflow example
+
+A workflow that periodically checks the health of all backends:
+
+```json
+{
+  "id": "workflow_health_check",
+  "name": "Periodic health check",
+  "description": "Checks the health of all backends every minute",
+  "tags": ["monitoring"],
+  "metadata": {},
+  "config": {
+    "type": "workflow",
+    "nodes": [
+      {
+        "type": "call",
+        "id": "get_backends",
+        "function": "state_get_all",
+        "args": {
+          "entity": "backends"
+        }
+      },
+      {
+        "type": "foreach",
+        "id": "check_each",
+        "array": "${nodes.get_backends.result}",
+        "node": {
+          "type": "call",
+          "function": "http_client",
+          "args": {
+            "url": "${item.backend.targets[0].hostname}",
+            "method": "GET",
+            "timeout": 5000
+          }
+        }
+      }
+    ]
+  },
+  "job": {
+    "enabled": true,
+    "cron": "0 * * * * ?",
+    "config": {}
+  }
+}
+```
 
 ## Learn more
 

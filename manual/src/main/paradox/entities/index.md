@@ -176,6 +176,15 @@ Any entity has the following properties
 @@@
 
 @@@div { .entities }
+<img src="../imgs/entities-routes.png">
+<div>
+<span>Route Templates</span>
+<span>Reusable route blueprints</span>
+</div>
+@ref:[View](./route-templates.md)
+@@@
+
+@@@div { .entities }
 <img src="../imgs/entities-services.png">
 <div>
 <span>Error Templates</span>
@@ -213,6 +222,7 @@ Any entity has the following properties
 * [HTTP Listeners](./http-listeners.md)
 * [Workflows](./workflows.md)
 * [WASM Plugins](./wasm-plugins.md)
+* [Route Templates](./route-templates.md)
 * [Error Templates](./error-templates.md)
 * [Otoroshi Admins](./otoroshi-admins.md)
 
