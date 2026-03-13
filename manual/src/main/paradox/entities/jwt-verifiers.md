@@ -10,15 +10,15 @@ You can find all JWT verifiers [here](http://otoroshi.oto.tools:8080/bo/dashboar
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | string | - | Unique identifier |
-| `name` | string | - | Display name |
-| `description` | string | - | Description |
+| `id` | string |     | Unique identifier |
+| `name` | string |     | Display name |
+| `description` | string |     | Description |
 | `strict` | boolean | `true` | If not strict, requests without a JWT token are allowed through. Useful to enforce token presence |
 | `tags` | array of string | `[]` | Tags |
 | `metadata` | object | `{}` | Key/value metadata |
-| `source` | object | - | Where to find the token in incoming requests (see [below](#token-location)) |
-| `algoSettings` | object | - | Algorithm settings for token validation (see [below](#token-validation)) |
-| `strategy` | object | - | Verification strategy (see [below](#strategy)) |
+| `source` | object |     | Where to find the token in incoming requests (see [below](#token-location)) |
+| `algoSettings` | object |     | Algorithm settings for token validation (see [below](#token-validation)) |
+| `strategy` | object |     | Verification strategy (see [below](#strategy)) |
 
 Each JWT verifier is configured in three steps:
 
