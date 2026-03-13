@@ -390,9 +390,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>null</code> </td>
       <td>Optional health check configuration (see <a href="#health-check">below</a>) </td>
     </tr>
+    <tr>
+      <td><code>client</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>HTTP client settings (see <a href="#client-settings">below</a>) </td>
+    </tr>
   </tbody>
 </table>
-<p>| <code>client</code> | object | - | HTTP client settings (see <a href="#client-settings">below</a>) |</p>
 <h3><a href="#full-path-rewrite" name="full-path-rewrite" class="anchor"><span class="anchor-link"></span></a>Full path rewrite</h3>
 <p>When <code>rewrite</code> is enabled, the original request path is stripped and replaced by the <code>root</code> value. Combined with named path parameters, this enables powerful URL rewriting:</p>
 <ul>
@@ -410,8 +415,69 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <th>Description </th>
     </tr>
   </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Unique identifier of the target </td>
+    </tr>
+    <tr>
+      <td><code>hostname</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Hostname of the target (without scheme) </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td> </td>
+      <td>Port of the target </td>
+    </tr>
+    <tr>
+      <td><code>tls</code> </td>
+      <td>boolean </td>
+      <td> </td>
+      <td>Call the target via HTTPS </td>
+    </tr>
+    <tr>
+      <td><code>weight</code> </td>
+      <td>number </td>
+      <td><code>1</code> </td>
+      <td>Weight used by the load balancing strategy to distribute traffic </td>
+    </tr>
+    <tr>
+      <td><code>protocol</code> </td>
+      <td>string </td>
+      <td><code>HTTP/1.1</code> </td>
+      <td>Protocol: <code>HTTP/1.0</code>, <code>HTTP/1.1</code>, <code>HTTP/2.0</code>, or <code>HTTP/3.0</code> </td>
+    </tr>
+    <tr>
+      <td><code>predicate</code> </td>
+      <td>object </td>
+      <td><code>AlwaysMatch</code> </td>
+      <td>Predicate function to filter this target based on request properties </td>
+    </tr>
+    <tr>
+      <td><code>ip_address</code> </td>
+      <td>string </td>
+      <td><code>null</code> </td>
+      <td>IP address of the target (optional, for DNS bypass) </td>
+    </tr>
+    <tr>
+      <td><code>tls_config</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>TLS settings for this specific target (see below) </td>
+    </tr>
+    <tr>
+      <td><code>backup</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>If <code>true</code>, this target is only used when all primary (non-backup) targets are unavailable </td>
+    </tr>
+  </tbody>
 </table>
-<p>| <code>id</code> | string | - | Unique identifier of the target | | <code>hostname</code> | string | - | Hostname of the target (without scheme) | | <code>port</code> | number | - | Port of the target | | <code>tls</code> | boolean | - | Call the target via HTTPS | | <code>weight</code> | number | <code>1</code> | Weight used by the load balancing strategy to distribute traffic | | <code>protocol</code> | string | <code>HTTP/1.1</code> | Protocol: <code>HTTP/1.0</code>, <code>HTTP/1.1</code>, <code>HTTP/2.0</code>, or <code>HTTP/3.0</code> | | <code>predicate</code> | object | <code>AlwaysMatch</code> | Predicate function to filter this target based on request properties | | <code>ip_address</code> | string | <code>null</code> | IP address of the target (optional, for DNS bypass) | | <code>tls_config</code> | object | - | TLS settings for this specific target (see below) | | <code>backup</code> | boolean | <code>false</code> | If <code>true</code>, this target is only used when all primary (non-backup) targets are unavailable |</p>
 <h3><a href="#target-tls-settings" name="target-tls-settings" class="anchor"><span class="anchor-link"></span></a>Target TLS settings</h3>
 <table>
   <thead>
@@ -492,9 +558,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>false</code> </td>
       <td>Enable periodic health checks </td>
     </tr>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>The URL to call for health checks </td>
+    </tr>
   </tbody>
 </table>
-<p>| <code>url</code> | string | - | The URL to call for health checks |</p>
 <p>When enabled, Otoroshi periodically calls the health check URL. Unhealthy targets can be temporarily removed from the load balancing pool.</p>
 <h2><a href="#load-balancing" name="load-balancing" class="anchor"><span class="anchor-link"></span></a>Load balancing</h2>
 <table>
@@ -609,9 +680,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>[]</code> </td>
       <td>Path-specific timeout overrides (see below) </td>
     </tr>
+    <tr>
+      <td><code>cache_connection_settings</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>Connection caching settings (see below) </td>
+    </tr>
+    <tr>
+      <td><code>proxy</code> </td>
+      <td>object </td>
+      <td><code>null</code> </td>
+      <td>HTTP proxy settings for reaching the backend </td>
+    </tr>
   </tbody>
 </table>
-<p>| <code>cache_connection_settings</code> | object | - | Connection caching settings (see below) | | <code>proxy</code> | object | <code>null</code> | HTTP proxy settings for reaching the backend |</p>
 <h3><a href="#custom-timeouts" name="custom-timeouts" class="anchor"><span class="anchor-link"></span></a>Custom timeouts</h3>
 <p>Custom timeouts allow overriding timeout values for specific paths:</p>
 <table>

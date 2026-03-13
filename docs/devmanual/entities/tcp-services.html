@@ -358,8 +358,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <th>Description </th>
     </tr>
   </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Unique identifier </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Display name of the TCP service </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Description </td>
+    </tr>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Whether the service is active </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td> </td>
+      <td>The listening port for incoming TCP connections </td>
+    </tr>
+    <tr>
+      <td><code>interface</code> </td>
+      <td>string </td>
+      <td><code>0.0.0.0</code> </td>
+      <td>Network interface the service listens on </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Tags </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Key/value metadata </td>
+    </tr>
+    <tr>
+      <td><code>tls</code> </td>
+      <td>string </td>
+      <td><code>Disabled</code> </td>
+      <td>TLS mode (see below) </td>
+    </tr>
+    <tr>
+      <td><code>clientAuth</code> </td>
+      <td>string </td>
+      <td><code>None</code> </td>
+      <td>mTLS client authentication mode (see below) </td>
+    </tr>
+    <tr>
+      <td><code>sni</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>SNI configuration (see below) </td>
+    </tr>
+    <tr>
+      <td><code>rules</code> </td>
+      <td>array of object </td>
+      <td><code>[]</code> </td>
+      <td>Routing rules (see below) </td>
+    </tr>
+  </tbody>
 </table>
-<p>| <code>id</code> | string | - | Unique identifier | | <code>name</code> | string | - | Display name of the TCP service | | <code>description</code> | string | - | Description | | <code>enabled</code> | boolean | <code>true</code> | Whether the service is active | | <code>port</code> | number | - | The listening port for incoming TCP connections | | <code>interface</code> | string | <code>0.0.0.0</code> | Network interface the service listens on | | <code>tags</code> | array of string | <code>[]</code> | Tags | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata | | <code>tls</code> | string | <code>Disabled</code> | TLS mode (see below) | | <code>clientAuth</code> | string | <code>None</code> | mTLS client authentication mode (see below) | | <code>sni</code> | object | - | SNI configuration (see below) | | <code>rules</code> | array of object | <code>[]</code> | Routing rules (see below) |</p>
 <h2><a href="#tls-modes" name="tls-modes" class="anchor"><span class="anchor-link"></span></a>TLS modes</h2>
 <table>
   <thead>
@@ -430,9 +503,32 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>false</code> </td>
       <td>Forward to a default target if no SNI match is found </td>
     </tr>
+    <tr>
+      <td><code>forwardsTo.host</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Default target hostname (when no SNI match) </td>
+    </tr>
+    <tr>
+      <td><code>forwardsTo.ip</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Default target IP address </td>
+    </tr>
+    <tr>
+      <td><code>forwardsTo.port</code> </td>
+      <td>number </td>
+      <td> </td>
+      <td>Default target port </td>
+    </tr>
+    <tr>
+      <td><code>forwardsTo.tls</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Use TLS to connect to the default target </td>
+    </tr>
   </tbody>
 </table>
-<p>| <code>forwardsTo.host</code> | string | - | Default target hostname (when no SNI match) | | <code>forwardsTo.ip</code> | string | - | Default target IP address | | <code>forwardsTo.port</code> | number | - | Default target port | | <code>forwardsTo.tls</code> | boolean | <code>false</code> | Use TLS to connect to the default target |</p>
 <h2><a href="#rules" name="rules" class="anchor"><span class="anchor-link"></span></a>Rules</h2>
 <p>For any listening TCP proxy, you can define multiple routing rules based on SNI or extracted HTTP host (when proxying HTTP).</p>
 <table>

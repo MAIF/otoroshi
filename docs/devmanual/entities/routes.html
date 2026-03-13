@@ -358,8 +358,99 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <th>Description </th>
     </tr>
   </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Unique identifier of the route </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Display name of the route </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Description of the route </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Tags for categorization and API automation </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Key/value metadata. Some keys are <a href="routes.html#reserved-metadata">reserved</a> </td>
+    </tr>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Whether the route is active. Disabled routes are ignored by the router </td>
+    </tr>
+    <tr>
+      <td><code>debug_flow</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable debug flow. Execution reports will contain all input/output values. See <a href="../topics/engine.html#reporting">engine docs</a> </td>
+    </tr>
+    <tr>
+      <td><code>capture</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable request/response capture. Generates events with full request content. Use with caution! See <a href="../topics/engine.html#http-traffic-capture">engine docs</a> </td>
+    </tr>
+    <tr>
+      <td><code>export_reporting</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Export execution reports for each request via <a href="data-exporters.html">data exporters</a>. See <a href="../topics/engine.html#reporting">engine docs</a> </td>
+    </tr>
+    <tr>
+      <td><code>groups</code> </td>
+      <td>array of string </td>
+      <td><code>[&quot;default&quot;]</code> </td>
+      <td>Service groups this route belongs to. Used for API key authorization </td>
+    </tr>
+    <tr>
+      <td><code>bound_listeners</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>List of <a href="http-listeners.html">HTTP listener</a> IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port </td>
+    </tr>
+    <tr>
+      <td><code>frontend</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>Frontend configuration (how the router matches this route). See <a href="#frontend-configuration">below</a> </td>
+    </tr>
+    <tr>
+      <td><code>backend</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>Backend configuration (where to forward requests). See <a href="backends.html">backends</a> </td>
+    </tr>
+    <tr>
+      <td><code>backend_ref</code> </td>
+      <td>string </td>
+      <td><code>null</code> </td>
+      <td>Reference to a global <a href="backends.html">stored backend</a> by ID. If set, takes precedence over inline <code>backend</code> </td>
+    </tr>
+    <tr>
+      <td><code>plugins</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>Plugin chain configuration. See <a href="#plugins">below</a> </td>
+    </tr>
+  </tbody>
 </table>
-<p>| <code>id</code> | string | - | Unique identifier of the route | | <code>name</code> | string | - | Display name of the route | | <code>description</code> | string | - | Description of the route | | <code>tags</code> | array of string | <code>[]</code> | Tags for categorization and API automation | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata. Some keys are <a href="routes.html#reserved-metadata">reserved</a> | | <code>enabled</code> | boolean | <code>true</code> | Whether the route is active. Disabled routes are ignored by the router | | <code>debug_flow</code> | boolean | <code>false</code> | Enable debug flow. Execution reports will contain all input/output values. See <a href="../topics/engine.html#reporting">engine docs</a> | | <code>capture</code> | boolean | <code>false</code> | Enable request/response capture. Generates events with full request content. Use with caution! See <a href="../topics/engine.html#http-traffic-capture">engine docs</a> | | <code>export_reporting</code> | boolean | <code>false</code> | Export execution reports for each request via <a href="data-exporters.html">data exporters</a>. See <a href="../topics/engine.html#reporting">engine docs</a> | | <code>groups</code> | array of string | <code>[&quot;default&quot;]</code> | Service groups this route belongs to. Used for API key authorization | | <code>bound_listeners</code> | array of string | <code>[]</code> | List of <a href="http-listeners.html">HTTP listener</a> IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port | | <code>frontend</code> | object | - | Frontend configuration (how the router matches this route). See <a href="#frontend-configuration">below</a> | | <code>backend</code> | object | - | Backend configuration (where to forward requests). See <a href="backends.html">backends</a> | | <code>backend_ref</code> | string | <code>null</code> | Reference to a global <a href="backends.html">stored backend</a> by ID. If set, takes precedence over inline <code>backend</code> | | <code>plugins</code> | object | - | Plugin chain configuration. See <a href="#plugins">below</a> |</p>
 <h3><a href="#reserved-metadata" name="reserved-metadata" class="anchor"><span class="anchor-link"></span></a>Reserved metadata</h3>
 <p>Some metadata keys are reserved for Otoroshi internal use:</p>
 <table>
@@ -525,9 +616,44 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>false</code> </td>
       <td>Enable debug output for this specific plugin </td>
     </tr>
+    <tr>
+      <td><code>plugin</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>The plugin identifier (e.g., <code>cp:otoroshi.next.plugins.Redirection</code>) </td>
+    </tr>
+    <tr>
+      <td><code>include</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Path patterns to include. If empty, all paths are included </td>
+    </tr>
+    <tr>
+      <td><code>exclude</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Path patterns to exclude. If empty, no paths are excluded </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Plugin-specific configuration </td>
+    </tr>
+    <tr>
+      <td><code>plugin_index</code> </td>
+      <td>object </td>
+      <td><code>null</code> </td>
+      <td>Explicit plugin execution order. If not provided, array order is used </td>
+    </tr>
+    <tr>
+      <td><code>bound_listeners</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Listener-specific plugin binding </td>
+    </tr>
   </tbody>
 </table>
-<p>| <code>plugin</code> | string | - | The plugin identifier (e.g., <code>cp:otoroshi.next.plugins.Redirection</code>) | | <code>include</code> | array of string | <code>[]</code> | Path patterns to include. If empty, all paths are included | | <code>exclude</code> | array of string | <code>[]</code> | Path patterns to exclude. If empty, no paths are excluded | | <code>config</code> | object | <code>{}</code> | Plugin-specific configuration | | <code>plugin_index</code> | object | <code>null</code> | Explicit plugin execution order. If not provided, array order is used | | <code>bound_listeners</code> | array of string | <code>[]</code> | Listener-specific plugin binding |</p>
 <h3><a href="#plugin-json-example" name="plugin-json-example" class="anchor"><span class="anchor-link"></span></a>Plugin JSON example</h3>
 <pre class="prettyprint"><code class="language-json">{
   &quot;enabled&quot;: true,

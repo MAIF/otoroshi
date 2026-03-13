@@ -461,8 +461,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <th>Description </th>
     </tr>
   </thead>
+  <tbody>
+    <tr>
+      <td><code>source</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>The WASM source definition (see source types below) </td>
+    </tr>
+    <tr>
+      <td><code>memoryPages</code> </td>
+      <td>number </td>
+      <td><code>50</code> </td>
+      <td>Number of memory pages allocated to the WASM VM </td>
+    </tr>
+    <tr>
+      <td><code>functionName</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Name of the function to invoke (optional, defaults to step-specific name) </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Key-value configuration passed to the WASM plugin at runtime </td>
+    </tr>
+    <tr>
+      <td><code>instances</code> </td>
+      <td>number </td>
+      <td><code>1</code> </td>
+      <td>Number of concurrent WASM VM instances </td>
+    </tr>
+    <tr>
+      <td><code>wasi</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable WebAssembly System Interface support </td>
+    </tr>
+    <tr>
+      <td><code>opa</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable Open Policy Agent mode for policy evaluation </td>
+    </tr>
+    <tr>
+      <td><code>httpWasm</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable HTTP WASM mode </td>
+    </tr>
+    <tr>
+      <td><code>allowedHosts</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Hostnames the WASM plugin is allowed to call via HTTP </td>
+    </tr>
+    <tr>
+      <td><code>allowedPaths</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>File paths the WASM plugin is allowed to access (path -&gt; permissions) </td>
+    </tr>
+    <tr>
+      <td><code>killOptions</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>VM termination options for resource management </td>
+    </tr>
+    <tr>
+      <td><code>authorizations</code> </td>
+      <td>object </td>
+      <td> </td>
+      <td>Fine-grained access control for the WASM plugin (see below) </td>
+    </tr>
+  </tbody>
 </table>
-<p>| <code>source</code> | object | - | The WASM source definition (see source types below) | | <code>memoryPages</code> | number | <code>50</code> | Number of memory pages allocated to the WASM VM | | <code>functionName</code> | string | - | Name of the function to invoke (optional, defaults to step-specific name) | | <code>config</code> | object | <code>{}</code> | Key-value configuration passed to the WASM plugin at runtime | | <code>instances</code> | number | <code>1</code> | Number of concurrent WASM VM instances | | <code>wasi</code> | boolean | <code>false</code> | Enable WebAssembly System Interface support | | <code>opa</code> | boolean | <code>false</code> | Enable Open Policy Agent mode for policy evaluation | | <code>httpWasm</code> | boolean | <code>false</code> | Enable HTTP WASM mode | | <code>allowedHosts</code> | array of string | <code>[]</code> | Hostnames the WASM plugin is allowed to call via HTTP | | <code>allowedPaths</code> | object | <code>{}</code> | File paths the WASM plugin is allowed to access (path -&gt; permissions) | | <code>killOptions</code> | object | - | VM termination options for resource management | | <code>authorizations</code> | object | - | Fine-grained access control for the WASM plugin (see below) |</p>
 <h2><a href="#source-types" name="source-types" class="anchor"><span class="anchor-link"></span></a>Source types</h2>
 <p>The <code>source</code> field defines where the WASM module is loaded from:</p>
 <table>

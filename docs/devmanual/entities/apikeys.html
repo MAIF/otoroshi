@@ -360,8 +360,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <th>Description </th>
     </tr>
   </thead>
+  <tbody>
+    <tr>
+      <td><code>clientId</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Unique random identifier for this API key </td>
+    </tr>
+    <tr>
+      <td><code>clientSecret</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Random secret used to validate the API key </td>
+    </tr>
+    <tr>
+      <td><code>clientName</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Display name of the API key (used for debugging) </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td><code>&quot;&quot;</code> </td>
+      <td>Description of the API key </td>
+    </tr>
+    <tr>
+      <td><code>authorizedEntities</code> </td>
+      <td>array of string </td>
+      <td> </td>
+      <td>Groups, routes, services, and APIs this key is authorized on </td>
+    </tr>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Whether the API key is active. Disabled keys reject all calls </td>
+    </tr>
+    <tr>
+      <td><code>readOnly</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>If enabled, only <code>GET</code>, <code>HEAD</code>, and <code>OPTIONS</code> methods are allowed </td>
+    </tr>
+    <tr>
+      <td><code>allowClientIdOnly</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Allow clients to authenticate with only the client ID (in a specific header), without the secret </td>
+    </tr>
+    <tr>
+      <td><code>constrainedServicesOnly</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>This API key can only be used on services with API key routing constraints </td>
+    </tr>
+    <tr>
+      <td><code>validUntil</code> </td>
+      <td>number </td>
+      <td><code>null</code> </td>
+      <td>Auto-disable the API key after this timestamp (milliseconds). Once expired, the key is disabled </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Tags for categorization </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Key/value metadata </td>
+    </tr>
+  </tbody>
 </table>
-<p>| <code>clientId</code> | string | - | Unique random identifier for this API key | | <code>clientSecret</code> | string | - | Random secret used to validate the API key | | <code>clientName</code> | string | - | Display name of the API key (used for debugging) | | <code>description</code> | string | <code>&quot;&quot;</code> | Description of the API key | | <code>authorizedEntities</code> | array of string | - | Groups, routes, services, and APIs this key is authorized on | | <code>enabled</code> | boolean | <code>true</code> | Whether the API key is active. Disabled keys reject all calls | | <code>readOnly</code> | boolean | <code>false</code> | If enabled, only <code>GET</code>, <code>HEAD</code>, and <code>OPTIONS</code> methods are allowed | | <code>allowClientIdOnly</code> | boolean | <code>false</code> | Allow clients to authenticate with only the client ID (in a specific header), without the secret | | <code>constrainedServicesOnly</code> | boolean | <code>false</code> | This API key can only be used on services with API key routing constraints | | <code>validUntil</code> | number | <code>null</code> | Auto-disable the API key after this timestamp (milliseconds). Once expired, the key is disabled | | <code>tags</code> | array of string | <code>[]</code> | Tags for categorization | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata |</p>
 <h2><a href="#quotas" name="quotas" class="anchor"><span class="anchor-link"></span></a>Quotas</h2>
 <p>Quotas control the rate of API calls allowed for this key.</p>
 <table>

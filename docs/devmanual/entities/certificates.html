@@ -365,8 +365,147 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <th>Description </th>
     </tr>
   </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Unique identifier of the certificate </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Display name of the certificate </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Description </td>
+    </tr>
+    <tr>
+      <td><code>chain</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>PEM-encoded certificate chain (full chain) </td>
+    </tr>
+    <tr>
+      <td><code>privateKey</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>PEM-encoded private key (can be empty for trust-only certificates) </td>
+    </tr>
+    <tr>
+      <td><code>caRef</code> </td>
+      <td>string </td>
+      <td><code>null</code> </td>
+      <td>Reference to the CA certificate that signed this certificate </td>
+    </tr>
+    <tr>
+      <td><code>domain</code> </td>
+      <td>string </td>
+      <td><code>&quot;--&quot;</code> </td>
+      <td>Primary domain of the certificate </td>
+    </tr>
+    <tr>
+      <td><code>selfSigned</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Whether the certificate is self-signed </td>
+    </tr>
+    <tr>
+      <td><code>ca</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Whether this certificate is a Certificate Authority </td>
+    </tr>
+    <tr>
+      <td><code>valid</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Whether the certificate is currently valid (not expired, not revoked) </td>
+    </tr>
+    <tr>
+      <td><code>exposed</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>If <code>true</code>, the public key is exposed on <code>/.well-known/jwks.json</code> </td>
+    </tr>
+    <tr>
+      <td><code>revoked</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Whether the certificate has been revoked </td>
+    </tr>
+    <tr>
+      <td><code>autoRenew</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Auto-renew the certificate when it expires (requires a known CA and private key) </td>
+    </tr>
+    <tr>
+      <td><code>letsEncrypt</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Certificate was issued by Let&rsquo;s Encrypt </td>
+    </tr>
+    <tr>
+      <td><code>client</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>This certificate is a client certificate (used for mTLS authentication) </td>
+    </tr>
+    <tr>
+      <td><code>keypair</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>This entity is a key pair (public + private key, without a certificate chain) </td>
+    </tr>
+    <tr>
+      <td><code>subject</code> </td>
+      <td>string </td>
+      <td><code>&quot;--&quot;</code> </td>
+      <td>Subject DN of the certificate </td>
+    </tr>
+    <tr>
+      <td><code>from</code> </td>
+      <td>number </td>
+      <td> </td>
+      <td>Validity start date (timestamp in milliseconds) </td>
+    </tr>
+    <tr>
+      <td><code>to</code> </td>
+      <td>number </td>
+      <td> </td>
+      <td>Validity end date (timestamp in milliseconds) </td>
+    </tr>
+    <tr>
+      <td><code>sans</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Subject Alternative Names (additional hostnames/IPs covered by this cert) </td>
+    </tr>
+    <tr>
+      <td><code>password</code> </td>
+      <td>string </td>
+      <td><code>null</code> </td>
+      <td>Password protecting the private key (optional) </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Tags </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Key/value metadata </td>
+    </tr>
+  </tbody>
 </table>
-<p>| <code>id</code> | string | - | Unique identifier of the certificate | | <code>name</code> | string | - | Display name of the certificate | | <code>description</code> | string | - | Description | | <code>chain</code> | string | - | PEM-encoded certificate chain (full chain) | | <code>privateKey</code> | string | - | PEM-encoded private key (can be empty for trust-only certificates) | | <code>caRef</code> | string | <code>null</code> | Reference to the CA certificate that signed this certificate | | <code>domain</code> | string | <code>&quot;--&quot;</code> | Primary domain of the certificate | | <code>selfSigned</code> | boolean | <code>false</code> | Whether the certificate is self-signed | | <code>ca</code> | boolean | <code>false</code> | Whether this certificate is a Certificate Authority | | <code>valid</code> | boolean | <code>false</code> | Whether the certificate is currently valid (not expired, not revoked) | | <code>exposed</code> | boolean | <code>false</code> | If <code>true</code>, the public key is exposed on <code>/.well-known/jwks.json</code> | | <code>revoked</code> | boolean | <code>false</code> | Whether the certificate has been revoked | | <code>autoRenew</code> | boolean | <code>false</code> | Auto-renew the certificate when it expires (requires a known CA and private key) | | <code>letsEncrypt</code> | boolean | <code>false</code> | Certificate was issued by Let&rsquo;s Encrypt | | <code>client</code> | boolean | <code>false</code> | This certificate is a client certificate (used for mTLS authentication) | | <code>keypair</code> | boolean | <code>false</code> | This entity is a key pair (public + private key, without a certificate chain) | | <code>subject</code> | string | <code>&quot;--&quot;</code> | Subject DN of the certificate | | <code>from</code> | number | - | Validity start date (timestamp in milliseconds) | | <code>to</code> | number | - | Validity end date (timestamp in milliseconds) | | <code>sans</code> | array of string | <code>[]</code> | Subject Alternative Names (additional hostnames/IPs covered by this cert) | | <code>password</code> | string | <code>null</code> | Password protecting the private key (optional) | | <code>tags</code> | array of string | <code>[]</code> | Tags | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata |</p>
 <h2><a href="#certificate-creation" name="certificate-creation" class="anchor"><span class="anchor-link"></span></a>Certificate creation</h2>
 <h3><a href="#from-lets-encrypt" name="from-lets-encrypt" class="anchor"><span class="anchor-link"></span></a>From Let&rsquo;s Encrypt</h3>
 <table>
