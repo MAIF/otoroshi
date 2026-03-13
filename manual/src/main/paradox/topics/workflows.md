@@ -802,17 +802,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitKeypairGenFunction (biscuit.extensions.cloud-apim.com.biscuit_keypair_gen)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ModerationCallFunction (extensions.com.cloud-apim.llm-extension.moderation_call)`
 
 no description
