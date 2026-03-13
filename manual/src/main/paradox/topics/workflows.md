@@ -1233,16 +1233,6 @@ Usage example
 }
 ```
 
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreRemoveFunction (extensions.com.cloud-apim.llm-extension.vector_store_remove)`
-
-no description
-
-expected configuration:
-
-
 
 ## Operators
 
