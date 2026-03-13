@@ -1064,17 +1064,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreAddFunction (extensions.com.cloud-apim.llm-extension.vector_store_add)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-eraser"></span>`Datastore delete (core.store_del)`
 
 This function deletes keys from the store
