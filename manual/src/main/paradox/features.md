@@ -225,6 +225,7 @@
 * Custom Ingress controller with CRD support
     * Manage Otoroshi resources from Kubernetes
 * Validation of resources via admission webhook
+* Kubernetes Gateway API support (@ref:[Gateway API](./topics/kubernetes-gateway-api.md))
 * Sidecar injection for service mesh
 * Bidirectional TLS certificate synchronization (Kubernetes secrets <-> Otoroshi certificates)
 
