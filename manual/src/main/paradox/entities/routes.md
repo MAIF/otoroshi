@@ -10,9 +10,9 @@ You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/route
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | string | - | Unique identifier of the route |
-| `name` | string | - | Display name of the route |
-| `description` | string | - | Description of the route |
+| `id`     | string |    | Unique identifier of the route |
+| `name`   | string |    | Display name of the route |
+| `description` | string |    | Description of the route |
 | `tags` | array of string | `[]` | Tags for categorization and API automation |
 | `metadata` | object | `{}` | Key/value metadata. Some keys are @ref[reserved](#reserved-metadata) |
 | `enabled` | boolean | `true` | Whether the route is active. Disabled routes are ignored by the router |
@@ -21,10 +21,10 @@ You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/route
 | `export_reporting` | boolean | `false` | Export execution reports for each request via @ref[data exporters](./data-exporters.md). See @ref[engine docs](../topics/engine.md#reporting) |
 | `groups` | array of string | `["default"]` | Service groups this route belongs to. Used for API key authorization |
 | `bound_listeners` | array of string | `[]` | List of @ref[HTTP listener](./http-listeners.md) IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port |
-| `frontend` | object | - | Frontend configuration (how the router matches this route). See [below](#frontend-configuration) |
-| `backend` | object | - | Backend configuration (where to forward requests). See @ref[backends](./backends.md) |
+| `frontend` | object |    | Frontend configuration (how the router matches this route). See [below](#frontend-configuration) |
+| `backend` | object |    | Backend configuration (where to forward requests). See @ref[backends](./backends.md) |
 | `backend_ref` | string | `null` | Reference to a global @ref[stored backend](./backends.md) by ID. If set, takes precedence over inline `backend` |
-| `plugins` | object | - | Plugin chain configuration. See [below](#plugins) |
+| `plugins` | object |    | Plugin chain configuration. See [below](#plugins) |
 
 ### Reserved metadata
 
@@ -93,7 +93,7 @@ The `plugins` field contains the list of plugins applied on this route. Each plu
 |----------|------|---------|-------------|
 | `enabled` | boolean | `true` | Whether the plugin is active |
 | `debug` | boolean | `false` | Enable debug output for this specific plugin |
-| `plugin` | string | - | The plugin identifier (e.g., `cp:otoroshi.next.plugins.Redirection`) |
+| `plugin` | string |     | The plugin identifier (e.g., `cp:otoroshi.next.plugins.Redirection`) |
 | `include` | array of string | `[]` | Path patterns to include. If empty, all paths are included |
 | `exclude` | array of string | `[]` | Path patterns to exclude. If empty, no paths are excluded |
 | `config` | object | `{}` | Plugin-specific configuration |
