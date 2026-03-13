@@ -17,11 +17,11 @@ The available actions from the UI are:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | string | - | Unique identifier of the certificate |
-| `name` | string | - | Display name of the certificate |
-| `description` | string | - | Description |
-| `chain` | string | - | PEM-encoded certificate chain (full chain) |
-| `privateKey` | string | - | PEM-encoded private key (can be empty for trust-only certificates) |
+| `id` | string |     | Unique identifier of the certificate |
+| `name` | string |     | Display name of the certificate |
+| `description` | string |     | Description |
+| `chain` | string |     | PEM-encoded certificate chain (full chain) |
+| `privateKey` | string |     | PEM-encoded private key (can be empty for trust-only certificates) |
 | `caRef` | string | `null` | Reference to the CA certificate that signed this certificate |
 | `domain` | string | `"--"` | Primary domain of the certificate |
 | `selfSigned` | boolean | `false` | Whether the certificate is self-signed |
@@ -34,8 +34,8 @@ The available actions from the UI are:
 | `client` | boolean | `false` | This certificate is a client certificate (used for mTLS authentication) |
 | `keypair` | boolean | `false` | This entity is a key pair (public + private key, without a certificate chain) |
 | `subject` | string | `"--"` | Subject DN of the certificate |
-| `from` | number | - | Validity start date (timestamp in milliseconds) |
-| `to` | number | - | Validity end date (timestamp in milliseconds) |
+| `from` | number |     | Validity start date (timestamp in milliseconds) |
+| `to` | number |     | Validity end date (timestamp in milliseconds) |
 | `sans` | array of string | `[]` | Subject Alternative Names (additional hostnames/IPs covered by this cert) |
 | `password` | string | `null` | Password protecting the private key (optional) |
 | `tags` | array of string | `[]` | Tags |
