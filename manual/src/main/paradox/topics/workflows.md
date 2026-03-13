@@ -620,15 +620,6 @@ Prototype:
 ### Full List of Functions
 
 
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitForgeFunction (biscuit.extensions.cloud-apim.com.biscuit_forge)`
-
-no description
-
-expected configuration:
-
----
-
-
 #### <span class="fas fa-cogs"></span>`Read from Otoroshi config. (core.config_read)`
 
 This function retrieves values from otoroshi config.
