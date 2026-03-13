@@ -928,18 +928,6 @@ Usage example
 }
 ```
 
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ComputeEmbeddingFunction (extensions.com.cloud-apim.llm-extension.embedding_compute)`
-
-no description
-
-expected configuration:
-
-
-
 ---
 
 
