@@ -931,17 +931,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitVerifyFunction (biscuit.extensions.cloud-apim.com.biscuit_verify)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-network-wired"></span>`HTTP client (core.http_client)`
 
 This function makes a HTTP request
