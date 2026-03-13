@@ -240,7 +240,7 @@ Certificates can also be used as key pairs for signing and verifying JWT tokens.
 
 Once marked as a key pair, it can be referenced in @ref:[JWT verifiers](../entities/jwt-verifiers.md) for token signing and verification using RSA or ECDSA algorithms.
 
-Key pairs with the `exposed` flag set to `true` are published on the JWKS endpoint. See @ref:[PKI - Exposed public keys](./pki.md#exposed-public-keys-jwks) for details.
+Key pairs with the `exposed` flag set to `true` are published on the JWKS endpoint. See @ref:[PKI - Exposed public keys](./pki.md#exposed-public-keys-jwks-) for details.
 
 ## Related
 
