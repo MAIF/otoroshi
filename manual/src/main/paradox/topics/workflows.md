@@ -905,17 +905,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.AudioTtsFunction (extensions.com.cloud-apim.llm-extension.audio_tts)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.LlmCallFunction (extensions.com.cloud-apim.llm-extension.llm_call)`
 
 no description
