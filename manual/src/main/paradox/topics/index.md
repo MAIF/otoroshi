@@ -31,6 +31,7 @@ In this sections, you will find informations about various Otoroshi topics
 * @ref:[Workflows Editor](./workflows-editor.md)
 * @ref:[Remote Catalogs](./remote-catalogs.md)
 * @ref:[Kubernetes Gateway API](./kubernetes-gateway-api.md)
+* @ref:[Admin Extensions](./admin-extensions.md)
 
 
 @@@ index
@@ -64,5 +65,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Workflows Editor](./workflows-editor.md)
 * [Remote Catalogs](./remote-catalogs.md)
 * [Kubernetes Gateway API](./kubernetes-gateway-api.md)
+* [Admin Extensions](./admin-extensions.md)
 
 @@@
