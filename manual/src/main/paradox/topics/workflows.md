@@ -1116,18 +1116,6 @@ Usage example
 }
 ```
 
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.CallMcpFunctionFunction (extensions.com.cloud-apim.llm-extension.mcp_function_call)`
-
-no description
-
-expected configuration:
-
-
-
 ---
 
 
