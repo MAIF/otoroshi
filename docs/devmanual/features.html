@@ -94,7 +94,7 @@ latest
     <li><a href="topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
     <li><a href="topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="topics/relay-routing.html" class="page">Relay Routing</a></li>
-    <li><a href="topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="topics/netty-server.html" class="page">Netty Server</a></li>
     <li><a href="topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
@@ -237,7 +237,7 @@ latest
     <li><a href="topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
     <li><a href="topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="topics/relay-routing.html" class="page">Relay Routing</a></li>
-    <li><a href="topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="topics/netty-server.html" class="page">Netty Server</a></li>
     <li><a href="topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
@@ -346,15 +346,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
 <p><strong>Traffic Management</strong></p>
 <ul>
-  <li>Can proxy any HTTP(s) service (APIs, webapps, websocket, etc)</li>
-  <li>Can proxy any TCP service (app, database, etc)</li>
-  <li>Can proxy any gRPC service (using a netty listener), also gRPC-Web support</li>
-  <li>Can proxy any GraphQL service (proxy, query composition, and schema-first backend)</li>
+  <li>Can proxy any HTTP(s) service (APIs, webapps, websocket, etc) (<a href="entities/routes.html">routes</a>, <a href="topics/engine.html">engine</a>)</li>
+  <li>Can proxy any TCP service (app, database, etc) (<a href="entities/tcp-services.html">TCP services</a>)</li>
+  <li>Can proxy any gRPC service (using a netty listener), also gRPC-Web support (<a href="topics/http-listeners.html">HTTP listeners</a>)</li>
+  <li>Can proxy any GraphQL service (proxy, query composition, and schema-first backend) (<a href="topics/graphql-composer.html">GraphQL composer</a>)</li>
   <li>Full WebSocket support with message validation, transformation, and mirroring</li>
   <li>End-to-end HTTP/1.1 support</li>
-  <li>End-to-end HTTP/2 support (including H2C cleartext)</li>
-  <li>End-to-end HTTP/3 support (QUIC)</li>
-  <li>Multiple load balancing options:
+  <li>End-to-end HTTP/2 support (including H2C cleartext) (<a href="topics/netty-server.html">Netty server</a>)</li>
+  <li>End-to-end HTTP/3 support (QUIC) (<a href="topics/http3.html">HTTP/3</a>)</li>
+  <li>Multiple load balancing options: (<a href="entities/backends.html">backends</a>)
     <ul>
       <li>Round Robin</li>
       <li>Random</li>
@@ -369,24 +369,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>Query Hash (consistent hashing on a query parameter)</li>
     </ul>
   </li>
-  <li>Backend Failover targets support</li>
-  <li>Distributed in-flight request limiting</li>
-  <li>Distributed rate limiting</li>
-  <li>Per-IP, per-API key, per-route, and custom throttling and quotas</li>
+  <li>Backend Failover targets support (<a href="entities/backends.html">backends</a>)</li>
+  <li>Distributed in-flight request limiting (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Distributed rate limiting (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Per-IP, per-API key, per-route, and custom throttling and quotas (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
   <li>Request and response bandwidth throttling</li>
   <li>Request and response body size limiting</li>
-  <li>Traffic mirroring to secondary backends</li>
-  <li>Traffic capture (GoReplay format)</li>
+  <li>Traffic mirroring to secondary backends (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Traffic capture (GoReplay format) (<a href="topics/engine.html">engine</a>)</li>
   <li>Canary deployments (percentage-based and time-controlled)</li>
-  <li>Relay routing across network zones</li>
-  <li>Tunnels for easier network exposition (TCP, UDP, WebSocket-based)</li>
-  <li>Custom error templates</li>
+  <li>Relay routing across network zones (<a href="topics/relay-routing.html">relay routing</a>)</li>
+  <li>Tunnels for easier network exposition (TCP, UDP, WebSocket-based) (<a href="topics/tunnels.html">tunnels</a>)</li>
+  <li>Custom error templates (<a href="entities/error-templates.html">error templates</a>)</li>
 </ul>
 <p><strong>Routing</strong></p>
 <ul>
-  <li>Router can support tens of thousands of concurrent routes</li>
-  <li>Router supports path parameter extraction (with regex validation)</li>
-  <li>Routing based on:
+  <li>Router can support tens of thousands of concurrent routes (<a href="topics/engine.html">engine</a>)</li>
+  <li>Router supports path parameter extraction (with regex validation) (<a href="topics/engine.html">engine</a>)</li>
+  <li>Routing based on: (<a href="entities/routes.html">routes</a>)
     <ul>
       <li>HTTP method</li>
       <li>hostname (exact, wildcard)</li>
@@ -396,15 +396,15 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>cookie values</li>
     </ul>
   </li>
-  <li>Full URL rewriting</li>
-  <li>Path stripping</li>
-  <li>Target predicates (route to specific backends based on geolocation, cloud region, datacenter, rack, etc)</li>
+  <li>Full URL rewriting (<a href="entities/backends.html">backends</a>)</li>
+  <li>Path stripping (<a href="entities/routes.html">routes</a>)</li>
+  <li>Target predicates (route to specific backends based on geolocation, cloud region, datacenter, rack, etc) (<a href="entities/backends.html">backends</a>)</li>
 </ul>
 <p><strong>Routes customization</strong></p>
 <ul>
-  <li>Over 200 built-in middlewares (plugins) covering:
+  <li>Over 200 built-in middlewares (plugins) covering: (<a href="plugins/built-in-plugins.html">built-in plugins</a>)
     <ul>
-      <li>circuit breakers (with configurable thresholds)</li>
+      <li>circuit breakers (with configurable thresholds) (<a href="topics/circuit-breaker.html">circuit breaker</a>)</li>
       <li>automatic retries (with exponential backoff)</li>
       <li>response caching</li>
       <li>gzip and brotli compression</li>
@@ -413,7 +413,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>CORS handling</li>
       <li>body transformation (jq, regex, XML/JSON conversion, SOAP)</li>
       <li>query string transformation</li>
-      <li>GraphQL composition</li>
+      <li>GraphQL composition (<a href="topics/graphql-composer.html">GraphQL composer</a>)</li>
       <li>HTML patching</li>
       <li>redirection</li>
       <li>maintenance and build modes</li>
@@ -421,70 +421,70 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>etc</li>
     </ul>
   </li>
-  <li>Support middlewares compiled to WASM (using Extism)</li>
-  <li>Support Open Policy Agent policies for traffic control (via WASM)</li>
-  <li>Visual workflow engine for building complex processing pipelines</li>
-  <li>Write your own custom middlewares:
+  <li>Support middlewares compiled to WASM (using Extism) (<a href="entities/wasm-plugins.html">WASM plugins</a>, <a href="topics/wasm-usage.html">WASM usage</a>)</li>
+  <li>Support Open Policy Agent policies for traffic control (via WASM) (<a href="topics/wasm-usage.html">WASM usage</a>)</li>
+  <li>Visual workflow engine for building complex processing pipelines (<a href="entities/workflows.html">workflows</a>, <a href="topics/workflows-editor.html">workflow editor</a>)</li>
+  <li>Write your own custom middlewares: (<a href="plugins/create-plugins.html">create plugins</a>)
     <ul>
       <li>in Scala deployed as jar files</li>
-      <li>in whatever language you want that can be compiled to WASM</li>
+      <li>in whatever language you want that can be compiled to WASM (<a href="how-to-s/wasm-usage.html">WASM how-to</a>)</li>
     </ul>
   </li>
 </ul>
 <p><strong>Security</strong></p>
 <ul>
-  <li>Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support</li>
-  <li>IP address allow and block lists (with CIDR support)</li>
-  <li>Domain name allow and block lists</li>
-  <li>Fail2Ban-style automatic IP banning</li>
-  <li>Geolocation-based access control (MaxMind, IPStack)</li>
+  <li>Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support (<a href="how-to-s/instantiate-waf-coraza.html">WAF how-to</a>)</li>
+  <li>IP address allow and block lists (with CIDR support) (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Domain name allow and block lists (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Fail2Ban-style automatic IP banning (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Geolocation-based access control (MaxMind, IPStack) (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
   <li>Time-restricted access control</li>
-  <li>Log4Shell and React2Shell vulnerability detection</li>
+  <li>Log4Shell and React2Shell vulnerability detection (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
   <li>Security headers injection (HSTS, CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options)</li>
   <li>security.txt endpoint (RFC 9116)</li>
   <li>robots.txt handling</li>
 </ul>
 <p><strong>API security</strong></p>
 <ul>
-  <li>Access management with API keys and quotas</li>
-  <li>Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT)</li>
-  <li>Automatic API key secrets rotation</li>
+  <li>Access management with API keys and quotas (<a href="entities/apikeys.html">API keys</a>, <a href="how-to-s/secure-with-apikey.html">how-to</a>)</li>
+  <li>Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) (<a href="entities/apikeys.html">API keys</a>)</li>
+  <li>Automatic API key secrets rotation (<a href="entities/apikeys.html">API keys</a>)</li>
   <li>Mandatory tags and metadata validation on API keys</li>
-  <li>HTTPS and TLS</li>
-  <li>End-to-end mTLS calls</li>
+  <li>HTTPS and TLS (<a href="topics/tls.html">TLS</a>)</li>
+  <li>End-to-end mTLS calls (<a href="how-to-s/end-to-end-mtls.html">mTLS how-to</a>)</li>
   <li>Routing constraints and restrictions</li>
   <li>Public/private path separation</li>
-  <li>JWT token validation and manipulation
+  <li>JWT token validation and manipulation (<a href="entities/jwt-verifiers.html">JWT verifiers</a>, <a href="how-to-s/secure-an-app-with-jwt-verifiers.html">how-to</a>)
     <ul>
       <li>Multiple validators on the same route</li>
       <li>JWE (encrypted JWT) support</li>
       <li>JWT signing</li>
     </ul>
   </li>
-  <li>HMAC request signing and validation</li>
-  <li>Biscuit token extraction and validation (datalog-based authorization)</li>
-  <li>OpenFGA fine-grained authorization</li>
-  <li>Role-based access control (RBAC)</li>
-  <li>Context validation (JSON path-based claims validation)</li>
+  <li>HMAC request signing and validation (<a href="topics/otoroshi-protocol.html">Otoroshi protocol</a>)</li>
+  <li>Biscuit token extraction and validation (datalog-based authorization) (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>OpenFGA fine-grained authorization (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Role-based access control (RBAC) (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Context validation (JSON path-based claims validation) (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
 </ul>
 <p><strong>Monitoring and observability</strong></p>
 <ul>
-  <li>Active health checks (with customizable healthy/unhealthy status codes and regex body checks)</li>
+  <li>Active health checks (with customizable healthy/unhealthy status codes and regex body checks) (<a href="entities/backends.html">backends</a>)</li>
   <li>Route state for the last 90 days</li>
-  <li>Calls tracing using W3C Trace Context</li>
-  <li>Real-time traffic metrics</li>
-  <li>Prometheus metrics export</li>
-  <li>OpenTelemetry metrics and logs export (OTLP)</li>
-  <li>Datadog, StatsD metrics export</li>
-  <li>Export alerts and events to external systems:
+  <li>Calls tracing using W3C Trace Context (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Real-time traffic metrics (<a href="topics/monitoring.html">monitoring</a>)</li>
+  <li>Prometheus metrics export (<a href="topics/monitoring.html">monitoring</a>)</li>
+  <li>OpenTelemetry metrics and logs export (OTLP) (<a href="topics/opentelemetry.html">OpenTelemetry</a>)</li>
+  <li>Datadog, StatsD metrics export (<a href="topics/monitoring.html">monitoring</a>)</li>
+  <li>Export alerts and events to external systems: (<a href="entities/data-exporters.html">data exporters</a>, <a href="topics/events-and-analytics.html">events and analytics</a>)
     <ul>
-      <li>Elasticsearch</li>
-      <li>Apache Kafka</li>
+      <li>Elasticsearch (<a href="how-to-s/export-events-to-elastic.html">how-to</a>)</li>
+      <li>Apache Kafka (<a href="how-to-s/communicate-with-kafka.html">how-to</a>)</li>
       <li>Apache Pulsar</li>
       <li>Webhook (HTTP)</li>
       <li>File</li>
       <li>S3</li>
-      <li>Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP)</li>
+      <li>Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) (<a href="how-to-s/export-alerts-using-mailgun.html">how-to</a>)</li>
       <li>Console / Logger</li>
       <li>Splunk</li>
       <li>Datadog</li>
@@ -492,37 +492,37 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>GoReplay (file and S3)</li>
       <li>TCP / UDP / Syslog</li>
       <li>JMS</li>
-      <li>WASM-based custom exporter</li>
-      <li>Workflow-based custom exporter</li>
+      <li>WASM-based custom exporter (<a href="topics/wasm-usage.html">WASM usage</a>)</li>
+      <li>Workflow-based custom exporter (<a href="topics/workflows.html">workflows</a>)</li>
     </ul>
   </li>
-  <li>GreenScore: ecological scoring of API routes based on efficiency rules</li>
+  <li>GreenScore: ecological scoring of API routes based on efficiency rules (<a href="topics/green-score.html">GreenScore</a>)</li>
 </ul>
 <p><strong>Services discovery</strong></p>
 <ul>
   <li>Through DNS</li>
-  <li>Through Eureka (internal and external)</li>
-  <li>Through Kubernetes API (namespace scanning)</li>
-  <li>Through custom Otoroshi protocol (self-registration)</li>
-  <li>Through Tailscale network</li>
+  <li>Through Eureka (internal and external) (<a href="how-to-s/working-with-eureka.html">how-to</a>)</li>
+  <li>Through Kubernetes API (namespace scanning) (<a href="deploy/kubernetes.html">Kubernetes</a>)</li>
+  <li>Through custom Otoroshi protocol (self-registration) (<a href="topics/otoroshi-protocol.html">Otoroshi protocol</a>)</li>
+  <li>Through Tailscale network (<a href="how-to-s/tailscale-integration.html">how-to</a>)</li>
 </ul>
 <p><strong>Authentication</strong></p>
 <ul>
-  <li>OAuth 2.0/2.1 authentication (with PKCE support)</li>
-  <li>OpenID Connect (OIDC) authentication</li>
-  <li>LDAP authentication (with nested groups)</li>
-  <li>JWT authentication</li>
-  <li>OAuth 1.0a authentication</li>
-  <li>SAML V2 authentication</li>
-  <li>Basic authentication (username/password)</li>
+  <li>OAuth 2.0/2.1 authentication (with PKCE support) (<a href="entities/auth-modules.html">auth modules</a>)</li>
+  <li>OpenID Connect (OIDC) authentication (<a href="entities/auth-modules.html">auth modules</a>, <a href="how-to-s/secure-app-with-keycloak.html">Keycloak how-to</a>)</li>
+  <li>LDAP authentication (with nested groups) (<a href="entities/auth-modules.html">auth modules</a>, <a href="how-to-s/secure-app-with-ldap.html">LDAP how-to</a>)</li>
+  <li>JWT authentication (<a href="entities/auth-modules.html">auth modules</a>)</li>
+  <li>OAuth 1.0a authentication (<a href="how-to-s/secure-with-oauth1-client.html">how-to</a>)</li>
+  <li>SAML V2 authentication (<a href="entities/auth-modules.html">auth modules</a>)</li>
+  <li>Basic authentication (username/password) (<a href="entities/auth-modules.html">auth modules</a>)</li>
   <li>WebAuthn / FIDO2 passwordless authentication</li>
-  <li>Auth0 passwordless flow</li>
-  <li>WASM-based custom authentication</li>
-  <li>Internal users management</li>
-  <li>Multi-authentication module chaining</li>
-  <li>Client credentials OAuth2 flow with token endpoint</li>
+  <li>Auth0 passwordless flow (<a href="how-to-s/secure-app-with-auth0.html">Auth0 how-to</a>)</li>
+  <li>WASM-based custom authentication (<a href="entities/auth-modules.html">auth modules</a>, <a href="topics/wasm-usage.html">WASM usage</a>)</li>
+  <li>Internal users management (<a href="entities/otoroshi-admins.html">Otoroshi admins</a>)</li>
+  <li>Multi-authentication module chaining (<a href="entities/auth-modules.html">auth modules</a>)</li>
+  <li>Client credentials OAuth2 flow with token endpoint (<a href="how-to-s/secure-with-oauth2-client-credentials.html">how-to</a>)</li>
 </ul>
-<p><strong>Secret vaults support</strong></p>
+<p><strong>Secret vaults support</strong> (<a href="topics/secrets.html">secrets management</a>)</p>
 <ul>
   <li>Environment variables</li>
   <li>Hashicorp Vault</li>
@@ -538,11 +538,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>Local (file-based)</li>
   <li>Extensible via admin extensions</li>
 </ul>
-<p><strong>Certificates management</strong></p>
+<p><strong>Certificates management</strong> (<a href="topics/pki.html">PKI</a>, <a href="entities/certificates.html">certificates</a>)</p>
 <ul>
-  <li>Dynamic TLS certificates store</li>
-  <li>Dynamic TLS termination</li>
-  <li>Internal PKI
+  <li>Dynamic TLS certificates store (<a href="topics/tls.html">TLS</a>)</li>
+  <li>Dynamic TLS termination (<a href="how-to-s/tls-termination-using-own-certificates.html">TLS how-to</a>)</li>
+  <li>Internal PKI (<a href="topics/pki.html">PKI</a>)
     <ul>
       <li>generate self-signed certificates/CAs</li>
       <li>generate/sign certificates/CAs/sub-CAs</li>
@@ -551,40 +551,40 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <li>import P12/certificate bundles</li>
     </ul>
   </li>
-  <li>ACME / Let&rsquo;s Encrypt support</li>
+  <li>ACME / Let&rsquo;s Encrypt support (<a href="how-to-s/tls-using-lets-encrypt.html">Let&rsquo;s Encrypt how-to</a>)</li>
   <li>On-the-fly certificate generation based on a CA certificate without request loss</li>
-  <li>JWKS exposition for public key pairs</li>
+  <li>JWKS exposition for public key pairs (<a href="topics/pki.html">PKI</a>)</li>
   <li>Default certificate</li>
-  <li>Customize mTLS trusted CAs in the TLS handshake</li>
-  <li>Tailscale certificates integration</li>
+  <li>Customize mTLS trusted CAs in the TLS handshake (<a href="how-to-s/end-to-end-mtls.html">mTLS how-to</a>)</li>
+  <li>Tailscale certificates integration (<a href="how-to-s/tailscale-integration.html">how-to</a>)</li>
 </ul>
-<p><strong>Clustering</strong></p>
+<p><strong>Clustering</strong> (<a href="deploy/clustering.html">clustering</a>)</p>
 <ul>
   <li>Based on a control plane / data plane pattern</li>
   <li>Encrypted communication between nodes</li>
   <li>Backup capabilities allowing data planes to start without control plane (improved resilience)</li>
-  <li>Relay routing to forward traffic across network zones</li>
-  <li>Distributed web authentication across nodes</li>
+  <li>Relay routing to forward traffic across network zones (<a href="topics/relay-routing.html">relay routing</a>)</li>
+  <li>Distributed web authentication across nodes (<a href="topics/sessions-mgmt.html">sessions management</a>)</li>
 </ul>
 <p><strong>Static content and backends</strong></p>
 <ul>
-  <li>Serve static files from local filesystem</li>
-  <li>Serve static files from Amazon S3</li>
-  <li>Serve static files from ZIP archives</li>
-  <li>Echo backend for debugging</li>
-  <li>Static response / mock backends</li>
+  <li>Serve static files from local filesystem (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Serve static files from Amazon S3 (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Serve static files from ZIP archives (<a href="how-to-s/zip-backend-plugin.html">ZIP backend how-to</a>)</li>
+  <li>Echo backend for debugging (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
+  <li>Static response / mock backends (<a href="plugins/built-in-plugins.html">built-in plugins</a>)</li>
 </ul>
 <p><strong>Administration UI</strong></p>
 <ul>
   <li>Manage and organize all resources</li>
-  <li>Secured user access with authentication module</li>
-  <li>Audited user actions</li>
+  <li>Secured user access with authentication module (<a href="entities/auth-modules.html">auth modules</a>)</li>
+  <li>Audited user actions (<a href="topics/events-and-analytics.html">events and analytics</a>)</li>
   <li>Dynamic changes at runtime without full reload</li>
   <li>Test your routes without any external tools</li>
-  <li>Visual workflow designer with step-by-step debugger</li>
+  <li>Visual workflow designer with step-by-step debugger (<a href="topics/workflows-editor.html">workflow editor</a>)</li>
   <li>Extensible via admin extensions (custom entities, routes, frontend modules)</li>
 </ul>
-<p><strong>Kubernetes integration</strong></p>
+<p><strong>Kubernetes integration</strong> (<a href="deploy/kubernetes.html">Kubernetes</a>)</p>
 <ul>
   <li>Standard Ingress controller</li>
   <li>Custom Ingress controller with CRD support
@@ -593,10 +593,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </ul>
   </li>
   <li>Validation of resources via admission webhook</li>
+  <li>Kubernetes Gateway API support (<a href="topics/kubernetes-gateway-api.html">Gateway API</a>)</li>
   <li>Sidecar injection for service mesh</li>
   <li>Bidirectional TLS certificate synchronization (Kubernetes secrets &lt;-&gt; Otoroshi certificates)</li>
 </ul>
-<p><strong>Dynamic HTTP listeners</strong></p>
+<p><strong>Dynamic HTTP listeners</strong> (<a href="topics/http-listeners.html">topic</a>, <a href="entities/http-listeners.html">entity</a>)</p>
 <ul>
   <li>Create and manage additional HTTP listeners on custom ports</li>
   <li>Multi-protocol support (HTTP/1.1, HTTP/2, HTTP/3, H2C)</li>
@@ -605,7 +606,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p><strong>Infrastructure as Code / GitOps</strong></p>
 <ul>
-  <li>Remote Catalogs: declarative entity management from trusted external sources
+  <li>Remote Catalogs: declarative entity management from trusted external sources (<a href="topics/remote-catalogs.html">topic</a>, <a href="entities/remote-catalogs.html">entity</a>)
     <ul>
       <li>Supported sources:
         <ul>
@@ -640,7 +641,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </ul>
   </li>
 </ul>
-<p><strong>Storage backends</strong></p>
+<p><strong>Storage backends</strong> (<a href="install/setup-otoroshi.html">setup</a>)</p>
 <ul>
   <li>Redis (via Lettuce)</li>
   <li>PostgreSQL (via Reactive PG)</li>
@@ -651,13 +652,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </ul>
 <p><strong>Organize</strong></p>
 <ul>
-  <li>Multi-organizations</li>
-  <li>Multi-teams</li>
-  <li>Routes groups</li>
+  <li>Multi-organizations (<a href="entities/organizations.html">organizations</a>)</li>
+  <li>Multi-teams (<a href="entities/teams.html">teams</a>)</li>
+  <li>Routes groups (<a href="entities/service-groups.html">service groups</a>)</li>
 </ul>
 <p><strong>Developers portal</strong></p>
 <ul>
-  <li>Using <a href="https://maif.github.io/daikoku/manual/index.html" title="Daikoku" target="_blank" rel="noopener noreferrer">Daikoku</a></li>
+  <li>Using <a href="https://maif.github.io/daikoku/manual/index.html" title="Daikoku" target="_blank" rel="noopener noreferrer">Daikoku</a> (<a href="topics/dev-portal.html">dev portal</a>)</li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="getting-started.html">Getting Started</a></p>

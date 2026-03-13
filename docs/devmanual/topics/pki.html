@@ -94,7 +94,7 @@ latest
     <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
     <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
-    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Netty Server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
@@ -237,7 +237,7 @@ latest
     <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
     <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
-    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Netty Server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
@@ -345,81 +345,627 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#otoroshis-pki" name="otoroshis-pki" class="anchor"><span class="anchor-link"></span></a>Otoroshi&rsquo;s PKI</h1>
-<p>With Otoroshi, you can add your own certificates, your own CA and even create self signed certificates or certificates from CAs. You can enable auto renewal of thoses self signed certificates or certificates generated. Certificates have to be created with the certificate chain and the private key in PEM format.</p>
-<p>An Otoroshi instance always starts with 5 auto-generated certificates. </p>
-<p>The highest certificate is the <strong>Otoroshi Default Root CA Certificate</strong>. This certificate is used by Otoroshi to sign the intermediate CA.</p>
-<p><strong>Otoroshi Default Intermediate CA Certificate</strong>: first intermediate CA that must be used to issue new certificates in Otoroshi. Creating certificates directly from the CA root certificate increases the risk of root certificate compromise, and if the CA root certificate is compromised, the entire trust infrastructure built by the SSL provider will fail</p>
-<p>This intermediate CA signed three certificates :</p>
-<ul>
-  <li><strong>Otoroshi Default Client certificate</strong>:</li>
-  <li><strong>Otoroshi Default Jwt Signing Keypair</strong>: default keypair (composed of a public and private key), exposed on <code>https://xxxxxx/.well-known/jwks.json</code>, that can be used to sign and verify JWT verifier</li>
-  <li><strong>Otoroshi Default Wildcard Certificate</strong>: this certificate has <code>*.oto.tools</code> as common name. It can be very useful to the development phase</li>
-</ul>
+<p>Otoroshi embeds a complete Public Key Infrastructure (PKI) based on BouncyCastle. You can create root CAs, intermediate CAs, server and client certificates, key pairs for JWT signing, and manage their full lifecycle including renewal, revocation, and OCSP status. Certificates must use PEM format for the chain and private key.</p>
+<h2><a href="#auto-generated-certificates" name="auto-generated-certificates" class="anchor"><span class="anchor-link"></span></a>Auto-generated certificates</h2>
+<p>An Otoroshi instance always starts with 5 auto-generated certificates, created by an internal job that runs every 24 hours and re-creates any missing certificate:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Certificate </th>
+      <th>ID </th>
+      <th>Validity </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Otoroshi Default Root CA Certificate</strong> </td>
+      <td><code>otoroshi-root-ca</code> </td>
+      <td>10 years </td>
+      <td>Root CA used to sign the intermediate CA. Should never be used directly to issue end-entity certificates </td>
+    </tr>
+    <tr>
+      <td><strong>Otoroshi Default Intermediate CA Certificate</strong> </td>
+      <td><code>otoroshi-intermediate-ca</code> </td>
+      <td>10 years </td>
+      <td>Intermediate CA used to issue all other default certificates. This is the CA you should reference when creating new certificates </td>
+    </tr>
+    <tr>
+      <td><strong>Otoroshi Default Client Certificate</strong> </td>
+      <td><code>otoroshi-client</code> </td>
+      <td>1 year </td>
+      <td>Default client certificate for mTLS </td>
+    </tr>
+    <tr>
+      <td><strong>Otoroshi Default Jwt Signing Keypair</strong> </td>
+      <td><code>otoroshi-jwt-signing</code> </td>
+      <td>1 year </td>
+      <td>Default key pair for signing and verifying JWT tokens. Exposed on <code>/.well-known/jwks.json</code> </td>
+    </tr>
+    <tr>
+      <td><strong>Otoroshi Default Wildcard Certificate</strong> </td>
+      <td><code>otoroshi-wildcard</code> </td>
+      <td>1 year </td>
+      <td>Wildcard certificate for <code>*.{your-domain}</code>. Useful during development. Can be disabled with <code>otoroshi.ssl.genWildcardCert=false</code> </td>
+    </tr>
+  </tbody>
+</table>
+<p>All auto-generated certificates have <code>autoRenew</code> enabled and are automatically renewed before expiration.</p>
+<h2><a href="#supported-algorithms" name="supported-algorithms" class="anchor"><span class="anchor-link"></span></a>Supported algorithms</h2>
+<h3><a href="#key-algorithms" name="key-algorithms" class="anchor"><span class="anchor-link"></span></a>Key algorithms</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Algorithm </th>
+      <th>Sizes </th>
+      <th>Default </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>RSA </td>
+      <td>2048, 3072, 4096 </td>
+      <td>2048 </td>
+    </tr>
+    <tr>
+      <td>ECDSA </td>
+      <td>256 (P-256), 384 (P-384), 521 (P-521) </td>
+      <td>256 </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#signature-algorithms" name="signature-algorithms" class="anchor"><span class="anchor-link"></span></a>Signature algorithms</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Algorithm </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>SHA256WithRSAEncryption</code> </td>
+      <td>RSA with SHA-256 (default) </td>
+    </tr>
+    <tr>
+      <td><code>SHA384WithRSAEncryption</code> </td>
+      <td>RSA with SHA-384 </td>
+    </tr>
+    <tr>
+      <td><code>SHA512WithRSAEncryption</code> </td>
+      <td>RSA with SHA-512 </td>
+    </tr>
+    <tr>
+      <td><code>SHA256WithECDSA</code> </td>
+      <td>ECDSA with SHA-256 </td>
+    </tr>
+    <tr>
+      <td><code>SHA384WithECDSA</code> </td>
+      <td>ECDSA with SHA-384 </td>
+    </tr>
+    <tr>
+      <td><code>SHA512WithECDSA</code> </td>
+      <td>ECDSA with SHA-512 </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#digest-algorithms" name="digest-algorithms" class="anchor"><span class="anchor-link"></span></a>Digest algorithms</h3>
+<p><code>SHA-256</code> (default), <code>SHA-384</code>, <code>SHA-512</code></p>
+<h2><a href="#certificate-request-format" name="certificate-request-format" class="anchor"><span class="anchor-link"></span></a>Certificate request format</h2>
+<p>Most PKI endpoints accept a JSON body following the <code>GenCsrQuery</code> model:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>hosts</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Subject Alternative Names (SANs) - domain names for the certificate </td>
+    </tr>
+    <tr>
+      <td><code>key.algo</code> </td>
+      <td>string </td>
+      <td><code>rsa</code> </td>
+      <td>Key algorithm: <code>rsa</code> or <code>ec</code> </td>
+    </tr>
+    <tr>
+      <td><code>key.size</code> </td>
+      <td>number </td>
+      <td><code>2048</code> </td>
+      <td>Key size (2048/4096 for RSA, 256/384/521 for ECDSA) </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Subject distinguished name fields as key/value (e.g., <code>{&quot;CN&quot;: &quot;example.com&quot;, &quot;O&quot;: &quot;My Org&quot;}</code>) </td>
+    </tr>
+    <tr>
+      <td><code>subject</code> </td>
+      <td>string </td>
+      <td> </td>
+      <td>Full subject DN string (alternative to <code>name</code>, e.g., <code>CN=example.com, O=My Org</code>). Takes precedence over <code>name</code> </td>
+    </tr>
+    <tr>
+      <td><code>client</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Generate a client certificate (adds TLS Client Authentication extended key usage) </td>
+    </tr>
+    <tr>
+      <td><code>ca</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Generate a CA certificate (adds Basic Constraints CA:TRUE) </td>
+    </tr>
+    <tr>
+      <td><code>includeAIA</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Include Authority Information Access extension (OCSP responder URL + CA issuers URL) </td>
+    </tr>
+    <tr>
+      <td><code>duration</code> </td>
+      <td>number </td>
+      <td><code>31536000000</code> </td>
+      <td>Certificate validity duration in milliseconds (default: 365 days) </td>
+    </tr>
+    <tr>
+      <td><code>signatureAlg</code> </td>
+      <td>string </td>
+      <td><code>SHA256WithRSAEncryption</code> </td>
+      <td>Signature algorithm </td>
+    </tr>
+    <tr>
+      <td><code>digestAlg</code> </td>
+      <td>string </td>
+      <td><code>SHA-256</code> </td>
+      <td>Digest algorithm </td>
+    </tr>
+  </tbody>
+</table>
+<p>You can also use <code>keyType</code> and <code>keySize</code> as alternatives to the <code>key</code> object.</p>
+<h3><a href="#example-generate-a-server-certificate" name="example-generate-a-server-certificate" class="anchor"><span class="anchor-link"></span></a>Example: generate a server certificate</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;hosts&quot;: [&quot;api.example.com&quot;, &quot;*.api.example.com&quot;],
+  &quot;key&quot;: { &quot;algo&quot;: &quot;rsa&quot;, &quot;size&quot;: 2048 },
+  &quot;subject&quot;: &quot;CN=api.example.com, OU=Engineering, O=My Company&quot;,
+  &quot;duration&quot;: 31536000000,
+  &quot;signatureAlg&quot;: &quot;SHA256WithRSAEncryption&quot;,
+  &quot;digestAlg&quot;: &quot;SHA-256&quot;,
+  &quot;includeAIA&quot;: true
+}
+</code></pre>
+<h3><a href="#example-generate-a-client-certificate" name="example-generate-a-client-certificate" class="anchor"><span class="anchor-link"></span></a>Example: generate a client certificate</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;hosts&quot;: [],
+  &quot;key&quot;: { &quot;algo&quot;: &quot;ec&quot;, &quot;size&quot;: 256 },
+  &quot;subject&quot;: &quot;CN=my-service-client, OU=Engineering, O=My Company&quot;,
+  &quot;client&quot;: true,
+  &quot;duration&quot;: 31536000000
+}
+</code></pre>
+<h3><a href="#example-generate-a-ca-certificate" name="example-generate-a-ca-certificate" class="anchor"><span class="anchor-link"></span></a>Example: generate a CA certificate</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;hosts&quot;: [],
+  &quot;key&quot;: { &quot;algo&quot;: &quot;rsa&quot;, &quot;size&quot;: 4096 },
+  &quot;subject&quot;: &quot;CN=My Internal CA, OU=Security, O=My Company&quot;,
+  &quot;ca&quot;: true,
+  &quot;duration&quot;: 315360000000,
+  &quot;includeAIA&quot;: true
+}
+</code></pre>
 <h2><a href="#the-pki-api" name="the-pki-api" class="anchor"><span class="anchor-link"></span></a>The PKI API</h2>
-<p>The Otoroshi&rsquo;s PKI can be managed using the admin api of otoroshi (by default admin api is exposed on <a href="https://otoroshi-api.xxxxx">https://otoroshi-api.xxxxx</a>)</p>
-<p>Link to the complete swagger section about PKI : <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki">https://maif.github.io/otoroshi/swagger-ui/index.html#/pki</a></p>
-<ul>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert">/api/pki/certs/_letencrypt</a>: generates a certificate using Let&rsquo;s Encrypt or any ACME compatible system</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.importCertFromP12">/api/pki/certs/_p12</a>: import a .p12 file as client certificates</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.certificateIsValid">/api/pki/certs/_valid</a>: check if a certificate is valid (based on its own data)</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.certificateData">/api/pki/certs/_data</a>: extract data from a certificate</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCert">/api/pki/certs</a>: generates a self signed certificates</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCsr">/api/pki/csrs</a> : generates a CSR</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genKeyPair">/api/pki/keys</a> : generates a keypair</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSelfSignedCA">/api/pki/cas</a> : generates a self signed CA</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.signCert">/api/pki/cas/:ca/certs/_sign</a>: sign a certificate based on CSR</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genCert">/api/pki/cas/:ca/certs</a>: generates a certificate</li>
-  <li><code>POST</code> <a href="https://maif.github.io/otoroshi/swagger-ui/index.html#/pki/otoroshi.controllers.adminapi.PkiController.genSubCA">/api/pki/cas/:ca/cas</a> : generates a sub-CA</li>
-</ul>
+<p>The PKI API is exposed on the admin API host (by default <code>https://otoroshi-api.xxxxx</code>). All PKI endpoints require super admin rights.</p>
+<h3><a href="#key-pair-generation" name="key-pair-generation" class="anchor"><span class="anchor-link"></span></a>Key pair generation</h3>
+<pre><code>POST /api/pki/keys
+</code></pre>
+<p>Generates a public/private key pair. The key pair is also stored as a certificate entity with the <code>keypair</code> flag.</p>
+<p><strong>Request body</strong>: <code>GenKeyPairQuery</code></p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>algo</code> </td>
+      <td>string </td>
+      <td><code>rsa</code> </td>
+      <td>Key algorithm: <code>rsa</code> or <code>ec</code> </td>
+    </tr>
+    <tr>
+      <td><code>size</code> </td>
+      <td>number </td>
+      <td><code>2048</code> </td>
+      <td>Key size </td>
+    </tr>
+  </tbody>
+</table>
+<p><strong>Response</strong>:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;publicKey&quot;: &quot;-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----&quot;,
+  &quot;privateKey&quot;: &quot;-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----&quot;
+}
+</code></pre>
+<h3><a href="#csr-generation" name="csr-generation" class="anchor"><span class="anchor-link"></span></a>CSR generation</h3>
+<pre><code>POST /api/pki/csrs
+POST /api/pki/csrs?ca={caId}
+</code></pre>
+<p>Generates a Certificate Signing Request. When the <code>ca</code> query parameter is provided, the CSR includes the authority key identifier from the referenced CA.</p>
+<p><strong>Request body</strong>: <code>GenCsrQuery</code> (see above)</p>
+<p><strong>Response</strong>:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;csr&quot;: &quot;-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----&quot;,
+  &quot;publicKey&quot;: &quot;-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----&quot;,
+  &quot;privateKey&quot;: &quot;-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----&quot;
+}
+</code></pre>
+<h3><a href="#self-signed-certificate" name="self-signed-certificate" class="anchor"><span class="anchor-link"></span></a>Self-signed certificate</h3>
+<pre><code>POST /api/pki/certs
+</code></pre>
+<p>Generates a self-signed certificate. Supports the <code>?persist=false</code> query parameter to return the certificate without storing it.</p>
+<p><strong>Request body</strong>: <code>GenCsrQuery</code></p>
+<p><strong>Response</strong>: Full certificate JSON entity with a <code>certId</code> field.</p>
+<h3><a href="#self-signed-root-ca" name="self-signed-root-ca" class="anchor"><span class="anchor-link"></span></a>Self-signed root CA</h3>
+<pre><code>POST /api/pki/cas
+</code></pre>
+<p>Generates a self-signed root CA certificate.</p>
+<p><strong>Request body</strong>: <code>GenCsrQuery</code> (the <code>ca</code> field is implicit)</p>
+<p><strong>Response</strong>: Full certificate JSON entity with a <code>certId</code> field.</p>
+<h3><a href="#certificate-signed-by-a-ca" name="certificate-signed-by-a-ca" class="anchor"><span class="anchor-link"></span></a>Certificate signed by a CA</h3>
+<pre><code>POST /api/pki/cas/:ca/certs
+</code></pre>
+<p>Generates a certificate signed by the referenced CA. The <code>:ca</code> parameter can be the certificate ID or serial number.</p>
+<p><strong>Request body</strong>: <code>GenCsrQuery</code></p>
+<p><strong>Response</strong>: Full certificate JSON entity with a <code>certId</code> field.</p>
+<h3><a href="#sub-ca-intermediate-ca-" name="sub-ca-intermediate-ca-" class="anchor"><span class="anchor-link"></span></a>Sub-CA (intermediate CA)</h3>
+<pre><code>POST /api/pki/cas/:ca/cas
+</code></pre>
+<p>Generates an intermediate CA certificate signed by the parent CA.</p>
+<p><strong>Request body</strong>: <code>GenCsrQuery</code></p>
+<p><strong>Response</strong>: Full certificate JSON entity with a <code>certId</code> field.</p>
+<h3><a href="#sign-a-csr" name="sign-a-csr" class="anchor"><span class="anchor-link"></span></a>Sign a CSR</h3>
+<pre><code>POST /api/pki/cas/:ca/certs/_sign?duration={millis}
+</code></pre>
+<p>Signs an externally-provided CSR using the referenced CA. The optional <code>duration</code> query parameter sets the certificate validity in milliseconds (default: 365 days).</p>
+<p><strong>Request body</strong>: PEM-encoded CSR</p>
+<p><strong>Response</strong>:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;cert&quot;: &quot;-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----&quot;,
+  &quot;csr&quot;: &quot;-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----&quot;,
+  &quot;ca&quot;: &quot;-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----&quot;
+}
+</code></pre>
+<h3><a href="#lets-encrypt-certificate" name="lets-encrypt-certificate" class="anchor"><span class="anchor-link"></span></a>Let&rsquo;s Encrypt certificate</h3>
+<pre><code>POST /api/pki/certs/_letencrypt
+</code></pre>
+<p>Generates a certificate using Let&rsquo;s Encrypt (or any ACME-compatible server). Requires Let&rsquo;s Encrypt settings to be configured in the global configuration. Uses the HTTP-01 challenge for domain validation.</p>
+<p><strong>Request body</strong>:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;host&quot;: &quot;api.example.com&quot;
+}
+</code></pre>
+<p><strong>Response</strong>: Full certificate JSON entity with a <code>certId</code> field.</p>
+<h3><a href="#import-pkcs-12" name="import-pkcs-12" class="anchor"><span class="anchor-link"></span></a>Import PKCS#12</h3>
+<pre><code>POST /api/pki/certs/_p12?password={password}
+</code></pre>
+<p>Imports certificates from a PKCS#12 (.p12/.pfx) file. The optional <code>password</code> query parameter provides the file password.</p>
+<p><strong>Request body</strong>: Raw binary .p12 file content</p>
+<h3><a href="#import-pem-bundle" name="import-pem-bundle" class="anchor"><span class="anchor-link"></span></a>Import PEM bundle</h3>
+<pre><code>POST /api/certificates/_bundle
+</code></pre>
+<p>Imports a PEM bundle containing certificates and private keys.</p>
+<p><strong>Request body</strong>: PEM-encoded bundle (certificates + private key concatenated)</p>
+<h3><a href="#certificate-validation" name="certificate-validation" class="anchor"><span class="anchor-link"></span></a>Certificate validation</h3>
+<pre><code>POST /api/pki/certs/_valid
+</code></pre>
+<p>Checks if a certificate is valid (chain validity, key matching, expiration, revocation).</p>
+<p><strong>Request body</strong>: Full certificate JSON entity</p>
+<p><strong>Response</strong>:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;valid&quot;: true
+}
+</code></pre>
+<h3><a href="#certificate-data-extraction" name="certificate-data-extraction" class="anchor"><span class="anchor-link"></span></a>Certificate data extraction</h3>
+<pre><code>POST /api/pki/certs/_data
+</code></pre>
+<p>Extracts metadata from a PEM certificate (subject, issuer, validity dates, SANs, serial number, signature algorithm, etc.).</p>
+<p><strong>Request body</strong>: PEM-encoded certificate</p>
+<p><strong>Response</strong>: JSON object with certificate metadata.</p>
+<h3><a href="#certificate-renewal" name="certificate-renewal" class="anchor"><span class="anchor-link"></span></a>Certificate renewal</h3>
+<pre><code>POST /api/certificates/:id/_renew
+</code></pre>
+<p>Renews an existing certificate. For Let&rsquo;s Encrypt certificates, triggers a new ACME flow. For other certificates, generates a new certificate with the same parameters.</p>
+<h2><a href="#certificate-management-api" name="certificate-management-api" class="anchor"><span class="anchor-link"></span></a>Certificate management API</h2>
+<p>Standard CRUD operations for certificate entities:</p>
+<pre><code>GET    /api/certificates              # List all certificates
+POST   /api/certificates              # Create a certificate
+GET    /api/certificates/:id          # Get a certificate
+PUT    /api/certificates/:id          # Update a certificate
+PATCH  /api/certificates/:id          # Partially update a certificate
+DELETE /api/certificates/:id          # Delete a certificate
+POST   /api/certificates/_bulk        # Bulk create
+PUT    /api/certificates/_bulk        # Bulk update
+PATCH  /api/certificates/_bulk        # Bulk patch
+DELETE /api/certificates/_bulk        # Bulk delete
+GET    /api/certificates/_template    # Get a certificate template
+</code></pre>
 <h2><a href="#the-pki-ui" name="the-pki-ui" class="anchor"><span class="anchor-link"></span></a>The PKI UI</h2>
-<p>All generated certificates are listed in the <code>https://xxxxxx/bo/dashboard/certificates</code> page. All those certificates can be used to serve traffic with TLS, perform mTLS calls, sign and verify JWT tokens.</p>
-<p>The PKI UI are composed of these following actions:</p>
+<p>All certificates are listed in the back-office at <code>https://xxxxxx/bo/dashboard/certificates</code>. Certificates can be used to serve TLS traffic, perform mTLS calls, and sign/verify JWT tokens.</p>
+<p>The UI provides these actions:</p>
 <ul>
-  <li><strong>Add item</strong>: redirects the user on the certificate creation page. It’s useful when you already had a certificate (like a pem file) and that you want to load it in Otoroshi.</li>
-  <li><strong>Let&rsquo;s Encrypt certificate</strong>: asks a certificate matching a given host to Let’s encrypt</li>
-  <li><strong>Create certificate</strong>: issues a certificate with an existing Otoroshi certificate as CA. You can create a client certificate, a server certificate or a keypair certiciate that will be used to verify and sign JWT tokens.</li>
-  <li><strong>Import .p12 file</strong>: loads a p12 file as certificate</li>
+  <li><strong>Add item</strong>: manually create a certificate entity by pasting PEM content</li>
+  <li><strong>Let&rsquo;s Encrypt certificate</strong>: request a certificate from Let&rsquo;s Encrypt for a given host</li>
+  <li><strong>Create certificate</strong>: issue a certificate using an existing Otoroshi CA. You can create a server certificate, client certificate, or key pair</li>
+  <li><strong>Import .p12 file</strong>: import a PKCS#12 file</li>
 </ul>
-<p>Under these buttons, you have the list of current certificates, imported or generated, revoked or not. For each certificate, you will find: </p>
+<p>For each certificate, the list displays:</p>
 <ul>
-  <li>a <strong>name</strong></li>
-  <li>a <strong>description</strong></li>
-  <li>the <strong>subject</strong></li>
-  <li>the <strong>type</strong> of certificate (CA / client / keypair / certificate)</li>
-  <li>the <strong>revoked reason</strong> (empty if not)</li>
-  <li>the <strong>creation date</strong> following by its <strong>expiration date</strong>.</li>
+  <li>Name and description</li>
+  <li>Subject DN</li>
+  <li>Type (CA / client / keypair / certificate)</li>
+  <li>Revocation status (if revoked, the reason is shown)</li>
+  <li>Creation date and expiration date</li>
 </ul>
-<h2><a href="#exposed-public-keys" name="exposed-public-keys" class="anchor"><span class="anchor-link"></span></a>Exposed public keys</h2>
-<p>The Otoroshi certificate can be turned and used as keypair (simple action that can be executed by editing a certificate or during its creation, or using the admin api). A Otoroski keypair can be used to sign and verify JWT tokens with asymetric signature. Once a jwt token is signed with a keypair, it can be necessary to provide a way to the services to verify the tokens received by Otoroshi. This usage is cover by Otoroshi by the flag <code>Public key exposed</code>, available on each certificate.</p>
-<p>Otoroshi exposes each keypair with the flag enabled, on the following routes:</p>
+<h2><a href="#supported-certificate-formats" name="supported-certificate-formats" class="anchor"><span class="anchor-link"></span></a>Supported certificate formats</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Format </th>
+      <th>Import </th>
+      <th>Export </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>PEM </td>
+      <td>Yes </td>
+      <td>Yes </td>
+      <td>Text format with <code>-----BEGIN/END-----</code> markers. Used for chains and private keys </td>
+    </tr>
+    <tr>
+      <td>PKCS#12 (.p12/.pfx) </td>
+      <td>Yes </td>
+      <td>No </td>
+      <td>Binary format with password protection </td>
+    </tr>
+    <tr>
+      <td>DER </td>
+      <td>Yes </td>
+      <td>Yes </td>
+      <td>Binary format used for AIA certificate delivery </td>
+    </tr>
+    <tr>
+      <td>PKCS#8 </td>
+      <td>Yes </td>
+      <td>No </td>
+      <td>Encrypted private key format </td>
+    </tr>
+    <tr>
+      <td>PKCS#1 </td>
+      <td>Yes </td>
+      <td>No </td>
+      <td>RSA private key format </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#lets-encrypt-acme" name="lets-encrypt-acme" class="anchor"><span class="anchor-link"></span></a>Let&rsquo;s Encrypt / ACME</h2>
+<p>Otoroshi supports the ACME protocol (via the acme4j library) for automatic certificate provisioning from Let&rsquo;s Encrypt or any ACME-compatible server.</p>
+<h3><a href="#configuration" name="configuration" class="anchor"><span class="anchor-link"></span></a>Configuration</h3>
+<p>Let&rsquo;s Encrypt settings are part of the global configuration:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable Let&rsquo;s Encrypt integration </td>
+    </tr>
+    <tr>
+      <td><code>server</code> </td>
+      <td>string </td>
+      <td><code>acme://letsencrypt.org/staging</code> </td>
+      <td>ACME server URL. Use <code>acme://letsencrypt.org</code> for production </td>
+    </tr>
+    <tr>
+      <td><code>emails</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Contact email addresses for the ACME account </td>
+    </tr>
+    <tr>
+      <td><code>contacts</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Additional contact URIs </td>
+    </tr>
+    <tr>
+      <td><code>publicKey</code> </td>
+      <td>string </td>
+      <td><code>&quot;&quot;</code> </td>
+      <td>ACME account public key (PEM). Auto-generated on first use </td>
+    </tr>
+    <tr>
+      <td><code>privateKey</code> </td>
+      <td>string </td>
+      <td><code>&quot;&quot;</code> </td>
+      <td>ACME account private key (PEM). Auto-generated on first use </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h3>
+<ol>
+  <li>Otoroshi creates an ACME account (or reuses existing account keys)</li>
+  <li>An order is placed for the requested domain</li>
+  <li>The HTTP-01 challenge is used: Otoroshi stores the challenge token and serves it on <code>/.well-known/acme-challenge/{token}</code></li>
+  <li>Once validated, the certificate is issued, stored, and marked as <code>letsEncrypt: true</code> and <code>autoRenew: true</code></li>
+  <li>Certificates are automatically renewed before expiration</li>
+</ol>
+<h3><a href="#auto-issuance-from-routes" name="auto-issuance-from-routes" class="anchor"><span class="anchor-link"></span></a>Auto-issuance from routes</h3>
+<p>Routes and services with the <code>letsEncrypt</code> flag or the <code>otoroshi-core-issue-lets-encrypt-certificate</code> metadata set to <code>true</code> will automatically trigger Let&rsquo;s Encrypt certificate creation for their domains.</p>
+<h2><a href="#auto-renewal" name="auto-renewal" class="anchor"><span class="anchor-link"></span></a>Auto-renewal</h2>
+<p>Certificates with <code>autoRenew: true</code> are automatically renewed by Otoroshi before they expire. The renewal process:</p>
 <ul>
-  <li><code>https://xxxxxxxxx.xxxxxxx.xx/.well-known/otoroshi/security/jwks.json</code></li>
-  <li><code>https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json</code></li>
+  <li>For <strong>Let&rsquo;s Encrypt certificates</strong>: a new ACME flow is triggered</li>
+  <li>For <strong>Otoroshi-generated certificates</strong>: a new certificate is generated with the same parameters</li>
+  <li>A <code>CertRenewalAlert</code> event is emitted on successful renewal</li>
+  <li>Expiring certificates (within 15 days) trigger alert events</li>
+  <li>Expired certificates are marked with <code>[EXPIRED]</code> in their name</li>
 </ul>
-<p>On these routes, you will find the list of public keys exposed using <a href="https://datatracker.ietf.org/doc/html/rfc7517">the JWK standard</a></p>
+<h2><a href="#exposed-public-keys-jwks-" name="exposed-public-keys-jwks-" class="anchor"><span class="anchor-link"></span></a>Exposed public keys (JWKS)</h2>
+<p>Certificates with the <code>keypair</code> flag and the <code>exposed</code> flag set to <code>true</code> have their public keys published as a JWK Set (JSON Web Key Set) on:</p>
+<ul>
+  <li><code>https://xxxxxxxxx/.well-known/otoroshi/security/jwks.json</code> (on any route domain)</li>
+  <li><code>https://otoroshi-api.xxxxxxx.xx/.well-known/jwks.json</code> (on the admin API domain)</li>
+</ul>
+<p>These endpoints return the list of exposed public keys following <a href="https://datatracker.ietf.org/doc/html/rfc7517">the JWK standard (RFC 7517)</a>. Services can use these endpoints to verify JWT tokens signed by Otoroshi.</p>
 <h2><a href="#ocsp-responder" name="ocsp-responder" class="anchor"><span class="anchor-link"></span></a>OCSP Responder</h2>
-<p>Otoroshi is able to revocate a certificate, directly from the UI, and to add a revocation status to specifiy the reason. The revocation reason can be :</p>
+<p>Otoroshi includes a built-in OCSP (Online Certificate Status Protocol) responder for checking the revocation status of certificates issued by its PKI.</p>
+<h3><a href="#endpoint" name="endpoint" class="anchor"><span class="anchor-link"></span></a>Endpoint</h3>
+<pre><code>POST /.well-known/otoroshi/security/ocsp
+POST /.well-known/otoroshi/ocsp          (on admin API domain)
+</code></pre>
+<h3><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h3>
 <ul>
-  <li><code>VALID</code>: The certificate is not revoked</li>
-  <li><code>UNSPECIFIED</code>: Can be used to revoke certificates for reasons other than the specific codes.</li>
-  <li><code>KEY_COMPROMISE</code>: It is known or suspected that the subject&rsquo;s private key or other aspects have been compromised.</li>
-  <li><code>CA_COMPROMISE</code>: It is known or suspected that the subject&rsquo;s private key or other aspects have been compromised.</li>
-  <li><code>AFFILIATION_CHANGED</code>: The subject&rsquo;s name or other information in the certificate has been modified but there is no cause to suspect that the private key has been compromised.</li>
-  <li><code>SUPERSEDED</code>: The certificate has been superseded but there is no cause to suspect that the private key has been compromised</li>
-  <li><code>CESSATION_OF_OPERATION</code>: The certificate is no longer needed for the purpose for which it was issued but there is no cause to suspect that the private key has been compromised</li>
-  <li><code>CERTIFICATE_HOLD</code>: The certificate is temporarily revoked but there is no cause to suspect that the private kye has been compromised</li>
-  <li><code>REMOVE_FROM_CRL</code>: The certificate has been unrevoked</li>
-  <li><code>PRIVILEGE_WITH_DRAWN</code>: The certificate was revoked because a privilege contained within that certificate has been withdrawn</li>
-  <li><code>AA_COMPROMISE</code>: It is known or suspected that aspects of the AA validated in the attribute certificate, have been compromised</li>
+  <li>Accepts standard OCSP requests (binary DER format, as per RFC 6960)</li>
+  <li>Checks certificate status against the Otoroshi certificate store</li>
+  <li>Supports nonce extension for replay protection</li>
+  <li>Response caching with configurable TTL (default: 3600 seconds, configurable via <code>app.ocsp.caching.seconds</code>)</li>
+  <li>Unknown certificates are rejected with a revoked status by default (extended revoke extension)</li>
 </ul>
-<p>Otoroshi supports the Online Certificate Status Protocol for obtaining the revocation status of its certificates. The OCSP endpoint is also add to any generated certificate. This endpoint is available at <code>https://otoroshi-api.xxxxxx/.well-known/otoroshi/security/ocsp</code></p>
-<h2><a href="#a-i-a-authority-information-access" name="a-i-a-authority-information-access" class="anchor"><span class="anchor-link"></span></a>A.I.A : Authority Information Access</h2>
-<p>Otoroshi provides a way to add the A.I.A in the certificate. This certificate extension contains :</p>
+<h3><a href="#testing-with-openssl" name="testing-with-openssl" class="anchor"><span class="anchor-link"></span></a>Testing with OpenSSL</h3>
+<pre class="prettyprint"><code class="language-bash">openssl ocsp \
+  -issuer ca.pem \
+  -cert certificate.pem \
+  -text \
+  -url http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp \
+  -header &quot;HOST&quot; &quot;otoroshi-api.oto.tools&quot;
+</code></pre>
+<h3><a href="#certificate-revocation" name="certificate-revocation" class="anchor"><span class="anchor-link"></span></a>Certificate revocation</h3>
+<p>Certificates can be revoked from the UI or via the admin API. The OCSP responder will return the appropriate status and reason.</p>
+<p>Supported revocation reasons:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Reason </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>UNSPECIFIED</code> </td>
+      <td>Revoked for an unspecified reason </td>
+    </tr>
+    <tr>
+      <td><code>KEY_COMPROMISE</code> </td>
+      <td>The subject&rsquo;s private key has been compromised </td>
+    </tr>
+    <tr>
+      <td><code>CA_COMPROMISE</code> </td>
+      <td>The CA&rsquo;s private key has been compromised </td>
+    </tr>
+    <tr>
+      <td><code>AFFILIATION_CHANGED</code> </td>
+      <td>The subject&rsquo;s name or information has changed </td>
+    </tr>
+    <tr>
+      <td><code>SUPERSEDED</code> </td>
+      <td>The certificate has been replaced by a new one </td>
+    </tr>
+    <tr>
+      <td><code>CESSATION_OF_OPERATION</code> </td>
+      <td>The certificate is no longer needed </td>
+    </tr>
+    <tr>
+      <td><code>CERTIFICATE_HOLD</code> </td>
+      <td>Temporarily revoked </td>
+    </tr>
+    <tr>
+      <td><code>REMOVE_FROM_CRL</code> </td>
+      <td>The certificate has been unrevoked </td>
+    </tr>
+    <tr>
+      <td><code>PRIVILEGE_WITH_DRAWN</code> </td>
+      <td>A privilege in the certificate has been withdrawn </td>
+    </tr>
+    <tr>
+      <td><code>AA_COMPROMISE</code> </td>
+      <td>The attribute authority has been compromised </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#authority-information-access-aia-" name="authority-information-access-aia-" class="anchor"><span class="anchor-link"></span></a>Authority Information Access (AIA)</h2>
+<p>Generated certificates can include the AIA extension (when <code>includeAIA: true</code>), which contains:</p>
 <ul>
-  <li>Information about how to get the issuer of this certificate (CA issuer access method)</li>
-  <li>Address of the OCSP responder from where revocation of this certificate can be checked (OCSP access method)</li>
+  <li><strong>CA Issuers</strong>: URL to download the issuing CA certificate in DER format</li>
+  <li><strong>OCSP</strong>: URL of the OCSP responder for revocation checking</li>
 </ul>
-<p><code>https://xxxxxxxxxx/.well-known/otoroshi/security/certificates/:cert-id</code></p>
+<p>The CA certificate delivery endpoint is:</p>
+<pre><code>GET /.well-known/otoroshi/security/certificates/:serialNumber
+GET /.well-known/otoroshi/certificates/:serialNumber          (on admin API domain)
+</code></pre>
+<p>This returns the certificate in <code>application/pkix-cert</code> (DER) format. Only certificates with the <code>exposed</code> flag and issued by the Otoroshi root CA are served.</p>
+<h2><a href="#certificate-extensions" name="certificate-extensions" class="anchor"><span class="anchor-link"></span></a>Certificate extensions</h2>
+<p>Otoroshi automatically adds the following X.509 extensions to generated certificates:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Extension </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Basic Constraints </td>
+      <td>Marks CA certificates (<code>CA:TRUE</code> with path length) </td>
+    </tr>
+    <tr>
+      <td>Key Usage </td>
+      <td>Digital signature, key encipherment, certificate signing (for CAs) </td>
+    </tr>
+    <tr>
+      <td>Extended Key Usage </td>
+      <td>TLS Server Authentication, TLS Client Authentication (based on certificate type) </td>
+    </tr>
+    <tr>
+      <td>Subject Alternative Name </td>
+      <td>DNS names from the <code>hosts</code> field </td>
+    </tr>
+    <tr>
+      <td>Subject Key Identifier </td>
+      <td>Hash of the certificate&rsquo;s public key </td>
+    </tr>
+    <tr>
+      <td>Authority Key Identifier </td>
+      <td>Identifier of the issuing CA&rsquo;s key </td>
+    </tr>
+    <tr>
+      <td>Authority Information Access </td>
+      <td>OCSP responder and CA issuers URLs (when <code>includeAIA: true</code>) </td>
+    </tr>
+  </tbody>
+</table>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/dev-portal.html">Developer portal with Daikoku</a></p>
 </div>
@@ -434,11 +980,19 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../topics/pki.html#otoroshis-pki" class="header">Otoroshi&rsquo;s PKI</a>
   <ul>
+    <li><a href="../topics/pki.html#auto-generated-certificates" class="header">Auto-generated certificates</a></li>
+    <li><a href="../topics/pki.html#supported-algorithms" class="header">Supported algorithms</a></li>
+    <li><a href="../topics/pki.html#certificate-request-format" class="header">Certificate request format</a></li>
     <li><a href="../topics/pki.html#the-pki-api" class="header">The PKI API</a></li>
+    <li><a href="../topics/pki.html#certificate-management-api" class="header">Certificate management API</a></li>
     <li><a href="../topics/pki.html#the-pki-ui" class="header">The PKI UI</a></li>
-    <li><a href="../topics/pki.html#exposed-public-keys" class="header">Exposed public keys</a></li>
+    <li><a href="../topics/pki.html#supported-certificate-formats" class="header">Supported certificate formats</a></li>
+    <li><a href="../topics/pki.html#lets-encrypt-acme" class="header">Let&rsquo;s Encrypt / ACME</a></li>
+    <li><a href="../topics/pki.html#auto-renewal" class="header">Auto-renewal</a></li>
+    <li><a href="../topics/pki.html#exposed-public-keys-jwks-" class="header">Exposed public keys (JWKS)</a></li>
     <li><a href="../topics/pki.html#ocsp-responder" class="header">OCSP Responder</a></li>
-    <li><a href="../topics/pki.html#a-i-a-authority-information-access" class="header">A.I.A : Authority Information Access</a></li>
+    <li><a href="../topics/pki.html#authority-information-access-aia-" class="header">Authority Information Access (AIA)</a></li>
+    <li><a href="../topics/pki.html#certificate-extensions" class="header">Certificate extensions</a></li>
   </ul></li>
 </ul>
 </div>

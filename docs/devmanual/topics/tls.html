@@ -94,7 +94,7 @@ latest
     <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
     <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
-    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Netty Server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
@@ -237,7 +237,7 @@ latest
     <li><a href="../topics/graphql-composer.html" class="page">GraphQL Composer Plugin</a></li>
     <li><a href="../topics/tunnels.html" class="page">Otoroshi tunnels</a></li>
     <li><a href="../topics/relay-routing.html" class="page">Relay Routing</a></li>
-    <li><a href="../topics/netty-server.html" class="page">Alternative HTTP server</a></li>
+    <li><a href="../topics/netty-server.html" class="page">Netty Server</a></li>
     <li><a href="../topics/http3.html" class="page">HTTP3 support</a></li>
     <li><a href="../topics/anonymous-reporting.html" class="page">Anonymous reporting</a></li>
     <li><a href="../topics/opentelemetry.html" class="page">OpenTelemetry support</a></li>
@@ -345,63 +345,350 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#tls" name="tls" class="anchor"><span class="anchor-link"></span></a>TLS</h1>
-<p>as you might have understand, otoroshi can store TLS certificates and use them dynamically. It means that once a certificate is imported or created in otoroshi, you can immediately use it to serve http request over TLS, to call https backends that requires mTLS or that do not have certicates signed by a globally knowned authority.</p>
+<p>Otoroshi manages TLS certificates dynamically. Once a certificate is imported or created in Otoroshi, it can immediately be used to serve HTTPS requests, to perform mTLS calls to backends, or to sign and verify JWT tokens. Certificates are stored in the Otoroshi datastore and synchronized across cluster nodes.</p>
 <h2><a href="#tls-termination" name="tls-termination" class="anchor"><span class="anchor-link"></span></a>TLS termination</h2>
-<p>any certficate added to otoroshi with a valid <code>CN</code> and <code>SANs</code> can be used in the following seconds to serve https requests. If you do not provide a private key with a certificate chain, the certificate will only be trusted like a CA. If you want to perform mTLS calls on you otoroshi instance, do not forget to enabled it (it is disabled by default for performance reasons as the TLS handshake is bigger with mTLS enabled)</p>
-<pre class="prettyprint"><code class="language-sh">otoroshi.ssl.fromOutside.clientAuth=None|Want|Need
+<p>Any certificate added to Otoroshi with a valid CN and/or SANs can be used within seconds to serve HTTPS requests. Otoroshi uses a dynamic TLS engine based on SNI (Server Name Indication) to select the right certificate for each incoming connection.</p>
+<p>If you import a certificate <strong>without a private key</strong>, it will be treated as a trusted CA (useful for backend mTLS verification or client certificate validation).</p>
+<h3><a href="#client-authentication-mtls-" name="client-authentication-mtls-" class="anchor"><span class="anchor-link"></span></a>Client authentication (mTLS)</h3>
+<p>By default, Otoroshi uses the <code>Dynamic</code> client authentication mode. In this mode, the actual mTLS behavior is <strong>read from the global configuration at each TLS handshake</strong>, which means it can be changed at runtime without restarting Otoroshi. This also works correctly in cluster mode, since the global configuration is synchronized between leader and worker nodes.</p>
+<p>The static configuration key is:</p>
+<pre class="prettyprint"><code class="language-conf">otoroshi.ssl.fromOutside.clientAuth = &quot;Dynamic&quot;
 </code></pre>
-<p>or using env. variables</p>
-<pre class="prettyprint"><code class="language-sh">SSL_OUTSIDE_CLIENT_AUTH=None|Want|Need
+<table>
+  <thead>
+    <tr>
+      <th>Mode </th>
+      <th>Env variable </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>None</code> </td>
+      <td><code>SSL_OUTSIDE_CLIENT_AUTH=None</code> </td>
+      <td>No client certificate requested. Default for best performance </td>
+    </tr>
+    <tr>
+      <td><code>Want</code> </td>
+      <td><code>SSL_OUTSIDE_CLIENT_AUTH=Want</code> </td>
+      <td>Client certificate is requested but not required. If provided, it is validated </td>
+    </tr>
+    <tr>
+      <td><code>Need</code> </td>
+      <td><code>SSL_OUTSIDE_CLIENT_AUTH=Need</code> </td>
+      <td>Client certificate is required. Connections without a valid client certificate are rejected </td>
+    </tr>
+    <tr>
+      <td><code>Dynamic</code> </td>
+      <td><code>SSL_OUTSIDE_CLIENT_AUTH=Dynamic</code> </td>
+      <td>The actual mode (<code>None</code>, <code>Want</code>, or <code>Need</code>) is read from the global configuration <code>tlsSettings.clientAuth</code> at each handshake. This is the default </td>
+    </tr>
+  </tbody>
+</table>
+<p>You can also set this via:</p>
+<pre class="prettyprint"><code class="language-sh">OTOROSHI_SSL_OUTSIDE_CLIENT_AUTH=Dynamic
 </code></pre>
-<h3><a href="#tls-termination-configuration" name="tls-termination-configuration" class="anchor"><span class="anchor-link"></span></a>TLS termination configuration</h3>
-<p>You can configure TLS termination statically using config. file or env. variables. Everything is available at <code>otoroshi.tls</code></p>
-<pre class="prettyprint"><code class="language-conf">otoroshi {
-  tls {
-    # the cipher suites used by otoroshi TLS termination
-    cipherSuitesJDK11 = [&quot;TLS_AES_128_GCM_SHA256&quot;, &quot;TLS_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
-    cipherSuitesJDK8 = [&quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_CBC_SHA&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_RSA_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_DHE_DSS_WITH_AES_256_GCM_SHA384&quot;, &quot;TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_RSA_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_DHE_DSS_WITH_AES_128_GCM_SHA256&quot;, &quot;TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA&quot;, &quot;SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA&quot;, &quot;TLS_EMPTY_RENEGOTIATION_INFO_SCSV&quot;]
-    cipherSuites = []
-    # the protocols used by otoroshi TLS termination
-    protocolsJDK11 = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1&quot;]
-    protocolsJDK8 = [&quot;SSLv2Hello&quot;, &quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;]
-    protocols = []
-    # the JDK cacert access
-    cacert {
-      path = &quot;$JAVA_HOME/lib/security/cacerts&quot;
-      password = &quot;changeit&quot;
+<p>For the Netty server specifically:</p>
+<pre class="prettyprint"><code class="language-sh">OTOROSHI_SSL_OUTSIDE_NETTY_CLIENT_AUTH=Dynamic
+</code></pre>
+<h3><a href="#dynamic-mtls-via-global-configuration" name="dynamic-mtls-via-global-configuration" class="anchor"><span class="anchor-link"></span></a>Dynamic mTLS via global configuration</h3>
+<p>When <code>clientAuth</code> is set to <code>Dynamic</code> (the default), the actual mTLS mode is controlled by the <code>tlsSettings</code> section of the global configuration entity. This can be updated at runtime via the admin API or the Danger Zone in the UI.</p>
+<p>The global configuration <code>tlsSettings</code> object controls:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>clientAuth</code> </td>
+      <td>string </td>
+      <td><code>None</code> </td>
+      <td>mTLS mode applied at TLS handshake time: <code>None</code>, <code>Want</code>, or <code>Need</code> </td>
+    </tr>
+    <tr>
+      <td><code>defaultDomain</code> </td>
+      <td>string </td>
+      <td><code>null</code> </td>
+      <td>Default domain used when no certificate matches the SNI. If set, the certificate for this domain is used as fallback </td>
+    </tr>
+    <tr>
+      <td><code>randomIfNotFound</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>If <code>true</code> and no certificate matches, a random certificate is used instead of failing </td>
+    </tr>
+    <tr>
+      <td><code>includeJdkCaServer</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Include JDK built-in CAs when validating client certificates (server-side mTLS). Set to <code>false</code> to only trust Otoroshi-managed CAs </td>
+    </tr>
+    <tr>
+      <td><code>includeJdkCaClient</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Include JDK built-in CAs when calling backends over TLS (client-side). Set to <code>false</code> to only trust Otoroshi-managed CAs </td>
+    </tr>
+    <tr>
+      <td><code>trustedCAsServer</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>List of Otoroshi certificate IDs to present as trusted CAs during mTLS handshake. When not empty (and <code>includeJdkCaServer</code> is <code>false</code>), only these CAs are trusted for client certificate validation </td>
+    </tr>
+    <tr>
+      <td><code>bannedAlpnProtocols</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Map of domain names to lists of banned ALPN protocols. Useful to force HTTP/1.1 on specific domains </td>
+    </tr>
+  </tbody>
+</table>
+<h4><a href="#example-enable-mtls-via-admin-api" name="example-enable-mtls-via-admin-api" class="anchor"><span class="anchor-link"></span></a>Example: enable mTLS via admin API</h4>
+<pre class="prettyprint"><code class="language-sh">curl -X PATCH &#39;http://otoroshi-api.oto.tools:8080/api/globalconfig&#39; \
+  -H &#39;Content-Type: application/json&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -d &#39;{
+    &quot;tlsSettings&quot;: {
+      &quot;clientAuth&quot;: &quot;Need&quot;,
+      &quot;includeJdkCaServer&quot;: false,
+      &quot;trustedCAsServer&quot;: [&quot;otoroshi-intermediate-ca&quot;, &quot;my-custom-ca-id&quot;]
     }
-    # the mtls mode
-    fromOutside {
-      clientAuth = &quot;None&quot;
-      clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
+  }&#39;
+</code></pre>
+<p>This immediately changes the mTLS mode for all new connections, including on cluster worker nodes once they sync the global config.</p>
+<h4><a href="#example-disable-mtls" name="example-disable-mtls" class="anchor"><span class="anchor-link"></span></a>Example: disable mTLS</h4>
+<pre class="prettyprint"><code class="language-sh">curl -X PATCH &#39;http://otoroshi-api.oto.tools:8080/api/globalconfig&#39; \
+  -H &#39;Content-Type: application/json&#39; \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -d &#39;{
+    &quot;tlsSettings&quot;: {
+      &quot;clientAuth&quot;: &quot;None&quot;
     }
-    # the default trust mode
-    trust {
-      all = false
-      all = ${?OTOROSHI_SSL_TRUST_ALL}
-    }
-    # some initial cacert access, useful to include non standard CA when starting (file paths)
-    initialCacert = ${?CLUSTER_WORKER_INITIAL_CACERT}
-    initialCacert = ${?INITIAL_CACERT}
-    initialCert = ${?CLUSTER_WORKER_INITIAL_CERT}
-    initialCert = ${?INITIAL_CERT}
-    initialCertKey = ${?CLUSTER_WORKER_INITIAL_CERT_KEY}
-    initialCertKey = ${?INITIAL_CERT_KEY}
-    # initialCerts = [] 
+  }&#39;
+</code></pre>
+<h3><a href="#trusted-cas-for-server-side-mtls" name="trusted-cas-for-server-side-mtls" class="anchor"><span class="anchor-link"></span></a>Trusted CAs for server-side mTLS</h3>
+<p>The list of CAs presented to clients during the mTLS handshake comes from two sources combined:</p>
+<ol>
+  <li><strong>Global config</strong>: <code>tlsSettings.trustedCAsServer</code> (certificate IDs, updatable at runtime)</li>
+  <li><strong>Static config</strong>: <code>otoroshi.ssl.trust.server_cas</code> (certificate IDs in the config file)</li>
+</ol>
+<pre class="prettyprint"><code class="language-conf">otoroshi.ssl.trust {
+  server_cas = [&quot;my-ca-cert-id-1&quot;, &quot;my-ca-cert-id-2&quot;]
+  # or as a comma-separated string via env variable:
+  server_cas_str = ${?OTOROSHI_SSL_TRUST_SERVER_CAS}
+}
+</code></pre>
+<p>When <code>includeJdkCaServer</code> is <code>true</code> (default), JDK built-in CAs are also included in the trust store. Set it to <code>false</code> if you want a strict, Otoroshi-only trust store.</p>
+<h2><a href="#tls-termination-configuration" name="tls-termination-configuration" class="anchor"><span class="anchor-link"></span></a>TLS termination configuration</h2>
+<p>You can configure TLS termination statically using the configuration file. All settings are under <code>otoroshi.ssl</code>:</p>
+<pre class="prettyprint"><code class="language-conf">otoroshi.ssl {
+  # Cipher suites for TLS termination (defaults to JDK 11 suite)
+  cipherSuites = ${otoroshi.ssl.cipherSuitesJDK11}
+
+  # TLS protocol versions (defaults to modern: TLSv1.3 + TLSv1.2)
+  protocols = ${otoroshi.ssl.modernProtocols}
+
+  # Available protocol presets:
+  # modernProtocols = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;]
+  # protocolsJDK11 = [&quot;TLSv1.3&quot;, &quot;TLSv1.2&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1&quot;]
+  # protocolsJDK8 = [&quot;SSLv2Hello&quot;, &quot;TLSv1&quot;, &quot;TLSv1.1&quot;, &quot;TLSv1.2&quot;]
+
+  # JDK cacert trust store
+  cacert {
+    path = &quot;$JAVA_HOME/lib/security/cacerts&quot;
+    password = &quot;changeit&quot;
+  }
+
+  # mTLS mode for incoming connections
+  fromOutside {
+    clientAuth = &quot;Dynamic&quot;
+    clientAuth = ${?SSL_OUTSIDE_CLIENT_AUTH}
+    clientAuth = ${?OTOROSHI_SSL_OUTSIDE_CLIENT_AUTH}
+  }
+
+  # Trust settings
+  trust {
+    all = false                                       # Trust ALL CAs (dangerous, for dev only)
+    all = ${?OTOROSHI_SSL_TRUST_ALL}
+    server_cas = []                                   # Static trusted CA IDs for mTLS
+    server_cas_str = ${?OTOROSHI_SSL_TRUST_SERVER_CAS}  # Comma-separated CA IDs
+  }
+
+  # Custom root CA for Otoroshi (replaces auto-generated)
+  rootCa {
+    ca = ${?OTOROSHI_SSL_ROOTCA_CA}         # PEM CA certificate
+    cert = ${?OTOROSHI_SSL_ROOTCA_CERT}     # PEM certificate
+    key = ${?OTOROSHI_SSL_ROOTCA_KEY}       # PEM private key
+    importCa = false
+    importCa = ${?OTOROSHI_SSL_ROOTCA_IMPORTCA}
+  }
+
+  # Initial certificates for bootstrapping (useful for cluster workers)
+  initialCacert = ${?OTOROSHI_INITIAL_CACERT}
+  initialCert = ${?OTOROSHI_INITIAL_CERT}
+  initialCertKey = ${?OTOROSHI_INITIAL_CERT_KEY}
+  initialCertImportCa = ${?OTOROSHI_INITIAL_CERT_IMPORTCA}
+}
+</code></pre>
+<h3><a href="#tls-termination-settings-in-the-ui" name="tls-termination-settings-in-the-ui" class="anchor"><span class="anchor-link"></span></a>TLS termination settings in the UI</h3>
+<p>In the Danger Zone (<code>/bo/dashboard/dangerzone</code>), the <strong>TLS Settings</strong> section lets you configure:</p>
+<ul>
+  <li><strong>Default domain</strong>: the domain whose certificate is used when no SNI match is found</li>
+  <li><strong>Random if not found</strong>: use a random certificate when no SNI match is found (instead of failing)</li>
+  <li><strong>Trust JDK CAs (client)</strong>: include JDK built-in CAs when calling backends</li>
+  <li><strong>Trust JDK CAs (server)</strong>: include JDK built-in CAs when validating client certificates in mTLS</li>
+  <li><strong>Trusted CAs (server)</strong>: select specific Otoroshi CA certificates to present during mTLS handshake</li>
+</ul>
+<h2><a href="#auto-generated-certificates" name="auto-generated-certificates" class="anchor"><span class="anchor-link"></span></a>Auto-generated certificates</h2>
+<p>Otoroshi can automatically generate TLS certificates on the fly for domains that don&rsquo;t have one, without losing the incoming request. This is configured in the Danger Zone under <strong>Auto Generate Certificates</strong> or via the global config.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable automatic certificate generation </td>
+    </tr>
+    <tr>
+      <td><code>caRef</code> </td>
+      <td>string </td>
+      <td><code>null</code> </td>
+      <td>ID of the CA certificate used to sign auto-generated certificates. The client must trust this CA </td>
+    </tr>
+    <tr>
+      <td><code>allowed</code> </td>
+      <td>array of string </td>
+      <td><code>[&quot;*&quot;]</code> </td>
+      <td>Regex patterns for domains allowed to trigger auto-generation </td>
+    </tr>
+    <tr>
+      <td><code>notAllowed</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Regex patterns for domains that must NOT trigger auto-generation (takes precedence over <code>allowed</code>) </td>
+    </tr>
+    <tr>
+      <td><code>replyNicely</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>When a domain is not allowed, reply with a human-readable error instead of a TLS error </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#example-enable-auto-cert-in-global-config" name="example-enable-auto-cert-in-global-config" class="anchor"><span class="anchor-link"></span></a>Example: enable auto-cert in global config</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;autoCert&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;caRef&quot;: &quot;otoroshi-intermediate-ca&quot;,
+    &quot;allowed&quot;: [&quot;.*\\.my-domain\\.com&quot;],
+    &quot;notAllowed&quot;: [&quot;admin\\.my-domain\\.com&quot;],
+    &quot;replyNicely&quot;: true
   }
 }
 </code></pre>
-<h3><a href="#tls-termination-settings" name="tls-termination-settings" class="anchor"><span class="anchor-link"></span></a>TLS termination settings</h3>
-<p>It is possible to adjust the behavior of the TLS termination from the <code>danger zone</code> at the <code>Tls Settings</code> section. Here you can either define that a non-matching SNI call will use a random TLS certtificate to reply or will use a default domain (the TLS certificate associated to this domain) to reply. Here you can also choose if you want to trust all the CAs trusted by your JDK when performing TLS calls <code>Trust JDK CAs (client)</code> or when receiving mTLS calls <code>Trust JDK CAs (server)</code>. If you disable the later, it is possible to select the list of CAs presented to the client during mTLS handshake.</p>
-<h3><a href="#certificates-auto-generation" name="certificates-auto-generation" class="anchor"><span class="anchor-link"></span></a>Certificates auto generation</h3>
-<p>it is also possible to generate non-existing certificate on the fly without losing the request. If you are interested by this feature, you can enable it in the <code>danger zone</code> at the <code>Auto Generate Certificates</code> section. Here you&rsquo;ll have to enable it and select the CA that will generate the certificate. Of course, the client will have to trust the selected CA. You can also add filters to choose which domain are allowed to generate certificates or not. The <code>Reply Nicely</code> flag is used to reply a nice error message (ie. human readable) telling that it&rsquo;s not possible to have an auto certficate for the current domain. </p>
-<h2><a href="#backends-tls-and-mtls-calls" name="backends-tls-and-mtls-calls" class="anchor"><span class="anchor-link"></span></a>Backends TLS and mTLS calls</h2>
-<p>For any call to a backend, it is possible to customize the TLS behavior </p><div class="centered-img">
-<img src="../imgs/tls-call-settings.png" /></div>
-<p>here you can define your level of trust (trust all, loose verification) or even select on or more CAs you will trust for the following backend calls. You can also select the client certificate that will be used for the following backend calls</p>
-<h2><a href="#keypair-for-signing-and-verification" name="keypair-for-signing-and-verification" class="anchor"><span class="anchor-link"></span></a>Keypair for signing and verification</h2>
-<p>It is also possible to use the keypair contained in a certificate to sign and verificate JWT token signature. You can mark an existing certificate in otoroshi as a keypair using the <code>keypair</code> on the certificate page.</p><div class="centered-img">
-<img src="../imgs/jwt-token-keypair-validation.png" /></div>
+<p>When a request arrives for <code>api.my-domain.com</code> and no matching certificate exists, Otoroshi generates one on the fly using the referenced CA and serves the response without dropping the connection.</p>
+<h2><a href="#backend-tls-and-mtls" name="backend-tls-and-mtls" class="anchor"><span class="anchor-link"></span></a>Backend TLS and mTLS</h2>
+<p>For each backend target, you can configure TLS behavior independently using the <code>tls_config</code> (or <code>tlsConfig</code>) object on the target or backend.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>JSON key </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable custom TLS settings for this backend </td>
+    </tr>
+    <tr>
+      <td><code>certs</code> </td>
+      <td><code>certs</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Otoroshi certificate IDs to use as client certificates for mTLS to the backend </td>
+    </tr>
+    <tr>
+      <td><code>trustedCerts</code> </td>
+      <td><code>trusted_certs</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Otoroshi certificate IDs to trust as CAs for verifying the backend&rsquo;s certificate </td>
+    </tr>
+    <tr>
+      <td><code>loose</code> </td>
+      <td><code>loose</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Skip hostname verification (useful for backends with self-signed certs) </td>
+    </tr>
+    <tr>
+      <td><code>trustAll</code> </td>
+      <td><code>trust_all</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Trust any CA (dangerous, for dev/test only) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#example-backend-mtls-configuration" name="example-backend-mtls-configuration" class="anchor"><span class="anchor-link"></span></a>Example: backend mTLS configuration</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;hostname&quot;: &quot;secure-api.internal&quot;,
+        &quot;port&quot;: 443,
+        &quot;tls&quot;: true,
+        &quot;tls_config&quot;: {
+          &quot;enabled&quot;: true,
+          &quot;certs&quot;: [&quot;my-client-cert-id&quot;],
+          &quot;trusted_certs&quot;: [&quot;internal-ca-id&quot;],
+          &quot;loose&quot;: false,
+          &quot;trust_all&quot;: false
+        }
+      }
+    ]
+  }
+}
+</code></pre>
+<p>This configuration tells Otoroshi to:</p>
+<ol>
+  <li>Present the certificate <code>my-client-cert-id</code> as the client certificate to the backend</li>
+  <li>Only trust the CA <code>internal-ca-id</code> when verifying the backend&rsquo;s TLS certificate</li>
+  <li>Perform strict hostname verification</li>
+</ol>
+<h2><a href="#key-pair-for-jwt-signing-and-verification" name="key-pair-for-jwt-signing-and-verification" class="anchor"><span class="anchor-link"></span></a>Key pair for JWT signing and verification</h2>
+<p>Certificates can also be used as key pairs for signing and verifying JWT tokens. To use a certificate as a key pair, mark it with the <code>keypair</code> flag on the certificate page or via the admin API.</p>
+<p>Once marked as a key pair, it can be referenced in <a href="../entities/jwt-verifiers.html">JWT verifiers</a> for token signing and verification using RSA or ECDSA algorithms.</p>
+<p>Key pairs with the <code>exposed</code> flag set to <code>true</code> are published on the JWKS endpoint. See <a href="pki.html#exposed-public-keys-jwks-">PKI - Exposed public keys</a> for details.</p>
+<h2><a href="#related" name="related" class="anchor"><span class="anchor-link"></span></a>Related</h2>
+<ul>
+  <li><a href="pki.html">PKI</a> - Certificate management, generation, OCSP, and JWKS</li>
+  <li><a href="../entities/certificates.html">Certificates</a> - Certificate entity reference</li>
+  <li><a href="../how-to-s/end-to-end-mtls.html">End-to-end mTLS</a> - Step-by-step mTLS guide</li>
+  <li><a href="../how-to-s/tls-termination-using-own-certificates.html">TLS termination with your own certificates</a> - Custom TLS termination how-to</li>
+  <li><a href="../how-to-s/tls-using-lets-encrypt.html">Let&rsquo;s Encrypt</a> - Automatic certificate provisioning</li>
+  <li><a href="http-listeners.html">Custom HTTP Listeners</a> - Per-listener TLS and mTLS settings</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/user-rights.html">Otoroshi user rights</a></p>
 </div>
@@ -417,8 +704,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../topics/tls.html#tls" class="header">TLS</a>
   <ul>
     <li><a href="../topics/tls.html#tls-termination" class="header">TLS termination</a></li>
-    <li><a href="../topics/tls.html#backends-tls-and-mtls-calls" class="header">Backends TLS and mTLS calls</a></li>
-    <li><a href="../topics/tls.html#keypair-for-signing-and-verification" class="header">Keypair for signing and verification</a></li>
+    <li><a href="../topics/tls.html#tls-termination-configuration" class="header">TLS termination configuration</a></li>
+    <li><a href="../topics/tls.html#auto-generated-certificates" class="header">Auto-generated certificates</a></li>
+    <li><a href="../topics/tls.html#backend-tls-and-mtls" class="header">Backend TLS and mTLS</a></li>
+    <li><a href="../topics/tls.html#key-pair-for-jwt-signing-and-verification" class="header">Key pair for JWT signing and verification</a></li>
+    <li><a href="../topics/tls.html#related" class="header">Related</a></li>
   </ul></li>
 </ul>
 </div>
