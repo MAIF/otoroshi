@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="active page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="active page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -347,67 +349,289 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all WASM plugins <a href="http://otoroshi.oto.tools:8080/bo/dashboard/wasm-plugins">here</a></p>
 <h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
-<ul>
-  <li><code>id</code>: unique identifier of the WASM plugin</li>
-  <li><code>name</code>: display name of the plugin</li>
-  <li><code>description</code>: description of the plugin</li>
-  <li><code>tags</code>: list of tags associated to the plugin</li>
-  <li><code>metadata</code>: list of metadata associated to the plugin</li>
-  <li><code>steps</code>: the list of proxy engine steps where this plugin will be applied (see below)</li>
-  <li><code>config</code>: the WASM plugin configuration (see below)</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td>Unique identifier of the WASM plugin </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Display name of the plugin </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td>Description of the plugin </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td>Tags associated to the plugin </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td>Key/value metadata associated to the plugin </td>
+    </tr>
+    <tr>
+      <td><code>steps</code> </td>
+      <td>array of string </td>
+      <td>The list of proxy engine steps where this plugin can be used </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td>The WASM plugin configuration (see below) </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#steps" name="steps" class="anchor"><span class="anchor-link"></span></a>Steps</h2>
 <p>The <code>steps</code> field defines at which points in the proxy engine pipeline this WASM plugin can be used:</p>
-<ul>
-  <li><code>MatchRoute</code>: custom route matching logic</li>
-  <li><code>Router</code>: custom routing decision</li>
-  <li><code>Sink</code>: handle requests that don&rsquo;t match any route</li>
-  <li><code>PreRoute</code>: request enrichment before routing</li>
-  <li><code>ValidateAccess</code>: access control validation</li>
-  <li><code>TransformRequest</code>: modify the request before forwarding to backend</li>
-  <li><code>TransformResponse</code>: modify the response before sending to client</li>
-  <li><code>HandlesRequest</code>: handle the complete request/response lifecycle (acts as a backend)</li>
-  <li><code>CallBackend</code>: custom backend call logic</li>
-  <li><code>HandlesTunnel</code>: handle tunnel connections</li>
-  <li><code>Job</code>: periodic job execution</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Step </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>MatchRoute</code> </td>
+      <td>Custom route matching logic </td>
+    </tr>
+    <tr>
+      <td><code>Router</code> </td>
+      <td>Custom routing decision </td>
+    </tr>
+    <tr>
+      <td><code>Sink</code> </td>
+      <td>Handle requests that don&rsquo;t match any route </td>
+    </tr>
+    <tr>
+      <td><code>PreRoute</code> </td>
+      <td>Request enrichment before routing </td>
+    </tr>
+    <tr>
+      <td><code>ValidateAccess</code> </td>
+      <td>Access control validation </td>
+    </tr>
+    <tr>
+      <td><code>TransformRequest</code> </td>
+      <td>Modify the request before forwarding to backend </td>
+    </tr>
+    <tr>
+      <td><code>TransformResponse</code> </td>
+      <td>Modify the response before sending to client </td>
+    </tr>
+    <tr>
+      <td><code>HandlesRequest</code> </td>
+      <td>Handle the complete request/response lifecycle (acts as a backend) </td>
+    </tr>
+    <tr>
+      <td><code>CallBackend</code> </td>
+      <td>Custom backend call logic </td>
+    </tr>
+    <tr>
+      <td><code>HandlesTunnel</code> </td>
+      <td>Handle tunnel connections </td>
+    </tr>
+    <tr>
+      <td><code>Job</code> </td>
+      <td>Periodic job execution </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#configuration" name="configuration" class="anchor"><span class="anchor-link"></span></a>Configuration</h2>
-<ul>
-  <li><code>source</code>: the WASM source definition (see source types below)</li>
-  <li><code>memoryPages</code>: number of memory pages allocated to the WASM VM (default: 50)</li>
-  <li><code>functionName</code>: the name of the function to invoke in the WASM module (optional, defaults to the step-specific function name)</li>
-  <li><code>config</code>: a key-value map of configuration passed to the WASM plugin at runtime</li>
-  <li><code>instances</code>: number of concurrent WASM VM instances (default: 1)</li>
-  <li><code>wasi</code>: enable WebAssembly System Interface support (default: false)</li>
-  <li><code>opa</code>: enable Open Policy Agent mode for policy evaluation (default: false)</li>
-  <li><code>httpWasm</code>: enable HTTP WASM mode (default: false)</li>
-  <li><code>allowedHosts</code>: list of hostnames the WASM plugin is allowed to call via HTTP</li>
-  <li><code>allowedPaths</code>: map of file paths the WASM plugin is allowed to access</li>
-  <li><code>killOptions</code>: VM termination options for resource management</li>
-  <li><code>authorizations</code>: fine-grained access control for the WASM plugin (see below)</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>source</code> | object | - | The WASM source definition (see source types below) | | <code>memoryPages</code> | number | <code>50</code> | Number of memory pages allocated to the WASM VM | | <code>functionName</code> | string | - | Name of the function to invoke (optional, defaults to step-specific name) | | <code>config</code> | object | <code>{}</code> | Key-value configuration passed to the WASM plugin at runtime | | <code>instances</code> | number | <code>1</code> | Number of concurrent WASM VM instances | | <code>wasi</code> | boolean | <code>false</code> | Enable WebAssembly System Interface support | | <code>opa</code> | boolean | <code>false</code> | Enable Open Policy Agent mode for policy evaluation | | <code>httpWasm</code> | boolean | <code>false</code> | Enable HTTP WASM mode | | <code>allowedHosts</code> | array of string | <code>[]</code> | Hostnames the WASM plugin is allowed to call via HTTP | | <code>allowedPaths</code> | object | <code>{}</code> | File paths the WASM plugin is allowed to access (path -&gt; permissions) | | <code>killOptions</code> | object | - | VM termination options for resource management | | <code>authorizations</code> | object | - | Fine-grained access control for the WASM plugin (see below) |</p>
 <h2><a href="#source-types" name="source-types" class="anchor"><span class="anchor-link"></span></a>Source types</h2>
 <p>The <code>source</code> field defines where the WASM module is loaded from:</p>
-<ul>
-  <li><code>base64</code>: the WASM binary encoded as a base64 string</li>
-  <li><code>file</code>: a local file path pointing to a <code>.wasm</code> file</li>
-  <li><code>http</code>: an HTTP/HTTPS URL to download the WASM module from</li>
-  <li><code>wasmo</code>: a reference to a WASM module compiled and managed by a Wasmo instance</li>
-  <li><code>local</code>: a reference to another WASM plugin entity by ID</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>base64</code> </td>
+      <td>The WASM binary encoded as a base64 string </td>
+    </tr>
+    <tr>
+      <td><code>file</code> </td>
+      <td>A local file path pointing to a <code>.wasm</code> file </td>
+    </tr>
+    <tr>
+      <td><code>http</code> </td>
+      <td>An HTTP/HTTPS URL to download the WASM module from </td>
+    </tr>
+    <tr>
+      <td><code>wasmo</code> </td>
+      <td>A reference to a WASM module compiled and managed by a Wasmo instance </td>
+    </tr>
+    <tr>
+      <td><code>local</code> </td>
+      <td>A reference to another WASM plugin entity by ID </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#authorizations" name="authorizations" class="anchor"><span class="anchor-link"></span></a>Authorizations</h2>
 <p>The <code>authorizations</code> field controls what the WASM plugin is allowed to access at runtime:</p>
-<ul>
-  <li><code>httpAccess</code>: allow the plugin to make outbound HTTP calls (default: false)</li>
-  <li><code>proxyHttpCallTimeout</code>: timeout in milliseconds for HTTP calls made by the plugin (default: 5000)</li>
-  <li><code>globalDataStoreAccess</code>: read/write rights to the global persistent key-value store</li>
-  <li><code>pluginDataStoreAccess</code>: read/write rights to the plugin-scoped persistent key-value store</li>
-  <li><code>globalMapAccess</code>: read/write rights to the global in-memory store</li>
-  <li><code>pluginMapAccess</code>: read/write rights to the plugin-scoped in-memory store</li>
-  <li><code>proxyStateAccess</code>: allow reading the current Otoroshi proxy state (default: false)</li>
-  <li><code>configurationAccess</code>: allow reading the Otoroshi configuration (default: false)</li>
-</ul>
-<p>Each data store access is defined as <code>{ &quot;read&quot;: true/false, &quot;write&quot;: true/false }</code>.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>httpAccess</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Allow the plugin to make outbound HTTP calls </td>
+    </tr>
+    <tr>
+      <td><code>proxyHttpCallTimeout</code> </td>
+      <td>number </td>
+      <td><code>5000</code> </td>
+      <td>Timeout in milliseconds for HTTP calls made by the plugin </td>
+    </tr>
+    <tr>
+      <td><code>globalDataStoreAccess</code> </td>
+      <td>object </td>
+      <td><code>{&quot;read&quot;: false, &quot;write&quot;: false}</code> </td>
+      <td>Read/write access to the global persistent key-value store </td>
+    </tr>
+    <tr>
+      <td><code>pluginDataStoreAccess</code> </td>
+      <td>object </td>
+      <td><code>{&quot;read&quot;: false, &quot;write&quot;: false}</code> </td>
+      <td>Read/write access to the plugin-scoped persistent key-value store </td>
+    </tr>
+    <tr>
+      <td><code>globalMapAccess</code> </td>
+      <td>object </td>
+      <td><code>{&quot;read&quot;: false, &quot;write&quot;: false}</code> </td>
+      <td>Read/write access to the global in-memory store </td>
+    </tr>
+    <tr>
+      <td><code>pluginMapAccess</code> </td>
+      <td>object </td>
+      <td><code>{&quot;read&quot;: false, &quot;write&quot;: false}</code> </td>
+      <td>Read/write access to the plugin-scoped in-memory store </td>
+    </tr>
+    <tr>
+      <td><code>proxyStateAccess</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Allow reading the current Otoroshi proxy state </td>
+    </tr>
+    <tr>
+      <td><code>configurationAccess</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Allow reading the Otoroshi configuration </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<p>A WASM plugin loaded from an HTTP URL with access to the proxy state:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;wasm-plugin_request_validator&quot;,
+  &quot;name&quot;: &quot;Request validator&quot;,
+  &quot;description&quot;: &quot;Validates incoming requests using custom WASM logic&quot;,
+  &quot;tags&quot;: [&quot;security&quot;],
+  &quot;metadata&quot;: {},
+  &quot;steps&quot;: [&quot;ValidateAccess&quot;, &quot;TransformRequest&quot;],
+  &quot;config&quot;: {
+    &quot;source&quot;: {
+      &quot;kind&quot;: &quot;http&quot;,
+      &quot;path&quot;: &quot;https://wasm-registry.internal/plugins/request-validator.wasm&quot;
+    },
+    &quot;memoryPages&quot;: 50,
+    &quot;functionName&quot;: null,
+    &quot;config&quot;: {
+      &quot;max_body_size&quot;: &quot;1048576&quot;,
+      &quot;allowed_content_types&quot;: &quot;application/json,text/plain&quot;
+    },
+    &quot;instances&quot;: 2,
+    &quot;wasi&quot;: false,
+    &quot;opa&quot;: false,
+    &quot;httpWasm&quot;: false,
+    &quot;allowedHosts&quot;: [&quot;api.internal&quot;],
+    &quot;allowedPaths&quot;: {},
+    &quot;authorizations&quot;: {
+      &quot;httpAccess&quot;: true,
+      &quot;proxyHttpCallTimeout&quot;: 5000,
+      &quot;globalDataStoreAccess&quot;: { &quot;read&quot;: true, &quot;write&quot;: false },
+      &quot;pluginDataStoreAccess&quot;: { &quot;read&quot;: true, &quot;write&quot;: true },
+      &quot;globalMapAccess&quot;: { &quot;read&quot;: true, &quot;write&quot;: false },
+      &quot;pluginMapAccess&quot;: { &quot;read&quot;: true, &quot;write&quot;: true },
+      &quot;proxyStateAccess&quot;: true,
+      &quot;configurationAccess&quot;: false
+    }
+  }
+}
+</code></pre>
+<p>An OPA (Open Policy Agent) plugin for policy evaluation:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;wasm-plugin_opa_policy&quot;,
+  &quot;name&quot;: &quot;OPA access policy&quot;,
+  &quot;description&quot;: &quot;Evaluates access policies using OPA WASM module&quot;,
+  &quot;tags&quot;: [&quot;policy&quot;, &quot;opa&quot;],
+  &quot;metadata&quot;: {},
+  &quot;steps&quot;: [&quot;ValidateAccess&quot;],
+  &quot;config&quot;: {
+    &quot;source&quot;: {
+      &quot;kind&quot;: &quot;file&quot;,
+      &quot;path&quot;: &quot;/etc/otoroshi/policies/access-policy.wasm&quot;
+    },
+    &quot;memoryPages&quot;: 100,
+    &quot;instances&quot;: 4,
+    &quot;opa&quot;: true,
+    &quot;wasi&quot;: false,
+    &quot;config&quot;: {},
+    &quot;allowedHosts&quot;: [],
+    &quot;allowedPaths&quot;: {},
+    &quot;authorizations&quot;: {
+      &quot;httpAccess&quot;: false,
+      &quot;proxyStateAccess&quot;: true,
+      &quot;configurationAccess&quot;: true
+    }
+  }
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/wasm-plugins           # List all WASM plugins
+POST   /api/wasm-plugins           # Create a WASM plugin
+GET    /api/wasm-plugins/:id       # Get a WASM plugin
+PUT    /api/wasm-plugins/:id       # Update a WASM plugin
+DELETE /api/wasm-plugins/:id       # Delete a WASM plugin
+PATCH  /api/wasm-plugins/:id       # Partially update a WASM plugin
+</code></pre>
 <h2><a href="#learn-more" name="learn-more" class="anchor"><span class="anchor-link"></span></a>Learn more</h2>
 <p>For a detailed overview of WASM in Otoroshi, available plugin types, and how they integrate with the proxy engine, see <a href="../topics/wasm-usage.html">Otoroshi and WASM</a>.</p>
 <p>For practical guides:</p>
@@ -416,7 +640,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../how-to-s/wasm-usage.html">Use a WASM plugin</a> for a step-by-step tutorial on creating and using WASM plugins</li>
 </ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/error-templates.html">Error Templates</a></p>
+<p><strong>Next:</strong> <a href="../entities/route-templates.html">Route Templates</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -435,6 +659,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/wasm-plugins.html#configuration" class="header">Configuration</a></li>
     <li><a href="../entities/wasm-plugins.html#source-types" class="header">Source types</a></li>
     <li><a href="../entities/wasm-plugins.html#authorizations" class="header">Authorizations</a></li>
+    <li><a href="../entities/wasm-plugins.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/wasm-plugins.html#admin-api" class="header">Admin API</a></li>
     <li><a href="../entities/wasm-plugins.html#learn-more" class="header">Learn more</a></li>
   </ul></li>
 </ul>

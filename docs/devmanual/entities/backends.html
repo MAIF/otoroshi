@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="active page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="active page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -343,80 +345,447 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#backends" name="backends" class="anchor"><span class="anchor-link"></span></a>Backends</h1>
-<p>A backend represent a list of server to target in a route and its client settings, load balancing, etc.</p>
-<p>The backends can be define directly on the route designer or on their dedicated page in order to be reusable.</p>
+<p>A backend represents a list of target servers to forward requests to, along with its client settings, load balancing, and health check configuration.</p>
+<p>Backends can be defined inline on a route or on their dedicated page to be reusable across multiple routes and APIs.</p>
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all backends <a href="http://otoroshi.oto.tools:8080/bo/dashboard/backends">here</a></p>
-<h2><a href="#global-properties" name="global-properties" class="anchor"><span class="anchor-link"></span></a>Global Properties</h2>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>targets</code> </td>
+      <td>array of <a href="#targets">Target</a> </td>
+      <td><code>[]</code> </td>
+      <td>List of target servers </td>
+    </tr>
+    <tr>
+      <td><code>root</code> </td>
+      <td>string </td>
+      <td><code>&quot;/&quot;</code> </td>
+      <td>Path prefix added to each request sent to the downstream service </td>
+    </tr>
+    <tr>
+      <td><code>rewrite</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>When enabled, the request path is completely replaced by <code>root</code>. Supports <a href="../topics/expression-language.html">expression language</a> for dynamic rewriting </td>
+    </tr>
+    <tr>
+      <td><code>load_balancing</code> </td>
+      <td>object </td>
+      <td><code>{&quot;type&quot;: &quot;RoundRobin&quot;}</code> </td>
+      <td>Load balancing algorithm (see <a href="#load-balancing">below</a>) </td>
+    </tr>
+    <tr>
+      <td><code>health_check</code> </td>
+      <td>object </td>
+      <td><code>null</code> </td>
+      <td>Optional health check configuration (see <a href="#health-check">below</a>) </td>
+    </tr>
+  </tbody>
+</table>
+<p>| <code>client</code> | object | - | HTTP client settings (see <a href="#client-settings">below</a>) |</p>
+<h3><a href="#full-path-rewrite" name="full-path-rewrite" class="anchor"><span class="anchor-link"></span></a>Full path rewrite</h3>
+<p>When <code>rewrite</code> is enabled, the original request path is stripped and replaced by the <code>root</code> value. Combined with named path parameters, this enables powerful URL rewriting:</p>
 <ul>
-  <li><code>Targets root path</code>: the path to add to each request sent to the downstream service</li>
-  <li><code>Full path rewrite</code>: When enabled, the path of the uri will be totally stripped and replaced by the value of <code>Targets root path</code>. If this value contains expression language expressions, they will be interpolated before forwading the request to the backend. When combined with things like named path parameters, it is possible to perform a ful url rewrite on the target path like</li>
-  <li>
-  <p>input: <code>subdomain.domain.tld/api/users/$id&lt;[0-9]+&gt;/bills</code></p></li>
-  <li>output: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
+  <li><strong>Input</strong>: <code>subdomain.domain.tld/api/users/$id&lt;[0-9]+&gt;/bills</code></li>
+  <li><strong>Output</strong>: <code>target.domain.tld/apis/v1/basic_users/${req.pathparams.id}/all_bills</code></li>
 </ul>
 <h2><a href="#targets" name="targets" class="anchor"><span class="anchor-link"></span></a>Targets</h2>
-<p>The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures.</p>
-<ul>
-  <li><code>id</code>: unique id of the target</li>
-  <li><code>Hostname</code>: the hostname of the target without scheme</li>
-  <li><code>Port</code>: the port of the target</li>
-  <li><code>TLS</code>: call the target via https</li>
-  <li><code>Weight</code>: the weight of the target. This valus is used by the load balancing strategy to dispatch the traffic between all targets</li>
-  <li><code>Predicate</code>: a function to filter targets from the target list based on a predefined predicate</li>
-  <li><code>Protocol</code>: protocol used to call the target, can be only equals to <code>HTTP/1.0</code>, <code>HTTP/1.1</code>, <code>HTTP/2.0</code> or <code>HTTP/3.0</code></li>
-  <li><code>IP address</code>: the ip address of the target</li>
-  <li><code>TLS Settings</code>:
-    <ul>
-      <li><code>Enabled</code>: enable this section</li>
-      <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-      <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-      <li><code>Client certificates</code>: list of client certificates used to communicate with the downstream service</li>
-      <li><code>Trusted certificates</code>: list of trusted certificates received from the downstream service</li>
-    </ul>
-  </li>
-</ul>
-<h2><a href="#heatlh-check" name="heatlh-check" class="anchor"><span class="anchor-link"></span></a>Heatlh check</h2>
-<ul>
-  <li><code>Enabled</code>: if enabled, the health check URL will be called at regular intervals</li>
-  <li><code>URL</code>: the URL to call to run the health check</li>
-</ul>
+<p>Each target represents a downstream server that Otoroshi can forward requests to.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>id</code> | string | - | Unique identifier of the target | | <code>hostname</code> | string | - | Hostname of the target (without scheme) | | <code>port</code> | number | - | Port of the target | | <code>tls</code> | boolean | - | Call the target via HTTPS | | <code>weight</code> | number | <code>1</code> | Weight used by the load balancing strategy to distribute traffic | | <code>protocol</code> | string | <code>HTTP/1.1</code> | Protocol: <code>HTTP/1.0</code>, <code>HTTP/1.1</code>, <code>HTTP/2.0</code>, or <code>HTTP/3.0</code> | | <code>predicate</code> | object | <code>AlwaysMatch</code> | Predicate function to filter this target based on request properties | | <code>ip_address</code> | string | <code>null</code> | IP address of the target (optional, for DNS bypass) | | <code>tls_config</code> | object | - | TLS settings for this specific target (see below) | | <code>backup</code> | boolean | <code>false</code> | If <code>true</code>, this target is only used when all primary (non-backup) targets are unavailable |</p>
+<h3><a href="#target-tls-settings" name="target-tls-settings" class="anchor"><span class="anchor-link"></span></a>Target TLS settings</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable custom TLS configuration for this target </td>
+    </tr>
+    <tr>
+      <td><code>loose</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>If enabled, will block all untrusted SSL configurations </td>
+    </tr>
+    <tr>
+      <td><code>trust_all</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Accept any server certificate, including self-signed ones </td>
+    </tr>
+    <tr>
+      <td><code>certs</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Client certificate IDs used to communicate with the target </td>
+    </tr>
+    <tr>
+      <td><code>trusted_certs</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Trusted certificate IDs expected from the target </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#target-json-example" name="target-json-example" class="anchor"><span class="anchor-link"></span></a>Target JSON example</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;target_1&quot;,
+  &quot;hostname&quot;: &quot;api.backend.internal&quot;,
+  &quot;port&quot;: 8443,
+  &quot;tls&quot;: true,
+  &quot;weight&quot;: 1,
+  &quot;protocol&quot;: &quot;HTTP/1.1&quot;,
+  &quot;predicate&quot;: { &quot;type&quot;: &quot;AlwaysMatch&quot; },
+  &quot;ip_address&quot;: null,
+  &quot;tls_config&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;loose&quot;: false,
+    &quot;trust_all&quot;: false,
+    &quot;certs&quot;: [],
+    &quot;trusted_certs&quot;: [&quot;cert_backend_ca&quot;]
+  },
+  &quot;backup&quot;: false
+}
+</code></pre>
+<h2><a href="#health-check" name="health-check" class="anchor"><span class="anchor-link"></span></a>Health check</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable periodic health checks </td>
+    </tr>
+  </tbody>
+</table>
+<p>| <code>url</code> | string | - | The URL to call for health checks |</p>
+<p>When enabled, Otoroshi periodically calls the health check URL. Unhealthy targets can be temporarily removed from the load balancing pool.</p>
 <h2><a href="#load-balancing" name="load-balancing" class="anchor"><span class="anchor-link"></span></a>Load balancing</h2>
-<ul>
-  <li><code>Type</code>: the load balancing algorithm used</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>RoundRobin</code> </td>
+      <td>Distributes requests evenly across all targets in order </td>
+    </tr>
+    <tr>
+      <td><code>Random</code> </td>
+      <td>Randomly selects a target for each request </td>
+    </tr>
+    <tr>
+      <td><code>Sticky</code> </td>
+      <td>Routes requests from the same client to the same target </td>
+    </tr>
+    <tr>
+      <td><code>IpAddressHash</code> </td>
+      <td>Selects target based on a hash of the client IP address </td>
+    </tr>
+    <tr>
+      <td><code>BestResponseTime</code> </td>
+      <td>Routes to the target with the lowest response time </td>
+    </tr>
+    <tr>
+      <td><code>WeightedBestResponseTime</code> </td>
+      <td>Combines weight and response time for target selection </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#client-settings" name="client-settings" class="anchor"><span class="anchor-link"></span></a>Client settings</h2>
+<p>Client settings control how Otoroshi connects to backend targets.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>retries</code> </td>
+      <td>number </td>
+      <td><code>1</code> </td>
+      <td>Number of retry attempts after a failed request </td>
+    </tr>
+    <tr>
+      <td><code>max_errors</code> </td>
+      <td>number </td>
+      <td><code>20</code> </td>
+      <td>Number of errors before opening the circuit breaker </td>
+    </tr>
+    <tr>
+      <td><code>retry_initial_delay</code> </td>
+      <td>number </td>
+      <td><code>50</code> </td>
+      <td>Delay (ms) before the first retry </td>
+    </tr>
+    <tr>
+      <td><code>backoff_factor</code> </td>
+      <td>number </td>
+      <td><code>2</code> </td>
+      <td>Multiplier applied to the delay between each retry </td>
+    </tr>
+    <tr>
+      <td><code>connection_timeout</code> </td>
+      <td>number </td>
+      <td><code>10000</code> </td>
+      <td>Maximum duration (ms) for establishing a connection </td>
+    </tr>
+    <tr>
+      <td><code>idle_timeout</code> </td>
+      <td>number </td>
+      <td><code>60000</code> </td>
+      <td>Maximum duration (ms) a connection can stay idle </td>
+    </tr>
+    <tr>
+      <td><code>call_and_stream_timeout</code> </td>
+      <td>number </td>
+      <td><code>120000</code> </td>
+      <td>Maximum duration (ms) for handling the request and streaming the response </td>
+    </tr>
+    <tr>
+      <td><code>call_timeout</code> </td>
+      <td>number </td>
+      <td><code>30000</code> </td>
+      <td>Maximum duration (ms) for a single call </td>
+    </tr>
+    <tr>
+      <td><code>global_timeout</code> </td>
+      <td>number </td>
+      <td><code>30000</code> </td>
+      <td>Maximum duration (ms) for the entire call including retries </td>
+    </tr>
+    <tr>
+      <td><code>sample_interval</code> </td>
+      <td>number </td>
+      <td><code>2000</code> </td>
+      <td>Delay (ms) between retries. Multiplied by <code>backoff_factor</code> at each retry </td>
+    </tr>
+    <tr>
+      <td><code>custom_timeouts</code> </td>
+      <td>array of object </td>
+      <td><code>[]</code> </td>
+      <td>Path-specific timeout overrides (see below) </td>
+    </tr>
+  </tbody>
+</table>
+<p>| <code>cache_connection_settings</code> | object | - | Connection caching settings (see below) | | <code>proxy</code> | object | <code>null</code> | HTTP proxy settings for reaching the backend |</p>
+<h3><a href="#custom-timeouts" name="custom-timeouts" class="anchor"><span class="anchor-link"></span></a>Custom timeouts</h3>
+<p>Custom timeouts allow overriding timeout values for specific paths:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>path</code> </td>
+      <td>string </td>
+      <td><code>/*</code> </td>
+      <td>Path pattern to match </td>
+    </tr>
+    <tr>
+      <td><code>connection_timeout</code> </td>
+      <td>number </td>
+      <td><code>10000</code> </td>
+      <td>Connection timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>idle_timeout</code> </td>
+      <td>number </td>
+      <td><code>60000</code> </td>
+      <td>Idle timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>call_and_stream_timeout</code> </td>
+      <td>number </td>
+      <td><code>3600000</code> </td>
+      <td>Call and stream timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>call_timeout</code> </td>
+      <td>number </td>
+      <td><code>30000</code> </td>
+      <td>Call timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>global_timeout</code> </td>
+      <td>number </td>
+      <td><code>30000</code> </td>
+      <td>Global timeout (ms) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#connection-cache-settings" name="connection-cache-settings" class="anchor"><span class="anchor-link"></span></a>Connection cache settings</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Try to keep TCP connections alive between requests </td>
+    </tr>
+    <tr>
+      <td><code>queue_size</code> </td>
+      <td>number </td>
+      <td><code>2048</code> </td>
+      <td>Queue size for open TCP connections </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#proxy-settings" name="proxy-settings" class="anchor"><span class="anchor-link"></span></a>Proxy settings</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td>Proxy hostname </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td>Proxy port </td>
+    </tr>
+    <tr>
+      <td><code>protocol</code> </td>
+      <td>string </td>
+      <td>Proxy protocol (<code>http</code> or <code>https</code>) </td>
+    </tr>
+    <tr>
+      <td><code>principal</code> </td>
+      <td>string </td>
+      <td>Proxy username </td>
+    </tr>
+    <tr>
+      <td><code>password</code> </td>
+      <td>string </td>
+      <td>Proxy password </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#complete-backend-json-example" name="complete-backend-json-example" class="anchor"><span class="anchor-link"></span></a>Complete backend JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;targets&quot;: [
+    {
+      &quot;id&quot;: &quot;target_1&quot;,
+      &quot;hostname&quot;: &quot;api-1.backend.internal&quot;,
+      &quot;port&quot;: 8080,
+      &quot;tls&quot;: false,
+      &quot;weight&quot;: 1,
+      &quot;protocol&quot;: &quot;HTTP/1.1&quot;,
+      &quot;predicate&quot;: { &quot;type&quot;: &quot;AlwaysMatch&quot; },
+      &quot;backup&quot;: false
+    },
+    {
+      &quot;id&quot;: &quot;target_2&quot;,
+      &quot;hostname&quot;: &quot;api-2.backend.internal&quot;,
+      &quot;port&quot;: 8080,
+      &quot;tls&quot;: false,
+      &quot;weight&quot;: 1,
+      &quot;protocol&quot;: &quot;HTTP/1.1&quot;,
+      &quot;predicate&quot;: { &quot;type&quot;: &quot;AlwaysMatch&quot; },
+      &quot;backup&quot;: true
+    }
+  ],
+  &quot;root&quot;: &quot;/api/v1&quot;,
+  &quot;rewrite&quot;: false,
+  &quot;load_balancing&quot;: { &quot;type&quot;: &quot;RoundRobin&quot; },
+  &quot;health_check&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;url&quot;: &quot;http://api-1.backend.internal:8080/health&quot;
+  },
+  &quot;client&quot;: {
+    &quot;retries&quot;: 1,
+    &quot;max_errors&quot;: 20,
+    &quot;retry_initial_delay&quot;: 50,
+    &quot;backoff_factor&quot;: 2,
+    &quot;connection_timeout&quot;: 10000,
+    &quot;idle_timeout&quot;: 60000,
+    &quot;call_and_stream_timeout&quot;: 120000,
+    &quot;call_timeout&quot;: 30000,
+    &quot;global_timeout&quot;: 30000,
+    &quot;sample_interval&quot;: 2000,
+    &quot;cache_connection_settings&quot;: {
+      &quot;enabled&quot;: false,
+      &quot;queue_size&quot;: 2048
+    },
+    &quot;custom_timeouts&quot;: []
+  }
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/backends           # List all stored backends
+POST   /api/backends           # Create a stored backend
+GET    /api/backends/:id       # Get a stored backend
+PUT    /api/backends/:id       # Update a stored backend
+DELETE /api/backends/:id       # Delete a stored backend
+PATCH  /api/backends/:id       # Partially update a stored backend
+</code></pre>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
 <ul>
-  <li><code>backoff factor</code>: specify the factor to multiply the delay for each retry (default value 2)</li>
-  <li><code>retries</code>: specify how many times the client will retry to fetch the result of the request after an error before giving up. (default value 1)</li>
-  <li><code>max errors</code>: specify how many errors can pass before opening the circuit breaker (default value 20)</li>
-  <li><code>global timeout</code>: specify how long the global call (with retries) should last at most in milliseconds. (default value 30000)</li>
-  <li><code>connection timeout</code>: specify how long each connection should last at most in milliseconds. (default value 10000)</li>
-  <li><code>idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds (default value 60000)</li>
-  <li><code>call timeout</code>: Specify how long each call should last at most in milliseconds. (default value 30000)</li>
-  <li><code>call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response. (default value 120000)</li>
-  <li><code>initial delay</code>: delay after which first retry will happens if needed (default value 50)</li>
-  <li><code>sample interval</code>: specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor (default value 2000)</li>
-  <li><code>cache connection</code>: try to keep tcp connection alive between requests (default value false)</li>
-  <li><code>cache connection queue size</code>: queue size for an open tcp connection (default value 2048)</li>
-  <li><code>custom timeouts</code> (list):
-    <ul>
-      <li><code>Path</code>: the path on which the timeout will be active</li>
-      <li><code>Client connection timeout</code>: specify how long each connection should last at most in milliseconds.</li>
-      <li><code>Client idle timeout</code>: specify how long each connection can stay in idle state at most in milliseconds.</li>
-      <li><code>Client call and stream timeout</code>: specify how long each call should last at most in milliseconds for handling the request and streaming the response.</li>
-      <li><code>Call timeout</code>: Specify how long each call should last at most in milliseconds.</li>
-      <li><code>Client global timeout</code>: specify how long the global call (with retries) should last at most in milliseconds.</li>
-    </ul>
-  </li>
-</ul>
-<h2><a href="#proxy" name="proxy" class="anchor"><span class="anchor-link"></span></a>Proxy</h2>
-<ul>
-  <li><code>host</code>: host of proxy behind the identify provider</li>
-  <li><code>port</code>: port of proxy behind the identify provider</li>
-  <li><code>protocol</code>: protocol of proxy behind the identify provider</li>
-  <li><code>principal</code>: user of proxy</li>
-  <li><code>password</code>: password of proxy</li>
+  <li><a href="routes.html">Routes</a> - Routes reference backends inline or via <code>backend_ref</code></li>
+  <li><a href="apis.html">APIs</a> - APIs define backends that are shared across API routes</li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/organizations.html">Organizations</a></p>
@@ -433,12 +802,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../entities/backends.html#backends" class="header">Backends</a>
   <ul>
     <li><a href="../entities/backends.html#ui-page" class="header">UI page</a></li>
-    <li><a href="../entities/backends.html#global-properties" class="header">Global Properties</a></li>
+    <li><a href="../entities/backends.html#properties" class="header">Properties</a></li>
     <li><a href="../entities/backends.html#targets" class="header">Targets</a></li>
-    <li><a href="../entities/backends.html#heatlh-check" class="header">Heatlh check</a></li>
+    <li><a href="../entities/backends.html#health-check" class="header">Health check</a></li>
     <li><a href="../entities/backends.html#load-balancing" class="header">Load balancing</a></li>
     <li><a href="../entities/backends.html#client-settings" class="header">Client settings</a></li>
-    <li><a href="../entities/backends.html#proxy" class="header">Proxy</a></li>
+    <li><a href="../entities/backends.html#complete-backend-json-example" class="header">Complete backend JSON example</a></li>
+    <li><a href="../entities/backends.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/backends.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

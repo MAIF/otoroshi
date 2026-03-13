@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="active page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="active page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -343,16 +345,102 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#service-groups" name="service-groups" class="anchor"><span class="anchor-link"></span></a>Service groups</h1>
-<p>A service group is composed of an unique <code>id</code>, a <code>Group name</code>, a <code>Group description</code>, an <code>Organization</code> and a <code>Team</code>. As all Otoroshi resources, a service group have a list of tags and metadata associated.</p><div class="centered-img">
+<p>A service group is a logical grouping of services (routes, APIs) primarily used for API key authorization. Instead of authorizing an API key for each individual service, you can group services together and grant authorization on the entire group.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all service groups <a href="http://otoroshi.oto.tools:8080/bo/dashboard/groups">here</a></p>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td>Unique identifier of the group </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Display name of the group </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td>Description of the group </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td>Tags for categorization </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td>Key/value metadata </td>
+    </tr>
+  </tbody>
+</table><div class="centered-img">
 <img src="../imgs/models-group.png" /></div>
-<p>The first instinctive usage of service group is to group a list of services. </p>
-<p>When it&rsquo;s done, you can authorize an api key on a specific group. Instead of authorize an api key for each service, you can regroup a list of services together, and give authorization on the group (read the page on the api keys and the usage of the <code>Authorized on.</code> field).</p>
-<h2><a href="#access-to-the-list-of-service-groups" name="access-to-the-list-of-service-groups" class="anchor"><span class="anchor-link"></span></a>Access to the list of service groups</h2>
-<p>To visualize and edit the list of groups, you can navigate to your instance on the <code>https://otoroshi.xxxxx/bo/dashboard/groups</code> route or click on the cog icon and select the Service groups button.</p>
-<p>Once on the page, you can create a new item, edit an existing service group or delete an existing one.</p>
+<h2><a href="#how-it-works" name="how-it-works" class="anchor"><span class="anchor-link"></span></a>How it works</h2>
+<ol>
+  <li><strong>Create a group</strong> with a meaningful name (e.g., &ldquo;Payment APIs&rdquo;, &ldquo;Public APIs&rdquo;)</li>
+  <li><strong>Assign routes to the group</strong> by adding the group ID to a route&rsquo;s <code>groups</code> field</li>
+  <li><strong>Authorize API keys on the group</strong> using the API key&rsquo;s <code>authorizedEntities</code> field</li>
+</ol>
+<p>When an API key is authorized on a group, it automatically has access to all routes that belong to that group. This simplifies API key management significantly when you have many routes that share the same access control requirements.</p>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;group_payment_apis&quot;,
+  &quot;name&quot;: &quot;Payment APIs&quot;,
+  &quot;description&quot;: &quot;All payment-related API routes&quot;,
+  &quot;metadata&quot;: {
+    &quot;department&quot;: &quot;finance&quot;
+  },
+  &quot;tags&quot;: [&quot;payment&quot;, &quot;finance&quot;]
+}
+</code></pre>
+<h3><a href="#authorizing-an-api-key-on-a-group" name="authorizing-an-api-key-on-a-group" class="anchor"><span class="anchor-link"></span></a>Authorizing an API key on a group</h3>
+<p>In the API key entity, reference the group in <code>authorizedEntities</code>:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;clientId&quot;: &quot;my-api-key-id&quot;,
+  &quot;clientSecret&quot;: &quot;my-api-key-secret&quot;,
+  &quot;clientName&quot;: &quot;Payment service key&quot;,
+  &quot;authorizedEntities&quot;: [&quot;group_payment_apis&quot;]
+}
+</code></pre>
+<h3><a href="#adding-a-route-to-a-group" name="adding-a-route-to-a-group" class="anchor"><span class="anchor-link"></span></a>Adding a route to a group</h3>
+<p>In the route entity, add the group ID to the <code>groups</code> array:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;route_process_payment&quot;,
+  &quot;name&quot;: &quot;Process payment&quot;,
+  &quot;groups&quot;: [&quot;group_payment_apis&quot;],
+  &quot;frontend&quot;: { &quot;...&quot; : &quot;...&quot; },
+  &quot;backend&quot;: { &quot;...&quot; : &quot;...&quot; },
+  &quot;plugins&quot;: { &quot;...&quot; : &quot;...&quot; }
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/groups           # List all service groups
+POST   /api/groups           # Create a service group
+GET    /api/groups/:id       # Get a service group
+PUT    /api/groups/:id       # Update a service group
+DELETE /api/groups/:id       # Delete a service group
+PATCH  /api/groups/:id       # Partially update a service group
+</code></pre>
 <blockquote>
-  <p>When a service group is deleted, the resources associated are not deleted. On the other hand, the service group of associated resources is let empty.</p>
+  <p>When a service group is deleted, the resources associated are not deleted. The group reference on those resources will become invalid (empty).</p>
 </blockquote>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
+<ul>
+  <li><a href="routes.html">Routes</a> - Routes reference groups in their <code>groups</code> field</li>
+  <li><a href="apikeys.html">API Keys</a> - API keys reference groups in their <code>authorizedEntities</code> field</li>
+  <li><a href="apis.html">APIs</a> - APIs also create virtual groups automatically for their routes</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/auth-modules.html">Authentication modules</a></p>
 </div>
@@ -367,7 +455,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../entities/service-groups.html#service-groups" class="header">Service groups</a>
   <ul>
-    <li><a href="../entities/service-groups.html#access-to-the-list-of-service-groups" class="header">Access to the list of service groups</a></li>
+    <li><a href="../entities/service-groups.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/service-groups.html#properties" class="header">Properties</a></li>
+    <li><a href="../entities/service-groups.html#how-it-works" class="header">How it works</a></li>
+    <li><a href="../entities/service-groups.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/service-groups.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/service-groups.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="active page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="active page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -343,52 +345,149 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#certificates" name="certificates" class="anchor"><span class="anchor-link"></span></a>Certificates</h1>
-<p>All generated and imported certificates are listed in the <code>https://otoroshi.xxxx/bo/dashboard/certificates</code> page. All those certificates can be used to serve traffic with TLS, perform mTLS calls, sign and verify JWT tokens.</p>
-<p>The list of available actions are:</p>
+<p>Certificates are used across Otoroshi for TLS termination, mTLS, JWT token signing and verification, and more. All generated and imported certificates are managed in a central store and can be referenced by routes, backends, auth modules, and other entities.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all certificates <a href="http://otoroshi.oto.tools:8080/bo/dashboard/certificates">here</a></p>
+<p>The available actions from the UI are:</p>
 <ul>
-  <li><code>Add item</code>: redirects the user on the certificate creation page. It&rsquo;s useful when you already had a certificate (like a pem file) and that you want to load it in Otoroshi.</li>
-  <li><code>Let&#39;s Encrypt certificate</code>: asks a certificate matching a given host to Let&rsquo;s encrypt</li>
-  <li><code>Create certificate</code>: issues a certificate with an existing Otoroshi certificate as CA.</li>
-  <li><code>Import .p12 file</code>: loads a p12 file as certificate</li>
+  <li><strong>Add item</strong>: Manually add an existing certificate (e.g., from a PEM file)</li>
+  <li><strong>Let&rsquo;s Encrypt certificate</strong>: Request a certificate from Let&rsquo;s Encrypt for a given hostname</li>
+  <li><strong>Create certificate</strong>: Issue a new certificate signed by an existing Otoroshi CA</li>
+  <li><strong>Import .p12 file</strong>: Load a PKCS#12 file as a certificate</li>
 </ul>
-<h2><a href="#add-item" name="add-item" class="anchor"><span class="anchor-link"></span></a>Add item</h2>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>id</code> | string | - | Unique identifier of the certificate | | <code>name</code> | string | - | Display name of the certificate | | <code>description</code> | string | - | Description | | <code>chain</code> | string | - | PEM-encoded certificate chain (full chain) | | <code>privateKey</code> | string | - | PEM-encoded private key (can be empty for trust-only certificates) | | <code>caRef</code> | string | <code>null</code> | Reference to the CA certificate that signed this certificate | | <code>domain</code> | string | <code>&quot;--&quot;</code> | Primary domain of the certificate | | <code>selfSigned</code> | boolean | <code>false</code> | Whether the certificate is self-signed | | <code>ca</code> | boolean | <code>false</code> | Whether this certificate is a Certificate Authority | | <code>valid</code> | boolean | <code>false</code> | Whether the certificate is currently valid (not expired, not revoked) | | <code>exposed</code> | boolean | <code>false</code> | If <code>true</code>, the public key is exposed on <code>/.well-known/jwks.json</code> | | <code>revoked</code> | boolean | <code>false</code> | Whether the certificate has been revoked | | <code>autoRenew</code> | boolean | <code>false</code> | Auto-renew the certificate when it expires (requires a known CA and private key) | | <code>letsEncrypt</code> | boolean | <code>false</code> | Certificate was issued by Let&rsquo;s Encrypt | | <code>client</code> | boolean | <code>false</code> | This certificate is a client certificate (used for mTLS authentication) | | <code>keypair</code> | boolean | <code>false</code> | This entity is a key pair (public + private key, without a certificate chain) | | <code>subject</code> | string | <code>&quot;--&quot;</code> | Subject DN of the certificate | | <code>from</code> | number | - | Validity start date (timestamp in milliseconds) | | <code>to</code> | number | - | Validity end date (timestamp in milliseconds) | | <code>sans</code> | array of string | <code>[]</code> | Subject Alternative Names (additional hostnames/IPs covered by this cert) | | <code>password</code> | string | <code>null</code> | Password protecting the private key (optional) | | <code>tags</code> | array of string | <code>[]</code> | Tags | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata |</p>
+<h2><a href="#certificate-creation" name="certificate-creation" class="anchor"><span class="anchor-link"></span></a>Certificate creation</h2>
+<h3><a href="#from-lets-encrypt" name="from-lets-encrypt" class="anchor"><span class="anchor-link"></span></a>From Let&rsquo;s Encrypt</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>host</code> </td>
+      <td>The hostname to request the certificate for </td>
+    </tr>
+  </tbody>
+</table>
+<p>Let&rsquo;s Encrypt must be enabled in the <a href="global-config.html">Global Config</a> with a valid ACME server URL.</p>
+<h3><a href="#from-an-existing-ca" name="from-an-existing-ca" class="anchor"><span class="anchor-link"></span></a>From an existing CA</h3>
+<p>When creating a certificate from an Otoroshi CA:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Issuer</code> </td>
+      <td>The CA certificate used to sign the new certificate </td>
+    </tr>
+    <tr>
+      <td><code>CA certificate</code> </td>
+      <td>If enabled, the new certificate will be a CA itself </td>
+    </tr>
+    <tr>
+      <td><code>Client certificate</code> </td>
+      <td>If enabled, the certificate will be used for client authentication </td>
+    </tr>
+    <tr>
+      <td><code>Include A.I.A</code> </td>
+      <td>Include Authority Information Access URLs in the certificate </td>
+    </tr>
+    <tr>
+      <td><code>Key Type</code> </td>
+      <td>Type of the private key (RSA, EC) </td>
+    </tr>
+    <tr>
+      <td><code>Key Size</code> </td>
+      <td>Size of the private key (2048, 4096, etc.) </td>
+    </tr>
+    <tr>
+      <td><code>Signature Algorithm</code> </td>
+      <td>Algorithm used to sign the certificate </td>
+    </tr>
+    <tr>
+      <td><code>Digest Algorithm</code> </td>
+      <td>Digest algorithm used </td>
+    </tr>
+    <tr>
+      <td><code>Validity</code> </td>
+      <td>How long the certificate will be valid </td>
+    </tr>
+    <tr>
+      <td><code>Subject DN</code> </td>
+      <td>Subject Distinguished Name </td>
+    </tr>
+    <tr>
+      <td><code>Hosts</code> </td>
+      <td>Hostnames covered by the certificate (added to SAN) </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;cert_api_example_com&quot;,
+  &quot;name&quot;: &quot;api.example.com&quot;,
+  &quot;description&quot;: &quot;TLS certificate for the public API&quot;,
+  &quot;chain&quot;: &quot;-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----&quot;,
+  &quot;privateKey&quot;: &quot;-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----&quot;,
+  &quot;caRef&quot;: &quot;cert_internal_ca&quot;,
+  &quot;domain&quot;: &quot;api.example.com&quot;,
+  &quot;selfSigned&quot;: false,
+  &quot;ca&quot;: false,
+  &quot;valid&quot;: true,
+  &quot;exposed&quot;: false,
+  &quot;revoked&quot;: false,
+  &quot;autoRenew&quot;: true,
+  &quot;letsEncrypt&quot;: false,
+  &quot;client&quot;: false,
+  &quot;keypair&quot;: false,
+  &quot;subject&quot;: &quot;CN=api.example.com&quot;,
+  &quot;from&quot;: 1710000000000,
+  &quot;to&quot;: 1741536000000,
+  &quot;sans&quot;: [&quot;api.example.com&quot;, &quot;*.api.example.com&quot;],
+  &quot;password&quot;: null,
+  &quot;tags&quot;: [&quot;production&quot;],
+  &quot;metadata&quot;: {}
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/certificates           # List all certificates
+POST   /api/certificates           # Create/import a certificate
+GET    /api/certificates/:id       # Get a certificate
+PUT    /api/certificates/:id       # Update a certificate
+DELETE /api/certificates/:id       # Delete a certificate
+PATCH  /api/certificates/:id       # Partially update a certificate
+</code></pre>
+<p>Additional endpoints:</p>
+<pre><code>GET  /api/certificates/:id/valid   # Check certificate validity
+POST /api/certificates/_renew      # Trigger certificate renewal
+</code></pre>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
 <ul>
-  <li><code>Id</code>: the generated unique id of the certificate</li>
-  <li><code>Name</code>: the name of the certificate</li>
-  <li><code>Description</code>: the description of the certificate</li>
-  <li><code>Auto renew cert.</code>: certificate will be issued when it will be expired. Only works with a CA from Otoroshi and a known private key</li>
-  <li><code>Client cert.</code>: the certificate generated will be used to identicate a client to a server</li>
-  <li><code>Keypair</code>: the certificate entity will be a pair of public key and private key.</li>
-  <li><code>Public key exposed</code>: if true, the public key will be exposed on <code>http://otoroshi-api.your-domain/.well-known/jwks.json</code></li>
-  <li><code>Certificate status</code>: the current status of the certificate. It can be valid if the certificate is not revoked and not expired, or equal to the reason of the revocation</li>
-  <li><code>Certificate full chain</code>: list of certificates used to authenticate a client or a server</li>
-  <li><code>Certificate private key</code>: the private key of the certificate or nothing if wanted. You can omit it if you want just add a certificte full chain to trust them.</li>
-  <li><code>Private key password</code>: the password to protect the private key</li>
-  <li><code>Certificate tags</code>: the tags attached to the certificate</li>
-  <li><code>Certaificate metadata</code>: the metadata attached to the certificate</li>
-</ul>
-<h2><a href="#lets-encrypt-certificate" name="lets-encrypt-certificate" class="anchor"><span class="anchor-link"></span></a>Let&rsquo;s Encrypt certificate</h2>
-<ul>
-  <li><code>Let&#39;s encrypt</code>: if enabled, the certificate will be generated by Let&rsquo;s Encrypt. If disabled, the user will be redirect to the <code>Create certificate</code> page</li>
-  <li><code>Host</code>: the host send to Let&rsquo;s encrypt to issue the certificate</li>
-</ul>
-<h2><a href="#create-certificate-view" name="create-certificate-view" class="anchor"><span class="anchor-link"></span></a>Create certificate view</h2>
-<ul>
-  <li><code>Issuer</code>: the CA used to sign your certificate</li>
-  <li><code>CA certificate</code>: if enabled, the certificate will be used as an authority certificate. Once generated, it will be use as CA to sign the new certificates</li>
-  <li><code>Let&#39;s Encrypt</code>: redirects to the Let&rsquo;s Encrypt page to request a certificate</li>
-  <li><code>Client certificate</code>: the certificate generated will be used to identicate a client to a server</li>
-  <li><code>Include A.I.A</code>: include authority information access urls in the certificate</li>
-  <li><code>Key Type</code>: the type of the private key</li>
-  <li><code>Key Size</code>: the size of the private key</li>
-  <li><code>Signature Algorithm</code>: the signature algorithm used to sign the certificate</li>
-  <li><code>Digest Algorithm</code>: the digest algorithm used</li>
-  <li><code>Validity</code>: how much time your certificate will be valid</li>
-  <li><code>Subject DN</code>: the subject DN of your certificate</li>
-  <li><code>Hosts</code>: the hosts of your certificate</li>
+  <li><a href="routes.html">Routes</a> - Routes use certificates for TLS termination</li>
+  <li><a href="backends.html">Backends</a> - Backend targets can use client certificates for mTLS</li>
+  <li><a href="auth-modules.html">Auth Modules</a> - OIDC/OAuth modules can use certificates for provider communication</li>
+  <li><a href="jwt-verifiers.html">JWT Verifiers</a> - Key pairs can be used for JWT signing and verification</li>
 </ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/jwt-verifiers.html">JWT verifiers</a></p>
+<p><strong>Next:</strong> <a href="../entities/jwt-verifiers.html">JWT Verifiers</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -401,9 +500,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../entities/certificates.html#certificates" class="header">Certificates</a>
   <ul>
-    <li><a href="../entities/certificates.html#add-item" class="header">Add item</a></li>
-    <li><a href="../entities/certificates.html#lets-encrypt-certificate" class="header">Let&rsquo;s Encrypt certificate</a></li>
-    <li><a href="../entities/certificates.html#create-certificate-view" class="header">Create certificate view</a></li>
+    <li><a href="../entities/certificates.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/certificates.html#properties" class="header">Properties</a></li>
+    <li><a href="../entities/certificates.html#certificate-creation" class="header">Certificate creation</a></li>
+    <li><a href="../entities/certificates.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/certificates.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/certificates.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

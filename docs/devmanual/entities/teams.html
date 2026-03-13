@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="active page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="active page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -343,42 +345,124 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#teams" name="teams" class="anchor"><span class="anchor-link"></span></a>Teams</h1>
-<p>In Otoroshi, all resources are attached to an <code>Organization</code> and a <code>Team</code>. </p>
-<p>A team is composed of an unique <code>id</code>, a <code>name</code>, a <code>description</code> and an <code>Organization</code>. As all Otoroshi resources, a Team have a list of tags and metadata associated.</p>
-<p>A team have an unique organization and can be use on multiples resources (services, api keys, etc &hellip;).</p>
-<p>A connected user on Otoroshi UI has a list of teams and organizations associated. It can be helpful when you want restrict the rights of a connected user.</p><div class="centered-img">
+<p>In Otoroshi, all resources are attached to an <a href="organizations.html">Organization</a> and one or more Teams. Teams provide a second level of grouping within an organization, allowing you to control visibility and access to entities.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all teams <a href="http://otoroshi.oto.tools:8080/bo/dashboard/teams">here</a></p>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td>Unique identifier of the team </td>
+    </tr>
+    <tr>
+      <td><code>tenant</code> </td>
+      <td>string </td>
+      <td>The organization this team belongs to </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Display name of the team </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td>Description of the team </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td>Tags for categorization </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td>Key/value metadata </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#use-cases" name="use-cases" class="anchor"><span class="anchor-link"></span></a>Use cases</h2>
+<ul>
+  <li><strong>Access control</strong>: Restrict which admin users can see and modify specific entities by assigning them to teams</li>
+  <li><strong>Resource organization</strong>: Group related entities (routes, API keys, certificates) by team so each team sees only their own resources</li>
+  <li><strong>Delegation</strong>: Allow team leads to manage their own resources without having access to other teams&rsquo; configurations</li>
+</ul><div class="centered-img">
 <img src="../imgs/organizations-and-teams.png" /></div>
-<h2><a href="#access-to-the-list-of-teams" name="access-to-the-list-of-teams" class="anchor"><span class="anchor-link"></span></a>Access to the list of teams</h2>
-<p>To visualize and edit the list of teams, you can navigate to your instance on the <code>https://otoroshi.xxxxxx/bo/dashboard/teams</code> route or click on the cog icon and select the teams button.</p>
-<p>Once on the page, you can create a new item, edit an existing team or delete an existing one.</p>
-<blockquote>
-  <p>When a team is deleted, the resources associated are not deleted. On the other hand, the team of associated resources is let empty.</p>
-</blockquote>
 <h2><a href="#entities-location" name="entities-location" class="anchor"><span class="anchor-link"></span></a>Entities location</h2>
-<p>Any otoroshi entity has a location property (<code>_loc</code> when serialized to json) explaining where and by whom the entity can be seen. </p>
-<p>An entity can be part of multiple teams in an organization</p>
-<pre class="prettyprint"><code class="language-javascript">{
+<p>Every Otoroshi entity has a location property (<code>_loc</code> when serialized to JSON) that includes the teams the entity belongs to.</p>
+<p>An entity visible to specific teams:</p>
+<pre class="prettyprint"><code class="language-json">{
   &quot;_loc&quot;: {
-    &quot;tenant&quot;: &quot;tenant-1&quot;,
+    &quot;tenant&quot;: &quot;organization-1&quot;,
     &quot;teams&quot;: [
       &quot;team-1&quot;,
       &quot;team-2&quot;
     ]
   }
-  ...
 }
 </code></pre>
-<p>or all teams</p>
-<pre class="prettyprint"><code class="language-javascript">{
+<p>An entity visible to all teams in the organization:</p>
+<pre class="prettyprint"><code class="language-json">{
   &quot;_loc&quot;: {
-    &quot;tenant&quot;: &quot;tenant-1&quot;,
+    &quot;tenant&quot;: &quot;organization-1&quot;,
     &quot;teams&quot;: [
       &quot;*&quot;
     ]
   }
-  ...
 }
 </code></pre>
+<h2><a href="#user-access-control" name="user-access-control" class="anchor"><span class="anchor-link"></span></a>User access control</h2>
+<p>Admin users have team-level access rights that determine what they can read and write:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;rights&quot;: [
+    {
+      &quot;tenant&quot;: &quot;organization-1&quot;,
+      &quot;teams&quot;: [
+        { &quot;value&quot;: &quot;team-backend&quot;, &quot;canRead&quot;: true, &quot;canWrite&quot;: true },
+        { &quot;value&quot;: &quot;team-frontend&quot;, &quot;canRead&quot;: true, &quot;canWrite&quot;: false }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>In this example, the user has full access to the backend team&rsquo;s entities but can only view (not modify) the frontend team&rsquo;s entities.</p>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;team_platform&quot;,
+  &quot;tenant&quot;: &quot;organization_production&quot;,
+  &quot;name&quot;: &quot;Platform Team&quot;,
+  &quot;description&quot;: &quot;Team responsible for platform infrastructure&quot;,
+  &quot;metadata&quot;: {
+    &quot;lead&quot;: &quot;alice@example.com&quot;
+  },
+  &quot;tags&quot;: [&quot;platform&quot;, &quot;infrastructure&quot;]
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/teams           # List all teams
+POST   /api/teams           # Create a team
+GET    /api/teams/:id       # Get a team
+PUT    /api/teams/:id       # Update a team
+DELETE /api/teams/:id       # Delete a team
+PATCH  /api/teams/:id       # Partially update a team
+</code></pre>
+<blockquote>
+  <p>When a team is deleted, the resources associated are not deleted. The team reference on those resources will become invalid (empty).</p>
+</blockquote>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
+<ul>
+  <li><a href="organizations.html">Organizations</a> - Each team belongs to exactly one organization</li>
+  <li><a href="otoroshi-admins.html">Otoroshi Admins</a> - Admin users have rights scoped to specific teams</li>
+</ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/global-config.html">Global config</a></p>
 </div>
@@ -393,8 +477,14 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../entities/teams.html#teams" class="header">Teams</a>
   <ul>
-    <li><a href="../entities/teams.html#access-to-the-list-of-teams" class="header">Access to the list of teams</a></li>
+    <li><a href="../entities/teams.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/teams.html#properties" class="header">Properties</a></li>
+    <li><a href="../entities/teams.html#use-cases" class="header">Use cases</a></li>
     <li><a href="../entities/teams.html#entities-location" class="header">Entities location</a></li>
+    <li><a href="../entities/teams.html#user-access-control" class="header">User access control</a></li>
+    <li><a href="../entities/teams.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/teams.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/teams.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

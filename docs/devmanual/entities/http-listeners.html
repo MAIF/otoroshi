@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="active page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="active page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -344,42 +346,173 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#http-listeners" name="http-listeners" class="anchor"><span class="anchor-link"></span></a>HTTP Listeners</h1>
 <p>HTTP Listeners allow you to create custom HTTP listeners on specific ports, enabling Otoroshi to serve traffic on multiple ports with different protocol configurations. Each listener can be configured independently for TLS, HTTP/1.1, HTTP/2, H2C, and HTTP/3 support.</p>
+<p>This is useful when you need to expose different services on different ports, separate public and internal traffic, or run specific protocols on dedicated ports.</p>
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all HTTP listeners <a href="http://otoroshi.oto.tools:8080/bo/dashboard/extensions/cloud-apim/http-listeners">here</a></p>
 <h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
-<ul>
-  <li><code>id</code>: unique identifier of the HTTP listener</li>
-  <li><code>name</code>: display name of the listener</li>
-  <li><code>description</code>: description of the listener</li>
-  <li><code>tags</code>: list of tags associated to the listener</li>
-  <li><code>metadata</code>: list of metadata associated to the listener</li>
-  <li><code>config</code>: the listener configuration (see below)</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td>Unique identifier of the HTTP listener </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Display name of the listener </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td>Description of the listener </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td>Tags associated to the listener </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td>Key/value metadata associated to the listener </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td>The listener configuration (see below) </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#configuration" name="configuration" class="anchor"><span class="anchor-link"></span></a>Configuration</h2>
-<ul>
-  <li><code>enabled</code>: is the listener enabled</li>
-  <li><code>exclusive</code>: if enabled, this listener will only handle routes that are explicitly bound to it. Routes not bound to this listener will not be served on its port</li>
-  <li><code>tls</code>: enable TLS/HTTPS on this listener (default: true)</li>
-  <li><code>http1</code>: enable HTTP/1.1 protocol support (default: true)</li>
-  <li><code>http2</code>: enable HTTP/2 protocol support (default: true)</li>
-  <li><code>h2c</code>: enable H2C (HTTP/2 Cleartext, without TLS) protocol support (default: false)</li>
-  <li><code>http3</code>: enable HTTP/3 protocol support (default: false)</li>
-  <li><code>port</code>: the port on which the listener will accept connections (default: 7890)</li>
-  <li><code>exposedPort</code>: the externally exposed port, useful when running behind a load balancer or inside a container (default: 7890)</li>
-  <li><code>host</code>: the host address to bind to (default: <code>0.0.0.0</code>)</li>
-  <li><code>accessLog</code>: enable access logging for this listener (default: false)</li>
-  <li><code>clientAuth</code>: mTLS client authentication mode. Possible values are <code>None</code>, <code>Want</code>, and <code>Need</code> (default: <code>None</code>)</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Whether the listener is active and accepting connections </td>
+    </tr>
+    <tr>
+      <td><code>exclusive</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>If enabled, this listener only handles routes explicitly bound to it. Routes not bound will not be served on its port </td>
+    </tr>
+    <tr>
+      <td><code>tls</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Enable TLS/HTTPS on this listener </td>
+    </tr>
+    <tr>
+      <td><code>http1</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Enable HTTP/1.1 protocol support </td>
+    </tr>
+    <tr>
+      <td><code>http2</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Enable HTTP/2 protocol support </td>
+    </tr>
+    <tr>
+      <td><code>h2c</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable H2C (HTTP/2 Cleartext, without TLS) protocol support </td>
+    </tr>
+    <tr>
+      <td><code>http3</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable HTTP/3 (QUIC) protocol support </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td><code>7890</code> </td>
+      <td>The port on which the listener will accept connections </td>
+    </tr>
+    <tr>
+      <td><code>exposedPort</code> </td>
+      <td>number </td>
+      <td><code>7890</code> </td>
+      <td>The externally exposed port (useful behind a load balancer or in a container) </td>
+    </tr>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td><code>0.0.0.0</code> </td>
+      <td>The host address to bind to </td>
+    </tr>
+    <tr>
+      <td><code>accessLog</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable access logging for this listener </td>
+    </tr>
+    <tr>
+      <td><code>clientAuth</code> </td>
+      <td>string </td>
+      <td><code>None</code> </td>
+      <td>mTLS client authentication mode: <code>None</code>, <code>Want</code>, or <code>Need</code> </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#client-authentication-modes" name="client-authentication-modes" class="anchor"><span class="anchor-link"></span></a>Client authentication modes</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Mode </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>None</code> </td>
+      <td>No client certificate is requested </td>
+    </tr>
+    <tr>
+      <td><code>Want</code> </td>
+      <td>A client certificate is requested but not required. If provided, it will be validated </td>
+    </tr>
+    <tr>
+      <td><code>Need</code> </td>
+      <td>A valid client certificate is required. Connections without one will be rejected </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#binding-routes-to-listeners" name="binding-routes-to-listeners" class="anchor"><span class="anchor-link"></span></a>Binding routes to listeners</h2>
+<p>Routes can be bound to specific listeners using the <code>bound_listeners</code> field on the <a href="routes.html">route</a> entity. When a listener is configured as <code>exclusive</code>, only routes that explicitly reference this listener in their <code>bound_listeners</code> array will be served on its port.</p>
+<p>This allows you to create isolated traffic channels where specific routes are only accessible on specific ports.</p>
 <h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<p>A basic HTTPS listener on a custom port:</p>
 <pre class="prettyprint"><code class="language-json">{
-  &quot;id&quot;: &quot;http-listener_abc123&quot;,
-  &quot;name&quot;: &quot;My custom listener&quot;,
-  &quot;description&quot;: &quot;A custom HTTPS listener on port 9443&quot;,
-  &quot;tags&quot;: [],
+  &quot;id&quot;: &quot;http-listener_internal_api&quot;,
+  &quot;name&quot;: &quot;Internal API listener&quot;,
+  &quot;description&quot;: &quot;HTTPS listener for internal APIs on port 9443&quot;,
+  &quot;tags&quot;: [&quot;internal&quot;],
   &quot;metadata&quot;: {},
   &quot;config&quot;: {
     &quot;enabled&quot;: true,
-    &quot;exclusive&quot;: false,
+    &quot;exclusive&quot;: true,
     &quot;tls&quot;: true,
     &quot;http1&quot;: true,
     &quot;http2&quot;: true,
@@ -388,10 +521,48 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;port&quot;: 9443,
     &quot;exposedPort&quot;: 9443,
     &quot;host&quot;: &quot;0.0.0.0&quot;,
-    &quot;accessLog&quot;: false,
+    &quot;accessLog&quot;: true,
     &quot;clientAuth&quot;: &quot;None&quot;
   }
 }
+</code></pre>
+<p>An HTTP/3 listener with mTLS:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;http-listener_secure_h3&quot;,
+  &quot;name&quot;: &quot;Secure HTTP/3 listener&quot;,
+  &quot;description&quot;: &quot;HTTP/3 listener with mutual TLS on port 8443&quot;,
+  &quot;tags&quot;: [&quot;secure&quot;, &quot;http3&quot;],
+  &quot;metadata&quot;: {},
+  &quot;config&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;exclusive&quot;: false,
+    &quot;tls&quot;: true,
+    &quot;http1&quot;: true,
+    &quot;http2&quot;: true,
+    &quot;h2c&quot;: false,
+    &quot;http3&quot;: true,
+    &quot;port&quot;: 8443,
+    &quot;exposedPort&quot;: 8443,
+    &quot;host&quot;: &quot;0.0.0.0&quot;,
+    &quot;accessLog&quot;: false,
+    &quot;clientAuth&quot;: &quot;Need&quot;
+  }
+}
+</code></pre>
+<h2><a href="#use-cases" name="use-cases" class="anchor"><span class="anchor-link"></span></a>Use cases</h2>
+<ul>
+  <li><strong>Internal/external separation</strong>: Run a public listener on port 443 and an internal listener on port 9443 with <code>exclusive: true</code> so internal APIs are never exposed publicly</li>
+  <li><strong>Protocol-specific listeners</strong>: Dedicate a listener for HTTP/3 traffic or H2C (useful for gRPC without TLS in internal networks)</li>
+  <li><strong>mTLS endpoints</strong>: Create a listener with <code>clientAuth: Need</code> for services that require mutual TLS authentication</li>
+  <li><strong>Multi-port deployment</strong>: Expose the same Otoroshi instance on multiple ports for different purposes (admin, public API, webhooks)</li>
+  <li><strong>Access logging</strong>: Enable access logging on specific listeners for auditing without adding overhead to all traffic</li>
+</ul>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /apis/http-listeners.otoroshi.io/v1/http-listeners           # List all listeners
+POST   /apis/http-listeners.otoroshi.io/v1/http-listeners           # Create a listener
+GET    /apis/http-listeners.otoroshi.io/v1/http-listeners/:id       # Get a listener
+PUT    /apis/http-listeners.otoroshi.io/v1/http-listeners/:id       # Update a listener
+DELETE /apis/http-listeners.otoroshi.io/v1/http-listeners/:id       # Delete a listener
 </code></pre>
 <h2><a href="#learn-more" name="learn-more" class="anchor"><span class="anchor-link"></span></a>Learn more</h2>
 <p>For detailed information about setting up HTTP listeners, binding routes, and using static vs dynamic listeners, see <a href="../topics/http-listeners.html">Custom HTTP Listeners</a>.</p>
@@ -417,7 +588,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/http-listeners.html#ui-page" class="header">UI page</a></li>
     <li><a href="../entities/http-listeners.html#properties" class="header">Properties</a></li>
     <li><a href="../entities/http-listeners.html#configuration" class="header">Configuration</a></li>
+    <li><a href="../entities/http-listeners.html#binding-routes-to-listeners" class="header">Binding routes to listeners</a></li>
     <li><a href="../entities/http-listeners.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/http-listeners.html#use-cases" class="header">Use cases</a></li>
+    <li><a href="../entities/http-listeners.html#admin-api" class="header">Admin API</a></li>
     <li><a href="../entities/http-listeners.html#learn-more" class="header">Learn more</a></li>
   </ul></li>
 </ul>

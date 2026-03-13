@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="active page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="active page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -347,35 +349,275 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all remote catalogs <a href="http://otoroshi.oto.tools:8080/bo/dashboard/extensions/remote-catalogs">here</a></p>
 <h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
-<ul>
-  <li><code>id</code>: unique identifier of the remote catalog</li>
-  <li><code>name</code>: display name</li>
-  <li><code>description</code>: description of the catalog</li>
-  <li><code>enabled</code>: whether the catalog is active</li>
-  <li><code>source_kind</code>: the type of source to fetch entities from (<code>http</code>, <code>file</code>, <code>github</code>, <code>gitlab</code>, <code>bitbucket</code>, <code>git</code>, <code>s3</code>, <code>consulkv</code>, <code>gitea</code>, <code>forgejo</code>, <code>codeberg</code>)</li>
-  <li><code>source_config</code>: source-specific configuration (URL, token, path, branch, etc.)</li>
-  <li><code>scheduling</code>: optional auto-sync scheduling configuration
-    <ul>
-      <li><code>enabled</code>: enable scheduled deployment</li>
-      <li><code>kind</code>: <code>ScheduledEvery</code> (fixed interval) or <code>CronExpression</code></li>
-      <li><code>interval</code>: interval in milliseconds (for <code>ScheduledEvery</code>)</li>
-      <li><code>cron_expression</code>: cron expression (for <code>CronExpression</code>)</li>
-      <li><code>initial_delay</code>: initial delay in milliseconds before first run</li>
-      <li><code>deploy_args</code>: arguments passed during each scheduled deploy</li>
-    </ul>
-  </li>
-  <li><code>test_deploy_args</code>: arguments used for manual test/dry-run</li>
-</ul>
-<h2><a href="#api" name="api" class="anchor"><span class="anchor-link"></span></a>API</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td>Unique identifier of the remote catalog </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Display name </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td>Description of the catalog </td>
+    </tr>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td>Whether the catalog is active </td>
+    </tr>
+    <tr>
+      <td><code>source_kind</code> </td>
+      <td>string </td>
+      <td>The type of source to fetch entities from (see below) </td>
+    </tr>
+    <tr>
+      <td><code>source_config</code> </td>
+      <td>object </td>
+      <td>Source-specific configuration </td>
+    </tr>
+    <tr>
+      <td><code>scheduling</code> </td>
+      <td>object </td>
+      <td>Optional auto-sync scheduling configuration </td>
+    </tr>
+    <tr>
+      <td><code>test_deploy_args</code> </td>
+      <td>object </td>
+      <td>Arguments used for manual test/dry-run </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td>Tags </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td>Key/value metadata </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#source-kinds" name="source-kinds" class="anchor"><span class="anchor-link"></span></a>Source kinds</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Source </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>http</code> </td>
+      <td>Fetch entities from an HTTP/HTTPS endpoint </td>
+    </tr>
+    <tr>
+      <td><code>file</code> </td>
+      <td>Read entities from a local file path </td>
+    </tr>
+    <tr>
+      <td><code>github</code> </td>
+      <td>Sync from a GitHub repository </td>
+    </tr>
+    <tr>
+      <td><code>gitlab</code> </td>
+      <td>Sync from a GitLab repository </td>
+    </tr>
+    <tr>
+      <td><code>bitbucket</code> </td>
+      <td>Sync from a Bitbucket repository </td>
+    </tr>
+    <tr>
+      <td><code>git</code> </td>
+      <td>Sync from any Git repository via clone </td>
+    </tr>
+    <tr>
+      <td><code>s3</code> </td>
+      <td>Fetch entities from an S3-compatible bucket </td>
+    </tr>
+    <tr>
+      <td><code>consulkv</code> </td>
+      <td>Read entities from a Consul KV store </td>
+    </tr>
+    <tr>
+      <td><code>gitea</code> </td>
+      <td>Sync from a Gitea repository </td>
+    </tr>
+    <tr>
+      <td><code>forgejo</code> </td>
+      <td>Sync from a Forgejo repository </td>
+    </tr>
+    <tr>
+      <td><code>codeberg</code> </td>
+      <td>Sync from a Codeberg repository </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#source-configuration" name="source-configuration" class="anchor"><span class="anchor-link"></span></a>Source configuration</h3>
+<p>Each source kind requires specific configuration. Common fields include:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>Source URL or endpoint </td>
+    </tr>
+    <tr>
+      <td><code>token</code> </td>
+      <td>string </td>
+      <td>Authentication token (for Git providers) </td>
+    </tr>
+    <tr>
+      <td><code>branch</code> </td>
+      <td>string </td>
+      <td>Git branch to sync from (default: <code>main</code>) </td>
+    </tr>
+    <tr>
+      <td><code>path</code> </td>
+      <td>string </td>
+      <td>Path or prefix within the source </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>Additional HTTP headers (for HTTP sources) </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#scheduling" name="scheduling" class="anchor"><span class="anchor-link"></span></a>Scheduling</h2>
+<p>The catalog can be deployed manually or on a schedule:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td>Enable scheduled deployment </td>
+    </tr>
+    <tr>
+      <td><code>kind</code> </td>
+      <td>string </td>
+      <td><code>ScheduledEvery</code> (fixed interval) or <code>CronExpression</code> </td>
+    </tr>
+    <tr>
+      <td><code>interval</code> </td>
+      <td>number </td>
+      <td>Interval in milliseconds (for <code>ScheduledEvery</code>) </td>
+    </tr>
+    <tr>
+      <td><code>cron_expression</code> </td>
+      <td>string </td>
+      <td>Cron expression (for <code>CronExpression</code>) </td>
+    </tr>
+    <tr>
+      <td><code>initial_delay</code> </td>
+      <td>number </td>
+      <td>Initial delay in milliseconds before first run </td>
+    </tr>
+    <tr>
+      <td><code>deploy_args</code> </td>
+      <td>object </td>
+      <td>Arguments passed during each scheduled deploy </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#reconciliation" name="reconciliation" class="anchor"><span class="anchor-link"></span></a>Reconciliation</h2>
+<p>When a catalog is deployed, Otoroshi performs a full reconciliation:</p>
+<ol>
+  <li><strong>Fetch</strong>: Entities are fetched from the configured source</li>
+  <li><strong>Parse</strong>: Each entity is parsed (JSON or YAML format, with support for multi-document YAML separated by <code>---</code>)</li>
+  <li><strong>Compare</strong>: Fetched entities are compared with existing entities in Otoroshi</li>
+  <li><strong>Reconcile</strong>: Entities are created, updated, or deleted to match the remote state</li>
+</ol>
+<p>This ensures that the Otoroshi state always matches the external source of truth.</p>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<p>A GitHub-based remote catalog syncing every 5 minutes:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;catalog_github_infra&quot;,
+  &quot;name&quot;: &quot;Infrastructure catalog&quot;,
+  &quot;description&quot;: &quot;Sync routes and backends from GitHub infrastructure repo&quot;,
+  &quot;enabled&quot;: true,
+  &quot;source_kind&quot;: &quot;github&quot;,
+  &quot;source_config&quot;: {
+    &quot;url&quot;: &quot;https://github.com/my-org/otoroshi-config&quot;,
+    &quot;token&quot;: &quot;${vault://github_token}&quot;,
+    &quot;branch&quot;: &quot;main&quot;,
+    &quot;path&quot;: &quot;otoroshi/&quot;
+  },
+  &quot;scheduling&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;kind&quot;: &quot;ScheduledEvery&quot;,
+    &quot;interval&quot;: 300000,
+    &quot;initial_delay&quot;: 10000,
+    &quot;deploy_args&quot;: {}
+  },
+  &quot;test_deploy_args&quot;: {},
+  &quot;tags&quot;: [&quot;infra&quot;, &quot;gitops&quot;],
+  &quot;metadata&quot;: {}
+}
+</code></pre>
+<p>An HTTP-based catalog for a simple endpoint:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;catalog_http_config&quot;,
+  &quot;name&quot;: &quot;Config server catalog&quot;,
+  &quot;description&quot;: &quot;Fetch entities from internal config server&quot;,
+  &quot;enabled&quot;: true,
+  &quot;source_kind&quot;: &quot;http&quot;,
+  &quot;source_config&quot;: {
+    &quot;url&quot;: &quot;https://config-server.internal/otoroshi/entities&quot;,
+    &quot;headers&quot;: {
+      &quot;Authorization&quot;: &quot;Bearer ${vault://config_token}&quot;
+    }
+  },
+  &quot;scheduling&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;kind&quot;: &quot;CronExpression&quot;,
+    &quot;cron_expression&quot;: &quot;0 */10 * * * ?&quot;,
+    &quot;initial_delay&quot;: 5000,
+    &quot;deploy_args&quot;: {}
+  },
+  &quot;tags&quot;: [],
+  &quot;metadata&quot;: {}
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
 <p>The admin API is available at:</p>
-<pre><code>http://otoroshi-api.oto.tools:8080/apis/catalogs.otoroshi.io/v1/remote-catalogs
+<pre><code>GET    /apis/catalogs.otoroshi.io/v1/remote-catalogs           # List all catalogs
+POST   /apis/catalogs.otoroshi.io/v1/remote-catalogs           # Create a catalog
+GET    /apis/catalogs.otoroshi.io/v1/remote-catalogs/:id       # Get a catalog
+PUT    /apis/catalogs.otoroshi.io/v1/remote-catalogs/:id       # Update a catalog
+DELETE /apis/catalogs.otoroshi.io/v1/remote-catalogs/:id       # Delete a catalog
 </code></pre>
 <p>Additional action endpoints:</p>
-<ul>
-  <li><code>POST /api/extensions/remote-catalogs/_deploy</code> - deploy one or more catalogs</li>
-  <li><code>POST /api/extensions/remote-catalogs/_undeploy</code> - undeploy one or more catalogs</li>
-  <li><code>POST /extensions/remote-catalogs/_test</code> - dry-run a catalog</li>
-</ul>
+<pre><code>POST /api/extensions/remote-catalogs/_deploy     # Deploy one or more catalogs
+POST /api/extensions/remote-catalogs/_undeploy   # Undeploy one or more catalogs
+POST /extensions/remote-catalogs/_test           # Dry-run a catalog
+</code></pre>
 <h2><a href="#learn-more" name="learn-more" class="anchor"><span class="anchor-link"></span></a>Learn more</h2>
 <p>For detailed information about entity format, supported sources, reconciliation, webhook deployment, and available plugins, see <a href="../topics/remote-catalogs.html">Remote Catalogs detailed topic</a>.</p>
 <div class="nav-next">
@@ -394,7 +636,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <ul>
     <li><a href="../entities/remote-catalogs.html#ui-page" class="header">UI page</a></li>
     <li><a href="../entities/remote-catalogs.html#properties" class="header">Properties</a></li>
-    <li><a href="../entities/remote-catalogs.html#api" class="header">API</a></li>
+    <li><a href="../entities/remote-catalogs.html#source-kinds" class="header">Source kinds</a></li>
+    <li><a href="../entities/remote-catalogs.html#scheduling" class="header">Scheduling</a></li>
+    <li><a href="../entities/remote-catalogs.html#reconciliation" class="header">Reconciliation</a></li>
+    <li><a href="../entities/remote-catalogs.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/remote-catalogs.html#admin-api" class="header">Admin API</a></li>
     <li><a href="../entities/remote-catalogs.html#learn-more" class="header">Learn more</a></li>
   </ul></li>
 </ul>

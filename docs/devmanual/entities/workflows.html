@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="active page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="active page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -347,66 +349,370 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all workflows <a href="http://otoroshi.oto.tools:8080/bo/dashboard/extensions/cloud-apim/workflows">here</a></p>
 <h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
-<ul>
-  <li><code>id</code>: unique identifier of the workflow</li>
-  <li><code>name</code>: display name of the workflow</li>
-  <li><code>description</code>: description of the workflow</li>
-  <li><code>tags</code>: list of tags associated to the workflow</li>
-  <li><code>metadata</code>: list of metadata associated to the workflow</li>
-  <li><code>config</code>: the root node configuration of the workflow (a JSON object describing the node graph)</li>
-  <li><code>job</code>: optional job scheduling configuration (see below)</li>
-  <li><code>functions</code>: a map of custom reusable functions defined within the workflow</li>
-  <li><code>test_payload</code>: a JSON object used as input when testing the workflow from the UI</li>
-  <li><code>orphans</code>: disconnected nodes and edges stored by the visual editor</li>
-  <li><code>notes</code>: visual annotations placed on the workflow canvas in the editor</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>id</code> </td>
+      <td>string </td>
+      <td>Unique identifier of the workflow </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Display name of the workflow </td>
+    </tr>
+    <tr>
+      <td><code>description</code> </td>
+      <td>string </td>
+      <td>Description of the workflow </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>array of string </td>
+      <td>Tags associated to the workflow </td>
+    </tr>
+    <tr>
+      <td><code>metadata</code> </td>
+      <td>object </td>
+      <td>Key/value metadata associated to the workflow </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td>The root node configuration (JSON object describing the node graph) </td>
+    </tr>
+    <tr>
+      <td><code>job</code> </td>
+      <td>object </td>
+      <td>Optional job scheduling configuration (see below) </td>
+    </tr>
+    <tr>
+      <td><code>functions</code> </td>
+      <td>object </td>
+      <td>Map of custom reusable functions defined within the workflow </td>
+    </tr>
+    <tr>
+      <td><code>test_payload</code> </td>
+      <td>object </td>
+      <td>JSON object used as input when testing the workflow from the UI </td>
+    </tr>
+    <tr>
+      <td><code>orphans</code> </td>
+      <td>object </td>
+      <td>Disconnected nodes and edges stored by the visual editor </td>
+    </tr>
+    <tr>
+      <td><code>notes</code> </td>
+      <td>array </td>
+      <td>Visual annotations placed on the workflow canvas in the editor </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#job-configuration" name="job-configuration" class="anchor"><span class="anchor-link"></span></a>Job configuration</h2>
 <p>A workflow can optionally be scheduled as a periodic job:</p>
-<ul>
-  <li><code>enabled</code>: is the job scheduling enabled</li>
-  <li><code>cron</code>: a cron expression defining when the workflow should run (e.g., <code>*/5 * * * * ?</code> for every 5 seconds)</li>
-  <li><code>config</code>: additional job configuration</li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td>Whether the job scheduling is enabled </td>
+    </tr>
+    <tr>
+      <td><code>cron</code> </td>
+      <td>string </td>
+      <td>A cron expression defining when the workflow should run (e.g., <code>*/5 * * * * ?</code> for every 5 seconds) </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td>Additional job configuration </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#node-types" name="node-types" class="anchor"><span class="anchor-link"></span></a>Node types</h2>
 <p>Workflows are composed of nodes. Each node has a type that determines its behavior:</p>
-<ul>
-  <li><code>workflow</code>: a sequential execution of child nodes</li>
-  <li><code>call</code>: invoke a built-in or custom function</li>
-  <li><code>assign</code>: assign a value to a variable in workflow memory</li>
-  <li><code>value</code>: return a static value</li>
-  <li><code>if</code>: conditional branching (if/then/else)</li>
-  <li><code>switch</code>: multi-path conditional branching based on value matching</li>
-  <li><code>foreach</code>: iterate over an array and execute a node for each element</li>
-  <li><code>map</code>: transform each element of an array</li>
-  <li><code>filter</code>: filter elements of an array based on a predicate</li>
-  <li><code>flatmap</code>: transform and flatten arrays</li>
-  <li><code>parallel</code>: execute multiple nodes in parallel</li>
-  <li><code>while</code>: loop while a condition is true</li>
-  <li><code>try</code>: try/catch/finally error handling</li>
-  <li><code>error</code>: raise an error</li>
-  <li><code>wait</code>: wait for a specified duration</li>
-  <li><code>pause</code>: pause workflow execution</li>
-  <li><code>end</code>: terminate the workflow</li>
-  <li><code>jump</code>: jump to another node in the workflow</li>
-  <li><code>async</code>: execute a node asynchronously</li>
-  <li><code>breakpoint</code>: debugging breakpoint in the visual editor</li>
-</ul>
-<h2><a href="#functions" name="functions" class="anchor"><span class="anchor-link"></span></a>Functions</h2>
-<p>Workflows provide a rich set of built-in functions that can be called from <code>call</code> nodes. These include:</p>
-<ul>
-  <li><strong>HTTP</strong>: <code>http_client</code> for making HTTP requests</li>
-  <li><strong>Storage</strong>: <code>store_get</code>, <code>store_set</code>, <code>store_del</code>, <code>store_keys</code>, <code>store_match</code> for persistent key-value storage</li>
-  <li><strong>State</strong>: <code>state_get</code>, <code>state_get_all</code> for accessing Otoroshi proxy state</li>
-  <li><strong>Configuration</strong>: <code>config_read</code> for reading Otoroshi configuration</li>
-  <li><strong>Files</strong>: <code>file_read</code>, <code>file_write</code>, <code>file_del</code> for file system operations</li>
-  <li><strong>WASM</strong>: <code>wasm_call</code> for calling WASM functions</li>
-  <li><strong>Workflows</strong>: <code>workflow_call</code> for calling other workflows</li>
-  <li><strong>Events</strong>: <code>emit_event</code> for emitting custom events</li>
-  <li><strong>Email</strong>: <code>send_mail</code> for sending emails</li>
-  <li><strong>System</strong>: <code>system_call</code> for executing system commands</li>
-  <li><strong>Logging</strong>: <code>log</code> for logging messages</li>
-</ul>
+<h3><a href="#control-flow" name="control-flow" class="anchor"><span class="anchor-link"></span></a>Control flow</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Node type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>workflow</code> </td>
+      <td>Sequential execution of child nodes </td>
+    </tr>
+    <tr>
+      <td><code>if</code> </td>
+      <td>Conditional branching (if/then/else) </td>
+    </tr>
+    <tr>
+      <td><code>switch</code> </td>
+      <td>Multi-path conditional branching based on value matching </td>
+    </tr>
+    <tr>
+      <td><code>foreach</code> </td>
+      <td>Iterate over an array and execute a node for each element </td>
+    </tr>
+    <tr>
+      <td><code>map</code> </td>
+      <td>Transform each element of an array </td>
+    </tr>
+    <tr>
+      <td><code>filter</code> </td>
+      <td>Filter elements of an array based on a predicate </td>
+    </tr>
+    <tr>
+      <td><code>flatmap</code> </td>
+      <td>Transform and flatten arrays </td>
+    </tr>
+    <tr>
+      <td><code>parallel</code> </td>
+      <td>Execute multiple nodes in parallel </td>
+    </tr>
+    <tr>
+      <td><code>while</code> </td>
+      <td>Loop while a condition is true </td>
+    </tr>
+    <tr>
+      <td><code>try</code> </td>
+      <td>Try/catch/finally error handling </td>
+    </tr>
+    <tr>
+      <td><code>jump</code> </td>
+      <td>Jump to another node in the workflow </td>
+    </tr>
+    <tr>
+      <td><code>async</code> </td>
+      <td>Execute a node asynchronously </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#data" name="data" class="anchor"><span class="anchor-link"></span></a>Data</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Node type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>call</code> </td>
+      <td>Invoke a built-in or custom function </td>
+    </tr>
+    <tr>
+      <td><code>assign</code> </td>
+      <td>Assign a value to a variable in workflow memory </td>
+    </tr>
+    <tr>
+      <td><code>value</code> </td>
+      <td>Return a static value </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#execution-control" name="execution-control" class="anchor"><span class="anchor-link"></span></a>Execution control</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Node type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>error</code> </td>
+      <td>Raise an error </td>
+    </tr>
+    <tr>
+      <td><code>wait</code> </td>
+      <td>Wait for a specified duration </td>
+    </tr>
+    <tr>
+      <td><code>pause</code> </td>
+      <td>Pause workflow execution </td>
+    </tr>
+    <tr>
+      <td><code>end</code> </td>
+      <td>Terminate the workflow </td>
+    </tr>
+    <tr>
+      <td><code>breakpoint</code> </td>
+      <td>Debugging breakpoint in the visual editor </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#built-in-functions" name="built-in-functions" class="anchor"><span class="anchor-link"></span></a>Built-in functions</h2>
+<p>Workflows provide a rich set of built-in functions that can be called from <code>call</code> nodes:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Category </th>
+      <th>Functions </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>HTTP</strong> </td>
+      <td><code>http_client</code> </td>
+      <td>Make HTTP requests to any endpoint </td>
+    </tr>
+    <tr>
+      <td><strong>Storage</strong> </td>
+      <td><code>store_get</code>, <code>store_set</code>, <code>store_del</code>, <code>store_keys</code>, <code>store_match</code> </td>
+      <td>Persistent key-value storage operations </td>
+    </tr>
+    <tr>
+      <td><strong>State</strong> </td>
+      <td><code>state_get</code>, <code>state_get_all</code> </td>
+      <td>Access Otoroshi proxy state (routes, backends, certificates, etc.) </td>
+    </tr>
+    <tr>
+      <td><strong>Configuration</strong> </td>
+      <td><code>config_read</code> </td>
+      <td>Read Otoroshi global configuration </td>
+    </tr>
+    <tr>
+      <td><strong>Files</strong> </td>
+      <td><code>file_read</code>, <code>file_write</code>, <code>file_del</code> </td>
+      <td>File system operations </td>
+    </tr>
+    <tr>
+      <td><strong>WASM</strong> </td>
+      <td><code>wasm_call</code> </td>
+      <td>Call WebAssembly functions </td>
+    </tr>
+    <tr>
+      <td><strong>Workflows</strong> </td>
+      <td><code>workflow_call</code> </td>
+      <td>Call other workflows (composition) </td>
+    </tr>
+    <tr>
+      <td><strong>Events</strong> </td>
+      <td><code>emit_event</code> </td>
+      <td>Emit custom events to the data exporter pipeline </td>
+    </tr>
+    <tr>
+      <td><strong>Email</strong> </td>
+      <td><code>send_mail</code> </td>
+      <td>Send emails </td>
+    </tr>
+    <tr>
+      <td><strong>System</strong> </td>
+      <td><code>system_call</code> </td>
+      <td>Execute system commands </td>
+    </tr>
+    <tr>
+      <td><strong>Logging</strong> </td>
+      <td><code>log</code> </td>
+      <td>Log messages to the Otoroshi logger </td>
+    </tr>
+  </tbody>
+</table>
 <p>You can also define custom functions in the <code>functions</code> map of the workflow entity.</p>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<p>Here is a simple workflow that fetches data from an HTTP endpoint and logs the result:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;workflow_fetch_and_log&quot;,
+  &quot;name&quot;: &quot;Fetch and log&quot;,
+  &quot;description&quot;: &quot;Fetches data from an API and logs the response&quot;,
+  &quot;tags&quot;: [&quot;example&quot;],
+  &quot;metadata&quot;: {},
+  &quot;config&quot;: {
+    &quot;type&quot;: &quot;workflow&quot;,
+    &quot;nodes&quot;: [
+      {
+        &quot;type&quot;: &quot;call&quot;,
+        &quot;id&quot;: &quot;fetch_data&quot;,
+        &quot;function&quot;: &quot;http_client&quot;,
+        &quot;args&quot;: {
+          &quot;url&quot;: &quot;https://api.example.com/data&quot;,
+          &quot;method&quot;: &quot;GET&quot;,
+          &quot;headers&quot;: {
+            &quot;Accept&quot;: &quot;application/json&quot;
+          }
+        }
+      },
+      {
+        &quot;type&quot;: &quot;call&quot;,
+        &quot;id&quot;: &quot;log_result&quot;,
+        &quot;function&quot;: &quot;log&quot;,
+        &quot;args&quot;: {
+          &quot;message&quot;: &quot;${nodes.fetch_data.response.body}&quot;
+        }
+      }
+    ]
+  },
+  &quot;job&quot;: {
+    &quot;enabled&quot;: false,
+    &quot;cron&quot;: &quot;0 */5 * * * ?&quot;,
+    &quot;config&quot;: {}
+  },
+  &quot;functions&quot;: {},
+  &quot;test_payload&quot;: {},
+  &quot;orphans&quot;: { &quot;nodes&quot;: [], &quot;edges&quot;: [] },
+  &quot;notes&quot;: []
+}
+</code></pre>
+<h2><a href="#scheduled-workflow-example" name="scheduled-workflow-example" class="anchor"><span class="anchor-link"></span></a>Scheduled workflow example</h2>
+<p>A workflow that periodically checks the health of all backends:</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;workflow_health_check&quot;,
+  &quot;name&quot;: &quot;Periodic health check&quot;,
+  &quot;description&quot;: &quot;Checks the health of all backends every minute&quot;,
+  &quot;tags&quot;: [&quot;monitoring&quot;],
+  &quot;metadata&quot;: {},
+  &quot;config&quot;: {
+    &quot;type&quot;: &quot;workflow&quot;,
+    &quot;nodes&quot;: [
+      {
+        &quot;type&quot;: &quot;call&quot;,
+        &quot;id&quot;: &quot;get_backends&quot;,
+        &quot;function&quot;: &quot;state_get_all&quot;,
+        &quot;args&quot;: {
+          &quot;entity&quot;: &quot;backends&quot;
+        }
+      },
+      {
+        &quot;type&quot;: &quot;foreach&quot;,
+        &quot;id&quot;: &quot;check_each&quot;,
+        &quot;array&quot;: &quot;${nodes.get_backends.result}&quot;,
+        &quot;node&quot;: {
+          &quot;type&quot;: &quot;call&quot;,
+          &quot;function&quot;: &quot;http_client&quot;,
+          &quot;args&quot;: {
+            &quot;url&quot;: &quot;${item.backend.targets[0].hostname}&quot;,
+            &quot;method&quot;: &quot;GET&quot;,
+            &quot;timeout&quot;: 5000
+          }
+        }
+      }
+    ]
+  },
+  &quot;job&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;cron&quot;: &quot;0 * * * * ?&quot;,
+    &quot;config&quot;: {}
+  }
+}
+</code></pre>
 <h2><a href="#learn-more" name="learn-more" class="anchor"><span class="anchor-link"></span></a>Learn more</h2>
 <p>For detailed information about node configuration, operators, expression syntax, and examples, see <a href="../topics/workflows.html">Otoroshi Workflows</a>.</p>
 <p>For information about the visual editor, debugging tools, and breakpoints, see <a href="../topics/workflows-editor.html">Workflows Editor</a>.</p>
@@ -428,7 +734,9 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../entities/workflows.html#properties" class="header">Properties</a></li>
     <li><a href="../entities/workflows.html#job-configuration" class="header">Job configuration</a></li>
     <li><a href="../entities/workflows.html#node-types" class="header">Node types</a></li>
-    <li><a href="../entities/workflows.html#functions" class="header">Functions</a></li>
+    <li><a href="../entities/workflows.html#built-in-functions" class="header">Built-in functions</a></li>
+    <li><a href="../entities/workflows.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/workflows.html#scheduled-workflow-example" class="header">Scheduled workflow example</a></li>
     <li><a href="../entities/workflows.html#learn-more" class="header">Learn more</a></li>
   </ul></li>
 </ul>

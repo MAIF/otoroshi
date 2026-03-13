@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Apikeys · Otoroshi</title>
+<title>API Keys · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="active page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="active page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="active page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="active page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -334,7 +336,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../entities/index.html">Main entities</a></li>
-  <li>Apikeys</li>
+  <li>API Keys</li>
 </ul>
 </div>
 </div>
@@ -342,66 +344,231 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#apikeys" name="apikeys" class="anchor"><span class="anchor-link"></span></a>Apikeys</h1>
-<p>An API key is a unique identifier used to connect to, or perform, an route call. </p><div class="centered-img">
+<h1><a href="#api-keys" name="api-keys" class="anchor"><span class="anchor-link"></span></a>API Keys</h1>
+<p>An API key is a unique credential used to authenticate and authorize calls to routes and APIs.</p><div class="centered-img">
 <img src="../imgs/models-apikey.png" /></div>
-<p>You can found a concrete example <a href="../how-to-s/secure-with-apikey.html">here</a></p>
+<p>You can find a practical example <a href="../how-to-s/secure-with-apikey.html">here</a>.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all API keys <a href="http://otoroshi.oto.tools:8080/bo/dashboard/apikeys">here</a></p>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>clientId</code> | string | - | Unique random identifier for this API key | | <code>clientSecret</code> | string | - | Random secret used to validate the API key | | <code>clientName</code> | string | - | Display name of the API key (used for debugging) | | <code>description</code> | string | <code>&quot;&quot;</code> | Description of the API key | | <code>authorizedEntities</code> | array of string | - | Groups, routes, services, and APIs this key is authorized on | | <code>enabled</code> | boolean | <code>true</code> | Whether the API key is active. Disabled keys reject all calls | | <code>readOnly</code> | boolean | <code>false</code> | If enabled, only <code>GET</code>, <code>HEAD</code>, and <code>OPTIONS</code> methods are allowed | | <code>allowClientIdOnly</code> | boolean | <code>false</code> | Allow clients to authenticate with only the client ID (in a specific header), without the secret | | <code>constrainedServicesOnly</code> | boolean | <code>false</code> | This API key can only be used on services with API key routing constraints | | <code>validUntil</code> | number | <code>null</code> | Auto-disable the API key after this timestamp (milliseconds). Once expired, the key is disabled | | <code>tags</code> | array of string | <code>[]</code> | Tags for categorization | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata |</p>
+<h2><a href="#quotas" name="quotas" class="anchor"><span class="anchor-link"></span></a>Quotas</h2>
+<p>Quotas control the rate of API calls allowed for this key.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>throttlingQuota</code> </td>
+      <td>number </td>
+      <td>unlimited </td>
+      <td>Maximum number of calls per second </td>
+    </tr>
+    <tr>
+      <td><code>dailyQuota</code> </td>
+      <td>number </td>
+      <td>unlimited </td>
+      <td>Maximum number of calls per day </td>
+    </tr>
+    <tr>
+      <td><code>monthlyQuota</code> </td>
+      <td>number </td>
+      <td>unlimited </td>
+      <td>Maximum number of calls per month </td>
+    </tr>
+  </tbody>
+</table><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Daily and monthly quotas are computed as follows:</p>
 <ul>
-  <li><code>ApiKey Id</code>: the id is a unique random key that will represent this API key</li>
-  <li><code>ApiKey Secret</code>: the secret is a random key used to validate the API key</li>
-  <li><code>ApiKey Name</code>: a name for the API key, used for debug purposes</li>
-  <li><code>ApiKey description</code>: a useful description for this apikey</li>
-  <li><code>Valid until</code>: auto disable apikey after this date</li>
-  <li><code>Enabled</code>: if the API key is disabled, then any call using this API key will fail</li>
-  <li><code>Read only</code>: if the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs</li>
-  <li><code>Allow pass by clientid only</code>: here you allow client to only pass client id in a specific header in order to grant access to the underlying api</li>
-  <li><code>Constrained services only</code>: this apikey can only be used on services using apikey routing constraints</li>
-  <li><code>Authorized on</code>: the groups/services linked to this api key</li>
-</ul>
-<h3><a href="#metadata-and-tags" name="metadata-and-tags" class="anchor"><span class="anchor-link"></span></a>Metadata and tags</h3>
-<ul>
-  <li><code>Tags</code>: tags attached to the api key</li>
-  <li><code>Metadata</code>: metadata attached to the api key</li>
-</ul>
-<h3><a href="#automatic-secret-rotation" name="automatic-secret-rotation" class="anchor"><span class="anchor-link"></span></a>Automatic secret rotation</h3>
-<p>API can handle automatic secret rotation by themselves. When enabled, the rotation changes the secret every <code>Rotation every</code> duration. During the <code>Grace period</code> both secret will be usable.</p>
-<ul>
-  <li><code>Enabled</code>: enabled automatic apikey secret rotation</li>
-  <li><code>Rotation every</code>: rotate secrets every</li>
-  <li><code>Grace period</code>: period when both secrets can be used</li>
-  <li><code>Next client secret</code>: display the next generated client secret</li>
-</ul>
-<h3><a href="#restrictions" name="restrictions" class="anchor"><span class="anchor-link"></span></a>Restrictions</h3>
-<ul>
-  <li><code>Enabled</code>: enable restrictions</li>
-  <li><code>Allow last</code>: Otoroshi will test forbidden and notFound paths before testing allowed paths</li>
-  <li><code>Allowed</code>: allowed paths</li>
-  <li><code>Forbidden</code>: forbidden paths</li>
-  <li><code>Not Found</code>: not found paths</li>
-</ul>
-<h3><a href="#call-examples" name="call-examples" class="anchor"><span class="anchor-link"></span></a>Call examples</h3>
-<ul>
-  <li><code>Curl Command</code>: simple request with the api key passed by header</li>
-  <li><code>Basic Auth. Header</code>: authorization Header with the api key as base64 encoded format</li>
-  <li><code>Curl Command with Basic Auth. Header</code>: simple request with api key passed in the Authorization header as base64 format</li>
-</ul>
-<h3><a href="#quotas" name="quotas" class="anchor"><span class="anchor-link"></span></a>Quotas</h3>
-<ul>
-  <li><code>Throttling quota</code>: the authorized number of calls per second</li>
-  <li><code>Daily quota</code>: the authorized number of calls per day</li>
-  <li><code>Monthly quota</code>: the authorized number of calls per month</li>
-</ul><div class="callout warning "><div class="callout-title">Warning</div>
-<p>Daily and monthly quotas are based on the following rules :</p>
-<ul>
-  <li>daily quota is computed between 00h00:00.000 and 23h59:59.999 of the current day</li>
-  <li>monthly qutoas is computed between the first day of the month at 00h00:00.000 and the last day of the month at 23h59:59.999</li>
+  <li><strong>Daily quota</strong>: between 00:00:00.000 and 23:59:59.999 of the current day</li>
+  <li><strong>Monthly quota</strong>: between the first day at 00:00:00.000 and the last day at 23:59:59.999 of the current month</li>
 </ul></div>
-<h3><a href="#quotas-consumption" name="quotas-consumption" class="anchor"><span class="anchor-link"></span></a>Quotas consumption</h3>
+<h3><a href="#quota-consumption" name="quota-consumption" class="anchor"><span class="anchor-link"></span></a>Quota consumption</h3>
+<p>The current consumption can be checked on the API key detail page or via the admin API:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>currentCallsPerDay</code> </td>
+      <td>Number of calls consumed today </td>
+    </tr>
+    <tr>
+      <td><code>remainingCallsPerDay</code> </td>
+      <td>Remaining calls for today </td>
+    </tr>
+    <tr>
+      <td><code>currentCallsPerMonth</code> </td>
+      <td>Number of calls consumed this month </td>
+    </tr>
+    <tr>
+      <td><code>remainingCallsPerMonth</code> </td>
+      <td>Remaining calls for this month </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#automatic-secret-rotation" name="automatic-secret-rotation" class="anchor"><span class="anchor-link"></span></a>Automatic secret rotation</h2>
+<p>API keys can handle automatic secret rotation. When enabled, the secret is changed periodically. During the grace period, both the old and new secrets are valid.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable automatic rotation </td>
+    </tr>
+    <tr>
+      <td><code>rotationEvery</code> </td>
+      <td>number </td>
+      <td><code>744</code> </td>
+      <td>Rotate the secret every N hours </td>
+    </tr>
+    <tr>
+      <td><code>gracePeriod</code> </td>
+      <td>number </td>
+      <td><code>168</code> </td>
+      <td>Period (hours) during which both old and new secrets are accepted </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#restrictions" name="restrictions" class="anchor"><span class="anchor-link"></span></a>Restrictions</h2>
+<p>Restrictions allow fine-grained access control based on request path and method.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable restrictions </td>
+    </tr>
+    <tr>
+      <td><code>allowLast</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Test forbidden and not-found paths before allowed paths </td>
+    </tr>
+    <tr>
+      <td><code>allowed</code> </td>
+      <td>array of object </td>
+      <td><code>[]</code> </td>
+      <td>Allowed paths (method + path pairs) </td>
+    </tr>
+    <tr>
+      <td><code>forbidden</code> </td>
+      <td>array of object </td>
+      <td><code>[]</code> </td>
+      <td>Forbidden paths </td>
+    </tr>
+    <tr>
+      <td><code>notFound</code> </td>
+      <td>array of object </td>
+      <td><code>[]</code> </td>
+      <td>Paths that return 404 </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#call-examples" name="call-examples" class="anchor"><span class="anchor-link"></span></a>Call examples</h2>
+<p>Once an API key is created, you can call protected routes using one of these methods:</p>
+<h3><a href="#using-headers" name="using-headers" class="anchor"><span class="anchor-link"></span></a>Using headers</h3>
+<pre class="prettyprint"><code class="language-bash">curl -H &quot;Otoroshi-Client-Id: &lt;clientId&gt;&quot; \
+     -H &quot;Otoroshi-Client-Secret: &lt;clientSecret&gt;&quot; \
+     https://api.oto.tools/users
+</code></pre>
+<h3><a href="#using-basic-authentication" name="using-basic-authentication" class="anchor"><span class="anchor-link"></span></a>Using Basic authentication</h3>
+<pre class="prettyprint"><code class="language-bash">curl -H &quot;Authorization: Basic &lt;base64(clientId:clientSecret)&gt;&quot; \
+     https://api.oto.tools/users
+</code></pre>
+<h3><a href="#using-client-id-only-if-allowclientidonly-is-enabled-" name="using-client-id-only-if-allowclientidonly-is-enabled-" class="anchor"><span class="anchor-link"></span></a>Using client ID only (if <code>allowClientIdOnly</code> is enabled)</h3>
+<pre class="prettyprint"><code class="language-bash">curl -H &quot;Otoroshi-Client-Id: &lt;clientId&gt;&quot; \
+     https://api.oto.tools/users
+</code></pre>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;clientId&quot;: &quot;abcdef123456&quot;,
+  &quot;clientSecret&quot;: &quot;secret_xyz789&quot;,
+  &quot;clientName&quot;: &quot;My API Key&quot;,
+  &quot;description&quot;: &quot;Key for the payment service&quot;,
+  &quot;authorizedEntities&quot;: [&quot;group_payment_apis&quot;, &quot;route_checkout&quot;],
+  &quot;enabled&quot;: true,
+  &quot;readOnly&quot;: false,
+  &quot;allowClientIdOnly&quot;: false,
+  &quot;constrainedServicesOnly&quot;: false,
+  &quot;validUntil&quot;: null,
+  &quot;throttlingQuota&quot;: 100,
+  &quot;dailyQuota&quot;: 10000,
+  &quot;monthlyQuota&quot;: 300000,
+  &quot;restrictions&quot;: {
+    &quot;enabled&quot;: false,
+    &quot;allowLast&quot;: false,
+    &quot;allowed&quot;: [],
+    &quot;forbidden&quot;: [],
+    &quot;notFound&quot;: []
+  },
+  &quot;rotation&quot;: {
+    &quot;enabled&quot;: false,
+    &quot;rotationEvery&quot;: 744,
+    &quot;gracePeriod&quot;: 168
+  },
+  &quot;tags&quot;: [&quot;payment&quot;],
+  &quot;metadata&quot;: {
+    &quot;team&quot;: &quot;billing&quot;
+  }
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/apikeys           # List all API keys
+POST   /api/apikeys           # Create an API key
+GET    /api/apikeys/:id       # Get an API key by clientId
+PUT    /api/apikeys/:id       # Update an API key
+DELETE /api/apikeys/:id       # Delete an API key
+PATCH  /api/apikeys/:id       # Partially update an API key
+</code></pre>
+<p>Additional endpoints:</p>
+<pre><code>GET /api/apikeys/:id/quotas   # Get current quota consumption
+PUT /api/apikeys/:id/quotas   # Reset quotas
+GET /api/groups/:groupId/apikeys  # List API keys for a group
+</code></pre>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
 <ul>
-  <li><code>Consumed daily calls</code>: the number of calls consumed today</li>
-  <li><code>Remaining daily calls</code>: the remaining number of calls for today</li>
-  <li><code>Consumed monthly calls</code>: the number of calls consumed this month</li>
-  <li><code>Remaining monthly calls</code>: the remaining number of calls for this month</li>
+  <li><a href="service-groups.html">Service Groups</a> - Groups that API keys can be authorized on</li>
+  <li><a href="routes.html">Routes</a> - Routes that API keys can be authorized on</li>
+  <li><a href="apis.html">APIs</a> - APIs where API keys are generated via subscriptions</li>
 </ul>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/service-groups.html">Service groups</a></p>
@@ -415,14 +582,17 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../entities/apikeys.html#apikeys" class="header">Apikeys</a>
+  <li><a href="../entities/apikeys.html#api-keys" class="header">API Keys</a>
   <ul>
-    <li><a href="../entities/apikeys.html#metadata-and-tags" class="header">Metadata and tags</a></li>
+    <li><a href="../entities/apikeys.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/apikeys.html#properties" class="header">Properties</a></li>
+    <li><a href="../entities/apikeys.html#quotas" class="header">Quotas</a></li>
     <li><a href="../entities/apikeys.html#automatic-secret-rotation" class="header">Automatic secret rotation</a></li>
     <li><a href="../entities/apikeys.html#restrictions" class="header">Restrictions</a></li>
     <li><a href="../entities/apikeys.html#call-examples" class="header">Call examples</a></li>
-    <li><a href="../entities/apikeys.html#quotas" class="header">Quotas</a></li>
-    <li><a href="../entities/apikeys.html#quotas-consumption" class="header">Quotas consumption</a></li>
+    <li><a href="../entities/apikeys.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/apikeys.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/apikeys.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

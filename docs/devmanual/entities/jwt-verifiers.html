@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>JWT verifiers · Otoroshi</title>
+<title>JWT Verifiers · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="active page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="active page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="active page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="active page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -334,7 +336,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../entities/index.html">Main entities</a></li>
-  <li>JWT verifiers</li>
+  <li>JWT Verifiers</li>
 </ul>
 </div>
 </div>
@@ -342,147 +344,525 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#jwt-verifiers" name="jwt-verifiers" class="anchor"><span class="anchor-link"></span></a>JWT verifiers</h1>
-<p>Sometimes, it can be pretty useful to verify Jwt tokens coming from other provider on some services. Otoroshi provides a tool to do that per service.</p>
-<ul>
-  <li><code>Name</code>: name of the JWT verifier</li>
-  <li><code>Description</code>: a simple description</li>
-  <li><code>Strict</code>: if not strict, request without JWT token will be allowed to pass. This option is helpful when you want to force the presence of tokens in each request on a specific service</li>
-  <li><code>Tags</code>: list of tags associated to the module</li>
-  <li><code>Metadata</code>: list of metadata associated to the module</li>
-</ul>
-<p>Each JWT verifier is configurable in three steps : the <code>location</code> where find the token in incoming requests, the <code>validation</code> step to check the signature and the presence of claims in tokens, and the last step, named <code>Strategy</code>.</p>
+<h1><a href="#jwt-verifiers" name="jwt-verifiers" class="anchor"><span class="anchor-link"></span></a>JWT Verifiers</h1>
+<p>JWT verifiers allow you to validate, sign, and transform JWT tokens on incoming requests. A verifier can be defined globally and referenced by multiple routes, or configured locally on a specific route.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all JWT verifiers <a href="http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers">here</a></p>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>id</code> | string | - | Unique identifier | | <code>name</code> | string | - | Display name | | <code>description</code> | string | - | Description | | <code>strict</code> | boolean | <code>true</code> | If not strict, requests without a JWT token are allowed through. Useful to enforce token presence | | <code>tags</code> | array of string | <code>[]</code> | Tags | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata | | <code>source</code> | object | - | Where to find the token in incoming requests (see <a href="#token-location">below</a>) | | <code>algoSettings</code> | object | - | Algorithm settings for token validation (see <a href="#token-validation">below</a>) | | <code>strategy</code> | object | - | Verification strategy (see <a href="#strategy">below</a>) |</p>
+<p>Each JWT verifier is configured in three steps:</p>
+<ol>
+  <li><strong>Location</strong>: Where to find the token in incoming requests</li>
+  <li><strong>Validation</strong>: How to validate the token signature</li>
+  <li><strong>Strategy</strong>: What to do with the token (pass-through, re-sign, transform)</li>
+</ol>
 <h2><a href="#token-location" name="token-location" class="anchor"><span class="anchor-link"></span></a>Token location</h2>
-<p>An incoming token can be found in three places.</p>
-<h4><a href="#in-query-string" name="in-query-string" class="anchor"><span class="anchor-link"></span></a>In query string</h4>
-<ul>
-  <li><code>Source</code>: JWT token location in query string</li>
-  <li><code>Query param name</code>: the name of the query param where JWT is located</li>
-</ul>
-<h4><a href="#in-a-header" name="in-a-header" class="anchor"><span class="anchor-link"></span></a>In a header</h4>
-<ul>
-  <li><code>Source</code>: JWT token location in a header</li>
-  <li><code>Header name</code>: the name of the header where JWT is located</li>
-  <li><code>Remove value</code>: when the token is read, this value will be remove of header value (example: if the header value is <em>Bearer xxxx</em>, the <em>remove value</em> could be Bearer&nbsp; don&rsquo;t forget the space at the end of the string)</li>
-</ul>
-<h4><a href="#in-a-cookie" name="in-a-cookie" class="anchor"><span class="anchor-link"></span></a>In a cookie</h4>
-<ul>
-  <li><code>Source</code>: JWT token location in a cookie</li>
-  <li><code>Cookie name</code>: the name of the cookie where JWT is located</li>
-</ul>
+<p>An incoming token can be found in three places:</p>
+<h3><a href="#in-a-query-string-parameter" name="in-a-query-string-parameter" class="anchor"><span class="anchor-link"></span></a>In a query string parameter</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>InQueryParam</code> </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Name of the query parameter containing the JWT </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#in-a-header" name="in-a-header" class="anchor"><span class="anchor-link"></span></a>In a header</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>InHeader</code> </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Name of the header containing the JWT </td>
+    </tr>
+    <tr>
+      <td><code>remove</code> </td>
+      <td>string </td>
+      <td>Prefix to remove from the header value (e.g., <code>Bearer</code> - note the trailing space) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#in-a-cookie" name="in-a-cookie" class="anchor"><span class="anchor-link"></span></a>In a cookie</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>InCookie</code> </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Name of the cookie containing the JWT </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#token-validation" name="token-validation" class="anchor"><span class="anchor-link"></span></a>Token validation</h2>
-<p>This section is used to verify the extracted token from specified location.</p>
-<ul>
-  <li><code>Algo.</code>: What kind of algorithm you want to use to verify/sign your JWT token with</li>
-</ul>
-<p>According to the selected algorithm, the validation form will change.</p>
-<h4><a href="#hmac-sha" name="hmac-sha" class="anchor"><span class="anchor-link"></span></a>Hmac + SHA</h4>
-<ul>
-  <li><code>SHA Size</code>: Word size for the SHA-2 hash function used</li>
-  <li><code>Hmac secret</code>: used to verify the token</li>
-  <li><code>Base64 encoded secret</code>: if enabled, the extracted token will be base64 decoded before it is verifier</li>
-</ul>
-<h4><a href="#rsassa-pkcs1-sha" name="rsassa-pkcs1-sha" class="anchor"><span class="anchor-link"></span></a>RSASSA-PKCS1 + SHA</h4>
-<ul>
-  <li><code>SHA Size</code>: Word size for the SHA-2 hash function used</li>
-  <li><code>Public key</code>: the RSA public key</li>
-  <li><code>Private key</code>: the RSA private key that can be empty if not used for JWT token signing</li>
-</ul>
-<h4><a href="#ecdsa-sha" name="ecdsa-sha" class="anchor"><span class="anchor-link"></span></a>ECDSA + SHA</h4>
-<ul>
-  <li><code>SHA Size</code>: Word size for the SHA-2 hash function used</li>
-  <li><code>Public key</code>: the ECDSA public key</li>
-  <li><code>Private key</code>: the ECDSA private key that can be empty if not used for JWT token signing</li>
-</ul>
-<h4><a href="#rsassa-pkcs1-sha-from-keypair" name="rsassa-pkcs1-sha-from-keypair" class="anchor"><span class="anchor-link"></span></a>RSASSA-PKCS1 + SHA from KeyPair</h4>
-<ul>
-  <li><code>SHA Size</code>: Word size for the SHA-2 hash function used</li>
-  <li><code>KeyPair</code>: used to sign/verify token. The displayed list represents the key pair registered in the Certificates page</li>
-</ul>
-<h4><a href="#ecdsa-sha-from-keypair" name="ecdsa-sha-from-keypair" class="anchor"><span class="anchor-link"></span></a>ECDSA + SHA from KeyPair</h4>
-<ul>
-  <li><code>SHA Size</code>: Word size for the SHA-2 hash function used</li>
-  <li><code>KeyPair</code>: used to sign/verify token. The displayed list represents the key pair registered in the Certificates page</li>
-</ul>
-<h4><a href="#otoroshi-keypair-from-token-kid-only-for-verification-" name="otoroshi-keypair-from-token-kid-only-for-verification-" class="anchor"><span class="anchor-link"></span></a>Otoroshi KeyPair from token kid (only for verification)</h4>
-<ul>
-  <li><code>Use only exposed keypairs</code>: if enabled, Otoroshi will only use the key pairs that are exposed on the well-known. If disabled, it will search on any registered key pairs.</li>
-</ul>
-<h4><a href="#jwk-set-only-for-verification-" name="jwk-set-only-for-verification-" class="anchor"><span class="anchor-link"></span></a>JWK Set (only for verification)</h4>
-<ul>
-  <li><code>URL</code>: the JWK set URL where the public keys are exposed</li>
-  <li><code>HTTP call timeout</code>: timeout for fetching the keyset</li>
-  <li><code>TTL</code>: cache TTL for the keyset</li>
-  <li><code>HTTP Headers</code>: the HTTP headers passed</li>
-  <li><code>Key type</code>: type of the key searched in the jwks</li>
-</ul>
-<p><em>TLS settings for JWKS fetching</em></p>
-<ul>
-  <li><code>Custom TLS Settings</code>: TLS settings for JWKS fetching</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>Trust all</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with JWKS server</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from JWKS server</li>
-</ul>
-<p><em>Proxy</em></p>
-<ul>
-  <li><code>Proxy host</code>: host of proxy behind the identify provider</li>
-  <li><code>Proxy port</code>: port of proxy behind the identify provider</li>
-  <li><code>Proxy principal</code>: user of proxy</li>
-  <li><code>Proxy password</code>: password of proxy</li>
-</ul>
+<p>The validation step defines the algorithm used to verify the token signature.</p>
+<h3><a href="#hmac-sha" name="hmac-sha" class="anchor"><span class="anchor-link"></span></a>HMAC + SHA</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>HSAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>size</code> </td>
+      <td>number </td>
+      <td>SHA size: <code>256</code>, <code>384</code>, or <code>512</code> </td>
+    </tr>
+    <tr>
+      <td><code>secret</code> </td>
+      <td>string </td>
+      <td>HMAC secret key </td>
+    </tr>
+    <tr>
+      <td><code>base64</code> </td>
+      <td>boolean </td>
+      <td>Whether the secret is base64-encoded </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#rsa-sha" name="rsa-sha" class="anchor"><span class="anchor-link"></span></a>RSA + SHA</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>RSAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>size</code> </td>
+      <td>number </td>
+      <td>SHA size: <code>256</code>, <code>384</code>, or <code>512</code> </td>
+    </tr>
+    <tr>
+      <td><code>publicKey</code> </td>
+      <td>string </td>
+      <td>RSA public key (PEM) </td>
+    </tr>
+    <tr>
+      <td><code>privateKey</code> </td>
+      <td>string </td>
+      <td>RSA private key (PEM, optional - only needed for signing) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#ecdsa-sha" name="ecdsa-sha" class="anchor"><span class="anchor-link"></span></a>ECDSA + SHA</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>ESAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>size</code> </td>
+      <td>number </td>
+      <td>SHA size: <code>256</code>, <code>384</code>, or <code>512</code> </td>
+    </tr>
+    <tr>
+      <td><code>publicKey</code> </td>
+      <td>string </td>
+      <td>ECDSA public key (PEM) </td>
+    </tr>
+    <tr>
+      <td><code>privateKey</code> </td>
+      <td>string </td>
+      <td>ECDSA private key (PEM, optional) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#rsa-from-keypair" name="rsa-from-keypair" class="anchor"><span class="anchor-link"></span></a>RSA from KeyPair</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>RSAKPAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>size</code> </td>
+      <td>number </td>
+      <td>SHA size </td>
+    </tr>
+    <tr>
+      <td><code>certId</code> </td>
+      <td>string </td>
+      <td>ID of the key pair certificate registered in Otoroshi </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#ecdsa-from-keypair" name="ecdsa-from-keypair" class="anchor"><span class="anchor-link"></span></a>ECDSA from KeyPair</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>ESKPAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>size</code> </td>
+      <td>number </td>
+      <td>SHA size </td>
+    </tr>
+    <tr>
+      <td><code>certId</code> </td>
+      <td>string </td>
+      <td>ID of the key pair certificate registered in Otoroshi </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#otoroshi-keypair-from-token-kid-verification-only-" name="otoroshi-keypair-from-token-kid-verification-only-" class="anchor"><span class="anchor-link"></span></a>Otoroshi KeyPair from token kid (verification only)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>KidAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>onlyExposedCerts</code> </td>
+      <td>boolean </td>
+      <td>Only use key pairs exposed on <code>/.well-known/jwks.json</code>. If disabled, searches all registered key pairs </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#jwk-set-verification-only-" name="jwk-set-verification-only-" class="anchor"><span class="anchor-link"></span></a>JWK Set (verification only)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>JWKSAlgoSettings</code> </td>
+    </tr>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>JWKS endpoint URL </td>
+    </tr>
+    <tr>
+      <td><code>timeout</code> </td>
+      <td>number </td>
+      <td>HTTP call timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>ttl</code> </td>
+      <td>number </td>
+      <td>Cache TTL for the keyset (ms) </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>HTTP headers for the JWKS request </td>
+    </tr>
+    <tr>
+      <td><code>kty</code> </td>
+      <td>string </td>
+      <td>Key type to search for in the JWKS </td>
+    </tr>
+    <tr>
+      <td><code>mtlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings for JWKS fetching </td>
+    </tr>
+    <tr>
+      <td><code>proxy</code> </td>
+      <td>object </td>
+      <td>Proxy settings (host, port, principal, password) </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#strategy" name="strategy" class="anchor"><span class="anchor-link"></span></a>Strategy</h2>
-<p>The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers:</p>
+<p>The strategy defines what happens to the token after validation. Otoroshi supports 4 strategies:</p>
+<h3><a href="#default-jwt-token" name="default-jwt-token" class="anchor"><span class="anchor-link"></span></a>Default JWT token</h3>
+<p>Adds a default token if none is present in the request.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>DefaultToken</code> </td>
+    </tr>
+    <tr>
+      <td><code>strict</code> </td>
+      <td>boolean </td>
+      <td>If <code>true</code> and a token is already present, the call will fail </td>
+    </tr>
+    <tr>
+      <td><code>defaultValue</code> </td>
+      <td>object </td>
+      <td>Claims for the generated token. Supports <a href="../topics/expression-language.html">expression language</a> </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#pass-through-verify-only-" name="pass-through-verify-only-" class="anchor"><span class="anchor-link"></span></a>Pass-through (verify only)</h3>
+<p>Verifies the token signature and claim values but does not modify it.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>PassThrough</code> </td>
+    </tr>
+    <tr>
+      <td><code>verificationSettings.fields</code> </td>
+      <td>object </td>
+      <td>Token fields to verify (key-value pairs) </td>
+    </tr>
+    <tr>
+      <td><code>verificationSettings.arrayFields</code> </td>
+      <td>object </td>
+      <td>Array fields to verify (check if value is contained in array) </td>
+    </tr>
+  </tbody>
+</table>
+<p>The <code>verificationSettings.fields</code> values support the following validation expressions:</p>
 <ul>
-  <li><code>Default JWT token</code> will add a token if no present.</li>
-  <li><code>Verify JWT token</code> will only verifiy token signing and fields values if provided.</li>
-  <li><code>Verify and re-sign JWT token</code> will verify the token and will re-sign the JWT token with the provided algo. settings.</li>
-  <li><code>Verify, re-sign and transform JWT token</code> will verify the token, re-sign and will be able to transform the token.</li>
+  <li><code>Regex(pattern)</code> - Match against a regex</li>
+  <li><code>Wildcard(pattern)</code> - Match with wildcards</li>
+  <li><code>WildcardNot(pattern)</code> - Must not match wildcards</li>
+  <li><code>Contains(value)</code> - Must contain value</li>
+  <li><code>ContainsNot(value)</code> - Must not contain value</li>
+  <li><code>Not(value)</code> - Must not equal value</li>
+  <li><code>ContainedIn(a, b, c)</code> - Must be one of the listed values</li>
+  <li><code>NotContainedIn(a, b, c)</code> - Must not be one of the listed values</li>
+  <li><code>ContainsOneOf(a, b)</code> - Array must contain at least one of the values</li>
+  <li><code>ContainsNotOneOf(a, b)</code> - Array must not contain any of the values</li>
+  <li><code>ContainsAll(a, b)</code> - Array must contain all of the values</li>
+  <li><code>ContainsNotAll(a, b)</code> - Array must not contain all of the values</li>
 </ul>
-<p>All verifiers has the following properties: </p>
+<p>These fields also support the <a href="../topics/expression-language.html">expression language</a>.</p>
+<h3><a href="#verify-and-re-sign" name="verify-and-re-sign" class="anchor"><span class="anchor-link"></span></a>Verify and re-sign</h3>
+<p>Verifies the token and re-signs it with a different algorithm/key.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>Sign</code> </td>
+    </tr>
+    <tr>
+      <td><code>verificationSettings</code> </td>
+      <td>object </td>
+      <td>Same as pass-through verification </td>
+    </tr>
+    <tr>
+      <td><code>algoSettings</code> </td>
+      <td>object </td>
+      <td>Algorithm settings for re-signing (same format as token validation) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#verify-re-sign-and-transform" name="verify-re-sign-and-transform" class="anchor"><span class="anchor-link"></span></a>Verify, re-sign and transform</h3>
+<p>Verifies the token, re-signs it, and transforms its content.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td><code>Transform</code> </td>
+    </tr>
+    <tr>
+      <td><code>verificationSettings</code> </td>
+      <td>object </td>
+      <td>Same as pass-through verification </td>
+    </tr>
+    <tr>
+      <td><code>algoSettings</code> </td>
+      <td>object </td>
+      <td>Algorithm settings for re-signing </td>
+    </tr>
+    <tr>
+      <td><code>transformSettings.location</code> </td>
+      <td>object </td>
+      <td>Where to place the transformed token </td>
+    </tr>
+    <tr>
+      <td><code>transformSettings.mappingSettings.map</code> </td>
+      <td>object </td>
+      <td>Rename token fields (old name -&gt; new name) </td>
+    </tr>
+    <tr>
+      <td><code>transformSettings.mappingSettings.values</code> </td>
+      <td>object </td>
+      <td>Add new fields with static or dynamic values </td>
+    </tr>
+    <tr>
+      <td><code>transformSettings.mappingSettings.remove</code> </td>
+      <td>array of string </td>
+      <td>Fields to remove from the token </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;jwt_verifier_auth0&quot;,
+  &quot;name&quot;: &quot;Auth0 JWT verifier&quot;,
+  &quot;description&quot;: &quot;Verify tokens issued by Auth0&quot;,
+  &quot;strict&quot;: true,
+  &quot;tags&quot;: [&quot;auth&quot;],
+  &quot;metadata&quot;: {},
+  &quot;source&quot;: {
+    &quot;type&quot;: &quot;InHeader&quot;,
+    &quot;name&quot;: &quot;Authorization&quot;,
+    &quot;remove&quot;: &quot;Bearer &quot;
+  },
+  &quot;algoSettings&quot;: {
+    &quot;type&quot;: &quot;JWKSAlgoSettings&quot;,
+    &quot;url&quot;: &quot;https://my-tenant.auth0.com/.well-known/jwks.json&quot;,
+    &quot;timeout&quot;: 5000,
+    &quot;ttl&quot;: 3600000,
+    &quot;headers&quot;: {},
+    &quot;kty&quot;: &quot;RSA&quot;
+  },
+  &quot;strategy&quot;: {
+    &quot;type&quot;: &quot;PassThrough&quot;,
+    &quot;verificationSettings&quot;: {
+      &quot;fields&quot;: {
+        &quot;iss&quot;: &quot;https://my-tenant.auth0.com/&quot;
+      },
+      &quot;arrayFields&quot;: {}
+    }
+  }
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/verifiers           # List all JWT verifiers
+POST   /api/verifiers           # Create a JWT verifier
+GET    /api/verifiers/:id       # Get a JWT verifier
+PUT    /api/verifiers/:id       # Update a JWT verifier
+DELETE /api/verifiers/:id       # Delete a JWT verifier
+PATCH  /api/verifiers/:id       # Partially update a JWT verifier
+</code></pre>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
 <ul>
-  <li><code>Verify token fields</code>: when the JWT token is checked, each field specified here will be verified with the provided value</li>
-  <li><code>Verify token array value</code>: when the JWT token is checked, each field specified here will be verified if the provided value is contained in the array</li>
-</ul>
-<h4><a href="#default-jwt-token" name="default-jwt-token" class="anchor"><span class="anchor-link"></span></a>Default JWT token</h4>
-<ul>
-  <li><code>Strict</code>: if token is already present, the call will fail</li>
-  <li><code>Default value</code>: list of claims of the generated token. These fields support raw values or language expressions. See the documentation about <a href="../topics/expression-language.html">the expression language</a></li>
-</ul>
-<h4><a href="#verify-jwt-token" name="verify-jwt-token" class="anchor"><span class="anchor-link"></span></a>Verify JWT token</h4>
-<p>No specific values needed. This kind of verifier needs only the two fields <code>Verify token fields</code> and <code>Verify token array value</code>.</p>
-<p>in the <code>Verify token fields</code> and <code>Verify token array value</code> fields you can use the Otoroshi <a href="../topics/expression-language.html">expression language</a></p>
-<p>in the <code>Verify token fields</code> you can use the following validation expressions as values</p>
-<ul>
-  <li><code>Regex(foo[1-9]+bar)</code></li>
-  <li><code>Wildcard(foo*bar)</code></li>
-  <li><code>WildcardNot(foo*bar)</code></li>
-  <li><code>Contains(foo)</code></li>
-  <li><code>ContainsNot(foo)</code></li>
-  <li><code>Not(foo)</code></li>
-  <li><code>ContainedIn(a, b, c)</code></li>
-  <li><code>NotContainedIn(a, b, c)</code></li>
-  <li><code>ContainsOneOf(a, b)</code></li>
-  <li><code>ContainsNotOneOf(a, b)</code></li>
-  <li><code>ContainsAll(a, b)</code></li>
-  <li><code>ContainsNotAll(a, b)</code></li>
-</ul>
-<h4><a href="#verify-and-re-sign-jwt-token" name="verify-and-re-sign-jwt-token" class="anchor"><span class="anchor-link"></span></a>Verify and re-sign JWT token</h4>
-<p>When <code>Verify and re-sign JWT token</code> is chosen, the <code>Re-sign settings</code> appear. All fields of <code>Re-sign settings</code> are the same of the <code>Token validation</code> section. The only difference is that the values are used to sign the new token and not to validate the token.</p>
-<h4><a href="#verify-re-sign-and-transform-jwt-token" name="verify-re-sign-and-transform-jwt-token" class="anchor"><span class="anchor-link"></span></a>Verify, re-sign and transform JWT token</h4>
-<p>When <code>Verify, re-sign and transform JWT token</code> is chosen, the <code>Re-sign settings</code> and <code>Transformation settings</code> appear.</p>
-<p>The <code>Re-sign settings</code> are used to sign the new token and has the same fields than the <code>Token validation</code> section.</p>
-<p>For the <code>Transformation settings</code> section, the fields are:</p>
-<ul>
-  <li><code>Token location</code>: the location where to find/set the JWT token</li>
-  <li><code>Header name</code>: the name of the header where JWT is located</li>
-  <li><code>Prepend value</code>: remove a value inside the header value</li>
-  <li><code>Rename token fields</code>: when the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name</li>
-  <li><code>Set token fields</code>: when the JWT token is transformed, it is possible to add new field with static values, just specify field name and value</li>
-  <li><code>Remove token fields</code>: when the JWT token is transformed, it is possible to remove fields</li>
+  <li><a href="routes.html">Routes</a> - Routes can use JWT verifiers via the JwtVerification plugin</li>
+  <li><a href="certificates.html">Certificates</a> - Key pairs used for token signing/verification</li>
+  <li><a href="auth-modules.html">Auth Modules</a> - OAuth2/OIDC modules use JWT verifiers for token validation</li>
 </ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/data-exporters.html">Data exporters</a></p>
+<p><strong>Next:</strong> <a href="../entities/data-exporters.html">Data Exporters</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -493,11 +873,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../entities/jwt-verifiers.html#jwt-verifiers" class="header">JWT verifiers</a>
+  <li><a href="../entities/jwt-verifiers.html#jwt-verifiers" class="header">JWT Verifiers</a>
   <ul>
+    <li><a href="../entities/jwt-verifiers.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/jwt-verifiers.html#properties" class="header">Properties</a></li>
     <li><a href="../entities/jwt-verifiers.html#token-location" class="header">Token location</a></li>
     <li><a href="../entities/jwt-verifiers.html#token-validation" class="header">Token validation</a></li>
     <li><a href="../entities/jwt-verifiers.html#strategy" class="header">Strategy</a></li>
+    <li><a href="../entities/jwt-verifiers.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/jwt-verifiers.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/jwt-verifiers.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

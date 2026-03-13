@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>TCP services · Otoroshi</title>
+<title>TCP Services · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="active page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="active page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="active page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="active page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -334,7 +336,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../entities/index.html">Main entities</a></li>
-  <li>TCP services</li>
+  <li>TCP Services</li>
 </ul>
 </div>
 </div>
@@ -342,55 +344,183 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#tcp-services" name="tcp-services" class="anchor"><span class="anchor-link"></span></a>TCP services</h1>
-<p>TCP service are special kind of otoroshi services meant to proxy pure TCP connections (ssh, database, http, etc)</p>
-<h2><a href="#global-information" name="global-information" class="anchor"><span class="anchor-link"></span></a>Global information</h2>
-<ul>
-  <li><code>Id</code>: generated unique identifier</li>
-  <li><code>TCP service name</code>: the name of your TCP service</li>
-  <li><code>Enabled</code>: enable and disable the service</li>
-  <li><code>TCP service port</code>: the listening port</li>
-  <li><code>TCP service interface</code>: network interface listen by the service</li>
-  <li><code>Tags</code>: list of tags associated to the service</li>
-  <li><code>Metadata</code>: list of metadata associated to the service</li>
-</ul>
-<h2><a href="#tls" name="tls" class="anchor"><span class="anchor-link"></span></a>TLS</h2>
-<p>this section controls the TLS exposition of the service</p>
-<ul>
-  <li><code>TLS mode</code>
-    <ul>
-      <li><code>Disabled</code>: no TLS</li>
-      <li><code>PassThrough</code>: as the target exposes TLS, the call will pass through otoroshi and use target TLS</li>
-      <li><code>Enabled</code>: the service will be exposed using TLS and will chose certificate based on SNI</li>
-    </ul>
-  </li>
-  <li><code>Client Auth.</code>
-    <ul>
-      <li><code>None</code> no mTLS needed to pass</li>
-      <li><code>Want</code> pass with or without mTLS</li>
-      <li><code>Need</code> need mTLS to pass</li>
-    </ul>
-  </li>
-</ul>
-<h2><a href="#server-name-indication-sni-" name="server-name-indication-sni-" class="anchor"><span class="anchor-link"></span></a>Server Name Indication (SNI)</h2>
-<p>this section control how SNI should be treated</p>
-<ul>
-  <li><code>SNI routing enabled</code>: if enabled, the server will use the SNI hostname to determine which certificate to present to the client</li>
-  <li><code>Forward to target if no SNI match</code>: if enabled, a call without any SNI match will be forward to the target</li>
-  <li><code>Target host</code>: host of the target called if no SNI</li>
-  <li><code>Target ip address</code>: ip of the target called if no SNI</li>
-  <li><code>Target port</code>: port of the target called if no SNI</li>
-  <li><code>TLS call</code>: encrypt the communication with TLS</li>
-</ul>
+<h1><a href="#tcp-services" name="tcp-services" class="anchor"><span class="anchor-link"></span></a>TCP Services</h1>
+<p>TCP services are a special kind of Otoroshi service designed to proxy pure TCP connections (SSH, databases, HTTP, etc.) without HTTP-level processing.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all TCP services <a href="http://otoroshi.oto.tools:8080/bo/dashboard/tcp/services">here</a></p>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>id</code> | string | - | Unique identifier | | <code>name</code> | string | - | Display name of the TCP service | | <code>description</code> | string | - | Description | | <code>enabled</code> | boolean | <code>true</code> | Whether the service is active | | <code>port</code> | number | - | The listening port for incoming TCP connections | | <code>interface</code> | string | <code>0.0.0.0</code> | Network interface the service listens on | | <code>tags</code> | array of string | <code>[]</code> | Tags | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata | | <code>tls</code> | string | <code>Disabled</code> | TLS mode (see below) | | <code>clientAuth</code> | string | <code>None</code> | mTLS client authentication mode (see below) | | <code>sni</code> | object | - | SNI configuration (see below) | | <code>rules</code> | array of object | <code>[]</code> | Routing rules (see below) |</p>
+<h2><a href="#tls-modes" name="tls-modes" class="anchor"><span class="anchor-link"></span></a>TLS modes</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Mode </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Disabled</code> </td>
+      <td>No TLS. TCP traffic is proxied as-is </td>
+    </tr>
+    <tr>
+      <td><code>PassThrough</code> </td>
+      <td>The target exposes TLS. Traffic passes through Otoroshi without termination </td>
+    </tr>
+    <tr>
+      <td><code>Enabled</code> </td>
+      <td>Otoroshi terminates TLS and selects the certificate based on SNI </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#client-authentication" name="client-authentication" class="anchor"><span class="anchor-link"></span></a>Client authentication</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Mode </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>None</code> </td>
+      <td>No client certificate required </td>
+    </tr>
+    <tr>
+      <td><code>Want</code> </td>
+      <td>Client certificate is requested but not required </td>
+    </tr>
+    <tr>
+      <td><code>Need</code> </td>
+      <td>Valid client certificate is mandatory </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#sni-server-name-indication-" name="sni-server-name-indication-" class="anchor"><span class="anchor-link"></span></a>SNI (Server Name Indication)</h2>
+<p>SNI allows Otoroshi to select different targets based on the hostname in the TLS handshake.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable SNI-based routing </td>
+    </tr>
+    <tr>
+      <td><code>forwardIfNoMatch</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Forward to a default target if no SNI match is found </td>
+    </tr>
+  </tbody>
+</table>
+<p>| <code>forwardsTo.host</code> | string | - | Default target hostname (when no SNI match) | | <code>forwardsTo.ip</code> | string | - | Default target IP address | | <code>forwardsTo.port</code> | number | - | Default target port | | <code>forwardsTo.tls</code> | boolean | <code>false</code> | Use TLS to connect to the default target |</p>
 <h2><a href="#rules" name="rules" class="anchor"><span class="anchor-link"></span></a>Rules</h2>
-<p>for any listening TCP proxy, it is possible to route to multiple targets based on SNI or extracted http host (if proxying http)</p>
-<ul>
-  <li><code>Matching domain name</code>: regex used to filter the list of domains where the rule will be applied</li>
-  <li><code>Target host</code>: host of the target</li>
-  <li><code>Target ip address</code>: ip of the target</li>
-  <li><code>Target port</code>: port of the target</li>
-  <li><code>TLS call</code>: enable this flag if the target is exposed using TLS</li>
-</ul>
+<p>For any listening TCP proxy, you can define multiple routing rules based on SNI or extracted HTTP host (when proxying HTTP).</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>domain</code> </td>
+      <td>string </td>
+      <td>Regex pattern to match against the domain name </td>
+    </tr>
+    <tr>
+      <td><code>targets</code> </td>
+      <td>array of object </td>
+      <td>List of targets for this rule </td>
+    </tr>
+    <tr>
+      <td><code>targets[].host</code> </td>
+      <td>string </td>
+      <td>Target hostname </td>
+    </tr>
+    <tr>
+      <td><code>targets[].ip</code> </td>
+      <td>string </td>
+      <td>Target IP address </td>
+    </tr>
+    <tr>
+      <td><code>targets[].port</code> </td>
+      <td>number </td>
+      <td>Target port </td>
+    </tr>
+    <tr>
+      <td><code>targets[].tls</code> </td>
+      <td>boolean </td>
+      <td>Use TLS to connect to this target </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#json-example" name="json-example" class="anchor"><span class="anchor-link"></span></a>JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;tcp_service_postgres&quot;,
+  &quot;name&quot;: &quot;PostgreSQL proxy&quot;,
+  &quot;description&quot;: &quot;TCP proxy for the production PostgreSQL cluster&quot;,
+  &quot;enabled&quot;: true,
+  &quot;port&quot;: 5432,
+  &quot;interface&quot;: &quot;0.0.0.0&quot;,
+  &quot;tls&quot;: &quot;Enabled&quot;,
+  &quot;clientAuth&quot;: &quot;None&quot;,
+  &quot;sni&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;forwardIfNoMatch&quot;: true,
+    &quot;forwardsTo&quot;: {
+      &quot;host&quot;: &quot;postgres-primary.internal&quot;,
+      &quot;ip&quot;: null,
+      &quot;port&quot;: 5432,
+      &quot;tls&quot;: false
+    }
+  },
+  &quot;rules&quot;: [
+    {
+      &quot;domain&quot;: &quot;.*read.*&quot;,
+      &quot;targets&quot;: [
+        {
+          &quot;host&quot;: &quot;postgres-replica.internal&quot;,
+          &quot;ip&quot;: null,
+          &quot;port&quot;: 5432,
+          &quot;tls&quot;: false
+        }
+      ]
+    }
+  ],
+  &quot;tags&quot;: [&quot;database&quot;, &quot;production&quot;],
+  &quot;metadata&quot;: {}
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/tcp/services           # List all TCP services
+POST   /api/tcp/services           # Create a TCP service
+GET    /api/tcp/services/:id       # Get a TCP service
+PUT    /api/tcp/services/:id       # Update a TCP service
+DELETE /api/tcp/services/:id       # Delete a TCP service
+PATCH  /api/tcp/services/:id       # Partially update a TCP service
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../entities/service-descriptors.html">Service descriptors</a></p>
 </div>
@@ -403,12 +533,16 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../entities/tcp-services.html#tcp-services" class="header">TCP services</a>
+  <li><a href="../entities/tcp-services.html#tcp-services" class="header">TCP Services</a>
   <ul>
-    <li><a href="../entities/tcp-services.html#global-information" class="header">Global information</a></li>
-    <li><a href="../entities/tcp-services.html#tls" class="header">TLS</a></li>
-    <li><a href="../entities/tcp-services.html#server-name-indication-sni-" class="header">Server Name Indication (SNI)</a></li>
+    <li><a href="../entities/tcp-services.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/tcp-services.html#properties" class="header">Properties</a></li>
+    <li><a href="../entities/tcp-services.html#tls-modes" class="header">TLS modes</a></li>
+    <li><a href="../entities/tcp-services.html#client-authentication" class="header">Client authentication</a></li>
+    <li><a href="../entities/tcp-services.html#sni-server-name-indication-" class="header">SNI (Server Name Indication)</a></li>
     <li><a href="../entities/tcp-services.html#rules" class="header">Rules</a></li>
+    <li><a href="../entities/tcp-services.html#json-example" class="header">JSON example</a></li>
+    <li><a href="../entities/tcp-services.html#admin-api" class="header">Admin API</a></li>
   </ul></li>
 </ul>
 </div>

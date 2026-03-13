@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="active page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="active page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -343,82 +345,275 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#routes" name="routes" class="anchor"><span class="anchor-link"></span></a>Routes</h1>
-<p>A route is an unique routing rule based on hostname, path, method and headers that will execute a bunch of plugins and eventually forward the request to the backend application.</p>
+<p>A route is a unique routing rule based on hostname, path, method and headers that will execute a chain of plugins and eventually forward the request to the backend application.</p>
 <h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
 <p>You can find all routes <a href="http://otoroshi.oto.tools:8080/bo/dashboard/routes">here</a></p>
-<h2><a href="#global-properties" name="global-properties" class="anchor"><span class="anchor-link"></span></a>Global Properties</h2>
-<ul>
-  <li><code>location</code>: the location of the entity</li>
-  <li><code>id</code>: the id of the route</li>
-  <li><code>name</code>: the name of the route</li>
-  <li><code>description</code>: the description of the route</li>
-  <li><code>tags</code>: the tags of the route. can be useful for api automation</li>
-  <li><code>metadata</code>: the metadata of the route. can be useful for api automation. There are a few reserved metadata used by otorshi that can be found <a href="routes.html#reserved-metadata">below</a></li>
-  <li><code>enabled</code>: is the route enabled ? if not, the router will not consider this route</li>
-  <li><code>debugFlow</code>: the debug flag. If enabled, the execution report for this route will contain all input/output values through steps of the proxy engine. For more informations, check the <a href="../topics/engine.html#reporting">engine documentation</a></li>
-  <li><code>capture</code>: if enabled, otoroshi will generate events containing the whole content of each request. Use with caution ! For more informations, check the <a href="../topics/engine.html#http-traffic-capture">engine documentation</a></li>
-  <li><code>exportReporting</code>: if enabled, execution reports of the proxy engine will be generated for each request. Those reports are exportable using <a href="data-exporters.html">data exporters</a> . For more informations, check the <a href="../topics/engine.html#reporting">engine documentation</a></li>
-  <li><code>groups</code>: each route is attached to a group. A group can have one or more services/routes. Each API key is linked to groups/routes/services and allow access to every entities in the groups.</li>
-</ul>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>id</code> | string | - | Unique identifier of the route | | <code>name</code> | string | - | Display name of the route | | <code>description</code> | string | - | Description of the route | | <code>tags</code> | array of string | <code>[]</code> | Tags for categorization and API automation | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata. Some keys are <a href="routes.html#reserved-metadata">reserved</a> | | <code>enabled</code> | boolean | <code>true</code> | Whether the route is active. Disabled routes are ignored by the router | | <code>debug_flow</code> | boolean | <code>false</code> | Enable debug flow. Execution reports will contain all input/output values. See <a href="../topics/engine.html#reporting">engine docs</a> | | <code>capture</code> | boolean | <code>false</code> | Enable request/response capture. Generates events with full request content. Use with caution! See <a href="../topics/engine.html#http-traffic-capture">engine docs</a> | | <code>export_reporting</code> | boolean | <code>false</code> | Export execution reports for each request via <a href="data-exporters.html">data exporters</a>. See <a href="../topics/engine.html#reporting">engine docs</a> | | <code>groups</code> | array of string | <code>[&quot;default&quot;]</code> | Service groups this route belongs to. Used for API key authorization | | <code>bound_listeners</code> | array of string | <code>[]</code> | List of <a href="http-listeners.html">HTTP listener</a> IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port | | <code>frontend</code> | object | - | Frontend configuration (how the router matches this route). See <a href="#frontend-configuration">below</a> | | <code>backend</code> | object | - | Backend configuration (where to forward requests). See <a href="backends.html">backends</a> | | <code>backend_ref</code> | string | <code>null</code> | Reference to a global <a href="backends.html">stored backend</a> by ID. If set, takes precedence over inline <code>backend</code> | | <code>plugins</code> | object | - | Plugin chain configuration. See <a href="#plugins">below</a> |</p>
 <h3><a href="#reserved-metadata" name="reserved-metadata" class="anchor"><span class="anchor-link"></span></a>Reserved metadata</h3>
-<p>some metadata are reserved for otoroshi usage. Here is the list of reserved metadata</p>
-<ul>
-  <li><code>otoroshi-core-user-facing</code>: is this a user facing app for the snow monkey</li>
-  <li><code>otoroshi-core-use-akka-http-client</code>: use the pure akka http client</li>
-  <li><code>otoroshi-core-use-netty-http-client</code>: use the pure netty http client</li>
-  <li><code>otoroshi-core-use-akka-http-ws-client</code>: use the modern websocket client</li>
-  <li><code>otoroshi-core-issue-lets-encrypt-certificate</code>: enabled let&rsquo;s encrypt certificate issue for this route. true or false</li>
-  <li><code>otoroshi-core-issue-certificate</code>: enabled certificate issue for this route. true or false</li>
-  <li><code>otoroshi-core-issue-certificate-ca</code>: the id of the CA cert to generate the certificate for this route</li>
-  <li><code>otoroshi-core-openapi-url</code>: the openapi url for this route</li>
-  <li><code>otoroshi-core-env</code>: the env for this route. here for legacy reasons</li>
-  <li><code>otoroshi-deployment-providers</code>: in the case of relay routing, the providers for this route</li>
-  <li><code>otoroshi-deployment-regions</code>: in the case of relay routing, the network regions for this route</li>
-  <li><code>otoroshi-deployment-zones</code>: in the case of relay routing, the network zone for this route</li>
-  <li><code>otoroshi-deployment-dcs</code>: in the case of relay routing, the datacenter for this route</li>
-  <li><code>otoroshi-deployment-racks</code>: in the case of relay routing, the rack for this route</li>
-</ul>
+<p>Some metadata keys are reserved for Otoroshi internal use:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Key </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>otoroshi-core-user-facing</code> </td>
+      <td>Is this a user-facing app for the Snow Monkey </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-use-akka-http-client</code> </td>
+      <td>Use the pure Akka HTTP client </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-use-netty-http-client</code> </td>
+      <td>Use the pure Netty HTTP client </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-use-akka-http-ws-client</code> </td>
+      <td>Use the modern WebSocket client </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-issue-lets-encrypt-certificate</code> </td>
+      <td>Enable Let&rsquo;s Encrypt certificate issuance for this route (<code>true</code>/<code>false</code>) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-issue-certificate</code> </td>
+      <td>Enable certificate issuance for this route (<code>true</code>/<code>false</code>) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-issue-certificate-ca</code> </td>
+      <td>ID of the CA cert to generate the certificate </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-openapi-url</code> </td>
+      <td>OpenAPI spec URL for this route </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-core-env</code> </td>
+      <td>Environment for this route (legacy) </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-deployment-providers</code> </td>
+      <td>Relay routing: infrastructure providers </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-deployment-regions</code> </td>
+      <td>Relay routing: network regions </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-deployment-zones</code> </td>
+      <td>Relay routing: network zones </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-deployment-dcs</code> </td>
+      <td>Relay routing: datacenters </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi-deployment-racks</code> </td>
+      <td>Relay routing: racks </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#frontend-configuration" name="frontend-configuration" class="anchor"><span class="anchor-link"></span></a>Frontend configuration</h2>
-<ul>
-  <li><code>frontend</code>: the frontend of the route. It&rsquo;s the configuration that will configure how otoroshi router will match this route. A frontend has the following shape.</li>
-</ul>
-<pre class="prettyprint"><code class="language-javascript">{
-  &quot;domains&quot;: [ // the matched domains and paths
-    &quot;new-route.oto.tools/path&quot; // here you can use wildcard in domain and path, also you can use named path params
+<p>The frontend defines how the Otoroshi router matches incoming requests to this route.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>domains</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Matched domains and paths. Supports wildcards in domain and path, and named path params (e.g., <code>api.oto.tools/users/$id&lt;[0-9]+&gt;</code>) </td>
+    </tr>
+    <tr>
+      <td><code>strip_path</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Strip the matched path from the forwarded request </td>
+    </tr>
+    <tr>
+      <td><code>exact</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Perform exact path matching. If <code>false</code>, matches on <code>/path*</code> </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Required HTTP headers to match. If empty, any headers match </td>
+    </tr>
+    <tr>
+      <td><code>query</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Required query parameters to match. If empty, any query params match </td>
+    </tr>
+    <tr>
+      <td><code>cookies</code> </td>
+      <td>object </td>
+      <td><code>{}</code> </td>
+      <td>Required cookies to match. If empty, any cookies match </td>
+    </tr>
+    <tr>
+      <td><code>methods</code> </td>
+      <td>array of string </td>
+      <td><code>[]</code> </td>
+      <td>Allowed HTTP methods. If empty, any method matches </td>
+    </tr>
+  </tbody>
+</table>
+<p>For more information about routing, check the <a href="../topics/engine.html#routing">engine documentation</a>.</p>
+<h3><a href="#frontend-json-example" name="frontend-json-example" class="anchor"><span class="anchor-link"></span></a>Frontend JSON example</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;domains&quot;: [
+    &quot;api.oto.tools/users&quot;
   ],
-  &quot;strip_path&quot;: true, // is the matched path stripped in the forwarded request
-  &quot;exact&quot;: false, // perform exact matching on path, if not, will be matched on /path*
-  &quot;headers&quot;: {}, // the matched http headers. if none provided, any header will be matched
-  &quot;query&quot;: {}, // the matched http query params. if none provided, any query params will be matched
-  &quot;methods&quot;: [] // the matched http methods. if none provided, any method will be matched
+  &quot;strip_path&quot;: true,
+  &quot;exact&quot;: false,
+  &quot;headers&quot;: {},
+  &quot;query&quot;: {},
+  &quot;cookies&quot;: {},
+  &quot;methods&quot;: [&quot;GET&quot;, &quot;POST&quot;]
 }
 </code></pre>
-<p>For more informations about routing, check the <a href="../topics/engine.html#routing">engine documentation</a></p>
 <h2><a href="#backend-configuration" name="backend-configuration" class="anchor"><span class="anchor-link"></span></a>Backend configuration</h2>
-<ul>
-  <li><code>backend</code>: a backend to forward requests to. For more informations, go to the <a href="backends.html">backend documentation</a></li>
-  <li><code>backendRef</code>: a reference to an existing backend id</li>
-</ul>
+<p>The <code>backend</code> field defines the target servers to forward requests to. For detailed documentation, see <a href="backends.html">backends</a>.</p>
+<p>Alternatively, use <code>backend_ref</code> to reference a global stored backend by ID, making the backend reusable across multiple routes.</p>
 <h2><a href="#plugins" name="plugins" class="anchor"><span class="anchor-link"></span></a>Plugins</h2>
-<p>the liste of plugins used on this route. Each plugin definition has the following shape:</p>
-<pre class="prettyprint"><code class="language-javascript">{
-  &quot;enabled&quot;: false, // is the plugin enabled
-  &quot;debug&quot;: false, // is debug enabled of this specific plugin
-  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.Redirection&quot;, // the id of the plugin
-  &quot;include&quot;: [], // included paths. if none, all paths are included
-  &quot;exclude&quot;: [], // excluded paths. if none, none paths are excluded
-  &quot;config&quot;: { // the configuration of the plugin
+<p>The <code>plugins</code> field contains the list of plugins applied on this route. Each plugin definition has the following structure:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>enabled</code> </td>
+      <td>boolean </td>
+      <td><code>true</code> </td>
+      <td>Whether the plugin is active </td>
+    </tr>
+    <tr>
+      <td><code>debug</code> </td>
+      <td>boolean </td>
+      <td><code>false</code> </td>
+      <td>Enable debug output for this specific plugin </td>
+    </tr>
+  </tbody>
+</table>
+<p>| <code>plugin</code> | string | - | The plugin identifier (e.g., <code>cp:otoroshi.next.plugins.Redirection</code>) | | <code>include</code> | array of string | <code>[]</code> | Path patterns to include. If empty, all paths are included | | <code>exclude</code> | array of string | <code>[]</code> | Path patterns to exclude. If empty, no paths are excluded | | <code>config</code> | object | <code>{}</code> | Plugin-specific configuration | | <code>plugin_index</code> | object | <code>null</code> | Explicit plugin execution order. If not provided, array order is used | | <code>bound_listeners</code> | array of string | <code>[]</code> | Listener-specific plugin binding |</p>
+<h3><a href="#plugin-json-example" name="plugin-json-example" class="anchor"><span class="anchor-link"></span></a>Plugin JSON example</h3>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;enabled&quot;: true,
+  &quot;debug&quot;: false,
+  &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.Redirection&quot;,
+  &quot;include&quot;: [],
+  &quot;exclude&quot;: [],
+  &quot;config&quot;: {
     &quot;code&quot;: 303,
     &quot;to&quot;: &quot;https://www.otoroshi.io&quot;
   },
-  &quot;plugin_index&quot;: { // the position of the plugin. if none provided, otoroshi will use the order in the plugin array
+  &quot;plugin_index&quot;: {
     &quot;pre_route&quot;: 0
   }
 }
 </code></pre>
-<p>for more informations about the available plugins, go <a href="../plugins/built-in-plugins.html">here</a></p>
+<p>For the full list of available plugins, see <a href="../plugins/built-in-plugins.html">built-in plugins</a>.</p>
+<h2><a href="#complete-route-json-example" name="complete-route-json-example" class="anchor"><span class="anchor-link"></span></a>Complete route JSON example</h2>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;id&quot;: &quot;route_users_api&quot;,
+  &quot;name&quot;: &quot;Users API&quot;,
+  &quot;description&quot;: &quot;Route for the users microservice&quot;,
+  &quot;tags&quot;: [&quot;users&quot;, &quot;api&quot;],
+  &quot;metadata&quot;: {},
+  &quot;enabled&quot;: true,
+  &quot;debug_flow&quot;: false,
+  &quot;capture&quot;: false,
+  &quot;export_reporting&quot;: false,
+  &quot;groups&quot;: [&quot;default&quot;],
+  &quot;bound_listeners&quot;: [],
+  &quot;frontend&quot;: {
+    &quot;domains&quot;: [&quot;api.oto.tools/users&quot;],
+    &quot;strip_path&quot;: true,
+    &quot;exact&quot;: false,
+    &quot;headers&quot;: {},
+    &quot;query&quot;: {},
+    &quot;cookies&quot;: {},
+    &quot;methods&quot;: []
+  },
+  &quot;backend&quot;: {
+    &quot;targets&quot;: [
+      {
+        &quot;id&quot;: &quot;target_1&quot;,
+        &quot;hostname&quot;: &quot;users-service.internal&quot;,
+        &quot;port&quot;: 8080,
+        &quot;tls&quot;: false,
+        &quot;weight&quot;: 1,
+        &quot;protocol&quot;: &quot;HTTP/1.1&quot;
+      }
+    ],
+    &quot;root&quot;: &quot;/&quot;,
+    &quot;rewrite&quot;: false,
+    &quot;load_balancing&quot;: { &quot;type&quot;: &quot;RoundRobin&quot; }
+  },
+  &quot;backend_ref&quot;: null,
+  &quot;plugins&quot;: {
+    &quot;slots&quot;: [
+      {
+        &quot;plugin&quot;: &quot;cp:otoroshi.next.plugins.OverrideHost&quot;,
+        &quot;enabled&quot;: true,
+        &quot;include&quot;: [],
+        &quot;exclude&quot;: [],
+        &quot;config&quot;: {}
+      }
+    ]
+  }
+}
+</code></pre>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/routes           # List all routes
+POST   /api/routes           # Create a route
+GET    /api/routes/:id       # Get a route
+PUT    /api/routes/:id       # Update a route
+DELETE /api/routes/:id       # Delete a route
+PATCH  /api/routes/:id       # Partially update a route
+</code></pre>
+<h2><a href="#related-entities" name="related-entities" class="anchor"><span class="anchor-link"></span></a>Related entities</h2>
+<ul>
+  <li><a href="backends.html">Backends</a> - Reusable backend configurations</li>
+  <li><a href="apis.html">APIs</a> - Group multiple routes into a managed API</li>
+  <li><a href="http-listeners.html">HTTP Listeners</a> - Custom listeners that routes can be bound to</li>
+  <li><a href="route-templates.html">Route Templates</a> - Reusable route blueprints</li>
+  <li><a href="service-groups.html">Service Groups</a> - Group routes for API key authorization</li>
+</ul>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/apis.html">Apis</a></p>
+<p><strong>Next:</strong> <a href="../entities/apis.html">APIs</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -432,10 +627,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../entities/routes.html#routes" class="header">Routes</a>
   <ul>
     <li><a href="../entities/routes.html#ui-page" class="header">UI page</a></li>
-    <li><a href="../entities/routes.html#global-properties" class="header">Global Properties</a></li>
+    <li><a href="../entities/routes.html#properties" class="header">Properties</a></li>
     <li><a href="../entities/routes.html#frontend-configuration" class="header">Frontend configuration</a></li>
     <li><a href="../entities/routes.html#backend-configuration" class="header">Backend configuration</a></li>
     <li><a href="../entities/routes.html#plugins" class="header">Plugins</a></li>
+    <li><a href="../entities/routes.html#complete-route-json-example" class="header">Complete route JSON example</a></li>
+    <li><a href="../entities/routes.html#admin-api" class="header">Admin API</a></li>
+    <li><a href="../entities/routes.html#related-entities" class="header">Related entities</a></li>
   </ul></li>
 </ul>
 </div>

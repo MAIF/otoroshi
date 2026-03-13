@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Data exporters · Otoroshi</title>
+<title>Data Exporters · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -55,23 +55,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="active page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="active page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -197,23 +198,24 @@ latest
   <li><a href="../entities/index.html" class="page">Main entities</a>
   <ul>
     <li><a href="../entities/routes.html" class="page">Routes</a></li>
-    <li><a href="../entities/apis.html" class="page">Apis</a></li>
+    <li><a href="../entities/apis.html" class="page">APIs</a></li>
     <li><a href="../entities/backends.html" class="page">Backends</a></li>
     <li><a href="../entities/organizations.html" class="page">Organizations</a></li>
     <li><a href="../entities/teams.html" class="page">Teams</a></li>
     <li><a href="../entities/global-config.html" class="page">Global config</a></li>
-    <li><a href="../entities/apikeys.html" class="page">Apikeys</a></li>
+    <li><a href="../entities/apikeys.html" class="page">API Keys</a></li>
     <li><a href="../entities/service-groups.html" class="page">Service groups</a></li>
     <li><a href="../entities/auth-modules.html" class="page">Authentication modules</a></li>
     <li><a href="../entities/certificates.html" class="page">Certificates</a></li>
-    <li><a href="../entities/jwt-verifiers.html" class="page">JWT verifiers</a></li>
-    <li><a href="../entities/data-exporters.html" class="active page">Data exporters</a></li>
-    <li><a href="../entities/tcp-services.html" class="page">TCP services</a></li>
+    <li><a href="../entities/jwt-verifiers.html" class="page">JWT Verifiers</a></li>
+    <li><a href="../entities/data-exporters.html" class="active page">Data Exporters</a></li>
+    <li><a href="../entities/tcp-services.html" class="page">TCP Services</a></li>
     <li><a href="../entities/service-descriptors.html" class="page">Service descriptors</a></li>
     <li><a href="../entities/remote-catalogs.html" class="page">Remote Catalogs</a></li>
     <li><a href="../entities/http-listeners.html" class="page">HTTP Listeners</a></li>
     <li><a href="../entities/workflows.html" class="page">Workflows</a></li>
     <li><a href="../entities/wasm-plugins.html" class="page">WASM Plugins</a></li>
+    <li><a href="../entities/route-templates.html" class="page">Route Templates</a></li>
     <li><a href="../entities/error-templates.html" class="page">Error Templates</a></li>
     <li><a href="../entities/otoroshi-admins.html" class="page">Otoroshi Admins</a></li>
   </ul></li>
@@ -334,7 +336,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../entities/index.html">Main entities</a></li>
-  <li>Data exporters</li>
+  <li>Data Exporters</li>
 </ul>
 </div>
 </div>
@@ -342,190 +344,981 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#data-exporters" name="data-exporters" class="anchor"><span class="anchor-link"></span></a>Data exporters</h1>
-<p>The data exporters are the way to export alerts and events from Otoroshi to an external storage.</p>
-<p>To try them, you can folllow <a href="../how-to-s/export-alerts-using-mailgun.html">this tutorial</a>.</p>
-<h2><a href="#common-fields" name="common-fields" class="anchor"><span class="anchor-link"></span></a>Common fields</h2>
-<ul>
-  <li><code>Type</code>: the type of event exporter</li>
-  <li><code>Enabled</code>: enabled or not the exporter</li>
-  <li><code>Name</code>: given name to the exporter</li>
-  <li><code>Description</code>: the data exporter description</li>
-  <li><code>Tags</code>: list of tags associated to the module</li>
-  <li><code>Metadata</code>: list of metadata associated to the module</li>
-</ul>
-<p>All exporters are split in three parts. The first and second parts are common and the last are specific by exporter.</p>
-<ul>
-  <li><code>Filtering and projection</code> : section to filter the list of sent events and alerts. The projection field allows you to export only certain event fields and reduce the size of exported data. It&rsquo;s composed of <code>Filtering</code> and <code>Projection</code> fields. To get a full usage of this elements, read <a href="data-exporters.html#matching-and-projections">this section</a></li>
-  <li><code>Queue details</code>: set of fields to adjust the workers of the exporter.</li>
-  <li><code>Buffer size</code>: if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Keep in memory the number of events.</li>
-  <li><code>JSON conversion workers</code>: number of workers used to transform events to JSON format in paralell</li>
-  <li><code>Send workers</code>: number of workers used to send transformed events</li>
-  <li><code>Group size</code>: chunk up this stream into groups of elements received within a time window (the time window is the next field)</li>
-  <li><code>Group duration</code>: waiting time before sending the group of events. If the group size is reached before the group duration, the events will be instantly sent</li>
-</ul>
-<p>For the last part, the <code>Exporter configuration</code> will be detail individually.</p>
+<h1><a href="#data-exporters" name="data-exporters" class="anchor"><span class="anchor-link"></span></a>Data Exporters</h1>
+<p>Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems.</p>
+<p>To try them out, you can follow <a href="../how-to-s/export-alerts-using-mailgun.html">this tutorial</a>.</p>
+<h2><a href="#ui-page" name="ui-page" class="anchor"><span class="anchor-link"></span></a>UI page</h2>
+<p>You can find all data exporters <a href="http://otoroshi.oto.tools:8080/bo/dashboard/exporters">here</a></p>
+<h2><a href="#properties" name="properties" class="anchor"><span class="anchor-link"></span></a>Properties</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Default </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+</table>
+<p>| <code>id</code> | string | - | Unique identifier | | <code>name</code> | string | - | Display name | | <code>description</code> | string | - | Description | | <code>enabled</code> | boolean | <code>true</code> | Whether the exporter is active | | <code>typ</code> | string | - | The type of exporter (see <a href="#exporter-types">exporter types</a>) | | <code>tags</code> | array of string | <code>[]</code> | Tags | | <code>metadata</code> | object | <code>{}</code> | Key/value metadata | | <code>filtering</code> | object | - | Event filtering configuration (see <a href="#matching-and-projections">below</a>) | | <code>projection</code> | object | <code>{}</code> | Projection to export only specific fields | | <code>bufferSize</code> | number | <code>5000</code> | Number of events to keep in memory buffer | | <code>jsonWorkers</code> | number | <code>1</code> | Number of workers for JSON serialization | | <code>sendWorkers</code> | number | <code>1</code> | Number of workers for sending events | | <code>groupSize</code> | number | <code>100</code> | Number of events to batch together | | <code>groupDuration</code> | number | <code>30000</code> | Maximum wait time (ms) before sending a batch | | <code>config</code> | object | - | Exporter-specific configuration |</p>
 <h2><a href="#matching-and-projections" name="matching-and-projections" class="anchor"><span class="anchor-link"></span></a>Matching and projections</h2>
-<p><strong>Filtering</strong> is used to <strong>include</strong> or <strong>exclude</strong> some kind of events and alerts. For each include and exclude field, you can add a list of key-value. </p>
-<p>Let&rsquo;s say we only want to keep Otoroshi alerts</p>
+<h3><a href="#filtering" name="filtering" class="anchor"><span class="anchor-link"></span></a>Filtering</h3>
+<p><strong>Filtering</strong> is used to <strong>include</strong> or <strong>exclude</strong> specific types of events and alerts. Each include/exclude entry is a key-value match.</p>
+<p>Example: only keep Otoroshi alerts:</p>
 <pre class="prettyprint"><code class="language-json">{ &quot;include&quot;: [{ &quot;@type&quot;: &quot;AlertEvent&quot; }] }
 </code></pre>
-<p>Otoroshi provides a list of rules to keep only events with specific values. We will use the following event to illustrate.</p>
+<p>Otoroshi provides rules to filter events based on their content. Given this example event:</p>
 <pre class="prettyprint"><code class="language-json">{
- &quot;foo&quot;: &quot;bar&quot;,
- &quot;type&quot;: &quot;AlertEvent&quot;,
- &quot;alert&quot;: &quot;big-alert&quot;,
- &quot;status&quot;: 200,
- &quot;codes&quot;: [&quot;a&quot;, &quot;b&quot;],
- &quot;inner&quot;: {
-   &quot;foo&quot;: &quot;bar&quot;,
-   &quot;bar&quot;: &quot;foo&quot;
- }
+  &quot;foo&quot;: &quot;bar&quot;,
+  &quot;type&quot;: &quot;AlertEvent&quot;,
+  &quot;alert&quot;: &quot;big-alert&quot;,
+  &quot;status&quot;: 200,
+  &quot;codes&quot;: [&quot;a&quot;, &quot;b&quot;],
+  &quot;inner&quot;: {
+    &quot;foo&quot;: &quot;bar&quot;,
+    &quot;bar&quot;: &quot;foo&quot;
+  }
 }
-</code></pre>
-<p>The rules apply with the previous example as event.</p><div id="filtering">
+</code></pre><div id="filtering">
 <p>&nbsp;</p></div>
-<p><strong>Projection</strong> is a list of fields to export. In the case of an empty list, all the fields of an event will be exported. In other case, <strong>only</strong> the listed fields will be exported.</p><div id="projection">
+<h3><a href="#projection" name="projection" class="anchor"><span class="anchor-link"></span></a>Projection</h3>
+<p><strong>Projection</strong> is a list of fields to export. If empty, all fields are exported. If specified, <strong>only</strong> the listed fields will be included in exported events.</p><div id="projection">
 <p>&nbsp;</p></div>
-<h2><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h2>
-<p>With this kind of exporter, every matching event will be sent to an elastic cluster (in batch). It is quite useful and can be used in combination with <a href="./global-config.html#analytics-elastic-dashboard-datasource-read-">elastic read in global config</a></p>
-<ul>
-  <li><code>Cluster URI</code>: Elastic cluster URI</li>
-  <li><code>Index</code>: Elastic index</li>
-  <li><code>Type</code>: Event type (not needed for elasticsearch above 6.x)</li>
-  <li><code>User</code>: Elastic User (optional)</li>
-  <li><code>Password</code>: Elastic password (optional)</li>
-  <li><code>Version</code>: Elastic version (optional, if none provided it will be fetched from cluster)</li>
-  <li><code>Apply template</code>: Automatically apply index template</li>
-  <li><code>Check Connection</code>: Button to test the configuration. It will displayed a modal with checked point, and if the case of it&rsquo;s successfull, it will displayed the found version of the Elasticsearch and the index used</li>
-  <li><code>Manually apply index template</code>: try to put the elasticsearch template by calling the api of elasticsearch</li>
-  <li><code>Show index template</code>: try to retrieve the current index template presents in elasticsearch</li>
-  <li><code>Client side temporal indexes handling</code>: When enabled, Otoroshi will manage the creation of indexes. When it&rsquo;s disabled, Otoroshi will push in the same index</li>
-  <li><code>One index per</code>: When the previous field is enabled, you can choose the interval of time between the creation of a new index in elasticsearch</li>
-  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-</ul>
-<h2><a href="#webhook" name="webhook" class="anchor"><span class="anchor-link"></span></a>Webhook</h2>
-<p>With this kind of exporter, every matching event will be sent to a URL (in batch) using a POST method and an JSON array body.</p>
-<ul>
-  <li><code>Alerts hook URL</code>: url used to post events</li>
-  <li><code>Hook Headers</code>: headers add to the post request</li>
-  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-</ul>
-<h2><a href="#pulsar" name="pulsar" class="anchor"><span class="anchor-link"></span></a>Pulsar</h2>
-<p>With this kind of exporter, every matching event will be sent to an <a href="https://pulsar.apache.org/">Apache Pulsar topic</a></p>
-<ul>
-  <li><code>Pulsar URI</code>: URI of the pulsar server</li>
-  <li><code>Custom TLS Settings</code>: Enable the TLS configuration for the communication with Elasticsearch</li>
-  <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-  <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-  <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-  <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-  <li><code>Pulsar tenant</code>: tenant on the pulsar server</li>
-  <li><code>Pulsar namespace</code>: namespace on the pulsar server</li>
-  <li><code>Pulsar topic</code>: topic on the pulsar server</li>
-</ul>
-<h2><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h2>
-<p>With this kind of exporter, every matching event will be sent to an <a href="https://kafka.apache.org/">Apache Kafka topic</a>. You can find few <a href="../how-to-s/communicate-with-kafka.html">tutorials</a> about the connection between Otoroshi and Kafka based on docker images.</p>
-<ul>
-  <li><code>Kafka Servers</code>: the list of servers to contact to connect the Kafka client with the Kafka cluster</li>
-  <li><code>Kafka topic</code>: the topic on which Otoroshi alerts will be sent</li>
-</ul>
-<p>By default, Kafka is installed with no authentication. Otoroshi supports the following authentication mechanisms and protocols for Kafka brokers.</p>
-<h3><a href="#sasl" name="sasl" class="anchor"><span class="anchor-link"></span></a>SASL</h3>
-<p>The Simple Authentication and Security Layer (SASL) [RFC4422] is a method for adding authentication support to connection-based protocols.</p>
-<ul>
-  <li><code>SASL username</code>: the client username</li>
-  <li><code>SASL password</code>: the client username</li>
-  <li><code>SASL Mechanism</code>:
-    <ul>
-      <li><code>PLAIN</code>: SASL/PLAIN uses a simple username and password for authentication.</li>
-      <li><code>SCRAM-SHA-256</code> and <code>SCRAM-SHA-512</code>: SASL/SCRAM uses usernames and passwords stored in ZooKeeper. Credentials are created during installation.</li>
-    </ul>
-  </li>
-</ul>
-<h3><a href="#ssl" name="ssl" class="anchor"><span class="anchor-link"></span></a>SSL</h3>
-<ul>
-  <li><code>Kafka keypass</code>: the keystore password if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Kafka keystore path</code>: the keystore path on the server if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Kafka truststore path</code>: the truststore path on the server if you use a keystore/truststore to connect to Kafka cluster</li>
-  <li><code>Custom TLS Settings</code>: enable the TLS configuration for the communication with Elasticsearch
-    <ul>
-      <li><code>TLS loose</code>: if enabled, will block all untrustful ssl configs</li>
-      <li><code>TrustAll</code>: allows any server certificates even the self-signed ones</li>
-      <li><code>Client certificates</code>: list of client certificates used to communicate with elasticsearch</li>
-      <li><code>Trusted certificates</code>: list of trusted certificates received from elasticsearch</li>
-    </ul>
-  </li>
-</ul>
-<h3><a href="#sasl-ssl" name="sasl-ssl" class="anchor"><span class="anchor-link"></span></a>SASL + SSL</h3>
-<p>This mechanism uses the SSL configuration and the SASL configuration.</p>
-<h2><a href="#mailer" name="mailer" class="anchor"><span class="anchor-link"></span></a>Mailer</h2>
-<p>With this kind of exporter, every matching event will be sent in batch as an email (using one of the following email provider)</p>
-<p>Otoroshi supports 5 exporters of email type.</p>
+<h2><a href="#exporter-types" name="exporter-types" class="anchor"><span class="anchor-link"></span></a>Exporter types</h2>
+<h3><a href="#elastic" name="elastic" class="anchor"><span class="anchor-link"></span></a>Elastic</h3>
+<p>Sends events in batch to an Elasticsearch cluster. Can be used with the <a href="global-config.html#analytics-elastic-dashboard-datasource-read-">elastic analytics dashboard</a>.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uris</code> </td>
+      <td>array of string </td>
+      <td>Elasticsearch cluster URIs </td>
+    </tr>
+    <tr>
+      <td><code>index</code> </td>
+      <td>string </td>
+      <td>Index name </td>
+    </tr>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td>Event type (not needed for ES 6.x+) </td>
+    </tr>
+    <tr>
+      <td><code>user</code> </td>
+      <td>string </td>
+      <td>Username (optional) </td>
+    </tr>
+    <tr>
+      <td><code>password</code> </td>
+      <td>string </td>
+      <td>Password (optional) </td>
+    </tr>
+    <tr>
+      <td><code>version</code> </td>
+      <td>string </td>
+      <td>Elasticsearch version (auto-detected if not set) </td>
+    </tr>
+    <tr>
+      <td><code>applyTemplate</code> </td>
+      <td>boolean </td>
+      <td>Automatically apply index template </td>
+    </tr>
+    <tr>
+      <td><code>indexSettings.clientSide</code> </td>
+      <td>boolean </td>
+      <td>Otoroshi manages index creation over time </td>
+    </tr>
+    <tr>
+      <td><code>indexSettings.interval</code> </td>
+      <td>string </td>
+      <td>Index rotation interval: <code>Day</code>, <code>Week</code>, <code>Month</code>, or <code>Year</code> </td>
+    </tr>
+    <tr>
+      <td><code>indexSettings.numberOfShards</code> </td>
+      <td>number </td>
+      <td>Number of shards </td>
+    </tr>
+    <tr>
+      <td><code>indexSettings.numberOfReplicas</code> </td>
+      <td>number </td>
+      <td>Number of replicas </td>
+    </tr>
+    <tr>
+      <td><code>mtlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#webhook" name="webhook" class="anchor"><span class="anchor-link"></span></a>Webhook</h3>
+<p>Sends events in batch to an HTTP endpoint using POST with a JSON array body.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>URL to post events to </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>HTTP headers to include </td>
+    </tr>
+    <tr>
+      <td><code>tlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#kafka" name="kafka" class="anchor"><span class="anchor-link"></span></a>Kafka</h3>
+<p>Sends events to an <a href="https://kafka.apache.org/">Apache Kafka</a> topic. See <a href="../how-to-s/communicate-with-kafka.html">Kafka tutorials</a>.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>servers</code> </td>
+      <td>array of string </td>
+      <td>Kafka broker addresses </td>
+    </tr>
+    <tr>
+      <td><code>topic</code> </td>
+      <td>string </td>
+      <td>Kafka topic name </td>
+    </tr>
+    <tr>
+      <td><code>sasl</code> </td>
+      <td>object </td>
+      <td>SASL authentication (username, password, mechanism: <code>PLAIN</code>/<code>SCRAM-SHA-256</code>/<code>SCRAM-SHA-512</code>) </td>
+    </tr>
+    <tr>
+      <td><code>keypass</code> </td>
+      <td>string </td>
+      <td>Keystore password </td>
+    </tr>
+    <tr>
+      <td><code>keystore</code> </td>
+      <td>string </td>
+      <td>Keystore path </td>
+    </tr>
+    <tr>
+      <td><code>truststore</code> </td>
+      <td>string </td>
+      <td>Truststore path </td>
+    </tr>
+    <tr>
+      <td><code>tlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#pulsar" name="pulsar" class="anchor"><span class="anchor-link"></span></a>Pulsar</h3>
+<p>Sends events to an <a href="https://pulsar.apache.org/">Apache Pulsar</a> topic.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uri</code> </td>
+      <td>string </td>
+      <td>Pulsar server URI </td>
+    </tr>
+    <tr>
+      <td><code>tenant</code> </td>
+      <td>string </td>
+      <td>Pulsar tenant </td>
+    </tr>
+    <tr>
+      <td><code>namespace</code> </td>
+      <td>string </td>
+      <td>Pulsar namespace </td>
+    </tr>
+    <tr>
+      <td><code>topic</code> </td>
+      <td>string </td>
+      <td>Pulsar topic </td>
+    </tr>
+    <tr>
+      <td><code>tlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#splunk" name="splunk" class="anchor"><span class="anchor-link"></span></a>Splunk</h3>
+<p>Sends events to a Splunk HTTP Event Collector (HEC).</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>Splunk HEC URL </td>
+    </tr>
+    <tr>
+      <td><code>token</code> </td>
+      <td>string </td>
+      <td>HEC token </td>
+    </tr>
+    <tr>
+      <td><code>index</code> </td>
+      <td>string </td>
+      <td>Splunk index (optional) </td>
+    </tr>
+    <tr>
+      <td><code>type</code> </td>
+      <td>string </td>
+      <td>Event source type (optional) </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>Additional HTTP headers </td>
+    </tr>
+    <tr>
+      <td><code>tlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#datadog" name="datadog" class="anchor"><span class="anchor-link"></span></a>Datadog</h3>
+<p>Sends events to Datadog via the Datadog API.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td>Datadog API host (e.g., <code>https://api.datadoghq.eu</code>) </td>
+    </tr>
+    <tr>
+      <td><code>apiKey</code> </td>
+      <td>string </td>
+      <td>Datadog API key </td>
+    </tr>
+    <tr>
+      <td><code>applicationKey</code> </td>
+      <td>string </td>
+      <td>Application key (optional) </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>Additional HTTP headers </td>
+    </tr>
+    <tr>
+      <td><code>tlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#new-relic" name="new-relic" class="anchor"><span class="anchor-link"></span></a>New Relic</h3>
+<p>Sends events to New Relic via their API.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>New Relic API URL </td>
+    </tr>
+    <tr>
+      <td><code>licenseKey</code> </td>
+      <td>string </td>
+      <td>New Relic license key </td>
+    </tr>
+    <tr>
+      <td><code>accountId</code> </td>
+      <td>string </td>
+      <td>New Relic account ID </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>Additional HTTP headers </td>
+    </tr>
+    <tr>
+      <td><code>tlsConfig</code> </td>
+      <td>object </td>
+      <td>Custom TLS settings </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#file" name="file" class="anchor"><span class="anchor-link"></span></a>File</h3>
+<p>Writes events to local files.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>path</code> </td>
+      <td>string </td>
+      <td>File path to write events </td>
+    </tr>
+    <tr>
+      <td><code>maxFileSize</code> </td>
+      <td>number </td>
+      <td>Maximum file size in bytes. When reached, a new timestamped file is created </td>
+    </tr>
+    <tr>
+      <td><code>maxNumberOfFile</code> </td>
+      <td>number </td>
+      <td>Maximum number of files to retain </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#s3" name="s3" class="anchor"><span class="anchor-link"></span></a>S3</h3>
+<p>Writes events to an S3-compatible object store.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>maxFileSize</code> </td>
+      <td>number </td>
+      <td>Maximum size per file </td>
+    </tr>
+    <tr>
+      <td><code>maxNumberOfFile</code> </td>
+      <td>number </td>
+      <td>Maximum number of files </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td>S3 configuration (bucket, region, credentials, endpoint) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#goreplay-file" name="goreplay-file" class="anchor"><span class="anchor-link"></span></a>GoReplay file</h3>
+<p>Writes events in <code>.gor</code> format compatible with <a href="https://goreplay.org/">GoReplay</a>.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>This exporter only catches <code>TrafficCaptureEvent</code>. These events are generated when a route has the <code>capture</code> flag enabled. See <a href="../topics/engine.html">engine docs</a>.</p></div>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>path</code> </td>
+      <td>string </td>
+      <td>File path </td>
+    </tr>
+    <tr>
+      <td><code>maxFileSize</code> </td>
+      <td>number </td>
+      <td>Maximum file size </td>
+    </tr>
+    <tr>
+      <td><code>captureRequests</code> </td>
+      <td>boolean </td>
+      <td>Capture HTTP requests </td>
+    </tr>
+    <tr>
+      <td><code>captureResponses</code> </td>
+      <td>boolean </td>
+      <td>Capture HTTP responses </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#goreplay-s3" name="goreplay-s3" class="anchor"><span class="anchor-link"></span></a>GoReplay S3</h3>
+<p>Same as GoReplay file but writes to an S3-compatible store.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>s3</code> </td>
+      <td>object </td>
+      <td>S3 configuration </td>
+    </tr>
+    <tr>
+      <td><code>maxFileSize</code> </td>
+      <td>number </td>
+      <td>Maximum file size </td>
+    </tr>
+    <tr>
+      <td><code>captureRequests</code> </td>
+      <td>boolean </td>
+      <td>Capture HTTP requests </td>
+    </tr>
+    <tr>
+      <td><code>captureResponses</code> </td>
+      <td>boolean </td>
+      <td>Capture HTTP responses </td>
+    </tr>
+    <tr>
+      <td><code>preferBackendRequest</code> </td>
+      <td>boolean </td>
+      <td>Prefer backend request over client request </td>
+    </tr>
+    <tr>
+      <td><code>preferBackendResponse</code> </td>
+      <td>boolean </td>
+      <td>Prefer backend response over client response </td>
+    </tr>
+    <tr>
+      <td><code>methods</code> </td>
+      <td>array of string </td>
+      <td>HTTP methods to capture </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#tcp" name="tcp" class="anchor"><span class="anchor-link"></span></a>TCP</h3>
+<p>Sends events over raw TCP connections.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td>Target host </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td>Target port </td>
+    </tr>
+    <tr>
+      <td><code>unixSocket</code> </td>
+      <td>string </td>
+      <td>Unix socket path (alternative to host/port) </td>
+    </tr>
+    <tr>
+      <td><code>connectTimeout</code> </td>
+      <td>number </td>
+      <td>Connection timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>tls</code> </td>
+      <td>object </td>
+      <td>TLS configuration </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#udp" name="udp" class="anchor"><span class="anchor-link"></span></a>UDP</h3>
+<p>Sends events over UDP.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td>Target host </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td>Target port </td>
+    </tr>
+    <tr>
+      <td><code>unixSocket</code> </td>
+      <td>string </td>
+      <td>Unix socket path (alternative to host/port) </td>
+    </tr>
+    <tr>
+      <td><code>connectTimeout</code> </td>
+      <td>number </td>
+      <td>Connection timeout (ms) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#syslog" name="syslog" class="anchor"><span class="anchor-link"></span></a>Syslog</h3>
+<p>Sends events to a syslog server.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td>Syslog server host </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td>Syslog server port </td>
+    </tr>
+    <tr>
+      <td><code>protocol</code> </td>
+      <td>string </td>
+      <td>Protocol: <code>tcp</code> or <code>udp</code> </td>
+    </tr>
+    <tr>
+      <td><code>unixSocket</code> </td>
+      <td>string </td>
+      <td>Unix socket path </td>
+    </tr>
+    <tr>
+      <td><code>connectTimeout</code> </td>
+      <td>number </td>
+      <td>Connection timeout (ms) </td>
+    </tr>
+    <tr>
+      <td><code>tls</code> </td>
+      <td>object </td>
+      <td>TLS configuration (for TCP) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#jms" name="jms" class="anchor"><span class="anchor-link"></span></a>JMS</h3>
+<p>Sends events to a JMS (Java Message Service) queue or topic.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>JMS connection URL </td>
+    </tr>
+    <tr>
+      <td><code>name</code> </td>
+      <td>string </td>
+      <td>Queue/topic name </td>
+    </tr>
+    <tr>
+      <td><code>topic</code> </td>
+      <td>boolean </td>
+      <td>If <code>true</code>, sends to a topic; otherwise to a queue </td>
+    </tr>
+    <tr>
+      <td><code>username</code> </td>
+      <td>string </td>
+      <td>JMS username </td>
+    </tr>
+    <tr>
+      <td><code>password</code> </td>
+      <td>string </td>
+      <td>JMS password </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#postgresql" name="postgresql" class="anchor"><span class="anchor-link"></span></a>PostgreSQL</h3>
+<p>Writes events to a PostgreSQL database.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>uri</code> </td>
+      <td>string </td>
+      <td>Full connection URI (alternative to individual fields) </td>
+    </tr>
+    <tr>
+      <td><code>host</code> </td>
+      <td>string </td>
+      <td>Database host </td>
+    </tr>
+    <tr>
+      <td><code>port</code> </td>
+      <td>number </td>
+      <td>Database port </td>
+    </tr>
+    <tr>
+      <td><code>database</code> </td>
+      <td>string </td>
+      <td>Database name </td>
+    </tr>
+    <tr>
+      <td><code>user</code> </td>
+      <td>string </td>
+      <td>Username </td>
+    </tr>
+    <tr>
+      <td><code>password</code> </td>
+      <td>string </td>
+      <td>Password </td>
+    </tr>
+    <tr>
+      <td><code>schema</code> </td>
+      <td>string </td>
+      <td>Schema name </td>
+    </tr>
+    <tr>
+      <td><code>table</code> </td>
+      <td>string </td>
+      <td>Table name </td>
+    </tr>
+    <tr>
+      <td><code>poolSize</code> </td>
+      <td>number </td>
+      <td>Connection pool size </td>
+    </tr>
+    <tr>
+      <td><code>ssl</code> </td>
+      <td>boolean </td>
+      <td>Enable SSL </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#workflow" name="workflow" class="anchor"><span class="anchor-link"></span></a>Workflow</h3>
+<p>Routes events to an Otoroshi <a href="workflows.html">workflow</a> for custom processing.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ref</code> </td>
+      <td>string </td>
+      <td>Workflow ID to invoke </td>
+    </tr>
+  </tbody>
+</table>
 <h3><a href="#console" name="console" class="anchor"><span class="anchor-link"></span></a>Console</h3>
-<p>Nothing to add. The events will be write on the standard output.</p>
-<h3><a href="#generic" name="generic" class="anchor"><span class="anchor-link"></span></a>Generic</h3>
-<ul>
-  <li><code>Mailer url</code>: URL used to push events</li>
-  <li><code>Headers</code>: headers add to the push requests</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h3><a href="#mailgun" name="mailgun" class="anchor"><span class="anchor-link"></span></a>Mailgun</h3>
-<ul>
-  <li><code>EU</code>: is EU server ? if enabled, *<a href="https://api.eu.mailgun.net/*">https://api.eu.mailgun.net/*</a> will be used, otherwise, the US URL will be used : *<a href="https://api.mailgun.net/*">https://api.mailgun.net/*</a>
-</li>
-  <li><code>Mailgun api key</code>: API key of the mailgun account</li>
-  <li><code>Mailgun domain</code>: domain name of the mailgun account</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h3><a href="#mailjet" name="mailjet" class="anchor"><span class="anchor-link"></span></a>Mailjet</h3>
-<ul>
-  <li><code>Public api key</code>: public key of the mailjet account</li>
-  <li><code>Private api key</code>: private key of the mailjet account</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h3><a href="#sendgrid" name="sendgrid" class="anchor"><span class="anchor-link"></span></a>Sendgrid</h3>
-<ul>
-  <li><code>Sendgrid api key</code>: api key of the sendgrid account</li>
-  <li><code>Email addresses</code>: recipients of the emails</li>
-</ul>
-<h2><a href="#file" name="file" class="anchor"><span class="anchor-link"></span></a>File</h2>
-<ul>
-  <li><code>File path</code>: path where the logs will be write</li>
-  <li><code>Max file size</code>: when size is reached, Otoroshi will create a new file postfixed by the current timestamp</li>
-</ul>
-<h2><a href="#goreplay-file" name="goreplay-file" class="anchor"><span class="anchor-link"></span></a>GoReplay file</h2>
-<p>With this kind of exporter, every matching event will be sent to a <code>.gor</code> file compatible with <a href="https://goreplay.org/">GoReplay</a>. </p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>this exporter will only be able to catch <code>TrafficCaptureEvent</code>. Those events are created when a route (or the global config) of the <a href="../topics/engine.html">new proxy engine</a> is setup to capture traffic using the <code>capture</code> flag.</p></div>
-<ul>
-  <li><code>File path</code>: path where the logs will be write</li>
-  <li><code>Max file size</code>: when size is reached, Otoroshi will create a new file postfixed by the current timestamp</li>
-  <li><code>Capture requests</code>: capture http requests in the <code>.gor</code> file</li>
-  <li><code>Capture responses</code>: capture http responses in the <code>.gor</code> file</li>
-</ul>
-<h2><a href="#console" name="console" class="anchor"><span class="anchor-link"></span></a>Console</h2>
-<p>Nothing to add. The events will be write on the standard output.</p>
-<h2><a href="#custom" name="custom" class="anchor"><span class="anchor-link"></span></a>Custom</h2>
-<p>This type of exporter let you the possibility to write your own exporter with your own rules. To create an exporter, we need to navigate to the plugins page, and to create a new item of type exporter.</p>
-<p>When it&rsquo;s done, the exporter will be visible in this list.</p>
-<ul>
-  <li><code>Exporter config.</code>: the configuration of the custom exporter.</li>
-</ul>
-<h2><a href="#metrics" name="metrics" class="anchor"><span class="anchor-link"></span></a>Metrics</h2>
-<p>This plugin is useful to rewrite the metric labels exposed on the <code>/metrics</code> endpoint.</p>
-<ul>
-  <li><code>Labels</code>: list of metric labels. Each pair contains an existing field name and the new name.</li>
-</ul>
+<p>Writes events to the standard output. No additional configuration needed.</p>
+<h3><a href="#wasm" name="wasm" class="anchor"><span class="anchor-link"></span></a>WASM</h3>
+<p>Processes events through a WebAssembly plugin.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>wasmRef</code> </td>
+      <td>string </td>
+      <td>Reference to a <a href="wasm-plugins.html">WASM plugin</a> entity </td>
+    </tr>
+    <tr>
+      <td><code>params</code> </td>
+      <td>object </td>
+      <td>Additional parameters passed to the WASM function </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#otlp-metrics" name="otlp-metrics" class="anchor"><span class="anchor-link"></span></a>OTLP Metrics</h3>
+<p>Exports metrics using the OpenTelemetry Protocol (OTLP).</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>otlp</code> </td>
+      <td>object </td>
+      <td>OTLP endpoint configuration (URL, headers, protocol) </td>
+    </tr>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>object </td>
+      <td>Custom metric tags/labels </td>
+    </tr>
+    <tr>
+      <td><code>metrics</code> </td>
+      <td>array of object </td>
+      <td>Metric definitions to export </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#otlp-logs" name="otlp-logs" class="anchor"><span class="anchor-link"></span></a>OTLP Logs</h3>
+<p>Exports logs using the OpenTelemetry Protocol (OTLP).</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>otlp</code> </td>
+      <td>object </td>
+      <td>OTLP endpoint configuration (URL, headers, protocol) </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#custom-metrics" name="custom-metrics" class="anchor"><span class="anchor-link"></span></a>Custom Metrics</h3>
+<p>Exposes custom metrics on the <code>/metrics</code> endpoint.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>tags</code> </td>
+      <td>object </td>
+      <td>Custom metric labels </td>
+    </tr>
+    <tr>
+      <td><code>metrics</code> </td>
+      <td>array of object </td>
+      <td>Metric definitions </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#metrics" name="metrics" class="anchor"><span class="anchor-link"></span></a>Metrics</h3>
+<p>Rewrites metric labels exposed on the <code>/metrics</code> endpoint.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>labels</code> </td>
+      <td>object </td>
+      <td>Map of existing label names to new label names </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#mailer" name="mailer" class="anchor"><span class="anchor-link"></span></a>Mailer</h3>
+<p>Sends events as email using one of the following providers:</p>
+<h4><a href="#console-mailer" name="console-mailer" class="anchor"><span class="anchor-link"></span></a>Console mailer</h4>
+<p>Writes emails to the standard output (for testing).</p>
+<h4><a href="#generic-mailer" name="generic-mailer" class="anchor"><span class="anchor-link"></span></a>Generic mailer</h4>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>url</code> </td>
+      <td>string </td>
+      <td>URL to push events </td>
+    </tr>
+    <tr>
+      <td><code>headers</code> </td>
+      <td>object </td>
+      <td>HTTP headers </td>
+    </tr>
+    <tr>
+      <td><code>to</code> </td>
+      <td>array of string </td>
+      <td>Recipient email addresses </td>
+    </tr>
+  </tbody>
+</table>
+<h4><a href="#mailgun" name="mailgun" class="anchor"><span class="anchor-link"></span></a>Mailgun</h4>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>eu</code> </td>
+      <td>boolean </td>
+      <td>Use EU server (<code>api.eu.mailgun.net</code>) instead of US </td>
+    </tr>
+    <tr>
+      <td><code>apiKey</code> </td>
+      <td>string </td>
+      <td>Mailgun API key </td>
+    </tr>
+    <tr>
+      <td><code>domain</code> </td>
+      <td>string </td>
+      <td>Mailgun domain </td>
+    </tr>
+    <tr>
+      <td><code>to</code> </td>
+      <td>array of string </td>
+      <td>Recipient email addresses </td>
+    </tr>
+  </tbody>
+</table>
+<h4><a href="#mailjet" name="mailjet" class="anchor"><span class="anchor-link"></span></a>Mailjet</h4>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>publicKey</code> </td>
+      <td>string </td>
+      <td>Mailjet public API key </td>
+    </tr>
+    <tr>
+      <td><code>privateKey</code> </td>
+      <td>string </td>
+      <td>Mailjet private API key </td>
+    </tr>
+    <tr>
+      <td><code>to</code> </td>
+      <td>array of string </td>
+      <td>Recipient email addresses </td>
+    </tr>
+  </tbody>
+</table>
+<h4><a href="#sendgrid" name="sendgrid" class="anchor"><span class="anchor-link"></span></a>Sendgrid</h4>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>apiKey</code> </td>
+      <td>string </td>
+      <td>Sendgrid API key </td>
+    </tr>
+    <tr>
+      <td><code>to</code> </td>
+      <td>array of string </td>
+      <td>Recipient email addresses </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a href="#custom-exporter" name="custom-exporter" class="anchor"><span class="anchor-link"></span></a>Custom exporter</h3>
+<p>Allows using a custom exporter plugin. Create a plugin of type &ldquo;exporter&rdquo; on the plugins page, then select it here.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Property </th>
+      <th>Type </th>
+      <th>Description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ref</code> </td>
+      <td>string </td>
+      <td>Reference to the custom exporter plugin </td>
+    </tr>
+    <tr>
+      <td><code>config</code> </td>
+      <td>object </td>
+      <td>Exporter configuration </td>
+    </tr>
+  </tbody>
+</table>
+<h2><a href="#admin-api" name="admin-api" class="anchor"><span class="anchor-link"></span></a>Admin API</h2>
+<pre><code>GET    /api/data-exporter-configs           # List all data exporters
+POST   /api/data-exporter-configs           # Create a data exporter
+GET    /api/data-exporter-configs/:id       # Get a data exporter
+PUT    /api/data-exporter-configs/:id       # Update a data exporter
+DELETE /api/data-exporter-configs/:id       # Delete a data exporter
+PATCH  /api/data-exporter-configs/:id       # Partially update a data exporter
+</code></pre>
 <div class="nav-next">
-<p><strong>Next:</strong> <a href="../entities/tcp-services.html">TCP services</a></p>
+<p><strong>Next:</strong> <a href="../entities/tcp-services.html">TCP Services</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
@@ -536,20 +1329,13 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../entities/data-exporters.html#data-exporters" class="header">Data exporters</a>
+  <li><a href="../entities/data-exporters.html#data-exporters" class="header">Data Exporters</a>
   <ul>
-    <li><a href="../entities/data-exporters.html#common-fields" class="header">Common fields</a></li>
+    <li><a href="../entities/data-exporters.html#ui-page" class="header">UI page</a></li>
+    <li><a href="../entities/data-exporters.html#properties" class="header">Properties</a></li>
     <li><a href="../entities/data-exporters.html#matching-and-projections" class="header">Matching and projections</a></li>
-    <li><a href="../entities/data-exporters.html#elastic" class="header">Elastic</a></li>
-    <li><a href="../entities/data-exporters.html#webhook" class="header">Webhook</a></li>
-    <li><a href="../entities/data-exporters.html#pulsar" class="header">Pulsar</a></li>
-    <li><a href="../entities/data-exporters.html#kafka" class="header">Kafka</a></li>
-    <li><a href="../entities/data-exporters.html#mailer" class="header">Mailer</a></li>
-    <li><a href="../entities/data-exporters.html#file" class="header">File</a></li>
-    <li><a href="../entities/data-exporters.html#goreplay-file" class="header">GoReplay file</a></li>
-    <li><a href="../entities/data-exporters.html#console" class="header">Console</a></li>
-    <li><a href="../entities/data-exporters.html#custom" class="header">Custom</a></li>
-    <li><a href="../entities/data-exporters.html#metrics" class="header">Metrics</a></li>
+    <li><a href="../entities/data-exporters.html#exporter-types" class="header">Exporter types</a></li>
+    <li><a href="../entities/data-exporters.html#admin-api" class="header">Admin API</a></li>
   </ul></li>
 </ul>
 </div>
