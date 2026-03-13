@@ -87,7 +87,7 @@ Workflows provide a rich set of built-in functions that can be called from `call
 | **Events** | `emit_event` | Emit custom events to the data exporter pipeline |
 | **Email** | `send_mail` | Send emails |
 | **System** | `system_call` | Execute system commands |
-| **Logging** | `log` | Log messages to the Otoroshi logger |
+| **Logging** | `log` | Log messages to the Otoroshi logger | 
 
 You can also define custom functions in the `functions` map of the workflow entity.
 
