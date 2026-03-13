@@ -641,18 +641,6 @@ Usage example
 }
 ```
 
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.GenerateVideoFunction (extensions.com.cloud-apim.llm-extension.video_generate)`
-
-no description
-
-expected configuration:
-
-
-
 ---
 
 
