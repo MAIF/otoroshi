@@ -626,19 +626,6 @@ no description
 
 expected configuration:
 
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.GenerateImageFunction (extensions.com.cloud-apim.llm-extension.image_generate)`
-
-no description
-
-expected configuration:
-
-
-
 ---
 
 
