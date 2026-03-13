@@ -1233,18 +1233,6 @@ Usage example
 }
 ```
 
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.AudioSttFunction (extensions.com.cloud-apim.llm-extension.audio_stt)`
-
-no description
-
-expected configuration:
-
-
-
 ---
 
 
