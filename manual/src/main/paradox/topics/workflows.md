@@ -905,17 +905,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.LlmCallFunction (extensions.com.cloud-apim.llm-extension.llm_call)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-clipboard-list"></span>`Log a message (core.log)`
 
 This function writes whatever the user want to the otoroshi logs
