@@ -824,17 +824,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.CallToolFunctionFunction (extensions.com.cloud-apim.llm-extension.tool_function_call)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-cube"></span>`Wasm call (core.wasm_call)`
 
 This function calls a wasm function
