@@ -8,6 +8,8 @@ The easiest way to get started with Otoroshi on Clever Cloud is to use the **Oto
 
 You can find the addon documentation and provisioning instructions here: [Clever Cloud Otoroshi addon](https://www.clever.cloud/developers/doc/addons/otoroshi/).
 
+The Otoroshi addon available on Clever Cloud is the [Cloud APIM](https://www.cloud-apim.com/) distribution of Otoroshi. This distribution ships with the entire Cloud APIM ecosystem of plugins and extensions, providing additional features on top of the standard Otoroshi distribution (LLM proxying, advanced API management features, etc.). You can find all the Cloud APIM open-source extensions on their [GitHub organization](https://github.com/cloud-apim).
+
 If you need more control over your deployment or want to self-host Otoroshi on Clever Cloud, follow the manual setup instructions below.
 
 ## Create an Otoroshi instance on CleverCloud
