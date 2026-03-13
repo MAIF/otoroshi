@@ -10,17 +10,17 @@ You can find all TCP services [here](http://otoroshi.oto.tools:8080/bo/dashboard
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `id` | string | - | Unique identifier |
-| `name` | string | - | Display name of the TCP service |
-| `description` | string | - | Description |
+| `id` | string |     | Unique identifier |
+| `name` | string |     | Display name of the TCP service |
+| `description` | string |     | Description |
 | `enabled` | boolean | `true` | Whether the service is active |
-| `port` | number | - | The listening port for incoming TCP connections |
+| `port` | number |     | The listening port for incoming TCP connections |
 | `interface` | string | `0.0.0.0` | Network interface the service listens on |
 | `tags` | array of string | `[]` | Tags |
 | `metadata` | object | `{}` | Key/value metadata |
 | `tls` | string | `Disabled` | TLS mode (see below) |
 | `clientAuth` | string | `None` | mTLS client authentication mode (see below) |
-| `sni` | object | - | SNI configuration (see below) |
+| `sni` | object |     | SNI configuration (see below) |
 | `rules` | array of object | `[]` | Routing rules (see below) |
 
 ## TLS modes
@@ -47,9 +47,9 @@ SNI allows Otoroshi to select different targets based on the hostname in the TLS
 |----------|------|---------|-------------|
 | `enabled` | boolean | `false` | Enable SNI-based routing |
 | `forwardIfNoMatch` | boolean | `false` | Forward to a default target if no SNI match is found |
-| `forwardsTo.host` | string | - | Default target hostname (when no SNI match) |
-| `forwardsTo.ip` | string | - | Default target IP address |
-| `forwardsTo.port` | number | - | Default target port |
+| `forwardsTo.host` | string |     | Default target hostname (when no SNI match) |
+| `forwardsTo.ip` | string |     | Default target IP address |
+| `forwardsTo.port` | number |     | Default target port |
 | `forwardsTo.tls` | boolean | `false` | Use TLS to connect to the default target |
 
 ## Rules
