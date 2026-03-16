@@ -5,14 +5,14 @@ import {themes as prismThemes} from 'prism-react-renderer';
 const config = {
   title: 'Otoroshi',
   tagline: 'Lightweight, blazing fast API Gateway & Reverse Proxy',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.png',
 
   future: {
     v4: true,
   },
 
   url: 'https://maif.github.io',
-  baseUrl: '/otoroshi/manual/',
+  baseUrl: '/otoroshi/next/',
 
   organizationName: 'MAIF',
   projectName: 'otoroshi',
