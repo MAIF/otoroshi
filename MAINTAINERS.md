@@ -6,8 +6,8 @@ This document describes who maintains Otoroshi and how project stewardship works
 
 Otoroshi is currently maintained by:
 
-- Mathieu Ancelin
-- Cloud APIM team
+- Mathieu Ancelin <mathieu.ancelin@cloud-apim.com>
+- Etienne Anne <etienne.anne@maif.fr>
 
 ## Maintainer role
 
