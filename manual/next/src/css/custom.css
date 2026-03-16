@@ -606,6 +606,10 @@ details.foldable-block > summary::-webkit-details-marker {
   display: none;
 }
 
+details.foldable-block > div div {
+  border-top: none !important;
+}
+
 details.foldable-block > summary::marker {
   display: none;
   content: '';
