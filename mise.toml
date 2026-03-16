@@ -16,7 +16,7 @@ dir = "otoroshi"
 run = "sbt --java-home $JAVA_HOME ~reStart"
 
 [tasks.dev-backend.env]
-#OTOROSHI_INITIAL_ADMIN_LOGIN = "admin"
+#OTOROSHI_INITIAL_ADMIN_LOGIN = "admin@otoroshi.io"
 #OTOROSHI_INITIAL_ADMIN_PASSWORD = "password"
 #OTOROSHI_API_CLIENT_ID = "admin"
 #OTOROSHI_API_CLIENT_SECRET = "secret"
@@ -55,8 +55,11 @@ dir = "otoroshi"
 run = "$JAVA_HOME/bin/java -jar target/scala-2.12/otoroshi.jar"
 
 [tasks.otoroshi.env]
+PORT = "8080"
 OTOROSHI_STORAGE = "file"
-OTOROSHI_INITIAL_ADMIN_LOGIN = "admin"
+OTOROSHI_ENV = "prod"
+OTOROSHI_INITIAL_ADMIN_LOGIN = "admin@otoroshi.io"
 OTOROSHI_INITIAL_ADMIN_PASSWORD = "password"
 OTOROSHI_API_CLIENT_ID = "admin"
 OTOROSHI_API_CLIENT_SECRET = "secret"
+OTOROSHI_DOMAIN = "oto.tools" # default oto.tools, resolves to 127.0.0.1
