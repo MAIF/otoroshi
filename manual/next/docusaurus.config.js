@@ -112,22 +112,9 @@ const config = {
             position: 'left',
           },
           {
+            to: '/ecosystem',
             label: 'Ecosystem',
             position: 'left',
-            items: [
-              {
-                label: 'Daikoku - Developer Portal',
-                href: 'https://maif.github.io/daikoku/',
-              },
-              {
-                label: 'Cloud APIM',
-                href: 'https://www.cloud-apim.com/',
-              },
-              {
-                label: 'MAIF OSS',
-                href: 'https://maif.github.io/',
-              },
-            ],
           },
           {
             href: 'https://discord.gg/dmbwZrfpcQ',
@@ -207,14 +194,14 @@ const config = {
             title: 'Ecosystem',
             items: [
               {
-                label: 'Daikoku',
-                href: 'https://maif.github.io/daikoku/',
+                label: 'Ecosystem page',
+                href: '/ecosystem',
               },
               {
-                label: 'Cloud APIM',
-                href: 'https://www.cloud-apim.com/',
-              },
-            ],
+                label: 'Daikoku',
+                href: 'https://maif.github.io/daikoku/',
+              }
+            ]
           },
         ],
         logo: {
