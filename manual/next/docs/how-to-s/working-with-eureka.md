@@ -131,7 +131,7 @@ Let's launch it with the following command:
 mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8085
 ````
 
-@@@note
+:::note
 The port is not required but it will be useful when we will deploy more than one instances in the rest of the tutorial
 :::
 Once the command ran, you can navigate to the eureka server view in the Otoroshi UI. The dashboard should displays one registered app and instance.

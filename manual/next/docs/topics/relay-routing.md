@@ -23,7 +23,7 @@ it can quickly become a nightmare when you want to access an application deploye
 </div>
 
 
-@@@ warning { .margin-top-20 }
+:::warning
 this feature may introduce additional latency as the call passes through relay nodes
 :::
 ## Otoroshi instance setup

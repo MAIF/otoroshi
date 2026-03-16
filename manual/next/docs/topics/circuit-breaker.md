@@ -194,7 +194,7 @@ Explanation:
 - All retries combined cannot exceed globalTimeout (25s).
 - After 25s, no further attempts are made, even if retries remain.
 
-@@@note 
+:::note 
 - callTimeout stops a single request attempt if it takes too long.
 - globalTimeout stops all retries combined, enforcing a hard upper limit on the total request duration.
 :::

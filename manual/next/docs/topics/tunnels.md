@@ -11,7 +11,7 @@ This feature is **EXPERIMENTAL** and might not work as expected. If you encounte
 Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. 
 With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).
 
-@@@ warning { .margin-top-20 }
+:::warning
 You have to enable cluster mode (Leader or Worker) to make this feature work. As this feature is experimental, we only support simple http request right now. Server Sent Event and Websocket request are not supported at the moment.
 :::
 ## How Otoroshi tunnels works
@@ -29,7 +29,7 @@ once the persistent tunnel has been created, you can create routes on the public
 <img src="/img/docs/tunnel-requests.jpeg" style="margin-bottom: 20px;" />
 </div>
 
-@@@ warning { .margin-top-20 }
+:::warning
 this feature may introduce additional latency as the call passes through otoroshi tunnels
 :::
 ## Otoroshi tunnel example
