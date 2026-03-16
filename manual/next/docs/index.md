@@ -72,7 +72,7 @@ Every release, along with the migration instructions, is documented on the [Gith
 
 ## Patrons
 
-The work on Otoroshi is funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a> and <a href="https://www.cloud-apim.com/" target="_blank">Cloud APIM</a> with the help of the community.
+The work on Otoroshi is funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a>, <a href="https://www.cloud-apim.com/" target="_blank">Cloud APIM</a>, <a href="https://www.serli.com/" target="_blank">Serli</a> and <a href="https://www.clever.cloud/" target="_blank">Clever Cloud</a> with the help of the community.
 
 ## Licence
 
