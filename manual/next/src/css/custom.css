@@ -568,6 +568,72 @@ div[class*='announcementBar'] {
   }
 }
 
+/* ===== Foldable blocks (GraphQL composer, etc.) ===== */
+details.foldable-block {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+details.foldable-block:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='dark'] details.foldable-block:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+details.foldable-block > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #e8edf4 0%, #dce3ed 100%);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  list-style: none;
+  user-select: none;
+}
+
+[data-theme='dark'] details.foldable-block > summary {
+  background: linear-gradient(135deg, #2a3040 0%, #232a38 100%);
+}
+
+details.foldable-block > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.foldable-block > summary::after {
+  content: "Read";
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 2px 12px;
+  border: 1px solid var(--ifm-color-emphasis-400);
+  border-radius: 4px;
+  background: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-700);
+  flex-shrink: 0;
+}
+
+details.foldable-block[open] > summary::after {
+  content: "Close";
+}
+
+details.foldable-block[open] > summary {
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+details.foldable-block > :not(summary) {
+  padding: 0 1rem;
+}
+
+details.foldable-block > p:first-of-type {
+  margin-top: 1rem;
+}
+
 /* ===== Print improvements ===== */
 @media print {
   .navbar,

@@ -6,7 +6,7 @@ sidebar_position: 12
 
 <div style="display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem">
 <span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.GraphQLBackend">GraphQL Composer</a>
+<a href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.GraphQLBackend">GraphQL Composer</a>
 </div>
 
 :::warning Experimental Feature
@@ -274,12 +274,8 @@ Let's move on to the next section to secure sensitive field of our API.
 
 The permission directives have been established to safeguard the fields within the GraphQL schema. The validation process commences by generating a context for all incoming requests, derived from the list of paths specified in the permissions field of the plugin. These permissions paths can reference various components of the request data (such as URL, headers, etc.), user credentials (such as API key, etc.), and details regarding the matched route. Subsequently, the process verifies that the specified value or values are present within the context.
 
-@@@div { .simple-block }
-
-<div class="simple-block-toggle">
-<span class="simple-block-title">Permission</span>
-<button class="simple-block-button">Close</button>
-</div>
+<details class="foldable-block">
+<summary>Permission</summary>
 
 *Arguments : value and unauthorized_value*
 
@@ -291,17 +287,15 @@ Two arguments are available : `value` which is mandatory and specifies the expec
 ```js
 type User {
     id: String @permission(
-        value: "FOO", 
+        value: "FOO",
         unauthorized_value: "You're not authorized to get this field")
 }
 ```
-:::
-@@@div { .simple-block }
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">All permissions</span>
-<button class="simple-block-button">Close</button>
-</div>
+</details>
+
+<details class="foldable-block">
+<summary>All permissions</summary>
 
 *Arguments : values and unauthorized_value*
 
@@ -311,17 +305,16 @@ This directive is presumably the same as the previous one except that it takes a
 ```js
 type User {
     id: String @allpermissions(
-        values: ["FOO", "BAR"], 
+        values: ["FOO", "BAR"],
         unauthorized_value: "FOO and BAR could not be found")
 }
 ```
-:::
-@@@div { .simple-block }
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">One permissions of</span>
-<button class="simple-block-button">Close</button>
-</div>
+</details>
+
+<details class="foldable-block">
+<summary>One permissions of</summary>
+
 *Arguments : values and unauthorized_value*
 
 This directive takes a list of values and validate that one of them is in the context.
@@ -330,17 +323,15 @@ This directive takes a list of values and validate that one of them is in the co
 ```js
 type User {
     id: String @onePermissionsOf(
-        values: ["FOO", "BAR"], 
+        values: ["FOO", "BAR"],
         unauthorized_value: "FOO or BAR could not be found")
 }
 ```
-:::
-@@@div { .simple-block }
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">Authorize</span>
-<button class="simple-block-button">Close</button>
-</div>
+</details>
+
+<details class="foldable-block">
+<summary>Authorize</summary>
 
 *Arguments : path, value and unauthorized_value*
 
@@ -350,12 +341,13 @@ The authorize directive has one more required argument, named `path`, which indi
 ```js
 type User {
     id: String @authorize(
-        path: "$.raw_request.headers.foo", 
-        value: "BAR", 
+        path: "$.raw_request.headers.foo",
+        value: "BAR",
         unauthorized_value: "Bar could not be found in the foo header")
 }
 ```
-:::
+
+</details>
 Let's restrict the password field to the users that comes with a `role` header of the value `ADMIN`.
 
 1. Patch the configuration of the API by adding the permissions in the configuration of the plugin.
@@ -424,12 +416,8 @@ The error message should look like
 
 ## Directives
 
-@@@div { .simple-block }
-
-<div class="simple-block-toggle">
-<span class="simple-block-title">Rest</span>
-<button class="simple-block-button">Close</button>
-</div>
+<details class="foldable-block">
+<summary>Rest</summary>
 
 *Arguments : url, method, headers, timeout, data, response_path, response_filter, limit, offset, paginate*
 
@@ -456,13 +444,11 @@ type Query {
   user(id: String): User @rest(url: "http://foo.oto.tools/users/${params.id}")
 }
 ```
-:::
-@@@div { .simple-block }
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">GraphQL</span>
-<button class="simple-block-button">Close</button>
-</div>
+</details>
+
+<details class="foldable-block">
+<summary>GraphQL</summary>
 
 *Arguments : url, method, headers, timeout, query, data, response_path, response_filter, limit, offset, paginate*
 
@@ -481,26 +467,24 @@ type Country {
     phone: String
 }
 ```
-:::
-@@@div { .simple-block }
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">Soap</span>
-<button class="simple-block-button">Close</button>
-</div>
+</details>
+
+<details class="foldable-block">
+<summary>Soap</summary>
+
 *Arguments: all following arguments*
 
-The soap directive is used to call a soap service. 
+The soap directive is used to call a soap service.
 
 ```js
 type Query {
     randomNumber: String @soap(
-        jq_response_filter: ".[\"soap:Envelope\"] | .[\"soap:Body\"] | .[\"m:NumberToWordsResponse\"] | .[\"m:NumberToWordsResult\"]", 
-        url: "https://www.dataaccess.com/webservicesserver/numberconversion.wso", 
+        jq_response_filter: ".[\"soap:Envelope\"] | .[\"soap:Body\"] | .[\"m:NumberToWordsResponse\"] | .[\"m:NumberToWordsResult\"]",
+        url: "https://www.dataaccess.com/webservicesserver/numberconversion.wso",
         envelope: "<?xml version=\"1.0\" encoding=\"utf-8\"?> \n  <soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">   \n  <soap:Body>     \n    <NumberToWords xmlns=\"http://www.dataaccess.com/webservicesserver/\">       \n      <ubiNum>12</ubiNum>     \n    </NumberToWords>   \n  </soap:Body> \n</soap:Envelope>")
 }
 ```
-
 
 ##### Specific arguments
 
@@ -515,13 +499,11 @@ type Query {
 | jq_request_filter           | *STRING*  | x        |               |
 | jq_response_filter          | *STRING*  | x        |               |
 
-:::
-@@@div { .simple-block }
+</details>
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">JSON</span>
-<button class="simple-block-button">Close</button>
-</div>
+<details class="foldable-block">
+<summary>JSON</summary>
+
 *Arguments: path, json, paginate*
 
 The json directive can be used to expose static data or mocked data. The first usage is to defined a raw stringify JSON in the `data` argument. The second usage is to set data in the predefined field of the GraphQL plugin composer and to specify a path in the `path` argument.
@@ -533,13 +515,12 @@ type Query {
     users_from_predefined_data: [User] @json(path: "users")
 }
 ```
-:::
-@@@div { .simple-block }
 
-<div class="simple-block-toggle">
-<span class="simple-block-title">Mock</span>
-<button class="simple-block-button">Close</button>
-</div>
+</details>
+
+<details class="foldable-block">
+<summary>Mock</summary>
+
 *Arguments: url*
 
 The mock directive is to used with the Mock Responses Plugin, also named `Charlatan`. This directive can be interesting to mock your schema and start to use your Otoroshi route before starting to develop the underlying service.
@@ -553,7 +534,7 @@ type Query {
 
 This example supposes that the Mock Responses plugin is set on the route's feed, and that an endpoint `/users` is available.
 
-:::
+</details>
 ### List of directive arguments
 
 | Argument           | Type             | Optional                    | Default value |
