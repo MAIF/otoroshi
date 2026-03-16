@@ -1,35 +1,61 @@
+# Mise file (https://mise.jdx.dev/) for otoroshi
+#
+# prepare: mise install 
+# dev: mise run dev 
+# build jar: mise run build 
+# run jar: mise run 
+
 [tools]
 java = "openjdk-17.0.2"
 sbt = "1.7.2"
 node = "20"
 
-[tasks.dev]
+[tasks.dev-backend]
 description = "Run otoroshi in dev mode with sbt"
 dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME run"
+run = "sbt --java-home $JAVA_HOME ~reStart"
 
-[tasks.dev.env]
-OTOROSHI_INITIAL_ADMIN_LOGIN = "admin"
-OTOROSHI_INITIAL_ADMIN_PASSWORD = "password"
-OTOROSHI_API_CLIENT_ID = "admin"
-OTOROSHI_API_CLIENT_SECRET = "secret"
+[tasks.dev-backend.env]
+#OTOROSHI_INITIAL_ADMIN_LOGIN = "admin"
+#OTOROSHI_INITIAL_ADMIN_PASSWORD = "password"
+#OTOROSHI_API_CLIENT_ID = "admin"
+#OTOROSHI_API_CLIENT_SECRET = "secret"
 
-[tasks.ui]
+[tasks.dev-frontend]
 description = "Start frontend dev server"
 dir = "otoroshi/javascript"
 run = "npm run webpack:start"
 
-[tasks.build]
-description = "Build otoroshi (compile, dist, assembly)"
+[tasks.dev]
+description = "Start otoroshi backend + frontend in dev mode"
 dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME compile dist assembly"
+depends = ["dev-backend", "dev-frontend"]
+run = "true"
 
-[tasks.otoroshi]
+[tasks.build-backend]
+description = "Build otoroshi backend (compile , assembly)"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME clean compile assembly"
+
+[tasks.build-frontend]
+description = "Build otoroshi frontend"
+dir = "otoroshi/javascript"
+run = "npm run webpack:build"
+
+[tasks.build]
+description = "Build otoroshi (backend + frontend)"
+run = [
+  { task = "build-frontend" },
+  { task = "build-backend" }
+]
+
+[tasks.jar]
 description = "Run otoroshi locally"
 dir = "otoroshi"
 run = "$JAVA_HOME/bin/java -jar target/scala-2.12/otoroshi.jar"
 
 [tasks.otoroshi.env]
+OTOROSHI_STORAGE = "file"
 OTOROSHI_INITIAL_ADMIN_LOGIN = "admin"
 OTOROSHI_INITIAL_ADMIN_PASSWORD = "password"
 OTOROSHI_API_CLIENT_ID = "admin"
