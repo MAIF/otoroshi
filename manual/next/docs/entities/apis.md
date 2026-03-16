@@ -197,7 +197,7 @@ A flow is a named collection of plugins. Plugins are applied between the fronten
 
 A default flow named `default_plugin_chain` is automatically created with the `OverrideHost` plugin. You can add multiple flows to apply different plugin chains to different routes within the same API.
 
-You can check the list of available plugins [here](../plugins/built-in-plugins.md).
+You can check the list of available plugins [here](../plugins/built-in-plugins.mdx).
 
 ### Flow JSON example
 

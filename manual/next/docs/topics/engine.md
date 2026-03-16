@@ -160,7 +160,7 @@ You can also enable debugging only on a plugin instance instead of the whole rou
 }
 ```
 
-you can find the list of built-in plugins [here](../plugins/built-in-plugins.md)
+you can find the list of built-in plugins [here](../plugins/built-in-plugins.mdx)
 
 ## Using legacy plugins
 

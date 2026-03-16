@@ -522,6 +522,6 @@ All built-in plugins are available as reference implementations on [GitHub](http
 ## Related
 
 * [Plugin system](./plugins.md) - Plugin types reference and lifecycle steps
-* [Built-in plugins](./built-in-plugins.md) - All built-in plugin references
+* [Built-in plugins](./built-in-plugins.mdx) - All built-in plugin references
 * [Admin extensions](../topics/admin-extensions.md) - Extend Otoroshi with custom entities, routes, and UIs
 * [WASM plugins](../topics/wasm-usage.mdx) - Write plugins in any language compiled to WASM

@@ -27,12 +27,12 @@ sidebar_position: 4
     * Cookie Hash (consistent hashing on a cookie value)
     * Query Hash (consistent hashing on a query parameter)
 * Backend Failover targets support ([backends](./entities/backends.md))
-* Distributed in-flight request limiting ([built-in plugins](./plugins/built-in-plugins.md))
-* Distributed rate limiting ([built-in plugins](./plugins/built-in-plugins.md))
-* Per-IP, per-API key, per-route, and custom throttling and quotas ([built-in plugins](./plugins/built-in-plugins.md))
+* Distributed in-flight request limiting ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Distributed rate limiting ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Per-IP, per-API key, per-route, and custom throttling and quotas ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Request and response bandwidth throttling
 * Request and response body size limiting
-* Traffic mirroring to secondary backends ([built-in plugins](./plugins/built-in-plugins.md))
+* Traffic mirroring to secondary backends ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Traffic capture (GoReplay format) ([engine](./topics/engine.md))
 * Canary deployments (percentage-based and time-controlled)
 * Relay routing across network zones ([relay routing](./topics/relay-routing.md))
@@ -56,21 +56,21 @@ sidebar_position: 4
 
 **Routes customization**
 
-* Over 200 built-in middlewares (plugins) covering: ([built-in plugins](./plugins/built-in-plugins.md))
+* Over 200 built-in middlewares (plugins) covering: ([built-in plugins](./plugins/built-in-plugins.mdx))
     * circuit breakers (with configurable thresholds) ([circuit breaker](./topics/circuit-breaker.md))
     * automatic retries (with exponential backoff)
-    * response caching ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.NgResponseCache))
-    * gzip and brotli compression ([gzip](./plugins/built-in-plugins.md#otoroshi.next.plugins.GzipResponseCompressor), [brotli](./plugins/built-in-plugins.md#otoroshi.next.plugins.BrotliResponseCompressor))
-    * request and response headers manipulation ([input](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalHeadersIn), [output](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalHeadersOut))
-    * request and response cookies manipulation ([input](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalCookieInt), [output](./plugins/built-in-plugins.md#otoroshi.next.plugins.AdditionalCookieOut))
-    * CORS handling ([CORS](./plugins/built-in-plugins.md#otoroshi.next.plugins.Cors))
-    * body transformation (jq, regex, XML/JSON conversion, SOAP) ([built-in plugins](./plugins/built-in-plugins.md))
-    * query string transformation ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.QueryTransformer))
+    * response caching ([built-in plugins](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.NgResponseCache))
+    * gzip and brotli compression ([gzip](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.GzipResponseCompressor), [brotli](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.BrotliResponseCompressor))
+    * request and response headers manipulation ([input](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.AdditionalHeadersIn), [output](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.AdditionalHeadersOut))
+    * request and response cookies manipulation ([input](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.AdditionalCookieInt), [output](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.AdditionalCookieOut))
+    * CORS handling ([CORS](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.Cors))
+    * body transformation (jq, regex, XML/JSON conversion, SOAP) ([built-in plugins](./plugins/built-in-plugins.mdx))
+    * query string transformation ([built-in plugins](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.QueryTransformer))
     * GraphQL composition ([GraphQL composer](./topics/graphql-composer.mdx#otoroshi.next.plugins.GraphQLBackend))
-    * HTML patching ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.NgHtmlPatcher))
-    * redirection ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.Redirection))
-    * maintenance and build modes ([built-in plugins](./plugins/built-in-plugins.md))
-    * static responses and mocks ([built-in plugins](./plugins/built-in-plugins.md))
+    * HTML patching ([built-in plugins](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.NgHtmlPatcher))
+    * redirection ([built-in plugins](./plugins/built-in-plugins.mdx#otoroshi.next.plugins.Redirection))
+    * maintenance and build modes ([built-in plugins](./plugins/built-in-plugins.mdx))
+    * static responses and mocks ([built-in plugins](./plugins/built-in-plugins.mdx))
     * etc
 * Support middlewares compiled to WASM (using Extism) ([WASM plugins](./entities/wasm-plugins.md), [WASM usage](./topics/wasm-usage.mdx))
 * Support Open Policy Agent policies for traffic control (via WASM) ([WASM usage](./topics/wasm-usage.mdx))
@@ -82,12 +82,12 @@ sidebar_position: 4
 **Security**
 
 * Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./how-to-s/instantiate-waf-coraza.mdx))
-* IP address allow and block lists (with CIDR support) ([built-in plugins](./plugins/built-in-plugins.md))
-* Domain name allow and block lists ([built-in plugins](./plugins/built-in-plugins.md))
-* Fail2Ban-style automatic IP banning ([built-in plugins](./plugins/built-in-plugins.md))
-* Geolocation-based access control (MaxMind, IPStack) ([built-in plugins](./plugins/built-in-plugins.md))
+* IP address allow and block lists (with CIDR support) ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Domain name allow and block lists ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Fail2Ban-style automatic IP banning ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Geolocation-based access control (MaxMind, IPStack) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Time-restricted access control
-* Log4Shell and React2Shell vulnerability detection ([built-in plugins](./plugins/built-in-plugins.md))
+* Log4Shell and React2Shell vulnerability detection ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Security headers injection (HSTS, CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options)
 * security.txt endpoint (RFC 9116)
 * robots.txt handling
@@ -107,16 +107,16 @@ sidebar_position: 4
     * JWE (encrypted JWT) support
     * JWT signing
 * HMAC request signing and validation ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
-* Biscuit token extraction and validation (datalog-based authorization) ([built-in plugins](./plugins/built-in-plugins.md))
-* OpenFGA fine-grained authorization ([built-in plugins](./plugins/built-in-plugins.md))
-* Role-based access control (RBAC) ([built-in plugins](./plugins/built-in-plugins.md))
-* Context validation (JSON path-based claims validation) ([built-in plugins](./plugins/built-in-plugins.md))
+* Biscuit token extraction and validation (datalog-based authorization) ([built-in plugins](./plugins/built-in-plugins.mdx))
+* OpenFGA fine-grained authorization ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Role-based access control (RBAC) ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Context validation (JSON path-based claims validation) ([built-in plugins](./plugins/built-in-plugins.mdx))
 
 **Monitoring and observability**
 
 * Active health checks (with customizable healthy/unhealthy status codes and regex body checks) ([backends](./entities/backends.md))
 * Route state for the last 90 days
-* Calls tracing using W3C Trace Context ([built-in plugins](./plugins/built-in-plugins.md))
+* Calls tracing using W3C Trace Context ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Real-time traffic metrics ([monitoring](./topics/monitoring.md))
 * Prometheus metrics export ([monitoring](./topics/monitoring.md))
 * OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.md))
@@ -207,11 +207,11 @@ sidebar_position: 4
 
 **Static content and backends**
 
-* Serve static files from local filesystem ([built-in plugins](./plugins/built-in-plugins.md))
-* Serve static files from Amazon S3 ([built-in plugins](./plugins/built-in-plugins.md))
+* Serve static files from local filesystem ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Serve static files from Amazon S3 ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Serve static files from ZIP archives ([ZIP backend how-to](./how-to-s/zip-backend-plugin.mdx))
-* Echo backend for debugging ([built-in plugins](./plugins/built-in-plugins.md))
-* Static response / mock backends ([built-in plugins](./plugins/built-in-plugins.md))
+* Echo backend for debugging ([built-in plugins](./plugins/built-in-plugins.mdx))
+* Static response / mock backends ([built-in plugins](./plugins/built-in-plugins.mdx))
 
 **Administration UI**
 

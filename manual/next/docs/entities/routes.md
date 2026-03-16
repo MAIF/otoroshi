@@ -123,7 +123,7 @@ The `plugins` field contains the list of plugins applied on this route. Each plu
 }
 ```
 
-For the full list of available plugins, see [built-in plugins](../plugins/built-in-plugins.md).
+For the full list of available plugins, see [built-in plugins](../plugins/built-in-plugins.mdx).
 
 ## Complete route JSON example
 

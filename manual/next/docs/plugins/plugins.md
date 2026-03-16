@@ -297,5 +297,5 @@ Always prefer `cachedConfig` in hot paths for performance.
 ## Related
 
 * [Create plugins](./create-plugins.md) - How to build, package, and deploy custom plugins
-* [Built-in plugins](./built-in-plugins.md) - All built-in plugin references
+* [Built-in plugins](./built-in-plugins.mdx) - All built-in plugin references
 * [Admin extensions](../topics/admin-extensions.md) - Extend Otoroshi with custom entities, routes, and UIs
