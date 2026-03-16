@@ -11,12 +11,14 @@ slug: /
 
 > *The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.*
 
-<div style={{textAlign: "center"}}>
-[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](hhttps://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar)
+<div align="center">
+
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar)
+
 </div>
 
-<div style={{textAlign: "center"}}>
-<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300"></img>
+<div align="center">
+<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300" />
 </div>
 
 ## Installation
