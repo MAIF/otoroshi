@@ -18,7 +18,14 @@ const config = {
   projectName: 'otoroshi',
 
   onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
+
+  markdown: {
+    format: 'detect',
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+      onBrokenMarkdownImages: 'warn',
+    },
+  },
 
   i18n: {
     defaultLocale: 'en',
@@ -37,27 +44,6 @@ const config = {
         indexBlog: false,
       }),
     ],
-    "docusaurus-theme-openapi-docs",
-  ],
-
-  plugins: [
-    [
-      'docusaurus-plugin-openapi-docs',
-      {
-        id: "api",
-        docsPluginId: "classic",
-        config: {
-          otoroshi: {
-            specPath: "static/openapi.json",
-            outputDir: "docs/api-reference",
-            sidebarOptions: {
-              groupPathsBy: "tag",
-              categoryLinkSource: "tag",
-            },
-          },
-        },
-      },
-    ],
   ],
 
   presets: [
@@ -68,7 +54,6 @@ const config = {
         docs: {
           sidebarPath: './sidebars.js',
           editUrl: 'https://github.com/MAIF/otoroshi/tree/master/manual/next/',
-          docItemComponent: "@theme/ApiItem",
         },
         blog: false,
         theme: {
@@ -108,7 +93,7 @@ const config = {
             label: 'Documentation',
           },
           {
-            to: '/docs/api-reference/otoroshi-admin-api',
+            to: '/api-reference',
             label: 'API Reference',
             position: 'left',
           },
@@ -238,7 +223,7 @@ const config = {
       prism: {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula,
-        additionalLanguages: ['scala', 'java', 'bash', 'json', 'yaml', 'toml', 'rust', 'nginx', 'docker'],
+        additionalLanguages: ['java', 'bash', 'json', 'yaml', 'rust', 'docker'],
       },
     }),
 };

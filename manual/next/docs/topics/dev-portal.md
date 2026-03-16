@@ -15,7 +15,7 @@ Whether you want to use Daikoku for your public APIs, you want to monetize or wi
 
 Run your first Daikoku with a simple jar or with one Docker command.
 
-<img src="./img/docs/daikoku-logo.png" />
+<img src="/img/docs/daikoku-logo.png" />
 <div style="font-weight: bold; text-align: center; width: 100%">
 Try Daikoku 
 </div>
@@ -26,13 +26,13 @@ Try Daikoku
 
 Daikoku is opensource, so all contributions are welcome.
 
-<img src="./img/docs/opensource.png" />
+<img src="/img/docs/opensource.png" />
 @link:[Show the repository](https://github.com/MAIF/daikoku)
 :::
 ## Documentation
 
 Daikoku and its UI are fully documented.
 
-<img src="./img/docs/documentation.png" />
+<img src="/img/docs/documentation.png" />
 @link:[Read the documentation](https://maif.github.io/daikoku/devmanual/)
 :::

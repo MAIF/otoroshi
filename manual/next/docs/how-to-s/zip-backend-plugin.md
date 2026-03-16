@@ -4,7 +4,7 @@ sidebar_position: 29
 ---
 # Quickly expose a website and static files 
 
-@@include[badge.md](../includes/badge.md) { #badge }
+@@include { #badge }
 
 ## Tutorial
 
@@ -16,7 +16,9 @@ After completing these steps, you will be able to statically expose any kind of 
 
 ## Before your start
 
-@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #initialize-otoroshi }
 
 ## Create an archive with HTML and CSS files
 
@@ -108,7 +110,7 @@ EOF
 Calling the route in a new browser tab at `http://demo-otoroshi.oto.tools:8080/`. You should see something like the following image:
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/zip-backend-final-result.png" />
+<img src="/img/docs/zip-backend-final-result.png" />
 </div>
 
 As we can see, the content of the archive is available, our HTML page is served and the CSS, linked into the HTML page, has loaded.

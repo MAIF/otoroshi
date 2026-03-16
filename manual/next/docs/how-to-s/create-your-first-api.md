@@ -13,7 +13,9 @@ Think of an API in Otoroshi as a way to group one or more routes into a single s
 :::
 ## Prerequisites
 
-@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #initialize-otoroshi }
 
 ## Import an API from OpenAPI
 
@@ -37,7 +39,7 @@ Don't forget the trailing slash in the root URL.
 
 You should now see your API dashboard with the imported routes and configuration.
 
-![Petstore API Dashboard](./img/docs/petstore-api.png)
+![Petstore API Dashboard](/img/docs/petstore-api.png)
 
 ### Understanding the import
 

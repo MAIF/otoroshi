@@ -10,7 +10,7 @@ sidebar_position: 3
 </div>
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/quick-tutorials/asymmetric-vs-symnetric.png" style="width: 700px" />
+<img src="/img/docs/quick-tutorials/asymmetric-vs-symnetric.png" style="width: 700px" />
 
 </div>
 
@@ -31,7 +31,9 @@ The modern best practice is **asymmetric signing**:
 
 ## Before you start
 
-@@include[getting-started.md](../includes/getting-started.md) { #getting-started }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #getting-started }
 
 ---
 

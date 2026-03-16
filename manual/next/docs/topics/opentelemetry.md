@@ -110,7 +110,7 @@ the exporter config. section, fill the collectors endpoint, timeout, gzip and gr
 `client_cert` and `trusted_cert`. 
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/otlp-logs.png" />
+<img src="/img/docs/otlp-logs.png" />
 </div>
 
 ## metrics data exporter
@@ -123,7 +123,7 @@ the exporter config. section, fill the collectors endpoint, timeout, gzip and gr
 Then you will be able to add new metrics on this data exporter with a name, the type of metric (counter, timer, histogram), the value and the kind of event it's based on.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/otlp-metrics.png" />
+<img src="/img/docs/otlp-metrics.png" />
 </div>
 
 

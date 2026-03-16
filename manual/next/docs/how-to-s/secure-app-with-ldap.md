@@ -11,7 +11,9 @@ sidebar_position: 17
 
 ### Before you start
 
-@@include[fetch-and-start.md](../includes/fetch-and-start.md) { #init }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #init }
 
 #### Running an simple OpenLDAP server 
 
@@ -145,7 +147,7 @@ ldapadd -x -w otoroshi -D "cn=admin,dc=otoroshi,dc=tools" -f bootstrap.ldif -v
  - wait 1000
  - screenshot-area generated-hows-to-ldap-auth-configs.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main
 -->
-<img src="./img/docs/generated-hows-to-ldap-auth-configs.png" />
+<img src="/img/docs/generated-hows-to-ldap-auth-configs.png" />
 
 > Dont' forget to save on the bottom page your configuration before to quit the page.
 
@@ -203,7 +205,7 @@ Then, replace the values of the `Mapping group filter` field to match LDAP group
  - wait 1000
  - screenshot-area generated-hows-to-ldap-manage-users.png #app>div>div.container-fluid>div>div.col-sm-10.col-sm-offset-2.main>div>div> div.row>div>div>div>form>div>div:nth-child(3)>div:nth-child(11)
 -->
-<img src="./img/docs/generated-hows-to-ldap-manage-users.png" />
+<img src="/img/docs/generated-hows-to-ldap-manage-users.png" />
 
 With this configuration, Baz is an administrator of Otoroshi with full rights (read / write) on all organizations.
 

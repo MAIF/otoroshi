@@ -22,7 +22,9 @@ After completing these steps, you will be able to call Otoroshi with CORS rules 
 
 ## Before your start
 
-@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #initialize-otoroshi }
 
 Let's start by creating an `index.html` file from where we will call our Otoroshi Route.
 
@@ -227,7 +229,7 @@ EOF
 Try calling your route again using the button.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/cors/allow_origin.png"/>
+<img src="/img/docs/cors/allow_origin.png"/>
 </div> div
 
 This time, the response will be received, and the CORS rules will be checked by your browser. To see the headers added by Otoroshi in the response, expose these headers by specifying them in the plugin configuration.
@@ -237,7 +239,7 @@ Now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 Edit the CORS plugin by adding a new entry `*` in the `Expose headers` input, and save your route. Try calling your route again using the button.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/cors/expose_headers.png" />
+<img src="/img/docs/cors/expose_headers.png" />
 </div>
 
 You should now be able to see the headers sent back by Otoroshi. Let's reduce the scope of allowed origins by restricting access to the route to your own domain only.
@@ -247,13 +249,13 @@ Edit the CORS plugin by replacing the `*` entry of the `Allow origins` input by 
 Try calling your route again using the button.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/cors/specific_allow_origin.png" />
+<img src="/img/docs/cors/specific_allow_origin.png" />
 </div>
 
 You can filter the HTTP methods allowed to be used on your route. Edit the CORS plugin and add `GET`, `POST`, `OPTIONS`, `HEAD` methods to the list of `Allow methods`. Save your route and try calling your route again using the button.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/cors/allow_methods.png" />
+<img src="/img/docs/cors/allow_methods.png" />
 </div>
 
 Try calling your route again using the button.

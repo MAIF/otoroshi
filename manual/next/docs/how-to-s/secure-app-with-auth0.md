@@ -11,7 +11,9 @@ sidebar_position: 15
 
 ### Download Otoroshi
 
-@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #initialize-otoroshi }
 
 ### Configure an Auth0 client
 

@@ -11,7 +11,9 @@ sidebar_position: 19
 
 ### Before you start
 
-@@include[fetch-and-start.md](../includes/fetch-and-start.md) { #init }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #init }
 
 ### Create a simple route
 

@@ -22,7 +22,7 @@ To simplify the process of WASM creation and usage, Otoroshi provides:
 - otoroshi `wasmo`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it [here](../how-to-s/wasmo-installation.md))
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/otoroshi-wasmo-1.png" title="screenshot of a wasmo instance" />
+<img src="/img/docs/otoroshi-wasmo-1.png" title="screenshot of a wasmo instance" />
 </div>
 
 ## Available tutorials
@@ -48,7 +48,7 @@ In a wasm plugin entity, you can define the source of your wasm plugin. You can 
 then you can define the number of memory pages available for each plugin instanciation, the name of the function you want to invoke, the config. map of the VM and if you want to keep a wasm vm alive during the request lifecycle to be able to reuse it in different plugin steps
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/wasm-plugin.png" title="screenshot of wasm plugin" />
+<img src="/img/docs/wasm-plugin.png" title="screenshot of wasm plugin" />
 </div>
 
 ## Otoroshi plugins api
@@ -542,7 +542,7 @@ otoroshi provides some host function in order make wasm interact with otoroshi i
 all the previously listed host functions are enabled with specific authorizations to avoid security issues with third party plugins. You can enable/disable the host function from the wasm plugin entity
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/wasm-authz.png" title="screenshot of wasm authz" />
+<img src="/img/docs/wasm-authz.png" title="screenshot of wasm authz" />
 </div>
 
 

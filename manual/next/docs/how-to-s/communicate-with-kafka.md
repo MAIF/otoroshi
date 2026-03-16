@@ -47,7 +47,7 @@ docker-compose up -d
 Create a new exporter on your Otoroshi instance with the following values
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/kafka-sasl-plaintext.png" />
+<img src="/img/docs/kafka-sasl-plaintext.png" />
 </div>
 
 ### PLAINTEXT mechanism
@@ -89,7 +89,7 @@ docker-compose up -d
 Create a new exporter on your Otoroshi instance with the following values
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/kafka-plaintext.png" />
+<img src="/img/docs/kafka-plaintext.png" />
 </div>
 
 ### SSL mechanism
@@ -147,7 +147,7 @@ docker-compose up -d
 Create a new exporter on your Otoroshi instance with the following values
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/kafka-ssl.png" />
+<img src="/img/docs/kafka-ssl.png" />
 </div>
 
 ### SASL_SSL mechanism
@@ -481,5 +481,5 @@ docker-compose up -d
 Create a new exporter on your Otoroshi instance with the following values
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/kafka-sasl-ssl.png" />
+<img src="/img/docs/kafka-sasl-ssl.png" />
 </div>

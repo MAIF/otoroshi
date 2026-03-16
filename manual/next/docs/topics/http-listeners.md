@@ -108,7 +108,7 @@ You can also provide the configuration as a JSON string using `listeners_json`, 
 Static listeners **must have an `id` field** so that routes and plugins can reference them via `bound_listeners`.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/http-listener-static.png" />
+<img src="/img/docs/http-listener-static.png" />
 </div>
 
 ## Dynamic HTTP listeners
@@ -116,7 +116,7 @@ Static listeners **must have an `id` field** so that routes and plugins can refe
 Dynamic listeners are managed through the admin API or the back-office UI. They are created, updated, and deleted at runtime without restarting Otoroshi.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/http-listener-dynamic.png" />
+<img src="/img/docs/http-listener-dynamic.png" />
 </div>
 
 ### Lifecycle
@@ -158,7 +158,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/http-listeners.proxy.otoro
 A few seconds later, a log entry will appear:
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/http-listener-api-create-log.png" />
+<img src="/img/docs/http-listener-api-create-log.png" />
 </div>
 
 ### Example: disable a listener
@@ -171,7 +171,7 @@ curl -X PATCH 'http://otoroshi-api.oto.tools:8080/apis/http-listeners.proxy.otor
 ```
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/http-listener-api-disable-log.png" />
+<img src="/img/docs/http-listener-api-disable-log.png" />
 </div>
 
 ### Example: delete a listener

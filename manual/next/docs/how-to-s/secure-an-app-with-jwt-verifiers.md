@@ -15,7 +15,9 @@ A verifier can obvisouly verify or generate.
 
 ### Before you start
 
-@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #initialize-otoroshi }
 
 ### Your first jwt verifier
 
@@ -90,7 +92,7 @@ curl -X GET \
 
 This should output a json with `authorization` in headers field. This time, the value are different and you can check his signature on [jwt.io](https://jwt.io) (the expected secret of the generated token is **otoroshi-internal-secret**)
 
-<img src="./img/docs/secure-an-app-with-jwt-verifiers-jwtio.png" height="300px">
+<img src="/img/docs/secure-an-app-with-jwt-verifiers-jwtio.png" height="300px">
 
 ### Verify, transform and generate a new token
 
@@ -112,6 +114,6 @@ Let's start by extending the [previous verifier](http://otoroshi.oto.tools:8080/
 This should output a json with `authorization` in headers field and our generate token in `Internal-Authorization`.
 Once paste in [jwt.io](https://jwt.io), you should have :
 
-<img src="./img/docs/secure-an-app-with-jwt-verifiers-transform-jwtio.png">
+<img src="/img/docs/secure-an-app-with-jwt-verifiers-transform-jwtio.png">
 
 You can see, in the payload of your token, the two claims **from-otoroshi-verifier** and **generated-key** added during the generation of the token by the JWT verifier.

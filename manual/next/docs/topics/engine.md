@@ -726,6 +726,6 @@ curl -X POST \
 ```
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/route_comp_openapi_import.png" />
+<img src="/img/docs/route_comp_openapi_import.png" />
 </div>
 

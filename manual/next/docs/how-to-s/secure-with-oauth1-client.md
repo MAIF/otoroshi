@@ -11,7 +11,9 @@ sidebar_position: 20
 
 ### Before you start
 
-@@include[initialize.md](../includes/initialize.md) { #initialize-otoroshi }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #initialize-otoroshi }
 
 ### Running an simple OAuth 1 server
 
@@ -59,7 +61,7 @@ After this command, the container logs should output :
  - wait 1000
  - screenshot generated-hows-to-secure-with-oauth1-provider.png
 -->
-<img src="./img/docs/generated-hows-to-secure-with-oauth1-provider.png" />
+<img src="/img/docs/generated-hows-to-secure-with-oauth1-provider.png" />
 
 With this configuration, the connected user will receive default access on teams and organizations. If you want to change the access rights for a specific user, you can achieve it with the `Rights override` field and a configuration like :
 
@@ -132,11 +134,11 @@ Once the authentication module and the new container created, we can define the 
 
 Now you can try to call your route and see the login module appears.
 
-> <img src="./img/docs/hows-to-secure-app-with-oauth1-provider-input.png">
+> <img src="/img/docs/hows-to-secure-app-with-oauth1-provider-input.png">
 
 The allow access to the user.
 
-> <img src="./img/docs/hows-to-secure-app-with-oauth1-provider-trust.png">
+> <img src="/img/docs/hows-to-secure-app-with-oauth1-provider-trust.png">
 
 If you had any errors, make sure of :
 

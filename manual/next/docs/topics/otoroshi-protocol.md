@@ -11,7 +11,7 @@ The exchange protocol secure the communication with an app. When it's enabled, O
 If you enable secure communication for a given service with `V1 - simple values exchange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. 
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/exchange.png" />
+<img src="/img/docs/exchange.png" />
 </div>
 
 you can find an example project that implements V1 challenge [here](https://github.com/MAIF/otoroshi/tree/master/demos/challenge)
@@ -21,7 +21,7 @@ you can find an example project that implements V1 challenge [here](https://gith
 If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL. The audience of the response token must be `Otoroshi` and you have to specify `iat`, `nbf` and `exp`.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/exchange-2.png" />
+<img src="/img/docs/exchange-2.png" />
 </div>
 
 you can find an example project that implements V2 challenge [here](https://github.com/MAIF/otoroshi/tree/master/demos/challenge)
@@ -35,13 +35,13 @@ The `Otoroshi-Claim` is a JWT token containing some informations about the servi
 By default, the otoroshi jwt token is signed with the `otoroshi.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section. 
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sec-com-signing-bis.png" />
+<img src="/img/docs/sec-com-signing-bis.png" />
 </div>
 
 using another signing algo.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sec-com-signing-2-bis.png" />
+<img src="/img/docs/sec-com-signing-2-bis.png" />
 </div>
 
 here you can choose the signing algorithm and the secret/keys used. You can use syntax like `${env.MY_ENV_VAR}` or `${config.my.config.path}` to provide secret/keys values. 

@@ -11,7 +11,7 @@ Service Descriptors are now deprecated and will sunset soon (probably in 2026). 
 Services or service descriptor, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). 
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/models-service.png" />
+<img src="/img/docs/models-service.png" />
 </div>
 
 Let’s say you have an API exposed on http://192.168.0.42 and I want to expose it on https://my.api.foo. Otoroshi will proxy all calls to https://my.api.foo and forward them to http://192.168.0.42. While doing that, it will also log everyhting, control accesses, etc.

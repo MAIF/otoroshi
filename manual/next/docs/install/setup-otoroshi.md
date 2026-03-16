@@ -18,7 +18,7 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
 
 The **redis** datastore is quite nice when you want to easily deploy several Otoroshi instances.
 
-<img src="./img/docs/redis.png" />
+<img src="/img/docs/redis.png" />
 
 @link:[Documentation](https://redis.io/topics/quickstart)
 :::
@@ -26,7 +26,7 @@ The **redis** datastore is quite nice when you want to easily deploy several Oto
 
 The **in-memory** datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.
 
-<img src="./img/docs/inmemory.png" />
+<img src="/img/docs/inmemory.png" />
 
 [Start with](../getting-started.md)
 :::
@@ -36,7 +36,7 @@ The **in-memory** datastore is kind of interesting. It can be used for testing p
 
 Experimental support, should be used in cluster mode for leaders
 
-<img src="./img/docs/cassandra.png" />
+<img src="/img/docs/cassandra.png" />
 
 @link:[Documentation](https://cassandra.apache.org/doc/latest/cassandra/getting_started/installing.html)
 :::
@@ -46,7 +46,7 @@ Experimental support, should be used in cluster mode for leaders
 
 Or any postgresql compatible databse like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)
 
-<img src="./img/docs/postgres.png" />
+<img src="/img/docs/postgres.png" />
 
 @link:[Documentation](https://www.postgresql.org/docs/10/tutorial-install.html)
 :::
@@ -55,11 +55,11 @@ Or any postgresql compatible databse like cockroachdb for instance (experimental
 The **filedb** datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. 
 Not suitable for production usage.
 
-<img src="./img/docs/filedb.png" />
+<img src="/img/docs/filedb.png" />
 
 :::
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/datastores.png" />
+<img src="/img/docs/datastores.png" />
 </div>
 
 the first thing to setup is what kind of datastore you want to use with the `otoroshi.storage` setting

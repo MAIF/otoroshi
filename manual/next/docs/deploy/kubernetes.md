@@ -1332,13 +1332,13 @@ Please avoid to use port `80` for your pod as it's the default port to access ot
 It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to `Automatic`
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/kubernetes-daikoku-integration-enabled.png" />
+<img src="/img/docs/kubernetes-daikoku-integration-enabled.png" />
 </div>
 
 then when a user subscribe for an apikey, he will only see an integration token
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/kubernetes-daikoku-integration-token.png" />
+<img src="/img/docs/kubernetes-daikoku-integration-token.png" />
 </div>
 
 then just create an ApiKey manifest with this token and your good to go 

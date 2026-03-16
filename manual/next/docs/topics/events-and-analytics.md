@@ -146,7 +146,7 @@ Once you have declared services, you can monitor them with Otoroshi.
 Let's starting by setup Otoroshi to push events to an elastic cluster via a data exporter. Then you will can setup Otoroshi events read from an elastic cluster. Go to `settings (cog icon) / Danger Zone` and expand the `Analytics: Elastic cluster (read)` section.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/push-to-elastic.png" />
+<img src="/img/docs/push-to-elastic.png" />
 </div>
 
 ### Service healthcheck
@@ -154,7 +154,7 @@ Let's starting by setup Otoroshi to push events to an elastic cluster via a data
 If you have defined an health check URL in the service descriptor, you can access the health check page from the sidebar of the service page.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/service-healthcheck.png" />
+<img src="/img/docs/service-healthcheck.png" />
 </div>
 
 ### Service live stats
@@ -162,7 +162,7 @@ If you have defined an health check URL in the service descriptor, you can acces
 You can also monitor live stats like total of served request, average response time, average overhead, etc. The live stats page can be accessed from the sidebar of the service page.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/service-live-stats.png" />
+<img src="/img/docs/service-live-stats.png" />
 </div>
 
 ### Service analytics
@@ -170,7 +170,7 @@ You can also monitor live stats like total of served request, average response t
 You can also get some aggregated metrics. The analytics page can be accessed from the sidebar of the service page.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/service-analytics.png" />
+<img src="/img/docs/service-analytics.png" />
 </div>
 
 ## New proxy engine

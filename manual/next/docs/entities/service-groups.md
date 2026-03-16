@@ -21,7 +21,7 @@ You can find all service groups [here](http://otoroshi.oto.tools:8080/bo/dashboa
 | `metadata` | object | Key/value metadata |
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/models-group.png" />
+<img src="/img/docs/models-group.png" />
 </div>
 
 ## How it works

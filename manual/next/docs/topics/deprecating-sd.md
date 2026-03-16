@@ -11,13 +11,13 @@ Now (v17.0.0) it's time to go ahead and provide some migration tools to help use
 If you still have Service Descriptors in you database, otoroshi will warn you in the logs
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sd-migration-logs.png" />
+<img src="/img/docs/sd-migration-logs.png" />
 </div>
 
 you will also have a popup displayed in the backoffice from time to time
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sd-migration-popup.png" />
+<img src="/img/docs/sd-migration-popup.png" />
 </div>
 
 This toolkit consists of 3 tools that you can use to migrate existing Service Descriptors
@@ -27,7 +27,7 @@ This toolkit consists of 3 tools that you can use to migrate existing Service De
 you can enable a job launched after the start of the otoroshi cluster by setting `otoroshi.service-descriptors-migration-job.enabled=true` or `OTOROSHI_SERVICE_DESCRIPTORS_MIGRATION_JOB_ENABLED=true`
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sd-migration-job-auto.png" />
+<img src="/img/docs/sd-migration-job-auto.png" />
 </div>
 
 ## Migration API
@@ -43,13 +43,13 @@ curl -X POST -H 'Content-Type: application/json' "http://otoroshi-api.oto.tools:
 on any Service Descriptor, you can click on the `convert to route` button
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sd-migration-ui.png" />
+<img src="/img/docs/sd-migration-ui.png" />
 </div>
 
 and just confirm it
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/sd-migration-ui-confirm.png" />
+<img src="/img/docs/sd-migration-ui-confirm.png" />
 </div>
 
 ## Kubernetes usage

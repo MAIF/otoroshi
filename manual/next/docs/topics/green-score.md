@@ -6,7 +6,7 @@ sidebar_position: 13
 
 The Green Score provide aggregated, quantitative data about the performance and behavior of an API over time. It is an aggregation of static and dynamic values that are coming from the usage of routes in Otoroshi. The main objective is to advise users on the consumption of their APIs and services.
 
-<img src="./img/docs/greenscore.png" />
+<img src="/img/docs/greenscore.png" />
 
 Otoroshi has a complete integration of the collective rules, divided into four concerns: **Architecture**, **Design**, **Usage** and **Logs retention**. The 6000 score points are spread over the four parts and a final note is given for each group of routes.
 
@@ -33,17 +33,17 @@ By default data are displayed for the last 7 days with an interval of one hour.
 On hover, you can see the number of hits and the average usage time (calculate with the average duration).
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/efficiency.png" />
+<img src="/img/docs/efficiency.png" />
 </div>
 
 By clicking on the `graph button` in the upper right corner, an alternative view allows you to visualize the data using 2 graphs including a frequency graph.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/efficiency-graph.png" />
+<img src="/img/docs/efficiency-graph.png" />
 </div>
 
 By clicking on the day in the legend, data is retrieved for the selected day with an interval of 10 minutes. The scale of the 7 last days is kept, in the top, the selected days is displayed.
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/efficiency-by-day.png" />
+<img src="/img/docs/efficiency-by-day.png" />
 </div>

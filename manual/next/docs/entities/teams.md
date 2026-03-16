@@ -28,7 +28,7 @@ You can find all teams [here](http://otoroshi.oto.tools:8080/bo/dashboard/teams)
 * **Delegation**: Allow team leads to manage their own resources without having access to other teams' configurations
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/organizations-and-teams.png" />
+<img src="/img/docs/organizations-and-teams.png" />
 </div>
 
 ## Entities location

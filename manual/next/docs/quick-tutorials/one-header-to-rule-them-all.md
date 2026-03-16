@@ -25,7 +25,9 @@ Your backend has to deal with all of this. You either:
 
 ## Before you start
 
-@@include[getting-started.md](../includes/getting-started.md) { #getting-started }
+@@include:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
+::: { #getting-started }
 
 ## The Solution: Normalize Headers at the Gateway
 
@@ -85,7 +87,7 @@ curl http://roles-api.oto.tools:8080 -H 'x-roles: admin,editor'
 ```
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/quick-tutorials/step-2.png" style="width: 700px" />
+<img src="/img/docs/quick-tutorials/step-2.png" style="width: 700px" />
 You'll see the response includes a `roles` header with the value `admin,editor`.
 </div>
 
@@ -164,7 +166,7 @@ curl http://roles-api.oto.tools:8080 -H 'x-roles: admin'
 ```
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/quick-tutorials/step-4.png" style="width: 700px" />
+<img src="/img/docs/quick-tutorials/step-4.png" style="width: 700px" />
 
 Your backend now receives only the normalized `roles` header. The original headers (`x-roles`, `user-roles`, `roles`) are removed, ensuring consistent header handling across all teams without modifying any client code.
 </div>

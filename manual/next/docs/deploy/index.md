@@ -22,13 +22,13 @@ Cloud APIM provides Otoroshi instances as a service. You can easily create produ
 
 Otoroshi provides an integration to create easily services based on application deployed on your Clever Cloud account.
 
-<img src="./img/docs/clever-cloud.png" />
+<img src="/img/docs/clever-cloud.png" />
 [Documentation](./clever-cloud.md)
 :::
 ## Kubernetes
 Starting at version 1.5.0, Otoroshi provides a native Kubernetes support.
 
-<img src="./img/docs/kubernetes.png" />
+<img src="/img/docs/kubernetes.png" />
 
 [Documentation](./kubernetes.md)
 :::
@@ -36,7 +36,7 @@ Starting at version 1.5.0, Otoroshi provides a native Kubernetes support.
 
 Run Otoroshi on AWS Elastic Beanstalk
 
-<img src="./img/docs/elastic-beanstalk.png" />
+<img src="/img/docs/elastic-beanstalk.png" />
 
 [Tutorial](./aws.md)
 :::
@@ -44,7 +44,7 @@ Run Otoroshi on AWS Elastic Beanstalk
 
 Deploy the Otoroshi Docker image using Amazon Elastic Container Service
 
-<img src="./img/docs/amazon-ecs.png" />
+<img src="/img/docs/amazon-ecs.png" />
 
 @link:[Tutorial](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html)
 [Docker image](../install/get-otoroshi.md#from-docker)
@@ -54,7 +54,7 @@ Deploy the Otoroshi Docker image using Amazon Elastic Container Service
 
 Deploy the Docker image using Google Compute Engine container integration
 
-<img src="./img/docs/google.jpeg" />
+<img src="/img/docs/google.jpeg" />
 
 @link:[Documentation](https://cloud.google.com/compute/docs/containers/deploying-containers)
 [Docker image](../install/get-otoroshi.md#from-docker)
@@ -64,7 +64,7 @@ Deploy the Docker image using Google Compute Engine container integration
 
 Deploy the Docker image using Azure Container Service
 
-<img src="./img/docs/azure-container-service.png" />
+<img src="/img/docs/azure-container-service.png" />
 
 @link:[Documentation](https://azure.microsoft.com/en-us/services/container-service/)
 [Docker image](../install/get-otoroshi.md#from-docker) 
@@ -73,7 +73,7 @@ Deploy the Docker image using Azure Container Service
 
 Deploy the Docker image using Docker integration
 
-<img src="./img/docs/heroku.png" />
+<img src="/img/docs/heroku.png" />
 
 @link:[Documentation](https://devcenter.heroku.com/articles/container-registry-and-runtime)
 [Docker image](../install/get-otoroshi.md#from-docker)
@@ -82,7 +82,7 @@ Deploy the Docker image using Docker integration
 
 Deploy the Docker image using -Docker integration
 
-<img src="./img/docs/cloudfoundry.png" />
+<img src="/img/docs/cloudfoundry.png" />
 
 @link:[Documentation](https://docs.cloudfoundry.org/adminguide/docker.html)
 [Docker image](../install/get-otoroshi.md#from-docker)
@@ -104,13 +104,13 @@ Download the latest Otoroshi distribution, unzip it, customize it and run it.
 
 Deploy Otoroshi as a cluster of leaders and workers.
 
-<img src="./img/docs/clustering.png" />
+<img src="/img/docs/clustering.png" />
 [Documentation](./clustering.md)
 :::
 ## Scaling Otoroshi
 
 Otoroshi is designed to be reasonably easy to scale and be highly available.
 
-<img src="./img/docs/scaling.png" />
+<img src="/img/docs/scaling.png" />
 [Documentation](./scaling.md) 
 :::

@@ -30,7 +30,7 @@ Organizations let you separate resources by logical boundaries:
 * **Multi-tenancy**: Serve multiple independent customers from a single Otoroshi instance
 
 <div style={{textAlign: "center"}}>
-<img src="./img/docs/organizations-and-teams.png" />
+<img src="/img/docs/organizations-and-teams.png" />
 </div>
 
 ## Entities location
