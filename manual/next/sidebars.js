@@ -157,7 +157,6 @@ const sidebars = {
         'plugins/plugins',
         'plugins/create-plugins',
         'plugins/built-in-plugins',
-        'plugins/built-in-legacy-plugins',
       ],
     },
     {
