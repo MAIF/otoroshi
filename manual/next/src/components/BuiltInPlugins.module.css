@@ -57,6 +57,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
+  align-items: start;
 }
 
 /* ===== Card ===== */
@@ -70,8 +71,11 @@
   transition: all 0.25s ease;
   cursor: pointer;
   user-select: none;
+  align-self: start;
+  width: 100%;
   min-width: 400px;
   max-width: 400px;
+  min-height: 200px;
 }
 
 .pluginCard:hover {
