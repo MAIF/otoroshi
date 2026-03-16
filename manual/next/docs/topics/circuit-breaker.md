@@ -36,18 +36,19 @@ In Otoroshi, the circuit breaker is built into the gateway to protect both your 
 ```
 
 ## Parameters Overview
-|:--|:--:|:--|
-|Parameter|	Example Value |	Meaning |
-|retries |	2	|Number of extra attempts after a failure|
-|retryInitialDelay |	50 ms|	Delay before the first retry|
-|backoffFactor |	2|	Exponential growth of retry delays (50ms → 100ms → 200ms …)|
-|maxErrors |	20	|Consecutive errors tolerated before opening the circuit|
-|callTimeout |	30 000 ms	|Max time to receive a full response (non-streaming)|
-|callAndStreamTimeout |	120 000 ms|	Max time to handle a streaming response (SSE, gRPC, WebSocket)|
-|connectionTimeout |	10 000 ms|	Max time to establish TCP/SSL connection|
-|idleTimeout |	60 000 ms|	Max idle time before closing a keep-alive connection|
-|globalTimeout |	30 000 ms|	Max total request duration including retries|
-|sampleInterval |	2000 ms	|Observation window for errors/successes|
+
+| Parameter |	Example Value |	Meaning |
+|---|----|---|
+| retries  |	2	| Number of extra attempts after a failure | 
+| retryInitialDelay  |	50 ms|	Delay before the first retry |
+| backoffFactor  |	2|	Exponential growth of retry delays (50ms → 100ms → 200ms …) |
+| maxErrors  |	20	| Consecutive errors tolerated before opening the circuit |
+| callTimeout  |	30 000 ms	| Max time to receive a full response (non-streaming) |
+| callAndStreamTimeout  |	120 000 ms|	Max time to handle a streaming response (SSE, gRPC, WebSocket) |
+| connectionTimeout  |	10 000 ms|	Max time to establish TCP/SSL connection |
+| idleTimeout  |	60 000 ms|	Max idle time before closing a keep-alive connection |
+| globalTimeout  |	30 000 ms|	Max total request duration including retries |
+| sampleInterval  |	2000 ms	| Observation window for errors/successes |
 
 ---
 

@@ -218,6 +218,30 @@ div[class*='announcementBar'] {
   color: #fff;
 }
 
+.provider-card .provider-card-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.provider-card .provider-card-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #6b8fb5;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.provider-card .provider-card-actions a:hover {
+  background: #5a7fa5;
+  color: #fff;
+}
+
 @media (max-width: 768px) {
   .provider-grid {
     grid-template-columns: 1fr;
