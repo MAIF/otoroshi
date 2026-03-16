@@ -10,13 +10,13 @@ But sometimes, this is not enough. So Otoroshi provides an additional clustering
 
 Otoroshi clustering only uses http internally (right now) to make communications between leaders and workers instances so it is fully compatible with PaaS providers like [Clever-Cloud](https://www.clever-cloud.com/en/) that only provide one external port for http traffic.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cluster-6.png" />
 
 *Fig. 1: Simplified view*
 </div>
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cluster-5.jpg" />
 
 *Fig. 2: Deployment view*
@@ -102,13 +102,13 @@ You **must** have the same cluster configuration on every Otoroshi instance (wor
 
 Once an Otoroshi instance is launcher as cluster Leader, a new row of live metrics tile will be available on the home page of Otoroshi admin UI.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cluster-3.png" />
 </div>
 
 you can also access a more detailed view of the cluster at `Settings (cog icon) / Cluster View`
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cluster-4.png" />
 </div>
 

@@ -228,7 +228,7 @@ EOF
 
 Try calling your route again using the button.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cors/allow_origin.png"/>
 </div> div
 
@@ -238,7 +238,7 @@ Now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 
 Edit the CORS plugin by adding a new entry `*` in the `Expose headers` input, and save your route. Try calling your route again using the button.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cors/expose_headers.png" />
 </div>
 
@@ -248,13 +248,13 @@ Edit the CORS plugin by replacing the `*` entry of the `Allow origins` input by 
 
 Try calling your route again using the button.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cors/specific_allow_origin.png" />
 </div>
 
 You can filter the HTTP methods allowed to be used on your route. Edit the CORS plugin and add `GET`, `POST`, `OPTIONS`, `HEAD` methods to the list of `Allow methods`. Save your route and try calling your route again using the button.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/cors/allow_methods.png" />
 </div>
 

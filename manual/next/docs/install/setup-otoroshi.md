@@ -58,7 +58,7 @@ Not suitable for production usage.
 <img src="/img/docs/filedb.png" />
 
 :::
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/datastores.png" />
 </div>
 

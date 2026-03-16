@@ -6,7 +6,7 @@ sidebar_position: 4
 
 Nihonzaru (the Snow Monkey) is the chaos engineering tool provided by Otoroshi. You can access it at `Settings (cog icon) / Snow Monkey`.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="https://github.com/MAIF/otoroshi/raw/master/resources/nihonzaru-logo.png" />
 </div>
 
@@ -14,13 +14,13 @@ Nihonzaru (the Snow Monkey) is the chaos engineering tool provided by Otoroshi. 
 
 Otoroshi offers some tools to introduce [chaos engineering](https://principlesofchaos.org/) in your everyday life. With chaos engineering, you will improve the resilience of your architecture by creating faults in production on running systems. With [Nihonzaru (the snow monkey)](https://en.wikipedia.org/wiki/Japanese_macaque) Otoroshi helps you to create faults on http request/response handled by Otoroshi. 
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/snow-monkey.png" />
 </div>
 
 ## Settings
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/snow-monkey-settings.png" />
 </div>
 
@@ -45,13 +45,13 @@ With the snow monkey, you can generate four types of faults
 
 Each fault let you define a ratio for impacted requests. If you specify a ratio of `0.2`, then 20% of the requests for the impacte service will be impacted by this fault
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/snow-monkey-faults.png" />
 </div>
 
 Then you juste have to start the snow monkey and enjoy the show ;)
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/snow-monkey-start.png" />
 </div>
 
@@ -59,6 +59,6 @@ Then you juste have to start the snow monkey and enjoy the show ;)
 
 In the last section of the snow monkey page, you can see current outages (per service), when they started, their duration, etc ...
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/snow-monkey-outages.png" />
 </div>

@@ -107,7 +107,7 @@ You can also provide the configuration as a JSON string using `listeners_json`, 
 
 Static listeners **must have an `id` field** so that routes and plugins can reference them via `bound_listeners`.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/http-listener-static.png" />
 </div>
 
@@ -115,7 +115,7 @@ Static listeners **must have an `id` field** so that routes and plugins can refe
 
 Dynamic listeners are managed through the admin API or the back-office UI. They are created, updated, and deleted at runtime without restarting Otoroshi.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/http-listener-dynamic.png" />
 </div>
 
@@ -157,7 +157,7 @@ curl -X POST 'http://otoroshi-api.oto.tools:8080/apis/http-listeners.proxy.otoro
 
 A few seconds later, a log entry will appear:
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/http-listener-api-create-log.png" />
 </div>
 
@@ -170,7 +170,7 @@ curl -X PATCH 'http://otoroshi-api.oto.tools:8080/apis/http-listeners.proxy.otor
   -d '[{"op": "replace", "path": "/config/enabled", "value": false}]'
 ```
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/http-listener-api-disable-log.png" />
 </div>
 

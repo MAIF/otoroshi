@@ -86,7 +86,7 @@ Test with a custom header:
 curl http://roles-api.oto.tools:8080 -H 'x-roles: admin,editor'
 ```
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/quick-tutorials/step-2.png" style="width: 700px" />
 You'll see the response includes a `roles` header with the value `admin,editor`.
 </div>
@@ -165,7 +165,7 @@ Test again to verify the cleanup:
 curl http://roles-api.oto.tools:8080 -H 'x-roles: admin'
 ```
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/quick-tutorials/step-4.png" style="width: 700px" />
 
 Your backend now receives only the normalized `roles` header. The original headers (`x-roles`, `user-roles`, `roles`) are removed, ensuring consistent header handling across all teams without modifying any client code.

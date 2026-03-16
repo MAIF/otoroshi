@@ -725,7 +725,7 @@ curl -X POST \
   -d '{"domain":"oto-api-proxy.oto.tools","openapi":"https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"}'
 ```
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/route_comp_openapi_import.png" />
 </div>
 

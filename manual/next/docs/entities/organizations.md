@@ -29,7 +29,7 @@ Organizations let you separate resources by logical boundaries:
 * **Environments**: Use different organizations for production, staging, and development (though this can also be handled at the infrastructure level)
 * **Multi-tenancy**: Serve multiple independent customers from a single Otoroshi instance
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/organizations-and-teams.png" />
 </div>
 

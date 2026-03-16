@@ -14,7 +14,7 @@ With the API entity, you can define reusable [backends](#backends), declare mult
 
 This evolution unlocks powerful capabilities for building developer portals and brings Otoroshi closer to the expectations of a full-featured API Management platform.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/apis-home.png" />
 </div>
 

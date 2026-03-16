@@ -6,7 +6,7 @@ sidebar_position: 2
 
 An API key is a unique credential used to authenticate and authorize calls to routes and APIs.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/models-apikey.png" />
 </div>
 

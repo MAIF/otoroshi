@@ -20,7 +20,7 @@ You can find all service groups [here](http://otoroshi.oto.tools:8080/bo/dashboa
 | `tags` | array of string | Tags for categorization |
 | `metadata` | object | Key/value metadata |
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/models-group.png" />
 </div>
 

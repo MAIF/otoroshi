@@ -46,7 +46,7 @@ docker-compose up -d
 
 Create a new exporter on your Otoroshi instance with the following values
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/kafka-sasl-plaintext.png" />
 </div>
 
@@ -88,7 +88,7 @@ docker-compose up -d
 
 Create a new exporter on your Otoroshi instance with the following values
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/kafka-plaintext.png" />
 </div>
 
@@ -146,7 +146,7 @@ docker-compose up -d
 
 Create a new exporter on your Otoroshi instance with the following values
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/kafka-ssl.png" />
 </div>
 
@@ -480,6 +480,6 @@ docker-compose up -d
 
 Create a new exporter on your Otoroshi instance with the following values
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/kafka-sasl-ssl.png" />
 </div>

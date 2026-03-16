@@ -12,7 +12,7 @@ Otoroshi provides some plugins out of the box. Here is the available plugins wit
 
 ## Access log (CLF)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -66,7 +66,7 @@ The plugin accepts the following configuration
 
 ## Access log (JSON)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -116,7 +116,7 @@ The plugin accepts the following configuration
 
 ## Kafka access log
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -168,7 +168,7 @@ The plugin accepts the following configuration
 
 ## Basic Auth. caller
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -210,7 +210,7 @@ This plugin accepts the following configuration
 
 ## OAuth2 caller
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -273,7 +273,7 @@ This plugin accepts the following configuration
 
 ## Response Cache
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -342,7 +342,7 @@ This plugin can accept the following configuration
 
 ## Client certificate header
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -414,7 +414,7 @@ This plugin can accept the following configuration
 
 ## Defer Responses
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -457,7 +457,7 @@ This plugin can accept the following configuration
 
 ## Self registration endpoints (service discovery)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -493,7 +493,7 @@ This plugin accepts the following configuration:
 
 ## Geolocation endpoint
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -517,7 +517,7 @@ This plugin will expose current geolocation informations on the following endpoi
 
 ## Geolocation header
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -559,7 +559,7 @@ This plugin can accept the following configuration
 
 ## HMAC caller plugin
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -593,7 +593,7 @@ This plugin can be used to call a "protected" api by an HMAC signature. It will 
 
 ## Izanami Canary Campaign
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -659,7 +659,7 @@ This plugin can accept the following configuration
 
 ## Izanami APIs Proxy
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -721,7 +721,7 @@ This plugin can accept the following configuration
 
 ## JQ bodies transformer
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -795,7 +795,7 @@ This plugin can accept the following configuration
 
 ## Html Patcher
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -828,7 +828,7 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 
 ## Log4Shell mitigation plugin
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -874,7 +874,7 @@ This plugin can accept the following configuration
 
 ## Body logger
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -949,7 +949,7 @@ This plugin can accept the following configuration
 
 ## Mirroring plugin
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -995,7 +995,7 @@ This plugin can accept the following configuration
 
 ## OAuth1 caller
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1029,7 +1029,7 @@ This plugin can be used to call api that are authenticated using OAuth1.
 
 ## OIDC headers
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1076,7 +1076,7 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 
 ## Security Txt
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1128,7 +1128,7 @@ This plugin can accept the following configuration
 
 ## Static Response
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1165,7 +1165,7 @@ This plugin returns a static response for any request
 
 ## User-Agent endpoint
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1189,7 +1189,7 @@ This plugin will expose current user-agent informations on the following endpoin
 
 ## User-Agent header
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1231,7 +1231,7 @@ This plugin can accept the following configuration
 
 ## [DEPRECATED] Workflow endpoint
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1263,7 +1263,7 @@ This plugin runs a workflow and return the response
 
 ## Biscuit token validator
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1303,7 +1303,7 @@ This plugin validates a Biscuit token.
 
 ## Client Certificate + Api Key only
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1326,7 +1326,7 @@ You can set the client cert. DN in an apikey metadata named `allowed-client-cert
 
 ## Client certificate matching (over http)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1394,7 +1394,7 @@ This plugin can accept the following configuration
 
 ## Client certificate matching
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1444,7 +1444,7 @@ This plugin can accept the following configuration
 
 ## Client Certificate Only
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1466,7 +1466,7 @@ Check if a client certificate is present in the request
 
 ## HMAC access validator
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1535,7 +1535,7 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 
 ## OIDC access_token validator
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1617,7 +1617,7 @@ This plugin can accept the following configuration
 
 ## Public quotas
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1655,7 +1655,7 @@ This plugin will enforce public quotas on the current service
 
 ## Allowed users only
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1709,7 +1709,7 @@ This plugin can accept the following configuration
 
 ## Apikey auth module
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1750,7 +1750,7 @@ This plugin adds basic auth on service where credentials are valid apikeys on th
 
 ## Client certificate as apikey
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1789,7 +1789,7 @@ This plugin uses client certificate as an apikey. The apikey will be stored for 
 
 ## Client Credential Flow ApiKey extractor
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1811,7 +1811,7 @@ This plugin can extract an apikey from an opaque access_token generate by the `C
 
 ## Apikey from Biscuit token extractor
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1852,7 +1852,7 @@ apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signat
 
 ## Service discovery target selector (service discovery)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1890,7 +1890,7 @@ This plugin accepts the following configuration:
 
 ## Geolocation details extractor (using IpStack api)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1937,7 +1937,7 @@ This plugin can accept the following configuration
 
 ## Geolocation details extractor (using Maxmind db)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -1982,7 +1982,7 @@ This plugin can accept the following configuration
 
 ## Jwt user extractor
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2018,7 +2018,7 @@ This plugin extract a user from a JWT token
 
 ## OIDC access_token as apikey
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2099,7 +2099,7 @@ This plugin can accept the following configuration
 
 ## User-Agent details extractor
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2142,7 +2142,7 @@ This plugin can accept the following configuration
 
 ## Client Credential Service
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2188,7 +2188,7 @@ This plugin add an an oauth client credentials service (`https://unhandleddomain
 
 ## Global self registration endpoints (service discovery)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2224,7 +2224,7 @@ This plugin accepts the following configuration:
 
 ## Kubernetes admission validator webhook
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2246,7 +2246,7 @@ This plugin exposes a webhook to kubernetes to handle manifests validation
 
 ## Kubernetes sidecar injector webhook
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2268,7 +2268,7 @@ This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods
 
 ## Otoroshi state exporter job
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2301,7 +2301,7 @@ This job send an event containing the full otoroshi export every n seconds
 
 ## Tailscale certificate fetcher job
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2323,7 +2323,7 @@ This job will fetch certificates from Tailscale ACME provider
 
 ## Tailscale targets job
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2345,7 +2345,7 @@ This job will aggregates Tailscale possible online targets
 
 ## Kubernetes Gateway API Controller
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2525,7 +2525,7 @@ and translates them into Otoroshi NgRoute entities.
 
 ## Kubernetes Ingress Controller
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2703,7 +2703,7 @@ This plugin enables Otoroshi as an Ingress Controller
 
 ## Kubernetes Otoroshi CRDs Controller
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -2881,7 +2881,7 @@ This plugin enables Otoroshi CRDs Controller
 
 ## Kubernetes to Otoroshi certs. synchronizer
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -3059,7 +3059,7 @@ This plugin syncs. TLS secrets from Kubernetes to Otoroshi
 
 ## Otoroshi certs. to Kubernetes secrets synchronizer
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -3237,7 +3237,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
 
 ## otoroshi.wasm.WasmVmPoolCleaner
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -3255,7 +3255,7 @@ This plugin syncs. Otoroshi certs to Kubernetes TLS secrets
 
 ## Otoroshi next proxy engine (experimental)
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 
@@ -3315,7 +3315,7 @@ The next time a request hits the `api.foo.bar` domain, the new engine will handl
 
 ## Forward traffic
 
-<img class="plugin-logo plugin-hidden" src=""></img>
+<img class="plugin-logo plugin-hidden" src="" />
 
 ### Infos
 

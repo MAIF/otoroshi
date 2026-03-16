@@ -10,7 +10,7 @@ Service Descriptors are now deprecated and will sunset soon (probably in 2026). 
 :::
 Services or service descriptor, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). 
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/models-service.png" />
 </div>
 

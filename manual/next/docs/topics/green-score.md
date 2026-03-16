@@ -32,18 +32,18 @@ In addition to a performance calculation, the green score also provide a view to
 By default data are displayed for the last 7 days with an interval of one hour. 
 On hover, you can see the number of hits and the average usage time (calculate with the average duration).
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/efficiency.png" />
 </div>
 
 By clicking on the `graph button` in the upper right corner, an alternative view allows you to visualize the data using 2 graphs including a frequency graph.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/efficiency-graph.png" />
 </div>
 
 By clicking on the day in the legend, data is retrieved for the selected day with an interval of 10 minutes. The scale of the 7 last days is kept, in the top, the selected days is displayed.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/efficiency-by-day.png" />
 </div>

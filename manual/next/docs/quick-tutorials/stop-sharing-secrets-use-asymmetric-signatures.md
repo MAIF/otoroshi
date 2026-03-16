@@ -9,7 +9,7 @@ sidebar_position: 3
 <a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.JwtSigner">JWT Signer</a>
 </div>
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/quick-tutorials/asymmetric-vs-symnetric.png" style="width: 700px" />
 
 </div>

@@ -27,7 +27,7 @@ You can find all teams [here](http://otoroshi.oto.tools:8080/bo/dashboard/teams)
 * **Resource organization**: Group related entities (routes, API keys, certificates) by team so each team sees only their own resources
 * **Delegation**: Allow team leads to manage their own resources without having access to other teams' configurations
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/organizations-and-teams.png" />
 </div>
 

@@ -6,7 +6,7 @@ sidebar_position: 30
 
 The Workflows Editor allows you to design, manage, and debug workflows visually. It is composed of a sidebar for navigation and a main panel for workflow interaction.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/workflows-editor.png" />
 </div>
 

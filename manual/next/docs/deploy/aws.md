@@ -52,13 +52,13 @@ First, go to [AWS Elastic Beanstalk Console](https://eu-west-3.console.aws.amazo
 
 Hit **Get started** 
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-0.png" />
 </div>
 
 Specify the **Application name** of your application, Otoroshi for example.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-1.png" />
 </div>
  
@@ -66,7 +66,7 @@ Choose the **Platform** of the application you want to create, in your case use 
 
 For **Application code** choose **Upload your code** then hit **Upload**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-2.png" />
 </div>
 
@@ -76,7 +76,7 @@ As you can see in the image above, you can also choose an S3 location, you can i
   
 When the upload is done, hit **Configure more options**.
    
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-3.png" />
 </div> 
  
@@ -91,7 +91,7 @@ As you see in the image above, we are now configuring the Otoroshi-env, the one 
 For **Configuration presets**, choose custom configuration, now you have a load balancer for your environment with the capacity of at least one instance and at most four.
 I'd recommend at least 2 instances, to change that, on the **Capacity** card hit **Modify**.         
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-4.png" />
 </div>
 
@@ -100,7 +100,7 @@ Change the **Instances** to min 2, max 4 then hit **Save**. For the **Scaling tr
 Instances size is by default t2.micro, which is a bit small for running Otoroshi, I'd recommend a t2.medium.     
 On the **Instances** card hit **Modify**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-5.png" />
 </div>
 
@@ -109,7 +109,7 @@ For **Instance type** choose t2.medium, then hit **Save**, no need to change the
 The default environment created for Otoroshi, for instance Otoroshi-env, is a web server environment which fits in your case, but the thing is that on AWS Elastic Beanstalk by default a web server environment for a docker-based application, runs behind an Nginx proxy.
 We have to remove that proxy. So on the **Software** card hit **Modify**.
         
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-6.png" />
 </div>        
     
@@ -117,7 +117,7 @@ For **Proxy server** choose None then hit **Save**.
 
 Also note that you can set Envs for Otoroshi in same page (see image below). 
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-7.png" />
 </div>  
 
@@ -133,7 +133,7 @@ Before starting, using a datastore hosted by AWS is not at all mandatory, feel f
 
 Go to [AWS ElastiCache](https://eu-west-3.console.aws.amazon.com/elasticache/home?region=eu-west-3#) and hit **Get Started Now**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-8.png" />
 </div>  
 
@@ -145,7 +145,7 @@ You can keep all the other default values and hit **Create** on the bottom right
 
 Once your Redis Cluster is created, it would look like the image below.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-9.png" />
 </div>  
 
@@ -237,31 +237,31 @@ Go to [AWS Certificate Manager](https://eu-west-3.console.aws.amazon.com/acm/hom
 
 Below **Provision certificates** hit **Get started**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-10.png" />
 </div>   
  
 Keep the default selected value **Request a public certificate** and hit **Request a certificate**.
  
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-11.png" />
 </div>  
 
 Put your **Domain name**, use *. for wildcard, for instance *\*.mysubdomain.oto.tools*, then hit **Next**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-12.png" />
 </div>  
 
 You can choose between **Email validation** and **DNS validation**, I'd recommend **DNS validation**, then hit **Review**.    
     
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-13.png" />
 </div> 
  
 Verify that you did put the right **Domain name** then hit **Confirm and request**.   
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-14.png" />
 </div>
  
@@ -273,13 +273,13 @@ Once the certificate is validated, you need to modify the configuration of Otoro
 For that you need to go to [AWS Elastic Beanstalk applications](https://eu-west-3.console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-3#/applications),
 hit **Otoroshi-env**, then on the left side hit **Configuration**, then on the **Load balancer** card hit **Modify**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-15.png" />
 </div>
 
 In the **Application Load Balancer** section hit **Add listener**.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-16.png" />
 </div>
 
@@ -287,7 +287,7 @@ Fill the popup as the image above, then hit **Add**.
 
 You should now be seeing something like this : 
    
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-17.png" />
 </div>   
  
@@ -304,7 +304,7 @@ To find the DNS name of Otoroshi's load balancer go to [AWS Ec2](https://eu-west
 
 You would find something like this : 
   
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/deploy-elb-18.png" />
 </div>   
 

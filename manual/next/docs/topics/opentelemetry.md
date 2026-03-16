@@ -109,7 +109,7 @@ First create a new data exporter and select the type `otlp-logs`. Then fill the 
 the exporter config. section, fill the collectors endpoint, timeout, gzip and grpc flags, enable mTLS through 
 `client_cert` and `trusted_cert`. 
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/otlp-logs.png" />
 </div>
 
@@ -122,7 +122,7 @@ the exporter config. section, fill the collectors endpoint, timeout, gzip and gr
 
 Then you will be able to add new metrics on this data exporter with a name, the type of metric (counter, timer, histogram), the value and the kind of event it's based on.
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/otlp-metrics.png" />
 </div>
 

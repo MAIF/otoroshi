@@ -11,7 +11,7 @@ To simplify the process of WASM creation and usage, Otoroshi provides:
 - otoroshi ui integration: a full set of plugins that let you pick which WASM function to runtime at any point in a route
 - otoroshi `wasmo`: a code editor in the browser that let you write your plugin in `Rust`, `TinyGo`, `Javascript` or `Assembly Script` without having to think about compiling it to WASM (you can find a complete tutorial about it [here](../how-to-s/wasmo-installation.md))
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/otoroshi-wasmo-1.png" title="screenshot of a wasmo instance" />
 </div>
 

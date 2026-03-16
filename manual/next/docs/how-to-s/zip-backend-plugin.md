@@ -109,7 +109,7 @@ EOF
 
 Calling the route in a new browser tab at `http://demo-otoroshi.oto.tools:8080/`. You should see something like the following image:
 
-<div style={{textAlign: "center"}}>
+<div align="center">
 <img src="/img/docs/zip-backend-final-result.png" />
 </div>
 
