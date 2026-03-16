@@ -1,5 +1,6 @@
 // @ts-check
 import {themes as prismThemes} from 'prism-react-renderer';
+import rehypeImgBaseUrl from './plugins/rehype-img-baseurl.js';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -54,6 +55,9 @@ const config = {
         docs: {
           sidebarPath: './sidebars.js',
           editUrl: 'https://github.com/MAIF/otoroshi/tree/master/manual/next/',
+          rehypePlugins: [
+            [rehypeImgBaseUrl, {baseUrl: '/otoroshi/next/'}],
+          ],
         },
         blog: false,
         theme: {
