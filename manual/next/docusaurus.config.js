@@ -43,7 +43,7 @@ const config = {
         language: ["en"],
         highlightSearchTermsOnTargetPage: true,
         explicitSearchResultPath: true,
-        indexBlog: false,
+        indexBlog: true,
       }),
     ],
   ],
@@ -61,7 +61,10 @@ const config = {
             [rehypeImgBaseUrl, {baseUrl: '/otoroshi/next/'}],
           ],
         },
-        blog: false,
+        blog: {
+          showReadingTime: true,
+          editUrl: 'https://github.com/MAIF/otoroshi/tree/master/manual/next/',
+        },
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -101,6 +104,11 @@ const config = {
           {
             to: '/api-reference',
             label: 'API Reference',
+            position: 'left',
+          },
+          {
+            to: '/blog',
+            label: 'Blog',
             position: 'left',
           },
           {
