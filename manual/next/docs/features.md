@@ -121,7 +121,7 @@ sidebar_position: 4
 * Prometheus metrics export ([monitoring](./topics/monitoring.md))
 * OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.md))
 * Datadog, StatsD metrics export ([monitoring](./topics/monitoring.md))
-* Export alerts and events to external systems: ([data exporters](./entities/data-exporters.md), [events and analytics](./topics/events-and-analytics.md))
+* Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.md))
     * Elasticsearch ([how-to](./how-to-s/export-events-to-elastic.md))
     * Apache Kafka ([how-to](./how-to-s/communicate-with-kafka.md))
     * Apache Pulsar

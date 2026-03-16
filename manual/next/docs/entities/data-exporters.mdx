@@ -2,6 +2,9 @@
 title: Data Exporters
 sidebar_position: 7
 ---
+
+import { FilteringDocs, ProjectionDocs } from '@site/src/components/DataExporterDocs';
+
 # Data Exporters
 
 Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems.
@@ -60,16 +63,12 @@ Otoroshi provides rules to filter events based on their content. Given this exam
 }
 ```
 
-@@@div { #filtering }
-&nbsp;
-:::
+<FilteringDocs />
 ### Projection
 
 **Projection** is a list of fields to export. If empty, all fields are exported. If specified, **only** the listed fields will be included in exported events.
 
-@@@div { #projection }
-&nbsp;
-:::
+<ProjectionDocs />
 ## Exporter types
 
 ### Elastic

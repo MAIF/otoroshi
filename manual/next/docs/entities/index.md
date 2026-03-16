@@ -43,7 +43,7 @@ Any entity has the following properties
 
 - **[Certificates](./certificates.md)**: Add secure communication between Otoroshi, clients and services
 
-- **[Data exporters](./data-exporters.md)**: Export alerts, events ands logs
+- **[Data exporters](./data-exporters.mdx)**: Export alerts, events ands logs
 
 - **[Service descriptors](./service-descriptors.md)**: Proxy your applications with service descriptors
 

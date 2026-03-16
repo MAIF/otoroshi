@@ -22,7 +22,7 @@ You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/route
 | `enabled` | boolean | `true` | Whether the route is active. Disabled routes are ignored by the router |
 | `debug_flow` | boolean | `false` | Enable debug flow. Execution reports will contain all input/output values. See [engine docs](../topics/engine.md#reporting) |
 | `capture` | boolean | `false` | Enable request/response capture. Generates events with full request content. Use with caution! See [engine docs](../topics/engine.md#http-traffic-capture) |
-| `export_reporting` | boolean | `false` | Export execution reports for each request via [data exporters](./data-exporters.md). See [engine docs](../topics/engine.md#reporting) |
+| `export_reporting` | boolean | `false` | Export execution reports for each request via [data exporters](./data-exporters.mdx). See [engine docs](../topics/engine.md#reporting) |
 | `groups` | array of string | `["default"]` | Service groups this route belongs to. Used for API key authorization |
 | `bound_listeners` | array of string | `[]` | List of [HTTP listener](./http-listeners.md) IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port |
 | `frontend` | object |    | Frontend configuration (how the router matches this route). See [below](#frontend-configuration) |

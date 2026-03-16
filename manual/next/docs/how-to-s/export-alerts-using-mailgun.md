@@ -29,7 +29,7 @@ Let's create an exporter. The exporter will export by default all events generat
 
 With this configuration, all Otoroshi events will be send to your listed addresses (we don't recommended to do that).
 
-To filter events on `Alerts` type, we need to add the following configuration inside the `Filtering and projection` section (if you want to deep learn about this section, read this [part](../entities/data-exporters.md#matching-and-projections)).
+To filter events on `Alerts` type, we need to add the following configuration inside the `Filtering and projection` section (if you want to deep learn about this section, read this [part](../entities/data-exporters.mdx#matching-and-projections)).
 
 ```json
 {

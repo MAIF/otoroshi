@@ -566,7 +566,7 @@ you can also use the `Try it` feature of the new route designer UI to get debug 
 :::
 ## HTTP traffic capture
 
-using the `capture` flag, a `TrafficCaptureEvent` is generated for each http request/response. This event will contains request and response body. Those events can be exported using [data exporters](../entities/data-exporters.md) as usual. You can also use the [GoReplay file exporter](../entities/data-exporters.md#goreplay-file) that is specifically designed to ingest those events and create [GoReplay](https://goreplay.org/) files (`.gor`)
+using the `capture` flag, a `TrafficCaptureEvent` is generated for each http request/response. This event will contains request and response body. Those events can be exported using [data exporters](../entities/data-exporters.mdx) as usual. You can also use the [GoReplay file exporter](../entities/data-exporters.mdx#goreplay-file) that is specifically designed to ingest those events and create [GoReplay](https://goreplay.org/) files (`.gor`)
 
 :::warning
 this feature can have actual impact on CPU and RAM consumption

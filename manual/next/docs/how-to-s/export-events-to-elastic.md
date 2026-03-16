@@ -61,7 +61,7 @@ This should output a list of graphs.
 
 By default, an exporter handle all events from Otoroshi. In some case, you need to filter the events to send to elasticsearch.
 
-To filter the events, jump to the `Filtering and projection` field in exporter view. Otoroshi supports to include a kind of events or to exclude a list of events (if you want to deep learn about this section, read this [part](../entities/data-exporters.md#matching-and-projections)). 
+To filter the events, jump to the `Filtering and projection` field in exporter view. Otoroshi supports to include a kind of events or to exclude a list of events (if you want to deep learn about this section, read this [part](../entities/data-exporters.mdx#matching-and-projections)). 
 
 An example which keep only events with a field `@type` of value `AlertEvent`:
 ```json
