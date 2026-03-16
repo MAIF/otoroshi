@@ -70,6 +70,8 @@
   transition: all 0.25s ease;
   cursor: pointer;
   user-select: none;
+  min-width: 400px;
+  max-width: 400px;
 }
 
 .pluginCard:hover {
@@ -129,6 +131,37 @@
   line-height: 1.5;
   margin: 0;
   flex: 1;
+}
+
+.pluginDescription code,
+.pluginDescriptionClamped code {
+  font-size: 0.8rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--ifm-color-emphasis-100);
+}
+
+[data-theme='dark'] .pluginDescription code,
+[data-theme='dark'] .pluginDescriptionClamped code {
+  background: var(--ifm-color-emphasis-200);
+}
+
+.pluginDescription a,
+.pluginDescriptionClamped a {
+  color: var(--ifm-color-primary);
+  text-decoration: underline;
+}
+
+.pluginDescriptionClamped {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ===== Expanded Details ===== */

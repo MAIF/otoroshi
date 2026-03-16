@@ -1,6 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import styles from './BuiltInPlugins.module.css';
-import pluginsData from '../../plugins.json';
+import _pluginsData from '../../plugins.json';
+
+const pluginsData = _pluginsData.filter(p => p.plugin_categories.indexOf("Cloud APIM") === -1 && p.id.indexOf("cloud.apim") === -1 && p.id.indexOf("cloud.apim") === -1)
+
+function renderMarkdown(text) {
+  if (!text) return null;
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const html = escaped
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\n/g, '<br/>');
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+}
 
 function PluginCard({ plugin }) {
   const [expanded, setExpanded] = useState(false);
@@ -20,7 +37,9 @@ function PluginCard({ plugin }) {
         ))}
       </div>
 
-      <p className={styles.pluginDescription}>{plugin.description}</p>
+      <div className={expanded ? styles.pluginDescription : styles.pluginDescriptionClamped}>
+        {renderMarkdown(plugin.description)}
+      </div>
 
       {expanded && (
         <div className={styles.expandedDetails}>
