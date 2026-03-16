@@ -4,9 +4,12 @@ sidebar_position: 22
 ---
 # Setup an Otoroshi cluster
 
-<div style="display: flex; align-items: center; gap: .5rem;">
-<span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<div style={{display: "flex", alignItems: "center", gap: ".5rem"}}>
+<span style={{fontWeight: "bold"}}>Route plugins:</span>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
 </div>
 
 In this tutorial, you create an cluster of Otoroshi.
@@ -77,17 +80,32 @@ backend back_http_nodes
 
 and run haproxy with this config file
 
-no docker
-:   > **Included file**: `../snippets/cluster-run-ha.sh`
+<Tabs>
+<TabItem value="no docker" label="no docker" default>
 
-docker (on linux)
-:   > **Included file**: `../snippets/cluster-run-ha.sh`
+```text include=../snippets/cluster-run-ha.sh
+```
 
-docker (on macos)
-:   > **Included file**: `../snippets/cluster-run-ha.sh`
+</TabItem>
+<TabItem value="docker (on linux)" label="docker (on linux)">
 
-docker (on windows)
-:   > **Included file**: `../snippets/cluster-run-ha.sh`
+```text include=../snippets/cluster-run-ha.sh
+```
+
+</TabItem>
+<TabItem value="docker (on macos)" label="docker (on macos)">
+
+```text include=../snippets/cluster-run-ha.sh
+```
+
+</TabItem>
+<TabItem value="docker (on windows)" label="docker (on windows)">
+
+```text include=../snippets/cluster-run-ha.sh
+```
+
+</TabItem>
+</Tabs>
 
 The last step is to create a route, add a rule to add, in the headers, a specific value to identify the worker used.
 

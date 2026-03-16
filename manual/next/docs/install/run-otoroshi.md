@@ -47,11 +47,11 @@ You can also pass useful args like :
 docker run -p "8080:8080" maif/otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
 ```
 
-If you want to provide your own config file, you can read [the documentation about config files](./setup-otoroshi.mdx).
+If you want to provide your own config file, you can read [the documentation about config files](./setup-otoroshi.mdxx).
 
 You can also provide some ENV variable using the `--env` flag to customize your Otoroshi instance.
 
-The list of possible env variables is available [here](./setup-otoroshi.mdx).
+The list of possible env variables is available [here](./setup-otoroshi.mdxx).
 
 You can use a volume to provide configuration like :
 

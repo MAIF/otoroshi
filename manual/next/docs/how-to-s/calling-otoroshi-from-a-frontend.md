@@ -22,9 +22,9 @@ After completing these steps, you will be able to call Otoroshi with CORS rules 
 
 ## Before your start
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 Let's start by creating an `index.html` file from where we will call our Otoroshi Route.
 

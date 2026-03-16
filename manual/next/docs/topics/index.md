@@ -9,7 +9,7 @@ slug: /topics
 In this sections, you will find informations about various Otoroshi topics  
 
 * [Proxy engine](./engine.md)
-* [WASM support](./wasm-usage.md)
+* [WASM support](./wasm-usage.mdx)
 * [Chaos engineering](./chaos-engineering.md)
 * [TLS](./tls.md)
 * [Otoroshi's PKI](./pki.md)
@@ -17,7 +17,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [Events and analytics](./events-and-analytics.md)
 * [Developer portal with Daikoku](./dev-portal.md)
 * [Sessions management](./sessions-mgmt.md)
-* [The Otoroshi communication protocol](./otoroshi-protocol.md)
+* [The Otoroshi communication protocol](./otoroshi-protocol.mdx)
 * [Expression language](./expression-language.md)
 * [Otoroshi user rights](./user-rights.md)
 * [GraphQL composer](./graphql-composer.md)

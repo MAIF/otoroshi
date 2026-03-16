@@ -13,9 +13,9 @@ Think of an API in Otoroshi as a way to group one or more routes into a single s
 :::
 ## Prerequisites
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 ## Import an API from OpenAPI
 

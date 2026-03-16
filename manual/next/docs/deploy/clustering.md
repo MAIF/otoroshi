@@ -129,4 +129,4 @@ java -Dhttp.port=8092 -Dhttps.port=9092 -Dotoroshi.cluster.mode=worker \
 
 ## Setup a cluster by example
 
-if you want to see how to setup an otoroshi cluster, just check [the clustering tutorial](../how-to-s/setup-otoroshi-cluster.md)
+if you want to see how to setup an otoroshi cluster, just check [the clustering tutorial](../how-to-s/setup-otoroshi-cluster.mdx)

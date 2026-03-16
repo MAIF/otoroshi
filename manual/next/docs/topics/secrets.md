@@ -4,9 +4,9 @@ sidebar_position: 24
 ---
 # Secrets management
 
-@@include:::warning Experimental Feature
+:::warning Experimental Feature
 This feature is **EXPERIMENTAL** and might not work as expected. If you encounter any bugs, [please file an issue](https://github.com/MAIF/otoroshi/issues/new).
-::: { .experimental-feature }
+:::
 
 Secrets are generally confidential values that should not appear in plain text in the application. There are several products that help you store, retrieve, and rotate these secrets securely. Otoroshi offers a mechanism to set up references to these secrets in its entities to benefits from the perks of your existing secrets management infrastructure. This feature only work with the [new proxy engine](./engine.md).
 

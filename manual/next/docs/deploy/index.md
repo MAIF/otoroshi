@@ -30,7 +30,7 @@ Starting at version 1.5.0, Otoroshi provides a native Kubernetes support.
 
 <img src="/img/docs/kubernetes.png" />
 
-[Documentation](./kubernetes.md)
+[Documentation](./kubernetes.mdx)
 :::
 ## AWS Elastic Beanstalk
 
@@ -112,5 +112,5 @@ Deploy Otoroshi as a cluster of leaders and workers.
 Otoroshi is designed to be reasonably easy to scale and be highly available.
 
 <img src="/img/docs/scaling.png" />
-[Documentation](./scaling.md) 
+[Documentation](./scaling.mdx) 
 :::

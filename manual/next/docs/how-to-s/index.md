@@ -8,7 +8,7 @@ slug: /how-to-s
 
 in this section, we will explain some mainstream Otoroshi usage scenario's 
 
-* [Otoroshi and WASM](./wasm-usage.md)
+* [Otoroshi and WASM](./wasm-usage.mdx)
 * [Wasmo](./wasmo-installation.md)
 * [Tailscale integration](./tailscale-integration.md)
 * [End-to-end mTLS](./end-to-end-mtls.md)
@@ -21,7 +21,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Secure an api with apikeys](./secure-with-apikey.md)
 * [Secure an app with OAuth1](./secure-with-oauth1-client.md)
 * [Secure an api with OAuth2 client_credentials flow](./secure-with-oauth2-client-credentials.md)
-* [Setup an Otoroshi cluster](./setup-otoroshi-cluster.md)
+* [Setup an Otoroshi cluster](./setup-otoroshi-cluster.mdx)
 * [TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
 * [Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
 * [Secure the communication between a backend app and Otoroshi](./secure-the-communication-between-a-backend-app-and-otoroshi.md)

@@ -171,9 +171,9 @@ PATCH  /api/wasm-plugins/:id       # Partially update a WASM plugin
 
 ## Learn more
 
-For a detailed overview of WASM in Otoroshi, available plugin types, and how they integrate with the proxy engine, see [Otoroshi and WASM](../topics/wasm-usage.md).
+For a detailed overview of WASM in Otoroshi, available plugin types, and how they integrate with the proxy engine, see [Otoroshi and WASM](../topics/wasm-usage.mdx).
 
 For practical guides:
 
 * [Install a Wasmo](../how-to-s/wasmo-installation.md) to set up a Wasmo instance for compiling WASM plugins
-* [Use a WASM plugin](../how-to-s/wasm-usage.md) for a step-by-step tutorial on creating and using WASM plugins
+* [Use a WASM plugin](../how-to-s/wasm-usage.mdx) for a step-by-step tutorial on creating and using WASM plugins

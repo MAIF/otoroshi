@@ -4,6 +4,9 @@ sidebar_position: 29
 ---
 # Otoroshi and WASM
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 WebAssembly (WASM) is a simple machine model and executable format with an extensive specification. It is designed to be portable, compact, and execute at or near native speeds. Otoroshi already supports the execution of WASM files by providing different plugins that can be applied on routes. These plugins are:
 
 - `WasmRouteMatcher`: useful to define if a route can handle a request
@@ -30,11 +33,11 @@ To simplify the process of WASM creation and usage, Otoroshi provides:
 here is the list of available tutorials about wasm in Otoroshi
 
 1. [Install a Wasmo](../how-to-s/wasmo-installation.md)
-2. [Use a WASM plugin](../how-to-s/wasm-usage.md)
+2. [Use a WASM plugin](../how-to-s/wasm-usage.mdx)
 
 ## Wasm plugins entities
 
-Otoroshi provides a dedicated entity for wasm plugins. Those entities makes it easy to declare a wasm plugin with specific configuration only once and use it in multiple places. 
+Otoroshi provides a dedicated entity for wasm plugins. Those entities makes it easy to declare a wasm plugin with specific configuration only once and use it in multiple places.
 
 You can find wasm plugin entities at `/bo/dashboard/wasm-plugins`
 
@@ -53,7 +56,7 @@ then you can define the number of memory pages available for each plugin instanc
 
 ## Otoroshi plugins api
 
-the following parts illustrates the apis for the different plugins. Otoroshi uses [Extism](https://extism.org/) to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings. 
+the following parts illustrates the apis for the different plugins. Otoroshi uses [Extism](https://extism.org/) to handle content sharing between the JVM and the wasm VM. All structures are sent to/from the plugins as json strings.
 
 for instance, if we want to write a `WasmBackendCall` plugin using javascript, we could write something like
 
@@ -63,20 +66,20 @@ function backend_call() {
   const backend_call_context = JSON.parse(input_str); // and parse it
   if (backend_call_context.path === '/hello') {
     Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the "backend" call result
-      headers: { 
-        'content-type': 'application/json' 
+      headers: {
+        'content-type': 'application/json'
       },
-      body_json: { 
-        message: `Hello ${ctx.request.query.name[0]}!` 
+      body_json: {
+        message: `Hello ${ctx.request.query.name[0]}!`
       },
       status: 200,
     }));
   } else {
     Host.outputString(JSON.stringify({  // now we return a json string to otoroshi with the "backend" call result
-      headers: { 
-        'content-type': 'application/json' 
+      headers: {
+        'content-type': 'application/json'
       },
-      body_json: { 
+      body_json: {
         error: "not found"
       },
       status: 404,
@@ -90,14 +93,26 @@ the following examples are written in rust. the rust macros provided by extism m
 
 do not forget to add the extism pdk library to your project to make it compile
 
-Cargo.toml
-:   > **Included file**: `../snippets/wasmo/Cargo.toml` 
+<Tabs>
+<TabItem value="Cargo.toml" label="Cargo.toml" default>
 
-go.mod
-:   > **Included file**: `../snippets/wasmo/go.mod` 
+```toml include=../snippets/wasmo/Cargo.toml
+```
 
-package.json
-:   > **Included file**: `../snippets/wasmo/package.json` 
+</TabItem>
+<TabItem value="go.mod" label="go.mod">
+
+```text include=../snippets/wasmo/go.mod
+```
+
+</TabItem>
+<TabItem value="package.json" label="package.json">
+
+```json include=../snippets/wasmo/package.json
+```
+
+</TabItem>
+</Tabs>
 
 ### WasmRouteMatcher
 
@@ -605,8 +620,17 @@ extern "C" {
 
 right know, when using the Wasmo, a default idiomatic implementation is provided for `TinyGo` and `Rust`
 
-host.rs
-:   > **Included file**: `../snippets/wasmo/host.rs` 
+<Tabs>
+<TabItem value="host.rs" label="host.rs" default>
 
-host.go
-:   > **Included file**: `../snippets/wasmo/host.go` 
+```rust include=../snippets/wasmo/host.rs
+```
+
+</TabItem>
+<TabItem value="host.go" label="host.go">
+
+```go include=../snippets/wasmo/host.go
+```
+
+</TabItem>
+</Tabs>

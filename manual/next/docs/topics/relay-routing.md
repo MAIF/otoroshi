@@ -4,9 +4,9 @@ sidebar_position: 22
 ---
 # Relay Routing
 
-@@include:::warning Experimental Feature
+:::warning Experimental Feature
 This feature is **EXPERIMENTAL** and might not work as expected. If you encounter any bugs, [please file an issue](https://github.com/MAIF/otoroshi/issues/new).
-::: { .experimental-feature }
+:::
 
 Relay routing is the capability to forward traffic between otoroshi leader nodes based on network location of the target. Let say we have an otoroshi cluster split accross 3 network zones. Each zone has 
 

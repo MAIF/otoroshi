@@ -37,9 +37,9 @@ In this tutorial:
 
 ### Download Otoroshi
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 ### Create an Otoroshi route with the Internal Eureka Server plugin
 

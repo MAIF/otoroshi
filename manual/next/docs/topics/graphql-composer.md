@@ -9,9 +9,9 @@ sidebar_position: 12
 <a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.GraphQLBackend">GraphQL Composer</a>
 </div>
 
-@@include:::warning Experimental Feature
+:::warning Experimental Feature
 This feature is **EXPERIMENTAL** and might not work as expected. If you encounter any bugs, [please file an issue](https://github.com/MAIF/otoroshi/issues/new).
-::: { .experimental-feature }
+:::
 
 > GraphQL is a query language for APIs and a runtime for fulfilling those queries with your existing data. GraphQL provides a complete and understandable description of the data in your API, gives clients the power to ask for exactly what they need and nothing more, makes it easier to evolve APIs over time, and enables powerful developer tools.
 [Official GraphQL website](https://graphql.org/)
@@ -70,9 +70,9 @@ Now that we've covered the fundamentals of GraphQL Composer, let's proceed with 
 
 ### Setup your environment
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 ### Create our countries API
 

@@ -25,9 +25,9 @@ Your backend has to deal with all of this. You either:
 
 ## Before you start
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #getting-started }
+:::
 
 ## The Solution: Normalize Headers at the Gateway
 

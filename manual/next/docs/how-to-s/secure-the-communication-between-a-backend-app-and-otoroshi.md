@@ -9,9 +9,9 @@ sidebar_position: 18
 <a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.OtoroshiChallenge">Otoroshi challenge token</a>
 </div>
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 Let's create a new route with the Otorochi challenge plugin enabled.
 

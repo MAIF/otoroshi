@@ -19,7 +19,7 @@ If you need more control over your deployment or want to self-host Otoroshi on C
 
 ## Create an Otoroshi instance on CleverCloud
 
-If you want to customize the configuration [use env. variables](../install/setup-otoroshi.md#configuration-with-env-variables), you can use [the example provided below](#example-of-clevercloud-env-variables)
+If you want to customize the configuration [use env. variables](../install/setup-otoroshi.mdx#configuration-with-env-variables), you can use [the example provided below](#example-of-clevercloud-env-variables)
 
 Create a new CleverCloud app based on a clevercloud git repo (not empty) or a github project of your own (not empty).
 

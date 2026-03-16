@@ -4,9 +4,9 @@ sidebar_position: 27
 ---
 # Otoroshi tunnels
 
-@@include:::warning Experimental Feature
+:::warning Experimental Feature
 This feature is **EXPERIMENTAL** and might not work as expected. If you encounter any bugs, [please file an issue](https://github.com/MAIF/otoroshi/issues/new).
-::: { .experimental-feature }
+:::
 
 Sometimes, exposing apis that lives in our private network can be a nightmare, especially from a networking point of view. 
 With otoroshi tunnels, this is now trivial, as long as your internal otoroshi (that lives inside your private network) is able to contact an external otoroshi (exposed on the internet).

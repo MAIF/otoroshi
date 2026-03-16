@@ -6,9 +6,9 @@ sidebar_position: 10
 
 ### Before you start
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 ### Deploy a Elasticsearch and kibana stack on Docker
 

@@ -4,7 +4,6 @@ sidebar_position: 29
 ---
 # Quickly expose a website and static files 
 
-@@include { #badge }
 
 ## Tutorial
 
@@ -16,9 +15,9 @@ After completing these steps, you will be able to statically expose any kind of 
 
 ## Before your start
 
-@@include:::tip Prerequisites
+:::tip Prerequisites
 If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-::: { #initialize-otoroshi }
+:::
 
 ## Create an archive with HTML and CSS files
 

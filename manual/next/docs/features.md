@@ -72,12 +72,12 @@ sidebar_position: 4
     * maintenance and build modes ([built-in plugins](./plugins/built-in-plugins.md))
     * static responses and mocks ([built-in plugins](./plugins/built-in-plugins.md))
     * etc
-* Support middlewares compiled to WASM (using Extism) ([WASM plugins](./entities/wasm-plugins.md), [WASM usage](./topics/wasm-usage.md))
-* Support Open Policy Agent policies for traffic control (via WASM) ([WASM usage](./topics/wasm-usage.md))
+* Support middlewares compiled to WASM (using Extism) ([WASM plugins](./entities/wasm-plugins.md), [WASM usage](./topics/wasm-usage.mdx))
+* Support Open Policy Agent policies for traffic control (via WASM) ([WASM usage](./topics/wasm-usage.mdx))
 * Visual workflow engine for building complex processing pipelines ([workflows](./entities/workflows.md), [workflow editor](./topics/workflows-editor.md))
 * Write your own custom middlewares: ([create plugins](./plugins/create-plugins.md))
     * in Scala deployed as jar files
-    * in whatever language you want that can be compiled to WASM ([WASM how-to](./how-to-s/wasm-usage.md))
+    * in whatever language you want that can be compiled to WASM ([WASM how-to](./how-to-s/wasm-usage.mdx))
 
 **Security**
 
@@ -106,7 +106,7 @@ sidebar_position: 4
     * Multiple validators on the same route
     * JWE (encrypted JWT) support
     * JWT signing
-* HMAC request signing and validation ([Otoroshi protocol](./topics/otoroshi-protocol.md))
+* HMAC request signing and validation ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
 * Biscuit token extraction and validation (datalog-based authorization) ([built-in plugins](./plugins/built-in-plugins.md))
 * OpenFGA fine-grained authorization ([built-in plugins](./plugins/built-in-plugins.md))
 * Role-based access control (RBAC) ([built-in plugins](./plugins/built-in-plugins.md))
@@ -136,7 +136,7 @@ sidebar_position: 4
     * GoReplay (file and S3)
     * TCP / UDP / Syslog
     * JMS
-    * WASM-based custom exporter ([WASM usage](./topics/wasm-usage.md))
+    * WASM-based custom exporter ([WASM usage](./topics/wasm-usage.mdx))
     * Workflow-based custom exporter ([workflows](./topics/workflows.md))
 * GreenScore: ecological scoring of API routes based on efficiency rules ([GreenScore](./topics/green-score.md))
 
@@ -144,8 +144,8 @@ sidebar_position: 4
 
 * Through DNS
 * Through Eureka (internal and external) ([how-to](./how-to-s/working-with-eureka.md))
-* Through Kubernetes API (namespace scanning) ([Kubernetes](./deploy/kubernetes.md))
-* Through custom Otoroshi protocol (self-registration) ([Otoroshi protocol](./topics/otoroshi-protocol.md))
+* Through Kubernetes API (namespace scanning) ([Kubernetes](./deploy/kubernetes.mdx))
+* Through custom Otoroshi protocol (self-registration) ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
 * Through Tailscale network ([how-to](./how-to-s/tailscale-integration.md))
 
 **Authentication**
@@ -159,7 +159,7 @@ sidebar_position: 4
 * Basic authentication (username/password) ([auth modules](./entities/auth-modules.md))
 * WebAuthn / FIDO2 passwordless authentication
 * Auth0 passwordless flow ([Auth0 how-to](./how-to-s/secure-app-with-auth0.md))
-* WASM-based custom authentication ([auth modules](./entities/auth-modules.md), [WASM usage](./topics/wasm-usage.md))
+* WASM-based custom authentication ([auth modules](./entities/auth-modules.md), [WASM usage](./topics/wasm-usage.mdx))
 * Internal users management ([Otoroshi admins](./entities/otoroshi-admins.md))
 * Multi-authentication module chaining ([auth modules](./entities/auth-modules.md))
 * Client credentials OAuth2 flow with token endpoint ([how-to](./how-to-s/secure-with-oauth2-client-credentials.md))
@@ -223,7 +223,7 @@ sidebar_position: 4
 * Visual workflow designer with step-by-step debugger ([workflow editor](./topics/workflows-editor.md))
 * Extensible via admin extensions (custom entities, routes, frontend modules)
 
-**Kubernetes integration** ([Kubernetes](./deploy/kubernetes.md))
+**Kubernetes integration** ([Kubernetes](./deploy/kubernetes.mdx))
 
 * Standard Ingress controller
 * Custom Ingress controller with CRD support
@@ -265,7 +265,7 @@ sidebar_position: 4
     * Sync configuration with Otoroshi clusters
     * Push-based IaC, very similar to what `kubectl apply` can do
 
-**Storage backends** ([setup](./install/setup-otoroshi.mdx))
+**Storage backends** ([setup](./install/setup-otoroshi.mdxx))
 
 * Redis (via Lettuce)
 * PostgreSQL (via Reactive PG)

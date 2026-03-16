@@ -4,11 +4,14 @@ sidebar_position: 20
 ---
 # The Otoroshi communication protocol
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 The exchange protocol secure the communication with an app. When it's enabled, Otoroshi will send for each request a value in pre-selected token header, and will check the same header in the return request. On routes, you will have to use the `Otoroshi challenge token` plugin to enable it.
 
 ## V1 challenge
 
-If you enable secure communication for a given service with `V1 - simple values exchange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. 
+If you enable secure communication for a given service with `V1 - simple values exchange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`.
 
 <div align="center">
 <img src="/img/docs/exchange.png" />
@@ -32,7 +35,7 @@ Otoroshi is also sending a JWT token in a header named `Otoroshi-Claim` that the
 
 The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that is more clear and structured.
 
-By default, the otoroshi jwt token is signed with the `otoroshi.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section. 
+By default, the otoroshi jwt token is signed with the `otoroshi.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section.
 
 <div align="center">
 <img src="/img/docs/sec-com-signing-bis.png" />
@@ -44,7 +47,7 @@ using another signing algo.
 <img src="/img/docs/sec-com-signing-2-bis.png" />
 </div>
 
-here you can choose the signing algorithm and the secret/keys used. You can use syntax like `${env.MY_ENV_VAR}` or `${config.my.config.path}` to provide secret/keys values. 
+here you can choose the signing algorithm and the secret/keys used. You can use syntax like `${env.MY_ENV_VAR}` or `${config.my.config.path}` to provide secret/keys values.
 
 For example, for a service named `my-service` with a signing key `secret` with `HMAC512` signing algorythm, the basic JWT token that will be sent should look like the following
 
@@ -67,11 +70,20 @@ if you decode it, the payload will look something like
 
 If you want to validate the `Otoroshi-Claim` on the target app side to ensure that the input requests only comes from `Otoroshi`, you will have to write an HTTP filter to do the job. For instance, if you want to write a filter to make sure that requests only comes from Otoroshi, you can write something like the following (using playframework 2.6).
 
-Scala
-:   > **Included file**: `../snippets/filter.scala`
+<Tabs>
+<TabItem value="Scala" label="Scala" default>
 
-Java
-:   > **Included file**: `../snippets/filter.java`
+```scala include=../snippets/filter.scala
+```
+
+</TabItem>
+<TabItem value="Java" label="Java">
+
+```java include=../snippets/filter.java
+```
+
+</TabItem>
+</Tabs>
 
 
 ## Using `otoroshictl` to bootstrap a proxy implementing the Otoroshi protocol
@@ -150,5 +162,4 @@ Benefits:
 You can configure a lot of stuff with the `otoroshictl challenge command` like the header names used for JWT token, the algorithms used (input/output), validation, asymmetric keys, etc. You can pass the options as command line options or environment variables.
 
 You can find the full documentation of the `otoroshictl challenge proxy` command [here](https://cloud-apim.github.io/otoroshictl/docs/tools/proxy)
-
 

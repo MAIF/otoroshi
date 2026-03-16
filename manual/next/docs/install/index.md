@@ -9,7 +9,7 @@ slug: /install
 In this sections, you will find informations about how to install and run Otoroshi
 
 * [Get Otoroshi](./get-otoroshi.md)
-* [Setup Otoroshi](./setup-otoroshi.mdx)
+* [Setup Otoroshi](./setup-otoroshi.mdxx)
 * [Run Otoroshi](./run-otoroshi.md)
 
 
