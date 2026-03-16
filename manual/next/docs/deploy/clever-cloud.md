@@ -68,7 +68,8 @@ You can add more env variables to customize your Otoroshi instance like the foll
 <div id="clevercloud-envvars"></div>
 
 <div class="hide">
-```
+
+```env
 ADMIN_API_CLIENT_ID=xxxx
 ADMIN_API_CLIENT_SECRET=xxxxx
 ADMIN_API_GROUP=xxxxxx
