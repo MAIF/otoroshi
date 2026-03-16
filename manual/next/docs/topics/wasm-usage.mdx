@@ -96,7 +96,7 @@ do not forget to add the extism pdk library to your project to make it compile
 <Tabs>
 <TabItem value="Cargo.toml" label="Cargo.toml" default>
 
-```toml include=../snippets/wasmo/Cargo.toml
+```rust include=../snippets/wasmo/Cargo.toml
 ```
 
 </TabItem>
@@ -118,7 +118,7 @@ do not forget to add the extism pdk library to your project to make it compile
 
 A route matcher is a plugin that can help the otoroshi router to select a route instance based on your own custom predicate. Basically it's a function that returns a boolean answer.
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -145,7 +145,7 @@ pub struct WasmMatchRouteResponse {
 
 A pre-route plugin can be used to short-circuit a request or enrich it (maybe extracting your own kind of auth. token, etc) a the very beginning of the request handling process, just after the routing part, when a route has bee chosen by the otoroshi router.
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -180,7 +180,7 @@ pub struct WasmPreRouteResponse {
 
 An access validator plugin is typically used to verify if the request can continue or must be cancelled. For instance, the otoroshi apikey plugin is an access validator that check if the current apikey provided by the client is legit and authorized on the current route.
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -217,7 +217,7 @@ pub struct WasmAccessValidatorResponse {
 
 A request transformer plugin can be used to compose or transform the request that will be sent to the backend
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -246,7 +246,7 @@ pub struct WasmRequestTransformerContext {
 
 A backend call plugin can be used to simulate a backend behavior in otoroshi. For instance the static backend of otoroshi return the content of a file
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -284,7 +284,7 @@ pub struct WasmBackendResponse {
 
 A response transformer plugin can be used to compose or transform the response that will be sent back to the client
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -322,7 +322,7 @@ pub struct WasmTransformerResponse {
 
 A sink is a kind of plugin that can be used to respond to any unmatched request before otoroshi sends back a 404 response
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -367,7 +367,7 @@ pub struct WasmSinkHandleResponse {
 
 A request handler is a very special kind of plugin that can bypass the otoroshi proxy engine on specific domains and completely handles the request/response lifecycle on it's own.
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -400,7 +400,7 @@ pub struct WasmRequestHandlerResponse {
 
 A job is a plugin that can run periodically an do whatever you want. Typically, the kubernetes plugins of otoroshi are jobs that periodically sync stuff between otoroshi and kubernetes using the kube-api
 
-```rs
+```rust
 use extism_pdk::*;
 
 #[plugin_fn]
@@ -423,7 +423,7 @@ pub struct WasmJobResult {
 
 ### Common types
 
-```rs
+```rust
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
