@@ -590,7 +590,7 @@ details.foldable-block > summary {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #e8edf4 0%, #dce3ed 100%);
+  background: transparent;
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
@@ -599,11 +599,20 @@ details.foldable-block > summary {
 }
 
 [data-theme='dark'] details.foldable-block > summary {
-  background: linear-gradient(135deg, #2a3040 0%, #232a38 100%);
+  background: transparent;
 }
 
 details.foldable-block > summary::-webkit-details-marker {
   display: none;
+}
+
+details.foldable-block > summary::marker {
+  display: none;
+  content: '';
+}
+
+details.foldable-block > summary::before {
+  top: 1.3rem;
 }
 
 details.foldable-block > summary::after {
