@@ -7,7 +7,7 @@ import styles from './ecosystem.module.css';
 const openSourceProjects = [
   {
     name: 'otoroshi-llm-extension',
-    description: 'Connect, setup, secure and seamlessly manage AI models using a Universal/OpenAI compatible API.',
+    description: 'Turn Otoroshi into an AI Gateway. Connect, setup, secure and seamlessly manage AI models using a Universal/OpenAI compatible API.',
     url: 'https://github.com/cloud-apim/otoroshi-llm-extension',
     tags: ['AI', 'AI Gateway', 'LLM'],
   },
@@ -19,9 +19,9 @@ const openSourceProjects = [
   },
   {
     name: 'otoroshi-biscuit-studio',
-    description: 'Biscuit token studio for Otoroshi. Create, manage and validate Biscuit authorization tokens.',
+    description: 'Biscuit studio Extension for Otoroshi. Create, manage and validate Eclipse Biscuit authorization tokens.',
     url: 'https://github.com/cloud-apim/otoroshi-biscuit-studio',
-    tags: ['Security', 'Auth'],
+    tags: ['Security', 'Authorizations', 'token'],
   },
   {
     name: 'otoroshi-plugin-dynamic-js-modules',
