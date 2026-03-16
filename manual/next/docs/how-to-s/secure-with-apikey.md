@@ -11,9 +11,26 @@ sidebar_position: 19
 
 ### Before you start
 
-:::tip Prerequisites
-If you already have an up and running Otoroshi instance, you can skip the setup below. Otherwise, see the [Getting Started](../getting-started.md) guide.
-:::
+<details class="foldable-block">
+<summary>Set up an Otoroshi</summary>
+
+If you already have an up and running otoroshi instance, you can skip the following instructions.
+
+Let's start by downloading the latest Otoroshi.
+
+```sh
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar'
+```
+
+then you can run start Otoroshi :
+
+```sh
+java -Dotoroshi.adminPassword=password -jar otoroshi.jar
+```
+
+Now you can log into Otoroshi at [http://otoroshi.oto.tools:8080](http://otoroshi.oto.tools:8080) with `admin@otoroshi.io/password`
+
+</details>
 
 ### Create a simple route
 
