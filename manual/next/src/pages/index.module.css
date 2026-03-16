@@ -1,23 +1,466 @@
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
-
+/* ===== Hero Banner ===== */
 .heroBanner {
-  padding: 4rem 0;
-  text-align: center;
-  position: relative;
+  padding: 6rem 0 4rem;
+  background: linear-gradient(135deg, #1b1b2f 0%, #162447 50%, #1f4068 100%);
+  color: #fff;
   overflow: hidden;
+  position: relative;
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
+[data-theme='light'] .heroBanner {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
+  color: #1b1b1d;
+}
+
+.heroContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+}
+
+.heroText {
+  flex: 1;
+  max-width: 650px;
+}
+
+.heroImage {
+  flex-shrink: 0;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 1.5rem;
+}
+
+[data-theme='dark'] .heroTitle {
+  color: #fff;
+}
+
+.highlight {
+  color: #f9b000;
+  background: linear-gradient(135deg, #f9b000, #ff8c00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroSubtitle {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+
+.heroButtons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.heroButtons :global(.button--primary) {
+  background: #f9b000;
+  border-color: #f9b000;
+  color: #1b1b1d;
+  font-weight: 700;
+}
+
+.heroButtons :global(.button--primary):hover {
+  background: #e6a200;
+  border-color: #e6a200;
+}
+
+.heroButtons :global(.button--outline) {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+[data-theme='light'] .heroButtons :global(.button--outline) {
+  border-color: rgba(0, 0, 0, 0.3);
+  color: #1b1b1d;
+}
+
+.heroButtons :global(.button--outline):hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.githubButton {
+  /* keep consistent with other buttons */
+}
+
+.heroInstall {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  display: inline-block;
+  font-size: 0.95rem;
+}
+
+[data-theme='light'] .heroInstall {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.heroInstall code {
+  background: none;
+  color: #f9b000;
+  font-size: 0.95rem;
+}
+
+[data-theme='light'] .heroInstall code {
+  color: #c67c00;
+}
+
+/* ===== Stats Section ===== */
+.statsSection {
+  padding: 3rem 0;
+  background: #f9b000;
+  color: #1b1b1d;
+}
+
+[data-theme='dark'] .statsSection {
+  background: #3d2e00;
+  color: #f9b000;
+}
+
+.statsGrid {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.statLabel {
+  font-size: 1rem;
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+/* ===== Section Headers ===== */
+.sectionHeader {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+}
+
+.sectionHeader h2 {
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+}
+
+.sectionHeader p {
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+/* ===== Features Section ===== */
+.featuresSection {
+  padding: 5rem 0;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.featureCard {
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  transition: all 0.3s ease;
+  background: var(--ifm-background-color);
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: #f9b000;
+}
+
+[data-theme='dark'] .featureCard:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+.featureIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.featureCard h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.featureCard p {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ===== Use Cases Section ===== */
+.useCasesSection {
+  padding: 5rem 0;
+  background: var(--ifm-background-surface-color);
+}
+
+.useCasesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+}
+
+.useCaseCard {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border-radius: 12px;
+  background: var(--ifm-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  transition: all 0.3s ease;
+}
+
+.useCaseCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.useCaseIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.useCaseCard h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.useCaseCard p {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin: 0;
+}
+
+/* ===== Quick Start Section ===== */
+.quickStartSection {
+  padding: 5rem 0;
+}
+
+.quickStartCards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.quickStartCard {
+  padding: 2rem;
+  border-radius: 12px;
+  background: #1b1b2f;
+  color: #fff;
+}
+
+[data-theme='light'] .quickStartCard {
+  background: #f5f5f5;
+  color: #1b1b1d;
+}
+
+.quickStartCard h4 {
+  margin-bottom: 1rem;
+  color: #f9b000;
+}
+
+.quickStartCard pre {
+  margin: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+[data-theme='light'] .quickStartCard pre {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.quickStartCard code {
+  color: #e8e8e8;
+  font-size: 0.9rem;
+}
+
+[data-theme='light'] .quickStartCard code {
+  color: #333;
+}
+
+.quickStartCta {
+  text-align: center;
+}
+
+.quickStartCta :global(.button--primary) {
+  background: #f9b000;
+  border-color: #f9b000;
+  color: #1b1b1d;
+  font-weight: 700;
+}
+
+/* ===== Comparison Section ===== */
+.comparisonSection {
+  padding: 5rem 0;
+  background: var(--ifm-background-surface-color);
+}
+
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.comparisonItem {
+  padding: 2rem;
+  border-radius: 12px;
+  border-left: 4px solid #f9b000;
+  background: var(--ifm-background-color);
+}
+
+.comparisonItem h4 {
+  margin-bottom: 0.75rem;
+  color: #f9b000;
+}
+
+.comparisonItem p {
+  margin: 0;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+/* ===== CTA Section ===== */
+.ctaSection {
+  padding: 5rem 0;
+  text-align: center;
+  background: linear-gradient(135deg, #1b1b2f 0%, #162447 100%);
+  color: #fff;
+}
+
+[data-theme='light'] .ctaSection {
+  background: linear-gradient(135deg, #f9b000 0%, #ff8c00 100%);
+  color: #1b1b1d;
+}
+
+.ctaSection h2 {
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+[data-theme='light'] .ctaSection h2 {
+  color: #1b1b1d;
+}
+
+.ctaSection p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaButtons :global(.button--primary) {
+  background: #f9b000;
+  border-color: #f9b000;
+  color: #1b1b1d;
+  font-weight: 700;
+}
+
+[data-theme='light'] .ctaButtons :global(.button--primary) {
+  background: #1b1b1d;
+  border-color: #1b1b1d;
+  color: #fff;
+}
+
+.ctaButtons :global(.button--outline) {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+[data-theme='light'] .ctaButtons :global(.button--outline) {
+  border-color: rgba(0, 0, 0, 0.3);
+  color: #1b1b1d;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 996px) {
+  .heroContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroTitle {
+    font-size: 2.2rem;
+  }
+
+  .heroButtons {
+    justify-content: center;
+  }
+
+  .heroImage img {
+    width: 200px;
+  }
+
+  .featuresGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .useCasesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .comparisonGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .quickStartCards {
+    grid-template-columns: 1fr;
   }
 }
 
-.buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+@media (max-width: 600px) {
+  .heroTitle {
+    font-size: 1.8rem;
+  }
+
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .useCasesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    gap: 1rem;
+  }
+
+  .statValue {
+    font-size: 2rem;
+  }
 }

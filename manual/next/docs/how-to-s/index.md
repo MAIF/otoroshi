@@ -1,0 +1,40 @@
+---
+title: "How to's"
+sidebar_label: "Overview"
+sidebar_position: 1
+slug: /how-to-s
+---
+# How to's
+
+in this section, we will explain some mainstream Otoroshi usage scenario's 
+
+* [Otoroshi and WASM](./wasm-usage.md)
+* [Wasmo](./wasmo-installation.md)
+* [Tailscale integration](./tailscale-integration.md)
+* [End-to-end mTLS](./end-to-end-mtls.md)
+* [Send alerts by emails](./export-alerts-using-mailgun.md)
+* [Export events to Elasticsearch](./export-events-to-elastic.md)
+* [Import/export Otoroshi datastore](./import-export-otoroshi-datastore.md)
+* [Secure an app with Auth0](./secure-app-with-auth0.md)
+* [Secure an app with Keycloak](./secure-app-with-keycloak.md)
+* [Secure an app with LDAP](./secure-app-with-ldap.md)
+* [Secure an api with apikeys](./secure-with-apikey.md)
+* [Secure an app with OAuth1](./secure-with-oauth1-client.md)
+* [Secure an api with OAuth2 client_credentials flow](./secure-with-oauth2-client-credentials.md)
+* [Setup an Otoroshi cluster](./setup-otoroshi-cluster.md)
+* [TLS termination using Let's Encrypt](./tls-using-lets-encrypt.md)
+* [Secure an app with jwt verifiers](./secure-an-app-with-jwt-verifiers.md)
+* [Secure the communication between a backend app and Otoroshi](./secure-the-communication-between-a-backend-app-and-otoroshi.md)
+* [TLS termination using your own certificates](./tls-termination-using-own-certificates.md)
+* [The resources loader](./resources-loader.md)
+* [Log levels customization](./custom-log-levels.md)
+* [Initial state customization](./custom-initial-state.md)
+* [Communicate with Kafka](./communicate-with-kafka.md)
+* [Create your custom Authentication module](./create-custom-auth-module.md)
+* [Working with Eureka](./working-with-eureka.md)
+* [Instantiate a WAF with Coraza](./instantiate-waf-coraza.md)
+* [Quickly expose a website and static files](./zip-backend-plugin.md)
+* [Calling Otoroshi from a frontend](./calling-otoroshi-from-a-frontend.md)
+* [Create your first API](./create-your-first-api.md)
+
+

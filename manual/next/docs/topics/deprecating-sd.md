@@ -1,0 +1,61 @@
+---
+title: Sunsetting Service Descriptors
+sidebar_position: 6
+---
+# Sunsetting Service Descriptors
+
+For more than 4 years, after the @ref[rewrite of the proxy engine](./engine.md) in `v1.5.3` (Feb 14, 2022), Service Descriptors has been deprecated.
+
+Now (v17.0.0) it's time to go ahead and provide some migration tools to help users getting rid of Service Descriptor in favor of routes before completely removing support of Service Descriptors in v18.0.0 (probably in 2026). Under the hood the new proxy engine already convert your Service Descriptors to Route in order to route traffic to your backends. The idea here is to remove the Service Descriptor entity in favor of the Route entity and let the user adapt their workflows and automations.
+
+If you still have Service Descriptors in you database, otoroshi will warn you in the logs
+
+<div style={{textAlign: "center"}}>
+<img src="./img/docs/sd-migration-logs.png" />
+</div>
+
+you will also have a popup displayed in the backoffice from time to time
+
+<div style={{textAlign: "center"}}>
+<img src="./img/docs/sd-migration-popup.png" />
+</div>
+
+This toolkit consists of 3 tools that you can use to migrate existing Service Descriptors
+
+## Migration Job
+
+you can enable a job launched after the start of the otoroshi cluster by setting `otoroshi.service-descriptors-migration-job.enabled=true` or `OTOROSHI_SERVICE_DESCRIPTORS_MIGRATION_JOB_ENABLED=true`
+
+<div style={{textAlign: "center"}}>
+<img src="./img/docs/sd-migration-job-auto.png" />
+</div>
+
+## Migration API
+
+You can migrate service descriptor to routes by calling the following endpoint
+
+```sh
+curl -X POST -H 'Content-Type: application/json' "http://otoroshi-api.oto.tools:8080/api/services/service-xxxxxxxx/route" -d '{}'
+```
+
+## Migration button
+
+on any Service Descriptor, you can click on the `convert to route` button
+
+<div style={{textAlign: "center"}}>
+<img src="./img/docs/sd-migration-ui.png" />
+</div>
+
+and just confirm it
+
+<div style={{textAlign: "center"}}>
+<img src="./img/docs/sd-migration-ui-confirm.png" />
+</div>
+
+## Kubernetes usage
+
+if you still use Service Descriptor through Kubernetes Ingress job or Kubernetes CRDs job, you will have logs warning you about it from time to time.
+
+For the `Kubernetes CRDs job` case, just use `Route` CRDs instead of `ServiceDescriptor` CRDs.
+
+For the `Kubernetes Ingress job`, you can use the `ingress.otoroshi.io/is-route=true` annotation and use `NgRoute specific annotations`. You'll find the list[here](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/ingress.scala#L310-L328).

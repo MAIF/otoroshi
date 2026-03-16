@@ -1,30 +1,129 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Otoroshi Documentation - Custom Styles
+ * Color palette based on Otoroshi branding (gold/amber)
  */
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary: #d4940a;
+  --ifm-color-primary-dark: #bf850a;
+  --ifm-color-primary-darker: #b47e09;
+  --ifm-color-primary-darkest: #946808;
+  --ifm-color-primary-light: #e9a40b;
+  --ifm-color-primary-lighter: #f4ad0c;
+  --ifm-color-primary-lightest: #f9be33;
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --docusaurus-highlighted-code-line-bg: rgba(249, 176, 0, 0.1);
+  --ifm-navbar-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #f9b000;
+  --ifm-color-primary-dark: #e0a000;
+  --ifm-color-primary-darker: #d49700;
+  --ifm-color-primary-darkest: #af7d00;
+  --ifm-color-primary-light: #fab91a;
+  --ifm-color-primary-lighter: #fabe26;
+  --ifm-color-primary-lightest: #fbcd51;
+  --ifm-background-color: #1b1b2f;
+  --ifm-background-surface-color: #162447;
+  --docusaurus-highlighted-code-line-bg: rgba(249, 176, 0, 0.15);
+}
+
+/* ===== Navbar ===== */
+.navbar {
+  backdrop-filter: blur(10px);
+}
+
+.navbar__title {
+  font-weight: 700;
+}
+
+.navbar__logo img {
+  height: 32px;
+}
+
+/* ===== Sidebar ===== */
+.menu__link {
+  font-size: 0.9rem;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  border-left: 3px solid var(--ifm-color-primary);
+  padding-left: calc(var(--ifm-menu-link-padding-horizontal) - 3px);
+}
+
+/* ===== Doc pages ===== */
+.markdown h1:first-child {
+  font-size: 2rem;
+}
+
+.markdown img {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+}
+
+[data-theme='dark'] .markdown img {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Admonitions ===== */
+.alert--warning {
+  --ifm-alert-background-color: rgba(249, 176, 0, 0.1);
+  --ifm-alert-border-color: #f9b000;
+}
+
+/* ===== Code blocks ===== */
+.prism-code {
+  border-radius: 8px !important;
+}
+
+/* ===== Tables ===== */
+table {
+  display: table;
+  width: 100%;
+}
+
+table th {
+  background: var(--ifm-color-emphasis-100);
+}
+
+/* ===== Footer ===== */
+.footer {
+  background: #1b1b2f;
+}
+
+.footer__title {
+  color: #f9b000;
+}
+
+/* ===== Announcement bar ===== */
+div[class*='announcementBar'] {
+  font-weight: 600;
+}
+
+/* ===== Search improvements ===== */
+.search-bar-container {
+  margin-left: 1rem;
+}
+
+/* ===== Centered images (migration from Paradox) ===== */
+.centered-img {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.centered-img img {
+  max-width: 100%;
+}
+
+/* ===== Print improvements ===== */
+@media print {
+  .navbar,
+  .footer,
+  .pagination-nav,
+  .theme-doc-sidebar-container {
+    display: none;
+  }
 }

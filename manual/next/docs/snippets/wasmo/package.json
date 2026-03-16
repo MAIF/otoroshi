@@ -1,0 +1,7 @@
+{
+  "name": "@@PLUGIN_NAME@@",
+  "version": "@@PLUGIN_VERSION@@",
+  "devDependencies": {
+    "esbuild": "^0.17.9"
+  }
+}
