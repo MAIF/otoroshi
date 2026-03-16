@@ -154,7 +154,7 @@ const sidebars = {
         id: 'plugins/index',
       },
       items: [
-        'plugins/plugins',
+        'plugins/plugins-system',
         'plugins/create-plugins',
         'plugins/built-in-plugins',
       ],

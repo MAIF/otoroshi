@@ -701,4 +701,4 @@ curl 'http://otoroshi-api.oto.tools:8080/api/extensions/bookmarks/search?q=otoro
 ## Related
 
 * [Create plugins](../plugins/create-plugins.md) - Build and deploy custom plugins
-* [Plugin system](../plugins/plugins.md) - Plugin types and lifecycle
+* [Plugin system](../plugins/plugins-system.md) - Plugin types and lifecycle
