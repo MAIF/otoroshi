@@ -116,11 +116,7 @@ function OpenSourceSection() {
         <div className={styles.sectionHeader}>
           <Heading as="h2">Open Source Projects</Heading>
           <p>
-            Community and Cloud APIM open source projects that extend Otoroshi with new capabilities.
-            All projects are available on the{' '}
-            <a href="https://github.com/orgs/cloud-apim/repositories" target="_blank" rel="noopener noreferrer">
-              Cloud APIM GitHub organization
-            </a>.
+            Community maintained open source projects that extend Otoroshi with new capabilities. Either with simple plugins or more complex extensions.
           </p>
         </div>
         <div className={styles.projectsGrid}>
