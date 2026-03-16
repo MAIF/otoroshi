@@ -9,7 +9,6 @@ Otoroshi next provides some plugins out of the box. Here is the available plugin
 
 <div id="plugins-container"></div>
 
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployMany }
 
 ## Remote Catalog Deploy Many
 
@@ -37,8 +36,6 @@ This plugin deploys entities from multiple remote catalogs
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeploySingle }
 
 ## Remote Catalog Deploy Single
 
@@ -66,8 +63,6 @@ This plugin deploys entities from a single remote catalog
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployWebhook }
 
 ## Remote Catalog Deploy Webhook
 
@@ -95,8 +90,6 @@ This plugin handles webhooks from Git providers to deploy entities from remote c
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieIn }
 
 ## Additional cookies in
 
@@ -127,8 +120,6 @@ This plugin adds cookies in the otoroshi request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieOut }
 
 ## Additional cookies out
 
@@ -165,8 +156,6 @@ This plugin adds cookies in the otoroshi response
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalHeadersIn }
 
 ## Additional headers in
 
@@ -196,8 +185,6 @@ This plugin adds headers in the incoming otoroshi request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalHeadersOut }
 
 ## Additional headers out
 
@@ -227,8 +214,6 @@ This plugin adds headers in the otoroshi response
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AllowHttpMethods }
 
 ## Allowed HTTP methods
 
@@ -259,8 +244,6 @@ This plugin verifies the current request only uses allowed http methods
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ApikeyAuthModule }
 
 ## Apikey auth module
 
@@ -291,8 +274,6 @@ This plugin adds basic auth on service where credentials are valid apikeys on th
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ApikeyCalls }
 
 ## Apikeys
 
@@ -370,8 +351,6 @@ This plugin expects to find an apikey to allow the request to pass
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ApikeyQuotas }
 
 ## Apikey quotas
 
@@ -393,8 +372,6 @@ Increments quotas for the currents apikey. Useful when 'legacy checks' are disab
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessEndFlowEndpoint }
 
 ## Auth0 Passwordless end flow endpoint
 
@@ -427,8 +404,6 @@ This plugin provide an endpoint to end a passwordless flow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessFlow }
 
 ## Auth0 Passwordless start/end flow
 
@@ -462,8 +437,6 @@ This plugin provide endpoints to start and end a passwordless flow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessStartEndFlowEndpoints }
 
 ## Auth0 Passwordless start/end flow endpoints
 
@@ -496,8 +469,6 @@ This plugin provide endpoints to start and end a passwordless flow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Auth0PasswordlessStartFlowEndpoint }
 
 ## Auth0 Passwordless start flow endpoint
 
@@ -530,8 +501,6 @@ This plugin provide an endpoint to start a passwordless flow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AuthModule }
 
 ## Authentication
 
@@ -562,8 +531,6 @@ This plugin applies an authentication module
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BasicAuthCaller }
 
 ## Basic Auth. caller
 
@@ -596,8 +563,6 @@ This plugin can be used to call api that are authenticated using basic auth.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BasicAuthWithAuthModule }
 
 ## Basic auth. from auth. module
 
@@ -628,8 +593,6 @@ This plugin enforces basic auth. authentication with users coming from LDAP and 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BlockHttpTraffic }
 
 ## Block non HTTPS traffic
 
@@ -663,8 +626,6 @@ In that case, make sure this plugins comes after Apikey and Authentication plugi
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BrotliResponseCompressor }
 
 ## Brotli compression
 
@@ -699,8 +660,6 @@ This plugin can compress responses using brotli
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.BuildMode }
 
 ## Build mode
 
@@ -722,8 +681,6 @@ This plugin displays a build page
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.CanaryMode }
 
 ## Canary mode
 
@@ -756,8 +713,6 @@ This plugin can split a portion of the traffic to canary backends
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ConsumerEndpoint }
 
 ## Consumer endpoint
 
@@ -779,8 +734,6 @@ This plugin returns the current consumer profile
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ContextValidation }
 
 ## Context validator
 
@@ -915,8 +868,6 @@ for instance to check if the current apikey has a metadata name `foo` with a val
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.CookiesValidation }
 
 ## Cookies validation
 
@@ -946,8 +897,6 @@ This plugin validates cookies content
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Cors }
 
 ## CORS
 
@@ -984,8 +933,6 @@ This plugin applies CORS rules
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.DisableHttp10 }
 
 ## Disable HTTP/1.0
 
@@ -1007,8 +954,6 @@ This plugin forbids HTTP/1.0 requests
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.EchoBackend }
 
 ## Request Echo
 
@@ -1038,8 +983,6 @@ This plugin returns request content as json
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.EndlessHttpResponse }
 
 ## Endless HTTP responses
 
@@ -1071,8 +1014,6 @@ This plugin returns 128 Gb of 0 to the ip addresses is in the list
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.EurekaServerSink }
 
 ## Eureka instance
 
@@ -1102,8 +1043,6 @@ Eureka plugin description
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.EurekaTarget }
 
 ## Internal Eureka target
 
@@ -1135,8 +1074,6 @@ This plugin can be used to used a target that come from an internal Eureka serve
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ExternalEurekaTarget }
 
 ## External Eureka target
 
@@ -1169,8 +1106,6 @@ This plugin can be used to used a target that come from an external Eureka serve
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Fail2BanPlugin }
 
 ## fail2ban
 
@@ -1208,8 +1143,6 @@ Temporarily bans client when too many failed requests occur within a detection w
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ForceHttpsTraffic }
 
 ## Force HTTPS traffic
 
@@ -1231,8 +1164,6 @@ This plugin verifies the current request uses HTTPS
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ForwardedHeader }
 
 ## Forwarded header
 
@@ -1254,8 +1185,6 @@ This plugin adds all the Forwarded header to the request for the backend target
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GlobalMaintenanceMode }
 
 ## Global Maintenance mode
 
@@ -1277,8 +1206,6 @@ This plugin displays a maintenance page for every services. Useful when 'legacy 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GlobalPerIpAddressThrottling }
 
 ## Global per ip address throttling 
 
@@ -1300,8 +1227,6 @@ Enforce global per ip address throttling. Useful when 'legacy checks' are disabl
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GlobalThrottling }
 
 ## Global throttling 
 
@@ -1323,8 +1248,6 @@ Enforce global throttling. Useful when 'legacy checks' are disabled on a service
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GraphQLBackend }
 
 ## GraphQL Composer
 
@@ -1357,8 +1280,6 @@ This plugin exposes a GraphQL API that you can compose with whatever you want
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GraphQLProxy }
 
 ## GraphQL Proxy
 
@@ -1393,8 +1314,6 @@ This plugin can apply validations (query, schema, max depth, max complexity) on 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GraphQLQuery }
 
 ## GraphQL Query to REST
 
@@ -1430,8 +1349,6 @@ This plugin can be used to call GraphQL query endpoints and expose it as a REST 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GrpcWebProxyPlugin }
 
 ## gRPC-Web Proxy
 
@@ -1464,8 +1381,6 @@ Proxies gRPC-Web requests to gRPC backend - Envoy compatible
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GzipResponseCompressor }
 
 ## Gzip compression
 
@@ -1500,8 +1415,6 @@ This plugin can compress responses using gzip
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.HMACCaller }
 
 ## HMAC caller plugin
 
@@ -1534,8 +1447,6 @@ This plugin can be used to call a "protected" api by an HMAC signature. It will 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.HMACValidator }
 
 ## HMAC access validator
 
@@ -1566,8 +1477,6 @@ This plugin can be used to check if a HMAC signature is present and valid in Aut
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.HeadersValidation }
 
 ## Headers validation
 
@@ -1611,8 +1520,6 @@ You can use otoroshi expression languages in headers values. You can also use th
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Http3Switch }
 
 ## Http3 traffic switch
 
@@ -1642,8 +1549,6 @@ This plugin injects additional alt-svc header to switch to the http3 server
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ImageReplacer }
 
 ## Image replacer
 
@@ -1673,8 +1578,6 @@ Replace all response with content-type image/* as they are proxied
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.IpAddressAllowedList }
 
 ## IP allowed list
 
@@ -1704,8 +1607,6 @@ This plugin verifies the current request ip address is in the allowed list
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.IpAddressBlockList }
 
 ## IP block list
 
@@ -1735,8 +1636,6 @@ This plugin verifies the current request ip address is not in the blocked list
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.IzanamiV2Proxy }
 
 ## Izanami V2 proxy
 
@@ -1777,8 +1676,6 @@ This plugin exposes Izanami routes
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JQ }
 
 ## JQ
 
@@ -1810,8 +1707,6 @@ This plugin let you transform JSON bodies (in requests and responses) using [JQ 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JQRequest }
 
 ## JQ transform request
 
@@ -1841,8 +1736,6 @@ This plugin let you transform request JSON body using [JQ filters](https://stedo
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JQResponse }
 
 ## JQ transform response
 
@@ -1872,8 +1765,6 @@ This plugin let you transform JSON response using [JQ filters](https://stedolan.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JqWebsocketMessageTransformer }
 
 ## Websocket JQ transformer
 
@@ -1904,8 +1795,6 @@ Transform messages JSON content using JQ filters
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JsonToXmlRequest }
 
 ## request body json-to-xml
 
@@ -1935,8 +1824,6 @@ This plugin transform incoming request body from json to xml and may apply a jq 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JsonToXmlResponse }
 
 ## response body json-to-xml
 
@@ -1966,8 +1853,6 @@ This plugin transform response body from json to xml and may apply a jq transfor
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JweExtractor }
 
 ## JWE extractor
 
@@ -2011,8 +1896,6 @@ This plugin validates and extracts the payload of JWE
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JweSigner }
 
 ## JWE signer
 
@@ -2056,8 +1939,6 @@ This plugin can only generate token
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JwtSigner }
 
 ## Jwt signer
 
@@ -2090,8 +1971,6 @@ This plugin can only generate token
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JwtVerification }
 
 ## Jwt verifiers
 
@@ -2126,8 +2005,6 @@ This plugin verifies the current request with one or more jwt verifier
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.JwtVerificationOnly }
 
 ## Jwt verification only
 
@@ -2162,8 +2039,6 @@ This plugin verifies the current request with one jwt verifier
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.KubernetesNamespaceScanBackend }
 
 ## Kubernetes Namespace Scanner
 
@@ -2193,8 +2068,6 @@ Triggers Kubernetes CRD controller to scan specified namespaces
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.LimitHeaderInTooLong }
 
 ## Limit headers in too long
 
@@ -2224,8 +2097,6 @@ This plugin limit all headers to backend with a length above a max
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.LimitHeaderOutTooLong }
 
 ## Limit headers out too long
 
@@ -2255,8 +2126,6 @@ This plugin limit all headers from backend with a length above a max
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MaintenanceMode }
 
 ## Maintenance mode
 
@@ -2278,8 +2147,6 @@ This plugin displays a maintenance page
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MissingCookieIn }
 
 ## Missing cookies in
 
@@ -2316,8 +2183,6 @@ This plugin adds cookies in the otoroshi request if not present
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MissingCookieOut }
 
 ## Missing cookies out
 
@@ -2354,8 +2219,6 @@ This plugin adds cookies in the otoroshi response if not present
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MissingHeadersIn }
 
 ## Missing headers in
 
@@ -2385,8 +2248,6 @@ This plugin adds headers (if missing) in the incoming otoroshi request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MissingHeadersOut }
 
 ## Missing headers out
 
@@ -2416,8 +2277,6 @@ This plugin adds headers (if missing) in the otoroshi response
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MockResponses }
 
 ## Mock Responses
 
@@ -2448,8 +2307,6 @@ This plugin returns mock responses
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.MultiAuthModule }
 
 ## Multi Authentication
 
@@ -2482,8 +2339,6 @@ This plugin applies an authentication module from a list of selected modules
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgApikeyMandatoryMetadata }
 
 ## Apikey mandatory metadata
 
@@ -2513,8 +2368,6 @@ This plugin checks that if an apikey is provided, there is one or more metadata 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgApikeyMandatoryTags }
 
 ## Apikey mandatory tags
 
@@ -2544,8 +2397,6 @@ This plugin checks that if an apikey is provided, there is one or more tags on i
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgAuthModuleExpectedUser }
 
 ## User logged in expected
 
@@ -2575,8 +2426,6 @@ This plugin enforce that a user from any auth. module is logged in
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgAuthModuleUserExtractor }
 
 ## User extraction from auth. module
 
@@ -2606,8 +2455,6 @@ This plugin extracts users from an authentication module without enforcing login
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgBiscuitExtractor }
 
 ## Apikey from Biscuit token extractor
 
@@ -2648,8 +2495,6 @@ apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signat
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgBiscuitValidator }
 
 ## Biscuit token validator
 
@@ -2689,8 +2534,6 @@ This plugin validates a Biscuit token
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgCertificateAsApikey }
 
 ## Client certificate as apikey
 
@@ -2727,8 +2570,6 @@ This plugin uses client certificate as an apikey. The apikey will be stored for 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgClientCertChainHeader }
 
 ## Client certificate header
 
@@ -2763,8 +2604,6 @@ This plugin pass client certificate informations to the target in headers
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgClientCredentialTokenEndpoint }
 
 ## Client credential token endpoint
 
@@ -2797,8 +2636,6 @@ This plugin provide the endpoint for the client_credential flow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgClientCredentials }
 
 ## Client Credential Service
 
@@ -2832,8 +2669,6 @@ This plugin add an an oauth client credentials service (`https://unhandleddomain
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgCustomQuotas }
 
 ## Custom quotas
 
@@ -2868,8 +2703,6 @@ This plugin will enforce quotas on the current route based on whatever you want
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgCustomThrottling }
 
 ## Custom throttling
 
@@ -2903,8 +2736,6 @@ This plugin will enforce throttling on the current route based on whatever you w
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgDefaultRequestBody }
 
 ## Default request body
 
@@ -2936,8 +2767,6 @@ This plugin adds a default request body if none specified
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgDeferPlugin }
 
 ## Defer Responses
 
@@ -2968,8 +2797,6 @@ This plugin is some kind of inside joke as one a our customer ask us to make slo
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgDiscoverySelfRegistrationSink }
 
 ## Global self registration endpoints (service discovery)
 
@@ -2997,8 +2824,6 @@ This plugin add support for self registration endpoint on specific hostnames
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgDiscoverySelfRegistrationTransformer }
 
 ## Self registration endpoints (service discovery)
 
@@ -3026,8 +2851,6 @@ This plugin add support for self registration endpoint on a specific service
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgDiscoveryTargetsSelector }
 
 ## Service discovery target selector (service discovery)
 
@@ -3057,8 +2880,6 @@ Or use an implementation of `DiscoveryJob` for the `third party registration pat
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgErrorRewriter }
 
 ## Error response rewrite
 
@@ -3096,8 +2917,6 @@ This plugin catch http response with specific statuses and rewrite the response
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgExpectedConsumer }
 
 ## Expected consumer
 
@@ -3119,8 +2938,6 @@ This plugin expect that a user or an apikey made the call
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgExternalValidator }
 
 ## External request validator
 
@@ -3156,8 +2973,6 @@ This plugin checks let requests pass based on an external validation service
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGenericAllowedList }
 
 ## Generic allowed list
 
@@ -3188,8 +3003,6 @@ This plugin checks let requests pass based on an el expression
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGenericBlockList }
 
 ## Generic block list
 
@@ -3220,8 +3033,6 @@ This plugin checks let requests is blocked based on an el expression
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGeolocationInfoEndpoint }
 
 ## Geolocation endpoint
 
@@ -3243,8 +3054,6 @@ This plugin will expose current geolocation informations on the following endpoi
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgGeolocationInfoHeader }
 
 ## Geolocation header
 
@@ -3274,8 +3083,6 @@ This plugin will send informations extracted by the Geolocation details extracto
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHasAllowedUsersValidator }
 
 ## Allowed users only
 
@@ -3313,8 +3120,6 @@ This plugin only let allowed users pass
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHasClientCertMatchingApikeyValidator }
 
 ## Client Certificate + Api Key only
 
@@ -3337,8 +3142,6 @@ You can set the client cert. DN in an apikey metadata named `allowed-client-cert
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHasClientCertMatchingHttpValidator }
 
 ## Client certificate matching (over http)
 
@@ -3378,8 +3181,6 @@ Check if client certificate matches the following fetched from an http endpoint
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHasClientCertMatchingValidator }
 
 ## Client certificate matching
 
@@ -3414,8 +3215,6 @@ Check if client certificate matches the following configuration
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHasClientCertValidator }
 
 ## Client Certificate Only
 
@@ -3437,8 +3236,6 @@ Check if a client certificate is present in the request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHtmlPatcher }
 
 ## Html Patcher
 
@@ -3471,8 +3268,6 @@ This plugin can inject elements in html pages (in the body or in the head) retur
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgHttpClientCache }
 
 ## HTTP Client Cache
 
@@ -3505,8 +3300,6 @@ This plugin add cache headers to responses
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIncomingRequestValidatorAllowedDomainNames }
 
 ## Globally allowed domain names
 
@@ -3528,8 +3321,6 @@ Globally allowed domain names plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIncomingRequestValidatorDeniedDomainNames }
 
 ## Globally denied domain names
 
@@ -3551,8 +3342,6 @@ Globally denied domain names plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIpStackGeolocationInfoExtractor }
 
 ## Geolocation details extractor (using IpStack api)
 
@@ -3585,8 +3374,6 @@ The informations are store in plugins attrs for other plugins to use
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIzanamiV1Canary }
 
 ## Izanami V1 Canary Campaign
 
@@ -3630,8 +3417,6 @@ This plugin allow you to perform canary testing based on an izanami experiment c
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgIzanamiV1Proxy }
 
 ## Izanami v1 APIs Proxy
 
@@ -3678,8 +3463,6 @@ This plugin exposes routes to proxy Izanami configuration and features tree APIs
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgJwtUserExtractor }
 
 ## Jwt user extractor
 
@@ -3714,8 +3497,6 @@ This plugin extract a user from a JWT token
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgLegacyApikeyCall }
 
 ## Legacy apikeys
 
@@ -3795,8 +3576,6 @@ This plugin expects to find an apikey to allow the request to pass. This plugin 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgLegacyAuthModuleCall }
 
 ## Legacy Authentication
 
@@ -3829,8 +3608,6 @@ This plugin applies an authentication module the same way service descriptor doe
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgLog4ShellFilter }
 
 ## Log4Shell mitigation plugin
 
@@ -3862,8 +3639,6 @@ This plugin try to detect Log4Shell attacks in request and block them
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgMaxMindGeolocationInfoExtractor }
 
 ## Geolocation details extractor (using Maxmind db)
 
@@ -3895,8 +3670,6 @@ The informations are store in plugins attrs for other plugins to use
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgResponseCache }
 
 ## Response Cache
 
@@ -3931,8 +3704,6 @@ It also provides a debug UI at `/.well-known/otoroshi/bodylogger`.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgSecurityTxt }
 
 ## Security Txt
 
@@ -3964,8 +3735,6 @@ This plugin exposes a special route `/.well-known/security.txt` as defined in RF
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgServiceQuotas }
 
 ## Public quotas
 
@@ -3997,8 +3766,6 @@ This plugin will enforce public quotas on the current route
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgTrafficMirroring }
 
 ## Traffic Mirroring
 
@@ -4035,8 +3802,6 @@ This plugin will mirror every request to other targets
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgUserAgentExtractor }
 
 ## User-Agent details extractor
 
@@ -4067,8 +3832,6 @@ The informations are store in plugins attrs for other plugins to use
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgUserAgentInfoEndpoint }
 
 ## User-Agent endpoint
 
@@ -4090,8 +3853,6 @@ This plugin will expose current user-agent informations on the following endpoin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.NgUserAgentInfoHeader }
 
 ## User-Agent header
 
@@ -4121,8 +3882,6 @@ This plugin will sent informations extracted by the User-Agent details extractor
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OAuth1Caller }
 
 ## OAuth1 caller
 
@@ -4159,8 +3918,6 @@ This plugin can be used to call api that are authenticated using OAuth1.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OAuth2Caller }
 
 ## OAuth2 caller
 
@@ -4210,8 +3967,6 @@ Do not forget to enable client retry to handle token generation on expire.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCAccessTokenAsApikey }
 
 ## OIDC access_token as apikey
 
@@ -4260,8 +4015,6 @@ This plugin will use the third party apikey configuration to generate an apikey
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCAccessTokenValidator }
 
 ## OIDC access_token validator
 
@@ -4311,8 +4064,6 @@ Use it to combine apikey validation and OIDC access_token validation.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCAuthToken }
 
 ## OIDC access_token authentication
 
@@ -4346,8 +4097,6 @@ This plugin will authenticate a user based on it's OIDC access_token
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCHeaders }
 
 ## OIDC headers
 
@@ -4392,8 +4141,6 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCJwtVerifier }
 
 ## OIDC JWT verification
 
@@ -4429,8 +4176,6 @@ This plugin verifies the current request jwt token against OIDC JWT verification
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OpenFGAValidator }
 
 ## OpenFGA validator
 
@@ -4475,8 +4220,6 @@ Enforces fine-grained authorizations using OpenFGA
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiAIAEndpoint }
 
 ## Otoroshi AIA endpoint
 
@@ -4509,8 +4252,6 @@ This plugin provide an endpoint to return Otoroshi Authority Information Access 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiChallenge }
 
 ## Otoroshi challenge token
 
@@ -4557,8 +4298,6 @@ This plugin adds a jwt challenge token to the request to a backend and expects a
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiHeadersIn }
 
 ## Otoroshi headers in
 
@@ -4580,8 +4319,6 @@ This plugin adds Otoroshi specific headers to the request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiHealthEndpoint }
 
 ## Otoroshi Health endpoint
 
@@ -4603,8 +4340,6 @@ This plugin provide an endpoint to return Otoroshi Health informations data for 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiInfos }
 
 ## Otoroshi info. token
 
@@ -4644,8 +4379,6 @@ This plugin adds a jwt token with informations about the caller to the backend
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiJWKSEndpoint }
 
 ## Otoroshi JWKS endpoint
 
@@ -4678,8 +4411,6 @@ This plugin provide an endpoint to return Otoroshi JWKS data
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiMetricsEndpoint }
 
 ## Otoroshi Metrics endpoint
 
@@ -4709,8 +4440,6 @@ This plugin provide an endpoint to return Otoroshi metrics data for the current 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OtoroshiOCSPResponderEndpoint }
 
 ## Otoroshi OCSP Responder endpoint
 
@@ -4743,8 +4472,6 @@ This plugin provide an endpoint to act as the Otoroshi OCSP Responder
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OverrideHost }
 
 ## Override host header
 
@@ -4766,8 +4493,6 @@ This plugin override the current Host header with the Host of the backend target
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OverrideLocationHeader }
 
 ## Override Location header
 
@@ -4797,8 +4522,6 @@ This plugin override the current Location header with the current frontend host 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.PolyfillIoDetector }
 
 ## cdn.polyfill.io detector
 
@@ -4820,8 +4543,6 @@ This plugin detects compromised cdn.polyfill.io script tags in html resource wit
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.PolyfillIoReplacer }
 
 ## cdn.polyfill.io mitigation
 
@@ -4843,8 +4564,6 @@ This plugin replaces compromised cdn.polyfill.io script tags in html resource wi
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.PublicPrivatePaths }
 
 ## Public/Private paths
 
@@ -4879,8 +4598,6 @@ This plugin allows or forbid request based on path patterns
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.QueryTransformer }
 
 ## Query param transformer
 
@@ -4912,8 +4629,6 @@ This plugin can modify the query params of the request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RBAC }
 
 ## RBAC
 
@@ -4951,8 +4666,6 @@ This plugin check if current user/apikey/jwt token has the right role
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.React2SShellDetector }
 
 ## React2Shell detector
 
@@ -4982,8 +4695,6 @@ This plugin detects (and block) React2Shell attacks
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ReadOnlyCalls }
 
 ## Read only requests
 
@@ -5005,8 +4716,6 @@ This plugin verifies the current request only reads data
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Redirection }
 
 ## Redirection
 
@@ -5037,8 +4746,6 @@ This plugin redirects the current request elsewhere
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexRequestBodyRewriter }
 
 ## Regex request body rewriter
 
@@ -5109,8 +4816,6 @@ Remember to properly escape backslashes in JSON.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexRequestHeadersRewriter }
 
 ## Regex request headers rewriter
 
@@ -5140,8 +4845,6 @@ Rewrites the HTTP request headers using a set of regex rules
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseBodyRewriter }
 
 ## Regex response body rewriter
 
@@ -5212,8 +4915,6 @@ Note: replacement supports backrefs $1, $2, ...
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RegexResponseHeadersRewriter }
 
 ## Regex response headers rewriter
 
@@ -5243,8 +4944,6 @@ Rewrites the HTTP response headers using a set of regex rules
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RejectHeaderInTooLong }
 
 ## Reject headers in too long
 
@@ -5274,8 +4973,6 @@ This plugin remove all headers to backend with a length above a max
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RejectHeaderOutTooLong }
 
 ## Reject headers out too long
 
@@ -5305,8 +5002,6 @@ This plugin remove all headers from backend with a length above a max
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveCookiesIn }
 
 ## Remove cookies in
 
@@ -5336,8 +5031,6 @@ This plugin remove cookies from the otoroshi request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveCookiesOut }
 
 ## Remove cookies out
 
@@ -5367,8 +5060,6 @@ This plugin remove cookies from the otoroshi response
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveHeadersIn }
 
 ## Remove headers in
 
@@ -5398,8 +5089,6 @@ This plugin removes headers in the incoming otoroshi request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RemoveHeadersOut }
 
 ## Remove headers out
 
@@ -5429,8 +5118,6 @@ This plugin removes headers in the otoroshi response
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBandwidthThrottling }
 
 ## Request bandwidth throttling
 
@@ -5464,8 +5151,6 @@ This plugin will limit request body bandwidth
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyEchoBackend }
 
 ## Request body Echo
 
@@ -5495,8 +5180,6 @@ This plugin returns request body content
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RequestBodyLengthLimiter }
 
 ## Request Body length limiter
 
@@ -5527,8 +5210,6 @@ This plugin will limit request body length
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ResponseBandwidthThrottling }
 
 ## Response bandwidth throttling
 
@@ -5562,8 +5243,6 @@ This plugin will limit response body bandwidth
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ResponseBodyLengthLimiter }
 
 ## Response Body length limiter
 
@@ -5594,8 +5273,6 @@ This plugin will limit response body length
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.Robots }
 
 ## Robots
 
@@ -5631,8 +5308,6 @@ This plugin provides all the necessary tool to handle search engine robots
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.RoutingRestrictions }
 
 ## Routing Restrictions
 
@@ -5665,8 +5340,6 @@ This plugin apply routing restriction `method domain/path` on the current reques
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.S3Backend }
 
 ## S3 Static backend
 
@@ -5706,8 +5379,6 @@ This plugin is able to S3 bucket with file content
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SOAPAction }
 
 ## SOAP action
 
@@ -5743,8 +5414,6 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SecurityHeadersPlugin }
 
 ## Security Headers
 
@@ -5792,8 +5461,6 @@ Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protecti
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SendOtoroshiHeadersBack }
 
 ## Send otoroshi headers back
 
@@ -5815,8 +5482,6 @@ This plugin adds response header containing useful informations about the curren
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SimpleBasicAuth }
 
 ## Basic Auth
 
@@ -5847,8 +5512,6 @@ This plugin can be used to protect a route with basic auth. You can use clear te
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SnowMonkeyChaos }
 
 ## Snow Monkey Chaos
 
@@ -5882,8 +5545,6 @@ This plugin introduce some chaos into you life
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.StaticAssetEndpoint }
 
 ## Http static asset
 
@@ -5913,8 +5574,6 @@ Serve any static http asset for the current request
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.StaticBackend }
 
 ## Static backend
 
@@ -5944,8 +5603,6 @@ This plugin is able to serve a static folder with file content
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.StaticResponse }
 
 ## Static Response
 
@@ -5978,8 +5635,6 @@ This plugin returns static responses
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.SwaggerUIPlugin }
 
 ## Swagger UI
 
@@ -6019,8 +5674,6 @@ Serves a Swagger UI page from a configurable OpenAPI specification URL
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TailscaleSelectTargetByName }
 
 ## Tailscale select target by name
 
@@ -6051,8 +5704,6 @@ This plugin selects a machine instance on Tailscale network based on its name
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TcpTunnel }
 
 ## TCP Tunnel
 
@@ -6074,8 +5725,6 @@ This plugin creates TCP tunnels through otoroshi
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TimeControlledCanaryMode }
 
 ## Time controlled Canary mode
 
@@ -6110,8 +5759,6 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.TimeRestrictedAccessPlugin }
 
 ## Time Restriction
 
@@ -6142,8 +5789,6 @@ This plugin restrict when a route is accessible
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.UdpTunnel }
 
 ## UDP Tunnel
 
@@ -6165,8 +5810,6 @@ This plugin creates UDP tunnels through otoroshi
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.UserLogoutEndpoint }
 
 ## User logout endpoint
 
@@ -6188,8 +5831,6 @@ This plugin logout the current user
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.UserProfileEndpoint }
 
 ## User profile endpoint
 
@@ -6211,8 +5852,6 @@ This plugin returns the current user profile
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.W3CTracing }
 
 ## W3C Trace Context
 
@@ -6246,8 +5885,6 @@ This plugin propagates W3C Trace Context spans and can export it to Jaeger or Zi
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmAccessValidator }
 
 ## Wasm Access control
 
@@ -6320,8 +5957,6 @@ Delegate route access to a wasm plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmBackend }
 
 ## Wasm Backend
 
@@ -6394,8 +6029,6 @@ This plugin can be used to use a wasm plugin as backend
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmOPA }
 
 ## Open Policy Agent (OPA)
 
@@ -6468,8 +6101,6 @@ Repo policies as WASM modules
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmPreRoute }
 
 ## Wasm pre-route
 
@@ -6542,8 +6173,6 @@ This plugin can be used to use a wasm plugin as in pre-route phase
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmRequestTransformer }
 
 ## Wasm Request Transformer
 
@@ -6616,8 +6245,6 @@ Transform the content of the request with a wasm plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmResponseTransformer }
 
 ## Wasm Response Transformer
 
@@ -6690,8 +6317,6 @@ Transform the content of a response with a wasm plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmRouteMatcher }
 
 ## Wasm Route Matcher
 
@@ -6764,8 +6389,6 @@ This plugin can be used to use a wasm plugin as route matcher
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmRouter }
 
 ## Wasm Router
 
@@ -6838,8 +6461,6 @@ Can decide for routing with a wasm plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmSink }
 
 ## Wasm Sink
 
@@ -6912,8 +6533,6 @@ Handle unmatched requests with a wasm plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WasmWebsocketTransformer }
 
 ## Websocket Wasm transformer
 
@@ -6986,8 +6605,6 @@ Transform messages and filter websocket messages
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketContentValidatorIn }
 
 ## Websocket content validator in
 
@@ -7023,8 +6640,6 @@ Validate the content of each frame
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketJsonFormatValidator }
 
 ## Websocket json format validator
 
@@ -7056,8 +6671,6 @@ Validate the json
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketMirrorBackend }
 
 ## Websocket mirror backend
 
@@ -7087,8 +6700,6 @@ Mirror incoming websocket messages to another target
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketSizeValidator }
 
 ## Websocket size validator
 
@@ -7121,8 +6732,6 @@ Make sure the frame does not exceed the maximum size set.
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WebsocketTypeValidator }
 
 ## Websocket type validator
 
@@ -7153,8 +6762,6 @@ Validate the type of each frame
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.WorkflowWebsocketTransformer }
 
 ## Websocket Workflow transformer
 
@@ -7186,8 +6793,6 @@ Transform messages and filter websocket messages
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.XForwardedHeaders }
 
 ## X-Forwarded-* headers
 
@@ -7209,8 +6814,6 @@ This plugin adds all the X-Forwarded-* headers to the request for the backend ta
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.XmlToJsonRequest }
 
 ## request body xml-to-json
 
@@ -7240,8 +6843,6 @@ This plugin transform incoming request body from xml to json and may apply a jq 
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.XmlToJsonResponse }
 
 ## response body xml-to-json
 
@@ -7271,8 +6872,6 @@ This plugin transform response body from xml to json and may apply a jq transfor
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ZipBombBackend }
 
 ## Zip Bomb backend
 
@@ -7306,8 +6905,6 @@ This plugin returns zip bomb responses based on predicates
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.ZipFileBackend }
 
 ## Zip file backend
 
@@ -7341,8 +6938,6 @@ Serves content from a zip file
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.api.YesWebsocketBackend }
 
 ## Yes
 
@@ -7364,8 +6959,6 @@ Outputs Ys to the client
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.tunnel.TunnelPlugin }
 
 ## Remote tunnel calls
 
@@ -7395,8 +6988,6 @@ This plugin can contact remote service using tunnels
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowAccessValidator }
 
 ## Workflow Access control
 
@@ -7424,8 +7015,6 @@ Delegate route access to a worflow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowBackend }
 
 ## Workflow Backend
 
@@ -7453,8 +7042,6 @@ This plugin uses a workflow as a backend
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowRequestTransformer }
 
 ## Workflow Request Transformer
 
@@ -7482,8 +7069,6 @@ Transform the content of the request with a workflow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowResponseTransformer }
 
 ## Workflow Response Transformer
 
@@ -7511,8 +7096,6 @@ Transform the content of a response with a workflow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.workflow.WorkflowResumeBackend }
 
 ## Workflow Resume Backend
 
@@ -7540,8 +7123,6 @@ This plugin can be used to resume a paused workflow
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.wasm.proxywasm.NgCorazaWAF }
 
 ## Coraza WAF
 
@@ -7573,8 +7154,6 @@ Coraza WAF plugin
 
 
 
-:::
-@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.wasm.proxywasm.NgIncomingRequestValidatorCorazaWAF }
 
 ## Coraza WAF - Incoming Request Validator
 
@@ -7603,5 +7182,3 @@ Coraza WAF - Incoming Request Validator plugin
 
 
 
-
-:::
