@@ -18,16 +18,16 @@ You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/route
 | `name`   | string |    | Display name of the route |
 | `description` | string |    | Description of the route |
 | `tags` | array of string | `[]` | Tags for categorization and API automation |
-| `metadata` | object | `{}` | Key/value metadata. Some keys are @ref[reserved](#reserved-metadata) |
+| `metadata` | object | `{}` | Key/value metadata. Some keys are [reserved](#reserved-metadata) |
 | `enabled` | boolean | `true` | Whether the route is active. Disabled routes are ignored by the router |
-| `debug_flow` | boolean | `false` | Enable debug flow. Execution reports will contain all input/output values. See @ref[engine docs](../topics/engine.md#reporting) |
-| `capture` | boolean | `false` | Enable request/response capture. Generates events with full request content. Use with caution! See @ref[engine docs](../topics/engine.md#http-traffic-capture) |
-| `export_reporting` | boolean | `false` | Export execution reports for each request via @ref[data exporters](./data-exporters.md). See @ref[engine docs](../topics/engine.md#reporting) |
+| `debug_flow` | boolean | `false` | Enable debug flow. Execution reports will contain all input/output values. See [engine docs](../topics/engine.md#reporting) |
+| `capture` | boolean | `false` | Enable request/response capture. Generates events with full request content. Use with caution! See [engine docs](../topics/engine.md#http-traffic-capture) |
+| `export_reporting` | boolean | `false` | Export execution reports for each request via [data exporters](./data-exporters.md). See [engine docs](../topics/engine.md#reporting) |
 | `groups` | array of string | `["default"]` | Service groups this route belongs to. Used for API key authorization |
-| `bound_listeners` | array of string | `[]` | List of @ref[HTTP listener](./http-listeners.md) IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port |
+| `bound_listeners` | array of string | `[]` | List of [HTTP listener](./http-listeners.md) IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port |
 | `frontend` | object |    | Frontend configuration (how the router matches this route). See [below](#frontend-configuration) |
-| `backend` | object |    | Backend configuration (where to forward requests). See @ref[backends](./backends.md) |
-| `backend_ref` | string | `null` | Reference to a global @ref[stored backend](./backends.md) by ID. If set, takes precedence over inline `backend` |
+| `backend` | object |    | Backend configuration (where to forward requests). See [backends](./backends.md) |
+| `backend_ref` | string | `null` | Reference to a global [stored backend](./backends.md) by ID. If set, takes precedence over inline `backend` |
 | `plugins` | object |    | Plugin chain configuration. See [below](#plugins) |
 
 ### Reserved metadata
@@ -65,7 +65,7 @@ The frontend defines how the Otoroshi router matches incoming requests to this r
 | `cookies` | object | `{}` | Required cookies to match. If empty, any cookies match |
 | `methods` | array of string | `[]` | Allowed HTTP methods. If empty, any method matches |
 
-For more information about routing, check the @ref[engine documentation](../topics/engine.md#routing).
+For more information about routing, check the [engine documentation](../topics/engine.md#routing).
 
 ### Frontend JSON example
 
@@ -85,7 +85,7 @@ For more information about routing, check the @ref[engine documentation](../topi
 
 ## Backend configuration
 
-The `backend` field defines the target servers to forward requests to. For detailed documentation, see @ref[backends](./backends.md).
+The `backend` field defines the target servers to forward requests to. For detailed documentation, see [backends](./backends.md).
 
 Alternatively, use `backend_ref` to reference a global stored backend by ID, making the backend reusable across multiple routes.
 
@@ -123,7 +123,7 @@ The `plugins` field contains the list of plugins applied on this route. Each plu
 }
 ```
 
-For the full list of available plugins, see @ref[built-in plugins](../plugins/built-in-plugins.md).
+For the full list of available plugins, see [built-in plugins](../plugins/built-in-plugins.md).
 
 ## Complete route JSON example
 

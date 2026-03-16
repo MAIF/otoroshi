@@ -6,7 +6,7 @@ sidebar_position: 7
 
 Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems.
 
-To try them out, you can follow @ref[this tutorial](../how-to-s/export-alerts-using-mailgun.md).
+To try them out, you can follow [this tutorial](../how-to-s/export-alerts-using-mailgun.md).
 
 ## UI page
 
@@ -74,7 +74,7 @@ Otoroshi provides rules to filter events based on their content. Given this exam
 
 ### Elastic
 
-Sends events in batch to an Elasticsearch cluster. Can be used with the @ref[elastic analytics dashboard](./global-config.md#analytics-elastic-dashboard-datasource-read-).
+Sends events in batch to an Elasticsearch cluster. Can be used with the [elastic analytics dashboard](./global-config.md#analytics-elastic-dashboard-datasource-read-).
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -103,7 +103,7 @@ Sends events in batch to an HTTP endpoint using POST with a JSON array body.
 
 ### Kafka
 
-Sends events to an [Apache Kafka](https://kafka.apache.org/) topic. See @ref[Kafka tutorials](../how-to-s/communicate-with-kafka.md).
+Sends events to an [Apache Kafka](https://kafka.apache.org/) topic. See [Kafka tutorials](../how-to-s/communicate-with-kafka.md).
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -189,7 +189,7 @@ Writes events to an S3-compatible object store.
 Writes events in `.gor` format compatible with [GoReplay](https://goreplay.org/).
 
 :::warning
-This exporter only catches `TrafficCaptureEvent`. These events are generated when a route has the `capture` flag enabled. See @ref[engine docs](../topics/engine.md).
+This exporter only catches `TrafficCaptureEvent`. These events are generated when a route has the `capture` flag enabled. See [engine docs](../topics/engine.md).
 :::
 | Property | Type | Description |
 |----------|------|-------------|
@@ -279,7 +279,7 @@ Writes events to a PostgreSQL database.
 
 ### Workflow
 
-Routes events to an Otoroshi @ref[workflow](./workflows.md) for custom processing.
+Routes events to an Otoroshi [workflow](./workflows.md) for custom processing.
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -295,7 +295,7 @@ Processes events through a WebAssembly plugin.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `wasmRef` | string | Reference to a @ref[WASM plugin](./wasm-plugins.md) entity |
+| `wasmRef` | string | Reference to a [WASM plugin](./wasm-plugins.md) entity |
 | `params` | object | Additional parameters passed to the WASM function |
 
 ### OTLP Metrics
