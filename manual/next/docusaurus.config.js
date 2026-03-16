@@ -120,10 +120,6 @@ const config = {
                 href: 'https://maif.github.io/daikoku/',
               },
               {
-                label: 'Izanami - Feature Flags',
-                href: 'https://maif.github.io/izanami/',
-              },
-              {
                 label: 'Cloud APIM',
                 href: 'https://www.cloud-apim.com/',
               },
@@ -213,10 +209,6 @@ const config = {
               {
                 label: 'Daikoku',
                 href: 'https://maif.github.io/daikoku/',
-              },
-              {
-                label: 'Izanami',
-                href: 'https://maif.github.io/izanami/',
               },
               {
                 label: 'Cloud APIM',
