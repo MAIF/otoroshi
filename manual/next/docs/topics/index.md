@@ -18,7 +18,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [Developer portal with Daikoku](./dev-portal.md)
 * [Sessions management](./sessions-mgmt.md)
 * [The Otoroshi communication protocol](./otoroshi-protocol.mdx)
-* [Expression language](./expression-language.md)
+* [Expression language](./expression-language.mdx)
 * [Otoroshi user rights](./user-rights.md)
 * [GraphQL composer](./graphql-composer.md)
 * [Secret vaults](./secrets.md)

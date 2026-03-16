@@ -2,14 +2,17 @@
 title: Expression language
 sidebar_position: 11
 ---
+
+import ExpressionLanguage from '@site/src/components/ExpressionLanguage';
+
 # Expression language
 
-<div style="display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem">
-<span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.OverrideHost">Override Host Header</a>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AuthModule">Authentication</a>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers in</a>
+<div style={{display: "flex", alignItems: "center", gap: ".5rem", marginBottom: "1rem"}}>
+<span style={{fontWeight: "bold"}}>Route plugins:</span>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.OverrideHost">Override Host Header</a>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.ApikeyCalls">Apikeys</a>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AuthModule">Authentication</a>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers in</a>
 </div>
 
 - [Documentation and examples](#documentation-and-examples)
@@ -18,11 +21,10 @@ sidebar_position: 11
 The expression language provides an important mechanism for accessing and manipulating Otoroshi data on different inputs. For example, with this mechanism, you can mapping a claim of an inconming token directly in a claim of a generated token (using [JWT verifiers](../entities/jwt-verifiers.md)). You can add information of the service descriptor traversed such as the domain of the service or the name of the service. This information can be useful on the backend service.
 
 ## Documentation and examples
-<!-- Documentation is in expression-language.js and it build when page is rendered -->
-@@@div { #expressions }
-&nbsp;
-:::
-If an input contains a string starting by `${`, Otoroshi will try to evaluate the content. If the content doesn't match a known expression,
+
+<ExpressionLanguage />
+
+If an input contains a string starting by `${"${"}`, Otoroshi will try to evaluate the content. If the content doesn't match a known expression,
 the 'bad-expr' value will be set.
 
 ## Combining optional values

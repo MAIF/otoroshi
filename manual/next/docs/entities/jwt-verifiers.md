@@ -135,7 +135,7 @@ Adds a default token if none is present in the request.
 |----------|------|-------------|
 | `type` | string | `DefaultToken` |
 | `strict` | boolean | If `true` and a token is already present, the call will fail |
-| `defaultValue` | object | Claims for the generated token. Supports [expression language](../topics/expression-language.md) |
+| `defaultValue` | object | Claims for the generated token. Supports [expression language](../topics/expression-language.mdx) |
 
 ### Pass-through (verify only)
 
@@ -162,7 +162,7 @@ The `verificationSettings.fields` values support the following validation expres
 * `ContainsAll(a, b)` - Array must contain all of the values
 * `ContainsNotAll(a, b)` - Array must not contain all of the values
 
-These fields also support the [expression language](../topics/expression-language.md).
+These fields also support the [expression language](../topics/expression-language.mdx).
 
 ### Verify and re-sign
 

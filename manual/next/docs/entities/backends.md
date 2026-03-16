@@ -18,7 +18,7 @@ You can find all backends [here](http://otoroshi.oto.tools:8080/bo/dashboard/bac
 |----------|------|---------|-------------|
 | `targets` | array of [Target](#targets) | `[]` | List of target servers |
 | `root` | string | `"/"` | Path prefix added to each request sent to the downstream service |
-| `rewrite` | boolean | `false` | When enabled, the request path is completely replaced by `root`. Supports [expression language](../topics/expression-language.md) for dynamic rewriting |
+| `rewrite` | boolean | `false` | When enabled, the request path is completely replaced by `root`. Supports [expression language](../topics/expression-language.mdx) for dynamic rewriting |
 | `load_balancing` | object | `{"type": "RoundRobin"}` | Load balancing algorithm (see [below](#load-balancing)) |
 | `health_check` | object | `null` | Optional health check configuration (see [below](#health-check)) |
 | `client` | object |     | HTTP client settings (see [below](#client-settings)) |

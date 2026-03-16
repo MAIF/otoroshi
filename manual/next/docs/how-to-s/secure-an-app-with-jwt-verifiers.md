@@ -108,7 +108,7 @@ Let's start by extending the [previous verifier](http://otoroshi.oto.tools:8080/
 5. Set `Internal-Authorization` as `Header name`
 6. Set `key` on first field of `Rename token fields` and `from-otoroshi-verifier` on second field
 7. Set `generated-key` and `generated-value` as `Set token fields`
-8. Add `generated_at` and `${date}` as second field of `Set token fields` (Otoroshi supports an [expression language](../topics/expression-language.md))
+8. Add `generated_at` and `${date}` as second field of `Set token fields` (Otoroshi supports an [expression language](../topics/expression-language.mdx))
 9. Save your verifier and try to call your service again.
 
 This should output a json with `authorization` in headers field and our generate token in `Internal-Authorization`.

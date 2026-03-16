@@ -248,6 +248,122 @@ div[class*='announcementBar'] {
   }
 }
 
+/* ===== Expression Language Explorer ===== */
+.el-container {
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+.el-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.el-section:last-child {
+  border-bottom: none;
+}
+
+.el-editor {
+  padding: 1.5rem;
+  background: var(--ifm-background-surface-color);
+  border-right: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.el-editor h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.3rem;
+}
+
+.el-context {
+  display: block;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 0.75rem;
+}
+
+.el-entry {
+  margin-bottom: 0.75rem;
+}
+
+.el-entry code {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.82rem;
+  padding: 2px 6px;
+  background: var(--ifm-color-emphasis-200);
+  border-radius: 4px;
+}
+
+.el-description {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--ifm-color-emphasis-700);
+  text-transform: capitalize;
+}
+
+.el-values {
+  padding: 1.5rem;
+  background: #303740;
+  color: #e0e0e0;
+}
+
+[data-theme='light'] .el-values {
+  background: #303740;
+  color: #e0e0e0;
+}
+
+.el-values-title {
+  text-align: right;
+  margin-bottom: 1rem;
+}
+
+.el-values-title span {
+  display: inline-block;
+  background: #444d56;
+  color: #ccc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.el-value-entry {
+  margin-bottom: 0.75rem;
+}
+
+.el-value-entry code {
+  display: inline-block;
+  margin-bottom: 0.2rem;
+  font-size: 0.82rem;
+  padding: 2px 6px;
+  background: #444d56;
+  color: #e0e0e0;
+  border-radius: 4px;
+}
+
+.el-value {
+  display: block;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .el-section {
+    grid-template-columns: 1fr;
+  }
+  .el-editor {
+    border-right: none;
+    border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  }
+}
+
 /* ===== Print improvements ===== */
 @media print {
   .navbar,
