@@ -4,6 +4,7 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './index.module.css';
 
 const features = [
@@ -86,6 +87,7 @@ const stats = [
 
 function HeroBanner() {
   const {siteConfig} = useDocusaurusContext();
+  const logoUrl = useBaseUrl('/img/otoroshi-logo.png');
   return (
     <header className={styles.heroBanner}>
       <div className="container">
@@ -116,7 +118,7 @@ function HeroBanner() {
             </div>
           </div>
           <div className={styles.heroImage}>
-            <img src="/img/otoroshi-logo.png" alt="Otoroshi" width="300" />
+            <img src={logoUrl} alt="Otoroshi" width="300" />
           </div>
         </div>
       </div>
