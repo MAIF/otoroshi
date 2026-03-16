@@ -118,6 +118,112 @@ div[class*='announcementBar'] {
   max-width: 100%;
 }
 
+/* ===== Provider cards (setup-otoroshi, deploy, etc.) ===== */
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.provider-card {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--ifm-background-color);
+  transition: box-shadow 0.2s;
+}
+
+.provider-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .provider-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.provider-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.provider-card-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.provider-card-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.provider-card-tag.recommended {
+  background: #e67e5a;
+}
+
+.provider-card-tag.clustering {
+  background: #6b9ebb;
+}
+
+.provider-card p {
+  flex: 1;
+  font-size: 0.9rem;
+  text-align: justify;
+  margin-bottom: 0.75rem;
+}
+
+.provider-card .provider-card-img {
+  text-align: center;
+  margin: 0.5rem 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-card .provider-card-img img {
+  max-height: 120px;
+  max-width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+.provider-card .provider-card-action {
+  margin-top: auto;
+}
+
+.provider-card .provider-card-action a {
+  display: block;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #6b8fb5;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.provider-card .provider-card-action a:hover {
+  background: #5a7fa5;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .provider-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Print improvements ===== */
 @media print {
   .navbar,

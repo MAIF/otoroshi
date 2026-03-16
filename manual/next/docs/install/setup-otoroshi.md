@@ -12,52 +12,51 @@ in this section we are going to configure otoroshi before running it for the fir
 Right now, Otoroshi supports multiple datastore. You can choose one datastore over another depending on your use case.
 
 
-<div style="font-size: 22px; font-weight: bold;">Redis</div>
+<div class="provider-grid">
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>Redis</h4>
+    <span class="provider-card-tag recommended">Recommended</span>
+  </div>
+  <p>The <strong>redis</strong> datastore is quite nice when you want to easily deploy several Otoroshi instances.</p>
+  <div class="provider-card-img"><img src="/img/docs/redis.png" alt="Redis" /></div>
+  <div class="provider-card-action"><a href="https://redis.io/topics/quickstart">Documentation</a></div>
+</div>
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>In memory</h4>
+  </div>
+  <p>The <strong>in-memory</strong> datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.</p>
+  <div class="provider-card-img"><img src="/img/docs/inmemory.png" alt="In memory" /></div>
+  <div class="provider-card-action"><a href="../getting-started">Start with</a></div>
+</div>
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>Cassandra</h4>
+    <span class="provider-card-tag clustering">Clustering</span>
+  </div>
+  <p>Experimental support, should be used in cluster mode for leaders</p>
+  <div class="provider-card-img"><img src="/img/docs/cassandra.png" alt="Cassandra" /></div>
+  <div class="provider-card-action"><a href="https://cassandra.apache.org/doc/latest/cassandra/getting_started/installing.html">Documentation</a></div>
+</div>
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>Postgresql</h4>
+    <span class="provider-card-tag clustering">Clustering</span>
+  </div>
+  <p>Or any postgresql compatible database like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)</p>
+  <div class="provider-card-img"><img src="/img/docs/postgres.png" alt="PostgreSQL" /></div>
+  <div class="provider-card-action"><a href="https://www.postgresql.org/docs/10/tutorial-install.html">Documentation</a></div>
+</div>
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>FileDB</h4>
+  </div>
+  <p>The <strong>filedb</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. Not suitable for production usage.</p>
+  <div class="provider-card-img"><img src="/img/docs/filedb.png" alt="FileDB" /></div>
+</div>
+</div>
 
-<div class="element-tag recommended-tag">Recommended</div>
-
-The **redis** datastore is quite nice when you want to easily deploy several Otoroshi instances.
-
-<img src="/img/docs/redis.png" />
-
-@link:[Documentation](https://redis.io/topics/quickstart)
-:::
-<div style="font-size: 22px; font-weight: bold;">In memory</div>
-
-The **in-memory** datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.
-
-<img src="/img/docs/inmemory.png" />
-
-[Start with](../getting-started.md)
-:::
-<div style="font-size: 22px; font-weight: bold;">Cassandra</div>
-
-<div class="element-tag cluster-tag">Clustering</div>
-
-Experimental support, should be used in cluster mode for leaders
-
-<img src="/img/docs/cassandra.png" />
-
-@link:[Documentation](https://cassandra.apache.org/doc/latest/cassandra/getting_started/installing.html)
-:::
-<div style="font-size: 22px; font-weight: bold;">Postgresql</div>
-
-<div class="element-tag cluster-tag">Clustering</div>
-
-Or any postgresql compatible databse like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)
-
-<img src="/img/docs/postgres.png" />
-
-@link:[Documentation](https://www.postgresql.org/docs/10/tutorial-install.html)
-:::
-<div style="font-size: 22px; font-weight: bold;">FileDB</div>
-
-The **filedb** datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. 
-Not suitable for production usage.
-
-<img src="/img/docs/filedb.png" />
-
-:::
 <div align="center">
 <img src="/img/docs/datastores.png" />
 </div>
