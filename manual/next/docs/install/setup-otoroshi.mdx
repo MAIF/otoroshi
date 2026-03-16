@@ -73,26 +73,53 @@ otoroshi {
 
 depending on the value you chose, you will be able to configure your datastore with the following configuration
 
-inmemory
-:   > **Included file**: `../snippets/datastores/inmemory.conf` 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-file
-:   > **Included file**: `../snippets/datastores/file.conf` 
+<Tabs>
+<TabItem value="inmemory" label="In memory" default>
 
-http
-:   > **Included file**: `../snippets/datastores/http.conf` 
+```conf include=../snippets/datastores/inmemory.conf
+```
 
-s3
-:   > **Included file**: `../snippets/datastores/s3.conf` 
+</TabItem>
+<TabItem value="redis" label="Redis">
 
-redis
-:   > **Included file**: `../snippets/datastores/lettuce.conf` 
+```conf include=../snippets/datastores/lettuce.conf
+```
 
-postgresql
-:   > **Included file**: `../snippets/datastores/pg.conf` 
+</TabItem>
+<TabItem value="postgresql" label="PostgreSQL">
 
-cassandra
-:   > **Included file**: `../snippets/datastores/cassandra.conf` 
+```conf include=../snippets/datastores/pg.conf
+```
+
+</TabItem>
+<TabItem value="cassandra" label="Cassandra">
+
+```conf include=../snippets/datastores/cassandra.conf
+```
+
+</TabItem>
+<TabItem value="file" label="File">
+
+```conf include=../snippets/datastores/file.conf
+```
+
+</TabItem>
+<TabItem value="http" label="HTTP">
+
+```conf include=../snippets/datastores/http.conf
+```
+
+</TabItem>
+<TabItem value="s3" label="S3">
+
+```conf include=../snippets/datastores/s3.conf
+```
+
+</TabItem>
+</Tabs>
 
 ## Setup your hosts before running
 
@@ -201,7 +228,8 @@ play.http {
 
 ### Reference configuration
 
-> **Included file**: `../snippets/reference.conf` 
+```conf include=../snippets/reference.conf
+```
 
 ### More config. options
 
@@ -216,4 +244,5 @@ Eevery property in the configuration file can be overriden by an environment var
 
 ## Reference configuration for env. variables
 
-> **Included file**: `../snippets/reference-env.conf` 
+```conf include=../snippets/reference-env.conf
+```

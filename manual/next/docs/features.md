@@ -265,7 +265,7 @@ sidebar_position: 4
     * Sync configuration with Otoroshi clusters
     * Push-based IaC, very similar to what `kubectl apply` can do
 
-**Storage backends** ([setup](./install/setup-otoroshi.md))
+**Storage backends** ([setup](./install/setup-otoroshi.mdx))
 
 * Redis (via Lettuce)
 * PostgreSQL (via Reactive PG)
