@@ -9,7 +9,7 @@ sidebar_position: 4
 * Can proxy any HTTP(s) service (APIs, webapps, websocket, etc) ([routes](./entities/routes.md), [engine](./topics/engine.md))
 * Can proxy any TCP service (app, database, etc) ([TCP services](./entities/tcp-services.md))
 * Can proxy any gRPC service (using a netty listener), also gRPC-Web support ([HTTP listeners](./topics/http-listeners.md))
-* Can proxy any GraphQL service (proxy, query composition, and schema-first backend) ([GraphQL composer](./topics/graphql-composer.md))
+* Can proxy any GraphQL service (proxy, query composition, and schema-first backend) ([GraphQL composer](./topics/graphql-composer.mdx))
 * Full WebSocket support with message validation, transformation, and mirroring
 * End-to-end HTTP/1.1 support
 * End-to-end HTTP/2 support (including H2C cleartext) ([Netty server](./topics/netty-server.md))
@@ -66,7 +66,7 @@ sidebar_position: 4
     * CORS handling ([CORS](./plugins/built-in-plugins.md#otoroshi.next.plugins.Cors))
     * body transformation (jq, regex, XML/JSON conversion, SOAP) ([built-in plugins](./plugins/built-in-plugins.md))
     * query string transformation ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.QueryTransformer))
-    * GraphQL composition ([GraphQL composer](./topics/graphql-composer.md#otoroshi.next.plugins.GraphQLBackend))
+    * GraphQL composition ([GraphQL composer](./topics/graphql-composer.mdx#otoroshi.next.plugins.GraphQLBackend))
     * HTML patching ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.NgHtmlPatcher))
     * redirection ([built-in plugins](./plugins/built-in-plugins.md#otoroshi.next.plugins.Redirection))
     * maintenance and build modes ([built-in plugins](./plugins/built-in-plugins.md))
@@ -81,7 +81,7 @@ sidebar_position: 4
 
 **Security**
 
-* Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./how-to-s/instantiate-waf-coraza.md))
+* Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./how-to-s/instantiate-waf-coraza.mdx))
 * IP address allow and block lists (with CIDR support) ([built-in plugins](./plugins/built-in-plugins.md))
 * Domain name allow and block lists ([built-in plugins](./plugins/built-in-plugins.md))
 * Fail2Ban-style automatic IP banning ([built-in plugins](./plugins/built-in-plugins.md))
@@ -94,7 +94,7 @@ sidebar_position: 4
 
 **API security**
 
-* Access management with API keys and quotas ([API keys](./entities/apikeys.md), [how-to](./how-to-s/secure-with-apikey.md))
+* Access management with API keys and quotas ([API keys](./entities/apikeys.md), [how-to](./how-to-s/secure-with-apikey.mdx))
 * Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) ([API keys](./entities/apikeys.md))
 * Automatic API key secrets rotation ([API keys](./entities/apikeys.md))
 * Mandatory tags and metadata validation on API keys
@@ -102,7 +102,7 @@ sidebar_position: 4
 * End-to-end mTLS calls ([mTLS how-to](./how-to-s/end-to-end-mtls.md))
 * Routing constraints and restrictions
 * Public/private path separation
-* JWT token validation and manipulation ([JWT verifiers](./entities/jwt-verifiers.md), [how-to](./how-to-s/secure-an-app-with-jwt-verifiers.md))
+* JWT token validation and manipulation ([JWT verifiers](./entities/jwt-verifiers.md), [how-to](./how-to-s/secure-an-app-with-jwt-verifiers.mdx))
     * Multiple validators on the same route
     * JWE (encrypted JWT) support
     * JWT signing
@@ -122,7 +122,7 @@ sidebar_position: 4
 * OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.md))
 * Datadog, StatsD metrics export ([monitoring](./topics/monitoring.md))
 * Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.md))
-    * Elasticsearch ([how-to](./how-to-s/export-events-to-elastic.md))
+    * Elasticsearch ([how-to](./how-to-s/export-events-to-elastic.mdx))
     * Apache Kafka ([how-to](./how-to-s/communicate-with-kafka.md))
     * Apache Pulsar
     * Webhook (HTTP)
@@ -143,7 +143,7 @@ sidebar_position: 4
 **Services discovery**
 
 * Through DNS
-* Through Eureka (internal and external) ([how-to](./how-to-s/working-with-eureka.md))
+* Through Eureka (internal and external) ([how-to](./how-to-s/working-with-eureka.mdx))
 * Through Kubernetes API (namespace scanning) ([Kubernetes](./deploy/kubernetes.mdx))
 * Through custom Otoroshi protocol (self-registration) ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
 * Through Tailscale network ([how-to](./how-to-s/tailscale-integration.md))
@@ -151,14 +151,14 @@ sidebar_position: 4
 **Authentication**
 
 * OAuth 2.0/2.1 authentication (with PKCE support) ([auth modules](./entities/auth-modules.md))
-* OpenID Connect (OIDC) authentication ([auth modules](./entities/auth-modules.md), [Keycloak how-to](./how-to-s/secure-app-with-keycloak.md))
-* LDAP authentication (with nested groups) ([auth modules](./entities/auth-modules.md), [LDAP how-to](./how-to-s/secure-app-with-ldap.md))
+* OpenID Connect (OIDC) authentication ([auth modules](./entities/auth-modules.md), [Keycloak how-to](./how-to-s/secure-app-with-keycloak.mdx))
+* LDAP authentication (with nested groups) ([auth modules](./entities/auth-modules.md), [LDAP how-to](./how-to-s/secure-app-with-ldap.mdx))
 * JWT authentication ([auth modules](./entities/auth-modules.md))
-* OAuth 1.0a authentication ([how-to](./how-to-s/secure-with-oauth1-client.md))
+* OAuth 1.0a authentication ([how-to](./how-to-s/secure-with-oauth1-client.mdx))
 * SAML V2 authentication ([auth modules](./entities/auth-modules.md))
 * Basic authentication (username/password) ([auth modules](./entities/auth-modules.md))
 * WebAuthn / FIDO2 passwordless authentication
-* Auth0 passwordless flow ([Auth0 how-to](./how-to-s/secure-app-with-auth0.md))
+* Auth0 passwordless flow ([Auth0 how-to](./how-to-s/secure-app-with-auth0.mdx))
 * WASM-based custom authentication ([auth modules](./entities/auth-modules.md), [WASM usage](./topics/wasm-usage.mdx))
 * Internal users management ([Otoroshi admins](./entities/otoroshi-admins.md))
 * Multi-authentication module chaining ([auth modules](./entities/auth-modules.md))
@@ -183,7 +183,7 @@ sidebar_position: 4
 **Certificates management** ([PKI](./topics/pki.md), [certificates](./entities/certificates.md))
 
 * Dynamic TLS certificates store ([TLS](./topics/tls.md))
-* Dynamic TLS termination ([TLS how-to](./how-to-s/tls-termination-using-own-certificates.md))
+* Dynamic TLS termination ([TLS how-to](./how-to-s/tls-termination-using-own-certificates.mdx))
 * Internal PKI ([PKI](./topics/pki.md))
     * generate self-signed certificates/CAs
     * generate/sign certificates/CAs/sub-CAs
@@ -209,7 +209,7 @@ sidebar_position: 4
 
 * Serve static files from local filesystem ([built-in plugins](./plugins/built-in-plugins.md))
 * Serve static files from Amazon S3 ([built-in plugins](./plugins/built-in-plugins.md))
-* Serve static files from ZIP archives ([ZIP backend how-to](./how-to-s/zip-backend-plugin.md))
+* Serve static files from ZIP archives ([ZIP backend how-to](./how-to-s/zip-backend-plugin.mdx))
 * Echo backend for debugging ([built-in plugins](./plugins/built-in-plugins.md))
 * Static response / mock backends ([built-in plugins](./plugins/built-in-plugins.md))
 

@@ -20,7 +20,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [The Otoroshi communication protocol](./otoroshi-protocol.mdx)
 * [Expression language](./expression-language.mdx)
 * [Otoroshi user rights](./user-rights.md)
-* [GraphQL composer](./graphql-composer.md)
+* [GraphQL composer](./graphql-composer.mdx)
 * [Secret vaults](./secrets.md)
 * [Otoroshi tunnels](./tunnels.md)
 * [Relay routing](./relay-routing.md)

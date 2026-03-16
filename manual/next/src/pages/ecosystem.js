@@ -7,9 +7,9 @@ import styles from './ecosystem.module.css';
 const openSourceProjects = [
   {
     name: 'otoroshi-llm-extension',
-    description: 'Connect, setup, secure and seamlessly manage LLM models using a Universal/OpenAI compatible API.',
+    description: 'Connect, setup, secure and seamlessly manage AI models using a Universal/OpenAI compatible API.',
     url: 'https://github.com/cloud-apim/otoroshi-llm-extension',
-    tags: ['AI', 'LLM'],
+    tags: ['AI', 'AI Gateway', 'LLM'],
   },
   {
     name: 'otoroshi-waf-extension',
