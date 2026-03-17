@@ -311,16 +311,28 @@ function ComparisonSection() {
             </thead>
             <tbody>
               <tr>
-                <td>Static configuration</td>
-                <td><strong>Dynamic runtime control</strong></td>
+                <td>Configure APIs</td>
+                <td><strong>Program your gateway</strong></td>
+              </tr>
+              <tr>
+                <td>Static policies</td>
+                <td><strong>Dynamic runtime logic</strong></td>
               </tr>
               <tr>
                 <td>API-only</td>
                 <td><strong>HTTP + API + AI + workflows</strong></td>
               </tr>
               <tr>
-                <td>Routing traffic</td>
-                <td><strong>Executing logic on traffic</strong></td>
+                <td>Reload to change</td>
+                <td><strong>Change instantly</strong></td>
+              </tr>
+              <tr>
+                <td>Limited extensibility</td>
+                <td><strong>Unlimited (WASM + Workflows + plugins)</strong></td>
+              </tr>
+              <tr>
+                <td>Vendor lock-in</td>
+                <td><strong>Open & sovereign</strong></td>
               </tr>
               <tr>
                 <td>Manage endpoints</td>
