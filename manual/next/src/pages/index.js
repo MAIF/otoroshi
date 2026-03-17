@@ -24,6 +24,11 @@ const features = [
     description: 'Circuit breakers, rate limiting, CORS, body transformation, caching, compression, traffic mirroring, and much more — all configurable at runtime.',
   },
   {
+    title: (<>AI Gateway<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a></>),
+    icon: '🤖',
+    description: (<>Turn Otoroshi into a full-featured AI Gateway<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a>. Connect 50+ LLM providers through a unified OpenAI-compatible API with load balancing, fallback, guardrails, prompt engineering, semantic caching, cost tracking, and MCP (Model Context Protocol) support.</>),
+  },
+  {
     title: 'Dynamic Hot Configuration',
     icon: '🔄',
     description: 'Change any configuration at runtime without restarts or reloads. Every setting is instantly propagated across your cluster.',
@@ -80,6 +85,11 @@ const useCases = [
     title: 'Developer Portal',
     description: 'Combine with Daikoku for a complete API marketplace with self-service onboarding.',
     icon: '👩‍💻',
+  },
+  {
+    title: (<>AI Gateway<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a></>),
+    description: (<>Secure and manage LLM access with guardrails, cost controls, MCP integration, and a unified API for 50+ providers<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a>.</>),
+    icon: '🤖',
   },
 ];
 
