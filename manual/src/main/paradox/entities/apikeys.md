@@ -1,70 +1,167 @@
-# Apikeys
+# API Keys
 
-An API key is a unique identifier used to connect to, or perform, an route call. 
+An API key is a unique credential used to authenticate and authorize calls to routes and APIs.
 
 @@@ div { .centered-img }
 <img src="../imgs/models-apikey.png" />
 @@@
 
-You can found a concrete example @ref:[here](../how-to-s/secure-with-apikey.md)
+You can find a practical example @ref:[here](../how-to-s/secure-with-apikey.md).
 
-* `ApiKey Id`: the id is a unique random key that will represent this API key
-* `ApiKey Secret`: the secret is a random key used to validate the API key
-* `ApiKey Name`: a name for the API key, used for debug purposes
-* `ApiKey description`: a useful description for this apikey
-* `Valid until`: auto disable apikey after this date
-* `Enabled`: if the API key is disabled, then any call using this API key will fail
-* `Read only`: if the API key is in read only mode, every request done with this api key will only work for GET, HEAD, OPTIONS verbs
-* `Allow pass by clientid only`: here you allow client to only pass client id in a specific header in order to grant access to the underlying api
-* `Constrained services only`: this apikey can only be used on services using apikey routing constraints
-* `Authorized on`: the groups/services linked to this api key
+## UI page
 
-### Metadata and tags
+You can find all API keys [here](http://otoroshi.oto.tools:8080/bo/dashboard/apikeys)
 
-* `Tags`: tags attached to the api key
-* `Metadata`: metadata attached to the api key
+## Properties
 
-### Automatic secret rotation
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `clientId` | string |     | Unique random identifier for this API key |
+| `clientSecret` | string |     | Random secret used to validate the API key |
+| `clientName` | string |     | Display name of the API key (used for debugging) |
+| `description` | string | `""` | Description of the API key |
+| `authorizedEntities` | array of string |     | Groups, routes, services, and APIs this key is authorized on |
+| `enabled` | boolean | `true` | Whether the API key is active. Disabled keys reject all calls |
+| `readOnly` | boolean | `false` | If enabled, only `GET`, `HEAD`, and `OPTIONS` methods are allowed |
+| `allowClientIdOnly` | boolean | `false` | Allow clients to authenticate with only the client ID (in a specific header), without the secret |
+| `constrainedServicesOnly` | boolean | `false` | This API key can only be used on services with API key routing constraints |
+| `validUntil` | number | `null` | Auto-disable the API key after this timestamp (milliseconds). Once expired, the key is disabled |
+| `tags` | array of string | `[]` | Tags for categorization |
+| `metadata` | object | `{}` | Key/value metadata |
 
-API can handle automatic secret rotation by themselves. When enabled, the rotation changes the secret every `Rotation every` duration. During the `Grace period` both secret will be usable.
- 
-* `Enabled`: enabled automatic apikey secret rotation
-* `Rotation every`: rotate secrets every
-* `Grace period`: period when both secrets can be used
-* `Next client secret`: display the next generated client secret
+## Quotas
 
-### Restrictions
+Quotas control the rate of API calls allowed for this key.
 
-* `Enabled`: enable restrictions
-* `Allow last`: Otoroshi will test forbidden and notFound paths before testing allowed paths
-* `Allowed`: allowed paths
-* `Forbidden`: forbidden paths
-* `Not Found`: not found paths
-
-### Call examples
-
-* `Curl Command`: simple request with the api key passed by header
-* `Basic Auth. Header`: authorization Header with the api key as base64 encoded format
-* `Curl Command with Basic Auth. Header`: simple request with api key passed in the Authorization header as base64 format
-
-### Quotas
-
-* `Throttling quota`: the authorized number of calls per second
-* `Daily quota`: the authorized number of calls per day
-* `Monthly quota`: the authorized number of calls per month
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `throttlingQuota` | number | unlimited | Maximum number of calls per second |
+| `dailyQuota` | number | unlimited | Maximum number of calls per day |
+| `monthlyQuota` | number | unlimited | Maximum number of calls per month |
 
 @@@ warning
+Daily and monthly quotas are computed as follows:
 
-Daily and monthly quotas are based on the following rules :
-
-* daily quota is computed between 00h00:00.000 and 23h59:59.999 of the current day
-* monthly qutoas is computed between the first day of the month at 00h00:00.000 and the last day of the month at 23h59:59.999
+* **Daily quota**: between 00:00:00.000 and 23:59:59.999 of the current day
+* **Monthly quota**: between the first day at 00:00:00.000 and the last day at 23:59:59.999 of the current month
 @@@
 
-### Quotas consumption
+### Quota consumption
 
-* `Consumed daily calls`: the number of calls consumed today
-* `Remaining daily calls`: the remaining number of calls for today
-* `Consumed monthly calls`: the number of calls consumed this month
-* `Remaining monthly calls`: the remaining number of calls for this month
+The current consumption can be checked on the API key detail page or via the admin API:
 
+| Property | Description |
+|----------|-------------|
+| `currentCallsPerDay` | Number of calls consumed today |
+| `remainingCallsPerDay` | Remaining calls for today |
+| `currentCallsPerMonth` | Number of calls consumed this month |
+| `remainingCallsPerMonth` | Remaining calls for this month |
+
+## Automatic secret rotation
+
+API keys can handle automatic secret rotation. When enabled, the secret is changed periodically. During the grace period, both the old and new secrets are valid.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enabled` | boolean | `false` | Enable automatic rotation |
+| `rotationEvery` | number | `744` | Rotate the secret every N hours |
+| `gracePeriod` | number | `168` | Period (hours) during which both old and new secrets are accepted |
+
+## Restrictions
+
+Restrictions allow fine-grained access control based on request path and method.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enabled` | boolean | `false` | Enable restrictions |
+| `allowLast` | boolean | `false` | Test forbidden and not-found paths before allowed paths |
+| `allowed` | array of object | `[]` | Allowed paths (method + path pairs) |
+| `forbidden` | array of object | `[]` | Forbidden paths |
+| `notFound` | array of object | `[]` | Paths that return 404 |
+
+## Call examples
+
+Once an API key is created, you can call protected routes using one of these methods:
+
+### Using headers
+
+```bash
+curl -H "Otoroshi-Client-Id: <clientId>" \
+     -H "Otoroshi-Client-Secret: <clientSecret>" \
+     https://api.oto.tools/users
+```
+
+### Using Basic authentication
+
+```bash
+curl -H "Authorization: Basic <base64(clientId:clientSecret)>" \
+     https://api.oto.tools/users
+```
+
+### Using client ID only (if `allowClientIdOnly` is enabled)
+
+```bash
+curl -H "Otoroshi-Client-Id: <clientId>" \
+     https://api.oto.tools/users
+```
+
+## JSON example
+
+```json
+{
+  "clientId": "abcdef123456",
+  "clientSecret": "secret_xyz789",
+  "clientName": "My API Key",
+  "description": "Key for the payment service",
+  "authorizedEntities": ["group_payment_apis", "route_checkout"],
+  "enabled": true,
+  "readOnly": false,
+  "allowClientIdOnly": false,
+  "constrainedServicesOnly": false,
+  "validUntil": null,
+  "throttlingQuota": 100,
+  "dailyQuota": 10000,
+  "monthlyQuota": 300000,
+  "restrictions": {
+    "enabled": false,
+    "allowLast": false,
+    "allowed": [],
+    "forbidden": [],
+    "notFound": []
+  },
+  "rotation": {
+    "enabled": false,
+    "rotationEvery": 744,
+    "gracePeriod": 168
+  },
+  "tags": ["payment"],
+  "metadata": {
+    "team": "billing"
+  }
+}
+```
+
+## Admin API
+
+```
+GET    /api/apikeys           # List all API keys
+POST   /api/apikeys           # Create an API key
+GET    /api/apikeys/:id       # Get an API key by clientId
+PUT    /api/apikeys/:id       # Update an API key
+DELETE /api/apikeys/:id       # Delete an API key
+PATCH  /api/apikeys/:id       # Partially update an API key
+```
+
+Additional endpoints:
+
+```
+GET /api/apikeys/:id/quotas   # Get current quota consumption
+PUT /api/apikeys/:id/quotas   # Reset quotas
+GET /api/groups/:groupId/apikeys  # List API keys for a group
+```
+
+## Related entities
+
+* @ref:[Service Groups](./service-groups.md) - Groups that API keys can be authorized on
+* @ref:[Routes](./routes.md) - Routes that API keys can be authorized on
+* @ref:[APIs](./apis.md) - APIs where API keys are generated via subscriptions

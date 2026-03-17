@@ -141,24 +141,23 @@ export const Informations = forwardRef(
         },
       },
       capture: {
-        type: 'bool',
-        label: 'Capture route traffic',
+        type: 'box-bool',
+        label: 'Capture endpoint traffic',
         props: {
-          labelColumn: 3,
+          description: 'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.'
         },
       },
       debug_flow: {
-        type: 'bool',
-        label: 'Debug the route',
+        type: 'box-bool',
+        label: 'Debug the endpoint',
         props: {
-          labelColumn: 3,
         },
       },
       export_reporting: {
-        type: 'bool',
+        type: 'box-bool',
         label: 'Export reporting',
         props: {
-          labelColumn: 3,
+          description: 'Export execution of each steps of the route as RequestFlowReport event. It can be exported using Data Exporters. This feature can have actual impact on CPU and RAM consumption'
         },
       },
       description: {
@@ -374,11 +373,9 @@ export const Informations = forwardRef(
           'name',
           'description',
           'groups',
-          {
-            type: 'grid',
-            name: 'Flags',
-            fields: ['debug_flow', 'export_reporting', 'capture'],
-          },
+          'debug_flow',
+          'export_reporting',
+          'capture'
         ],
       },
       {

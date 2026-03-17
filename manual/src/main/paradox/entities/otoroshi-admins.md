@@ -71,11 +71,18 @@ An admin with `tenant.value = "*"` and full read/write on all teams is a **super
 
 The `adminEntityValidators` field allows restricting the values an admin can set when creating or modifying entities. It is a map where keys are entity types and values are lists of JSON validation rules. This is useful to enforce that certain admins can only create entities with specific metadata, tags, or other field constraints.
 
-## API
-
-The admin API endpoints are:
+## Admin API
 
 ```
-http://otoroshi-api.oto.tools:8080/api/admins/simple
-http://otoroshi-api.oto.tools:8080/api/admins/webauthn
+GET    /api/admins/simple            # List all simple admins
+POST   /api/admins/simple            # Create a simple admin
+GET    /api/admins/simple/:id        # Get a simple admin
+PUT    /api/admins/simple/:id        # Update a simple admin
+DELETE /api/admins/simple/:id        # Delete a simple admin
+
+GET    /api/admins/webauthn          # List all WebAuthn admins
+POST   /api/admins/webauthn          # Create a WebAuthn admin
+GET    /api/admins/webauthn/:id      # Get a WebAuthn admin
+PUT    /api/admins/webauthn/:id      # Update a WebAuthn admin
+DELETE /api/admins/webauthn/:id      # Delete a WebAuthn admin
 ```

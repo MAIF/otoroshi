@@ -1600,9 +1600,7 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _ctx) => env.datastores.draftsDataStore.template(env).json,
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
-        stateUpdate = seq => env.proxyState.updateDrafts(seq),
-        writeValidator = Draft.writeValidator
-//        deleteValidator = Draft.deleteValidator,
+        stateUpdate = seq => env.proxyState.updateDrafts(seq)
       )
     ),
     //////
@@ -1622,16 +1620,14 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _a) => env.datastores.apiDataStore.template(env).json,
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
-        stateUpdate = seq => env.proxyState.updateApis(seq),
-        writeValidator = (entity, body, oldEntity, singularName, id, action, env) =>
-          Api.writeValidator(entity, body, oldEntity, singularName, id, action, env)
+        stateUpdate = seq => env.proxyState.updateApis(seq)
       )
     ),
     //////
     Resource(
-      "ApiConsumerSubscription",
-      "apiconsumersubscriptions",
-      "apiconsumersubscription",
+      "ApiSubscription",
+      "apisubscriptions",
+      "apisubscription",
       "apis.otoroshi.io",
       ResourceVersion("v1", served = true, deprecated = false, storage = true),
       GenericResourceAccessApiWithStateAndWriteValidation[ApiConsumerSubscription](
@@ -1641,12 +1637,11 @@ class OtoroshiResources(env: Env) {
         env.datastores.apiConsumerSubscriptionDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
-        (_v, _p, _a) => env.datastores.apiConsumerSubscriptionDataStore.template(env).json,
-        stateAll = () => env.proxyState.allApiConsumerSubscriptions(),
-        stateOne = id => env.proxyState.apiConsumerSubscription(id),
-        stateUpdate = seq => env.proxyState.updateApiConsumerSubscriptions(seq),
-        writeValidator = ApiConsumerSubscription.writeValidator,
-        deleteValidator = ApiConsumerSubscription.deleteValidator
+        (_v, _p, _a) => env.datastores.apiSubscriptionDataStore.template(env).json,
+        stateAll = () => env.proxyState.allApiSubscriptions(),
+        stateOne = id => env.proxyState.apiSubscription(id),
+        stateUpdate = seq => env.proxyState.updateApiSubscriptions(seq),
+        writeValidator = ApiSubscription.writeValidator
       )
     ),
     //////

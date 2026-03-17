@@ -53,10 +53,13 @@ When the client requests a JSON response, Otoroshi returns a JSON object with th
 }
 ```
 
-## API
-
-The admin API is available at:
+## Admin API
 
 ```
-http://otoroshi-api.oto.tools:8080/api/error-templates
+GET    /api/error-templates           # List all error templates
+POST   /api/error-templates           # Create an error template
+GET    /api/error-templates/:id       # Get an error template
+PUT    /api/error-templates/:id       # Update an error template
+DELETE /api/error-templates/:id       # Delete an error template
+PATCH  /api/error-templates/:id       # Partially update an error template
 ```

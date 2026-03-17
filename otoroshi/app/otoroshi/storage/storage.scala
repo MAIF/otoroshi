@@ -84,7 +84,7 @@ trait DataStores {
   def wasmPluginsDataStore: WasmPluginDataStore
   def draftsDataStore: DraftDataStore
   def apiDataStore: ApiDataStore
-  def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore
+  def apiSubscriptionDataStore: ApiSubscriptionDataStore
   def routeTemplateDataStore: RouteTemplateDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////

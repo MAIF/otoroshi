@@ -2,14 +2,16 @@ package otoroshi.storage.drivers.lettuce
 
 import com.typesafe.config.ConfigFactory
 import io.lettuce.core.cluster.RedisClusterClient
+import io.lettuce.core.internal.HostAndPort
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
-import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
+import io.lettuce.core.resource.{ClientResources, DefaultClientResources, MappingSocketAddressResolver}
 import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
+import io.netty.resolver.DefaultAddressResolverGroup
 import next.models.{
-  ApiConsumerSubscriptionDataStore,
   ApiDataStore,
-  KvApiConsumerSubscriptionDataStore,
+  ApiSubscriptionDataStore,
   KvApiDataStore,
+  KvApiSubscriptionDataStore,
   KvRouteTemplateDataStore,
   RouteTemplateDataStore
 }
@@ -36,6 +38,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.given
@@ -86,10 +89,31 @@ class LettuceDataStores(
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
   lazy val verifyPeers: Boolean    =
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
+
+  lazy val redisSentinelUsername =
+    configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.sentinels.username")
+  lazy val redisSentinelPassword =
+    configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.sentinels.password")
+  lazy val useRedisSentinel      = redisSentinelUsername.isDefined || redisSentinelPassword.isDefined
+
+  lazy val credProvider = if (useRedisSentinel) {
+    val username = redisSentinelUsername.orNull
+    val password = redisSentinelPassword.map(_.toCharArray).getOrElse(Array.emptyCharArray)
+
+    io.lettuce.core.RedisCredentialsProvider.from(() => io.lettuce.core.RedisCredentials.just(username, password)).some
+  } else {
+    None
+  }
+
   lazy val nodesRaw: Seq[RedisURI] = redisUris.map { v =>
     val uri = RedisURI.create(v)
     uri.setStartTls(startTLS)
     uri.setVerifyPeer(verifyPeers)
+
+    if (!uri.getSentinels.isEmpty) {
+      credProvider.foreach(cred => uri.getSentinels.forEach(_.setCredentialsProvider(cred)))
+    }
+
     uri
   }
   lazy val nodes                   = nodesRaw.asJava
@@ -102,16 +126,26 @@ class LettuceDataStores(
       configuration
         .getOptionalWithFileSupport[Int]("app.redis.lettuce.ioThreadPoolSize")
         .getOrElse(default.ioThreadPoolSize())
-    ClientResources
+    val builder                   = ClientResources
       .builder()
       .computationThreadPoolSize(computationThreadPoolSize)
       .ioThreadPoolSize(ioThreadPoolSize)
-      .build()
+
+    if (env.isDev)
+      builder
+        .socketAddressResolver(
+          MappingSocketAddressResolver.create((hostAndPort: HostAndPort) =>
+            HostAndPort.of("127.0.0.1", hostAndPort.getPort)
+          )
+        )
+        .build()
+    else
+      builder.build()
   }
-  lazy val usePool                = configuration
+  lazy val usePool     = configuration
     .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.enabled")
     .getOrElse(false)
-  lazy val useReactive            = configuration
+  lazy val useReactive = configuration
     .getOptionalWithFileSupport[Boolean]("app.redis.lettuce.pooling.reactive")
     .getOrElse(false)
 
@@ -260,8 +294,8 @@ class LettuceDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  private lazy val _apiSubscriptionDataStore                      = new KvApiSubscriptionDataStore(redis, env)
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore

@@ -4,6 +4,7 @@ import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import org.apache.commons.codec.binary.Hex
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
 import org.apache.pekko.http.scaladsl.ClientTransport
@@ -3066,8 +3067,8 @@ class SwappableInMemoryDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  private lazy val _apiSubscriptionDataStore                              = new KvApiSubscriptionDataStore(redis, env)
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore

@@ -104,15 +104,6 @@ object Draft {
       case _                              => newDraft.rightf
     }
   }
-
-//  def deleteValidator(entity: Draft,
-//                        body: JsValue,
-//                        singularName: String,
-//                        id: String,
-//                        action: DeleteAction,
-//                        env: Env):  Future[Either[JsValue, Unit]] = {
-//    ???
-//  }
 }
 
 trait DraftDataStore extends BasicStore[Draft] {

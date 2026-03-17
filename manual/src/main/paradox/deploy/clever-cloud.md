@@ -2,6 +2,16 @@
 
 Now you want to use Otoroshi on Clever Cloud. Otoroshi has been designed and created to run on Clever Cloud and a lot of choices were made because of how Clever Cloud works.
 
+## Otoroshi as a Clever Cloud addon
+
+The easiest way to get started with Otoroshi on Clever Cloud is to use the **Otoroshi addon** available directly from the Clever Cloud marketplace. This gives you a fully managed Otoroshi instance with no manual setup required.
+
+You can find the addon documentation and provisioning instructions here: [Clever Cloud Otoroshi addon](https://www.clever.cloud/developers/doc/addons/otoroshi/).
+
+The Otoroshi addon available on Clever Cloud is the [Cloud APIM](https://www.cloud-apim.com/) distribution of Otoroshi. This distribution ships with the entire Cloud APIM ecosystem of plugins and extensions, providing additional features on top of the standard Otoroshi distribution (LLM proxying, advanced API management features, etc.). You can find all the Cloud APIM open-source extensions on their [GitHub organization](https://github.com/cloud-apim).
+
+If you need more control over your deployment or want to self-host Otoroshi on Clever Cloud, follow the manual setup instructions below.
+
 ## Create an Otoroshi instance on CleverCloud
 
 If you want to customize the configuration @ref:[use env. variables](../install/setup-otoroshi.md#configuration-with-env-variables), you can use [the example provided below](#example-of-clevercloud-env-variables)

@@ -1,3 +1,5 @@
+import React from 'react'
+
 export default {
   id: 'Frontend',
   icon: 'user',
@@ -36,7 +38,18 @@ export default {
       type: 'box-bool',
       label: 'Exact',
       props: {
-        description: 'Match exact request path.',
+        description: <div>
+          <p>Match the exact request path.</p>
+
+          <p>Example:</p>
+          <ul>
+            <li>Endpoint path: /api/users</li>
+            <li>Incoming request: /api/users → matches if exact match is true</li>
+            <li>Incoming request: /api/users/123 → does not match if exact match is true</li>
+            <li>Incoming request: /api/users/123 → matches if exact match is false</li>
+          </ul>
+        </div>
+
       },
     },
     domains: {
@@ -49,8 +62,18 @@ export default {
       type: 'box-bool',
       label: 'Strip path',
       props: {
-        description:
-          'When matching, strip the matching prefix from the upstream request URL. Defaults to true',
+        description: (<div>
+          <p>When matching, strip the matching prefix from the upstream request URL.</p>
+
+          <p>Example:</p>
+          <ul>
+            <li>Upstream URL: https://api.example.com/v1/users</li>
+            <li>API context path: /v1</li>
+            <li>If strip is true → Request forwarded as /</li>
+            <li>If strip is false → Request forwarded as /users</li>
+          </ul>
+        </div>
+        )
       },
     },
   },

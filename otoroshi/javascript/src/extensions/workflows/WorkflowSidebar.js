@@ -78,7 +78,7 @@ export const WorkflowSidebar = ({ params }) => {
           <Link
             to={`/extensions/workflows/workflows`}
             {...createTooltip(`All your workflows`)}
-            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-3' : ''} m-0`}
+            className={`d-flex align-items-center nav-link ${openedSidebar ? 'ms-1' : ''} m-0`}
           >
             <div style={{ width: '20px' }} className="d-flex justify-content-center">
               <i className="fas fa-cubes" />
@@ -113,7 +113,7 @@ const Item = ({ openedSidebar, title, to, tooltip, location, icon, isActive }) =
       <Link
         to={to}
         {...(tooltip || {})}
-        className={`d-flex align-items-center nav-link ${isActive(location.pathname) ? 'active' : ''} ${openedSidebar ? 'ms-3' : ''} m-0`}
+        className={`d-flex align-items-center nav-link ${isActive(location.pathname) ? 'active' : ''} ${openedSidebar ? 'ms-1' : ''} m-0`}
       >
         <div style={{ width: '20px' }} className="d-flex justify-content-center">
           <i className={`fas ${icon}`} />

@@ -1,0 +1,38 @@
+---
+title: Developer portal with Daikoku
+sidebar_position: 7
+---
+# Developer portal with Daikoku
+
+While Otoroshi is the perfect tool to manage your webapps in a technical point of view it lacked of business perspective. This is not the case anymore with Daikoku.
+
+While Otoroshi is a standalone, Daikoku is a developer portal which stands in front of Otoroshi and provides some business feature.
+
+Whether you want to use Daikoku for your public APIs, you want to monetize or with your private APIs to provide some documentation, facilitation and self-service feature, it will be the perfect portal for Otoroshi.
+
+<div class="provider-grid">
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>Daikoku</h4>
+  </div>
+  <p>Run your first Daikoku with a simple jar or with one Docker command.</p>
+  <div class="provider-card-img"><img src="/img/docs/daikoku-logo.png" alt="Daikoku" /></div>
+  <div class="provider-card-actions"><a href="https://maif.github.io/daikoku/devmanual/getdaikoku/frombinaries.html">With jar</a> <a href="https://maif.github.io/daikoku/devmanual/getdaikoku/fromdocker.html">With Docker</a></div>
+</div>
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>Contribute</h4>
+  </div>
+  <p>Daikoku is opensource, so all contributions are welcome.</p>
+  <div class="provider-card-img"><img src="/img/docs/opensource.png" alt="Open Source" /></div>
+  <div class="provider-card-action"><a href="https://github.com/MAIF/daikoku">Show the repository</a></div>
+</div>
+<div class="provider-card">
+  <div class="provider-card-header">
+    <h4>Documentation</h4>
+  </div>
+  <p>Daikoku and its UI are fully documented.</p>
+  <div class="provider-card-img"><img src="/img/docs/documentation.png" alt="Documentation" /></div>
+  <div class="provider-card-action"><a href="https://maif.github.io/daikoku/devmanual/">Read the documentation</a></div>
+</div>
+</div>

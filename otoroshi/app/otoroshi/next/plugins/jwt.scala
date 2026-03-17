@@ -825,8 +825,8 @@ object OIDCJwtVerifierConfig {
   )
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "mandatory" -> Json.obj(
-        "type" -> "bool",
+      "mandatory"               -> Json.obj(
+        "type"  -> "bool",
         "label" -> "Mandatory"
       ),
       "user"                    -> Json.obj(
@@ -886,7 +886,7 @@ object OIDCJwtVerifierConfig {
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: OIDCJwtVerifierConfig): JsValue             = Json.obj(
-      "mandatory" -> o.mandatory,
+      "mandatory"               -> o.mandatory,
       "ref"                     -> o.ref.map(_.json).getOrElse(JsNull).asValue,
       "source"                  -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
       "custom_response"         -> o.customResponse,
@@ -941,7 +941,7 @@ class OIDCJwtVerifier extends NgAccessValidator {
                     NgAccess
                       .NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found"))))
                       .vfuture
-                  case Some((source, token)) =>
+                  case Some((source, token))     =>
                     verifier
                       .copy(source = source)
                       .verifyGen[NgAccess](
@@ -977,13 +977,18 @@ class OIDCJwtVerifier extends NgAccessValidator {
                 }
               }
               case _                                                                  =>
-                NgAccess
-                  .NgDenied(
-                    Results.BadRequest(
-                      Json.obj("error" -> "auth. module not an oidc module or does not have jwt verification settings")
+                if (!config.mandatory)
+                  NgAccess.NgAllowed.vfuture
+                else
+                  NgAccess
+                    .NgDenied(
+                      Results.BadRequest(
+                        Json.obj(
+                          "error" -> "auth. module not an oidc module or does not have jwt verification settings"
+                        )
+                      )
                     )
-                  )
-                  .vfuture
+                    .vfuture
             }
         }
     }

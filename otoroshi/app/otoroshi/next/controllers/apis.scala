@@ -361,6 +361,34 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     Ok(NgClientConfig.default.json).future
   }
 
+  def subscribe(apiId: String, planId: String): Action[JsValue] = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to subscribe to a plan of an API",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"  -> apiId,
+              "planId" -> planId
+            )
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None      => Results.NotFound.future
+          case Some(api) => Ok(Json.obj("message" -> "foo")).future
+        }
+      }
+    }
+  }
+
   def createNewVersion(apiId: String): Action[JsValue] = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canReadService(apiId) {
@@ -393,16 +421,16 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                       case JsError(_)             => Results.NotFound.future
                       case JsSuccess(apiDraft, _) =>
                         val updatedApi = apiDraft.copy(
-                          versions = api.versions :+ deployment.version,
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
-                          version = deployment.version,
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
                           state = if (apiDraft.state == ApiStaging) ApiPublished else api.state
                         )
+
                         env.datastores.apiDataStore
                           .set(updatedApi)
                           .map(result => {
+
                             ApiDeploymentEvent(
                               `@id` = env.snowflakeGenerator.nextIdStr(),
                               `@timestamp` = DateTime.now(),
@@ -413,7 +441,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                                 else deployment.owner,
                               at = deployment.at,
                               apiDefinition = deployment.apiDefinition,
-                              version = deployment.version,
+                              version = api.version,
                               `@service` = api.name,
                               `@serviceId` = apiId
                             ).toAnalytics()
@@ -437,14 +465,15 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       (
         body.selectAsOptString("domain"),
         body.selectAsOptString("openapi"),
-        body.selectAsOptString("serverURL"),
-        body.selectAsOptString("root")
+        body.selectAsOptString("contextPath"),
+        body.selectAsOptString("backendHostname"),
+        body.selectAsOptString("backendPath")
       ) match {
-        case (Some(domain), Some(openapi), serverURL, root) =>
+        case (Some(domain), Some(openapi), Some(contextPath), Some(backendHostname), Some(backendPath)) =>
           Api
-            .fromOpenApi(domain, openapi, serverURL, root)
+            .fromOpenApi(domain, openapi, contextPath, backendHostname, backendPath)
             .map(service => Ok(service.json))
-        case _                                              => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+        case _                                                                                          => BadRequest(Json.obj("error" -> "missing values")).vfuture
       }
     }
   }
