@@ -72,12 +72,7 @@ export function EditPluginChains(props) {
   if (!item) return <SimpleLoader />;
 
   return (
-    <div
-      style={{
-        maxWidth: MAX_WIDTH,
-        margin: 'auto',
-      }}
-    >
+    <div style={{ maxWidth: MAX_WIDTH }}>
       <NgForm
         schema={FLOW_FORM_SETTINGS.schema(item)}
         flow={FLOW_FORM_SETTINGS.flow}
@@ -133,12 +128,7 @@ export function NewPluginChains(props) {
   if (!item) return <SimpleLoader />;
 
   return (
-    <div
-      style={{
-        maxWidth: MAX_WIDTH,
-        margin: 'auto',
-      }}
-    >
+    <div style={{ maxWidth: MAX_WIDTH }}>
       <NgForm
         schema={FLOW_FORM_SETTINGS.schema(item)}
         flow={FLOW_FORM_SETTINGS.flow}

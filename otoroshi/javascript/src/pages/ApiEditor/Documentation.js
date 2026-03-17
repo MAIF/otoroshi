@@ -7,6 +7,7 @@ import { Form } from '../../components/inputs/Form';
 
 import { useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
+import { MAX_WIDTH } from './constants';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -313,35 +314,36 @@ export function Documentation(props) {
   };
 
   if (!item) return <SimpleLoader />;
-  return (
-    <>
-      <PageTitle title="Documentation" {...props}>
-        <div className="btn-group" style={{ marginRight: 10 }}>
-          <PillButton
-            className="mx-auto"
-            rightEnabled={!showJson}
-            leftText="Form"
-            rightText="Json editor"
-            onChange={() => {
-              setShowJson(!showJson);
-              if (!showJson) {
-                setCode(JSON.stringify(newItem || {}, null, 2));
-              }
-            }}
-          />
-        </div>
+  return <div>
+    <PageTitle title="Documentation" {...props}>
+      <div className="btn-group" style={{ marginRight: 10 }}>
+        <PillButton
+          className="mx-auto"
+          rightEnabled={!showJson}
+          leftText="Form"
+          rightText="Json editor"
+          onChange={() => {
+            setShowJson(!showJson);
+            if (!showJson) {
+              setCode(JSON.stringify(newItem || {}, null, 2));
+            }
+          }}
+        />
+      </div>
 
-        {isDraft ? <FeedbackButton
-          type="success"
-          className="d-flex ms-auto"
-          onPress={updateDoc}
-          text={
-            <div className="d-flex align-items-center">
-              Update <VersionBadge size="xs" />
-            </div>
-          }
-        /> : null}
-      </PageTitle>
+      {isDraft ? <FeedbackButton
+        type="success"
+        className="d-flex ms-auto"
+        onPress={updateDoc}
+        text={
+          <div className="d-flex align-items-center">
+            Update <VersionBadge size="xs" />
+          </div>
+        }
+      /> : null}
+    </PageTitle>
+
+    <div style={{ maxWidth: MAX_WIDTH }}>
       {showJson && (
         <MonacoEditor
           height={window.innerHeight - 140}
@@ -369,6 +371,6 @@ export function Documentation(props) {
       {!showJson && (
         <Form flow={flow} schema={schema} value={newItem || {}} onChange={(e) => setNewItem(e)} />
       )}
-    </>
-  );
+    </div>
+  </div>
 }

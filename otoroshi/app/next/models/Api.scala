@@ -514,7 +514,7 @@ object ApikeyAccessModeConfiguration {
 }
 
 case class ApiDocumentationPlan(raw: JsObject) {
-  lazy val accessModeConfigurationType                                              = raw.selectAsString("access_mode_configuration_type")
+  lazy val accessModeConfigurationType                                              = raw.selectAsOptString("access_mode_configuration_type").getOrElse("keyless")
   lazy val id: String                                                               = raw.selectAsString("id")
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
@@ -1162,6 +1162,20 @@ case class Api(
             plan.accessModeConfiguration
               .map(_.asInstanceOf[ApikeyAccessModeConfiguration].json.asObject)
               .getOrElse(Json.obj())
+              .deepMerge(
+                NgApikeyCallsConfig(
+                  mandatory = false,
+                  extractors = NgApikeyExtractors(
+                    basic = NgApikeyExtractorBasic(enabled = false),
+                    customHeaders = NgApikeyExtractorCustomHeaders(enabled = false),
+                    clientId = NgApikeyExtractorClientId(enabled = false),
+                    jwt = NgApikeyExtractorJwt(enabled = false)
+                  )
+                ).json.asObject
+              ),
+            pluginIndex = PluginIndex(
+              validateAccess = 2.00.some
+            ).some
           )
         )
       case "jwt"           =>
@@ -1234,7 +1248,7 @@ case class Api(
                 PluginWithConfig(
                   pluginId[NgExpectedConsumer],
                   Json.obj(),
-                  Some(PluginIndex(validateAccess = 100.00.some))
+                  Some(PluginIndex(validateAccess = 1000.00.some))
                 )
               )
             )
@@ -1267,7 +1281,9 @@ case class Api(
         val all                  = routeFutures ++ draftRoutes
         val apisWithPlanPolicies = all.map(applyPlansPolicies)
 
-//        apisWithPlanPolicies.foreach(route => println(route.frontend.domains, route.plugins.slots.map(_.plugin)))
+//        apisWithPlanPolicies.foreach(route =>
+//          println(route.frontend.domains, route.plugins.slots.map(p => (p.plugin, p.config)))
+//        )
 
         apisWithPlanPolicies
       }

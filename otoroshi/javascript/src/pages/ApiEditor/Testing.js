@@ -110,8 +110,7 @@ export function Testing(props) {
     <>
       <div
         style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
+          maxWidth: MAX_WIDTH
         }}
       >
         <NgForm

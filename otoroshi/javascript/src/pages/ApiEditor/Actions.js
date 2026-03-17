@@ -5,7 +5,7 @@ import { API_STATE } from './model';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI } from './hooks';
 import { VersionBadge } from './DraftOnly';
-import { LIFECYCLE_STEPS, STATE_PERMISSIONS } from './constants';
+import { LIFECYCLE_STEPS, MAX_WIDTH, STATE_PERMISSIONS } from './constants';
 
 function ActionCard({ icon, title, description, onClick, color }) {
   return (
@@ -194,7 +194,7 @@ export function Actions(props) {
   const isStaging = item.state === 'staging'
 
   return (
-    <div className="actions-page mt-3">
+    <div className="actions-page mt-3" style={{ maxWidth: MAX_WIDTH }}>
       {/* Lifecycle section */}
       <div className="actions-section">
         <h3 className="actions-section-title">

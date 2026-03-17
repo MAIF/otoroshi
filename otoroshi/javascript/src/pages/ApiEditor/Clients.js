@@ -8,6 +8,7 @@ import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
 import { v4 } from 'uuid';
+import { MAX_WIDTH } from './constants';
 
 export function ClientForm({ client, onChange }) {
   const schema = {
@@ -151,7 +152,7 @@ export function ClientEditor(props) {
       .then(back);
   };
 
-  return <div>
+  return <div style={{ maxWidth: MAX_WIDTH }}>
     <PageTitle title={isNew ? 'New client' : client.name} {...props}>
       <FeedbackButton
         type="success"

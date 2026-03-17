@@ -11,6 +11,7 @@ import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
 import { VersionBadge } from './DraftOnly';
 import { APIState } from './Dashboard';
+import { MAX_WIDTH } from './constants';
 
 export function NewAPI(props) {
   const history = useHistory();
@@ -238,7 +239,7 @@ export function NewAPI(props) {
   if (!value) return <SimpleLoader />;
 
   return (
-    <div className="mx-auto" style={{ maxWidth: 820 }}>
+    <div className="mx-auto" style={{ maxWidth: MAX_WIDTH }}>
       <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
       {step === 1 && (
         <div className="d-flex justify-content-between align-items-center">

@@ -231,12 +231,7 @@ export function RouteDesigner(props) {
           />
         </DraftOnly>
       </PageTitle>
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
+      <div style={{ maxWidth: MAX_WIDTH }}>
         <NgForm
           value={route}
           flow={ROUTE_FORM_SETTINGS.flow}
@@ -320,12 +315,7 @@ export function NewRoute(props) {
   return (
     <>
       <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
+      <div style={{ maxWidth: MAX_WIDTH }}>
         <InfoCollapse title="What is an Endpoint ?">
           <ul>
             <li>

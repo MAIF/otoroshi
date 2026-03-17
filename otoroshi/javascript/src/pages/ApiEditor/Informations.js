@@ -7,6 +7,9 @@ import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
+import { MAX_WIDTH } from './constants';
+import PageTitle from '../../components/PageTitle';
+import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 
 export function Informations(props) {
   const history = useHistory();
@@ -131,30 +134,29 @@ export function Informations(props) {
     updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
   };
 
-  useEffect(() => {
-    if (item) {
-      props.setTitle({
-        value: 'Informations',
-        noThumbtack: true,
-        children: <VersionBadge />,
-      });
-    }
-  }, [item]);
-
   if (!item) return <SimpleLoader />;
 
-  return (
-    <>
+  return <>
+    <PageTitle
+      style={{
+        paddingBottom: 0,
+      }}
+      title="Informations"
+      {...props}
+    >
+      <FeedbackButton
+        type="success"
+        className="ms-2 mb-1 d-flex align-items-center"
+        onPress={updateAPI}
+        text={
+          <>
+            Update <VersionBadge size="xs" className="ms-2" />
+          </>
+        }
+      />
+    </PageTitle>
+    <div style={{ maxWidth: MAX_WIDTH }}>
       <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
-      <DraftOnly>
-        <Button
-          type="success"
-          className="btn-sm ms-auto d-flex align-items-center"
-          onClick={updateAPI}
-        >
-          Update <VersionBadge size="xs" className="ms-2" />
-        </Button>
-      </DraftOnly>
-    </>
-  );
+    </div>
+  </>
 }

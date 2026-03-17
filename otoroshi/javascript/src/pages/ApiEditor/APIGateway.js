@@ -6,6 +6,7 @@ import InfoCollapse from '../../components/InfoCollapse';
 import { Row } from '../../components/Row';
 import { useDraftOfAPI } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
+import { MAX_WIDTH } from './constants';
 
 export function APIGateway(props) {
   const { item, updateItem } = useDraftOfAPI();
@@ -89,12 +90,12 @@ export function APIGateway(props) {
       </DraftOnly>
     </PageTitle>
 
-    <div className="actions-page mt-3">
+    <div className="actions-page mt-3" style={{ maxWidth: MAX_WIDTH }}>
       <NgForm
         value={state}
         onChange={setState}
         schema={schema}
       />
     </div>
-  </>;
+  </>
 }

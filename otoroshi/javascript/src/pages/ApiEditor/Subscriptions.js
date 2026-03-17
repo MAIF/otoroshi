@@ -220,12 +220,7 @@ export function SubscriptionDesigner(props) {
           }
         />
       </PageTitle>
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
+      <div style={{ maxWidth: MAX_WIDTH }}>
         <NgForm
           value={subscription}
           schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
@@ -286,12 +281,7 @@ export function NewSubscription(props) {
   return (
     <>
       <PageTitle title={subscription.name} {...props} />
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
+      <div style={{ maxWidth: MAX_WIDTH }}>
         <NgForm
           value={subscription}
           schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}

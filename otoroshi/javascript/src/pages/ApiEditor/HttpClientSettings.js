@@ -149,12 +149,7 @@ export function NewHttpClientSettings(props) {
         />
       </PageTitle>
 
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
+      <div style={{ maxWidth: MAX_WIDTH }}>
         <BackendForm
           state={{
             form: {
@@ -238,12 +233,7 @@ export function EditHttpClientSettings(props) {
         </DraftOnly>
       </PageTitle>
 
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
+      <div style={{ maxWidth: MAX_WIDTH }}>
         <BackendForm
           state={{
             form: {

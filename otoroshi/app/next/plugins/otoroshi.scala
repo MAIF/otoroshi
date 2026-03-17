@@ -477,6 +477,8 @@ class OtoroshiInfos extends NgRequestTransformer {
         logger.error("error while projecting apikey", t)
     }
 
+
+
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
     ctx.attrs.put(NgOtoroshiChallengeKeys.ClaimKey  -> claim)
     ctx.attrs.put(otoroshi.plugins.Keys.OtoTokenKey -> claim.payload)

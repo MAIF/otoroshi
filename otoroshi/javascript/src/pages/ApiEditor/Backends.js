@@ -183,8 +183,7 @@ export function NewBackend(props) {
 
       <div
         style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
+          maxWidth: MAX_WIDTH
         }}
       >
         <BackendForm
@@ -288,8 +287,7 @@ export function EditBackend(props) {
 
       <div
         style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
+          maxWidth: MAX_WIDTH
         }}
       >
         <BackendForm

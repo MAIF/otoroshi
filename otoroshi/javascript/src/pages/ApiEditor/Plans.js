@@ -18,6 +18,7 @@ import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
 import { findAuthConfigById, subscribeToPlan } from '../../services/BackOfficeServices';
 import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
+import { MAX_WIDTH } from './constants';
 
 const STATUS_BADGES = {
   staging: { label: 'Staging', cls: 'api-status-started' },
@@ -332,7 +333,7 @@ function NewAccessModeSettingsForm(props) {
 
 function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfirm }) {
   return <div className="wizard">
-    <div className="wizard-container">
+    <div className="wizard-container" style={{ maxWidth: 750 }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem', paddingBottom: '5rem' }}>
         <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
           <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
@@ -402,11 +403,8 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
     <NewAccessModeSettingsForm
       schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
       flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
-      value={accessModeConfiguration.pluginConfiguration}
-      onChange={pluginConfiguration => setAccessModeConfiguration({
-        ...accessModeConfiguration,
-        pluginConfiguration
-      })}
+      value={accessModeConfiguration}
+      onChange={setAccessModeConfiguration}
     />
   </AccessModeLayout>
 }
@@ -698,13 +696,13 @@ export function Plans(props) {
         hideAddItemAction={true}
         itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
         rawEditUrl={true}
-        injectTopBar={() => (
+        injectTopBar={() => (<DraftOnly>
           <div className="btn-group input-group-btn">
             <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
               <i className="fas fa-plus-circle" /> Create new plan
             </Link>
           </div>
-        )}
+        </DraftOnly>)}
       />
     </>
   );
@@ -751,7 +749,7 @@ export function PlanEditor(props) {
       .then(back);
   };
 
-  return <div>
+  return <div style={{ maxWidth: MAX_WIDTH }}>
     <PageTitle title={isNew ? 'New Plan' : plan.name} {...props}>
       <DraftOnly>
         <FeedbackButton
