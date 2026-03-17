@@ -251,7 +251,7 @@ function ComparisonSection() {
       <div className="container">
         <div className={styles.sectionHeader}>
           <Heading as="h2">Why Otoroshi?</Heading>
-          <p>What makes Otoroshi different from other API gateways.</p>
+          <p>What makes Otoroshi different from other API gateways. Unlike traditional API gateways, Otoroshi is a runtime programmable gateway that lets you execute logic directly on traffic.</p>
         </div>
         <div className={styles.comparisonGrid}>
           <div className={styles.comparisonItem}>
