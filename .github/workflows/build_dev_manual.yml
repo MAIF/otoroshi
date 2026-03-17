@@ -39,8 +39,11 @@ jobs:
           cd manual/next
           npm ci --legacy-peer-deps
           npm run build
+          npm run build-root
           rm -rf ../../docs/next
+          rm -rf ../../docs/next-root
           cp -r build ../../docs/next
+          cp -r build-root ../../docs/next-root
       - name: Commit files
         run: |
           git config --local user.email "otoroshi-github-actions@users.noreply.github.com"
