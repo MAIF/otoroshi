@@ -109,7 +109,7 @@ function HeroBanner() {
         <div className={styles.heroContent}>
           <div className={styles.heroText}>
             <Heading as="h1" className={styles.heroTitle}>
-              The Cloud Native <span className={styles.highlight}>API Gateway</span> for Modern Architectures
+              The Cloud Native <span className={styles.highlight}>API & AI Gateway</span> for Modern Architectures
             </Heading>
             <p className={styles.heroSubtitle}>
               Otoroshi is a lightweight, high-performance reverse proxy and API gateway with dynamic hot configuration,
