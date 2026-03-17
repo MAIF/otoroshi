@@ -48,12 +48,6 @@ const openSourceProjects = [
     tags: ['Plugin', 'Email'],
   },
   {
-    name: 'otoroshi-api-portal',
-    description: 'A developer portal for Otoroshi APIs. Expose and document your APIs for external consumers.',
-    url: 'https://github.com/cloud-apim/otoroshi-api-portal',
-    tags: ['Portal'],
-  },
-  {
     name: 'otoroshi-plugin-couchbase',
     description: 'Couchbase storage backend plugin for Otoroshi.',
     url: 'https://github.com/cloud-apim/otoroshi-plugin-couchbase',
@@ -77,6 +71,21 @@ const openSourceProjects = [
     url: 'https://github.com/cloud-apim/otoroshi-plugin-curity-phantom-token',
     tags: ['Plugin', 'Auth'],
   }
+];
+
+const devPortals = [
+  {
+    name: 'Daikoku',
+    description: 'An open source developer portal built by MAIF. Daikoku provides API catalog, subscription management, documentation, and usage analytics for your Otoroshi APIs.',
+    url: 'https://maif.github.io/daikoku/',
+    tags: ['Open Source', 'MAIF', 'API Catalog', 'Subscriptions'],
+  },
+  {
+    name: 'Cloud APIM API Portal',
+    description: 'A developer portal for Otoroshi APIs by Cloud APIM. Expose and document your APIs for external consumers.',
+    url: 'https://github.com/cloud-apim/otoroshi-api-portal',
+    tags: ['Open Source', 'Cloud APIM', 'Portal'],
+  },
 ];
 
 const managedProviders = [
@@ -134,6 +143,42 @@ function OpenSourceSection() {
               <p>{project.description}</p>
               <div className={styles.tags}>
                 {project.tags.map((tag, tidx) => (
+                  <span key={tidx} className={styles.tag}>{tag}</span>
+                ))}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DevPortalsSection() {
+  return (
+    <section className={styles.sectionAlt}>
+      <div className="container">
+        <div className={styles.sectionHeader}>
+          <Heading as="h2">Dev Portals</Heading>
+          <p>
+            Developer portals that integrate with Otoroshi to expose, document, and manage API access for your consumers.
+          </p>
+        </div>
+        <div className={styles.providersGrid}>
+          {devPortals.map((portal, idx) => (
+            <a
+              key={idx}
+              className={styles.projectCard}
+              href={portal.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className={styles.projectCardHeader}>
+                <h3>{portal.name}</h3>
+              </div>
+              <p>{portal.description}</p>
+              <div className={styles.tags}>
+                {portal.tags.map((tag, tidx) => (
                   <span key={tidx} className={styles.tag}>{tag}</span>
                 ))}
               </div>
@@ -238,6 +283,7 @@ export default function Ecosystem() {
       <HeroSection />
       <main>
         <OpenSourceSection />
+        <DevPortalsSection />
         <ManagedProvidersSection />
         <SupportSection />
       </main>
