@@ -224,7 +224,10 @@ class OverrideLocationHeader extends NgRequestTransformer {
                     .filterNot(_.isBlank)
                     .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
                 val currentPort: Int = if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
-                val processedPath = if (ctx.route.b)//stripPathIfMatch(ctx.route, oldLocation.path)
+                val processedPath = if (!ctx.route.backend.rewrite && ctx.route.backend.root != "/") {
+                  val newPath = oldLocation.path.toString().replaceFirst(ctx.route.backend.root, "")
+                  if (newPath.startsWith("/")) Uri.Path(newPath) else Uri.Path(s"/$newPath")
+                } else oldLocation.path //stripPathIfMatch(ctx.route, oldLocation.path)
                 val newLocation  =
                   oldLocation.copy(
                     scheme = ctx.request.theProtocol,
