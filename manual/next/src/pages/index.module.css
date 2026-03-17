@@ -365,6 +365,54 @@
   line-height: 1.6;
 }
 
+/* ===== Sovereignty Section ===== */
+.sovereigntySection {
+  padding: 5rem 0;
+  background: var(--ifm-background-surface-color);
+}
+
+.sovereigntyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.sovereigntyCard {
+  text-align: center;
+  padding: 2.5rem 2rem;
+  border-radius: 12px;
+  background: var(--ifm-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  transition: all 0.3s ease;
+}
+
+.sovereigntyCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-color: #f9b000;
+}
+
+[data-theme='dark'] .sovereigntyCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.sovereigntyIcon {
+  font-size: 3rem;
+  margin-bottom: 1.25rem;
+}
+
+.sovereigntyCard h4 {
+  margin-bottom: 0.75rem;
+  color: #f9b000;
+}
+
+.sovereigntyCard p {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ===== CTA Section ===== */
 .ctaSection {
   padding: 5rem 0;
@@ -469,6 +517,10 @@
   }
 
   .comparisonGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sovereigntyGrid {
     grid-template-columns: 1fr;
   }
 

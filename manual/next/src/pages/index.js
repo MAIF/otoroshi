@@ -292,6 +292,36 @@ function FootnoteSection() {
   );
 }
 
+function SovereigntySection() {
+  return (
+    <section className={styles.sovereigntySection}>
+      <div className="container">
+        <div className={styles.sectionHeader}>
+          <Heading as="h2">Open Source &amp; Sovereign by Design</Heading>
+          <p>Otoroshi is built from the ground up as an open source project. Your infrastructure, your rules — no strings attached.</p>
+        </div>
+        <div className={styles.sovereigntyGrid}>
+          <div className={styles.sovereigntyCard}>
+            <div className={styles.sovereigntyIcon}>🔓</div>
+            <Heading as="h4">No Vendor Lock-in</Heading>
+            <p>Apache 2.0 licensed, community-driven, and backed by MAIF. Switch, fork, or extend — you're always in control.</p>
+          </div>
+          <div className={styles.sovereigntyCard}>
+            <div className={styles.sovereigntyIcon}>🌍</div>
+            <Heading as="h4">Deploy Anywhere</Heading>
+            <p>On-premises, any cloud, Kubernetes, bare metal, or edge. Otoroshi runs wherever you need it — no call-home, no telemetry walls.</p>
+          </div>
+          <div className={styles.sovereigntyCard}>
+            <div className={styles.sovereigntyIcon}>🗄️</div>
+            <Heading as="h4">Full Control Over Your Data</Heading>
+            <p>Every request, every config, every secret stays in your perimeter. Choose your own storage backend and export events on your terms.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CTASection() {
   return (
     <section className={styles.ctaSection}>
@@ -324,6 +354,7 @@ export default function Home() {
         <ComparisonSection />
         <UseCasesSection />
         <QuickStartSection />
+        <SovereigntySection />
         <CTASection />
         <FootnoteSection />
       </main>
