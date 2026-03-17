@@ -16,7 +16,7 @@ const features = [
   {
     title: 'Enterprise-Grade Security',
     icon: '🛡️',
-    description: 'Built-in mTLS, API keys with quotas, JWT token validation, Eclipse Biscuit validation, OAuth2/OIDC, LDAP, SAML, WASM-based auth, powerful WAF (using OWASP CoreRuleSet), and fine-grained RBAC.',
+    description: (<>Built-in mTLS, API keys with quotas, JWT token validation, Eclipse Biscuit validation<a href="#ecosystem-note">*</a>, OAuth2/OIDC, LDAP, SAML, WASM-based auth, powerful WAF<a href="#ecosystem-note">*</a> (using OWASP CoreRuleSet), and fine-grained RBAC.</>),
   },
   {
     title: '200+ Built-in Plugins',
@@ -261,6 +261,19 @@ function ComparisonSection() {
   );
 }
 
+function FootnoteSection() {
+  return (
+    <section id="ecosystem-note" className={styles.footnoteSection}>
+      <div className="container">
+        <p className={styles.footnoteText}>
+          * These features require open source extensions from the{' '}
+          <Link to="/ecosystem">Otoroshi ecosystem</Link>.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function CTASection() {
   return (
     <section className={styles.ctaSection}>
@@ -294,6 +307,7 @@ export default function Home() {
         <UseCasesSection />
         <QuickStartSection />
         <CTASection />
+        <FootnoteSection />
       </main>
     </Layout>
   );
