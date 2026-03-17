@@ -2,14 +2,14 @@ package otoroshi.plugins.defer
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
-import otoroshi.env.Env
 import org.joda.time.DateTime
+import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
+import otoroshi.script.*
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 // MIGRATED

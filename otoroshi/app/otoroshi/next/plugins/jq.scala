@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
+import com.arakelian.jq.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.arakelian.jq._
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 case class JQConfig(request: String = ".", response: String = "") extends NgPluginConfig {

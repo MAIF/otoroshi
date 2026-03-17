@@ -1,14 +1,14 @@
 package otoroshi.storage.stores
 
-import org.apache.pekko.http.scaladsl.util.FastFuture._
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import otoroshi.env.Env
-import otoroshi.models._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.joda.time.DateTime
+import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.storage.{RedisLike, RedisLikeStore}
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.Format
-import otoroshi.storage.{RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -134,22 +134,21 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     env.clusterAgent.incrementApi(apiKey.clientId, increment)
     for {
-      _ <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
-
+      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
       secTtl   <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
                     redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
                   }
-      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
 
+      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
       dailyTtl   <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
                       redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
                     }
-      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
 
+      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
       monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
                         redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
                       }
-      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
+      _            <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
     } yield {
       RemainingQuotas(
         authorizedCallsPerWindow = apiKey.throttlingQuota,
@@ -162,6 +161,56 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
         currentCallsPerMonth = monthlyCalls,
         remainingCallsPerMonth = apiKey.monthlyQuota - monthlyCalls
       )
+    }
+  }
+
+  override def updateQuotasAndCheck(apiKey: ApiKey, increment: Long = 1L)(using
+      ec: ExecutionContext,
+      env: Env
+  ): Future[(RemainingQuotas, Boolean)] = {
+    val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
+    val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
+    val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
+    val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+    env.clusterAgent.incrementApi(apiKey.clientId, increment)
+    for {
+      secCalls <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
+      _        <- redisCli.pttl(throttlingKey(apiKey.clientId)).flatMap {
+                    case -1 => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+                    case _  => Future.successful(())
+                  }
+
+      dailyCalls <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
+      _          <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).flatMap {
+                      case -1 => redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+                      case _  => Future.successful(())
+                    }
+
+      monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
+      _            <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).flatMap {
+                        case -1 => redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+                        case _  => Future.successful(())
+                      }
+
+      _ <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
+    } yield {
+      val withinQuota = secCalls <= apiKey.throttlingQuota &&
+        dailyCalls <= apiKey.dailyQuota &&
+        monthlyCalls <= apiKey.monthlyQuota
+
+      val quotas = RemainingQuotas(
+        authorizedCallsPerWindow = apiKey.throttlingQuota,
+        throttlingCallsPerWindow = secCalls,
+        remainingCallsPerWindow = Math.max(0, apiKey.throttlingQuota - secCalls),
+        authorizedCallsPerDay = apiKey.dailyQuota,
+        currentCallsPerDay = dailyCalls,
+        remainingCallsPerDay = Math.max(0, apiKey.dailyQuota - dailyCalls),
+        authorizedCallsPerMonth = apiKey.monthlyQuota,
+        currentCallsPerMonth = monthlyCalls,
+        remainingCallsPerMonth = Math.max(0, apiKey.monthlyQuota - monthlyCalls)
+      )
+
+      (quotas, withinQuota)
     }
   }
 
@@ -243,9 +292,16 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
                 val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
                 groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
             }
-          case Some(service) =>
-            val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
-            identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey).vfuture
+          case Some(service) => {
+            val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
+            service.metadata.get("Otoroshi-Api-Ref") match {
+              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some.vfuture
+              case _                                                        => {
+                val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+                identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey).vfuture
+              }
+            }
+          }
         }
       case _                                                                                                => FastFuture.successful(None)
     }
@@ -265,9 +321,16 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
                 val groups = routeComp.groups.map(ServiceGroupIdentifier.apply)
                 groups.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
             }
-          case Some(service) =>
-            val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
-            identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+          case Some(service) => {
+            val apikeyApiAuthorizations = apiKey.authorizedEntities.filter(_.isApi).map(_.id)
+            service.metadata.get("Otoroshi-Api-Ref") match {
+              case Some(apiRef) if apikeyApiAuthorizations.contains(apiRef) => apiKey.some
+              case _                                                        => {
+                val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+                identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+              }
+            }
+          }
         }
       case _                                                                                                => None
     }

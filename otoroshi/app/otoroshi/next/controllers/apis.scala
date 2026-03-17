@@ -1,31 +1,30 @@
 package otoroshi.next.controllers.adminapi
 
 import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
-import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiStaging}
+import next.models.*
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
 import scala.+:
 import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.stream.Materializer
 import scala.concurrent.duration.FiniteDuration
-import play.api.libs.json.JsValue
 
 class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env) extends AbstractController(cc) {
 
-  implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
-  implicit lazy val mat: Materializer    = env.otoroshiMaterializer
+  given ec: ExecutionContext = env.otoroshiExecutionContext
+  given mat: Materializer = env.otoroshiMaterializer
 
-  lazy val logger: Logger = Logger("otoroshi-apis-controller")
+  lazy val logger = Logger("otoroshi-apis-controller")
 
   case class RouteStats(
       calls: Long = 0,
@@ -35,7 +34,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       duration: Double = 0.0,
       overhead: Double = 0.0
   ) {
-    def json: JsObject = Json.obj(
+    def json = Json.obj(
       "calls"    -> calls,
       "dataIn"   -> dataIn,
       "dataOut"  -> dataOut,
@@ -53,7 +52,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def draftLiveStats(id: String, every: Option[Int]): Action[AnyContent] =
+  def draftLiveStats(id: String, every: Option[Int]) =
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -98,7 +97,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       }
     }
 
-  def foldStats(stats: Seq[RouteStats]): RouteStats = {
+  def foldStats(stats: Seq[RouteStats]) = {
     stats.foldLeft(RouteStats()) { case (acc, item) =>
       acc.copy(
         calls = acc.calls + item.calls,
@@ -109,7 +108,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def getStatsOfRoute(route: NgRoute): Future[RouteStats] = {
+  def getStatsOfRoute(route: NgRoute) = {
     for {
       calls    <- env.datastores.serviceDescriptorDataStore.calls(route.id)
       dataIn   <- env.datastores.serviceDescriptorDataStore.dataInFor(route.id)
@@ -129,7 +128,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def liveStats(id: String, every: Option[Int]): Action[AnyContent] =
+  def liveStats(id: String, every: Option[Int]) =
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -171,7 +170,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
       }
     }
 
-  def start(id: String): Action[AnyContent] = {
+  def start(id: String) = {
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -203,7 +202,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def stop(id: String): Action[AnyContent] = {
+  def stop(id: String) = {
     ApiAction.async { ctx =>
       ctx.canReadService(id) {
         Audit.send(
@@ -225,7 +224,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def getRoute(apiId: String, routeId: String): Action[AnyContent] = {
+  def getRoute(apiId: String, routeId: String) = {
     ApiAction.async { ctx =>
       ctx.canReadService(apiId) {
         Audit.send(
@@ -264,105 +263,39 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def publishConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
-    ApiAction.async { ctx =>
-      ctx.canReadService(apiId) {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_API_CONSUMER",
-            "User published the consumer",
-            ctx.from,
-            ctx.ua,
-            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
-          )
-        )
-
-        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Published)
-      }
-    }
-  }
-
-  def updateConsumerStatus(apiId: String, consumerId: String, status: ApiConsumerStatus): Future[Result] = {
-    env.datastores.apiDataStore.findById(apiId).flatMap {
-      case Some(api) =>
-        var result: Option[String] = Some("")
-        val newAPI                 = api.copy(consumers = api.consumers.map(consumer => {
-          if (consumer.id == consumerId) {
-            if (Api.updateConsumerStatus(consumer, consumer.copy(status = status))) {
-              consumer.copy(status = status)
-            } else {
-              result = None
-              consumer
-            }
-          } else {
-            consumer
-          }
-        }))
-
-        result match {
-          case None    => Results.BadRequest(Json.obj("error" -> "you can't update consumer status")).future
-          case Some(_) =>
-            env.datastores.apiDataStore
-              .set(newAPI)
-              .flatMap(_ => Results.Ok.vfuture)
-        }
-      case None      => Results.NotFound.future
-    }
-  }
-
-  def deprecateConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
-    ApiAction.async { ctx =>
-      ctx.canReadService(apiId) {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_API_CONSUMER",
-            "User deprecated the consumer",
-            ctx.from,
-            ctx.ua,
-            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
-          )
-        )
-
-        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Deprecated)
-      }
-    }
-  }
-
-  def closeConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
-    ApiAction.async { ctx =>
-      ctx.canReadService(apiId) {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_API_CONSUMER",
-            "User deprecated the consumer",
-            ctx.from,
-            ctx.ua,
-            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
-          )
-        )
-
-        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Closed)
-      }
-    }
-  }
-
-  def getHttpClientSettings(apiId: String): Action[AnyContent] = ApiAction.async { _ =>
+  def getHttpClientSettings(apiId: String) = ApiAction.async { _ =>
     Ok(NgClientConfig.default.json).future
   }
 
-  def createNewVersion(apiId: String): Action[JsValue] = {
+  def subscribe(apiId: String, planId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to subscribe to a plan of an API",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"  -> apiId,
+              "planId" -> planId
+            )
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None      => Results.NotFound.future
+          case Some(api) => Ok(Json.obj("message" -> "foo")).future
+        }
+      }
+    }
+  }
+
+  def createNewVersion(apiId: String) = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canReadService(apiId) {
         Audit.send(
@@ -394,16 +327,16 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                       case JsError(_)             => Results.NotFound.future
                       case JsSuccess(apiDraft, _) =>
                         val updatedApi = apiDraft.copy(
-                          versions = api.versions :+ deployment.version,
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
-                          version = deployment.version,
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
                           state = if (apiDraft.state == ApiStaging) ApiPublished else api.state
                         )
+
                         env.datastores.apiDataStore
                           .set(updatedApi)
                           .map(result => {
+
                             ApiDeploymentEvent(
                               `@id` = env.snowflakeGenerator.nextIdStr(),
                               `@timestamp` = DateTime.now(),
@@ -414,7 +347,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                                 else deployment.owner,
                               at = deployment.at,
                               apiDefinition = deployment.apiDefinition,
-                              version = deployment.version,
+                              version = api.version,
                               `@service` = api.name,
                               `@serviceId` = apiId
                             ).toAnalytics()
@@ -432,20 +365,21 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
     }
   }
 
-  def fromOpenapi(): Action[JsValue] = ApiAction.async(parse.json) { ctx =>
+  def fromOpenapi() = ApiAction.async(parse.json) { ctx =>
     {
       val body = ctx.request.body
       (
         body.selectAsOptString("domain"),
         body.selectAsOptString("openapi"),
-        body.selectAsOptString("serverURL"),
-        body.selectAsOptString("root")
+        body.selectAsOptString("contextPath"),
+        body.selectAsOptString("backendHostname"),
+        body.selectAsOptString("backendPath")
       ) match {
-        case (Some(domain), Some(openapi), serverURL, root) =>
+        case (Some(domain), Some(openapi), Some(contextPath), Some(backendHostname), Some(backendPath)) =>
           Api
-            .fromOpenApi(domain, openapi, serverURL, root)
+            .fromOpenApi(domain, openapi, contextPath, backendHostname, backendPath)
             .map(service => Ok(service.json))
-        case _                                              => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+        case _                                                                                          => BadRequest(Json.obj("error" -> "missing values")).vfuture
       }
     }
   }

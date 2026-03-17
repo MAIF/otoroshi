@@ -1,23 +1,23 @@
 package otoroshi.plugins.discovery
 
+import kaleidoscope.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import kaleidoscope.*
 import otoroshi.env.Env
 import otoroshi.models.Target
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 case class SelfRegistrationConfig(raw: JsValue) {

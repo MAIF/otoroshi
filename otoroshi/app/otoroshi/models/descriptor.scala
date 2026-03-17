@@ -1,50 +1,50 @@
 package otoroshi.models
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
-import org.apache.pekko.stream.{Materializer, OverflowStrategy}
-import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import otoroshi.auth._
 import com.auth0.jwt.JWT
 import com.comcast.ip4s.{Cidr, IpAddress}
 import com.google.common.hash.Hashing
-import otoroshi.env.Env
-import otoroshi.gateway.Errors
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
 import org.joda.time.DateTime
 import otoroshi.actions.ApiActionContext
+import otoroshi.auth.*
 import otoroshi.el.RedirectionExpressionLanguage
+import otoroshi.env.Env
+import otoroshi.gateway.Errors
 import otoroshi.models.HttpProtocols.{HTTP_1_0, HTTP_1_1, HTTP_2_0, HTTP_3_0}
+import otoroshi.models.RoundRobin.reqCounter
 import otoroshi.next.models.{NgOverflowStrategy, NgRoute, NgTarget}
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
-import play.api.Logger
-import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
-import play.api.mvc.Results.{NotFound, TooManyRequests}
-import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.script.plugins.Plugins
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.storage.stores.KvServiceDescriptorDataStore
-import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.gzip.GzipConfig
-import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
+import otoroshi.utils.config.ConfigUtils
+import otoroshi.utils.gzip.GzipConfig
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
+import otoroshi.utils.infotoken.InfoTokenHelper
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
+import otoroshi.utils.{RegexPool, ReplaceAllWith, TypedMap}
+import play.api.Logger
+import play.api.http.websocket.Message as PlayWSMessage
+import play.api.libs.json.*
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
+import play.api.mvc.Results.{NotFound, TooManyRequests}
+import play.api.mvc.{RequestHeader, Result, Results}
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterSyntax}
-import otoroshi.utils.infotoken.InfoTokenHelper
 
 case class ServiceDescriptorQuery(
     subdomain: String,
@@ -212,6 +212,12 @@ object LoadBalancing {
         case Some("LeastConnections")         => JsSuccess(LeastConnections)
         case Some("Random")                   => JsSuccess(Random)
         case Some("Sticky")                   => JsSuccess(Sticky)
+        case Some("HeaderHash")               =>
+          JsSuccess(new HeaderHash(json.select("header_name").asOpt[String].getOrElse("session-id")))
+        case Some("CookieHash")               =>
+          JsSuccess(new CookieHash(json.select("cookie_name").asOpt[String].getOrElse("session-id")))
+        case Some("QueryHash")                =>
+          JsSuccess(new QueryHash(json.select("query_name").asOpt[String].getOrElse("session-id")))
         case Some("IpAddressHash")            => JsSuccess(IpAddressHash)
         case Some("BestResponseTime")         => JsSuccess(BestResponseTime)
         case Some("WeightedBestResponseTime") =>
@@ -352,6 +358,93 @@ object Sticky extends LoadBalancing {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
+  }
+}
+
+object CookieHash {
+  val reqCounter = new AtomicInteger(0)
+}
+
+class CookieHash(cookieName: String) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue             = Json.obj("type" -> "CookieHash")
+  override def select(
+      reqId: String,
+      tid: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
+    req.cookies.get(cookieName).map(_.value) match {
+      case None             => {
+        val index: Int = CookieHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        targets.apply(index)
+      }
+      case Some(trackingId) => {
+        val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+        val index: Int = Hashing.consistentHash(hash, targets.size)
+        targets.apply(index)
+      }
+    }
+  }
+}
+
+object QueryHash {
+  val reqCounter = new AtomicInteger(0)
+}
+
+class QueryHash(queryName: String) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue             = Json.obj("type" -> "QueryHash")
+  override def select(
+      reqId: String,
+      tid: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
+    req.getQueryString(queryName) match {
+      case None             => {
+        val index: Int = QueryHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        targets.apply(index)
+      }
+      case Some(trackingId) => {
+        val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+        val index: Int = Hashing.consistentHash(hash, targets.size)
+        targets.apply(index)
+      }
+    }
+  }
+}
+
+object HeaderHash {
+  val reqCounter = new AtomicInteger(0)
+}
+
+class HeaderHash(headerName: String) extends LoadBalancing {
+  override def needTrackingCookie: Boolean = false
+  override def toJson: JsValue             = Json.obj("type" -> "HeaderHash")
+  override def select(
+      reqId: String,
+      tid: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      descId: String,
+      attempts: Int
+  )(implicit env: Env): Target = {
+    req.headers.get(headerName) match {
+      case None             => {
+        val index: Int = HeaderHash.reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
+        targets.apply(index)
+      }
+      case Some(trackingId) => {
+        val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
+        val index: Int = Hashing.consistentHash(hash, targets.size)
+        targets.apply(index)
+      }
+    }
   }
 }
 
@@ -659,7 +752,8 @@ case class Target(
     mtlsConfig: MtlsConfig = MtlsConfig(),
     backup: Boolean = false,
     tags: Seq[String] = Seq.empty,
-    metadata: Map[String, String] = Map.empty
+    metadata: Map[String, String] = Map.empty,
+    port: Option[Int] = None
 ) {
 
   def toJson: JsValue       = Target.format.writes(this)
@@ -673,14 +767,20 @@ case class Target(
 
   lazy val lkey = asKey
 
-  lazy val thePort: Int = if (host.contains(":")) {
-    host.split(":").last.toInt
-  } else
-    scheme.toLowerCase() match {
-      case "http"  => 80
-      case "https" => 443
-      case _       => 80
+  lazy val thePort: Int = {
+    port match {
+      case Some(value) => value
+      case None        =>
+        if (host.contains(":")) {
+          host.split(":").last.toInt
+        } else
+          scheme.toLowerCase() match {
+            case "http"  => 80
+            case "https" => 443
+            case _       => 80
+          }
     }
+  }
 
   lazy val theHost: String = if (host.contains(":")) {
     host.split(":").init.mkString("")
@@ -809,15 +909,21 @@ case class HealthCheck(
     timeout: Int = 5000,
     healthyStatuses: Seq[Int] = Seq.empty,
     unhealthyStatuses: Seq[Int] = Seq.empty,
-    blockOnRed: Boolean = false
+    blockOnRed: Boolean = false,
+    logicCheck: Boolean = true,
+    healthyRegexChecks: Seq[String] = Seq.empty,
+    unhealthyRegexChecks: Seq[String] = Seq.empty
 ) {
-  def toJson: JsObject = Json.obj(
-    "enabled"           -> enabled,
-    "url"               -> url,
-    "timeout"           -> timeout,
-    "healthyStatuses"   -> healthyStatuses,
-    "unhealthyStatuses" -> unhealthyStatuses,
-    "blockOnRed"        -> blockOnRed
+  def toJson = Json.obj(
+    "enabled"              -> enabled,
+    "url"                  -> url,
+    "timeout"              -> timeout,
+    "healthyStatuses"      -> healthyStatuses,
+    "unhealthyStatuses"    -> unhealthyStatuses,
+    "blockOnRed"           -> blockOnRed,
+    "logicCheck"           -> logicCheck,
+    "healthyRegexChecks"   -> healthyRegexChecks,
+    "unhealthyRegexChecks" -> unhealthyRegexChecks
   )
 }
 
@@ -830,7 +936,10 @@ object HealthCheck {
         timeout = json.select("timeout").asOpt[Int].getOrElse(5000),
         healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
         unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
-        blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false)
+        blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false),
+        logicCheck = json.select("logicCheck").asOpt[Boolean].getOrElse(true),
+        healthyRegexChecks = json.select("healthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty),
+        unhealthyRegexChecks = json.select("unhealthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -1626,7 +1735,7 @@ case class Restrictions(
       env: Env
   ): (Boolean, Future[Result]) = {
 
-    import otoroshi.utils.http.RequestImplicits._
+    import otoroshi.utils.http.RequestImplicits.given
 
     if (enabled) {
       val method = req.method
@@ -1648,7 +1757,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (isForbidden(method, domain, path)) {
@@ -1662,21 +1771,7 @@ case class Restrictions(
                   Some("errors.forbidden"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
-                )
-              )
-            } else if (isNotAllowed(method, domain, path)) {
-              (
-                true,
-                Errors.craftResponseResult(
-                  "Not Found", // TODO: is it the right response ?
-                  Results.NotFound,
-                  req,
-                  descriptor,
-                  Some("errors.not.found"),
-                  emptyBody = true,
-                  attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else {
@@ -1695,7 +1790,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (!allowed && isForbidden(method, domain, path)) {
@@ -1709,7 +1804,7 @@ case class Restrictions(
                   Some("errors.forbidden"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else if (isNotAllowed(method, domain, path)) {
@@ -1723,7 +1818,7 @@ case class Restrictions(
                   Some("errors.not.found"),
                   emptyBody = true,
                   attrs = attrs,
-                  maybeRoute = route,
+                  maybeRoute = route
                 )
               )
             } else {
@@ -1993,7 +2088,7 @@ case class ServiceDescriptor(
     }
   }
 
-  import play.api.http.websocket.{Message => PlayWSMessage}
+  import play.api.http.websocket.Message as PlayWSMessage
 
   def wsValidateClientCertificates(
       snowflake: String,
@@ -2123,7 +2218,7 @@ case class ServiceDescriptor(
     )(using env)
   }
 
-  import otoroshi.utils.http.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits.given
 
   def preRoute(
       snowflake: String,
@@ -2146,7 +2241,7 @@ case class ServiceDescriptor(
       f: => Future[Either[Result, A]]
   )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
-    import otoroshi.utils.future.Implicits._
+    import otoroshi.utils.future.Implicits.given
 
     val plugs    = plugins.preRoutings(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -2580,9 +2675,13 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         env.datastores.routeDataStore.findById(id) flatMap {
           case Some(service) => service.legacy.some.vfuture
           case None          =>
-            env.datastores.routeCompositionDataStore.findById(id) map {
-              case Some(service) => service.toRoutes.head.legacy.some
-              case None          => None
+            env.proxyState.route(id) match {
+              case Some(service) => service.legacy.some.vfuture
+              case None          =>
+                env.datastores.routeCompositionDataStore.findById(id) map {
+                  case Some(service) => service.toRoutes.head.legacy.some
+                  case None          => None
+                }
             }
         }
     }

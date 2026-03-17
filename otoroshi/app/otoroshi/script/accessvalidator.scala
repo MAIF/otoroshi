@@ -3,10 +3,10 @@ package otoroshi.script
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, GwError}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.TypedMap
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}

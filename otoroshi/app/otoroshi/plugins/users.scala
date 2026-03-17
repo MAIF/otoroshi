@@ -3,8 +3,8 @@ package otoroshi.plugins.users
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.utils.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator}
+import otoroshi.utils.JsonPathUtils
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
@@ -82,11 +82,11 @@ class HasAllowedUsersValidator extends AccessValidator {
           allowedUsernames.contains(user.name) ||
           allowedEmails.contains(user.email) ||
           allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
-          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(
-            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw)) && !metadataNotMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw)
           )) ||
-          (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(
-            JsonPathUtils.matchWith(user.profile, "user profile")
+          (profileMatch.exists(JsonPathUtils.matchWith(user.profile)) && !profileNotMatch.exists(
+            JsonPathUtils.matchWith(user.profile)
           ))
         ) {
           FastFuture.successful(true)

@@ -1,9 +1,9 @@
 package functional
 
-import org.apache.pekko.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
 import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import play.api.Configuration
 

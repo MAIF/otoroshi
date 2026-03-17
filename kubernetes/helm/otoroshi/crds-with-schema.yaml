@@ -438,9 +438,15 @@ spec:
                   url:
                     type: "string"
                     description: "???"
+                  blockOnRed:
+                    type: "boolean"
+                    description: "???"
                   timeout:
                     type: "integer"
                     format: "int32"
+                    description: "???"
+                  logicCheck:
+                    type: "boolean"
                     description: "???"
                 type: "object"
               allowHttp10:
@@ -656,12 +662,12 @@ spec:
               redirection:
                 description: "???"
                 properties:
-                  enabled:
-                    type: "boolean"
-                    description: "???"
                   code:
                     type: "integer"
                     format: "int32"
+                    description: "???"
+                  enabled:
+                    type: "boolean"
                     description: "???"
                   to:
                     type: "string"
@@ -1262,6 +1268,10 @@ spec:
               templates:
                 description: "???"
                 properties:
+                  routeTemplate:
+                    description: "null type"
+                    type: "string"
+                    nullable: true
                   draft:
                     description: "null type"
                     type: "string"
@@ -1387,13 +1397,17 @@ spec:
                     description: "???"
                     type: "object"
                     properties:
-                      username:
+                      mechanism:
                         type: "string"
                         description: "???"
+                      jaasConfig:
+                        description: "null type"
+                        type: "string"
+                        nullable: true
                       password:
                         type: "string"
                         description: "???"
-                      mechanism:
+                      username:
                         type: "string"
                         description: "???"
                   keystore:
@@ -1465,12 +1479,12 @@ spec:
                   indexSettings:
                     description: "???"
                     properties:
-                      clientSide:
-                        type: "boolean"
-                        description: "???"
                       numberOfShards:
                         type: "integer"
                         format: "int32"
+                        description: "???"
+                      clientSide:
+                        type: "boolean"
                         description: "???"
                       numberOfReplicas:
                         type: "integer"
@@ -1479,6 +1493,9 @@ spec:
                       interval:
                         type: "string"
                         x-kubernetes-preserve-unknown-fields: true
+                        description: "???"
+                      action:
+                        type: "string"
                         description: "???"
                     type: "object"
                   index:
@@ -1735,6 +1752,10 @@ spec:
               tlsSettings:
                 description: "???"
                 properties:
+                  clientAuth:
+                    type: "object"
+                    x-kubernetes-preserve-unknown-fields: true
+                    description: "???"
                   includeJdkCaClient:
                     type: "boolean"
                     description: "???"
@@ -2167,9 +2188,15 @@ spec:
                   url:
                     type: "string"
                     description: "???"
+                  blockOnRed:
+                    type: "boolean"
+                    description: "???"
                   timeout:
                     type: "integer"
                     format: "int32"
+                    description: "???"
+                  logicCheck:
+                    type: "boolean"
                     description: "???"
               client:
                 description: "???"
@@ -2616,9 +2643,15 @@ spec:
                       url:
                         type: "string"
                         description: "???"
+                      blockOnRed:
+                        type: "boolean"
+                        description: "???"
                       timeout:
                         type: "integer"
                         format: "int32"
+                        description: "???"
+                      logicCheck:
+                        type: "boolean"
                         description: "???"
                   client:
                     description: "???"

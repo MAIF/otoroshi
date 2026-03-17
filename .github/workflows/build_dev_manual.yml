@@ -26,8 +26,24 @@ jobs:
         with:
           java-version: 11
       - uses: sbt/setup-sbt@v1.1.5
-      - name: Generate dev documentation website
+      - name: Generate dev documentation website (Paradox)
         run: sh ./scripts/doc.sh buildDev
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: manual/next/package-lock.json
+      - name: Build Docusaurus documentation
+        run: |
+          cd manual/next
+          npm ci --legacy-peer-deps
+          npm run build
+          npm run build-root
+          rm -rf ../../docs/next
+          rm -rf ../../docs/next-root
+          cp -r build ../../docs/next
+          cp -r build-root ../../docs/next-root
       - name: Commit files
         run: |
           git config --local user.email "otoroshi-github-actions@users.noreply.github.com"

@@ -1,21 +1,19 @@
 package functional
 
-import java.security.KeyFactory
-import java.security.interfaces.{ECPrivateKey, ECPublicKey}
-import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
-import java.util.Optional
-import java.util.concurrent.atomic.AtomicInteger
-
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.models.*
 import play.api.Configuration
-import java.util.{Base64 => JavaBase64}
 import play.api.libs.json.Json
 
+import java.security.KeyFactory
+import java.security.interfaces.{ECPrivateKey, ECPublicKey}
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
+import java.util.{Optional, Base64 as JavaBase64}
+import java.util.concurrent.atomic.AtomicInteger
 import scala.util.{Failure, Success, Try}
 
 class JWTVerification2Spec(name: String, configurationSpec: => Configuration) extends PlaySpec {
@@ -237,8 +235,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
     "Re-sign JWT token" in {
 
-      import Implicit._
-
+      import Implicit.given
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
       val algorithm  = Algorithm.HMAC512("secret")
@@ -384,8 +381,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
 
     "Transform JWT token" in {
 
-      import Implicit._
-
+      import Implicit.given
       import com.auth0.jwt.algorithms.Algorithm
       val key        = "very secret"
       val algorithm  = Algorithm.HMAC512("secret")
@@ -410,7 +406,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
             .asOption
             .map(a => a.value())
             .foreach { a =>
-              import scala.jdk.CollectionConverters._
+              import scala.jdk.CollectionConverters.given
               val v        = JWT
                 .require(algorithm2)
                 .withIssuer("foo")

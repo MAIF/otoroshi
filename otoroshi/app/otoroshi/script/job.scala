@@ -1,20 +1,19 @@
 package otoroshi.script
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl._
-import org.apache.pekko.util.ByteString
-import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
+import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.*
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
+import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import otoroshi.models.GlobalConfig
+import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.next.utils.JsonHelpers
@@ -22,14 +21,20 @@ import otoroshi.next.workflow.WorkflowJob
 import otoroshi.utils
 import otoroshi.utils.{future, JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import otoroshi.security.IdGenerator
+import otoroshi.utils
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.*
+import play.api.Logger
+import play.api.libs.json.*
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
 import scala.util.{Failure, Random, Success, Try}
 
@@ -112,8 +117,9 @@ case class JobId(id: String)
 
 trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener { self =>
 
-  private val refId   = new AtomicReference[String](s"cp:${self.getClass.getName}")
-  private val promise = Promise[Unit]()
+  private val refId = new AtomicReference[String](s"cp:${self.getClass.getName}")
+//  private val promise = Promise[Unit]
+  val promise       = Promise[Unit]
 
   final override def pluginType: PluginType = PluginType.JobType
 
@@ -219,6 +225,15 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     val manager = env.jobManager
     manager.registerJob(this)
     manager.startIfPossible(this)
+    promise.future.andThen { case _ =>
+      manager.unregisterJob(this)
+    }(using manager.jobExecutor)
+  }
+
+  final def runOnceWithConfiguration()(using env: Env): Future[Unit] = {
+    val manager = env.jobManager
+    manager.registerJob(this)
+    manager.runOnceWithConfiguration(this)
     promise.future.andThen { case _ =>
       manager.unregisterJob(this)
     }(using manager.jobExecutor)
@@ -409,9 +424,9 @@ case class RegisteredJobContext(
         job.cronExpression(ctx, env) match {
           case None             => ()
           case Some(expression) =>
-            import java.time.ZonedDateTime
-
             import com.cronutils.parser.CronParser
+
+            import java.time.ZonedDateTime
 
             val now           = ZonedDateTime.now
             val parser        = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
@@ -567,6 +582,28 @@ case class RegisteredJobContext(
         }
     }
   }
+
+  def runOnceWithConfiguration(config: GlobalConfig, env: Env): Future[Unit] = {
+    Option(ref.get()).flatten match {
+      case Some(_) => ().vfuture
+      case None    =>
+        val ctx = JobContext(
+          snowflake = runId.get(),
+          attrs = attrs,
+          globalConfig = ConfigUtils.mergeOpt(
+            env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+            env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+          ),
+          actorSystem = actorSystem,
+          scheduler = actorSystem.scheduler
+        )
+        job
+          .jobRunHook(ctx)
+//          .flatMap { _ =>
+//            job.stop(env)
+//          }
+    }
+  }
 }
 
 object JobManager {
@@ -623,6 +660,12 @@ class JobManager(env: Env) {
     }
   }
 
+  private[script] def runOnceWithConfiguration(job: Job): Unit = {
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.get(job.uniqueId).foreach(_.runOnceWithConfiguration(config, env))
+    }
+  }
+
   private def stopAllJobs(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registeredJobs.foreach { case (id, ctx) =>
@@ -636,6 +679,7 @@ class JobManager(env: Env) {
     env.scriptManager.jobNames
       .filterNot(_ == classOf[WasmJob].getName)
       .filterNot(_ == classOf[WorkflowJob].getName)
+      .filterNot(_ == classOf[RemoteCatalogJob].getName)
       .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     scanRef.set(
       jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))

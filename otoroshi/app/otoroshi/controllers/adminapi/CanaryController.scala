@@ -3,13 +3,11 @@ package otoroshi.controllers.adminapi
 import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {

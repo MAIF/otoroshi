@@ -3,6 +3,27 @@ import { JwtVerifierLauncher } from '../wizards/JwtVerifierLauncher';
 export default {
   id: 'cp:otoroshi.next.plugins.JwtVerificationOnly',
   config_schema: {
+    custom_response: {
+      type: 'bool',
+      label: 'Custom error',
+    },
+    custom_response_status: {
+      type: 'number',
+      label: 'Custom error status',
+    },
+    custom_response_headers: {
+      type: 'object',
+      label: 'Custom error headers',
+    },
+    custom_response_body: {
+      type: 'code',
+      label: 'Custom error body',
+      props: {
+        ngOptions: {
+          spread: true,
+        }
+      }
+    },
     verifier: {
       label: 'Verifier',
       type: 'JwtVerifierWizard',
@@ -22,5 +43,19 @@ export default {
       },
     },
   },
-  config_flow: ['verifier', 'fail_if_absent'],
+  config_flow: [
+    'verifier',
+    'fail_if_absent',
+    'custom_response',
+    {
+      type: 'group',
+      visible: props => props?.custom_response,
+      title: 'Custom response information',
+      fields: [
+        'custom_response_status',
+        'custom_response_headers',
+        'custom_response_body'
+      ]
+    }
+  ],
 };

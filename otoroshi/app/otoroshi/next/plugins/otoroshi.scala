@@ -1,26 +1,26 @@
 package otoroshi.next.plugins
 
+import com.auth0.jwt.JWT
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
-import com.auth0.jwt.JWT
 import org.joda.time.DateTime
 import otoroshi.controllers.HealthController
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, StateRespInvalid}
 import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion, SecComVersion}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.infotoken.{AddFieldsSettings, InfoTokenHelper}
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.*
+import play.api.mvc.Results.*
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -484,29 +484,62 @@ class OtoroshiInfos extends NgRequestTransformer {
   }
 }
 
-case class PossibleCerts(certIds: Seq[String]) extends NgPluginConfig {
+case class PossibleCerts(
+    certIds: Seq[String],
+    includeAlgorithms: Boolean,
+    rsaAlgorithms: Seq[com.nimbusds.jose.Algorithm],
+    esAlgorithms: Seq[com.nimbusds.jose.Algorithm]
+) extends NgPluginConfig {
   override def json: JsValue = PossibleCerts.format.writes(this)
 }
 
 object PossibleCerts {
-  val default: PossibleCerts         = PossibleCerts(Seq.empty)
-  val format: Format[PossibleCerts]  = new Format[PossibleCerts] {
+  val default                        = PossibleCerts(Seq.empty, false, Seq.empty, Seq.empty)
+  val format                         = new Format[PossibleCerts] {
     override def writes(o: PossibleCerts): JsValue             = Json.obj(
-      "cert_ids" -> o.certIds
+      "cert_ids"           -> o.certIds,
+      "include_algorithms" -> o.includeAlgorithms,
+      "rsa_algorithms"     -> JsArray(o.rsaAlgorithms.map(_.getName.json)),
+      "es_algorithms"      -> JsArray(o.esAlgorithms.map(_.getName.json))
     )
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
-        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty)
+        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+        includeAlgorithms = json.select("include_algorithms").asOptBoolean.getOrElse(false),
+        rsaAlgorithms = json
+          .select("rsa_algorithms")
+          .asOpt[Seq[String]]
+          .getOrElse(Seq.empty)
+          .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
+        esAlgorithms = json
+          .select("es_algorithms")
+          .asOpt[Seq[String]]
+          .getOrElse(Seq.empty)
+          .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str))
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
   }
-  val configFlow: Seq[String]        = Seq("cert_ids")
+  val configFlow: Seq[String]        = Seq("cert_ids", "include_algorithms", "rsa_algorithms", "es_algorithms")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "cert_ids" -> Json.obj(
+      "include_algorithms" -> Json.obj(
+        "type"  -> "boolean",
+        "label" -> "Include algorithms"
+      ),
+      "es_algorithms"      -> Json.obj(
+        "type"  -> "string",
+        "array" -> true,
+        "label" -> "ES algorithms"
+      ),
+      "rsa_algorithms"     -> Json.obj(
+        "type"  -> "string",
+        "array" -> true,
+        "label" -> "RSA algorithms"
+      ),
+      "cert_ids"           -> Json.obj(
         "type"  -> "select",
         "array" -> true,
         "label" -> s"Allowed certificates",
@@ -627,10 +660,12 @@ class OtoroshiJWKSEndpoint extends NgBackendCall {
       mat: Materializer
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(PossibleCerts.format).getOrElse(PossibleCerts.default)
-    JWKSHelper.jwks(ctx.rawRequest, config.certIds).map {
-      case Left(body)  => Results.NotFound(body)
-      case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
-    } map { res =>
+    JWKSHelper
+      .jwks(ctx.rawRequest, config.certIds, false, config.includeAlgorithms, config.rsaAlgorithms, config.esAlgorithms)
+      .map {
+        case Left(body)  => Results.NotFound(body)
+        case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
+      } map { res =>
       Right(BackendCallResponse(NgPluginHttpResponse.fromResult(res), None))
     }
   }

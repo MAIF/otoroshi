@@ -13,7 +13,7 @@ import otoroshi.models.*
 import otoroshi.next.models.NgTarget
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
 import play.api.Logger
 import play.api.libs.json.*

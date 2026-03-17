@@ -13,6 +13,7 @@ node_modules
 .gradle
 target
 /data
+/libs
 .metals
 .java-version
 *.patch
@@ -22,12 +23,14 @@ target
 .bsp
 oto-events*
 *.gor
-/project
+/project/*/
 /local-scripts
 otoroshi/javascript/stats.json
 .bloop
 /otoroshi/hs_err_*.log
 .scala-build
 *.iml
-
+CLAUDE.md
+_doc-research
+gateway-api-conformance-suite
 logs/

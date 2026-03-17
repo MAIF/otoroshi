@@ -1,25 +1,25 @@
 package functional
 
-import org.apache.pekko.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.WSAuthScheme
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
 class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)
@@ -518,7 +518,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
   override def singleEntity(): ApiKey                         =
     env.datastores.apiKeyDataStore
       .initiateNewApiKey("admin-api-group", env)
-      .copy(authorizedEntities = Seq(ServiceDescriptorIdentifier("admin-api-service")))
+      .applyOn(a => a.copy(authorizedEntities = a.authorizedEntities ++ Seq(RouteIdentifier("admin-api-service"))))
   override def entityName: String                             = "ApiKey"
   override def route(): String                                = "/api/routes/admin-api-service/apikeys"
   override def readEntityFromJson(json: JsValue): ApiKey      = ApiKey._fmt.reads(json).get

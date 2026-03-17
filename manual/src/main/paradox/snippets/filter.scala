@@ -3,9 +3,9 @@ import com.auth0.jwt._
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces._
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap._
-import play.api.mvc._
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util._

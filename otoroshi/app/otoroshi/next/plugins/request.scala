@@ -3,8 +3,8 @@ package otoroshi.next.plugins
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsNull, JsString, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result}
 

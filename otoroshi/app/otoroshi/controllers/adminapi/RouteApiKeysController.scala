@@ -4,28 +4,16 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.ApiKey
-import otoroshi.utils.controllers.{
-  AdminApiHelper,
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SeqEntityAndContext
-}
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.controllers.*
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
@@ -100,12 +88,12 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
         case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
         case Some(desc)                            =>
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
-          val entities   = (Seq("service_" + routeId) ++ oldGroup).distinct
+          val entities   = (Seq("route_" + routeId) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                            => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + routeId))
-            case Some(sid) if !sid.contains(s"service_$routeId") =>
+            case None                                            => body ++ Json.obj("authorizedEntities" -> Json.arr("route_" + routeId))
+            case Some(sid) if !sid.contains(s"route_${routeId}") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
-            case Some(sid) if sid.contains(s"service_$routeId")  => body
+            case Some(sid) if sid.contains(s"route_${routeId}")  => body
             case Some(_)                                         => body
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {

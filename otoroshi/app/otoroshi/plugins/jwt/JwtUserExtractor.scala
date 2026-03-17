@@ -1,15 +1,15 @@
 package otoroshi.plugins.jwt
 
+import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.PrivateAppsUser
-import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.utils.JsonPathUtils
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
-import play.api.mvc.Results
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.JsonPathUtils
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

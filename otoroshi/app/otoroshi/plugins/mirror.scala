@@ -13,16 +13,14 @@ import otoroshi.script.*
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.HeadersHelper
-import otoroshi.utils.http.Implicits.*
-import otoroshi.utils.http.RequestImplicits.*
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.http.Implicits.{*, given}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.http.ResponseImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.http.Implicits._
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import scala.collection.concurrent.TrieMap
@@ -211,14 +209,32 @@ case class MirroringEvent(`@id`: String, `@env`: String, ctx: RequestContext, `@
 
 class MirroringPluginConfig(val conf: JsValue) {
 
-  def shouldBeMirrored(request: RequestHeader): Boolean = {
-    enabled // TODO: filter by path and method
+  def shouldBeMirrored(routeId: String, request: RequestHeader): Boolean = {
+    if (enabled) { // TODO: filter by path and method
+      if (percentage <= 0.0) return false
+      if (percentage >= 100.0) return true
+      val reqId     = request.id
+      val key       = s"$routeId|$salt|$reqId"
+      // stable hash
+      val h         = scala.util.hashing.MurmurHash3.stringHash(key) & 0x7fffffff
+      // bucket 0..9999
+      val bucket    = h % 10000
+      // threshold 0..10000
+      val threshold = (percentage * 100).toInt // 12.34% => 1234
+      bucket < threshold
+    } else {
+      false
+    }
   }
 
+  lazy val percentage: Double             =
+    (conf \ "percentage").asOpt[Double].orElse((conf \ "percentage").asOpt[Int].map(_.toDouble)).getOrElse(100.0)
+  lazy val salt: String                   = (conf \ "salt").asOpt[String].getOrElse("none")
   lazy val to: String                     = (conf \ "to").as[String]
   lazy val enabled: Boolean               = (conf \ "enabled").asOpt[Boolean].getOrElse(true)
-  lazy val shouldCaptureResponse: Boolean = (conf \ "captureResponse").asOpt[Boolean].getOrElse(false)
-  lazy val generateEvents: Boolean        = (conf \ "generateEvents").asOpt[Boolean].getOrElse(false)
+  lazy val shouldCaptureResponse: Boolean = (conf \ "capture_response").asOpt[Boolean].getOrElse(false)
+  lazy val generateEvents: Boolean        = (conf \ "generate_events").asOpt[Boolean].getOrElse(false)
+  lazy val headers: Map[String, String]   = (conf \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
 }
 
 object MirroringPluginConfig {
@@ -274,9 +290,9 @@ class MirroringPlugin extends RequestTransformer {
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = MirroringPluginConfig(ctx.configFor("MirroringPlugin"))
-    if (cfg.shouldBeMirrored(ctx.request)) {
-      val done       = Promise[Unit]()
-      val mirrorDone = Promise[Unit]()
+    if (cfg.shouldBeMirrored(ctx.descriptor.id, ctx.request)) {
+      val done       = Promise[Unit]
+      val mirrorDone = Promise[Unit]
       val context    = RequestContext(
         id = ctx.snowflake,
         request = ctx.request,

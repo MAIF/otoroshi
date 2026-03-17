@@ -6,6 +6,440 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.13.0] - 2026-02-23
+
+
+https://github.com/MAIF/otoroshi/milestone/135?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.12.0...v17.13.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.13.0
+
+
+### Added 
+
+- Add config. options to expose public keys with algorithms in JWKS (#2429 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Experimental support for k8s Gateway api (#2437 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Search a JWK in a JWKS can fail when alg not present (#2428 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router most specific path matching does not work with wildcard domains (#2444 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router does not prioritize routes with query/header/cookie matching in the final stage of the routing pipeline (#2445 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router should treat trailing slash in frontend domains as exact segment match (#2446 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Strict mode of the `JWT user extractor plugin` is broken (#2455 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.12.0] - 2026-01-28
+
+
+https://github.com/MAIF/otoroshi/milestone/134?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.11.0...v17.12.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.12.0
+
+
+### Added 
+
+- Support Monaco editor in classic forms (#2407 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support JWT verification based on the settings of an OIDC auth. module (#2410 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provider helpers to create customizable errors in plugins (#2422 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow Fail2Ban to be triggered by other plugins that can't use `requestError` phase (#2423 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDCJwtVerifier can be used to populate the current user session (#2426 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Always display plugins, even if missing from the JS plugins list (#2406 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+### Changed 
+
+- Add `USERS.md` in the Otoroshi repository (#2409 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Otoroshi containers should run with a non root user (#2399 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Release process does not publish helm chart (#2425 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Bad name used for netty experimental server (#2400 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Bad group name used for dynamic http-listeners (#2401 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bad content-type check when proxying grpc request (#2402 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OverrideLocationHeader plugin was badly configured + description was wrong (#2403 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
+## [17.11.0] - 2025-12-31
+
+
+https://github.com/MAIF/otoroshi/milestone/133?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.10.0...v17.11.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.11.0
+
+
+### Added 
+
+- support new `HeaderHash` loadbalancing strategy (#2380 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support new `CookieHash` loadbalancing strategy (#2381 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support new `QueryHash` loadbalancing strategy (#2382 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add workflow support for websocket message transformations (#2383 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide helpful log message when ssl modules not open (#2386 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to mirror websocket traffic to another target (#2388 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `Datadog` data exporter (#2390 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `New Relic` data exporter (#2392 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Enforce fine-grained authorizations through OpenFGA API (#2394 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- update coraza plugin to use OWASP CoreRuleSet 4.21.0 (#2389 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- WebSocket sub protocol is not forwarded anymore (#2387 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- documentation page about `Understanding GatewayEvent Durations in Otoroshi` (#2393 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+
+## [17.10.0] - 2025-12-08
+
+
+https://github.com/MAIF/otoroshi/milestone/132?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.2...v17.10.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.10.0
+
+
+### Added 
+
+- `$parse_number` operator for workflows (#2360 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add an `$and` operator for workflows (#2364 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add an `$or` operator for workflows (#2365 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add a `$first_truthy` operator for workflows (#2366 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- allow to return custom error response on failed jwt verification (#2369 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- add new `UserLogoutEndpoint` plugin (#2370 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add a plugin to detect and block `React2Shell` attacks (#2371 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `$contains_ignore_case` operator for workflows (#2372 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains` can now work as `contains_all` (#2374 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains_ignore_case` can now work as `contains_all` (#2375 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains_ignore_case` can now work as `contains_any` (#2376 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$contains` can now work as `contains_any` (#2377 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$or` can operator on sequence of values (#2378 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `$and` can operator on sequence of values (#2379 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Update snow monkey page to use routes by default (#2373 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Unable to Launch Chaos Engineering Plugin (v17.5.1) (#2361 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- avoid to fail when response path not present in the `http_call` function (#2362 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Avoid failing on empty array with `Map`, `FlatMap`, `Filter`, `Foreach` nodes (#2363 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Using authentication plugin in APIs does not work (#2367 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @dmorvant-altima
+
+## [17.9.2] - 2025-12-03
+
+
+https://github.com/MAIF/otoroshi/milestone/131?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.1...v17.9.2
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.2
+
+
+### Added 
+
+- Align NgServiceQuotas plugin logic with updateQuotasAndCheck (#2355 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add support for route templates (reusable route configurations) (#2356 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Fixed 
+
+- Weird iowait behavior with lettuce client on linux (#2359 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @sebprunierserli
+* @mathieuancelin
+
+## [17.9.1] - 2025-12-01
+
+
+https://github.com/MAIF/otoroshi/milestone/130?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.9.1...v17.9.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.1
+
+
+
+
+### Fixed 
+
+- cleanup docker images during publishing (#2358 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+
+## [17.9.0] - 2025-11-30
+
+
+https://github.com/MAIF/otoroshi/milestone/129?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.8.1...v17.9.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.9.0
+
+
+### Added 
+
+- support euclidian division in workflow operators (#2328 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support || in workflow expressions (#2329 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support additional match rules in the HasAllowedUsersValidator plugin (#2334 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Fix RegexResponseHeadersRewriter: missing name field and incorrect flow position (#2335 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Autoremove Bearer when verifying jwt token (#2336 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Missing filter on the API Keys page (#2337 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add basic documentation editor for APIs (#2339 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add form for API documentation section (#2341 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- configurable bulk action for Elastic exporter (#2342 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$at` projection (#2343 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$atIf` projection (#2344 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$pointer` projection (#2345 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$pointerIf` projection (#2346 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$path` projection (#2347 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$pathIf` projection (#2348 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add default value when using `$header` projection (#2349 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add new projection operator `$date_from_unix_fmt` (#2350 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow dynamic mTLS mode (based on global config. TLS settings) for the server (#2351 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow to declare trusted server CAs local to a node (#2352 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Fix Cookies validation plugin (#2326 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Issue when selecting a path with custommetrics data exporter (#2327 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix Throttling (#2333 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+
+## [17.8.1] - 2025-11-13
+
+
+https://github.com/MAIF/otoroshi/milestone/128?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.8.0...v17.8.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.8.1
+
+
+### Added 
+
+- Avoid failure when filtering on missing values (#2318 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Http Security headers plugin (#2322 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Time restriction plugin (#2323 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Expression language can be used in JWT claims verification (#2324 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Expose input and output verified/transformed JWT tokens in the expression language (#2325 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Apikey secret export may fail if secret already exist (#2314 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Google Secret Manager vault (#2315 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL and JDK 25 (#2316 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- apikey enabled flag check bypass in some cases (#2317 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- S3 backend does not handle index.html automatically (#2319 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix Multi authentication plugin (#2321 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @aicfr
+* @Zwiterrion
+
+## [17.8.0] - 2025-11-07
+
+
+https://github.com/MAIF/otoroshi/milestone/127?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.7.0...v17.8.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.8.0
+
+
+### Added 
+
+- Headers validation plugin can use validation expressions (#2304 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support validation expressions in JWT Verifiers (#2305 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin to rewrite plugin request headers using regex (#2307 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin to rewrite plugin response headers using regex (#2308 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add informations about streaming durations in GatewayEvents (#2309 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDC config. fetch from UI now supports mTLS (#2312 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Make JWT UI like the other UIs (#2310 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- JWKS fetch need to select key by id AND alg (#2302 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Wipe apikey from request doesn't work anymore (#2303 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- When using apikey bearer with custom header name, request is not wiped (#2306 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- File storage is missing some counter values (#2311 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bandwith plugins kind renderer missing (#2313 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.7.0] - 2025-10-31
+
+
+https://github.com/MAIF/otoroshi/milestone/123?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.3...v17.7.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.7.0
+
+
+### Added 
+
+- In the route table, add column filter for the tags (#2257 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- In the route table, sort rows by name by default (#2258 fixed by [sebprunierserli](https://github.com/sebprunierserli))
+- JDK25 support for docker images (#2270 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add missing error template in the search bar (#2272 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Add health check strategy based on regex (#2277 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support APIs in apikeys authorize section (#2281 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- APIs can have groups (#2284 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make PG cleanup job interval customizable (#2285 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- When creating an apikey from a route, add route in the authorized entities and not group (#2290 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make metadata searchable in the route page (#2293 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Display group names in the route table (#2295 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow server side filtering with multiple values for a field in generic admin apis (#2297 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make Healthcheck job interval customizable (#2299 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Enhance kafka config. (#2300 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- emulate some datastore commands when the underlying datastore only support a limited command set (#2301 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Remove double save buttons on a lot of entity screens (#2279 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Fix mTLS label on the home of route designer (#2286 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Change throttling suffix "calls per sec" to "calls per window" (#2287 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Group exprot button in the Table component (#2298 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Bad enum value for PostgreSQL SSL_MODE (#2275 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Make id readonly when editing teams and organizations (#2278 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Otoroshi API behind an NGINX ingress controller can cause infinite proxy loop (#2282 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Apikey delete button always disabled (#2283 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- SSL Kafka data exporter doesn't work using Otoroshi certificates (#2288 fixed by )       
+      
+
+### Contributors
+
+* @sebprunierserli
+* @mathieuancelin
+* @Zwiterrion
+* @ptitFicus
+
+## [17.6.3] - 2025-10-06
+
+
+https://github.com/MAIF/otoroshi/milestone/125?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.2...v17.6.3
+https://github.com/MAIF/otoroshi/releases/tag/v17.6.3
+
+
+### Added 
+
+- OAuth1Caller and OAuth2Caller plugin can use expression language (#2273 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Admin UI API proxy can fail if x-forwarded-host defined (#2274 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.6.2] - 2025-10-03
+
+
+https://github.com/MAIF/otoroshi/milestone/124?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.6.0...v17.6.2
+https://github.com/MAIF/otoroshi/releases/tag/v17.6.2
+
+
+### Added 
+
+- Allow pluggable node rendering in the workflow designer (#2269 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+
+
+
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+
+## [17.6.0] - 2025-10-01
+
+
+https://github.com/MAIF/otoroshi/milestone/121?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.5.1...v17.6.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.6.0
+
+
+### Added 
+
+- Add Sub-Workflows Section (#2241 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Reference Existing Workflows in CallNode (#2242 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Upgrade Code Editor to Monaco (#2243 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- improve workflow editor (#2244 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- pass node output as input to next node (#2246 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add blockOnRed option to block requests on failed healthchecks (#2248 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- ExitNode support for workflows (#2249 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- WhileNode support for workflows (#2250 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- JumpNode support for workflows (#2251 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New operators and function to work on maps and arrays (#2252 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- TryNode support for workflows (#2255 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- AsyncNode support for workflows (#2256 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Global cleanup of private sessions for a targeted auth-module (#2259 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Plugins to limit body size (request, response) (#2261 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Plugin to throttle bandwidth (#2262 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support "while" node in the workflows UI (#2264 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- fix documentation (#2265 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- `ManagementFactory.getPlatformMBeanServer` issue on recent Linux kernel 6.12+ (#2253 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Issues when starting netty server can crash otoroshi boot (#2254 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Routing restriction plugin : Route informations missing on GatewayEvent (#2260 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Select renderer in array renderer does not render properly (#2266 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- Add documentation for configuring circuit breaker and health checks (#2247 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+### Contributors
+
+* @Zwiterrion
+* @mathieuancelin
+* @quentinduboisconserto
+* @cbois
+
 ## [17.5.1] - 2025-09-01
 
 

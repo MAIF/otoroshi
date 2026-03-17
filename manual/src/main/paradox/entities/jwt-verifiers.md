@@ -1,132 +1,237 @@
-# JWT verifiers
+# JWT Verifiers
 
-Sometimes, it can be pretty useful to verify Jwt tokens coming from other provider on some services. Otoroshi provides a tool to do that per service.
+JWT verifiers allow you to validate, sign, and transform JWT tokens on incoming requests. A verifier can be defined globally and referenced by multiple routes, or configured locally on a specific route.
 
-* `Name`: name of the JWT verifier
-* `Description`: a simple description
-* `Strict`: if not strict, request without JWT token will be allowed to pass. This option is helpful when you want to force the presence of tokens in each request on a specific service 
-* `Tags`: list of tags associated to the module
-* `Metadata`: list of metadata associated to the module
+## UI page
 
-Each JWT verifier is configurable in three steps : the `location` where find the token in incoming requests, the `validation` step to check the signature and the presence of claims in tokens, and the last step, named `Strategy`.
+You can find all JWT verifiers [here](http://otoroshi.oto.tools:8080/bo/dashboard/jwt-verifiers)
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `id` | string |     | Unique identifier |
+| `name` | string |     | Display name |
+| `description` | string |     | Description |
+| `strict` | boolean | `true` | If not strict, requests without a JWT token are allowed through. Useful to enforce token presence |
+| `tags` | array of string | `[]` | Tags |
+| `metadata` | object | `{}` | Key/value metadata |
+| `source` | object |     | Where to find the token in incoming requests (see [below](#token-location)) |
+| `algoSettings` | object |     | Algorithm settings for token validation (see [below](#token-validation)) |
+| `strategy` | object |     | Verification strategy (see [below](#strategy)) |
+
+Each JWT verifier is configured in three steps:
+
+1. **Location**: Where to find the token in incoming requests
+2. **Validation**: How to validate the token signature
+3. **Strategy**: What to do with the token (pass-through, re-sign, transform)
 
 ## Token location
 
-An incoming token can be found in three places.
+An incoming token can be found in three places:
 
-#### In query string
+### In a query string parameter
 
-* `Source`: JWT token location in query string
-* `Query param name`: the name of the query param where JWT is located
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `InQueryParam` |
+| `name` | string | Name of the query parameter containing the JWT |
 
-#### In a header
+### In a header
 
-* `Source`: JWT token location in a header
-* `Header name`: the name of the header where JWT is located
-* `Remove value`: when the token is read, this value will be remove of header value (example: if the header value is *Bearer xxxx*, the *remove value* could be Bearer&nbsp; don't forget the space at the end of the string)
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `InHeader` |
+| `name` | string | Name of the header containing the JWT |
+| `remove` | string | Prefix to remove from the header value (e.g., `Bearer ` - note the trailing space) |
 
-#### In a cookie
+### In a cookie
 
-* `Source`: JWT token location in a cookie
-* `Cookie name`: the name of the cookie where JWT is located
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `InCookie` |
+| `name` | string | Name of the cookie containing the JWT |
 
 ## Token validation
 
-This section is used to verify the extracted token from specified location.
+The validation step defines the algorithm used to verify the token signature.
 
-* `Algo.`: What kind of algorithm you want to use to verify/sign your JWT token with
+### HMAC + SHA
 
-According to the selected algorithm, the validation form will change.
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `HSAlgoSettings` |
+| `size` | number | SHA size: `256`, `384`, or `512` |
+| `secret` | string | HMAC secret key |
+| `base64` | boolean | Whether the secret is base64-encoded |
 
-#### Hmac + SHA
-* `SHA Size`: Word size for the SHA-2 hash function used
-* `Hmac secret`: used to verify the token
-* `Base64 encoded secret`: if enabled, the extracted token will be base64 decoded before it is verifier
+### RSA + SHA
 
-#### RSASSA-PKCS1 + SHA
-* `SHA Size`: Word size for the SHA-2 hash function used
-* `Public key`: the RSA public key
-* `Private key`: the RSA private key that can be empty if not used for JWT token signing
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `RSAlgoSettings` |
+| `size` | number | SHA size: `256`, `384`, or `512` |
+| `publicKey` | string | RSA public key (PEM) |
+| `privateKey` | string | RSA private key (PEM, optional - only needed for signing) |
 
-#### ECDSA + SHA
-* `SHA Size`: Word size for the SHA-2 hash function used
-* `Public key`: the ECDSA public key
-* `Private key`: the ECDSA private key that can be empty if not used for JWT token signing
+### ECDSA + SHA
 
-#### RSASSA-PKCS1 + SHA from KeyPair
-* `SHA Size`: Word size for the SHA-2 hash function used
-* `KeyPair`: used to sign/verify token. The displayed list represents the key pair registered in the Certificates page
-  
-#### ECDSA + SHA from KeyPair
-* `SHA Size`: Word size for the SHA-2 hash function used
-* `KeyPair`: used to sign/verify token. The displayed list represents the key pair registered in the Certificates page
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `ESAlgoSettings` |
+| `size` | number | SHA size: `256`, `384`, or `512` |
+| `publicKey` | string | ECDSA public key (PEM) |
+| `privateKey` | string | ECDSA private key (PEM, optional) |
 
-#### Otoroshi KeyPair from token kid (only for verification)
-* `Use only exposed keypairs`: if enabled, Otoroshi will only use the key pairs that are exposed on the well-known. If disabled, it will search on any registered key pairs.
+### RSA from KeyPair
 
-#### JWK Set (only for verification)
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `RSAKPAlgoSettings` |
+| `size` | number | SHA size |
+| `certId` | string | ID of the key pair certificate registered in Otoroshi |
 
-* `URL`: the JWK set URL where the public keys are exposed
-* `HTTP call timeout`: timeout for fetching the keyset
-* `TTL`: cache TTL for the keyset
-* `HTTP Headers`: the HTTP headers passed
-* `Key type`: type of the key searched in the jwks
+### ECDSA from KeyPair
 
-*TLS settings for JWKS fetching*
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `ESKPAlgoSettings` |
+| `size` | number | SHA size |
+| `certId` | string | ID of the key pair certificate registered in Otoroshi |
 
-* `Custom TLS Settings`: TLS settings for JWKS fetching
-* `TLS loose`: if enabled, will block all untrustful ssl configs
-* `Trust all`: allows any server certificates even the self-signed ones
-* `Client certificates`: list of client certificates used to communicate with JWKS server
-* `Trusted certificates`: list of trusted certificates received from JWKS server
+### Otoroshi KeyPair from token kid (verification only)
 
-*Proxy*
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `KidAlgoSettings` |
+| `onlyExposedCerts` | boolean | Only use key pairs exposed on `/.well-known/jwks.json`. If disabled, searches all registered key pairs |
 
-* `Proxy host`: host of proxy behind the identify provider
-* `Proxy port`: port of proxy behind the identify provider
-* `Proxy principal`: user of proxy 
-* `Proxy password`: password of proxy
+### JWK Set (verification only)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `JWKSAlgoSettings` |
+| `url` | string | JWKS endpoint URL |
+| `timeout` | number | HTTP call timeout (ms) |
+| `ttl` | number | Cache TTL for the keyset (ms) |
+| `headers` | object | HTTP headers for the JWKS request |
+| `kty` | string | Key type to search for in the JWKS |
+| `mtlsConfig` | object | Custom TLS settings for JWKS fetching |
+| `proxy` | object | Proxy settings (host, port, principal, password) |
 
 ## Strategy
 
-The first step is to select the verifier strategy. Otoroshi supports 4 types of JWT verifiers:
+The strategy defines what happens to the token after validation. Otoroshi supports 4 strategies:
 
-* `Default JWT token` will add a token if no present. 
-* `Verify JWT token` will only verifiy token signing and fields values if provided. 
-* `Verify and re-sign JWT token` will verify the token and will re-sign the JWT token with the provided algo. settings. 
-* `Verify, re-sign and transform JWT token` will verify the token, re-sign and will be able to transform the token.
+### Default JWT token
 
-All verifiers has the following properties: 
+Adds a default token if none is present in the request.
 
-* `Verify token fields`: when the JWT token is checked, each field specified here will be verified with the provided value
-* `Verify token array value`: when the JWT token is checked, each field specified here will be verified if the provided value is contained in the array
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `DefaultToken` |
+| `strict` | boolean | If `true` and a token is already present, the call will fail |
+| `defaultValue` | object | Claims for the generated token. Supports @ref[expression language](../topics/expression-language.md) |
 
+### Pass-through (verify only)
 
-#### Default JWT token
+Verifies the token signature and claim values but does not modify it.
 
-* `Strict`: if token is already present, the call will fail
-* `Default value`: list of claims of the generated token. These fields support raw values or language expressions. See the documentation about @ref:[the expression language](../topics/expression-language.md)
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `PassThrough` |
+| `verificationSettings.fields` | object | Token fields to verify (key-value pairs) |
+| `verificationSettings.arrayFields` | object | Array fields to verify (check if value is contained in array) |
 
-#### Verify JWT token
+The `verificationSettings.fields` values support the following validation expressions:
 
-No specific values needed. This kind of verifier needs only the two fields `Verify token fields` and `Verify token array value`.
+* `Regex(pattern)` - Match against a regex
+* `Wildcard(pattern)` - Match with wildcards
+* `WildcardNot(pattern)` - Must not match wildcards
+* `Contains(value)` - Must contain value
+* `ContainsNot(value)` - Must not contain value
+* `Not(value)` - Must not equal value
+* `ContainedIn(a, b, c)` - Must be one of the listed values
+* `NotContainedIn(a, b, c)` - Must not be one of the listed values
+* `ContainsOneOf(a, b)` - Array must contain at least one of the values
+* `ContainsNotOneOf(a, b)` - Array must not contain any of the values
+* `ContainsAll(a, b)` - Array must contain all of the values
+* `ContainsNotAll(a, b)` - Array must not contain all of the values
 
-#### Verify and re-sign JWT token
+These fields also support the @ref[expression language](../topics/expression-language.md).
 
-When `Verify and re-sign JWT token` is chosen, the `Re-sign settings` appear. All fields of `Re-sign settings` are the same of the `Token validation` section. The only difference is that the values are used to sign the new token and not to validate the token.
+### Verify and re-sign
 
+Verifies the token and re-signs it with a different algorithm/key.
 
-#### Verify, re-sign and transform JWT token
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `Sign` |
+| `verificationSettings` | object | Same as pass-through verification |
+| `algoSettings` | object | Algorithm settings for re-signing (same format as token validation) |
 
-When `Verify, re-sign and transform JWT token` is chosen, the `Re-sign settings` and `Transformation settings` appear.
+### Verify, re-sign and transform
 
-The `Re-sign settings` are used to sign the new token and has the same fields than the `Token validation` section.
+Verifies the token, re-signs it, and transforms its content.
 
-For the `Transformation settings` section, the fields are:
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | `Transform` |
+| `verificationSettings` | object | Same as pass-through verification |
+| `algoSettings` | object | Algorithm settings for re-signing |
+| `transformSettings.location` | object | Where to place the transformed token |
+| `transformSettings.mappingSettings.map` | object | Rename token fields (old name -> new name) |
+| `transformSettings.mappingSettings.values` | object | Add new fields with static or dynamic values |
+| `transformSettings.mappingSettings.remove` | array of string | Fields to remove from the token |
 
-* `Token location`: the location where to find/set the JWT token
-* `Header name`: the name of the header where JWT is located
-* `Prepend value`: remove a value inside the header value
-* `Rename token fields`: when the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name
-* `Set token fields`: when the JWT token is transformed, it is possible to add new field with static values, just specify field name and value
-* `Remove token fields`: when the JWT token is transformed, it is possible to remove fields
+## JSON example
+
+```json
+{
+  "id": "jwt_verifier_auth0",
+  "name": "Auth0 JWT verifier",
+  "description": "Verify tokens issued by Auth0",
+  "strict": true,
+  "tags": ["auth"],
+  "metadata": {},
+  "source": {
+    "type": "InHeader",
+    "name": "Authorization",
+    "remove": "Bearer "
+  },
+  "algoSettings": {
+    "type": "JWKSAlgoSettings",
+    "url": "https://my-tenant.auth0.com/.well-known/jwks.json",
+    "timeout": 5000,
+    "ttl": 3600000,
+    "headers": {},
+    "kty": "RSA"
+  },
+  "strategy": {
+    "type": "PassThrough",
+    "verificationSettings": {
+      "fields": {
+        "iss": "https://my-tenant.auth0.com/"
+      },
+      "arrayFields": {}
+    }
+  }
+}
+```
+
+## Admin API
+
+```
+GET    /api/verifiers           # List all JWT verifiers
+POST   /api/verifiers           # Create a JWT verifier
+GET    /api/verifiers/:id       # Get a JWT verifier
+PUT    /api/verifiers/:id       # Update a JWT verifier
+DELETE /api/verifiers/:id       # Delete a JWT verifier
+PATCH  /api/verifiers/:id       # Partially update a JWT verifier
+```
+
+## Related entities
+
+* @ref:[Routes](./routes.md) - Routes can use JWT verifiers via the JwtVerification plugin
+* @ref:[Certificates](./certificates.md) - Key pairs used for token signing/verification
+* @ref:[Auth Modules](./auth-modules.md) - OAuth2/OIDC modules use JWT verifiers for token validation

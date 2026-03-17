@@ -25,6 +25,22 @@ jobs:
       with:
         node-version: '18'
     #test oto
+    - name: install playwright dependencies
+      run: |
+        sudo apt-get install libwoff1 \
+          libvpx9 \
+          libevent-2.1-7t64 \
+          libopus0 \
+          libgstreamer-plugins-base1.0-0 \
+          libgstreamer-gl1.0-0 \
+          libgstreamer-plugins-bad1.0-0 \
+          libharfbuzz-icu0 \
+          libsecret-1-0 \
+          libhyphen0 \
+          libmanette-0.2-0 \
+          libflite1 \
+          libgles2 \
+          gstreamer1.0-libav
     - uses: coursier/cache-action@v6
     - name: run-tests
       id: run-tests

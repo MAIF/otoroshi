@@ -1,11 +1,11 @@
 package otoroshi.events
 
-import com.sksamuel.pulsar4s.Producer
+import org.apache.pulsar.client.api.Producer as ApacheProducer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
 import io.netty.channel.unix.DomainSocketAddress
 import io.opentelemetry.api.logs.Severity
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
 import jakarta.jms.{Destination, JMSContext, JMSProducer}
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import org.apache.pekko.Done
@@ -13,14 +13,7 @@ import org.apache.pekko.actor.{Actor, Props}
 import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.joda.time.DateTime
@@ -29,11 +22,11 @@ import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.events.pulsar.{PulsarConfig, PulsarSetting}
 import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.storage.drivers.inmemory.S3Configuration
@@ -41,9 +34,9 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import reactor.core.publisher.Mono
 import reactor.netty.{Connection, ConnectionObserver}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
@@ -59,9 +52,9 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.Consumer
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {
@@ -1064,6 +1057,32 @@ object Exporters {
     }
   }
 
+  class DatadogCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[DatadogCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
+  class NewRelicCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[NewRelicCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
@@ -1111,7 +1130,7 @@ object Exporters {
   class PulsarExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(using ec, env) {
 
-    val clientRef = new AtomicReference[Producer[JsValue]]()
+    val clientRef = new AtomicReference[ApacheProducer[JsValue]]()
 
     override def start(): Future[Unit] = {
       exporter[PulsarConfig].foreach { eec =>
@@ -1121,7 +1140,12 @@ object Exporters {
     }
 
     override def stop(): Future[Unit] = {
-      Option(clientRef.get()).map(_.closeAsync).getOrElse(FastFuture.successful(()))
+      Option(clientRef.get()).map { p =>
+        Future {
+          p.closeAsync().get()
+          ()
+        }(using ec)
+      }.getOrElse(FastFuture.successful(()))
     }
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
@@ -1131,7 +1155,10 @@ object Exporters {
           start()
         }
         Source(events.toList)
-          .mapAsync(10)(evt => cli.sendAsync(evt))
+          .mapAsync(10)(evt => Future {
+            cli.sendAsync(evt).get()
+            ()
+          }(using ec))
           .runWith(Sink.ignore)(using env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
@@ -2106,6 +2133,121 @@ object Exporters {
           .getOrElse(
             JsonOperationsHelper.getValueAtPath(label._1.replace("$at", "@"), event)._2.asOpt[String].getOrElse("")
           ))
+      }
+    }
+  }
+
+  class PostgresExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
+
+    import otoroshi.storage.drivers.reactivepg.pgimplicits._
+    import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+    import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
+    import io.vertx.core.json.JsonObject
+    import scala.jdk.CollectionConverters.given
+
+    private val poolRef = new AtomicReference[PgPool](null)
+
+    private def buildConnectOptions(settings: PostgresExporterSettings): PgConnectOptions = {
+      settings.uri match {
+        case Some(uri) => PgConnectOptions.fromUri(uri)
+        case None      =>
+          new PgConnectOptions()
+            .setHost(settings.host)
+            .setPort(settings.port)
+            .setDatabase(settings.database)
+            .setUser(settings.user)
+            .setPassword(settings.password)
+            .applyOnIf(settings.ssl)(_.setSslMode(SslMode.REQUIRE))
+      }
+    }
+
+    private def initTable(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+      pool
+        .query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};")
+        .executeAsync()
+        .flatMap { _ =>
+          pool
+            .query(s"""
+              |CREATE TABLE IF NOT EXISTS ${settings.schema}.${settings.table} (
+              |  id         TEXT        NOT NULL,
+              |  timestamp  TIMESTAMPTZ NOT NULL,
+              |  service    TEXT        NOT NULL DEFAULT '',
+              |  service_id TEXT        NOT NULL DEFAULT '',
+              |  env        TEXT        NOT NULL DEFAULT '',
+              |  event      JSONB       NOT NULL DEFAULT '{}'::jsonb,
+              |  PRIMARY KEY (id)
+              |);
+            """.stripMargin)
+            .executeAsync()
+        }
+        .map(_ => ())
+    }
+
+    override def start(): Future[Unit] = {
+      exporter[PostgresExporterSettings].map { settings =>
+        val pool = PgPool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
+        poolRef.set(pool)
+        initTable(pool, settings).recover {
+          case e: Throwable =>
+            logger.error(
+              s"[postgres-exporter] Error while initializing table '${settings.schema}.${settings.table}'",
+              e
+            )
+        }
+      }.getOrElse(FastFuture.successful(()))
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(poolRef.getAndSet(null)).foreach(_.close())
+      FastFuture.successful(())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      Option(poolRef.get()) match {
+        case None       => FastFuture.successful(ExportResult.ExportResultFailure("PostgreSQL pool not initialized"))
+        case Some(pool) =>
+          exporter[PostgresExporterSettings] match {
+            case None           => FastFuture.successful(ExportResult.ExportResultFailure("Bad config type!"))
+            case Some(settings) =>
+              val tuples: java.util.List[VertxTuple] = events.map { event =>
+                val id        = event.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
+                val timestamp = event
+                  .select("@timestamp")
+                  .asOpt[Long]
+                  .map(ts => java.time.Instant.ofEpochMilli(ts).atOffset(java.time.ZoneOffset.UTC))
+                  .orElse(
+                    event
+                      .select("@timestamp")
+                      .asOpt[String]
+                      .flatMap(s => scala.util.Try(java.time.OffsetDateTime.parse(s)).toOption)
+                  )
+                  .getOrElse(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC))
+                val service   = event.select("@service").asOpt[String].getOrElse("")
+                val serviceId = event.select("@serviceId").asOpt[String].getOrElse("")
+                val envStr    = event.select("@env").asOpt[String].getOrElse("")
+                VertxTuple.from(
+                  Array[AnyRef](id, timestamp, service, serviceId, envStr, new JsonObject(Json.stringify(event)))
+                )
+              }.asJava
+              pool
+                .preparedQuery(
+                  s"""INSERT INTO ${settings.schema}.${settings.table} (id, timestamp, service, service_id, env, event)
+                     |VALUES ($$1, $$2, $$3, $$4, $$5, $$6::jsonb)
+                     |ON CONFLICT (id) DO NOTHING;""".stripMargin
+                )
+                .executeBatch(tuples)
+                .scala
+                .map(_ => ExportResult.ExportResultSuccess: ExportResult)
+                .recover {
+                  case e: Throwable =>
+                    logger.error(
+                      s"[postgres-exporter] Error while inserting events into '${settings.schema}.${settings.table}'",
+                      e
+                    )
+                    ExportResult.ExportResultFailure(e.getMessage)
+                }
+          }
       }
     }
   }

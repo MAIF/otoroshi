@@ -3,14 +3,14 @@ package otoroshi.next.plugins
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgUserAgentExtractorConfig(
     log: Boolean = false
@@ -53,14 +53,15 @@ class NgUserAgentExtractor extends NgPreRouting {
     ctx.request.headers.get("User-Agent") match {
       case None     => Done.rightf
       case Some(ua) =>
-        otoroshi.plugins.useragent.UserAgentHelper.userAgentDetails(ua) match {
-          case None       => Done.rightf
-          case Some(info) =>
+        otoroshi.plugins.useragent.UserAgentHelper.userAgentDetails(ua).map {
+          case None       => Done.right
+          case Some(info) => {
             val config =
               ctx.cachedConfig(internalName)(NgUserAgentExtractorConfig.format).getOrElse(NgUserAgentExtractorConfig())
             if (config.log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(otoroshi.plugins.Keys.UserAgentInfoKey -> info)
-            Done.rightf
+            Done.right
+          }
         }
     }
   }

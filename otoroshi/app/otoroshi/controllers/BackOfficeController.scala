@@ -1,55 +1,55 @@
 package otoroshi.controllers
 
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth, BackOfficeActionContextAuth}
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
 import otoroshi.jobs.AnonymousReportingJobConfig
 import otoroshi.jobs.newengine.NewEngine
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
+import otoroshi.models.*
 import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models._
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgRouteComposition, NgTarget}
 import otoroshi.next.plugins.EurekaServerSink
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.proxy.{BackOfficeRequest, ProxyEngine}
 import otoroshi.script.RequestHandler
-import otoroshi.security._
-import otoroshi.ssl._
+import otoroshi.security.*
+import otoroshi.ssl.*
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.infotoken.InfoTokenHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{SourceBody, WSBodyWritables}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -151,7 +151,7 @@ class BackOfficeController(
     env: Env
 ) extends AbstractController(cc) {
 
-  import WSBodyWritables._
+  import WSBodyWritables.*
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val lat: Materializer    = env.otoroshiMaterializer
@@ -522,9 +522,9 @@ class BackOfficeController(
       env.datastores.globalConfigDataStore.singleton().map { config =>
         val thridPartyLoginEnabled = config.backOfficeAuthRef.nonEmpty
         ctx.user match {
-          case Some(user)                     => Redirect("/bo/dashboard")
-          case None if config.u2fLoginOnly    => Redirect(routes.U2FController.loginPage())
-          case None if thridPartyLoginEnabled =>
+          case Some(user)                      => Redirect(env.backOfficePath)
+          case None if config.u2fLoginOnly     => Redirect(routes.U2FController.loginPage())
+          case None if thridPartyLoginEnabled  =>
             Ok(otoroshi.views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
           case None                           => Redirect(routes.U2FController.loginPage())
         }
@@ -591,7 +591,7 @@ class BackOfficeController(
 
   def documentationFrameDescriptor(lineId: String, serviceId: String): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case Some(descriptor) if !ctx.canUserRead(descriptor)            => ApiActionContext.fforbidden
         case Some(service) if service.api.openApiDescriptorUrl.isDefined =>
@@ -888,7 +888,7 @@ class BackOfficeController(
   def getAllLoggers(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
-        import scala.jdk.CollectionConverters._
+        import scala.jdk.CollectionConverters.given
 
         val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
         val paginationPageSize: Int =
@@ -973,15 +973,20 @@ class BackOfficeController(
 
   def fetchOpenIdConfiguration(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
-      import otoroshi.utils.http.Implicits._
+      import otoroshi.utils.http.Implicits.given
 
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
+      val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
+      val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
+      val desc         = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
+      val clientId     = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
+      val clientSecret = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
 
-      val id                  = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
-      val name                = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
-      val desc                = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
-      val clientId            = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
-      val clientSecret        = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
+      val trust_all     = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
+      val loose         = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
+      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
+
       val sessionCookieValues =
         (ctx.request.body \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues())
       (ctx.request.body \ "url").asOpt[String] match {
@@ -1004,9 +1009,16 @@ class BackOfficeController(
             )
           )
         case Some(url) =>
-          env.Ws
-            .url(url) // no need for mtls here
-            .withRequestTimeout(10.seconds)
+          val tlsConfig = MtlsConfig(
+            certs = client_certs,
+            trustedCerts = trusted_certs,
+            mtls = (client_certs.nonEmpty || trusted_certs.nonEmpty || loose || trust_all),
+            loose = loose,
+            trustAll = trust_all
+          )
+          env.MtlsWs
+            .url(url, tlsConfig)
+            .withRequestTimeout(30.seconds)
             .get()
             .map { resp =>
               if (resp.status == 200) {
@@ -1118,7 +1130,7 @@ class BackOfficeController(
 
   def fetchSAMLConfiguration(): Action[JsValue] = BackOfficeActionAuth.async(parse.json) { ctx =>
     import scala.xml.Elem
-    import scala.xml.XML._
+    import scala.xml.XML.*
     Try {
       val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
         case Some(url) => Right(load(url))
@@ -1465,7 +1477,7 @@ class BackOfficeController(
       }
     }
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.given
 
   def caCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
@@ -1758,20 +1770,30 @@ class BackOfficeController(
         rservices          <- env.proxyState.allServices().vfuture
         rroutes            <- env.proxyState.allRoutes().vfuture
         rrouteCompositions <- env.proxyState.allNgServices().vfuture
+        rapis              <- env.proxyState.allApis().vfuture
       } yield {
         val groups            = rgroups
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+          .map(g => Json.obj("label" -> s"Group - ${g.name}", "value" -> s"group_${g.id}", "kind" -> "group"))
         val services          = rservices
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"service_${g.id}", "kind" -> "service"))
+          .map(g => Json.obj("label" -> s"Service - ${g.name}", "value" -> s"service_${g.id}", "kind" -> "service"))
         val routes            = rroutes
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"route_${g.id}", "kind" -> "route"))
+          .map(g => Json.obj("label" -> s"Route - ${g.name}", "value" -> s"route_${g.id}", "kind" -> "route"))
+        val apis              = rapis
+          .filter(ctx.canUserRead)
+          .map(g => Json.obj("label" -> s"Api - ${g.name}", "value" -> s"api_${g.id}", "kind" -> "api"))
         val routeCompositions = rrouteCompositions
           .filter(ctx.canUserRead)
-          .map(g => Json.obj("label" -> g.name, "value" -> s"route-composition_${g.id}", "kind" -> "route-composition"))
-        Ok(JsArray(groups ++ services ++ routes ++ routeCompositions))
+          .map(g =>
+            Json.obj(
+              "label" -> s"Route composition - ${g.name}",
+              "value" -> s"route-composition_${g.id}",
+              "kind"  -> "route-composition"
+            )
+          )
+        Ok(JsArray(groups ++ services ++ routes ++ apis ++ routeCompositions))
       }
     }
 
@@ -2176,6 +2198,9 @@ class BackOfficeController(
           uri = rawRequest.relativeUri
         ),
         backendDuration = 20L,
+        requestStreamingDuration = 10L,
+        responseStreamingDuration = 20L,
+        backendResponseStreamingDuration = 20L,
         duration = 30L,
         overhead = 10L,
         cbDuration = 0L,

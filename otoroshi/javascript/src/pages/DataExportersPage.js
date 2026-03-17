@@ -24,6 +24,7 @@ import {
   NgStringRenderer,
 } from '../components/nginputs';
 import { Location } from '../components/Location';
+import InfoCollapse from '../components/InfoCollapse';
 
 function tryOrTrue(f) {
   try {
@@ -117,10 +118,20 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
-                    }`}
-                  optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
-                  onChange={props.onChange}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
+                  optionsTransformer={(arr) => {
+                    return arr.map((item) => {
+                      if (item.label) {
+                        return item;
+                      }
+                      return { value: item, label: item };
+                    });
+                  }}
+                  onChange={(v) => {
+                    props.onChange(v.value);
+                  }}
                 />
               </LabelAndInput>
             );
@@ -271,8 +282,8 @@ export const MAILERS_FORM = {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  }
-}
+  },
+};
 
 class Mailer extends Component {
   render() {
@@ -431,6 +442,42 @@ export class DataExportersPage extends Component {
           style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
           <i className="fas fa-hat-wizard" /> Create with wizard
         </button> */}
+        <InfoCollapse title="What is a Data Exporter?">
+          <p>
+            A Data Exporter lets you <strong>monitor and export all events</strong> happening inside
+            Otoroshi in real time. Every HTTP call, every authentication, every error, every admin
+            action — everything that passes through the gateway generates events that can be
+            streamed to your observability stack.
+          </p>
+          <p>Otoroshi supports a wide range of export targets out of the box:</p>
+          <ul>
+            <li>
+              <strong>Elasticsearch</strong> — index events for search, dashboards, and alerting
+              with Kibana.
+            </li>
+            <li>
+              <strong>Kafka</strong> — stream events to topics for real-time processing pipelines.
+            </li>
+            <li>
+              <strong>Webhooks</strong> — push events to any HTTP endpoint of your choice.
+            </li>
+            <li>
+              <strong>File</strong> — write events to local files for simple logging or debugging.
+            </li>
+            <li>
+              <strong>Pulsar, custom</strong> — connect to additional backends depending on your
+              infrastructure.
+            </li>
+          </ul>
+          <p>
+            Each exporter can be configured with <strong>filters</strong> to select which event
+            types to export,
+            <strong>projections</strong> to reshape the data before sending, and{' '}
+            <strong>buffering</strong> options to control throughput and batch size. You can run
+            multiple exporters in parallel, each targeting a different system with different
+            filters.
+          </p>
+        </InfoCollapse>
         <Table
           parentProps={this.props}
           selfUrl="exporters"
@@ -929,6 +976,7 @@ const possibleExporterConfigFormValues = {
       'checkConnection',
       '>>>Index settings',
       'indexSettings.clientSide',
+      'indexSettings.action',
       'indexSettings.interval',
       'indexSettings.numberOfShards',
       'indexSettings.numberOfReplicas',
@@ -1006,6 +1054,10 @@ const possibleExporterConfigFormValues = {
       'indexSettings.clientSide': {
         type: 'bool',
         props: { label: 'Client side temporal indexes handling' },
+      },
+      'indexSettings.action': {
+        type: 'string',
+        props: { label: 'Bulk action' },
       },
       'indexSettings.interval': {
         type: 'select',
@@ -1264,6 +1316,108 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  datadog: {
+    flow: [
+      'url',
+      'headers',
+      'timeout',
+      'token',
+      'hostname',
+      'service',
+      'ddsource',
+      'ddtags',
+      'tls_config',
+    ],
+    schema: {
+      url: {
+        type: 'string',
+        props: {
+          label: 'URL',
+          placeholder: 'example: https://http-intake.logs.datadoghq.eu/api/v2/logs',
+        },
+      },
+      token: {
+        type: 'string',
+        props: { label: 'DD Apikey', placeholder: 'The datadog apikey' },
+      },
+      ddsource: {
+        type: 'string',
+        props: { label: 'Source', placeholder: 'example: otoroshi' },
+      },
+      ddtags: {
+        type: 'string',
+        props: { label: 'Tags', placeholder: 'example: otoroshi:prod, foo:bar' },
+      },
+      hostname: {
+        type: 'string',
+        props: { label: 'Hostname', placeholder: 'example: otoroshi' },
+      },
+      service: {
+        type: 'string',
+        props: { label: 'Service', placeholder: 'example: otoroshi' },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
+      },
+    },
+  },
+  newrelic: {
+    flow: ['url', 'headers', 'timeout', 'token', 'hostname', 'service', 'logtype', 'tls_config'],
+    schema: {
+      url: {
+        type: 'string',
+        props: {
+          label: 'URL',
+          placeholder: 'example: https://log-api.eu.newrelic.com/log/v1',
+        },
+      },
+      token: {
+        type: 'string',
+        props: { label: 'New Relic Apikey', placeholder: 'The new relic apikey' },
+      },
+      logtype: {
+        type: 'string',
+        props: { label: 'Log type', placeholder: 'example: accesslogs' },
+      },
+      hostname: {
+        type: 'string',
+        props: { label: 'Hostname', placeholder: 'example: otoroshi' },
+      },
+      service: {
+        type: 'string',
+        props: { label: 'Service', placeholder: 'example: otoroshi' },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
+      },
+    },
+  },
   workflow: {
     flow: ['ref'],
     schema: {
@@ -1415,6 +1569,7 @@ const possibleExporterConfigFormValues = {
       'saslConfig.username',
       'saslConfig.password',
       'saslConfig.mechanism',
+      'saslConfig.jaasConfig',
       'mtlsConfig.mtls',
       'keyPass',
       'keystore',
@@ -1424,6 +1579,7 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
       'hostValidation',
+      'properties',
     ],
     schema: {
       servers: {
@@ -1461,6 +1617,14 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
           help: 'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+        },
+      },
+      'saslConfig.jaasConfig': {
+        type: 'string',
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes('SASL')),
+        props: {
+          label: 'SASL JAAS Config',
+          help: 'The JAAS config. property',
         },
       },
       'saslConfig.username': {
@@ -1561,6 +1725,13 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka topic',
           placeholder: 'otoroshi-alerts',
           help: 'The topic on which Otoroshi alerts will be sent',
+        },
+      },
+      properties: {
+        type: 'object',
+        props: {
+          label: 'Properties',
+          help: 'Additional properties for the Kafka client',
         },
       },
     },
@@ -2409,6 +2580,55 @@ const possibleExporterConfigFormValues = {
       topic: {
         type: 'bool',
         props: { label: 'Destination is a topic' },
+      },
+    },
+  },
+  postgresql: {
+    label: 'PostgreSQL',
+    flow: ['uri', 'host', 'port', 'database', 'user', 'password', 'schema', 'table', 'pool_size', 'ssl'],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Connection URI',
+          placeholder: 'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+        },
+      },
+      host: {
+        type: 'string',
+        props: { label: 'Host', placeholder: 'localhost' },
+      },
+      port: {
+        type: 'number',
+        props: { label: 'Port' },
+      },
+      database: {
+        type: 'string',
+        props: { label: 'Database' },
+      },
+      user: {
+        type: 'string',
+        props: { label: 'User' },
+      },
+      password: {
+        type: 'password',
+        props: { label: 'Password' },
+      },
+      schema: {
+        type: 'string',
+        props: { label: 'Schema', placeholder: 'otoroshi' },
+      },
+      table: {
+        type: 'string',
+        props: { label: 'Table', placeholder: 'otoroshi_events' },
+      },
+      pool_size: {
+        type: 'number',
+        props: { label: 'Pool size' },
+      },
+      ssl: {
+        type: 'bool',
+        props: { label: 'SSL (REQUIRE mode)' },
       },
     },
   },

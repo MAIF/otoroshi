@@ -2,11 +2,11 @@ package otoroshi.utils
 
 import org.apache.pekko.http.scaladsl.model.DateTime
 import otoroshi.gateway.GwError
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgBackend, NgRoute, NgTarget}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.json._
-import play.api.libs.json._
+import otoroshi.utils.json.*
+import play.api.libs.json.*
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}

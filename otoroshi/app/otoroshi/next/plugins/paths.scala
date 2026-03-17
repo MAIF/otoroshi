@@ -2,10 +2,10 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,7 +50,12 @@ class PublicPrivatePaths extends NgAccessValidator {
   override def multiInstance: Boolean                      = true
   override def core: Boolean                               = true
   override def name: String                                = "Public/Private paths"
-  override def description: Option[String]                 = "This plugin allows or forbid request based on path patterns".some
+  override def description: Option[String]                 =
+    """This plugin allows or forbid request based on path patterns
+        |
+        | Strict mode = restricted access.
+        | Only an API key is accepted.
+      """.stripMargin.some
   override def defaultConfigObject: Option[NgPluginConfig] = NgPublicPrivatePathsConfig().some
   override def isAccessAsync: Boolean                      = true
 
@@ -58,10 +63,12 @@ class PublicPrivatePaths extends NgAccessValidator {
     val uri                                                                 = ctx.request.thePath
     val NgPublicPrivatePathsConfig(strict, publicPatterns, privatePatterns) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgPublicPrivatePathsConfig())
-    val isPublic                                                            =
+
+    val isPublic =
       !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(p =>
         otoroshi.utils.RegexPool.regex(p).matches(uri)
       )
+
     if (isPublic) {
       NgAccess.NgAllowed.vfuture
     } else if (!isPublic && !strict && (ctx.apikey.isDefined || ctx.user.isDefined)) {

@@ -4,6 +4,7 @@ import { Table } from '../../components/inputs';
 import { nextClient } from '../../services/BackOfficeServices';
 import { firstLetterUppercase } from '../../util';
 import Loader from '../../components/Loader';
+import InfoCollapse from '../../components/InfoCollapse';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -27,6 +28,7 @@ export function RoutesTable(props) {
   const params = useParams();
   const history = useHistory();
 
+  const [groups, setGroups] = useState([]);
   const [queryFilters, setQueryFilters] = useState(undefined);
 
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,6 @@ export function RoutesTable(props) {
     title: 'Tags',
     content: (item) => (item.tags || []).join(','),
     notSortable: true,
-    notFilterable: true,
   };
 
   const metadataColumn = {
@@ -160,13 +161,15 @@ export function RoutesTable(props) {
         .map(([key, value]) => `${key}:${value}`)
         .join(' - '),
     notSortable: true,
-    notFilterable: true,
   };
 
   const groupsColumn = {
     title: 'Groups',
     filterId: 'groups',
-    content: (item) => (Array.isArray(item.groups) ? item.groups : []).join(','),
+    content: (item) =>
+      (Array.isArray(item.groups) ? item.groups : [])
+        .map((group_id) => groups.find((g) => g.id === group_id)?.name || group_id)
+        .join(','),
   };
 
   const pluginsColumn = {
@@ -254,8 +257,25 @@ export function RoutesTable(props) {
     }
   };
 
-  const fetchItems = (paginationState) =>
-    nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
+  const fetchItems = (paginationState) => {
+    if (paginationState.filtered && paginationState.filtered.length > 0) {
+      paginationState.filtered = paginationState.filtered.map((filter) => {
+        if (filter.id === 'groups') {
+          const value = filter.value;
+          const fgroup = groups.filter(
+            (g) => g.name.toLowerCase().indexOf(value.toLowerCase()) > -1
+          );
+          if (fgroup && fgroup.length > 0) {
+            return { id: 'groups', value: fgroup.map((g) => g.id).join('|') };
+          } else {
+            return filter;
+          }
+        } else {
+          return filter;
+        }
+      });
+    }
+    return nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findAllWithPagination({
       ...paginationState,
       fields: [
         'backend.targets',
@@ -267,6 +287,7 @@ export function RoutesTable(props) {
         ...Object.keys(fields).map((field) => (fields[field] ? field : undefined)),
       ].filter((c) => c),
     });
+  };
 
   const fetchTemplate = () => nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).template();
 
@@ -284,6 +305,7 @@ export function RoutesTable(props) {
   useEffect(() => {
     loadSearchParamsFromQuery();
     loadFields();
+    loadGroups();
   }, []);
 
   const loadSearchParamsFromQuery = () => {
@@ -311,6 +333,15 @@ export function RoutesTable(props) {
     }
   };
 
+  const loadGroups = () => {
+    nextClient
+      .forEntityNext(nextClient.ENTITIES.GROUPS)
+      .findAll()
+      .then((groups) => {
+        setGroups(groups);
+      });
+  };
+
   const saveFields = (fields) => {
     try {
       const values = JSON.parse(localStorage.getItem(FIELDS_SELECTOR) || '{}');
@@ -327,11 +358,51 @@ export function RoutesTable(props) {
     }
   };
 
-  console.log(queryFilters);
-
   return (
     <Loader loading={loading}>
       <div className="designer">
+        <InfoCollapse title="What is an HTTP Route?">
+          <p>
+            An HTTP Route is one of the <strong>core entities</strong> of Otoroshi's HTTP Gateway.
+            It acts as a smart reverse proxy rule that sits between your clients and your backend
+            services, giving you full control over every HTTP exchange passing through.
+          </p>
+          <p>
+            As long as it speaks HTTP, you can do anything with it — Otoroshi handles the rest. Here
+            are some examples of what you can achieve with routes:
+          </p>
+          <ul>
+            <li>
+              <strong>Expose a web application</strong> — put your frontend app behind Otoroshi and
+              serve it on a custom domain with TLS termination.
+            </li>
+            <li>
+              <strong>Publish and secure REST APIs</strong> — protect your backend APIs with API
+              keys, OAuth2/JWT authentication, rate limiting, and quotas.
+            </li>
+            <li>
+              <strong>Add security layers</strong> — enforce CORS policies, IP filtering, mTLS, HMAC
+              signature verification, or any custom security policy through plugins.
+            </li>
+            <li>
+              <strong>Transform requests and responses</strong> — rewrite headers, modify payloads,
+              change paths, or adapt protocols on the fly.
+            </li>
+            <li>
+              <strong>Monitor and audit traffic</strong> — every call passing through a route can be
+              logged, audited, and exported to your analytics stack.
+            </li>
+            <li>
+              <strong>Implement traffic management</strong> — canary deployments, A/B testing,
+              blue/green routing, circuit breaking, and load balancing across multiple targets.
+            </li>
+          </ul>
+          <p>
+            Each route is fully configurable at runtime — no restart needed. You define{' '}
+            <strong>how</strong> traffic comes in (frontend), <strong>where</strong> it goes
+            (backend), and <strong>what happens</strong> along the way (plugins).
+          </p>
+        </InfoCollapse>
         <Table
           ref={ref}
           defaultFiltered={queryFilters}
@@ -369,7 +440,7 @@ export function RoutesTable(props) {
             setFields(newFields);
           }}
           deleteItem={(item) => deleteItem(item)}
-          defaultSort="metadata.updated_at"
+          defaultSort="name"
           defaultSortDesc="true"
           fetchItems={fetchItems}
           fetchTemplate={fetchTemplate}

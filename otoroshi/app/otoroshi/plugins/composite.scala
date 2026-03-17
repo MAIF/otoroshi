@@ -5,24 +5,10 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{
-  AccessContext,
-  AccessValidator,
-  HttpRequest,
-  HttpResponse,
-  PluginType,
-  PreRouting,
-  PreRoutingContext,
-  RequestTransformer,
-  TransformerErrorContext,
-  TransformerRequestBodyContext,
-  TransformerRequestContext,
-  TransformerResponseBodyContext,
-  TransformerResponseContext
-}
-import play.api.mvc.Result
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
+import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
 

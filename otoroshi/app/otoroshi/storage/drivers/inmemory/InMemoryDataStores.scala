@@ -1,33 +1,39 @@
 package otoroshi.storage.drivers.inmemory
 
+import com.typesafe.config.ConfigFactory
+import next.models.{
+  ApiSubscriptionDataStore,
+  ApiDataStore,
+  KvApiSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage.stores._
-import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, SwappableRedisLikeMetricsWrapper}
+import otoroshi.storage.stores.*
+import otoroshi.storage.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
-import otoroshi.storage.{OptimizedRedisLike, RedisLike}
 
 class InMemoryDataStores(
     configuration: Configuration,
@@ -168,8 +174,11 @@ class InMemoryDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  private lazy val _apiSubscriptionDataStore                              = new KvApiSubscriptionDataStore(redis, env)
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore
@@ -328,12 +337,13 @@ class InMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     value match {
-      case str: String                                                                => ("string", JsString(str))
-      case str: ByteString                                                            => ("string", JsString(str.utf8String))
-      case lng: Long                                                                  => ("string", JsString(lng.toString))
+      case str: String                                                     => ("string", JsString(str))
+      case str: ByteString                                                 => ("string", JsString(str.utf8String))
+      case lng: Long                                                       => ("string", JsString(lng.toString))
+      case lng: java.util.concurrent.atomic.AtomicLong                     => ("string", JsString(lng.get().toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case map: TrieMap[String, ByteString] @unchecked                                =>

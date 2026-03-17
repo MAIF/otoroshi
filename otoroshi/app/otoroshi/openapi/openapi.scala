@@ -1,21 +1,21 @@
 package otoroshi.openapi
 
+import io.github.classgraph.*
 import org.apache.pekko.http.scaladsl.model.HttpProtocols
-import io.github.classgraph._
+import org.slf4j
 import otoroshi.models.Entity
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
-import scala.jdk.CollectionConverters._
-import org.slf4j
+import scala.jdk.CollectionConverters.given
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
@@ -804,223 +804,164 @@ class OpenApiGenerator(
 
   def scanPaths(config: OpenApiGeneratorConfig): (JsValue, JsValue) = {
     val f = new File(routerPath)
-    if (f.exists()) {
-      var tags             = Seq.empty[String]
-      val lines            = Files
+    if (!f.exists()) {
+      (Json.obj(), Json.obj())
+    } else {
+      val lines = Files
         .readAllLines(f.toPath, StandardCharsets.UTF_8)
         .asScala
         .toSeq
         .map(_.trim)
-        .filterNot(_.startsWith("#"))
-        .filterNot(_.isEmpty)
-      val pathes: JsObject = lines
-        .map { line =>
-          val parts = line.split(" ").toSeq.map(_.trim).filterNot(_.isEmpty).toList
-          parts match {
-            case verb :: path :: rest
-                if path.startsWith("/api/") && !path.startsWith("/api/client-validators") && !path.startsWith(
-                  "/api/swagger"
-                ) && !path.startsWith("/api/openapi") && !path.startsWith("/api/services/:serviceId/apikeys") && !path
-                  .startsWith("/api/groups/:groupId/apikeys") =>
-              val name           = rest.mkString(" ").split("\\(").head
-              val methodName     = name.split("\\.").reverse.head
-              val controllerName = name.split("\\.").reverse.tail.reverse.mkString(".")
-              val controller     = world.getOrElse(controllerName, null)
+        .filterNot(line => line.startsWith("#") || line.isEmpty)
 
-              if (controller == null) {
-                return (Json.obj(), Json.obj())
-              }
+      val results = lines.flatMap(line => processLine(line, config))
+      val paths   = results.map(_._1).foldLeft(Json.obj())(_ deepMerge _)
+      val tags    = results.flatMap(_._2).distinct.sorted
 
-              val method             = controller.getMethodInfo(methodName)
-              val isCrud             = controller.implementsInterface("otoroshi.utils.controllers.CrudControllerHelper")
-              val isBulk             = controller.implementsInterface("otoroshi.utils.controllers.BulkControllerHelper")
-              val entity             = if (isCrud || isBulk) {
-                controller
-                  .getMethodInfo("extractId")
-                  .asScala
-                  .head
-                  .getParameterInfo
-                  .toSeq
-                  .head
-                  .getTypeDescriptor
-                  .toString
-                  .some
-              } else {
-                None
-              }
-              val pathParts          = path.split("/").toList
-              val rawTag             = pathParts.tail.tail.head
-              // TODO: from config
-              val tag                = rawTag match {
-                case "data-exporter-configs" => "data-exporters"
-                case "tenants"               => "organizations"
-                case "verifiers"             => "jwt-verifiers"
-                case "import"                => "import-export"
-                case "otoroshi.json"         => "import-export"
-                case ":entity"               => "templates"
-                case "new"                   => "templates"
-                case "auths"                 => "auth-modules"
-                case "stats"                 => "analytics"
-                case "events"                => "analytics"
-                case "status"                => "analytics"
-                case "audit"                 => "events"
-                case "alert"                 => "events"
-                case v                       => v
-              }
-              // TODO: from config
-              val operationId        = s"$controllerName.$methodName" match {
-                case "otoroshi.controllers.adminapi.StatsController.serviceLiveStats"                          =>
-                  s"$controllerName.${methodName}_$tag"
-                case "otoroshi.controllers.adminapi.TemplatesController.initiateTcpService"                    =>
-                  s"$controllerName.${methodName}_$tag"
-                case "otoroshi.controllers.adminapi.TemplatesController.initiateApiKey"                        =>
-                  s"$controllerName.${methodName}_$tag"
-                case "otoroshi.controllers.adminapi.TemplatesController.initiateService"                       =>
-                  s"$controllerName.${methodName}_$tag"
-                case "otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup"                  =>
-                  s"$controllerName.${methodName}_$tag"
-                case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate" if tag == "admins" =>
-                  s"$controllerName.${methodName}_${pathParts.apply(3)}"
-                case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate"                    =>
-                  s"$controllerName.${methodName}_$tag"
-                case v                                                                                         => v
-              }
-              tags = tags :+ tag
-              val (resCode, resBody) = extractResBody(
-                verb,
-                path,
-                operationId,
-                tag,
-                controllerName,
-                methodName,
-                isCrud,
-                isBulk,
-                entity,
-                rawTag,
-                config
-              )
-              val reqBodyOpt         = extractReqBody(
-                verb,
-                path,
-                operationId,
-                tag,
-                controllerName,
-                methodName,
-                isCrud,
-                isBulk,
-                entity,
-                rawTag,
-                config
-              )
-              val customizedPath     = path
-                .split("/")
-                .map {
-                  case part if part.startsWith(":") => s"{${part.substring(1)}}"
-                  case part                         => part
-                }
-                .mkString("/")
-              Json.obj(
-                customizedPath -> Json.obj(
-                  verb.toLowerCase() -> Json
-                    .obj(
-                      "tags"        -> Json.arr(tag),
-                      "summary"     -> getOperationDescription(
-                        verb,
-                        path,
-                        operationId,
-                        tag,
-                        controllerName,
-                        methodName,
-                        isCrud,
-                        isBulk,
-                        entity,
-                        rawTag,
-                        config
-                      ),
-                      "operationId" -> operationId,
-                      "parameters"  -> extractParameters(path, entity, isBulk, isCrud),
-                      "security"    -> Json.arr(Json.obj("otoroshi_auth" -> Json.arr())),
-                      "responses"   -> Json.obj(
-                        "401"   -> Json.obj(
-                          "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-                          "content"     -> Json.obj(
-                            "application/json" -> Json.obj(
-                              "schema" -> Json.obj(
-                                "$ref" -> "#/components/schemas/ErrorResponse"
-                              )
-                            )
-                          )
-                        ),
-                        "400"   -> Json.obj(
-                          "description" -> "Bad resource format. Take another look to the swagger, or open an issue",
-                          "content"     -> Json.obj(
-                            "application/json" -> Json.obj(
-                              "schema" -> Json.obj(
-                                "$ref" -> "#/components/schemas/ErrorResponse"
-                              )
-                            )
-                          )
-                        ),
-                        "404"   -> Json.obj(
-                          "description" -> "Resource not found or does not exist",
-                          "content"     -> Json.obj(
-                            "application/json" -> Json.obj(
-                              "schema" -> Json.obj(
-                                "$ref" -> "#/components/schemas/ErrorResponse"
-                              )
-                            )
-                          )
-                        ),
-                        resCode -> Json.obj(
-                          "description" -> "Successful operation",
-                          "content"     -> Json.obj(
-                            (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj(
-                              "schema" -> resBody
-                            )
-                          )
-                        )
-                      )
-                    )
-                    .applyOnIf(
-                      verb.toLowerCase() != "get" && verb.toLowerCase() != "delete" && verb.toLowerCase() != "options"
-                    ) { c =>
-                      c ++ Json.obj(
-                        "requestBody" -> Json.obj(
-                          "description" -> (if (isBulk)
-                                              "the request body in nd-json format (1 stringified entity per line)"
-                                            else "the request body"),
-                          "required"    -> true,
-                          "content"     -> Json.obj(
-                            (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj(
-                              "schema" -> reqBodyOpt.get
-                            )
-                          )
-                        )
-                      )
-                    }
-                )
-              )
-            case _ =>
-              // logger.debug(s"bad definition: $line")
-              Json.obj()
-          }
-        }
-        .foldLeft(Json.obj())((a, b) => a.deepMerge(b))
       (
-        pathes,
-        JsArray(
-          tags.distinct
-            .sortWith((a, b) => a.compareTo(b) < 0)
-            .map(t =>
-              Json.obj("name" -> t).applyOn { o =>
-                o ++ Json.obj("description" -> getTagDescription(o.select("name").asString, config))
-              }
-            )
+        paths,
+        JsArray(tags.map(t => Json.obj("name" -> t, "description" -> getTagDescription(t, config))))
+      )
+    }
+  }
+
+  private def isValidApiPath(path: String): Boolean =
+    path.startsWith("/api/") &&
+      !path.startsWith("/api/client-validators") &&
+      !path.startsWith("/api/swagger") &&
+      !path.startsWith("/api/openapi") &&
+      !path.startsWith("/api/services/:serviceId/apikeys") &&
+      !path.startsWith("/api/groups/:groupId/apikeys")
+
+  private def extractController(descriptor: String): Option[(String, String)] = {
+    val name  = descriptor.split("\\(").head
+    val parts = name.split("\\.").toSeq
+    parts.lastOption.map(methodName => (parts.dropRight(1).mkString("."), methodName))
+  }
+
+  private def normalizeTag(rawTag: String): String = rawTag match {
+    case "data-exporter-configs" => "data-exporters"
+    case "tenants"               => "organizations"
+    case "verifiers"             => "jwt-verifiers"
+    case "import"                => "import-export"
+    case "otoroshi.json"         => "import-export"
+    case ":entity"               => "templates"
+    case "new"                   => "templates"
+    case "auths"                 => "auth-modules"
+    case "stats"                 => "analytics"
+    case "events"                => "analytics"
+    case "status"                => "analytics"
+    case "audit"                 => "events"
+    case "alert"                 => "events"
+    case v                       => v
+  }
+
+  private def buildOperationId(base: String, tag: String, pathParts: List[String]): String = base match {
+    case "otoroshi.controllers.adminapi.StatsController.serviceLiveStats"                          => s"${base}_$tag"
+    case "otoroshi.controllers.adminapi.TemplatesController.initiateTcpService"                    => s"${base}_$tag"
+    case "otoroshi.controllers.adminapi.TemplatesController.initiateApiKey"                        => s"${base}_$tag"
+    case "otoroshi.controllers.adminapi.TemplatesController.initiateService"                       => s"${base}_$tag"
+    case "otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup"                  => s"${base}_$tag"
+    case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate" if tag == "admins" =>
+      s"${base}_${pathParts.lift(3).getOrElse("")}"
+    case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate"                    => s"${base}_$tag"
+    case v                                                                                         => v
+  }
+
+  private def errorResponse(description: String): JsObject =
+    Json.obj(
+      "description" -> description,
+      "content"     -> Json.obj(
+        "application/json" -> Json.obj(
+          "schema" -> Json.obj("$ref" -> "#/components/schemas/ErrorResponse")
         )
       )
-    } else {
-      (Json.obj(), Json.obj())
+    )
+
+  private def processLine(line: String, config: OpenApiGeneratorConfig): Option[(JsObject, Seq[String])] = {
+    line.split(" ").toSeq.map(_.trim).filterNot(_.isEmpty).toList match {
+      case verb :: path :: rest if isValidApiPath(path) =>
+        extractController(rest.mkString(" ")).flatMap { case (controllerName, methodName) =>
+          world.get(controllerName).map { controller =>
+            buildPathJson(verb, path, controllerName, methodName, controller, config)
+          }
+        }
+      case _                                            => None
     }
+  }
+
+  private def buildPathJson(
+      verb: String,
+      path: String,
+      controllerName: String,
+      methodName: String,
+      controller: ClassInfo,
+      config: OpenApiGeneratorConfig
+  ): (JsObject, Seq[String]) = {
+    val method     = controller.getMethodInfo(methodName)
+    val isCrud     = controller.implementsInterface("otoroshi.utils.controllers.CrudControllerHelper")
+    val isBulk     = controller.implementsInterface("otoroshi.utils.controllers.BulkControllerHelper")
+    val entity     = if (isCrud || isBulk) {
+      controller
+        .getMethodInfo("extractId")
+        .asScala
+        .head
+        .getParameterInfo
+        .toSeq
+        .head
+        .getTypeDescriptor
+        .toString
+        .some
+    } else {
+      None
+    }
+    val pathParts  = path.split("/").toList
+    val rawTag     = pathParts.tail.tail.head
+    val tag        = normalizeTag(rawTag)
+    val operationId = buildOperationId(s"$controllerName.$methodName", tag, pathParts)
+
+    val (resCode, resBody) = extractResBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
+    val reqBodyOpt         = extractReqBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
+    val customizedPath     = path
+      .split("/")
+      .map {
+        case part if part.startsWith(":") => s"{${part.substring(1)}}"
+        case part                         => part
+      }
+      .mkString("/")
+
+    val operation = Json
+      .obj(
+        "tags"        -> Json.arr(tag),
+        "summary"     -> getOperationDescription(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config),
+        "operationId" -> operationId,
+        "parameters"  -> extractParameters(path, entity, isBulk, isCrud),
+        "security"    -> Json.arr(Json.obj("otoroshi_auth" -> Json.arr())),
+        "responses"   -> Json.obj(
+          "401"   -> errorResponse("You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"),
+          "400"   -> errorResponse("Bad resource format. Take another look to the swagger, or open an issue"),
+          "404"   -> errorResponse("Resource not found or does not exist"),
+          resCode -> Json.obj(
+            "description" -> "Successful operation",
+            "content"     -> Json.obj(
+              (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj("schema" -> resBody)
+            )
+          )
+        )
+      )
+      .applyOnIf(verb.toLowerCase != "get" && verb.toLowerCase != "delete" && verb.toLowerCase != "options") { c =>
+        c ++ Json.obj(
+          "requestBody" -> Json.obj(
+            "description" -> (if (isBulk) "the request body in nd-json format (1 stringified entity per line)" else "the request body"),
+            "required"    -> true,
+            "content"     -> Json.obj(
+              (if (isBulk) "application/x-ndjson" else "application/json") -> Json.obj("schema" -> reqBodyOpt.get)
+            )
+          )
+        )
+      }
+
+    (Json.obj(customizedPath -> Json.obj(verb.toLowerCase -> operation)), Seq(tag))
   }
 
   def run(): JsValue = runAndMaybeWrite()._1
@@ -1211,7 +1152,7 @@ class OpenApiGenerator(
       "info"         -> Json.obj(
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
-        "version"     -> "17.6.0-dev",
+        "version"     -> "17.14.0-dev",
         "contact"     -> Json.obj(
           "name"  -> "Otoroshi Team",
           "email" -> "oss@maif.fr"

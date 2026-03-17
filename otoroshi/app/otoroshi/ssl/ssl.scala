@@ -1,5 +1,20 @@
 package otoroshi.ssl
 
+import java.io.*
+import java.lang.reflect.{Field, InaccessibleObjectException}
+import java.net.Socket
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.US_ASCII
+import java.security.*
+import java.security.cert.*
+import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
+import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import java.util.regex.Pattern.CASE_INSENSITIVE
+import java.util.regex.{Matcher, Pattern}
+import java.util.{Base64, Date}
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
@@ -8,7 +23,11 @@ import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.stream.{Materializer, TLSClientAuth}
 import org.apache.pekko.util.ByteString
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
-import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JcePEMDecryptorProviderBuilder}
+import org.bouncycastle.openssl.jcajce.{
+  JcaPEMKeyConverter,
+  JceOpenSSLPKCS8DecryptorProviderBuilder,
+  JcePEMDecryptorProviderBuilder
+}
 import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.joda.time.{DateTime, Interval}
@@ -25,7 +44,7 @@ import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
@@ -69,34 +88,41 @@ sealed trait ClientAuth {
   def name: String
   def toAkkaClientAuth: TLSClientAuth
 }
-case object ClientAuthNone extends ClientAuth {
+case object ClientAuthNone    extends ClientAuth {
   def name: String                    = "None"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.None
 }
-case object ClientAuthWant extends ClientAuth {
+case object ClientAuthWant    extends ClientAuth {
   def name: String                    = "Want"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Want
 }
-case object ClientAuthNeed extends ClientAuth {
+case object ClientAuthNeed    extends ClientAuth {
   def name: String                    = "Need"
+  def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
+}
+case object ClientAuthDynamic extends ClientAuth {
+  def name: String                    = "Dynamic"
   def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
 }
 object ClientAuth {
 
-  val None = ClientAuthNone
-  val Want = ClientAuthWant
-  val Need = ClientAuthNeed
+  val None    = ClientAuthNone
+  val Want    = ClientAuthWant
+  val Need    = ClientAuthNeed
+  val Dynamic = ClientAuthDynamic
 
-  def values: Seq[ClientAuth] = Seq(None, Want, Need)
+  def values: Seq[ClientAuth] = Seq(None, Want, Need, Dynamic)
   def apply(name: String): Option[ClientAuth] = {
     name.toLowerCase match {
-      case "None" => Some(None)
-      case "none" => Some(None)
-      case "Want" => Some(Want)
-      case "want" => Some(Want)
-      case "Need" => Some(Need)
-      case "need" => Some(Need)
-      case _      => scala.None
+      case "None"    => Some(None)
+      case "none"    => Some(None)
+      case "Want"    => Some(Want)
+      case "want"    => Some(Want)
+      case "Need"    => Some(Need)
+      case "need"    => Some(Need)
+      case "Dynamic" => Some(Dynamic)
+      case "dynamic" => Some(Dynamic)
+      case _         => scala.None
     }
   }
 }
@@ -194,7 +220,7 @@ case class Cert(
   def renew(
       _duration: Option[FiniteDuration] = None
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
-    import SSLImplicits.*
+    import SSLImplicits.given
     val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     this match {
       case original if original.letsEncrypt => LetsEncryptHelper.renew(this)
@@ -252,15 +278,6 @@ case class Cert(
                 caCert.cryptoKeyPair
               )
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
-            case _                  =>
-              // println("wait what ???")
-              val resp = FakeKeyStore.createSelfSignedCertificate(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue())
-              )
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
           }
         }
     }
@@ -430,7 +447,7 @@ case class Cert(
 
 object Cert {
 
-  import SSLImplicits.*
+  import SSLImplicits.given
 
   val OtoroshiCaDN: String             = s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
   val OtoroshiCA                       = "otoroshi-root-ca"
@@ -604,19 +621,20 @@ object Cert {
                   .flatMap { _ =>
                     val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
                     if (cert.autoRenew) {
-                      cert.renew()
+                      cert.renew().map { _ =>
+                        logger.info(s"Successfully created certificate for $host")
+                      }.recover { case err =>
+                        logger.error(s"Error while creating certificate for $host. $err")
+                      }
                     } else {
-                      FastFuture.successful(cert)
+                      logger.info(s"Successfully created certificate for $host")
+                      FastFuture.successful(cert: Unit)
                     }
                   }
                   .andThen { case _ =>
                     env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
                   }
             }
-          }
-          .map {
-            case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
-            case (host, Right(_))  => logger.info(s"Successfully created certificate for $host")
           }
           .runWith(Sink.ignore)
           .map(_ => ())
@@ -1462,13 +1480,17 @@ object DynamicSSLEngineProvider {
     certs.filter(_.notRevoked).foreach(crt => autogenCerts.put(crt.id, crt))
     val ctxClient                                         = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaClient),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaServer),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1497,13 +1519,17 @@ object DynamicSSLEngineProvider {
       )
     val ctxClient                                         = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaClient),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaServer),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1515,13 +1541,17 @@ object DynamicSSLEngineProvider {
     firstSetupDone.compareAndSet(false, true)
     val ctxClient                                         = setupContext(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaClient),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
-      env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaServer),
-      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+      env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
+      env.datastores.globalConfigDataStore.latestSafe
+        .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+        .getOrElse(Seq.empty)
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1531,7 +1561,7 @@ object DynamicSSLEngineProvider {
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
 
-    import SSLImplicits.*
+    import SSLImplicits.given
 
     if (logger.isDebugEnabled) logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
@@ -1710,7 +1740,7 @@ object DynamicSSLEngineProvider {
       if (logger.isDebugEnabled) logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
-      import otoroshi.utils.syntax.implicits.*
+      import otoroshi.utils.syntax.implicits.given
       Try {
         // val reader = new PemReader(new StringReader(privateKey))
         val parser    = new PEMParser(new StringReader(content))
@@ -1766,12 +1796,13 @@ object DynamicSSLEngineProvider {
   def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 
   def createSSLEngine(
-      clientAuth: ClientAuth,
+      _clientAuth: ClientAuth,
       cipherSuites: Option[Seq[String]],
       protocols: Option[Seq[String]],
       appProto: Option[String],
       env: => Env
   ): SSLEngine = {
+    // println(s"create ssl engine: clientAuth: ${_clientAuth}")
     val context: SSLContext    = DynamicSSLEngineProvider.currentServer
     if (logger.isDebugEnabled) DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
@@ -1786,6 +1817,15 @@ object DynamicSSLEngineProvider {
     )
     val sslParameters          = new SSLParameters
     val matchers               = new java.util.ArrayList[SNIMatcher]()
+
+    val clientAuth = _clientAuth match {
+      case ClientAuth.Dynamic =>
+        env.datastores.globalConfigDataStore.latestSafe
+          .map(_.tlsSettings.clientAuth)
+          .getOrElse(_clientAuth)
+      //.debug(ca => println(s"Dynamic SSL client auth: ${ca}"))
+      case _                  => _clientAuth
+    }
 
     engine.setUseClientMode(false)
     clientAuth match {
@@ -1899,9 +1939,9 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
-  import otoroshi.ssl.SSLImplicits.*
+  import otoroshi.ssl.SSLImplicits.given
 
-  import scala.jdk.CollectionConverters.*
+  import scala.jdk.CollectionConverters.given
 
   private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
@@ -1993,7 +2033,7 @@ object PemHeaders {
 
 object FakeKeyStore {
 
-  import otoroshi.ssl.SSLImplicits.*
+  import otoroshi.ssl.SSLImplicits.given
 
   private val EMPTY_PASSWORD = Array.emptyCharArray
   private val encoder        = Base64.getEncoder
@@ -2227,12 +2267,28 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
   }
 
   def setEngineHostName(hostName: String): Unit = {
-    if (DynamicSSLEngineProvider.logger.isDebugEnabled)
-      DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
-    hostnameHolder.set(hostName)
-    // TODO: add try to avoid future issue ? fixed for now with '--add-opens java.base/javax.net.ssl=ALL-UNNAMED' in the java command line
-    field.set(this, hostName)
-    field.set(delegate, hostName)
+    try {
+      if (DynamicSSLEngineProvider.logger.isDebugEnabled)
+        DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
+      hostnameHolder.set(hostName)
+      field.set(this, hostName)
+      field.set(delegate, hostName)
+    } catch {
+      case e: InaccessibleObjectException
+          if e.getMessage.contains(
+            "Unable to make field private java.lang.String javax.net.ssl.SSLEngine.peerHost accessible: module java.base does not \"opens javax.net.ssl\" to "
+          ) =>
+        DynamicSSLEngineProvider.logger.warn("""
+            |It seems that you're trying to use the otoroshi TLS engine without opening the SSL modules.
+            |Please add the following options to your java configuration:
+            |
+            |--add-opens=java.base/javax.net.ssl=ALL-UNNAMED
+            |--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+            |--add-exports=java.base/sun.security.x509=ALL-UNNAMED
+            |--add-opens=java.base/sun.security.ssl=ALL-UNNAMED
+            |""".stripMargin)
+      case e => e.printStackTrace()
+    }
   }
 
   override def getPeerHost: String = Option(hostnameHolder.get()).getOrElse(delegate.getPeerHost)
@@ -2334,7 +2390,7 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
-    import scala.jdk.CollectionConverters.*
+    import scala.jdk.CollectionConverters.given
     if (!lock) {
       delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
         override def apply(t: SSLEngine, u: util.List[String]): String = {
@@ -2505,7 +2561,7 @@ case class ClientCertificateValidator(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  import otoroshi.utils.http.Implicits.*
+  import otoroshi.utils.http.Implicits.given
 
   /*
   TEST CODE
@@ -2535,7 +2591,7 @@ case class ClientCertificateValidator(
   app.listen(3000, () => console.log('certificate validation server'));
    */
 
-  import otoroshi.ssl.SSLImplicits.*
+  import otoroshi.ssl.SSLImplicits.given
   import play.api.http.websocket.Message as PlayWSMessage
 
   import scala.concurrent.duration.*
@@ -2801,7 +2857,7 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
 
 object SSLImplicits {
 
-  import scala.jdk.CollectionConverters.*
+  import scala.jdk.CollectionConverters.given
 
   private val logger = Logger("otoroshi-ssl-implicits")
 
@@ -2904,7 +2960,7 @@ case class RawCertificate(
     client: Boolean = false
 ) {
 
-  import SSLImplicits.*
+  import SSLImplicits.given
 
   def matchesDomain(dom: String): Boolean = sans.exists(d => RegexPool.apply(d).matches(dom))
 

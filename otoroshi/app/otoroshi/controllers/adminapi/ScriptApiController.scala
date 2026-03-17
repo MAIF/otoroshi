@@ -1,13 +1,19 @@
 package otoroshi.controllers.adminapi
 
 import org.apache.pekko.stream.Materializer
-import otoroshi.actions.ApiAction
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
+import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.workflow.WorkflowJob
-import otoroshi.script._
+import otoroshi.plugins.jobs.kubernetes.{KubernetesCRDsJob, KubernetesConfig}
+import otoroshi.script.*
+import otoroshi.security.IdGenerator
+import otoroshi.utils.TypedMap
+import otoroshi.utils.config.ConfigUtils
 import otoroshi.utils.controllers.{
   ApiError,
   BulkControllerHelper,
@@ -19,14 +25,12 @@ import otoroshi.utils.controllers.{
   SeqEntityAndContext
 }
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
-import otoroshi.utils.syntax.implicits._
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import org.apache.pekko.stream.scaladsl.Source
 
 class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
@@ -51,7 +55,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     if (env.scriptingEnabled) {
       f
     } else {
-      InternalServerError(Json.obj("error" -> "Scripting not enabled !")).future
+      Future.successful(InternalServerError(Json.obj("error" -> "Scripting not enabled !")))
     }
   }
 
@@ -216,6 +220,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpJobNames
             .filter(_ != classOf[WasmJob].getName)
             .filter(_ != classOf[WorkflowJob].getName)
+            .filter(_ != classOf[RemoteCatalogJob].getName)
             .map(extractInfosFromJob)
             .filter {
               case JsNull => false

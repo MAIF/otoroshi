@@ -1,13 +1,13 @@
 package functional
 
-import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import org.apache.pekko.actor.ActorSystem
+import otoroshi.models.*
 import play.api.Configuration
 import play.api.libs.json.Json
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

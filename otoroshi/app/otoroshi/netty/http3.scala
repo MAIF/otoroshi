@@ -21,7 +21,7 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.netty.ImplicitUtils.*
 import otoroshi.ssl.{DynamicKeyManager, DynamicSSLEngineProvider}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
 import play.api.libs.json.Json
@@ -38,7 +38,7 @@ import scala.annotation.tailrec
 import scala.compiletime.uninitialized
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.concurrent.{Await, ExecutionContext}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Try}
 
 class Http1RequestHandler(
@@ -667,9 +667,17 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                   QuicSslContextBuilder
                     .forServer(keypair.getPrivate, cert.password.orNull, chain*)
                     .clientAuth(config.clientAuth match {
-                      case otoroshi.ssl.ClientAuth.None => io.netty.handler.ssl.ClientAuth.NONE
-                      case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
-                      case otoroshi.ssl.ClientAuth.Need => io.netty.handler.ssl.ClientAuth.REQUIRE
+                      case otoroshi.ssl.ClientAuth.None    => io.netty.handler.ssl.ClientAuth.NONE
+                      case otoroshi.ssl.ClientAuth.Want    => io.netty.handler.ssl.ClientAuth.OPTIONAL
+                      case otoroshi.ssl.ClientAuth.Need    => io.netty.handler.ssl.ClientAuth.REQUIRE
+                      case otoroshi.ssl.ClientAuth.Dynamic =>
+                        env.datastores.globalConfigDataStore.latestSafe
+                          .map(_.tlsSettings.clientAuth)
+                          .getOrElse(config.clientAuth) match {
+                          case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
+                          case otoroshi.ssl.ClientAuth.Need => io.netty.handler.ssl.ClientAuth.REQUIRE
+                          case _                            => io.netty.handler.ssl.ClientAuth.NONE
+                        }
                     })
                     .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
                     .applicationProtocols(Http3.supportedApplicationProtocols()*)

@@ -1,27 +1,27 @@
 package otoroshi.storage
 
+import next.models.{ApiSubscriptionDataStore, ApiDataStore, RouteTemplateDataStore}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream._
-import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.*
+import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.util.ByteString
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.RequestsDataStore
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore}
 import otoroshi.script.{NamedPlugin, PluginType, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.storage.drivers.inmemory.{Memory, SwapStrategy, SwappableRedis}
-import otoroshi.storage.stores._
+import otoroshi.storage.stores.*
 import otoroshi.tcp.TcpServiceDataStore
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
@@ -84,7 +84,8 @@ trait DataStores {
   def wasmPluginsDataStore: WasmPluginDataStore
   def draftsDataStore: DraftDataStore
   def apiDataStore: ApiDataStore
-  def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore
+  def apiSubscriptionDataStore: ApiSubscriptionDataStore
+  def routeTemplateDataStore: RouteTemplateDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit]
@@ -102,6 +103,7 @@ trait RawDataStore {
   def incr(key: String)(using ec: ExecutionContext, env: Env): Future[Long]           = incrby(key, 1L)
   def incrby(key: String, incr: Long)(using ec: ExecutionContext, env: Env): Future[Long]
   def keys(pattern: String)(using ec: ExecutionContext, env: Env): Future[Seq[String]]
+  def expire(key: String, seconds: Int): Future[Boolean]
   def pexpire(key: String, pttl: Long)(using ec: ExecutionContext, env: Env): Future[Boolean]
   def sadd(key: String, members: Seq[ByteString]): Future[Long]
   def sismember(key: String, member: ByteString): Future[Boolean]

@@ -67,7 +67,7 @@ export class SnowMonkeyPage extends Component {
   };
 
   columns = [
-    { title: 'Service Name', content: (item) => item.descriptorName },
+    { title: 'Route Name', content: (item) => item.descriptorName },
     {
       title: 'Outage started at',
       content: (item) => moment(item.startedAt).format('YYYY-MM-DD HH:mm:ss.SSS'),
@@ -94,10 +94,10 @@ export class SnowMonkeyPage extends Component {
             type="button"
             className="btn btn-success btn-sm"
             onClick={(e) =>
-              (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
+              (window.location = `/bo/dashboard/routes/${item.descriptorId}?tab=flow`)
             }
           >
-            <i className="fas fa-link" /> Go to service descriptor
+            <i className="fas fa-link" /> Go to route
           </button>
         );
       },

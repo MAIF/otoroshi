@@ -13,3 +13,4 @@ export * from './Help';
 export * from './FreeDomainInput';
 export * from './DateInput';
 export * from './Popover';
+export * from './MonacoInput';

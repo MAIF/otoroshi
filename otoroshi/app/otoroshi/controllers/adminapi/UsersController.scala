@@ -1,19 +1,18 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.{ApiAction, ApiActionContext}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.{BackOfficeUser, PrivateAppsUser}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.env.Env
+import otoroshi.events.*
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models.{UserRights, _}
-import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
+import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -145,8 +144,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
       ctx.checkRights(TenantAdminOnly) {
         env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
           env.datastores.authConfigsDataStore.findById(id).flatMap {
-            case None                                        => Results.NotFound(Json.obj("error" -> "auth module not found")).future
-            case Some(_)                                     =>
+            case None    => Results.NotFound(Json.obj("error" -> "auth module not found")).future
+            case Some(_) =>
               env.datastores.privateAppsUserDataStore
                 .findAll()
                 .map(sessions => sessions.filter(_.authConfigId == id))
@@ -178,11 +177,11 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
                   Ok(Json.obj("done" -> true))
                 }
           }
-          }
-        } recover { case _ =>
-          Ok(Json.obj("done" -> false))
         }
+      } recover { case _ =>
+        Ok(Json.obj("done" -> false))
       }
+    }
 
   def discardPrivateAppsSession(id: String): Action[AnyContent] =
     ApiAction.async { ctx =>

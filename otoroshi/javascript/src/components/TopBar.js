@@ -650,8 +650,8 @@ export class TopBar extends Component {
         options.push({
           action: () => this.routeTo('/routes'),
           env: <span className="fas fa-road" />,
-          label: 'Routes',
-          value: 'All Routes',
+          label: 'HTTP Routes',
+          value: 'All HTTP Routes',
         });
         options.push({
           action: () => this.routeTo('/apis'),
@@ -835,6 +835,18 @@ export class TopBar extends Component {
           env: <span className="fas fa-plug" />,
           label: 'Wasm Plugins',
           value: 'wasm-plugins',
+        });
+        options.push({
+          action: () => this.routeTo('/error-templates'),
+          env: <span className="fas fa-bomb" />,
+          label: 'Error Templates',
+          value: 'error-templates',
+        });
+        options.push({
+          action: () => this.routeTo('/route-templates'),
+          env: <span className="fas fa-bomb" />,
+          label: 'Route Templates',
+          value: 'route-templates',
         });
         if (this.props.env.scriptingEnabled === true) {
           options.push({
@@ -1128,7 +1140,7 @@ export class TopBar extends Component {
       ) {
         setTimeout(() => this.selector.focus());
       }
-    } catch (_err) { }
+    } catch (_err) {}
   };
 
   componentDidMount() {
@@ -1254,7 +1266,7 @@ export class TopBar extends Component {
             <span className="fas fa-cubes" /> Service descriptors
           </Link>
           <Link to="/routes" className="dropdown-item">
-            <span className="fas fa-road" /> Routes
+            <span className="fas fa-road" /> HTTP Routes
           </Link>
           <Link to="/backends" className="dropdown-item">
             <span className="fas fa-microchip" /> Backends
@@ -1741,7 +1753,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-          // style={{ zIndex: 100 }}
+            // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1765,7 +1777,7 @@ export class TopBar extends Component {
                       overflow: 'hidden',
                     }}
                     onClick={() => {
-                      this.props.setSidebarContent(null)
+                      this.props.setSidebarContent(null);
                       this.props.setTitle(null);
                     }}
                   >
@@ -2098,8 +2110,9 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                        } py-2 pb-4`}
+                      className={`custom-dropdown ${
+                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                      } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });

@@ -1,11 +1,11 @@
 package otoroshi.next.workflow
 
-import org.apache.pekko.util.ByteString
+import io.azam.ulidj.ULID
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
-import io.azam.ulidj.ULID
 import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.{ApiAction, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
@@ -18,13 +18,13 @@ import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.http.websocket.{Message, TextMessage}
 import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results, WebSocket}
+import play.api.mvc.*
 import reactor.core.publisher.{Flux, Sinks}
 
 import java.io.File
@@ -33,6 +33,44 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class Orphans(nodes: Seq[Node] = Seq.empty, edges: Seq[JsObject] = Seq.empty)
+
+case class Note(
+    content: String,
+    color: String,
+    titleColor: String,
+    position: JsValue,
+    measured: JsValue,
+    id: String,
+    kind: String
+)
+
+object Note {
+  val format = new Format[Note] {
+    override def writes(o: Note): JsValue             = Json.obj(
+      "content"    -> o.content,
+      "color"      -> o.color,
+      "titleColor" -> o.titleColor,
+      "position"   -> o.position,
+      "measured"   -> o.measured,
+      "id"         -> o.id,
+      "kind"       -> o.kind
+    )
+    override def reads(json: JsValue): JsResult[Note] = Try {
+      Note(
+        content = json.selectAsOptString("content").getOrElse(""),
+        color = json.selectAsOptString("color").getOrElse("var(--bg-color_level3)"),
+        titleColor = json.selectAsOptString("titleColor").getOrElse("#fff"),
+        position = json.selectAsObject("position"),
+        measured = json.selectAsObject("measured"),
+        id = json.selectAsString("id"),
+        kind = json.selectAsString("kind")
+      )
+    } match {
+      case Failure(ex)    => JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
 
 object Orphans {
   val format = new Format[Orphans] {
@@ -63,7 +101,8 @@ case class Workflow(
     job: WorkflowJobConfig,
     functions: Map[String, JsObject],
     testPayload: JsObject,
-    orphans: Orphans
+    orphans: Orphans,
+    notes: Seq[Note] = Seq.empty
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = Workflow.format.writes(this)
@@ -98,7 +137,8 @@ object Workflow {
       "test_payload" -> o.testPayload,
       "orphans"      -> Orphans.format.writes(o.orphans),
       "job"          -> o.job.json,
-      "functions"    -> o.functions
+      "functions"    -> o.functions,
+      "notes"        -> o.notes.map(Note.format.writes)
     )
     override def reads(json: JsValue): JsResult[Workflow] = Try {
       Workflow(
@@ -115,7 +155,8 @@ object Workflow {
           .getOrElse(WorkflowJobConfig.default),
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
-        orphans = (json \ "orphans").asOpt[Orphans](using Orphans.format).getOrElse(Orphans())
+        orphans = (json \ "orphans").asOpt[Orphans](using Orphans.format).getOrElse(Orphans()),
+        notes = (json \ "notes").asOpt(using Reads.seq(using Note.format)).getOrElse(Seq.empty)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -210,7 +251,7 @@ class WorkflowConfigAdminExtensionState(env: Env) {
 
 object WorkflowAdminExtension {
   val liveUpdatesSourceKey = TypedKey[Sinks.Many[JsObject]]("otoroshi.extensions.workflows.LiveUpdatesSourceKey")
-  val workflowDebuggerKey = TypedKey[WorkflowDebugger]("otoroshi.extensions.workflows.WorkflowDebuggerKey")
+  val workflowDebuggerKey  = TypedKey[WorkflowDebugger]("otoroshi.extensions.workflows.WorkflowDebuggerKey")
 }
 
 class WorkflowAdminExtension(val env: Env) extends AdminExtension {
@@ -426,13 +467,13 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   def workflow(id: String): Option[Workflow] = states.workflow(id)
 
   def handleWorkflowDebug(): Flow[Message, Message, NotUsed] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec                     = env.otoroshiExecutionContext
     val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
-    val hotFlux: Flux[JsObject] = hotSource.asFlux()
-    val debugger = new WorkflowDebugger()
+    val hotFlux: Flux[JsObject]         = hotSource.asFlux()
+    val debugger                        = new WorkflowDebugger()
 
     def start(body: JsObject): Unit = {
-      val payload_raw = body.stringify
+      val payload_raw      = body.stringify
       val secretFillFuture =
         if (payload_raw.contains("${vault://")) env.vaults.fillSecretsAsync("workflow-test", payload_raw)
         else payload_raw.vfuture
@@ -442,10 +483,10 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
         val functions   = payload.select("functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         val workflow_id = payload.select("workflow_id").asString
         val workflow    = payload.select("workflow").asObject
-        val stepByStep   = payload.select("step_by_step").asOptBoolean.getOrElse(false)
+        val stepByStep  = payload.select("step_by_step").asOptBoolean.getOrElse(false)
         val node        = Node.from(workflow)
-        val attrs = TypedMap.empty
-        attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
+        val attrs       = TypedMap.empty
+        attrs.put(WorkflowAdminExtension.workflowDebuggerKey  -> debugger)
         attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
         if (stepByStep) {
           debugger.pause()
@@ -465,19 +506,19 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
           val data = json.select("data").asOpt[JsObject].getOrElse(Json.obj())
 
           kind match {
-            case "start" =>
+            case "start"  =>
               start(data)
-            case "next" =>
+            case "next"   =>
               // TODO: if new memory in data, update memory
               debugger.next()
             case "resume" =>
               // TODO: if new memory in data, update memory
               debugger.resume()
-            case "stop" => debugger.shutdown()
-            case _ => println(s"unknown message: '${kind}'")
+            case "stop"   => debugger.shutdown()
+            case _        => println(s"unknown message: '${kind}'")
           }
         }
-        case m => println(s"unknown ws message: '${m.getClass.getName}'")
+        case m               => println(s"unknown ws message: '${m.getClass.getName}'")
       },
       Source.fromPublisher[Message](hotFlux.map(o => TextMessage(o.stringify)))
     )
@@ -510,9 +551,9 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             val node        = Node.from(workflow)
             if (live) {
               val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
-              val hotFlux: Flux[JsObject] = hotSource.asFlux()
+              val hotFlux: Flux[JsObject]         = hotSource.asFlux()
               //val debugger = new WorkflowDebugger()
-              val attrs = TypedMap.empty
+              val attrs                           = TypedMap.empty
               //attrs.put(WorkflowAdminExtension.workflowDebuggerKey -> debugger)
               attrs.put(WorkflowAdminExtension.liveUpdatesSourceKey -> hotSource)
               engine.run(workflow_id, node, input, attrs, functions).map { res =>
@@ -553,20 +594,21 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   }
 }
 
-class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
 
   given ec: ExecutionContext  = env.otoroshiExecutionContext
   given mat: Materializer     = env.otoroshiMaterializer
 
   def handleWorkflowDebug() = WebSocket.acceptOrResult[Message, Message] { request =>
     request.session.get("bousr") match {
-      case None => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
+      case None     => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
       case Some(id) => {
         env.datastores.backOfficeUserDataStore.findById(id).flatMap {
           case None       => Results.Unauthorized(Json.obj("error" -> "unauthorized")).leftf
           case Some(user) => {
             env.adminExtensions.extension[WorkflowAdminExtension] match {
-              case None => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
+              case None      => Results.NotFound(Json.obj("error" -> "extension not found")).leftf
               case Some(ext) => {
                 ext.handleWorkflowDebug().rightf
               }

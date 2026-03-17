@@ -3,13 +3,13 @@ package otoroshi.script
 import com.google.common.base.Charsets
 import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 import otoroshi.events.CustomDataExporter
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.Try
 
 class PluginDocumentationGenerator(docPath: String) {
@@ -344,6 +344,7 @@ class PluginDocumentationGenerator(docPath: String) {
       (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames).distinct
         .filterNot(_ == "otoroshi.next.plugins.WasmJob")
         .filterNot(_ == "otoroshi.next.workflow.WorkflowJob")
+        .filterNot(_ == "otoroshi.next.catalogs.RemoteCatalogJob")
     val contents: Seq[String] = plugins
       .map { pl =>
         this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()

@@ -1,47 +1,96 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
-import java.util.{Base64 => JavaBase64}
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.{
+  ApiKey,
+  DefaultToken,
+  InCookie,
+  InHeader,
+  InQueryParam,
+  JwtTokenLocation,
+  LocalJwtVerifier,
+  OutputMode,
+  PrivateAppsUser,
+  RefJwtVerifier,
+  ServiceDescriptor
+}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.{
+  BetterJsReadable,
+  BetterJsValue,
+  BetterMapOfStringAndB,
+  BetterString,
+  BetterSyntax
+}
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import play.api.libs.ws.WSBodyWritables._
-import play.api.mvc.{Result, Results}
+import play.api.libs.ws.WSBodyWritables.given
+import play.api.mvc.{RequestHeader, Result, Results}
+import org.joda.time.DateTime
+import otoroshi.auth.OAuth2ModuleConfig
+import otoroshi.el.JwtExpressionLanguage
+import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.pki.models.GenKeyPairQuery
+import otoroshi.utils.TypedMap
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
+import java.util.Base64 as JavaBase64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends NgPluginConfig {
+case class NgJwtVerificationConfig(
+    verifiers: Seq[String] = Seq.empty,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
 }
 
 object NgJwtVerificationConfig {
   val format: Format[NgJwtVerificationConfig] = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
-        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgJwtVerificationConfig): JsValue             = Json.obj("verifiers" -> o.verifiers)
+    override def writes(o: NgJwtVerificationConfig): JsValue             = Json.obj(
+      "verifiers"               -> o.verifiers,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
+    )
   }
 }
 
@@ -71,7 +120,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
     config.verifiers match {
       case Nil         => JwtVerifierUtils.onError()
-      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds)
+      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds, config.asResult)
     }
   }
 
@@ -110,7 +159,7 @@ object JwtVerifierUtils {
       .vfuture
   }
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String])(using
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -126,7 +175,7 @@ object JwtVerifierUtils {
           attrs = ctx.attrs
         )
         .flatMap {
-          case Left(result)     => onError(result.some)
+          case Left(result)     => onError(customResult.orElse(result.some))
           case Right(injection) =>
             ctx.attrs.put(JwtInjectionKey -> injection)
             NgAccess.NgAllowed.vfuture
@@ -140,7 +189,7 @@ object JwtVerifierUtils {
         elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
         attrs = ctx.attrs
       ) match {
-        case Left(result)     => onError(result.some)
+        case Left(result)     => onError(customResult.orElse(result.some))
         case Right(injection) =>
           ctx.attrs.put(JwtInjectionKey -> injection)
           NgAccess.NgAllowed.vfuture
@@ -149,9 +198,24 @@ object JwtVerifierUtils {
   }
 }
 
-case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAbsent: Boolean = true)
-    extends NgPluginConfig {
+case class NgJwtVerificationOnlyConfig(
+    verifier: Option[String] = None,
+    failIfAbsent: Boolean = true,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationOnlyConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
 }
 
 object NgJwtVerificationOnlyConfig {
@@ -159,15 +223,24 @@ object NgJwtVerificationOnlyConfig {
     override def reads(json: JsValue): JsResult[NgJwtVerificationOnlyConfig] = Try {
       NgJwtVerificationOnlyConfig(
         verifier = json.select("verifier").asOpt[String],
-        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true)
+        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgJwtVerificationOnlyConfig): JsValue             = Json.obj(
-      "verifier"       -> o.verifier,
-      "fail_if_absent" -> o.failIfAbsent
+      "verifier"                -> o.verifier,
+      "fail_if_absent"          -> o.failIfAbsent,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
     )
   }
 }
@@ -206,7 +279,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
           case Some(verifier) =>
             verifier.source.token(ctx.request) match {
               case None if !config.failIfAbsent => NgAccess.NgAllowed.vfuture
-              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId))
+              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId), config.asResult)
             }
         }
     }
@@ -711,6 +784,211 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
                   case _                        => Left(Results.Unauthorized(Json.obj("error" -> "invalid token"))).future
                 } get
               case None        => Left(Results.BadRequest(Json.obj("error" -> "something wrong happened"))).future
+            }
+        }
+    }
+  }
+}
+
+case class OIDCJwtVerifierConfig(
+    mandatory: Boolean = true,
+    ref: Option[String] = None,
+    source: Option[JwtTokenLocation] = None,
+    user: Boolean = false,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
+  def json: JsValue = OIDCJwtVerifierConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
+}
+
+object OIDCJwtVerifierConfig {
+  val configFlow                     = Seq(
+    "mandatory",
+    "ref",
+    "user",
+    "custom_response",
+    "custom_response_status",
+    "custom_response_headers",
+    "custom_response_body",
+    "source"
+  )
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "mandatory"               -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Mandatory"
+      ),
+      "user"                    -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Use as connected user"
+      ),
+      "custom_response"         -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Custom error"
+      ),
+      "custom_response_status"  -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Custom error status"
+      ),
+      "custom_response_headers" -> Json.obj(
+        "type"  -> "object",
+        "label" -> "Custom error headers"
+      ),
+      "custom_response_body"    -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Custom error body",
+        "props" -> Json.obj("editorOnly" -> true)
+      ),
+      "source"                  -> Json.obj(
+        "type"  -> "any",
+        "label" -> "JWT Source",
+        "props" -> Json.obj("height" -> 200)
+      ),
+      "ref"                     -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Auth. module",
+        "props" -> Json.obj(
+          "optionsFrom"        -> "/bo/api/proxy/apis/security.otoroshi.io/v1/auth-modules",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id"
+          )
+        )
+      )
+    )
+  )
+  val format                         = new Format[OIDCJwtVerifierConfig] {
+    override def reads(json: JsValue): JsResult[OIDCJwtVerifierConfig] = Try {
+      OIDCJwtVerifierConfig(
+        mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
+        ref = json.select("ref").asOpt[String],
+        user = json.select("user").asOptBoolean.getOrElse(false),
+        source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OIDCJwtVerifierConfig): JsValue             = Json.obj(
+      "mandatory"               -> o.mandatory,
+      "ref"                     -> o.ref.map(_.json).getOrElse(JsNull).asValue,
+      "source"                  -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
+    )
+  }
+}
+
+class OIDCJwtVerifier extends NgAccessValidator {
+
+  override def defaultConfigObject: Option[NgPluginConfig] = OIDCJwtVerifierConfig().some
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def isAccessAsync: Boolean                      = true
+  override def name: String                                = "OIDC JWT verification"
+  override def description: Option[String]                 =
+    "This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module".some
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OIDCJwtVerifierConfig.configFlow
+  override def configSchema: Option[JsObject] = OIDCJwtVerifierConfig.configSchema
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx.cachedConfig(internalName)(OIDCJwtVerifierConfig.format).getOrElse(OIDCJwtVerifierConfig())
+    config.ref match {
+      case None               => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
+      case Some(authModuleId) =>
+        env.proxyState.authModule(authModuleId) match {
+          case None    => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
+          case Some(m) =>
+            m match {
+              case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
+                val customResult = config.asResult
+                val verifier     = LocalJwtVerifier()
+                  .copy(
+                    enabled = true,
+                    algoSettings = oidcModule.jwtVerifier.get
+                  )
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None if !config.mandatory  => NgAccess.NgAllowed.vfuture
+                  case None /* config.mandatory */ =>
+                    NgAccess
+                      .NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found"))))
+                      .vfuture
+                  case Some((source, token))     =>
+                    verifier
+                      .copy(source = source)
+                      .verifyGen[NgAccess](
+                        ctx.request,
+                        ctx.route.legacy,
+                        ctx.apikey,
+                        ctx.user,
+                        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                        ctx.attrs
+                      ) { _ =>
+                        if (config.user) {
+                          OIDCAuthToken.getSession(
+                            ctx,
+                            oidcModule,
+                            OIDCAuthTokenConfig(
+                              ref = config.ref.get,
+                              opaque = false,
+                              fetchUserProfile = true,
+                              validateAudience = false,
+                              headerName = "Authorization"
+                            ),
+                            Some(token)
+                          )
+                        } else {
+                          NgAccess.NgAllowed.rightf
+                        }
+                      }
+                      .map {
+                        case Left(_) if config.mandatory      => NgAccess.NgAllowed
+                        case Left(result)                     => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Right(r)                         => r
+                      }
+                }
+              }
+              case _                                                                  =>
+                if (!config.mandatory)
+                  NgAccess.NgAllowed.vfuture
+                else
+                  NgAccess
+                    .NgDenied(
+                      Results.BadRequest(
+                        Json.obj(
+                          "error" -> "auth. module not an oidc module or does not have jwt verification settings"
+                        )
+                      )
+                    )
+                    .vfuture
             }
         }
     }

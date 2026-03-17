@@ -215,7 +215,19 @@ GET 'http://xxxxxxxx.xxxx.xx/.well-known/otoroshi/logout' # trigger logout for t
 GET 'http://xxxxxxxx.xxxx.xx/.well-known/otoroshi/me'     # get the current logged user profile (do not forget to pass cookies)
 ```
 
+## Admin API
+
+```
+GET    /api/auths           # List all auth modules
+POST   /api/auths           # Create an auth module
+GET    /api/auths/:id       # Get an auth module
+PUT    /api/auths/:id       # Update an auth module
+DELETE /api/auths/:id       # Delete an auth module
+PATCH  /api/auths/:id       # Partially update an auth module
+```
+
 ## Related pages
+
 * @ref[Secure an app with auth0](../how-to-s/secure-app-with-auth0.md)
 * @ref[Secure an app with keycloak](../how-to-s/secure-app-with-keycloak.md)
 * @ref[Secure an app with LDAP](../how-to-s/secure-app-with-ldap.md)

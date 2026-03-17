@@ -4,16 +4,16 @@ import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.Target
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.discovery.{DiscoveryHelper, SelfRegistrationConfig}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class NgDiscoverySelfRegistrationConfig(
     raw: JsValue = Json.obj()

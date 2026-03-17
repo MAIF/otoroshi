@@ -1,26 +1,22 @@
 package otoroshi.ssl
 
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
 import org.bouncycastle.asn1.x509.{CRLReason, Extension, Extensions, SubjectPublicKeyInfo}
 import org.bouncycastle.cert.X509CertificateHolder
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
-import org.bouncycastle.cert.ocsp._
-import org.bouncycastle.operator.jcajce.{
-  JcaContentSignerBuilder,
-  JcaContentVerifierProviderBuilder,
-  JcaDigestCalculatorProviderBuilder
-}
+import org.bouncycastle.cert.ocsp.*
+import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
 import org.bouncycastle.operator.{DefaultDigestAlgorithmIdentifierFinder, DigestCalculatorProvider}
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -28,7 +24,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import java.math.BigInteger
 import java.security.cert.X509Certificate
 import java.util.Date
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 object CertParentHelper {
@@ -111,7 +107,7 @@ class OcspResponder(env: Env)(using ec: ExecutionContext) {
     env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
   def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(using ec: ExecutionContext): Future[Result] = {
-    import scala.util._
+    import scala.util.*
     if (possibleCerts.isEmpty || (possibleCerts.nonEmpty && possibleCerts.contains(id))) {
       // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
       DynamicSSLEngineProvider.certificates.values.find { c =>

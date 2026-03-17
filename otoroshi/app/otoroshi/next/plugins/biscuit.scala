@@ -7,15 +7,15 @@ import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.next.plugins.api._
-import otoroshi.plugins.biscuit._
+import otoroshi.next.plugins.api.*
+import otoroshi.plugins.biscuit.*
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class PreRoutingVerifierContext(ctx: NgPreRoutingContext, apk: ApiKey) extends VerificationContext {
   override def request: RequestHeader        = ctx.request
@@ -75,7 +75,7 @@ object NgBiscuitConfig {
 
 class NgBiscuitExtractor extends NgPreRouting {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
 
   override def name: String                                = "Apikey from Biscuit token extractor"
   override def description: Option[String]                 =

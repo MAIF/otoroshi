@@ -2,17 +2,9 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgAccessContext,
-  NgAccessValidator,
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep
-}
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json.{Format, JsError, JsResult, JsSuccess, JsValue, Json}
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}

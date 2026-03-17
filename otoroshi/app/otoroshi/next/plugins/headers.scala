@@ -1,19 +1,21 @@
 package otoroshi.next.plugins
 
+
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
-import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
+import otoroshi.el.{GlobalExpressionLanguage, HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
-import otoroshi.models.RemainingQuotas
-import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.models.{ApiKey, RemainingQuotas}
+import otoroshi.next.models.{NgDomainAndPath, NgRoute}
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -86,7 +88,7 @@ class OverrideHost extends NgRequestTransformer {
     ctx.attrs.get(Keys.BackendKey) match {
       case None          => Right(ctx.otoroshiRequest)
       case Some(backend) =>
-        val host    = TargetExpressionLanguage(
+        val host = TargetExpressionLanguage(
           backend.hostname,
           Some(ctx.request),
           ctx.route.serviceDescriptor.some,
@@ -97,6 +99,7 @@ class OverrideHost extends NgRequestTransformer {
           ctx.attrs,
           env
         )
+
         val headers = ctx.otoroshiRequest.headers.-("Host").-("host").+("Host" -> host)
         val request = ctx.otoroshiRequest.copy(headers = headers)
         Right(request)
@@ -104,9 +107,45 @@ class OverrideHost extends NgRequestTransformer {
   }
 }
 
+case class OverrideLocationHeaderConfig(matchingHostnames: Seq[String] = Seq.empty) extends NgPluginConfig {
+  def json: JsValue = Json.obj(
+    "matching_hostnames" -> matchingHostnames
+  )
+  def matches(hostname: String): Boolean = {
+    matchingHostnames.contains(hostname)
+  }
+}
+
+object OverrideLocationHeaderConfig {
+  val default                        = OverrideLocationHeaderConfig()
+  val format                         = new Format[OverrideLocationHeaderConfig] {
+    override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
+      OverrideLocationHeaderConfig(
+        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: OverrideLocationHeaderConfig): JsValue             = o.json
+  }
+  val configFlow: Seq[String]        = Seq("matching_hostnames")
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "matching_hostnames" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Matching hostnames",
+        "props" -> Json.obj(
+          "label" -> "Matching hostnames"
+        )
+      )
+    )
+  )
+}
+
 class OverrideLocationHeader extends NgRequestTransformer {
 
-  override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
+  override def steps: Seq[NgStep]                = Seq(NgStep.TransformResponse)
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
@@ -114,29 +153,34 @@ class OverrideLocationHeader extends NgRequestTransformer {
   override def core: Boolean                               = true
   override def usesCallbacks: Boolean                      = false
   override def transformsRequest: Boolean                  = false
-  override def transformsResponse: Boolean                 = false
+  override def transformsResponse: Boolean                 = true
   override def transformsError: Boolean                    = false
   override def isTransformRequestAsync: Boolean            = false
   override def isTransformResponseAsync: Boolean           = true
   override def name: String                                = "Override Location header"
   override def description: Option[String]                 =
-    "This plugin override the current Location header with the Host of the backend target".some
-  override def defaultConfigObject: Option[NgPluginConfig] = None
+    "This plugin override the current Location header with the current frontend host if the location start with the Host of the backend target".some
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(OverrideLocationHeaderConfig.default)
   override def noJsForm: Boolean                           = true
+  override def configFlow: Seq[String]                     = OverrideLocationHeaderConfig.configFlow
+  override def configSchema: Option[JsObject]              = OverrideLocationHeaderConfig.configSchema
 
-  override def transformResponseSync(
+  override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     ctx.attrs.get(Keys.BackendKey) match {
-      case None          => ctx.otoroshiResponse.right
+      case None          => ctx.otoroshiResponse.rightf
       case Some(backend) =>
         val status = ctx.otoroshiResponse.status
         if ((status > 299 && status < 400) || status == 201) {
           ctx.otoroshiResponse.header("Location") match {
-            case None                                                                                   => ctx.otoroshiResponse.right
+            case None                                                                                   => ctx.otoroshiResponse.rightf
             case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) =>
-              ctx.otoroshiResponse.right
+              ctx.otoroshiResponse.rightf
             case Some(location)                                                                         =>
+              val config          = ctx
+                .cachedConfig(internalName)(OverrideLocationHeaderConfig.format)
+                .getOrElse(OverrideLocationHeaderConfig.default)
               val backendHost     = TargetExpressionLanguage(
                 backend.hostname,
                 Some(ctx.request),
@@ -150,21 +194,33 @@ class OverrideLocationHeader extends NgRequestTransformer {
               )
               val oldLocation     = Uri(location)
               val oldLocationHost = oldLocation.authority.host.toString()
-              if (oldLocationHost.equalsIgnoreCase(backendHost)) {
+              if (oldLocationHost.equalsIgnoreCase(backendHost) || config.matches(oldLocationHost)) {
                 val frontendHost =
                   Option(ctx.request.domain)
                     .filterNot(_.isBlank)
                     .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
+                val currentPort: Int = if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
+                val processedPath = if (!ctx.route.backend.rewrite && ctx.route.backend.root != "/") {
+                  val newPath = oldLocation.path.toString().replaceFirst(ctx.route.backend.root, "")
+                  if (newPath.startsWith("/")) Uri.Path(newPath) else Uri.Path(s"/$newPath")
+                } else oldLocation.path //stripPathIfMatch(ctx.route, oldLocation.path)
                 val newLocation  =
-                  oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
+                  oldLocation.copy(
+                    scheme = ctx.request.theProtocol,
+                    path = processedPath,
+                    authority = oldLocation.authority.copy(
+                      host = Uri.Host(frontendHost),
+                      port = currentPort
+                    )
+                  ).toString()
                 val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
-                ctx.otoroshiResponse.copy(headers = headers).right
+                ctx.otoroshiResponse.copy(headers = headers).rightf
               } else {
-                ctx.otoroshiResponse.right
+                ctx.otoroshiResponse.rightf
               }
           }
         } else {
-          ctx.otoroshiResponse.right
+          ctx.otoroshiResponse.rightf
         }
     }
   }
@@ -178,23 +234,86 @@ class HeadersValidation extends NgAccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Headers, NgPluginCategory.Classic)
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
 
-  override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = true
-  override def name: String                                = "Headers validation"
-  override def description: Option[String]                 = "This plugin validates the values of incoming request headers".some
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def name: String                = "Headers validation"
+  override def description: Option[String] = "This plugin validates the values of incoming request headers".some
+
+  override def documentation: Option[String]               = Some(
+    s"""You can use otoroshi expression languages in headers values. You can also use the following validation expressions:
+       |
+       |- Regex(foo[1-9]+bar)
+       |- Wildcard(foo*bar)
+       |- WildcardNot(foo*bar)
+       |- Contains(foo)
+       |- ContainsNot(foo)
+       |- Not(foo)
+       |- ContainedIn(a, b, c)
+       |- NotContainedIn(a, b, c)
+       |""".stripMargin
+  )
   override def defaultConfigObject: Option[NgPluginConfig] = NgHeaderValuesConfig().some
   override def isAccessAsync: Boolean                      = true
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val validationHeaders = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map {
-      case (key, value) => (key.toLowerCase, value)
-    }
+    val validationHeaders =
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.map { case (key, value) =>
+        (
+          key.toLowerCase,
+          GlobalExpressionLanguage.apply(
+            value,
+            Some(ctx.request),
+            ctx.route.legacy.some,
+            ctx.route.some,
+            ctx.apikey,
+            ctx.user,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            ctx.attrs,
+            env
+          )
+        )
+      }
     val headers           = ctx.request.headers.toSimpleMap.map { case (key, value) =>
       (key.toLowerCase, value)
     }
     if (
       validationHeaders.forall { case (key, value) =>
-        headers.get(key).contains(value)
+        //headers.get(key).contains(value)
+        headers.get(key).exists { v =>
+          val expected        = value
+          val expectedTrimmed = expected.trim
+          if (expectedTrimmed.startsWith("Regex(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(6).init
+            RegexPool.regex(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("Wildcard(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(9).init
+            RegexPool.apply(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("RegexNot(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(9).init
+            !RegexPool.regex(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("WildcardNot(") && expectedTrimmed.endsWith(")")) {
+            val regex = expected.substring(12).init
+            !RegexPool.apply(regex).matches(v)
+          } else if (expectedTrimmed.startsWith("Contains(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(9).init
+            v.contains(contained)
+          } else if (expectedTrimmed.startsWith("ContainsNot(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(12).init
+            !v.contains(contained)
+          } else if (expectedTrimmed.startsWith("Not(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(4).init
+            v != contained
+          } else if (expectedTrimmed.startsWith("ContainedIn(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(12).init
+            contained.split(",").map(_.trim()).contains(v)
+          } else if (expectedTrimmed.startsWith("NotContainedIn(") && expectedTrimmed.endsWith(")")) {
+            val contained = expected.substring(15).init
+            val values    = contained.split(",").map(_.trim())
+            !values.contains(v)
+          } else {
+            v == expected
+          }
+        }
       }
     ) {
       NgAccess.NgAllowed.vfuture

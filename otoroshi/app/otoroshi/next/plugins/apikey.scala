@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.Done
-import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.PreRoutingError
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.nio.charset.StandardCharsets
@@ -284,12 +284,23 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               ctx.otoroshiRequest.copy(url = newUrl).right
             case ApikeyLocationKind.Cookie =>
               ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right
-            case _ => ctx.otoroshiRequest.right
+            case _                         => ctx.otoroshiRequest.right
           }
         case _                                             => ctx.otoroshiRequest.right
       }
     } else {
-      ctx.otoroshiRequest.right
+      var headers: Map[String, String] = Map.empty
+      if (config.extractors.customHeaders.clientIdHeaderName.isEmpty) {
+        ctx.request.headers.get(env.Headers.OtoroshiClientId).foreach { cid =>
+          headers = headers + (env.Headers.OtoroshiClientId -> cid)
+        }
+      }
+      if (config.extractors.customHeaders.clientSecretHeaderName.isEmpty) {
+        ctx.request.headers.get(env.Headers.OtoroshiClientSecret).foreach { csec =>
+          headers = headers + (env.Headers.OtoroshiClientSecret -> csec)
+        }
+      }
+      ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ headers).right
     }
   }
 }
@@ -396,8 +407,16 @@ case class NgApikeyExtractorCustomHeaders(
   )
   def json: JsValue                             = Json.obj(
     "enabled"                   -> enabled,
-    "client_id_header_name"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "client_secret_header_name" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "client_id_header_name"     -> clientIdHeaderName
+      .filterNot(_.trim.isEmpty)
+      .map(JsString.apply)
+      .getOrElse(JsNull)
+      .as[JsValue],
+    "client_secret_header_name" -> clientSecretHeaderName
+      .filterNot(_.trim.isEmpty)
+      .map(JsString.apply)
+      .getOrElse(JsNull)
+      .as[JsValue]
   )
 }
 
@@ -786,7 +805,7 @@ class ApikeyAuthModule extends NgPreRouting {
   }
 
   def validApikey(apikey: ApiKey, routing: ApiKeyRouteMatcher): Boolean = {
-    import otoroshi.models.SeqImplicits._
+    import otoroshi.models.SeqImplicits.given
 
     val matchOnRole: Boolean   = Option(routing.oneTagIn)
       .filter(_.nonEmpty)

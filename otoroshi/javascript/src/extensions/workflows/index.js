@@ -249,6 +249,12 @@ export function setupWorkflowsExtension(registerExtension) {
             label: 'Functions',
           },
         },
+        notes: {
+          type: 'jsonobjectcode',
+          props: {
+            label: 'Notes',
+          },
+        },
       };
 
       columns = [
@@ -281,6 +287,7 @@ export function setupWorkflowsExtension(registerExtension) {
         'metadata',
         '<<<Workflow',
         'config',
+        'notes',
         '>>>Local Functions',
         'functions',
         '<<<Tester',
@@ -301,8 +308,7 @@ export function setupWorkflowsExtension(registerExtension) {
       client = BackOfficeServices.apisClient('plugins.otoroshi.io', 'v1', 'workflows');
 
       componentDidMount() {
-        if (this.props.location.pathname === '/extensions/workflows/workflows/')
-          this.props.setSidebarContent(<WorkflowSidebar {...this.props} />)
+        this.props.setSidebarContent(<WorkflowSidebar {...this.props} />);
 
         this.props.setTitle('Workflows');
       }
@@ -321,6 +327,7 @@ export function setupWorkflowsExtension(registerExtension) {
               tags: [],
               metadata: {},
               functions: {},
+              notes: [],
               job: {
                 enabled: false,
                 kind: 'ScheduledEvery',
@@ -358,9 +365,16 @@ export function setupWorkflowsExtension(registerExtension) {
             formFlow: this.formFlow,
             columns: this.columns,
             stayAfterSave: true,
-            fetchItems: (paginationState) => this.client.findAll(),
+            defaultSort: 'metadata.updated_at',
+            defaultSortDesc: false,
+            fetchItems: this.client.findAllWithPagination,
             updateItem: (content) => this.client.update(content),
-            createItem: (content) => this.client.create(content),
+            createItem: (content) =>
+              this.client
+                .create(content)
+                .then((item) =>
+                  this.props.history.push(`/extensions/workflows/${item.id}/designer`)
+                ),
             deleteItem: this.client.delete,
             navigateTo: (item) =>
               this.props.history.push(`/extensions/workflows/${item.id}/designer`),
@@ -550,7 +564,7 @@ export function setupWorkflowsExtension(registerExtension) {
       componentDidMount() {
         this.client.findById(this.props.match.params.workflowId).then((r) => {
           if (r) {
-            this.props.setSidebarContent(<WorkflowSidebar {...this.props} />)
+            this.props.setSidebarContent(<WorkflowSidebar {...this.props} />);
             this.setState({ workflow: r });
             this.props.setTitle(`Workflow sessions for ${r.name}`);
           }

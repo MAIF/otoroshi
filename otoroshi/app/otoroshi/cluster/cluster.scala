@@ -3,7 +3,8 @@ package otoroshi.cluster
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
+import next.models.{ApiSubscriptionDataStore, ApiDataStore, KvApiSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import org.apache.commons.codec.binary.Hex
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
 import org.apache.pekko.http.scaladsl.ClientTransport
@@ -11,7 +12,7 @@ import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, Uri}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
@@ -26,27 +27,27 @@ import otoroshi.env.{Env, JavaVersion, OS}
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import otoroshi.jobs.updates.Version
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.{NgCustomQuotas, NgCustomThrottling}
 import otoroshi.next.workflow.PausedWorkflowSession
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.security.IdGenerator
-import otoroshi.ssl._
-import otoroshi.storage._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.stores._
+import otoroshi.ssl.*
+import otoroshi.storage.*
+import otoroshi.storage.drivers.inmemory.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.given
 import otoroshi.utils.http.{ManualResolveTransport, MtlsConfig}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.RequestHeader
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
@@ -340,8 +341,8 @@ case class ClusterConfig(
   def name: String                                    = if (mode.isOff) "standalone" else if (mode.isLeader) leader.name else worker.name
   def gzip(): Flow[ByteString, ByteString, NotUsed]   =
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
-  def gunzip(): Flow[ByteString, ByteString, NotUsed] =
-    if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+  def gzipDecompress(): Flow[ByteString, ByteString, NotUsed] =
+    if (compression == -1) Flow.apply[ByteString] else Compression.gzipDecompress()
   def json: JsValue                                   = Json.obj(
     "mode"         -> mode.json,
     "compression"  -> compression,
@@ -1132,7 +1133,7 @@ object ClusterAgent {
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
 
-  private def clusterGetApikey(env: Env, id: String)(using
+  def clusterGetApikey(env: Env, id: String)(using
       executionContext: ExecutionContext,
       mat: Materializer
   ): Future[Option[JsValue]] = {
@@ -1147,6 +1148,29 @@ object ClusterAgent {
       .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
       .withMaybeProxyServer(cfg.proxy)
       .get()
+      .map {
+        case r if r.status == 200 => r.json.some
+        case r                    =>
+          r.ignore()
+          None
+      }
+  }
+
+  def clusterDeleteApikey(env: Env, id: String)(using
+                                             executionContext: ExecutionContext,
+                                             mat: Materializer
+  ): Future[Option[JsValue]] = {
+    val cfg         = env.clusterConfig
+    val otoroshiUrl = cfg.leader.urls.head
+    env.MtlsWs
+      .url(otoroshiUrl + s"/api/apikeys/$id", cfg.mtlsConfig)
+      .withHttpHeaders(
+        "Host" -> cfg.leader.host
+      )
+      .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
+      .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
+      .withMaybeProxyServer(cfg.proxy)
+      .delete()
       .map {
         case r if r.status == 200 => r.json.some
         case r                    =>
@@ -1205,7 +1229,7 @@ object CpuInfo {
 
   def cpuLoad(): Double = {
     tmbs match {
-      case Failure(_) => 0.0
+      case Failure(_)   => 0.0
       case Success(mbs) => {
         val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
         val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
@@ -1220,7 +1244,7 @@ object CpuInfo {
 
   def loadAverage(): Double = {
     tosMXBean match {
-      case Failure(_) => 0.0
+      case Failure(_)        => 0.0
       case Success(osMXBean) => {
         osMXBean.getSystemLoadAverage
       }
@@ -1231,7 +1255,7 @@ object CpuInfo {
 object ClusterLeaderAgent {
   def apply(config: ClusterConfig, env: Env) = new ClusterLeaderAgent(config, env)
   def getIpAddress(): String = {
-    import java.net._
+    import java.net.*
     val all   = "0.0.0.0"
     val local = "127.0.0.1"
     val res1  = Try {
@@ -1275,7 +1299,7 @@ object ClusterLeaderAgent {
 }
 
 class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
@@ -1447,7 +1471,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
 class ClusterAgent(config: ClusterConfig, env: Env) {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
@@ -2146,7 +2170,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -2259,7 +2283,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val responseBody =
                   if (env.clusterConfig.streamed) resp.bodyAsSource else Source.single(resp.bodyAsBytes)
                 responseBody
-                  .via(env.clusterConfig.gunzip())
+                  .via(env.clusterConfig.gzipDecompress())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, allowTruncation = true))
                   .alsoTo(Sink.foreach { item =>
                     if (env.clusterConfig.backup.instanceCanWrite) {
@@ -2560,7 +2584,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
           csm.state
             .chunks(64 * 1024)
-            .via(env.clusterConfig.gunzip())
+            .via(env.clusterConfig.gzipDecompress())
             .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
             .alsoTo(Sink.foreach { item =>
               if (env.clusterConfig.backup.instanceCanWrite) {
@@ -2746,7 +2770,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               debug(s"uncompressing strict at level ${env.clusterConfig.compression}")
               data
                 .chunks(1024 * 32)
-                .via(config.gunzip())
+                .via(config.gzipDecompress())
                 .runFold(ByteString.empty)(_ ++ _)
                 .map(data => onClusterState(data.utf8String, streamed = false, compressed = true))
             case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
@@ -2826,7 +2850,7 @@ class SwappableInMemoryDataStores(
 
   import org.apache.pekko.stream.Materializer
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
   import scala.util.hashing.MurmurHash3
 
   lazy val redisStatsItems: Int                                           = configuration.betterGet[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
@@ -2856,7 +2880,7 @@ class SwappableInMemoryDataStores(
       environment: Environment,
       lifecycle: ApplicationLifecycle
   ): Future[Unit] = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     Cluster.logger.info("Now using Swappable InMemory DataStores")
     dbPathOpt.foreach { dbPath =>
       val file = new File(dbPath)
@@ -2926,7 +2950,7 @@ class SwappableInMemoryDataStores(
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -3043,8 +3067,11 @@ class SwappableInMemoryDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  private lazy val _apiSubscriptionDataStore                              = new KvApiSubscriptionDataStore(redis, env)
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore
@@ -3240,7 +3267,7 @@ class SwappableInMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     value match {
       case str: String                                                                => ("string", JsString(str))
@@ -3481,7 +3508,9 @@ object ClusterLeaderUpdateMessage       {
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomThrottling.updateQuotas(expr, group, calls.get(), ttl)
+      NgCustomThrottling
+        .updateQuotas(expr, group, calls.get(), 0, ttl.toInt)
+        .map(_ => ())
     }
 
     override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {
@@ -3501,7 +3530,9 @@ object ClusterLeaderUpdateMessage       {
     def increment(inc: Long): Long = calls.addAndGet(inc)
 
     override def updateLeader(member: MemberView)(using env: Env, ec: ExecutionContext): Future[Unit] = {
-      NgCustomQuotas.updateQuotas(expr, group, calls.get())
+      NgCustomQuotas
+        .updateQuotas(expr, group, calls.get())
+        .map(_ => ())
     }
 
     override def updateWorker(member: MemberView)(using env: Env): Future[Unit] = {

@@ -4,13 +4,13 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class StaticAssetEndpointConfiguration(url: Option[String] = None) extends NgPluginConfig {
   def json: JsValue = StaticAssetEndpointConfiguration.format.writes(this)

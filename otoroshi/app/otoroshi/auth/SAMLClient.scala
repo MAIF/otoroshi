@@ -1,10 +1,10 @@
 package otoroshi.auth
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.nimbusds.jose.util.X509CertUtils
 import net.shibboleth.utilities.java.support.xml.BasicParserPool
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pulsar.shade.org.apache.commons.io.IOUtils
 import org.apache.pulsar.shade.org.apache.commons.io.input.BOMInputStream
 import org.opensaml.core.config.InitializationService
@@ -15,19 +15,14 @@ import org.opensaml.core.xml.schema.impl.XSStringImpl
 import org.opensaml.saml.common.SAMLVersion
 import org.opensaml.saml.common.xml.SAMLConstants
 import org.opensaml.saml.metadata.resolver.impl.DOMMetadataResolver
-import org.opensaml.saml.saml2.core._
+import org.opensaml.saml.saml2.core.*
 import org.opensaml.saml.saml2.encryption.Decrypter
 import org.opensaml.saml.saml2.metadata.EntityDescriptor
 import org.opensaml.security.x509.BasicX509Credential
 import org.opensaml.xmlsec.SignatureSigningParameters
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver
 import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver
-import java.util.{Base64 => JavaBase64}
-import org.opensaml.xmlsec.keyinfo.impl.{
-  ChainingKeyInfoCredentialResolver,
-  StaticKeyInfoCredentialResolver,
-  X509KeyInfoGeneratorFactory
-}
+import org.opensaml.xmlsec.keyinfo.impl.{ChainingKeyInfoCredentialResolver, StaticKeyInfoCredentialResolver, X509KeyInfoGeneratorFactory}
 import org.opensaml.xmlsec.signature.Signature
 import org.opensaml.xmlsec.signature.impl.SignatureBuilder
 import org.opensaml.xmlsec.signature.support.{SignatureConstants, SignatureException, SignatureSupport}
@@ -36,19 +31,19 @@ import org.w3c.dom.{Document, Node}
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider.PRIVATE_KEY_PATTERN
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
-import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.Results.{BadRequest, Ok, Redirect}
-import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
+import play.api.mvc.*
 import play.twirl.api.TwirlHelperImports.twirlJavaCollectionToScala
 
-import java.io.{ByteArrayInputStream, InputStreamReader, Reader, StringWriter, Writer}
+import java.io.*
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.cert.{CertificateFactory, X509Certificate}
@@ -56,17 +51,17 @@ import java.security.{PrivateKey, Security}
 import java.time.{Instant, ZonedDateTime}
 import java.util
 import java.util.regex.Matcher
-import java.util.zip.{Inflater, InflaterInputStream}
+import java.util.zip.{Deflater, Inflater, InflaterInputStream}
+import java.util.Base64 as JavaBase64
 import java.util.{Base64, UUID}
 import javax.xml.namespace.QName
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.Try
-import java.util.zip.Deflater
 
 case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
-  import SAMLModule._
+  import SAMLModule.*
 
   def this() = this(SAMLModule.defaultConfig)
 
@@ -84,7 +79,8 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     val redirect   = request
       .getQueryString("redirect")
       .filter(redirect =>
-        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+        request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
       )
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)

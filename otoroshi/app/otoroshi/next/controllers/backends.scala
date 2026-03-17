@@ -3,14 +3,14 @@ package otoroshi.next.controllers.adminapi
 import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

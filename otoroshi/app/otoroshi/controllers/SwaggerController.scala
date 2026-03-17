@@ -3,8 +3,8 @@ package otoroshi.controllers
 import controllers.{Assets, AssetsBuilder}
 import otoroshi.env.Env
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.ExecutionContext
 
@@ -22,7 +22,7 @@ object Implicits {
 class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(using env: Env)
     extends AbstractController(cc) {
 
-  import Implicits._
+  import Implicits.given
 
   implicit lazy val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -2890,7 +2890,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
     Json.obj(
       "openapi"      -> "3.0.0",
       "info"         -> Json.obj(
-        "version"     -> "17.6.0-dev",
+        "version"     -> "17.14.0-dev",
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact"     -> Json.obj(

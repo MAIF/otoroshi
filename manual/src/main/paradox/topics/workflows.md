@@ -1,6 +1,6 @@
 # Otoroshi Workflows
 
-Workflows in Otoroshi provide a powerful way to describe and execute sequences of logic using a JSON-based pseudo-language. Think of it as a lightweight alternative to tools like n8n or Apache NiFi — without the GUI (yet). Workflows let you orchestrate actions, transform data, trigger functions, and control flow based on conditional logic, all within the Otoroshi ecosystem.
+Workflows in Otoroshi provide a powerful way to describe and execute sequences of logic using a JSON-based pseudo-language. Think of it as a lightweight alternative to tools like n8n or Apache NiFi. Workflows let you orchestrate actions, transform data, trigger functions, and control flow based on conditional logic, all within the Otoroshi ecosystem.
 
 ## Key Concepts
 
@@ -620,28 +620,6 @@ Prototype:
 ### Full List of Functions
 
 
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitForgeFunction (biscuit.extensions.cloud-apim.com.biscuit_forge)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.GenerateImageFunction (extensions.com.cloud-apim.llm-extension.image_generate)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-cogs"></span>`Read from Otoroshi config. (core.config_read)`
 
 This function retrieves values from otoroshi config.
@@ -662,18 +640,6 @@ Usage example
   }
 }
 ```
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.GenerateVideoFunction (extensions.com.cloud-apim.llm-extension.video_generate)`
-
-no description
-
-expected configuration:
-
-
 
 ---
 
@@ -836,28 +802,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitKeypairGenFunction (biscuit.extensions.cloud-apim.com.biscuit_keypair_gen)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ModerationCallFunction (extensions.com.cloud-apim.llm-extension.moderation_call)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-cogs"></span>`Compute a resume token for the current workflow (core.compute_resume_token)`
 
 This function computes a resume token for the current workflow
@@ -875,17 +819,6 @@ Usage example
   "args" : { }
 }
 ```
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.CallToolFunctionFunction (extensions.com.cloud-apim.llm-extension.tool_function_call)`
-
-no description
-
-expected configuration:
-
 
 
 ---
@@ -972,28 +905,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.AudioTtsFunction (extensions.com.cloud-apim.llm-extension.audio_tts)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.LlmCallFunction (extensions.com.cloud-apim.llm-extension.llm_call)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-clipboard-list"></span>`Log a message (core.log)`
 
 This function writes whatever the user want to the otoroshi logs
@@ -1016,29 +927,6 @@ Usage example
   }
 }
 ```
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.ComputeEmbeddingFunction (extensions.com.cloud-apim.llm-extension.embedding_compute)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitVerifyFunction (biscuit.extensions.cloud-apim.com.biscuit_verify)`
-
-no description
-
-expected configuration:
-
-
 
 ---
 
@@ -1176,17 +1064,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreAddFunction (extensions.com.cloud-apim.llm-extension.vector_store_add)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-eraser"></span>`Datastore delete (core.store_del)`
 
 This function deletes keys from the store
@@ -1207,17 +1084,6 @@ Usage example
   }
 }
 ```
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`otoroshi_plugins.com.cloud.apim.otoroshi.extensions.biscuit.BiscuitAttenuationFunction (biscuit.extensions.cloud-apim.com.biscuit_attenuation)`
-
-no description
-
-expected configuration:
-
 
 
 ---
@@ -1249,18 +1115,6 @@ Usage example
   }
 }
 ```
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.CallMcpFunctionFunction (extensions.com.cloud-apim.llm-extension.mcp_function_call)`
-
-no description
-
-expected configuration:
-
-
 
 ---
 
@@ -1350,17 +1204,6 @@ Usage example
 ---
 
 
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreSearchFunction (extensions.com.cloud-apim.llm-extension.vector_store_search)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
 #### <span class="fas fa-bullhorn"></span>`Emit an event (core.emit_event)`
 
 This function emits an event
@@ -1389,28 +1232,6 @@ Usage example
   }
 }
 ```
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.AudioSttFunction (extensions.com.cloud-apim.llm-extension.audio_stt)`
-
-no description
-
-expected configuration:
-
-
-
----
-
-
-#### <span class="fas fa-circle"></span>`com.cloud.apim.otoroshi.extensions.aigateway.VectorStoreRemoveFunction (extensions.com.cloud-apim.llm-extension.vector_store_remove)`
-
-no description
-
-expected configuration:
-
 
 
 ## Operators

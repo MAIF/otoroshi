@@ -1,0 +1,63 @@
+package plugins
+
+import functional.PluginsTestSpec
+import otoroshi.models.ApiKey
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
+import otoroshi.next.plugins.*
+import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.security.IdGenerator
+import play.api.http.Status
+import play.api.libs.json.JsObject
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
+
+class RobotsTests(parent: PluginsTestSpec) {
+
+  import parent.{*, given}
+
+  val route = createRouteWithExternalTarget(
+    Seq(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[OverrideHost]
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[Robots],
+        config = NgPluginInstanceConfig(
+          RobotConfig(
+            robotEnabled = true,
+            robotTxtContent = "User-agent: *\nDisallow: /admin",
+            metaEnabled = true,
+            metaContent = "noindex, nofollow",
+            headerEnabled = true,
+            headerContent = "noindex, nofollow"
+          ).json
+            .as[JsObject]
+        )
+      )
+    )
+  ).futureValue
+
+  val authorizedCall = ws
+    .url(s"http://127.0.0.1:$port/robots.txt")
+    .withHttpHeaders(
+      "Host" -> route.frontend.domains.head.domain
+    )
+    .get()
+    .futureValue
+
+  authorizedCall.status mustBe Status.OK
+  authorizedCall.body must include("User-agent: *")
+  authorizedCall.body must include("Disallow: /admin")
+
+  val htmlResp = ws
+    .url(s"http://127.0.0.1:$port/api")
+    .withHttpHeaders(
+      "Host" -> route.frontend.domains.head.domain
+    )
+    .get()
+    .futureValue
+
+  htmlResp.status mustBe Status.OK
+  htmlResp.header("X-Robots-Tag") mustBe Some("noindex, nofollow")
+
+  deleteOtoroshiRoute(route).futureValue
+}

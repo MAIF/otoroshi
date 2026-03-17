@@ -2,11 +2,11 @@ package otoroshi.auth
 
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits.BetterConfiguration
-import play.api.{Configuration, Logger}
 import play.api.http.{JWTConfiguration, SecretConfiguration, SessionConfiguration}
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.mvc.Cookie.SameSite
-import play.api.mvc.{Cookie, DefaultSessionCookieBaker, RequestHeader, Result, Session}
+import play.api.mvc.*
+import play.api.{Configuration, Logger}
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 

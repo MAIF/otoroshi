@@ -1,28 +1,25 @@
 package otoroshi.controllers.adminapi
 
-import java.lang.management.ManagementFactory
-import java.util.concurrent.TimeUnit
-import otoroshi.actions.ApiAction
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
+import otoroshi.actions.ApiAction
 import otoroshi.cluster.CpuInfo.tmbs
 import otoroshi.cluster.StatsView
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Audit}
-
-import javax.management.{Attribute, ObjectName}
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.controllers.Stats
-import play.api.Logger
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
-import otoroshi.utils.syntax.implicits._
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents}
 
+import java.lang.management.ManagementFactory
+import java.util.concurrent.TimeUnit
+import javax.management.{Attribute, ObjectName}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
-import play.api.mvc
-import play.api.mvc.AnyContent
 import scala.util.{Failure, Success, Try}
 
 class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
@@ -103,11 +100,11 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
         val instanceId     = Option(System.getenv("INSTANCE_ID")).getOrElse("--")
 
         val tmbs = Try(ManagementFactory.getPlatformMBeanServer)
-        val rt  = Runtime.getRuntime
+        val rt   = Runtime.getRuntime
 
         def getProcessCpuLoad(): Double = {
           tmbs match {
-            case Failure(_) => 0.0
+            case Failure(_)   => 0.0
             case Success(mbs) => {
               val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
               val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))

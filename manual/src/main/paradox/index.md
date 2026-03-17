@@ -6,7 +6,7 @@
 > *The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.*
 
 @@@ div { .centered-img }
-[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](hhttps://github.com/MAIF/otoroshi/releases/download/v17.6.0-dev/otoroshi.jar)
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [ ![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg) ](hhttps://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar)
 @@@
 
 @@@ div { .centered-img }
@@ -20,14 +20,14 @@ You can download the latest build of Otoroshi as a @ref:[fat jar](./install/get-
 You can install and run Otoroshi with this little bash snippet
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.6.0-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar'
 java -jar otoroshi.jar
 ```
 
 or using docker
 
 ```sh
-docker run -p "8080:8080" maif/otoroshi:17.6.0-dev
+docker run -p "8080:8080" maif/otoroshi:17.14.0-dev
 ```
 
 now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./getting-started.md) or directly to the @ref:[installation instructions](./install/get-otoroshi.md)
@@ -41,6 +41,7 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 * @ref:[Install Otoroshi](./install/index.md)
 * @ref:[Main entities](./entities/index.md)
 * @ref:[Detailed topics](./topics/index.md)
+* @ref:[Quick Tutorials](./quick-tutorials/index.md)
 * @ref:[How to's](./how-to-s/index.md)
 * @ref:[Plugins](./plugins/index.md)
 * @ref:[Admin REST API](./api.md)
@@ -80,6 +81,7 @@ Otoroshi is Open Source and available under the @link:[Apache 2 License](https:/
 * [Install Otoroshi](./install/index.md)
 * [Main entities](./entities/index.md)
 * [Detailed topics](./topics/index.md)
+* [Quick Tutorials](./quick-tutorials/index.md)
 * [How to's](./how-to-s/index.md)
 * [Plugins](./plugins/index.md)
 * [Admin REST API](./api.md)

@@ -4,7 +4,7 @@ export default {
     request: {
       label: 'Request',
       type: 'code',
-      help: 'Example: {user: .user, title: .title}',
+      help: 'Example: {username: .user.name}',
       props: {
         label: 'Request',
         type: 'javascript',
@@ -14,7 +14,7 @@ export default {
     response: {
       label: 'Response',
       type: 'code',
-      help: 'Example: {user: .user, title: .title}',
+      help: 'Example: {username: .user.name}',
       props: {
         label: 'Response',
         type: 'javascript',

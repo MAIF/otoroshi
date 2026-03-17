@@ -1,72 +1,66 @@
 package otoroshi.env
 
-import org.apache.pekko.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
-import org.apache.pekko.http.scaladsl.util.FastFuture._
-import org.apache.pekko.stream.Materializer
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
 import io.otoroshi.wasm4s.scaladsl.WasmIntegration
-import otoroshi.metrics.{HasMetrics, Metrics}
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Cancellable, PoisonPill, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{AuthModuleConfig, PrivateAppsSessionManager, SessionCookieValues}
-import otoroshi.cluster._
-import otoroshi.events._
+import otoroshi.cluster.*
+import otoroshi.events.*
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
-import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
-import otoroshi.models._
+import otoroshi.metrics.{HasMetrics, Metrics}
+import otoroshi.models.*
 import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
 import otoroshi.next.utils.Vaults
-import otoroshi.openapi.ClassGraphScanner
+import otoroshi.openapi.{ClassGraphScanner, OpenApiSchema}
 import otoroshi.script.plugins.Plugins
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
-import otoroshi.storage.{DataStores, DataStoresBuilder}
-import otoroshi.storage.drivers.cassandra._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.drivers.lettuce._
+import otoroshi.storage.drivers.cassandra.*
+import otoroshi.storage.drivers.inmemory.*
+import otoroshi.storage.drivers.lettuce.*
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
-import otoroshi.storage.drivers.rediscala._
-import otoroshi.tcp.TcpService
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import otoroshi.storage.drivers.rediscala.*
+import otoroshi.storage.{DataStores, DataStoresBuilder}
+import otoroshi.tcp.{RunningServers, TcpService}
+import otoroshi.utils.JsonValidator
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.{BetterSyntax, given}
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
-import play.api._
+import play.api.*
 import play.api.http.{HttpConfiguration, HttpRequestHandler}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
-import play.api.libs.ws._
-import play.api.libs.ws.ahc._
+import play.api.libs.ws.*
+import play.api.libs.ws.ahc.*
 import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
 import play.twirl.api.Html
 
-import java.io.File
 import java.lang.management.ManagementFactory
-import java.nio.file.Files
 import java.rmi.registry.LocateRegistry
-import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{Executors, TimeUnit}
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
-import org.apache.pekko.actor.ActorRef
-import otoroshi.openapi.OpenApiSchema
-import otoroshi.tcp.RunningServers
 
 case class RoutingInfo(id: String, name: String)
 
@@ -383,6 +377,9 @@ class Env(
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
+  lazy val trailingSlashMeansExactSegments: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.router.trailingSlashMeansExactSegments").getOrElse(true)
+
   lazy val metricsEvery: FiniteDuration =
     configuration
       .getOptionalWithFileSupport[Long]("otoroshi.metrics.every")
@@ -605,6 +602,9 @@ class Env(
   lazy val backOfficeHost: String      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost: String     = composeMainUrl(privateAppsSubDomain)
 
+  lazy val backOfficePath = "/bo/dashboard"
+  lazy val backOfficeUrl  = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
+
   lazy val adminApiExposedDomains: Seq[String] = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
     .orElse(
@@ -695,7 +695,7 @@ class Env(
       )
     )(using otoroshiMaterializer)
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = ahcClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -745,7 +745,7 @@ class Env(
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     internalAhcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = wsClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -1110,7 +1110,32 @@ class Env(
     // FastFuture.successful(())
   })
 
-  lazy val port: Int = getHttpPort.getOrElse(
+  lazy val confJwksIncludeAlgorithms                               =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jwks.include-algorithms").getOrElse(true)
+  lazy val confJwksRsaAlgorithms: Seq[com.nimbusds.jose.Algorithm] =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.jwks.rsa-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(
+        Seq(
+          com.nimbusds.jose.JWSAlgorithm.RS256,
+          com.nimbusds.jose.JWSAlgorithm.RS384,
+          com.nimbusds.jose.JWSAlgorithm.RS512
+        )
+      )
+  lazy val confJwksEsAlgorithms: Seq[com.nimbusds.jose.Algorithm]  =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.jwks.es-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(
+        Seq(
+          com.nimbusds.jose.JWSAlgorithm.ES256,
+          com.nimbusds.jose.JWSAlgorithm.ES384,
+          com.nimbusds.jose.JWSAlgorithm.ES512
+        )
+      )
+
+  lazy val port = getHttpPort.getOrElse(
     configuration
       .getOptionalWithFileSupport[Int]("play.server.http.port")
       .orElse(configuration.getOptionalWithFileSupport[Int]("http.port"))
@@ -1255,7 +1280,8 @@ class Env(
     localHost = s"127.0.0.1:$port",
     forceHttps = false,
     additionalHeaders = Map(
-      "Host" -> backOfficeDescriptorHostHeader
+      "Host"            -> backOfficeDescriptorHostHeader,
+      "X-Forwarded-For" -> backOfficeDescriptorHostHeader
     ),
     publicPatterns = Seq("/health", "/metrics"),
     removeHeadersIn = Seq.empty,
@@ -1273,7 +1299,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.6.0-dev"
+  lazy val otoroshiVersion    = "17.14.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1348,6 +1374,15 @@ class Env(
     version <- Option(System.getProperty("os.version"))
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
+  val serverTrustedCAs: Seq[String] = {
+    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
+    val localStr = configuration
+      .getOptional[String]("otoroshi.ssl.trust.server_cas_str")
+      .map(_.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty)
+    (local ++ localStr).distinct
+  }
+
   timeout(300.millis).andThen { case _ =>
     given ec: ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
 
@@ -1365,7 +1400,6 @@ class Env(
       logger.info(s"Running Otoroshi Worker agent !")
       clusterAgent.startF()
     }
-
     val modernTlsProtocols: Seq[String] =
       configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
     val protocolsJDK11: Seq[String]     =

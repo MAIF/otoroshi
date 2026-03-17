@@ -97,7 +97,7 @@ export default function EditGroup({}) {
     },
     {
       type: 'group',
-      name: 'Routes.',
+      name: 'HTTP Routes.',
       collapsed: false,
       collapsable: false,
       fields: ['routes'],

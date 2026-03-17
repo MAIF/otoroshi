@@ -33,7 +33,7 @@ export const FromMemory = ({
               props.rootOnChange({
                 ...props.rootValue,
                 fromMemory: e,
-                value: undefined,
+                array: undefined,
               });
             else {
               props.rootOnChange({

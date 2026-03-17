@@ -69,6 +69,7 @@ import { NgFormPlayground } from '../components/nginputs';
 import { NgSelectRenderer } from '../components/nginputs';
 import Loader from '../components/Loader';
 import { globalConfig } from 'antd/lib/config-provider';
+import { RouteTemplatesPage } from '../pages/RouteTemplatesPage';
 
 class ServiceDescriptorsMigrationPopup extends Component {
   render() {
@@ -78,14 +79,14 @@ class ServiceDescriptorsMigrationPopup extends Component {
           <p style={{ textAlign: 'justify' }}>
             It seems that you are still using Service Descriptors to route traffic, as you may know,
             Service Descriptors have been deprecated for{' '}
-            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 2 years</span>,
+            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 4 years</span>,
             since the rewrite of the proxy engine.
           </p>
           <p style={{ textAlign: 'justify' }}>
             The next major version of Otoroshi (
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
-            for Service Descriptors. Once this version will be deployed, all your remaning Service
+            for Service Descriptors (probably in 2026). Once this version will be deployed, all your remaning Service
             Descriptors will be automatically migrated and deleted without further notice.
           </p>
           <p style={{ textAlign: 'justify' }}>
@@ -727,6 +728,33 @@ class BackOfficeAppContainer extends Component {
                         }
                       />
                       <Route
+                        path="/route-templates/:taction/:titem"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates/:taction"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
+                        path="/route-templates"
+                        component={(props) =>
+                          this.decorate(RouteTemplatesPage, {
+                            ...props,
+                            env: this.state.env,
+                          })
+                        }
+                      />
+                      <Route
                         path="/lines/:lineId/services/:serviceId"
                         component={(props) =>
                           this.decorate(ServicePage, {
@@ -1032,6 +1060,7 @@ const BackOfficeAppContainerWithRouter = withRouter(BackOfficeAppContainer);
 export class BackOfficeApp extends Component {
   render() {
     return (
+      // See constant defined in app/env/Env.scala
       <Router basename="/bo/dashboard">
         <BackOfficeAppContainerWithRouter />
       </Router>
