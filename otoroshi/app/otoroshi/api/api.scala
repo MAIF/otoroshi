@@ -4,7 +4,7 @@ import ch.qos.logback.classic.LoggerContext
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers.{Assets, AssetsComponents}
-import next.models.{Api, ApiConsumerSubscription, RouteTemplate}
+import next.models.{Api, ApiSubscription, RouteTemplate}
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -1630,11 +1630,11 @@ class OtoroshiResources(env: Env) {
       "apisubscription",
       "apis.otoroshi.io",
       ResourceVersion("v1", served = true, deprecated = false, storage = true),
-      GenericResourceAccessApiWithStateAndWriteValidation[ApiConsumerSubscription](
-        ApiConsumerSubscription.format,
-        classOf[ApiConsumerSubscription],
-        env.datastores.apiConsumerSubscriptionDataStore.key,
-        env.datastores.apiConsumerSubscriptionDataStore.extractId,
+      GenericResourceAccessApiWithStateAndWriteValidation[ApiSubscription](
+        ApiSubscription.format,
+        classOf[ApiSubscription],
+        env.datastores.apiSubscriptionDataStore.key,
+        env.datastores.apiSubscriptionDataStore.extractId,
         json => json.select("id").asString,
         () => "id",
         (_v, _p, _a) => env.datastores.apiSubscriptionDataStore.template(env).json,

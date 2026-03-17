@@ -1,6 +1,6 @@
 package otoroshi.storage
 
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, RouteTemplateDataStore}
+import next.models.{ApiSubscriptionDataStore, ApiDataStore, RouteTemplateDataStore}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.*

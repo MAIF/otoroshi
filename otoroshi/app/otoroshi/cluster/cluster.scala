@@ -3,7 +3,7 @@ package otoroshi.cluster
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import next.models.{ApiSubscriptionDataStore, ApiDataStore, KvApiSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
 import org.apache.commons.codec.binary.Hex
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
