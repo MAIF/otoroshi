@@ -4,6 +4,10 @@ sidebar_label: "Overview"
 sidebar_position: 1
 slug: /
 ---
+
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
+
 # Otoroshi
 
 **Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
@@ -13,7 +17,7 @@ slug: /
 
 <div align="center">
 
-[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) [![Download](https://img.shields.io/github/release/MAIF/otoroshi.svg)](https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar)
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) <a href={`https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar`}><img src="https://img.shields.io/github/release/MAIF/otoroshi.svg" alt="Download" /></a>
 
 </div>
 
@@ -23,29 +27,29 @@ slug: /
 
 ## Installation
 
-You can download the latest build of Otoroshi as a [fat jar](./install/get-otoroshi.md#from-jar-file), as a [zip package](./install/get-otoroshi.md#from-zip) or as a [docker image](./install/get-otoroshi.md#from-docker).
+You can download the latest build of Otoroshi as a [fat jar](./install/get-otoroshi.mdx#from-jar-file), as a [zip package](./install/get-otoroshi.mdx#from-zip) or as a [docker image](./install/get-otoroshi.mdx#from-docker).
 
 You can install and run Otoroshi with this little bash snippet
 
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar'
-java -jar otoroshi.jar
-```
+<CodeBlock language="sh">
+{`curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar'
+java -jar otoroshi.jar`}
+</CodeBlock>
 
 or using docker
 
-```sh
-docker run -p "8080:8080" maif/otoroshi:17.14.0-dev
-```
+<CodeBlock language="sh">
+{`docker run -p "8080:8080" maif/otoroshi:${version}`}
+</CodeBlock>
 
-now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the [Quick Start](./getting-started.md) or directly to the [installation instructions](./install/get-otoroshi.md)
+now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the [Quick Start](./getting-started.mdx) or directly to the [installation instructions](./install/get-otoroshi.mdx)
 
 ## Documentation
 
 * [About Otoroshi](./about.md)
 * [Architecture](./architecture.md)
 * [Features](./features.md)
-* [Getting started](./getting-started.md)
+* [Getting started](./getting-started.mdx)
 * [Install Otoroshi](./install/index.md)
 * [Main entities](./entities/index.md)
 * [Detailed topics](./topics/index.md)

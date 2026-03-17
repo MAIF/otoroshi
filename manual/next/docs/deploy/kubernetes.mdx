@@ -4,6 +4,8 @@ sidebar_position: 2
 ---
 # Kubernetes
 
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -22,10 +24,10 @@ If you want to deploy otoroshi into your kubernetes cluster, you can download th
 
 You can also create a `kustomization.yaml` file with a remote base
 
-```yaml
-bases:
-- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v17.14.0-dev
-```
+<CodeBlock language="yaml">
+{`bases:
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v${version}`}
+</CodeBlock>
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
 
@@ -75,8 +77,8 @@ stringData:
 
 and mount it in the otoroshi container
 
-```yaml
-apiVersion: apps/v1
+<CodeBlock language="yaml">
+{`apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: otoroshi-deployment
@@ -93,7 +95,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:17.14.0-dev
+      - image: maif/otoroshi:${version}
         imagePullPolicy: IfNotPresent
         name: otoroshi
         args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']
@@ -112,8 +114,8 @@ spec:
       - name: otoroshi-config
         secret:
           secretName: otoroshi-config
-        ...
-```
+        ...`}
+</CodeBlock>
 
 You can also create several secrets for each placeholder, mount them to the otoroshi container then use their file path as value
 

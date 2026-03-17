@@ -3,6 +3,8 @@ title: Expression language
 sidebar_position: 11
 ---
 
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
 import ExpressionLanguage from '@site/src/components/ExpressionLanguage';
 
 # Expression language
@@ -53,23 +55,24 @@ ${req.headers.foo || req.query.foo || req.cookies.foo :: no-foo}
 
 You can test to get the same values than the right part by creating these following services. 
 
-```sh
-# Let's start by downloading the latest Otoroshi.
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar'
+<CodeBlock language="sh">
+{`# Let's start by downloading the latest Otoroshi.
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar'
 
 # Once downloading, run Otoroshi.
-java -Dotoroshi.adminPassword=password -jar otoroshi.jar 
+java -Dotoroshi.adminPassword=password -jar otoroshi.jar
 
 # Create an authentication module to protect the following route.
-curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \
--H "Otoroshi-Client-Id: admin-api-apikey-id" \
--H "Otoroshi-Client-Secret: admin-api-apikey-secret" \
--H 'Content-Type: application/json; charset=utf-8' \
+curl -X POST http://otoroshi-api.oto.tools:8080/api/auths \\
+-H "Otoroshi-Client-Id: admin-api-apikey-id" \\
+-H "Otoroshi-Client-Secret: admin-api-apikey-secret" \\
+-H 'Content-Type: application/json; charset=utf-8' \\
 -d @- <<'EOF'
 {"type":"basic","id":"auth_mod_in_memory_auth","name":"in-memory-auth","desc":"in-memory-auth","users":[{"name":"User Otoroshi","password":"$2a$10$oIf4JkaOsfiypk5ZK8DKOumiNbb2xHMZUkYkuJyuIqMDYnR/zXj9i","email":"user@foo.bar","metadata":{"username":"roger"},"tags":["foo"],"webauthn":null,"rights":[{"tenant":"*:r","teams":["*:r"]}]}],"sessionCookieValues":{"httpOnly":true,"secure":false}}
-EOF
+EOF`}
+</CodeBlock>
 
-
+```sh
 # Create a proxy of the request.otoroshi.io on http://api.oto.tools:8080
 curl -X POST http://otoroshi-api.oto.tools:8080/api/routes \
 -u admin-api-apikey-id:admin-api-apikey-secret \

@@ -2,11 +2,15 @@
 title: One header to rule them all
 sidebar_position: 2
 ---
+
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
+
 # One header to rule them all
 
-<div style="display: flex; align-items: center; gap: .5rem;">
-<span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
+<div style={{display: "flex", alignItems: "center", gap: ".5rem"}}>
+<span style={{fontWeight: "bold"}}>Route plugins:</span>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
 </div>
 
 Have you ever managed user permissions across 15 teams... with 15 different formats? This is a common problem in large organizations: you have multiple APIs handling authorization, and 15 client services calling them. The catch? Each team has implemented it their own way:
@@ -25,16 +29,16 @@ Your backend has to deal with all of this. You either:
 
 ## Before you start
 
-<details class="foldable-block">
+<details className="foldable-block">
 <summary>Set up Otoroshi</summary>
 
 If you already have a running Otoroshi instance, you can skip the following instructions.
 
 Download the latest Otoroshi release:
 
-```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar'
-```
+<CodeBlock language="sh">
+{`curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar'`}
+</CodeBlock>
 
 Start Otoroshi with a custom admin password:
 
@@ -104,7 +108,7 @@ curl http://roles-api.oto.tools:8080 -H 'x-roles: admin,editor'
 ```
 
 <div align="center">
-<img src="/img/docs/quick-tutorials/step-2.png" style="width: 700px" />
+<img src="/img/docs/quick-tutorials/step-2.png" style={{width: "700px"}} />
 </div>
 
 You'll see the response includes a `roles` header with the value `admin,editor`.
@@ -122,10 +126,10 @@ You may have noticed there’s one more plugin in the list. Otoroshi doesn’t a
 :::
 ### Step 3: Clean up original headers
 
-<div style="display: flex; align-items: center; gap: .5rem;">
-<span style="font-weight: bold">Route plugins:</span>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.RemoveHeadersIn">Remove Headers In</a>
+<div style={{display: "flex", alignItems: "center", gap: ".5rem"}}>
+<span style={{fontWeight: "bold"}}>Route plugins:</span>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.RemoveHeadersIn">Remove Headers In</a>
 </div>
 
 By default, Otoroshi forwards all incoming headers to the backend. To ensure your backend only receives the normalized `roles` header, remove the original headers:
@@ -183,7 +187,7 @@ curl http://roles-api.oto.tools:8080 -H 'x-roles: admin'
 ```
 
 <div align="center">
-<img src="/img/docs/quick-tutorials/step-4.png" style="width: 700px" />
+<img src="/img/docs/quick-tutorials/step-4.png" style={{width: "700px"}} />
 </div>
 
 Your backend now receives only the normalized `roles` header. The original headers (`x-roles`, `user-roles`, `roles`) are removed, ensuring consistent header handling across all teams without modifying any client code.
@@ -199,17 +203,17 @@ Your backend now receives only the normalized `roles` header. The original heade
 
 **Plugins used:**
 
-<div style="display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem;">
-<div style="display: flex; align-items: center; gap: .5rem;">
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
+<div style={{display: "flex", flexDirection: "column", gap: ".5rem", marginTop: "1rem"}}>
+<div style={{display: "flex", alignItems: "center", gap: ".5rem"}}>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.AdditionalHeadersIn">Additional Headers In</a>
 <span>Creates the normalized <code>roles</code> header using Expression Language</span>
 </div>
-<div style="display: flex; align-items: center; gap: .5rem;">
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.RemoveHeadersIn">Remove Headers In</a>
+<div style={{display: "flex", alignItems: "center", gap: ".5rem"}}>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.RemoveHeadersIn">Remove Headers In</a>
 <span>Removes original header variations to prevent confusion</span>
 </div>
-<div style="display: flex; align-items: center; gap: .5rem;">
-<a class="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.OverrideHostHeader">Override Host Header</a>
+<div style={{display: "flex", alignItems: "center", gap: ".5rem"}}>
+<a className="badge" href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html#otoroshi.next.plugins.OverrideHostHeader">Override Host Header</a>
 <span>Ensures proper Host header for backend routing</span>
 </div>
 </div>

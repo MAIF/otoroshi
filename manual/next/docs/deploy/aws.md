@@ -8,9 +8,9 @@ sidebar_position: 5
 Now you want to use Otoroshi on AWS. There are multiple options to deploy Otoroshi on AWS, 
 for instance :
 
-* You can deploy the [Docker image](../install/get-otoroshi.md#from-docker) on [Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html)
+* You can deploy the [Docker image](../install/get-otoroshi.mdx#from-docker) on [Amazon ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html)
 * You can create a basic [Amazon EC2](https://docs.aws.amazon.com/fr_fr/AWSEC2/latest/UserGuide/concepts.html), access it via SSH, then 
-deploy the [otoroshi.jar](../install/get-otoroshi.md#from-jar-file)     
+deploy the [otoroshi.jar](../install/get-otoroshi.mdx#from-jar-file)     
 * Or you can use [AWS Elastic Beanstalk](https://aws.amazon.com/fr/elasticbeanstalk)
 
 In this section we are going to cover how to deploy Otoroshi on [AWS Elastic Beanstalk](https://aws.amazon.com/fr/elasticbeanstalk). 
@@ -26,9 +26,9 @@ Eg: for apps running on the JVM (Scala/Java/Kotlin) a Zip with the jar inside wo
 ## Prepare your deployment target
 Actually, there are 2 options to build your target. 
 
-Either you create a DockerFile from this [Docker image](../install/get-otoroshi.md#from-docker), build a zip, and do all the Otoroshi custom configuration using ENVs.
+Either you create a DockerFile from this [Docker image](../install/get-otoroshi.mdx#from-docker), build a zip, and do all the Otoroshi custom configuration using ENVs.
 
-Or you download the [otoroshi.jar](../install/get-otoroshi.md#from-jar-file), do all the Otoroshi custom configuration using your own otoroshi.conf, and create a DockerFile that runs the jar using your otoroshi.conf. 
+Or you download the [otoroshi.jar](../install/get-otoroshi.mdx#from-jar-file), do all the Otoroshi custom configuration using your own otoroshi.conf, and create a DockerFile that runs the jar using your otoroshi.conf. 
 
 For the second option your DockerFile would look like this :
 
