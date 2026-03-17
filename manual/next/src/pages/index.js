@@ -44,9 +44,9 @@ const features = [
     description: 'Export events to Elasticsearch, Kafka, Datadog, Prometheus, OpenTelemetry, and 15+ other backends. Real-time metrics and analytics.',
   },
   {
-    title: 'Extensible with WASM',
+    title: 'Truely Extensible',
     icon: '🔌',
-    description: 'Write custom plugins in any language compiled to WebAssembly. Extend auth, transformations, and traffic policies with full flexibility.',
+    description: 'Write custom plugins in Scala or any language compiled to WebAssembly. Extend auth, transformations, and traffic policies with full flexibility.',
   },
   {
     title: 'GitOps Ready',
