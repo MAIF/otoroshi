@@ -203,9 +203,9 @@ function AIGatewaySection() {
         <div className={styles.aiGatewayCard}>
           <div className={styles.aiGatewayIntro}>
             <div className={styles.aiGatewayEyebrow}>AI capabilities</div>
-            <Heading as="h2">AI Gateway built-in</Heading>
+            <Heading as="h2">AI Gateway built-in<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a></Heading>
             <p>
-              Connect, secure and control 50+ LLM providers with a unified API.
+              Connect, secure and control 50+ LLM providers with a unified API<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a>.
             </p>
           </div>
           <div className={styles.aiGatewayListWrap}>
