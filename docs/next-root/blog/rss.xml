@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
     <channel>
         <title>Otoroshi Blog</title>
-        <link>https://maif.github.io/otoroshi/next/blog</link>
+        <link>https://www.otoroshi.io/blog</link>
         <description>Otoroshi Blog</description>
         <lastBuildDate>Mon, 16 Mar 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
@@ -10,12 +10,12 @@
         <language>en</language>
         <item>
             <title><![CDATA[Welcome to the Otoroshi Blog]]></title>
-            <link>https://maif.github.io/otoroshi/next/blog/welcome</link>
-            <guid>https://maif.github.io/otoroshi/next/blog/welcome</guid>
+            <link>https://www.otoroshi.io/blog/welcome</link>
+            <guid>https://www.otoroshi.io/blog/welcome</guid>
             <pubDate>Mon, 16 Mar 2026 00:00:00 GMT</pubDate>
             <description><![CDATA[Welcome to the official Otoroshi blog! This is the place where we will share news, release announcements, tutorials, and insights about Otoroshi and the API gateway ecosystem.]]></description>
             <content:encoded><![CDATA[<p>Welcome to the official Otoroshi blog! This is the place where we will share news, release announcements, tutorials, and insights about Otoroshi and the API gateway ecosystem.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-expect">What to expect<a href="https://maif.github.io/otoroshi/next/blog/welcome#what-to-expect" class="hash-link" aria-label="Direct link to What to expect" title="Direct link to What to expect" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-expect">What to expect<a href="https://www.otoroshi.io/blog/welcome#what-to-expect" class="hash-link" aria-label="Direct link to What to expect" title="Direct link to What to expect" translate="no">​</a></h2>
 <p>Here are some of the topics we plan to cover:</p>
 <ul>
 <li class=""><strong>Release announcements</strong> — details about new versions, features, and improvements</li>
