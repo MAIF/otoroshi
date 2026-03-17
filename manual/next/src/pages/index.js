@@ -274,6 +274,34 @@ function ComparisonSection() {
             <p>Complete REST API, expression language, WASM plugins in any language, visual workflow editor, and comprehensive documentation.</p>
           </div>
         </div>
+        <div className={styles.comparisonTableWrapper}>
+          <table className={styles.comparisonTable}>
+            <thead>
+              <tr>
+                <th>Traditional gateways</th>
+                <th>Otoroshi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Static configuration</td>
+                <td><strong>Dynamic runtime control</strong></td>
+              </tr>
+              <tr>
+                <td>API-only</td>
+                <td><strong>HTTP + API + AI + workflows</strong></td>
+              </tr>
+              <tr>
+                <td>Routing traffic</td>
+                <td><strong>Executing logic on traffic</strong></td>
+              </tr>
+              <tr>
+                <td>Manage endpoints</td>
+                <td><strong>Control flows</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
