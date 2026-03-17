@@ -113,8 +113,21 @@ function HeroBanner() {
                 GitHub
               </Link>
             </div>
-            <div className={styles.heroInstall}>
-              <code>docker run -p "8080:8080" maif/otoroshi</code>
+            <div className={styles.heroMeta}>
+              <div className={styles.heroInstall}>
+                <code>docker run -p "8080:8080" maif/otoroshi</code>
+              </div>
+              <a
+                className={styles.githubStarsBadge}
+                href="https://github.com/MAIF/otoroshi"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src="https://img.shields.io/github/stars/MAIF/otoroshi?style=social"
+                  alt="GitHub stars"
+                />
+              </a>
             </div>
           </div>
           <div className={styles.heroImage}>
