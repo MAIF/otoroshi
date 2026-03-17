@@ -233,6 +233,69 @@
   margin: 0;
 }
 
+/* ===== AI Gateway Section ===== */
+.aiGatewaySection {
+  padding: 0 0 5rem;
+}
+
+.aiGatewayCard {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 2rem;
+  align-items: stretch;
+  padding: 2rem;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(249, 176, 0, 0.12), rgba(249, 176, 0, 0.03)),
+    var(--ifm-background-color);
+  border: 1px solid color-mix(in srgb, #f9b000 28%, var(--ifm-color-emphasis-200));
+}
+
+.aiGatewayIntro h2 {
+  margin-bottom: 0.75rem;
+}
+
+.aiGatewayIntro p {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.8;
+  max-width: 40rem;
+}
+
+.aiGatewayEyebrow {
+  margin-bottom: 0.75rem;
+  color: #c67c00;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.aiGatewayListWrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.aiGatewayList {
+  margin: 0;
+  padding: 1.1rem 1.25rem 1.1rem 2.2rem;
+  width: 100%;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ifm-background-surface-color) 72%, transparent);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.aiGatewayList li {
+  margin: 0.35rem 0;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .aiGatewayEyebrow {
+  color: #f9b000;
+}
+
 /* ===== Use Cases Section ===== */
 .useCasesSection {
   padding: 5rem 0;
@@ -570,6 +633,14 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .aiGatewayCard {
+    grid-template-columns: 1fr;
+  }
+
+  .aiGatewayListWrap {
+    justify-content: stretch;
+  }
+
   .useCasesGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -603,6 +674,18 @@
 
   .featuresGrid {
     grid-template-columns: 1fr;
+  }
+
+  .aiGatewaySection {
+    padding-bottom: 4rem;
+  }
+
+  .aiGatewayCard {
+    padding: 1.5rem;
+  }
+
+  .aiGatewayList {
+    padding: 1rem 1rem 1rem 2rem;
   }
 
   .useCasesGrid {

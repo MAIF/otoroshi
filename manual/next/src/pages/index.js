@@ -196,6 +196,33 @@ function FeaturesSection() {
   );
 }
 
+function AIGatewaySection() {
+  return (
+    <section className={styles.aiGatewaySection}>
+      <div className="container">
+        <div className={styles.aiGatewayCard}>
+          <div className={styles.aiGatewayIntro}>
+            <div className={styles.aiGatewayEyebrow}>AI capabilities</div>
+            <Heading as="h2">AI Gateway built-in</Heading>
+            <p>
+              Connect, secure and control 50+ LLM providers with a unified API.
+            </p>
+          </div>
+          <div className={styles.aiGatewayListWrap}>
+            <ul className={styles.aiGatewayList}>
+              <li>Multi-modal</li>
+              <li>Guardrails</li>
+              <li>Cost tracking & Bugets management</li>
+              <li>MCP support</li>
+              <li>Observability</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function UseCasesSection() {
   return (
     <section className={styles.useCasesSection}>
@@ -379,6 +406,7 @@ export default function Home() {
       <main>
         <StatsSection />
         <FeaturesSection />
+        <AIGatewaySection />
         <ComparisonSection />
         <UseCasesSection />
         <QuickStartSection />
