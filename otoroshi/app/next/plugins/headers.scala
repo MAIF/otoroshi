@@ -164,31 +164,6 @@ class OverrideLocationHeader extends NgRequestTransformer {
   override def configFlow: Seq[String]                     = OverrideLocationHeaderConfig.configFlow
   override def configSchema: Option[JsObject]              = OverrideLocationHeaderConfig.configSchema
 
-  def stripPathIfMatch(
-    route: NgRoute,
-    _requestPath: Uri.Path
-  ): Uri.Path = {
-    if (route.frontend.stripPath) {
-      val requestPath = _requestPath.toString()
-      def normalize(p: String): String =
-        if (p.endsWith("/") && p != "/") p.dropRight(1) else p
-      val normalizedRequest = normalize(requestPath)
-      route.frontend.domains
-        .sortBy(_.path.length)(Ordering[Int].reverse)
-        .find { f =>
-          val fp = normalize(f.path)
-          normalizedRequest == fp || normalizedRequest.startsWith(fp + "/")
-        }
-        .map { f =>
-          val fp = normalize(f.path)
-          val stripped = normalizedRequest.stripPrefix(fp)
-          if (stripped.isEmpty) Uri.Path("/") else Uri.Path(stripped)
-        }
-        .getOrElse(_requestPath)
-    } else {
-      _requestPath
-    }
-  }
   override def transformResponse(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
