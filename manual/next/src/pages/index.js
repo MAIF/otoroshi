@@ -49,6 +49,11 @@ const features = [
     description: 'Write custom plugins in Scala or any language compiled to WebAssembly. Extend auth, transformations, and traffic policies with full flexibility.',
   },
   {
+    title: 'No-Code Workflows',
+    icon: '🔀',
+    description: 'Build automation pipelines and no-code plugins with a visual workflow editor. Chain HTTP calls, transformations, and logic without writing a single line of code.',
+  },
+  {
     title: 'GitOps Ready',
     icon: '🚀',
     description: 'Remote Catalogs with reconciliation from GitHub, GitLab, Bitbucket, S3, and more. Declarative config with webhook-triggered deployments.',
