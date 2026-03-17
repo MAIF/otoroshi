@@ -371,7 +371,7 @@ function SovereigntySection() {
           <div className={styles.sovereigntyCard}>
             <div className={styles.sovereigntyIcon}>🔓</div>
             <Heading as="h4">No Vendor Lock-in</Heading>
-            <p>Apache 2.0 licensed, community-driven, and backed by MAIF. Switch, fork, or extend — you're always in control.</p>
+            <p>Apache 2.0 licensed, community-driven. Switch, fork, or extend — you're always in control.</p>
           </div>
           <div className={styles.sovereigntyCard}>
             <div className={styles.sovereigntyIcon}>🌍</div>
