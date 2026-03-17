@@ -14,7 +14,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [End-to-end mTLS](./end-to-end-mtls.md)
 * [Send alerts by emails](./export-alerts-using-mailgun.md)
 * [Export events to Elasticsearch](./export-events-to-elastic.mdx)
-* [Import/export Otoroshi datastore](./import-export-otoroshi-datastore.md)
+* [Import/export Otoroshi datastore](./import-export-otoroshi-datastore.mdx)
 * [Secure an app with Auth0](./secure-app-with-auth0.mdx)
 * [Secure an app with Keycloak](./secure-app-with-keycloak.mdx)
 * [Secure an app with LDAP](./secure-app-with-ldap.mdx)

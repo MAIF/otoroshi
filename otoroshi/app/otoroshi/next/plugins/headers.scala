@@ -8,8 +8,8 @@ import otoroshi.el.{GlobalExpressionLanguage, HeadersExpressionLanguage, TargetE
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
-import otoroshi.models.RemainingQuotas
-import otoroshi.next.models.NgRoute
+import otoroshi.models.{ApiKey, RemainingQuotas}
+import otoroshi.next.models.{NgDomainAndPath, NgRoute}
 import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -199,8 +199,20 @@ class OverrideLocationHeader extends NgRequestTransformer {
                   Option(ctx.request.domain)
                     .filterNot(_.isBlank)
                     .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
+                val currentPort: Int = if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
+                val processedPath = if (!ctx.route.backend.rewrite && ctx.route.backend.root != "/") {
+                  val newPath = oldLocation.path.toString().replaceFirst(ctx.route.backend.root, "")
+                  if (newPath.startsWith("/")) Uri.Path(newPath) else Uri.Path(s"/$newPath")
+                } else oldLocation.path //stripPathIfMatch(ctx.route, oldLocation.path)
                 val newLocation  =
-                  oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
+                  oldLocation.copy(
+                    scheme = ctx.request.theProtocol,
+                    path = processedPath,
+                    authority = oldLocation.authority.copy(
+                      host = Uri.Host(frontendHost),
+                      port = currentPort
+                    )
+                  ).toString()
                 val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
                 ctx.otoroshiResponse.copy(headers = headers).rightf
               } else {

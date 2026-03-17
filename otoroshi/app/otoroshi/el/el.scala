@@ -510,7 +510,7 @@ object GlobalExpressionLanguage {
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
-                  (json \ field.s).asOpt[JsValue] match {
+                  json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -522,7 +522,7 @@ object GlobalExpressionLanguage {
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
-                  (json \ field.s).asOpt[JsValue] match {
+                  json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -534,7 +534,7 @@ object GlobalExpressionLanguage {
               user
                 .map(_.profile)
                 .map(json =>
-                  (json \ field.s).asOpt[JsValue] match {
+                  json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -546,7 +546,7 @@ object GlobalExpressionLanguage {
               user
                 .map(_.profile)
                 .map(json =>
-                  (json \ field.s).asOpt[JsValue] match {
+                  json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -580,7 +580,7 @@ object GlobalExpressionLanguage {
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.view.mapValues(_.json).toMap)))
                 .map(json =>
-                  (json \ field.s).asOpt[JsValue] match {
+                  json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
@@ -593,7 +593,7 @@ object GlobalExpressionLanguage {
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.view.mapValues(_.json).toMap)))
                 .map(json =>
-                  (json \ field.s).asOpt[JsValue] match {
+                  json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString

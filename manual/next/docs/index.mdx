@@ -1,0 +1,88 @@
+---
+title: Otoroshi
+sidebar_label: "Overview"
+sidebar_position: 1
+slug: /
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
+
+# Otoroshi
+
+**Otoroshi** is a layer of lightweight api management on top of a modern http reverse proxy written in <a href="https://www.scala-lang.org/" target="_blank">Scala</a> and developped by the <a href="https://maif.github.io" target="_blank">MAIF OSS</a> team that can handle all the calls to and between your microservices without service locator and let you change configuration dynamicaly at runtime.
+
+
+> *The <a href="https://en.wikipedia.org/wiki/Gazu_Hyakki_Yagy%C5%8D#/media/File:SekienOtoroshi.jpg" target="blank">Otoroshi</a> is a large hairy monster that tends to lurk on the top of the torii gate in front of Shinto shrines. It's a hostile creature, but also said to be the guardian of the shrine and is said to leap down from the top of the gate to devour those who approach the shrine for only self-serving purposes.*
+
+<div align="center">
+
+[![Join the discord](https://img.shields.io/discord/1089571852940218538?color=f9b000&label=Community&logo=Discord&logoColor=f9b000)](https://discord.gg/dmbwZrfpcQ) <a href={`https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar`}><img src="https://img.shields.io/github/release/MAIF/otoroshi.svg" alt="Download" /></a>
+
+</div>
+
+<div align="center">
+<img src="https://github.com/MAIF/otoroshi/raw/master/resources/otoroshi-logo.png" width="300" />
+</div>
+
+## Installation
+
+You can download the latest build of Otoroshi as a [fat jar](./install/get-otoroshi.mdx#from-jar-file), as a [zip package](./install/get-otoroshi.mdx#from-zip) or as a [docker image](./install/get-otoroshi.mdx#from-docker).
+
+You can install and run Otoroshi with this little bash snippet
+
+<CodeBlock language="sh">
+{`curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar'
+java -jar otoroshi.jar`}
+</CodeBlock>
+
+or using docker
+
+<CodeBlock language="sh">
+{`docker run -p "8080:8080" maif/otoroshi:${version}`}
+</CodeBlock>
+
+now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the [Quick Start](./getting-started.mdx) or directly to the [installation instructions](./install/get-otoroshi.mdx)
+
+## Documentation
+
+* [About Otoroshi](./about.md)
+* [Architecture](./architecture.md)
+* [Features](./features.md)
+* [Getting started](./getting-started.mdx)
+* [Install Otoroshi](./install/index.md)
+* [Main entities](./entities/index.md)
+* [Detailed topics](./topics/index.md)
+* [Quick Tutorials](./quick-tutorials/index.md)
+* [How to's](./how-to-s/index.md)
+* [Plugins](./plugins/index.md)
+* [Admin REST API](./api.md)
+* [Deploy to production](./deploy/index.md)
+* [Developing Otoroshi](./dev.md)
+
+## Discussion
+
+Join the [Otoroshi server](https://discord.gg/dmbwZrfpcQ) Discord
+
+## Sources
+
+The sources of Otoroshi are available on [Github](https://github.com/MAIF/otoroshi).
+
+## Logo
+
+You can find the official Otoroshi logo [on GitHub](https://github.com/MAIF/otoroshi/blob/master/resources/otoroshi-logo.png). The Otoroshi logo has been created by François Galioto ([@fgalioto](https://twitter.com/fgalioto))
+
+## Changelog
+
+Every release, along with the migration instructions, is documented on the [Github Releases](https://github.com/MAIF/otoroshi/releases) page. A condensed version of the changelog is available on [github](https://github.com/MAIF/otoroshi/blob/master/CHANGELOG.md)
+
+## Patrons
+
+The work on Otoroshi is funded by <a href="https://www.maif.fr/" target="_blank">MAIF</a>, <a href="https://www.cloud-apim.com/" target="_blank">Cloud APIM</a>, <a href="https://www.serli.com/" target="_blank">Serli</a> and <a href="https://www.clever.cloud/" target="_blank">Clever Cloud</a> with the help of the community.
+
+## Licence
+
+Otoroshi is Open Source and available under the [Apache 2 License](https://opensource.org/licenses/Apache-2.0)
+
+
+

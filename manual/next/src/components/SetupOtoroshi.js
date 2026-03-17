@@ -1,5 +1,6 @@
 import React from 'react';
 import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
 
 const createRouteCommand = `curl -X POST 'http://otoroshi-api.oto.tools:8080/api/routes' \\
 -H "Content-type: application/json" \\
@@ -32,7 +33,7 @@ export default function SetupOtoroshi({ withRoute = false }) {
         </p>
         <p>Let's start by downloading the latest Otoroshi.</p>
         <CodeBlock language="sh">
-          {`curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v17.14.0-dev/otoroshi.jar'`}
+          {`curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar'`}
         </CodeBlock>
         <p>then you can run start Otoroshi :</p>
         <CodeBlock language="sh">
