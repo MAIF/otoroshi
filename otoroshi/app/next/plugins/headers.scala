@@ -8,7 +8,7 @@ import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas}
-import otoroshi.next.models.NgRoute
+import otoroshi.next.models.{NgDomainAndPath, NgRoute}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -164,6 +164,31 @@ class OverrideLocationHeader extends NgRequestTransformer {
   override def configFlow: Seq[String]                     = OverrideLocationHeaderConfig.configFlow
   override def configSchema: Option[JsObject]              = OverrideLocationHeaderConfig.configSchema
 
+  def stripPathIfMatch(
+    route: NgRoute,
+    _requestPath: Uri.Path
+  ): Uri.Path = {
+    if (route.frontend.stripPath) {
+      val requestPath = _requestPath.toString()
+      def normalize(p: String): String =
+        if (p.endsWith("/") && p != "/") p.dropRight(1) else p
+      val normalizedRequest = normalize(requestPath)
+      route.frontend.domains
+        .sortBy(_.path.length)(Ordering[Int].reverse)
+        .find { f =>
+          val fp = normalize(f.path)
+          normalizedRequest == fp || normalizedRequest.startsWith(fp + "/")
+        }
+        .map { f =>
+          val fp = normalize(f.path)
+          val stripped = normalizedRequest.stripPrefix(fp)
+          if (stripped.isEmpty) Uri.Path("/") else Uri.Path(stripped)
+        }
+        .getOrElse(_requestPath)
+    } else {
+      _requestPath
+    }
+  }
   override def transformResponse(
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
@@ -199,9 +224,11 @@ class OverrideLocationHeader extends NgRequestTransformer {
                     .filterNot(_.isBlank)
                     .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
                 val currentPort: Int = if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
+                val processedPath = if (ctx.route.b)//stripPathIfMatch(ctx.route, oldLocation.path)
                 val newLocation  =
                   oldLocation.copy(
                     scheme = ctx.request.theProtocol,
+                    path = processedPath,
                     authority = oldLocation.authority.copy(
                       host = Uri.Host(frontendHost),
                       port = currentPort
