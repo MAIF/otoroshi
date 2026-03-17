@@ -23,7 +23,7 @@ target
 .bsp
 oto-events*
 *.gor
-/project
+/project/*/
 /local-scripts
 otoroshi/javascript/stats.json
 .bloop
