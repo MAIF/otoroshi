@@ -211,7 +211,7 @@ const config = {
           width: 50,
           height: 50,
         },
-        copyright: `Copyright © ${new Date().getFullYear()} MAIF — Open Source. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} #OSSbyMAIF. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,
