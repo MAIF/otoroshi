@@ -194,7 +194,7 @@ const config = {
             title: 'Ecosystem',
             items: [
               {
-                label: 'Ecosystem page',
+                label: 'Otoroshi\'s Ecosystem',
                 href: '/ecosystem',
               },
               {
