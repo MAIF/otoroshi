@@ -16,7 +16,7 @@ const features = [
   {
     title: 'Enterprise-Grade Security',
     icon: '🛡️',
-    description: 'Built-in mTLS, API keys with quotas, JWT validation, OAuth2/OIDC, LDAP, SAML, WASM-based auth, WAF (Coraza), and fine-grained RBAC.',
+    description: 'Built-in mTLS, API keys with quotas, JWT token validation, Eclipse Biscuit validation, OAuth2/OIDC, LDAP, SAML, WASM-based auth, powerful WAF (using OWASP CoreRuleSet), and fine-grained RBAC.',
   },
   {
     title: '200+ Built-in Plugins',
