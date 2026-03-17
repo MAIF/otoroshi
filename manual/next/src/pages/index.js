@@ -67,12 +67,14 @@ const features = [
 
 const useCases = [
   {
-    title: 'API Gateway',
+    // title: 'API Gateway',
+    title: 'API Control Plane',
     description: 'Centralize API traffic management with authentication, rate limiting, and monitoring.',
     icon: '🌐',
   },
   {
-    title: 'Service Mesh',
+    // title: 'Service Mesh',
+    title: 'Traffic Orchestration',
     description: 'Manage inter-service communication with mTLS, circuit breakers, and retry policies.',
     icon: '🕸️',
   },
@@ -97,7 +99,8 @@ const stats = [
   { value: '200+', label: 'Built-in Plugins' },
   { value: '15+', label: 'Event Exporters' },
   { value: '10+', label: 'Auth Protocols' },
-  { value: '6', label: 'Storage Backends' },
+  { value: '50+', label: 'LLM Providers supported' },
+  //{ value: '6', label: 'Storage Backends' },
 ];
 
 function HeroBanner() {
