@@ -58,6 +58,43 @@ export function Informations(props) {
         description: 'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.'
       },
     },
+    owner: {
+      label: "Owner",
+      type: 'form',
+      schema: {
+        ref: {
+          label: 'Owner ref.',
+          type: "string",
+        },
+        config: {
+          type: 'json',
+          label: 'Owner ref. config.',
+        }
+      },
+      flow: [
+        "ref",
+        "config",
+      ],
+    },
+    members: {
+      array: true,
+      label: "Members",
+      type: 'form',
+      schema: {
+        ref: {
+          label: 'Owner ref.',
+          type: "string",
+        },
+        config: {
+          type: 'json',
+          label: 'Owner ref. config.',
+        }
+      },
+      flow: [
+        "ref",
+        "config",
+      ],
+    },
     debug_flow: {
       type: 'box-bool',
       label: 'Debug the endpoint',
@@ -109,6 +146,15 @@ export function Informations(props) {
       collapsable: false,
       name: 'API',
       fields: ['enabled', 'name', 'description', 'version'],
+    },
+    {
+      type: 'group',
+      collapsed: true,
+      name: 'Informations',
+      fields: [
+        'owner',
+        'members',
+      ],
     },
     {
       type: 'group',
