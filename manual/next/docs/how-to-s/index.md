@@ -36,5 +36,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Quickly expose a website and static files](./zip-backend-plugin.mdx)
 * [Calling Otoroshi from a frontend](./calling-otoroshi-from-a-frontend.mdx)
 * [Create your first API](./create-your-first-api.mdx)
+* [Set up an AI Gateway with otoroshictl](./setup-ai-gateway-with-otoroshictl.md)
 
 

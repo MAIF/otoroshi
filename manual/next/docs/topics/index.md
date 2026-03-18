@@ -39,6 +39,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [Kubernetes Gateway API](./kubernetes-gateway-api.md)
 * [Admin Extensions](./admin-extensions.md)
 * [Managing Otoroshi with otoroshictl](./otoroshictl.md)
+* [AI / LLM Gateway](./llm-gateway.md)
 
 
 

@@ -93,6 +93,7 @@ const sidebars = {
         'topics/kubernetes-gateway-api',
         'topics/admin-extensions',
         'topics/otoroshictl',
+        'topics/llm-gateway',
         'topics/deprecating-sd',
         'topics/anonymous-reporting',
       ],
@@ -145,6 +146,7 @@ const sidebars = {
         'how-to-s/resources-loader',
         'how-to-s/custom-log-levels',
         'how-to-s/custom-initial-state',
+        'how-to-s/setup-ai-gateway-with-otoroshictl',
       ],
     },
     {
