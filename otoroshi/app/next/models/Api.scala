@@ -1034,6 +1034,30 @@ object ApiTesting {
   }
 }
 
+case class UserRef(ref: String, config: JsObject) {
+  def json: JsValue = UserRef.format.writes(this)
+}
+object UserRef {
+  val empty = UserRef("owner", Json.obj())
+  val format = new Format[UserRef] {
+    override def writes(o: UserRef): JsValue = Json.obj(
+      "ref" -> o.ref,
+      "config" -> o.config
+    )
+    override def reads(json: JsValue): JsResult[UserRef] = Try {
+      UserRef(
+        ref = json.select("ref").asString,
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj()),
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+  }
+}
+
 case class Api(
     kind: String = "Api",
     location: EntityLocation,
@@ -1044,6 +1068,8 @@ case class Api(
     contextPath: String,
     tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
+    owner: UserRef = UserRef.empty,
+    members: Seq[UserRef] = Seq.empty,
     version: String,
     versions: Seq[String] = Seq("0.0.1"),
     debugFlow: Boolean,
@@ -1517,6 +1543,8 @@ object Api {
       "contextPath"            -> o.contextPath,
       "metadata"               -> o.metadata,
       "tags"                   -> JsArray(o.tags.map(JsString.apply)),
+      "owner"                  -> o.owner.json,
+      "members"                -> JsArray(o.members.map(_.json)),
       "version"                -> o.version,
       "debug_flow"             -> o.debugFlow,
       "capture"                -> o.capture,
@@ -1547,6 +1575,8 @@ object Api {
         contextPath = (json \ "contextPath").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        owner = (json \ "owner").asOpt[JsObject].flatMap(o => UserRef.format.reads(o).asOpt).getOrElse(UserRef.empty),
+        members = (json \ "members").asOpt[Seq[JsObject]].map(seq => seq.flatMap(o => UserRef.format.reads(o).asOpt)).getOrElse(Seq.empty),
         version = (json \ "version").asOptString.getOrElse("0.0.1"),
         debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
