@@ -85,10 +85,10 @@ export function Informations(props) {
           type: 'select',
           props: {
             options: [
-              { label: 'public', value: 'Public' },
-              { label: 'semi_public', value: 'Semi Public' },
-              { label: 'private', value: 'Private' },
-              { label: 'custom', value: 'Custom' },
+              { value: 'public', label: 'Public' },
+              { value: 'semi_public', label: 'Semi Public' },
+              { value: 'private', label: 'Private' },
+              { value: 'custom', label: 'Custom' },
             ],
           },
         },
