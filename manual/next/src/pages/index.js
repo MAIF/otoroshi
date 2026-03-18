@@ -412,7 +412,7 @@ export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title="Cloud Native API Gateway"
+      title="Cloud Native API & AI Gateway"
       description="Otoroshi is a lightweight, blazing fast API gateway and reverse proxy with dynamic hot configuration, enterprise security, 200+ plugins, and deep observability.">
       <HeroBanner />
       <main>

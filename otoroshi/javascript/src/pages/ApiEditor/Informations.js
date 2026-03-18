@@ -76,6 +76,32 @@ export function Informations(props) {
         "config",
       ],
     },
+    visibility: {
+      label: "Visibility",
+      type: 'form',
+      schema: {
+        kind: {
+          label: 'Kind',
+          type: 'select',
+          props: {
+            options: [
+              { label: 'public', value: 'Public' },
+              { label: 'semi_public', value: 'Semi Public' },
+              { label: 'private', value: 'Private' },
+              { label: 'custom', value: 'Custom' },
+            ],
+          },
+        },
+        config: {
+          type: 'json',
+          label: 'Visibility config.',
+        }
+      },
+      flow: [
+        "kind",
+        "config",
+      ],
+    },
     members: {
       array: true,
       label: "Members",
@@ -154,6 +180,7 @@ export function Informations(props) {
       fields: [
         'owner',
         'members',
+        'visibility',
       ],
     },
     {

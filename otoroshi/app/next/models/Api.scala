@@ -1058,6 +1058,51 @@ object UserRef {
   }
 }
 
+sealed trait ApiVisibilityKind {
+  def name: String
+  def json: JsValue = name.json
+}
+object ApiVisibilityKind {
+
+  case object Public extends ApiVisibilityKind { def name: String = "public" }
+  case object SemiPublic extends ApiVisibilityKind { def name: String = "semi_public" }
+  case object Private extends ApiVisibilityKind { def name: String = "private" }
+  case object Custom extends ApiVisibilityKind { def name: String = "custom" }
+
+  def apply(str: String): ApiVisibilityKind = str match {
+    case "public" => Public
+    case "semi_public" => SemiPublic
+    case "private" => Private
+    case "custom" => Custom
+    case _ => Private
+  }
+}
+
+case class ApiVisibility(kind: ApiVisibilityKind, config: JsObject = Json.obj()) {
+  def json: JsValue = ApiVisibility.format.writes(this)
+}
+
+object ApiVisibility {
+  val Public: ApiVisibility = ApiVisibility(ApiVisibilityKind.Public)
+  val format = new Format[ApiVisibility] {
+    override def reads(json: JsValue): JsResult[ApiVisibility] = Try {
+      ApiVisibility(
+        kind = ApiVisibilityKind(json.select("kind").asOptString.getOrElse("public")),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj()),
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: ApiVisibility): JsValue = Json.obj(
+      "kind" -> o.kind.json,
+      "config" -> o.config
+    )
+  }
+}
+
 case class Api(
     kind: String = "Api",
     location: EntityLocation,
@@ -1070,6 +1115,7 @@ case class Api(
     metadata: Map[String, String] = Map.empty,
     owner: UserRef = UserRef.empty,
     members: Seq[UserRef] = Seq.empty,
+    visibility: ApiVisibility = ApiVisibility.Public,
     version: String,
     versions: Seq[String] = Seq("0.0.1"),
     debugFlow: Boolean,
@@ -1543,6 +1589,7 @@ object Api {
       "contextPath"            -> o.contextPath,
       "metadata"               -> o.metadata,
       "tags"                   -> JsArray(o.tags.map(JsString.apply)),
+      "visibility"             -> o.visibility.json,
       "owner"                  -> o.owner.json,
       "members"                -> JsArray(o.members.map(_.json)),
       "version"                -> o.version,
@@ -1575,6 +1622,7 @@ object Api {
         contextPath = (json \ "contextPath").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        visibility = (json \ "visibility").asOpt[JsObject].flatMap(o => ApiVisibility.format.reads(o).asOpt).getOrElse(ApiVisibility.Public),
         owner = (json \ "owner").asOpt[JsObject].flatMap(o => UserRef.format.reads(o).asOpt).getOrElse(UserRef.empty),
         members = (json \ "members").asOpt[Seq[JsObject]].map(seq => seq.flatMap(o => UserRef.format.reads(o).asOpt)).getOrElse(Seq.empty),
         version = (json \ "version").asOptString.getOrElse("0.0.1"),
