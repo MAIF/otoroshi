@@ -213,6 +213,67 @@ Budgets enforce spending or token limits per consumer (API key, user, or service
   "alert_threshold": 80,
   "metadata": {}
 }
+{
+  "id": "budget_b261a762-a0f4-4c11-9edb-3cbefae5874a",
+  "name": "Standard budget",
+  "description": "Standard Budget",
+  "metadata": {
+    "updated_at": "2025-11-06T15:54:15.157+01:00"
+  },
+  "tags": [],
+  "enabled": true,
+  "start_at": "2025-11-04T22:07:41.404+01:00",
+  "end_at": "2026-11-04T22:07:41.404+01:00",
+  "duration": {
+    "value": 30,
+    "unit": "day"
+  },
+  "limits": {
+    "total_tokens": 10000000,
+    "total_usd": 200,
+    "inference_tokens": null,
+    "inference_usd": null,
+    "image_tokens": null,
+    "image_usd": null,
+    "audio_tokens": null,
+    "audio_usd": null,
+    "video_tokens": null,
+    "video_usd": null,
+    "embedding_tokens": null,
+    "embedding_usd": null,
+    "moderation_tokens": null,
+    "moderation_usd": null
+  },
+  "scope": {
+    "extract_from_apikey_meta": true,
+    "extract_from_apikey_group_meta": true,
+    "extract_from_user_meta": true,
+    "extract_from_user_auth_module_meta": true,
+    "extract_from_provider_meta": true,
+    "apikeys": [],
+    "users": [],
+    "groups": [],
+    "providers": [],
+    "models": [],
+    "always_apply_rules": false,
+    "rules": [
+      {
+        "kind": "json-path-validator",
+        "path": "$.foo",
+        "value": "bar",
+        "error": null
+      }
+    ],
+    "rules_match_mode": "all"
+  },
+  "action_on_exceed": {
+    "mode": "block",
+    "alert_on_exceed": true,
+    "alert_on_almost_exceed": true,
+    "alert_on_almost_exceed_percentage": 80
+  },
+  "kind": "ai-gateway.extensions.cloud-apim.com/AiBudget"
+}
 ```
 
 | Field | Description |
