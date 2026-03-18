@@ -544,14 +544,77 @@ function PlanForm({ plan, onChange }) {
     },
     tags: { type: 'array', label: 'Tags' },
     metadata: { type: 'object', label: 'Metadata' },
+    validation: {
+      type: 'form',
+      label: 'Plan validation',
+      schema: {
+        kind: {
+          type: 'select',
+          label: 'Kind',
+          props: {
+            defaultValue: 'auto',
+            options: [
+              { value: 'auto', label: 'Auto' },
+              { value: 'manual', label: 'Manual' },
+              { value: 'webhook', label: 'Webhook' },
+              { value: 'workflow', label: 'Workflow' },
+              { value: 'wasm', label: 'Wasm' },
+              { value: 'custom', label: 'Custom' },
+            ],
+          }
+        },
+        config: {
+          type: 'json',
+          label: 'Validation config.',
+          props: {
+            defaultValue: '{}',
+            height: 100
+          }
+        }
+      },
+      flow: ['kind', 'config']
+    },
+    visibility: {
+      label: "Visibility",
+      type: 'form',
+      schema: {
+        kind: {
+          label: 'Kind',
+          type: 'select',
+          props: {
+            defaultValue: 'public',
+            options: [
+              { value: 'public', label: 'Public' },
+              { value: 'semi_public', label: 'Semi Public' },
+              { value: 'private', label: 'Private' },
+              { value: 'custom', label: 'Custom' },
+            ],
+          },
+        },
+        config: {
+          type: 'json',
+          label: 'Visibility config.',
+          props: {
+            defaultValue: '{}',
+            height: 100
+          }
+        }
+      },
+      flow: [
+        "kind",
+        "config",
+      ],
+    },
   };
 
   const flow = [
     { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
     { type: 'group', name: 'Lifecycle', collapsable: false, fields: ['status', 'statusDescription'] },
+    'visibility',
     { type: 'group', name: 'Access Mode', collapsable: false, fields: ['access_mode_configuration_type', 'access_mode_configuration'] },
     'rateLimiting',
     'pricing',
+    'validation',
     { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
   ];
 
