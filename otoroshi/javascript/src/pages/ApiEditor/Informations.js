@@ -134,6 +134,29 @@ export function Informations(props) {
         "config",
       ],
     },
+    hooks: {
+      array: true,
+      label: "State hooks",
+      type: 'form',
+      schema: {
+        ref: {
+          label: 'Hook ref.',
+          type: "string",
+        },
+        config: {
+          type: 'json',
+          label: 'Hook config.',
+          props: {
+            defaultValue: '{}',
+            height: 100
+          }
+        }
+      },
+      flow: [
+        "ref",
+        "config",
+      ],
+    },
     debug_flow: {
       type: 'box-bool',
       label: 'Debug the endpoint',
@@ -192,8 +215,9 @@ export function Informations(props) {
       name: 'Informations',
       fields: [
         'owner',
-        'members',
         'visibility',
+        'members',
+        'hooks',
       ],
     },
     {

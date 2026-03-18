@@ -1204,6 +1204,30 @@ object ApiVisibility {
   }
 }
 
+case class ApiStateHook(ref: String, config: JsObject) {
+  def json: JsValue = ApiStateHook.format.writes(this)
+}
+
+object ApiStateHook {
+  val format = new Format[ApiStateHook] {
+    override def reads(json: JsValue): JsResult[ApiStateHook] = Try {
+      ApiStateHook(
+        ref = json.select("ref").asOptString.getOrElse(""),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj()),
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: ApiStateHook): JsValue = Json.obj(
+      "ref" -> o.ref,
+      "config" -> o.config
+    )
+  }
+}
+
 case class Api(
     kind: String = "Api",
     location: EntityLocation,
@@ -1233,7 +1257,8 @@ case class Api(
     documentation: Option[ApiDocumentation] = None,
     deployments: Seq[ApiDeployment] = Seq.empty,
     clients: Seq[ApiClient] = Seq.empty,
-    testing: ApiTesting
+    testing: ApiTesting,
+    hooks: Seq[ApiStateHook] = Seq.empty,
     // TODO: monitoring and heath ????
 ) extends EntityLocationSupport {
   override def internalId: String = id
@@ -1710,7 +1735,8 @@ object Api {
       "deployments"            -> o.deployments.map(ApiDeployment._fmt.writes),
       "versions"               -> o.versions,
       "testing"                -> ApiTesting._fmt.writes(o.testing),
-      "clients"                -> o.clients.map(ApiClient.format.writes)
+      "clients"                -> o.clients.map(ApiClient.format.writes),
+      "hooks"                  -> JsArray(o.hooks.map(_.json)),
     )
     override def reads(json: JsValue): JsResult[Api] = Try {
       Api(
@@ -1783,6 +1809,10 @@ object Api {
         clients = (json \ "clients")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiClient.format.reads(v).asOpt))
+          .getOrElse(Seq.empty),
+        hooks = (json \ "hooks")
+          .asOpt[Seq[JsValue]]
+          .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
           .getOrElse(Seq.empty)
       )
     } match {
