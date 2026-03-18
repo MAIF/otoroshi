@@ -513,6 +513,101 @@ object ApikeyAccessModeConfiguration {
     }
 }
 
+sealed trait ApiDocumentationPlanVisibilityKind {
+  def name: String
+  def json: JsValue = name.json
+}
+object ApiDocumentationPlanVisibilityKind {
+
+  case object Public extends ApiDocumentationPlanVisibilityKind { def name: String = "public" }
+  case object SemiPublic extends ApiDocumentationPlanVisibilityKind { def name: String = "semi_public" }
+  case object Private extends ApiDocumentationPlanVisibilityKind { def name: String = "private" }
+  case object Custom extends ApiDocumentationPlanVisibilityKind { def name: String = "custom" }
+
+  def apply(str: String): ApiDocumentationPlanVisibilityKind = str match {
+    case "public" => Public
+    case "semi_public" => SemiPublic
+    case "private" => Private
+    case "custom" => Custom
+    case _ => Private
+  }
+}
+
+case class ApiDocumentationPlanVisibility(kind: ApiDocumentationPlanVisibilityKind, config: JsObject = Json.obj()) {
+  def json: JsValue = ApiDocumentationPlanVisibility.format.writes(this)
+}
+
+object ApiDocumentationPlanVisibility {
+  val Public: ApiDocumentationPlanVisibility= ApiDocumentationPlanVisibility(ApiDocumentationPlanVisibilityKind.Public)
+  val format = new Format[ApiDocumentationPlanVisibility] {
+    override def reads(json: JsValue): JsResult[ApiDocumentationPlanVisibility] = Try {
+      ApiDocumentationPlanVisibility(
+        kind = ApiDocumentationPlanVisibilityKind(json.select("kind").asOptString.getOrElse("public")),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj()),
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: ApiDocumentationPlanVisibility): JsValue = Json.obj(
+      "kind" -> o.kind.json,
+      "config" -> o.config
+    )
+  }
+}
+
+sealed trait ApiDocumentationPlanValidationKind {
+  def name: String
+  def json: JsValue = name.json
+}
+object ApiDocumentationPlanValidationKind {
+
+  case object Auto extends ApiDocumentationPlanValidationKind { def name: String = "auto" }
+  case object Manual extends ApiDocumentationPlanValidationKind { def name: String = "manual" }
+  case object Webhook extends ApiDocumentationPlanValidationKind { def name: String = "webhook" }
+  case object Workflow extends ApiDocumentationPlanValidationKind { def name: String = "workflow" }
+  case object Wasm extends ApiDocumentationPlanValidationKind { def name: String = "wasm" }
+  case object Custom extends ApiDocumentationPlanValidationKind { def name: String = "custom" }
+
+  def apply(str: String): ApiDocumentationPlanValidationKind = str match {
+    case "auto" => Auto
+    case "manual" => Manual
+    case "webhook" => Webhook
+    case "workflow" => Workflow
+    case "wasm" => Wasm
+    case "custom" => Custom
+    case _ => Auto
+  }
+}
+
+case class ApiDocumentationPlanValidation(kind: ApiDocumentationPlanValidationKind, config: JsObject = Json.obj()) {
+  def json: JsValue = ApiDocumentationPlanValidation.format.writes(this)
+}
+object ApiDocumentationPlanValidation {
+  val Auto = ApiDocumentationPlanValidation(ApiDocumentationPlanValidationKind.Auto)
+  val format = new Format[ApiDocumentationPlanValidation] {
+
+    override def reads(json: JsValue): JsResult[ApiDocumentationPlanValidation] = Try {
+      ApiDocumentationPlanValidation(
+        kind = ApiDocumentationPlanValidationKind(json.select("kind").asOptString.getOrElse("auto")),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj()),
+      )
+    } match {
+      case Failure(ex)    =>
+        ex.printStackTrace()
+        JsError(ex.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+
+    override def writes(o: ApiDocumentationPlanValidation): JsValue = Json.obj(
+      "kind" -> o.kind.json,
+      "config" -> o.config
+    )
+  }
+}
+
 case class ApiDocumentationPlan(raw: JsObject) {
   lazy val accessModeConfigurationType                                              = raw.selectAsOptString("access_mode_configuration_type").getOrElse("keyless")
   lazy val id: String                                                               = raw.selectAsString("id")
@@ -536,6 +631,12 @@ case class ApiDocumentationPlan(raw: JsObject) {
   }
   lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
   lazy val metadata: Map[String, String]                                            = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val validation: ApiDocumentationPlanValidation                               = raw.select("validation").asOpt[JsObject]
+    .flatMap(o => ApiDocumentationPlanValidation.format.reads(o).asOpt)
+    .getOrElse(ApiDocumentationPlanValidation.Auto)
+  lazy val visibility: ApiDocumentationPlanVisibility                               = raw.select("visibility").asOpt[JsObject]
+    .flatMap(o => ApiDocumentationPlanVisibility.format.reads(o).asOpt)
+    .getOrElse(ApiDocumentationPlanVisibility.Public)
 }
 
 case class ApiDocumentationSource(raw: JsObject) {
