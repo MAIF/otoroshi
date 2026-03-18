@@ -1,5 +1,5 @@
 ---
-title: AI / LLM Gateway
+title: AI Gateway
 sidebar_position: 29
 ---
 # AI / LLM Gateway
@@ -858,4 +858,4 @@ All entities are accessible through Otoroshi's admin API:
 - [Tutorial: Set up an AI Gateway with otoroshictl](../how-to-s/setup-ai-gateway-with-otoroshictl.md)
 - [Secret vaults](./secrets.md) - for securing API keys with `vault://` references
 - [Admin Extensions](./admin-extensions.md) - how extensions work in Otoroshi
-- [otoroshi-llm-extension on GitHub](https://github.com/cloud-apim/otoroshi-llm-extension)
+- [otoroshi-llm-extension documentation](https://cloud-apim.github.io/otoroshi-llm-extension/)

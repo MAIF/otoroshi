@@ -93,7 +93,7 @@ const sidebars = {
         'topics/kubernetes-gateway-api',
         'topics/admin-extensions',
         'topics/otoroshictl',
-        'topics/llm-gateway',
+        'topics/ai-gateway',
         'topics/deprecating-sd',
         'topics/anonymous-reporting',
       ],
