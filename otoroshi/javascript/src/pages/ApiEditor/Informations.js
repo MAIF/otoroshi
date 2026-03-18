@@ -69,6 +69,10 @@ export function Informations(props) {
         config: {
           type: 'json',
           label: 'Owner ref. config.',
+          props: {
+            defaultValue: '{}',
+            height: 100
+          }
         }
       },
       flow: [
@@ -84,6 +88,7 @@ export function Informations(props) {
           label: 'Kind',
           type: 'select',
           props: {
+            defaultValue: 'public',
             options: [
               { value: 'public', label: 'Public' },
               { value: 'semi_public', label: 'Semi Public' },
@@ -95,6 +100,10 @@ export function Informations(props) {
         config: {
           type: 'json',
           label: 'Visibility config.',
+          props: {
+            defaultValue: '{}',
+            height: 100
+          }
         }
       },
       flow: [
@@ -114,6 +123,10 @@ export function Informations(props) {
         config: {
           type: 'json',
           label: 'Owner ref. config.',
+          props: {
+            defaultValue: '{}',
+            height: 100
+          }
         }
       },
       flow: [
