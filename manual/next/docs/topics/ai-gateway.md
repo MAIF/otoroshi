@@ -29,7 +29,7 @@ Download the extension jar and place it in Otoroshi's classpath, then declare it
 ```sh
 # Download the extension jar
 curl -L -o otoroshi-llm-extension.jar \
-  https://github.com/cloud-apim/otoroshi-llm-extension/releases/latest/download/otoroshi-llm-extension-assembly.jar
+  https://github.com/cloud-apim/otoroshi-llm-extension/releases/download/xxx/otoroshi-llm-extension_2.12-xxx.jar
 ```
 
 Start Otoroshi with the extension:

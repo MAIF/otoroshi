@@ -27,7 +27,7 @@ Download the extension jar and start Otoroshi with it on the classpath:
 ```sh
 # Download the extension
 curl -L -o otoroshi-llm-extension.jar \
-  https://github.com/cloud-apim/otoroshi-llm-extension/releases/latest/download/otoroshi-llm-extension-assembly.jar
+  https://github.com/cloud-apim/otoroshi-llm-extension/releases/download/xxx/otoroshi-llm-extension_2.12-xxx.jar
 
 # Set your OpenAI API key as an environment variable
 export OPENAI_TOKEN="sk-your-openai-api-key-here"
@@ -246,20 +246,60 @@ curl -X POST http://ai-gateway.oto.tools:8080/v1/chat/completions \
 Now let's enforce spending limits. We'll create a budget that applies to all API keys with the metadata `ai_tier=standard`. Create `ai-budget.yaml`:
 
 ```yaml
-apiVersion: ai-gateway.extensions.cloud-apim.com/v1
-kind: Budget
+apiVersion: "proxy.otoroshi.io/v1"
+kind: "AiBudget"
 metadata:
-  name: standard-budget
+  name: "standard-budget"
 spec:
-  id: standard-budget
-  name: Standard tier budget
-  budget_type: money
-  consumer_type: api_key
-  consumer_filter: ai_tier=standard
-  limit_amount: 10.0
-  time_window: 30days
-  alert_threshold: 80
-  metadata: {}
+  id: "standard-budget"
+  name: "Standard Budget"
+  description: "Standard Budget"
+  enabled: true
+  start_at: "2025-11-04T22:07:41.404+01:00"
+  end_at: "2026-11-04T22:07:41.404+01:00"
+  duration:
+    value: 30
+    unit: "day"
+  limits:
+    total_tokens: 10000000
+    total_usd: 10
+    inference_tokens: null
+    inference_usd: null
+    image_tokens: null
+    image_usd: null
+    audio_tokens: null
+    audio_usd: null
+    video_tokens: null
+    video_usd: null
+    embedding_tokens: null
+    embedding_usd: null
+    moderation_tokens: null
+    moderation_usd: null
+  scope:
+    extract_from_apikey_meta: true
+    extract_from_apikey_group_meta: true
+    extract_from_user_meta: true
+    extract_from_user_auth_module_meta: true
+    extract_from_provider_meta: true
+    apikeys: []
+    users: []
+    groups: []
+    providers: []
+    models: []
+    always_apply_rules: false
+    rules:
+    - kind: "json-path-validator"
+      path: "$.apikey.metadata.ai_tier"
+      value: "standard"
+      error: null
+    rules_match_mode: "all"
+  action_on_exceed:
+    mode: "block"
+    alert_on_exceed: true
+    alert_on_almost_exceed: true
+    alert_on_almost_exceed_percentage: 80
+  kind: "ai-gateway.extensions.cloud-apim.com/AiBudget"
+
 ```
 
 Apply it:
@@ -617,3 +657,6 @@ curl -X POST http://ai-gateway.oto.tools:8080/v1/chat/completions \
 - Export LLM analytics to **Elasticsearch** or **Kafka** via Otoroshi's data exporters for cost dashboards
 
 For the full feature reference, see the [AI / LLM Gateway topic](../topics/llm-gateway.md).
+
+For the full documentation, see the [otoroshi-llm-extension documentation](https://cloud-apim.github.io/otoroshi-llm-extension/)
+
