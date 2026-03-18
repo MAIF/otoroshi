@@ -1369,6 +1369,44 @@ case class Api(
 
 object Api {
 
+  def writeValidator(
+                      entity: Api,
+                      body: JsValue,
+                      oldEntity: Option[(Api, JsValue)],
+                      singularName: String,
+                      id: Option[String],
+                      action: WriteAction,
+                      env: Env
+                    ): Future[Either[JsValue, Api]] = {
+
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val e  = env
+
+    def onError(error: String): Either[JsValue, Api] = Json
+      .obj(
+        "error"            -> error,
+        "http_status_code" -> 400
+      )
+      .left
+
+    env.datastores.apiDataStore
+      .findById(entity.id)
+      .map {
+        case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
+          api.documentation match {
+            case Some(documentation) =>
+              documentation.plans.find(_.id == entity.planRef) match {
+                case None                                                                                         => onError("plan not found")
+                case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
+                  entity.right
+                case _                                                                                            => onError("wrong status plan")
+              }
+            case None                => onError("plan not found")
+          }
+        case _                                                                 => onError("wrong status api")
+      }
+  }
+
   def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(
       implicit
       ec: ExecutionContext,

@@ -10,7 +10,7 @@ import { SidebarComponent } from './SidebarComponent';
 import { Actions } from './Actions';
 import { APIGateway } from './APIGateway';
 import { Endpoints, NewRoute, RouteDesigner } from './Routes';
-import { Subscriptions, NewSubscription, SubscriptionDesigner } from './Subscriptions';
+import { Subscriptions, SubscriptionDesigner } from './Subscriptions';
 import { PluginChains, NewPluginChains, PluginChainsDesigner, EditPluginChains } from './PluginChains';
 import { Backends, NewBackend, EditBackend } from './Backends';
 import { HttpClientSettings, NewHttpClientSettings, EditHttpClientSettings } from './HttpClientSettings';
@@ -56,12 +56,6 @@ export default function ApiEditor(props) {
             exact
             path="/apis/:apiId/subscriptions"
             component={Subscriptions}
-            props={props}
-          />
-          <RouteWithProps
-            exact
-            path="/apis/:apiId/subscriptions/new"
-            component={NewSubscription}
             props={props}
           />
           <RouteWithProps

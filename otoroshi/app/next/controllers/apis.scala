@@ -2,15 +2,25 @@ package otoroshi.next.controllers.adminapi
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import next.models.{Api, ApiDeployment, ApiPublished, ApiStaging}
+import next.models.{
+  Api,
+  ApiDeployment,
+  ApiDeprecated,
+  ApiDocumentationPlan,
+  ApiPlanStatus,
+  ApiPublished,
+  ApiRemoved,
+  ApiStaging,
+  ApiSubscription
+}
 import org.joda.time.DateTime
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
@@ -266,6 +276,28 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     Ok(NgClientConfig.default.json).future
   }
 
+  private def validateApi(api: Api): Either[Result, Api] = {
+    if (!api.enabled)
+      Left(BadRequest(Json.obj("error" -> "api is disabled")))
+    else if (api.state == ApiDeprecated || api.state == ApiRemoved)
+      Left(BadRequest(Json.obj("error" -> s"api is ${api.state.name}")))
+    else
+      Right(api)
+  }
+
+  private def validatePlan(api: Api, planId: String): Either[Result, ApiDocumentationPlan] =
+    api.documentation.flatMap(_.plans.find(_.id == planId)) match {
+      case None                                                 => Left(BadRequest(Json.obj("error" -> "plan not found")))
+      case Some(plan) if plan.status != ApiPlanStatus.Published =>
+        Left(BadRequest(Json.obj("error" -> "plan is not published")))
+      case Some(plan)                                           => Right(plan)
+    }
+
+  private def validateBody(ctx: ApiActionContext[JsValue]): Either[Result, ApiSubscription] =
+    ctx.request.body
+      .asOpt(ApiSubscription.format)
+      .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
+
   def subscribe(apiId: String, planId: String) = {
     ApiAction.async(parse.json) { ctx =>
       ctx.canReadService(apiId) {
@@ -287,8 +319,22 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         )
 
         env.datastores.apiDataStore.findById(apiId) flatMap {
-          case None      => Results.NotFound.future
-          case Some(api) => Ok(Json.obj("message" -> "foo")).future
+          case None      => Results.NotFound.vfuture
+          case Some(api) =>
+            val result = for {
+              validApi     <- validateApi(api)
+              _validPlan   <- validatePlan(validApi, apiId)
+              subscription <- validateBody(ctx)
+            } yield subscription
+
+            result match {
+              case Left(errorResult)   => errorResult.vfuture
+              case Right(subscription) =>
+                env.datastores.apiSubscriptionDataStore.set(subscription).map {
+                  case true  => Ok(Json.obj("done" -> true))
+                  case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                }
+            }
         }
       }
     }

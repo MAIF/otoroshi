@@ -19,6 +19,7 @@ import { findAuthConfigById, subscribeToPlan } from '../../services/BackOfficeSe
 import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
 import { MAX_WIDTH } from './constants';
+import { NewSubscription } from './Subscriptions';
 
 const STATUS_BADGES = {
   staging: { label: 'Staging', cls: 'api-status-started' },
@@ -574,22 +575,21 @@ function PlanForm({ plan, onChange }) {
   );
 }
 
-function SubscriptionModal({ ok, cancel, plan, api }) {
+// function SubscriptionModal({ ok, cancel, plan, api, props }) {
 
-  useEffect(() => {
-    subscribeToPlan(api.id, plan.id)
-      .then(res => console.log(res))
-  }, [])
+//   // useEffect(() => {
+//   //   subscribeToPlan(api.id, plan.id)
+//   //     .then(res => console.log(res))
+//   // }, [])
 
-  return <div>
-    Subscribing ...
-  </div>
-}
+//   return <NewSubscription props={props} />
+// }
 
 
 export function Plans(props) {
   const params = useParams();
   const history = useHistory();
+  const [plan, setPlan] = useState()
   const { item, version } = useDraftOfAPI();
 
   useEffect(() => {
@@ -638,25 +638,7 @@ export function Plans(props) {
     {
       title: 'Subscribe',
       notFilterable: true,
-      cell: (_, plan) => <Button type='primary' className='btn-sm' onClick={() => {
-        window.wizard(
-          'Subscribe to plan',
-          (ok, cancel) => (
-            <SubscriptionModal
-              ok={ok}
-              cancel={cancel}
-              plan={plan}
-              api={item}
-            />
-          ),
-          {
-            additionalClass: 'modal-xl',
-            style: { width: '100%' },
-            noCancel: true,
-            okLabel: 'Subscribe'
-          }
-        );
-      }}>
+      cell: (_, plan) => <Button type='primary' className='btn-sm' onClick={() => setPlan(plan)}>
         Subscribe
       </Button>
     }
@@ -672,40 +654,39 @@ export function Plans(props) {
     })
   }
 
-  return (
-    <>
-      <Table
-        parentProps={{ params }}
-        navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
-        navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
-        selfUrl="plans"
-        defaultTitle="Plans"
-        itemName="Plan"
-        formSchema={null}
-        formFlow={null}
-        columns={columns}
-        deleteItem={(item) => deleteItem(item)}
-        defaultSort="name"
-        defaultSortDesc="true"
-        fetchItems={() => Promise.resolve(plans)}
-        fetchTemplate={() => Promise.resolve({})}
-        showActions={true}
-        showLink={false}
-        extractKey={(item) => item.id}
-        rowNavigation={true}
-        hideAddItemAction={true}
-        itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
-        rawEditUrl={true}
-        injectTopBar={() => (<DraftOnly>
-          <div className="btn-group input-group-btn">
-            <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
-              <i className="fas fa-plus-circle" /> Create new plan
-            </Link>
-          </div>
-        </DraftOnly>)}
-      />
-    </>
-  );
+  if (plan)
+    return <NewSubscription plan={plan} {...props} />
+
+  return <Table
+    parentProps={{ params }}
+    navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
+    navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
+    selfUrl="plans"
+    defaultTitle="Plans"
+    itemName="Plan"
+    formSchema={null}
+    formFlow={null}
+    columns={columns}
+    deleteItem={(item) => deleteItem(item)}
+    defaultSort="name"
+    defaultSortDesc="true"
+    fetchItems={() => Promise.resolve(plans)}
+    fetchTemplate={() => Promise.resolve({})}
+    showActions={true}
+    showLink={false}
+    extractKey={(item) => item.id}
+    rowNavigation={true}
+    hideAddItemAction={true}
+    itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
+    rawEditUrl={true}
+    injectTopBar={() => (<DraftOnly>
+      <div className="btn-group input-group-btn">
+        <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
+          <i className="fas fa-plus-circle" /> Create new plan
+        </Link>
+      </div>
+    </DraftOnly>)}
+  />
 }
 
 export function PlanEditor(props) {

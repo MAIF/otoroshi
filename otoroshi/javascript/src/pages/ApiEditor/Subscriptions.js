@@ -155,20 +155,6 @@ export function Subscriptions(props) {
         linkWithQuery(`/bo/dashboard/apis/${params.apiId}/subscriptions/${i.id}/edit`)
       }
       rawEditUrl={true}
-      injectTopBar={() => (
-        <div className="btn-group input-group-btn">
-          <Link
-            className="btn btn-primary btn-sm"
-            to={{
-              pathname: 'subscriptions/new',
-              search: location.search,
-            }}
-          >
-            <i className="fas fa-plus-circle" /> Create new subscription
-          </Link>
-          {props.injectTopBar}
-        </div>
-      )}
     />
   );
 }
@@ -197,11 +183,13 @@ export function SubscriptionDesigner(props) {
     }
   );
 
+  const goToSubscriptions = () => historyPush(history, location, `/apis/${params.apiId}/subscriptions`)
+
   const updateSubscription = () => {
     return nextClient
       .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .update(subscription)
-      .then(() => historyPush(history, location, `/apis/${params.apiId}/subscriptions`));
+      .then(goToSubscriptions)
   };
 
   if (!item || rawSubscription.isLoading) return <SimpleLoader />;
@@ -233,9 +221,9 @@ export function SubscriptionDesigner(props) {
 }
 
 export function NewSubscription(props) {
-  const params = useParams();
-  const history = useHistory();
   const location = useLocation();
+  const params = useParams()
+  const history = useHistory()
 
   const [subscription, setSubscription] = useState();
   const [error, setError] = useState();
