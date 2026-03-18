@@ -92,6 +92,7 @@ const sidebars = {
         'topics/remote-catalogs',
         'topics/kubernetes-gateway-api',
         'topics/admin-extensions',
+        'topics/otoroshictl',
         'topics/deprecating-sd',
         'topics/anonymous-reporting',
       ],
