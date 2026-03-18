@@ -16,7 +16,7 @@ In this tutorial, you will set up Otoroshi as an AI Gateway using the LLM extens
 ## Prerequisites
 
 - An Otoroshi instance (see [getting started](../getting-started.mdx))
-- The `otoroshi-llm-extension` jar (see [AI / LLM Gateway topic](../topics/llm-gateway.md))
+- The `otoroshi-llm-extension` jar (see [AI Gateway topic](../topics/ai-gateway.md))
 - `otoroshictl` installed (see [Managing Otoroshi with otoroshictl](../topics/otoroshictl.md))
 - An OpenAI API key (or any supported LLM provider key)
 
@@ -656,7 +656,7 @@ curl -X POST http://ai-gateway.oto.tools:8080/v1/chat/completions \
 - Add **token rate limiting** with the `LlmTokensRateLimitingValidator` plugin for fine-grained throttling
 - Export LLM analytics to **Elasticsearch** or **Kafka** via Otoroshi's data exporters for cost dashboards
 
-For the full feature reference, see the [AI / LLM Gateway topic](../topics/llm-gateway.md).
+For the full feature reference, see the [AI Gateway topic](../topics/ai-gateway.md).
 
 For the full documentation, see the [otoroshi-llm-extension documentation](https://cloud-apim.github.io/otoroshi-llm-extension/)
 
