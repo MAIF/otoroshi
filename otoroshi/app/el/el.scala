@@ -517,6 +517,7 @@ object GlobalExpressionLanguage {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
+                    case Some(v: JsValue)       => v.stringify
                     case _                      => dv
                   }
                 )
@@ -541,6 +542,7 @@ object GlobalExpressionLanguage {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
+                    case Some(v: JsValue)       => v.stringify
                     case _                      => dv
                   }
                 )
@@ -553,6 +555,7 @@ object GlobalExpressionLanguage {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
+                    case Some(v: JsValue)       => v.stringify
                     case _                      => s"no-meta-$field"
                   }
                 )
@@ -587,6 +590,7 @@ object GlobalExpressionLanguage {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
+                    case Some(v: JsValue)       => v.stringify
                     case _                      => dv
                   }
                 )
@@ -600,6 +604,7 @@ object GlobalExpressionLanguage {
                     case Some(JsNumber(number)) => number.toString()
                     case Some(JsString(str))    => str
                     case Some(JsBoolean(b))     => b.toString
+                    case Some(v: JsValue)       => v.stringify
                     case _                      => s"no-meta-$field"
                   }
                 )
