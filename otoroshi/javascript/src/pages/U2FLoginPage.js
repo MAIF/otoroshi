@@ -1,7 +1,8 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 
 function Base64Url() {
-  let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  let chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
   // Use a lookup table to find the index.
   let lookup = new Uint8Array(256);
@@ -13,7 +14,7 @@ function Base64Url() {
     let bytes = new Uint8Array(arraybuffer),
       i,
       len = bytes.length,
-      base64url = '';
+      base64url = "";
 
     for (i = 0; i < len; i += 3) {
       base64url += chars[bytes[i] >> 2];
@@ -76,7 +77,7 @@ function responseToObject(response) {
     try {
       clientExtensionResults = response.getClientExtensionResults();
     } catch (e) {
-      console.error('getClientExtensionResults failed', e);
+      console.error("getClientExtensionResults failed", e);
     }
 
     if (response.response.attestationObject) {
@@ -84,8 +85,12 @@ function responseToObject(response) {
         type: response.type,
         id: response.id,
         response: {
-          attestationObject: base64url.fromByteArray(response.response.attestationObject),
-          clientDataJSON: base64url.fromByteArray(response.response.clientDataJSON),
+          attestationObject: base64url.fromByteArray(
+            response.response.attestationObject
+          ),
+          clientDataJSON: base64url.fromByteArray(
+            response.response.clientDataJSON
+          ),
         },
         clientExtensionResults,
       };
@@ -94,11 +99,16 @@ function responseToObject(response) {
         type: response.type,
         id: response.id,
         response: {
-          authenticatorData: base64url.fromByteArray(response.response.authenticatorData),
-          clientDataJSON: base64url.fromByteArray(response.response.clientDataJSON),
+          authenticatorData: base64url.fromByteArray(
+            response.response.authenticatorData
+          ),
+          clientDataJSON: base64url.fromByteArray(
+            response.response.clientDataJSON
+          ),
           signature: base64url.fromByteArray(response.response.signature),
           userHandle:
-            response.response.userHandle && base64url.fromByteArray(response.response.userHandle),
+            response.response.userHandle &&
+            base64url.fromByteArray(response.response.userHandle),
         },
         clientExtensionResults,
       };
@@ -106,22 +116,272 @@ function responseToObject(response) {
   }
 }
 
+// Inject styles for animations
+const injectStyles = () => {
+  if (document.getElementById("otoroshi-admin-login-styles")) return;
+  const style = document.createElement("style");
+  style.id = "otoroshi-admin-login-styles";
+  style.textContent = `
+    @keyframes oto-fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes oto-glow-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.7; }
+    }
+    @keyframes oto-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .oto-login-input::placeholder {
+      color: #52525b;
+    }
+    .oto-login-input:focus {
+      border-color: #f9b000;
+      box-shadow: 0 0 0 1px #f9b000, 0 0 20px rgba(249, 176, 0, 0.15);
+      outline: none;
+    }
+    .oto-login-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      box-shadow: 0 8px 24px rgba(249, 176, 0, 0.35);
+      transform: translateY(-1px);
+    }
+    .oto-login-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .oto-login-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .oto-webauthn-btn:hover:not(:disabled) {
+      background: rgba(63, 63, 70, 0.8);
+      border-color: #52525b;
+    }
+    .oto-footer-link:hover {
+      color: #f9b000;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+const styles = {
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#09090b",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    padding: "24px",
+    position: "relative",
+    overflow: "hidden",
+  },
+  backgroundOrb: {
+    position: "absolute",
+    top: "10%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "600px",
+    height: "600px",
+    background:
+      "radial-gradient(circle, rgba(249, 176, 0, 0.08) 0%, transparent 70%)",
+    pointerEvents: "none",
+    animation: "oto-glow-pulse 4s ease-in-out infinite",
+  },
+  content: {
+    position: "relative",
+    zIndex: 1,
+    width: "100%",
+    maxWidth: "400px",
+    animation: "oto-fade-in 0.5s ease-out",
+  },
+  brandSection: {
+    textAlign: "center",
+    marginBottom: "32px",
+  },
+  logo: {
+    height: "120px",
+    width: "auto",
+  },
+  card: {
+    background:
+      "linear-gradient(145deg, rgba(39, 39, 42, 0.8) 0%, rgba(24, 24, 27, 0.9) 100%)",
+    backdropFilter: "blur(20px)",
+    border: "1px solid rgba(63, 63, 70, 0.5)",
+    borderRadius: "16px",
+    padding: "32px",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+  },
+  cardHeader: {
+    marginBottom: "28px",
+    textAlign: "center",
+  },
+  title: {
+    margin: "0 0 8px",
+    color: "#fafafa",
+    fontSize: "24px",
+    fontWeight: "600",
+    letterSpacing: "-0.02em",
+  },
+  subtitle: {
+    margin: 0,
+    color: "#71717a",
+    fontSize: "14px",
+    lineHeight: "1.5",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  inputGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  label: {
+    color: "#a1a1aa",
+    fontSize: "13px",
+    fontWeight: "500",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    fontSize: "14px",
+    color: "#fafafa",
+    backgroundColor: "rgba(9, 9, 11, 0.8)",
+    border: "1px solid #3f3f46",
+    borderRadius: "10px",
+    outline: "none",
+    transition: "all 0.2s ease",
+    boxSizing: "border-box",
+  },
+  errorContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 14px",
+    backgroundColor: "rgba(220, 38, 38, 0.1)",
+    border: "1px solid rgba(220, 38, 38, 0.2)",
+    borderRadius: "10px",
+    color: "#fca5a5",
+    fontSize: "13px",
+  },
+  errorIcon: {
+    width: "16px",
+    height: "16px",
+    flexShrink: 0,
+    color: "#f87171",
+  },
+  successContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 14px",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    border: "1px solid rgba(16, 185, 129, 0.2)",
+    borderRadius: "10px",
+    color: "#6ee7b7",
+    fontSize: "13px",
+  },
+  successIcon: {
+    width: "16px",
+    height: "16px",
+    flexShrink: 0,
+    color: "#10b981",
+  },
+  buttonGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    marginTop: "4px",
+  },
+  button: {
+    width: "100%",
+    padding: "12px 20px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#09090b",
+    background: "linear-gradient(135deg, #f9b000 0%, #f59e0b 100%)",
+    border: "none",
+    borderRadius: "10px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    boxShadow: "0 4px 14px rgba(249, 176, 0, 0.25)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+  },
+  webauthnButton: {
+    width: "100%",
+    padding: "12px 20px",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#a1a1aa",
+    background: "rgba(39, 39, 42, 0.5)",
+    border: "1px solid #3f3f46",
+    borderRadius: "10px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+  },
+  spinner: {
+    width: "18px",
+    height: "18px",
+    animation: "oto-spin 1s linear infinite",
+  },
+  spinnerTrack: {
+    opacity: 0.2,
+  },
+  spinnerHead: {
+    opacity: 1,
+  },
+  footer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    marginTop: "32px",
+    color: "#52525b",
+    fontSize: "12px",
+  },
+  footerLink: {
+    color: "#71717a",
+    textDecoration: "none",
+    transition: "color 0.2s ease",
+  },
+};
+
 export class U2FLoginPage extends Component {
   state = {
-    email: '',
-    password: '',
+    email: "",
+    password: "",
     error: null,
     message: null,
+    loading: false,
   };
 
+  componentDidMount() {
+    injectStyles();
+  }
+
   onChange = (e) => {
-    this.setState({ [e.target.name]: e.target.value });
+    this.setState({ [e.target.name]: e.target.value, error: null });
   };
 
   handleError = (mess, t) => {
     return (err) => {
       console.log(err && err.message ? err.message : err);
-      this.setState({ error: err && err.message ? err.message : err });
+      this.setState({
+        error: err && err.message ? err.message : err,
+        loading: false,
+      });
       throw err;
     };
   };
@@ -132,13 +392,13 @@ export class U2FLoginPage extends Component {
     }
     const username = this.state.email;
     const password = this.state.password;
-    this.setState({ message: null });
+    this.setState({ message: null, loading: true, error: null });
     return fetch(`/bo/simple/login`, {
-      method: 'POST',
-      credentials: 'include',
+      method: "POST",
+      credentials: "include",
       headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         username,
@@ -146,11 +406,12 @@ export class U2FLoginPage extends Component {
       }),
     }).then((r) => {
       if (r && r.ok) {
-        window.location.href = '/bo/dashboard';
+        this.setState({ message: "Login successful, redirecting..." });
+        window.location.href = "/bo/dashboard";
       } else {
         this.webAuthnLogin();
       }
-    }, this.handleError('Login and/or password error, sorry ...'));
+    }, this.handleError("Invalid username or password"));
   };
 
   webAuthnLogin = (e) => {
@@ -160,13 +421,17 @@ export class U2FLoginPage extends Component {
     const username = this.state.email;
     const password = this.state.password;
     const label = this.state.label;
-    this.setState({ message: null });
+    this.setState({
+      message: "Waiting for security key...",
+      loading: true,
+      error: null,
+    });
     fetch(`/bo/webauthn/login/start`, {
-      method: 'POST',
-      credentials: 'include',
+      method: "POST",
+      credentials: "include",
       headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         username,
@@ -179,9 +444,9 @@ export class U2FLoginPage extends Component {
         if (r.status === 200 || r.status == 201) {
           return r.json();
         } else {
-          throw new Error('Login and/or password error, sorry ...');
+          throw new Error("Invalid username or password");
         }
-      }, this.handleError('Login and/or password error, sorry ...'))
+      }, this.handleError("Invalid username or password"))
       .then((payload) => {
         const requestId = payload.requestId;
         const options = payload.request.publicKeyCredentialRequestOptions;
@@ -190,22 +455,21 @@ export class U2FLoginPage extends Component {
           c.id = base64url.decode(c.id);
           return c;
         });
-        console.log(options);
         return navigator.credentials
           .get(
             {
               publicKey: options,
             },
-            this.handleError('Webauthn error, sorry ...')
+            this.handleError("WebAuthn authentication failed")
           )
           .then((credentials) => {
             const json = responseToObject(credentials);
             return fetch(`/bo/webauthn/login/finish`, {
-              method: 'POST',
-              credentials: 'include',
+              method: "POST",
+              credentials: "include",
               headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
+                Accept: "application/json",
+                "Content-Type": "application/json",
               },
               body: JSON.stringify({
                 requestId,
@@ -217,86 +481,187 @@ export class U2FLoginPage extends Component {
                 },
               }),
             })
-              .then((r) => r.json(), this.handleError('Authentication error, sorry ...'))
+              .then((r) => r.json(), this.handleError("Authentication failed"))
               .then((data) => {
                 this.setState(
-                  { error: null, email: '', password: '', message: `Login successfully` },
+                  {
+                    error: null,
+                    email: "",
+                    password: "",
+                    message: "Login successful, redirecting...",
+                    loading: false,
+                  },
                   () => {
-                    window.location.href = '/bo/dashboard';
+                    window.location.href = "/bo/dashboard";
                   }
                 );
-              }, this.handleError('Login error, sorry ...'));
+              }, this.handleError("Login failed"));
           });
-      }, this.handleError('Login error, sorry ...'));
+      }, this.handleError("Authentication failed"));
   };
 
   render() {
+    const { email, password, error, message, loading } = this.state;
+    const canSubmit = email && password && !loading;
+
     return (
-      <div className="login-card">
-        <img src={this.props.otoroshiLogo} />
-        <div className="login-card-title">
-          <h1>Admin login</h1>
-          <p>Log in to Otoroshi to continue</p>
+      <div style={styles.container}>
+        {/* Background glow */}
+        <div style={styles.backgroundOrb} />
+
+        <div style={styles.content}>
+          {/* Logo */}
+          <div style={styles.brandSection}>
+            <img
+              src={this.props.otoroshiLogo}
+              style={styles.logo}
+              alt="Otoroshi"
+            />
+          </div>
+
+          {/* Login card */}
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <h1 style={styles.title}>Admin console</h1>
+              <p style={styles.subtitle}>Sign in to access Otoroshi</p>
+            </div>
+
+            <form onSubmit={this.simpleLogin} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Username</label>
+                <input
+                  type="text"
+                  name="email"
+                  className="oto-login-input"
+                  style={styles.input}
+                  value={email}
+                  onChange={this.onChange}
+                  placeholder="admin@otoroshi.io"
+                  autoFocus
+                  disabled={loading}
+                  autoComplete="username"
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  className="oto-login-input"
+                  style={styles.input}
+                  value={password}
+                  onChange={this.onChange}
+                  placeholder="Enter your password"
+                  disabled={loading}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {error && (
+                <div style={styles.errorContainer}>
+                  <svg
+                    style={styles.errorIcon}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {message && !error && (
+                <div style={styles.successContainer}>
+                  <svg
+                    style={styles.successIcon}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{message}</span>
+                </div>
+              )}
+
+              <div style={styles.buttonGroup}>
+                <button
+                  type="submit"
+                  className="oto-login-btn"
+                  style={styles.button}
+                  disabled={!canSubmit}
+                >
+                  {loading ? (
+                    <>
+                      <svg
+                        style={styles.spinner}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          style={styles.spinnerTrack}
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        />
+                        <path
+                          style={styles.spinnerHead}
+                          d="M12 2a10 10 0 0110 10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign in
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+
+          {/* Footer */}
+          <div style={styles.footer}>
+            <span>Otoroshi API Gateway</span>
+            <span style={{ color: "#3f3f46" }}>·</span>
+            <a
+              href="https://www.otoroshi.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="oto-footer-link"
+              style={styles.footerLink}
+            >
+              Documentation
+            </a>
+          </div>
         </div>
-        <form className="login-card-body form-horizontal" onSubmit={this.simpleLogin}>
-          <div className="row">
-            <label className="col-12">Username</label>
-            <div className="col-12">
-              <input
-                type="text"
-                name="email"
-                className="form-control"
-                value={this.props.email}
-                onChange={this.onChange}
-              />
-            </div>
-          </div>
-          <div className="row">
-            <label className="col-12">Password</label>
-            <div className="col-12">
-              <input
-                type="password"
-                name="password"
-                className="form-control"
-                value={this.props.password}
-                onChange={this.onChange}
-              />
-            </div>
-          </div>
-          <div className="row">
-            <div className="col-12">
-              <p>{!this.state.error && this.state.message}</p>
-              <p
-                style={{
-                  color: 'var(--color-red)',
-                  width: '100%',
-                  textAlign: 'center',
-                  fontSize: '18px',
-                }}
-              >
-                {!!this.state.error && this.state.error}
-              </p>
-            </div>
-          </div>
-          <div className="row">
-            <div className="d-flex justify-content-around">
-              <button
-                type="submit"
-                className="btn btn-primaryColor btn-lg"
-                onClick={this.simpleLogin}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                className="btn btn-primaryColor btn-lg hide"
-                onClick={this.webAuthnLogin}
-              >
-                Login with WebAuthn
-              </button>
-            </div>
-          </div>
-        </form>
       </div>
     );
   }

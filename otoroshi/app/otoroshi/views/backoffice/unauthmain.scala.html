@@ -6,12 +6,34 @@
     <head>
         <title>@title</title>
         <meta name="robots" content="noindex, nofollow">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
         <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/otoroshiapps.css")">
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/all.min.css")" rel="stylesheet">
         <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
         @moreStyles
+        <style>
+            body, html {
+                margin: 0;
+                padding: 0;
+                min-height: 100vh;
+                background-color: #09090b;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+            .container {
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                max-width: 100%;
+            }
+            #app {
+                width: 100%;
+            }
+        </style>
     </head>
     <body>
         <div class="container">
