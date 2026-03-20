@@ -1,9 +1,9 @@
 # Mise file (https://mise.jdx.dev/) for otoroshi
 #
-# prepare: mise install 
-# dev: mise run dev 
-# build jar: mise run build 
-# run jar: mise run 
+# prepare: mise install
+# dev: mise run dev
+# build jar: mise run build
+# run jar: mise run
 
 [tools]
 java = "openjdk-17.0.2"
@@ -54,7 +54,7 @@ description = "Run otoroshi locally"
 dir = "otoroshi"
 run = "$JAVA_HOME/bin/java -jar target/scala-2.12/otoroshi.jar"
 
-[tasks.otoroshi.env]
+[tasks.jar.env]
 PORT = "8080"
 OTOROSHI_STORAGE = "file"
 OTOROSHI_ENV = "prod"
