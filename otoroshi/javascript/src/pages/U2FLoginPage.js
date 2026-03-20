@@ -135,16 +135,16 @@ const injectStyles = () => {
       to { transform: rotate(360deg); }
     }
     .oto-login-input::placeholder {
-      color: #52525b;
+      color: rgba(255, 255, 255, 0.3);
     }
     .oto-login-input:focus {
       border-color: #f9b000;
-      box-shadow: 0 0 0 1px #f9b000, 0 0 20px rgba(249, 176, 0, 0.15);
+      box-shadow: 0 0 0 1px #f9b000, 0 0 16px rgba(249, 176, 0, 0.12);
       outline: none;
     }
     .oto-login-btn:hover:not(:disabled) {
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      box-shadow: 0 8px 24px rgba(249, 176, 0, 0.35);
+      background: #e6a200;
+      box-shadow: 0 8px 24px rgba(249, 176, 0, 0.3);
       transform: translateY(-1px);
     }
     .oto-login-btn:active:not(:disabled) {
@@ -155,8 +155,8 @@ const injectStyles = () => {
       cursor: not-allowed;
     }
     .oto-webauthn-btn:hover:not(:disabled) {
-      background: rgba(63, 63, 70, 0.8);
-      border-color: #52525b;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.35);
     }
     .oto-footer-link:hover {
       color: #f9b000;
@@ -171,9 +171,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#09090b",
+    background: "linear-gradient(135deg, #1b1b2f 0%, #162447 50%, #1f4068 100%)",
     fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
     padding: "24px",
     position: "relative",
     overflow: "hidden",
@@ -186,7 +186,7 @@ const styles = {
     width: "600px",
     height: "600px",
     background:
-      "radial-gradient(circle, rgba(249, 176, 0, 0.08) 0%, transparent 70%)",
+      "radial-gradient(circle, rgba(249, 176, 0, 0.06) 0%, transparent 70%)",
     pointerEvents: "none",
     animation: "oto-glow-pulse 4s ease-in-out infinite",
   },
@@ -206,13 +206,12 @@ const styles = {
     width: "auto",
   },
   card: {
-    background:
-      "linear-gradient(145deg, rgba(39, 39, 42, 0.8) 0%, rgba(24, 24, 27, 0.9) 100%)",
+    background: "rgba(0, 0, 0, 0.35)",
     backdropFilter: "blur(20px)",
-    border: "1px solid rgba(63, 63, 70, 0.5)",
-    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "12px",
     padding: "32px",
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
   },
   cardHeader: {
     marginBottom: "28px",
@@ -220,14 +219,14 @@ const styles = {
   },
   title: {
     margin: "0 0 8px",
-    color: "#fafafa",
+    color: "#fff",
     fontSize: "24px",
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: "-0.02em",
   },
   subtitle: {
     margin: 0,
-    color: "#71717a",
+    color: "rgba(255, 255, 255, 0.6)",
     fontSize: "14px",
     lineHeight: "1.5",
   },
@@ -242,7 +241,7 @@ const styles = {
     gap: "8px",
   },
   label: {
-    color: "#a1a1aa",
+    color: "rgba(255, 255, 255, 0.7)",
     fontSize: "13px",
     fontWeight: "500",
   },
@@ -250,10 +249,10 @@ const styles = {
     width: "100%",
     padding: "12px 14px",
     fontSize: "14px",
-    color: "#fafafa",
-    backgroundColor: "rgba(9, 9, 11, 0.8)",
-    border: "1px solid #3f3f46",
-    borderRadius: "10px",
+    color: "#fff",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
+    borderRadius: "8px",
     outline: "none",
     transition: "all 0.2s ease",
     boxSizing: "border-box",
@@ -265,7 +264,7 @@ const styles = {
     padding: "12px 14px",
     backgroundColor: "rgba(220, 38, 38, 0.1)",
     border: "1px solid rgba(220, 38, 38, 0.2)",
-    borderRadius: "10px",
+    borderRadius: "8px",
     color: "#fca5a5",
     fontSize: "13px",
   },
@@ -282,7 +281,7 @@ const styles = {
     padding: "12px 14px",
     backgroundColor: "rgba(16, 185, 129, 0.1)",
     border: "1px solid rgba(16, 185, 129, 0.2)",
-    borderRadius: "10px",
+    borderRadius: "8px",
     color: "#6ee7b7",
     fontSize: "13px",
   },
@@ -302,14 +301,14 @@ const styles = {
     width: "100%",
     padding: "12px 20px",
     fontSize: "14px",
-    fontWeight: "600",
-    color: "#09090b",
-    background: "linear-gradient(135deg, #f9b000 0%, #f59e0b 100%)",
+    fontWeight: "700",
+    color: "#1b1b1d",
+    background: "#f9b000",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.2s ease",
-    boxShadow: "0 4px 14px rgba(249, 176, 0, 0.25)",
+    boxShadow: "0 4px 14px rgba(249, 176, 0, 0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -320,10 +319,10 @@ const styles = {
     padding: "12px 20px",
     fontSize: "14px",
     fontWeight: "500",
-    color: "#a1a1aa",
-    background: "rgba(39, 39, 42, 0.5)",
-    border: "1px solid #3f3f46",
-    borderRadius: "10px",
+    color: "rgba(255, 255, 255, 0.7)",
+    background: "transparent",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.2s ease",
     display: "flex",
@@ -348,11 +347,11 @@ const styles = {
     justifyContent: "center",
     gap: "8px",
     marginTop: "32px",
-    color: "#52525b",
+    color: "rgba(255, 255, 255, 0.35)",
     fontSize: "12px",
   },
   footerLink: {
-    color: "#71717a",
+    color: "rgba(255, 255, 255, 0.5)",
     textDecoration: "none",
     transition: "color 0.2s ease",
   },
