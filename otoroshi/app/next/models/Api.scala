@@ -236,7 +236,7 @@ case class ApiDocumentationSidebarLink(raw: JsObject)     extends ApiDocumentati
 }
 
 case class ApiDocumentationSidebar(raw: JsObject) {
-  lazy val label: String                           = raw.select("label").asString
+  lazy val label: String                           = raw.select("label").asOptString.getOrElse("")
   lazy val icon: Option[ApiDocumentationResource]  =
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
   lazy val path: Seq[String]                       =
