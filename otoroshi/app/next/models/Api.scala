@@ -2,25 +2,13 @@ package next.models
 
 import akka.http.scaladsl.model.Uri
 import akka.util.ByteString
-import next.models.ApiKind.Keyless
 import org.joda.time.DateTime
-import otoroshi.api.{DeleteAction, WriteAction}
+import otoroshi.api.WriteAction
 import otoroshi.env.Env
-import otoroshi.models.{
-  ApiKeyRotation,
-  EntityIdentifier,
-  EntityLocation,
-  EntityLocationSupport,
-  RemainingQuotas,
-  Restrictions,
-  RoundRobin,
-  ServiceDescriptor,
-  ServiceGroupIdentifier
-}
+import otoroshi.models._
 import otoroshi.next.models._
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.{ApikeyQuotas, _}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
-import otoroshi.next.plugins.api.{NgPlugin, NgPluginConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.UrlSanitizer.sanitize
@@ -31,7 +19,6 @@ import play.api.libs.json._
 import java.net.URI
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 sealed trait ApiState {
@@ -315,11 +302,25 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
 }
 
-trait ApiDocumentationAccessModeConfiguration
+trait ApiDocumentationAccessModeConfiguration {
+  def apiKind: ApiKind
+  def throttlingQuota: Long
+  def dailyQuota: Long
+  def monthlyQuota: Long
+}
+
+// TODO: fixit !!!!
+trait ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible extends ApiDocumentationAccessModeConfiguration {
+  def throttlingQuota: Long = RemainingQuotas.MaxValue
+  def dailyQuota: Long = RemainingQuotas.MaxValue
+  def monthlyQuota: Long = RemainingQuotas.MaxValue
+}
 
 case class JWTAccessModeConfiguration(
     verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfiguration
+) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+  override def apiKind: ApiKind = ApiKind.JWT
+}
 
 object JWTAccessModeConfiguration {
   def fmt = new Format[JWTAccessModeConfiguration] {
@@ -340,7 +341,9 @@ object JWTAccessModeConfiguration {
 case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
     regexIssuerDNs: Seq[String] = Seq.empty
-) extends ApiDocumentationAccessModeConfiguration
+) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+  override def apiKind: ApiKind = ApiKind.Mtls
+}
 
 object MtlsAccessModeConfiguration {
   def fmt = new Format[MtlsAccessModeConfiguration] {
@@ -362,7 +365,9 @@ object MtlsAccessModeConfiguration {
 
 case class OAuth2RemoteAccessModeConfiguration(
     verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfiguration
+) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+  override def apiKind: ApiKind = ApiKind.OAuth2Remote
+}
 
 object OAuth2RemoteAccessModeConfiguration {
   def fmt = new Format[OAuth2RemoteAccessModeConfiguration] {
@@ -383,7 +388,9 @@ object OAuth2RemoteAccessModeConfiguration {
 case class OAuth2AccessModeConfiguration(
     defaultKeyPair: String,
     expiration: Int
-) extends ApiDocumentationAccessModeConfiguration
+) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+  override def apiKind: ApiKind = ApiKind.OAuth2Local
+}
 
 object OAuth2AccessModeConfiguration {
   def fmt = new Format[OAuth2AccessModeConfiguration] {
@@ -407,7 +414,11 @@ case class ApikeyAccessModeConfiguration(
     clientIdPattern: Option[String] = None,
     clientNamePattern: Option[String] = None,
     description: Option[String] = None,
+    // TODO: do we actually need this ? it should be automatically handled right ?
     authorizedEntities: Seq[EntityIdentifier] = Seq.empty,
+    throttlingQuota: Long = RemainingQuotas.MaxValue,
+    dailyQuota: Long = RemainingQuotas.MaxValue,
+    monthlyQuota: Long = RemainingQuotas.MaxValue,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     allowClientIdOnly: Boolean = false,
@@ -418,6 +429,7 @@ case class ApikeyAccessModeConfiguration(
     tags: Seq[String] = Seq.empty[String],
     metadata: Map[String, String] = Map.empty[String, String]
 ) extends ApiDocumentationAccessModeConfiguration {
+  override def apiKind: ApiKind = ApiKind.Apikey
   def json: JsValue = {
     val enabled            = validUntil match {
       case Some(date) if date.isBeforeNow => false
@@ -438,6 +450,9 @@ case class ApikeyAccessModeConfiguration(
       "authorizedGroup"         -> authGroup,
       "authorizedEntities"      -> JsArray(authorizedEntities.map(_.json)),
       "authorizations"          -> JsArray(authorizedEntities.map(_.modernJson)),
+      "throttlingQuota" -> throttlingQuota,
+      "dailyQuota" -> dailyQuota,
+      "monthlyQuota" -> monthlyQuota,
       "enabled"                 -> enabled,
       "readOnly"                -> readOnly,
       "allowClientIdOnly"       -> allowClientIdOnly,
@@ -491,6 +506,9 @@ object ApikeyAccessModeConfiguration {
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
           constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
+          throttlingQuota = json.select("throttlingQuota").asOptLong.getOrElse(RemainingQuotas.MaxValue),
+          dailyQuota = json.select("dailyQuota").asOptLong.getOrElse(RemainingQuotas.MaxValue),
+          monthlyQuota = json.select("monthlyQuota").asOptLong.getOrElse(RemainingQuotas.MaxValue),
           restrictions = Restrictions.format
             .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Restrictions()),
@@ -583,6 +601,7 @@ object ApiDocumentationPlanValidationKind {
 }
 
 case class ApiDocumentationPlanValidation(kind: ApiDocumentationPlanValidationKind, config: JsObject = Json.obj()) {
+  def isAuto: Boolean = kind == ApiDocumentationPlanValidationKind.Auto
   def json: JsValue = ApiDocumentationPlanValidation.format.writes(this)
 }
 object ApiDocumentationPlanValidation {
@@ -616,12 +635,12 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(ApiPricing.format)
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
-      case "apikey"        => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
-      case "jwt"           => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
-      case "mtls"          => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
-      case "oauth2-local"  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
+      case "apikey" => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
+      case "jwt" => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
+      case "mtls" => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
+      case "oauth2-local" => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
       case "oauth2-remote" => (raw \ "access_mode_configuration").asOpt(OAuth2RemoteAccessModeConfiguration.fmt)
-      case _               => None
+      case _ => None
     }
   lazy val status: ApiPlanStatus                                                    = raw.selectAsOptString("status").getOrElse("published").toLowerCase match {
     case "staging"    => ApiPlanStatus.Staging
@@ -1272,6 +1291,8 @@ case class Api(
   override def theTags: Seq[String] = tags
 
   override def theMetadata: Map[String, String] = metadata
+
+  def plans: Seq[ApiDocumentationPlan] = documentation.toSeq.flatMap(_.plans)
 
   def resolveDocumentation()(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     documentation.flatMap(_.source) match {
