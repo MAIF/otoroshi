@@ -506,9 +506,9 @@ object ApikeyAccessModeConfiguration {
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
           constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-          throttlingQuota = json.select("throttlingQuota").asOptLong.getOrElse(RemainingQuotas.MaxValue),
-          dailyQuota = json.select("dailyQuota").asOptLong.getOrElse(RemainingQuotas.MaxValue),
-          monthlyQuota = json.select("monthlyQuota").asOptLong.getOrElse(RemainingQuotas.MaxValue),
+          throttlingQuota = json.select("throttlingQuota").asOptLong.orElse(json.select("throttling_quota").asOptLong).getOrElse(RemainingQuotas.MaxValue),
+          dailyQuota = json.select("dailyQuota").asOptLong.orElse(json.select("daily_quota").asOptLong).getOrElse(RemainingQuotas.MaxValue),
+          monthlyQuota = json.select("monthlyQuota").asOptLong.orElse(json.select("monthly_quota").asOptLong).getOrElse(RemainingQuotas.MaxValue),
           restrictions = Restrictions.format
             .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Restrictions()),
