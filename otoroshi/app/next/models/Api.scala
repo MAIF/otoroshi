@@ -646,7 +646,6 @@ case class ApiDocumentationPlan(raw: JsObject) {
     case "staging"    => ApiPlanStatus.Staging
     case "published"  => ApiPlanStatus.Published
     case "deprecated" => ApiPlanStatus.Deprecated
-    case "closed"     => ApiPlanStatus.Closed
     case _            => ApiPlanStatus.Closed
   }
   lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
