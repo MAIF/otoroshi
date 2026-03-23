@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useHistory, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { components } from 'react-select';
-import { nextClient } from '../../services/BackOfficeServices';
+import { findDraftsByKind, nextClient } from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
 import { NgForm } from '../../components/nginputs';
 import PageTitle from '../../components/PageTitle';
@@ -84,7 +84,7 @@ export function Subscriptions(props) {
   const params = useParams();
   const location = useLocation();
 
-  const { isDraft } = useDraftOfAPI();
+  const { isDraft, version } = useDraftOfAPI();
 
   const columns = [
     {
@@ -98,35 +98,41 @@ export function Subscriptions(props) {
     props.setTitle({
       value: 'Subscriptions',
       noThumbtack: true,
-      children: <div
-        className='m-0 ms-2'
-        style={{ fontSize: '1rem' }}
-      >
-        <span className={`badge bg-xs bg-danger`}>
-          PROD
-        </span>
-      </div>,
+      children: <VersionBadge />
     });
   }, []);
 
-  const client = nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS);
+  const client = nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
 
-  const rawSubscriptions = useQuery(['getSubscriptions'], () => {
-    return client.findAllWithPagination({
-      page: 1,
-      pageSize: 15,
-      filtered: [
-        {
-          id: 'api_ref',
-          value: params.apiId,
-        },
-      ],
-    });
-  });
+  const fetchSubscriptions = () => {
+    if (version) {
+      if (isDraft)
+        return findDraftsByKind("api-subscription")
+          .then(d => ({ data: d }))
 
-  const deleteItem = (item) => client.delete(item).then(() => window.location.reload());
+      return nextClient
+        .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
+        .findAllWithPagination({
+          page: 1,
+          pageSize: 15,
+          filtered: [
+            {
+              id: 'api_ref',
+              value: params.apiId,
+            },
+          ],
+        });
+    }
+  }
 
-  if (rawSubscriptions.isLoading) return <SimpleLoader />;
+  const deleteItem = (item) => {
+    if (isDraft)
+      return nextClient
+        .forEntityNext(nextClient.ENTITIES.DRAFTS)
+        .deleteById(item.id)
+
+    return client.delete(item).then(() => window.location.reload());
+  }
 
   return (
     <Table
@@ -143,7 +149,7 @@ export function Subscriptions(props) {
       columns={columns}
       deleteItem={deleteItem}
       fetchTemplate={client.template}
-      fetchItems={() => Promise.resolve(rawSubscriptions.data || [])}
+      fetchItems={fetchSubscriptions}
       defaultSort="name"
       defaultSortDesc="true"
       showActions={isDraft}
@@ -165,38 +171,58 @@ export function SubscriptionDesigner(props) {
   const location = useLocation();
 
   const [subscription, setSubscription] = useState();
+  const [draftSubscription, setDraftSubscription] = useState();
 
-  const { item } = useDraftOfAPI();
+  const { item, isDraft, version } = useDraftOfAPI();
 
   useEffect(() => {
     props.setTitle(undefined);
   }, []);
 
   const rawSubscription = useQuery(
-    ['getSubscription', params.subscriptionId],
-    () =>
-      nextClient
+    ['getSubscription', params.subscriptionId, version, isDraft],
+    () => {
+      if (isDraft)
+        return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+          .findById(params.subscriptionId)
+      return nextClient
         .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
-        .findById(params.subscriptionId),
+        .findById(params.subscriptionId)
+    },
     {
-      onSuccess: setSubscription,
+      enabled: !!version,
+      onSuccess: res => {
+        if (isDraft)
+          setDraftSubscription(res)
+        else
+          setSubscription(res)
+      },
     }
   );
 
   const goToSubscriptions = () => historyPush(history, location, `/apis/${params.apiId}/subscriptions`)
 
   const updateSubscription = () => {
+    if (isDraft)
+      return nextClient
+        .forEntityNext(nextClient.ENTITIES.DRAFTS)
+        .update(draftSubscription)
+
     return nextClient
       .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .update(subscription)
       .then(goToSubscriptions)
   };
 
-  if (!item || rawSubscription.isLoading) return <SimpleLoader />;
+  if (!item || (isDraft ? !draftSubscription : !subscription)) return <SimpleLoader />;
+
+  const sub = isDraft ? draftSubscription : subscription
+
+  console.log(draftSubscription)
 
   return (
     <>
-      <PageTitle title={subscription.name} {...props}>
+      <PageTitle title={sub.name} {...props}>
         <FeedbackButton
           type="success"
           className="d-flex ms-auto"
@@ -210,10 +236,10 @@ export function SubscriptionDesigner(props) {
       </PageTitle>
       <div style={{ maxWidth: MAX_WIDTH }}>
         <NgForm
-          value={subscription}
+          value={isDraft ? draftSubscription.content : subscription}
           schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
           flow={SUBSCRIPTION_FORM_SETTINGS.flow}
-          onChange={setSubscription}
+          onChange={res => isDraft ? setDraftSubscription({ ...draftSubscription, content: res }) : setSubscription(res)}
         />
       </div>
     </>
@@ -228,7 +254,7 @@ export function NewSubscription(props) {
   const [subscription, setSubscription] = useState();
   const [error, setError] = useState();
 
-  const { item, version } = useDraftOfAPI();
+  const { item, version, isDraft } = useDraftOfAPI();
 
   useEffect(() => {
     props.setTitle(undefined);
@@ -250,8 +276,9 @@ export function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
-    return nextClient
-      .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
+    return (isDraft ? nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS) :
+      nextClient
+        .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS))
       .create({
         ...subscription,
         api_ref: params.apiId,

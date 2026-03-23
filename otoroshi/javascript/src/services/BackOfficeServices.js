@@ -2085,19 +2085,6 @@ export function jsonToGraphqlSchema(schema, types) {
   }).then((r) => r.json());
 }
 
-export function subscribeToPlan(apiId, planId) {
-  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/plans/${planId}/subscribe`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({})
-  })
-    .then((r) => r.json());
-}
-
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) => {
@@ -2143,6 +2130,12 @@ const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
     body: body ? JSON.stringify(body) : undefined,
   }).then((r) => r.json());
 };
+
+export const findDraftsByKind = kind => {
+  return fetch(`/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${kind}`, {
+    credentials: 'include'
+  }).then((r) => r.json());
+}
 
 export const findAllWithPagination = (
   route,

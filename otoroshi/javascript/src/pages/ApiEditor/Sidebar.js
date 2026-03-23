@@ -82,7 +82,6 @@ const LINK_GROUPS = (id) => [
         title: 'Clients',
         tab: 'Clients',
         tooltip: { ...createTooltip(`Show clients tab`) },
-        isProd: true
       },
       {
         to: `/apis/${id}/subscriptions`,
@@ -90,7 +89,6 @@ const LINK_GROUPS = (id) => [
         title: 'Subscriptions',
         tab: 'Subscriptions',
         tooltip: { ...createTooltip(`Show subscriptions tab`) },
-        isProd: true
       },
       {
         to: `/apis/${id}/documentation`,

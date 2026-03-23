@@ -20,7 +20,7 @@ import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
@@ -104,6 +104,20 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
             Ok.chunked(Source.single(1).flatMapConcat(_ => Source.future(fetch()))).as("application/json").future
         }
       }
+    }
+
+  def findAllByKind(kind: String) =
+    ApiAction.async { ctx =>
+      Results
+        .Ok(
+          JsArray(
+            env.proxyState
+              .allDrafts()
+              .filter(_.id.startsWith(kind))
+              .map(_.json)
+          )
+        )
+        .future
     }
 
   def foldStats(stats: Seq[RouteStats]) = {

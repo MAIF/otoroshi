@@ -7,7 +7,6 @@ import PageTitle from '../../components/PageTitle';
 import { Row } from '../../components/Row';
 import { ArrayInput, Table } from '../../components/inputs';
 import { RestrictionPath } from '../../components/Restrictions';
-import JwtVerificationOnly from '../../forms/ng_plugins/JwtVerificationOnly';
 import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCredentialTokenEndpoint';
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import SimpleLoader from './SimpleLoader';
@@ -15,7 +14,7 @@ import { useDraftOfAPI, historyPush } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
 import { v4 } from 'uuid';
 import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
-import { findAuthConfigById, subscribeToPlan } from '../../services/BackOfficeServices';
+import { findAuthConfigById } from '../../services/BackOfficeServices';
 import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
 import { MAX_WIDTH } from './constants';
@@ -637,17 +636,6 @@ function PlanForm({ plan, onChange }) {
     </>
   );
 }
-
-// function SubscriptionModal({ ok, cancel, plan, api, props }) {
-
-//   // useEffect(() => {
-//   //   subscribeToPlan(api.id, plan.id)
-//   //     .then(res => console.log(res))
-//   // }, [])
-
-//   return <NewSubscription props={props} />
-// }
-
 
 export function Plans(props) {
   const params = useParams();
