@@ -389,13 +389,14 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
-                          state = if (apiDraft.state == ApiStaging) ApiPublished else api.state
+                          state = if (apiDraft.state == ApiStaging) ApiPublished else api.state,
+                          documentation = api.documentation,
+                          clients = api.clients
                         )
 
                         env.datastores.apiDataStore
                           .set(updatedApi)
                           .map(result => {
-
                             ApiDeploymentEvent(
                               `@id` = env.snowflakeGenerator.nextIdStr(),
                               `@timestamp` = DateTime.now(),

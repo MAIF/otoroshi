@@ -910,7 +910,7 @@ class TableComponent extends Component {
           <div>
             <div className="row">
               <div
-                className=""
+                className="d-flex"
                 style={{
                   position: 'absolute',
                   right: 0,

@@ -1017,7 +1017,8 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _ctx) => env.datastores.draftsDataStore.template(env).json,
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
-        stateUpdate = seq => env.proxyState.updateDrafts(seq)
+        stateUpdate = seq => env.proxyState.updateDrafts(seq),
+        writeValidator = Draft.writeValidator
       )
     ),
     //////

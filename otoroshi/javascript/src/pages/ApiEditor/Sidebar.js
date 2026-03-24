@@ -24,6 +24,14 @@ const LINK_GROUPS = (id) => [
         tab: 'informations',
         tooltip: { ...createTooltip(`Show informations tab`) },
       },
+      {
+        to: `/apis/${id}/actions`,
+        icon: 'fa-bolt',
+        title: 'Actions',
+        tab: 'actions',
+        tooltip: { ...createTooltip(`Show actions tab`) },
+        isProd: true
+      }
     ],
   },
   {
@@ -102,14 +110,6 @@ const LINK_GROUPS = (id) => [
   {
     label: 'Operations',
     links: [
-      {
-        to: `/apis/${id}/actions`,
-        icon: 'fa-bolt',
-        title: 'Actions',
-        tab: 'actions',
-        tooltip: { ...createTooltip(`Show actions tab`) },
-        isProd: true
-      },
       {
         to: `/apis/${id}/deployments`,
         icon: 'fa-server',

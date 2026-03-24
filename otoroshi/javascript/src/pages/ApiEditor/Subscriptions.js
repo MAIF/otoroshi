@@ -152,7 +152,7 @@ export function Subscriptions(props) {
       fetchItems={fetchSubscriptions}
       defaultSort="name"
       defaultSortDesc="true"
-      showActions={isDraft}
+      showActions
       showLink={false}
       extractKey={(item) => item.id}
       rowNavigation={true}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useHistory, useLocation, useParams } from 'react-router-dom';
-import { NgForm } from '../../components/nginputs';
+import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { Button } from '../../components/Button';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import PageTitle from '../../components/PageTitle';
@@ -19,6 +19,7 @@ import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
 import { MAX_WIDTH } from './constants';
 import { NewSubscription } from './Subscriptions';
+import { Header } from '../../components/wizardframe';
 
 const STATUS_BADGES = {
   staging: { label: 'Staging', cls: 'api-status-started' },
@@ -548,7 +549,7 @@ function PlanForm({ plan, onChange }) {
       label: 'Plan validation',
       schema: {
         kind: {
-          type: 'select',
+          type: 'dots',
           label: 'Kind',
           props: {
             defaultValue: 'auto',
@@ -579,7 +580,7 @@ function PlanForm({ plan, onChange }) {
       schema: {
         kind: {
           label: 'Kind',
-          type: 'select',
+          type: 'dots',
           props: {
             defaultValue: 'public',
             options: [
@@ -637,11 +638,73 @@ function PlanForm({ plan, onChange }) {
   );
 }
 
+function ImportPlanModal({ hide, draft, api, updateAPI }) {
+  const [planId, setPlan] = useState()
+
+  const importPlan = () => {
+    const plan = draft.documentation.plans.find(p => p.id === planId)
+
+    return updateAPI({
+      ...api,
+      documentation: {
+        ...api.documentation,
+        plans: [
+          ...(api.documentation.plans || []),
+          {
+            ...plan,
+            enabled: false,
+            id: `prod-${plan.id}`
+          }
+        ]
+      }
+    })
+      .then(() => window.location.reload())
+  }
+
+  return <div className='wizard'>
+    <div className='wizard-container' style={{ padding: '1.5rem' }}>
+      <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+        <Header title="Import a plan from draft" />
+        <div className="wizard-content">
+          <NgSelectRenderer
+            value={planId}
+            onChange={setPlan}
+            ngOptions={{ spread: true }}
+            options={(draft.documentation?.plans || [])}
+            optionsTransformer={(arr) =>
+              arr.map((item) => ({
+                value: item.id,
+                label: item.name,
+              }))
+            }
+          />
+        </div>
+      </div>
+      <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+        <FeedbackButton
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            borderColor: 'var(--color-primary)',
+            padding: '12px 48px',
+          }}
+          disabled={!planId}
+          onPress={importPlan}
+          onSuccess={hide}
+          icon={() => <i className="fas fa-paper-plane" />}
+          text="Copy to prod, then edit"
+        />
+      </div>
+    </div>
+  </div>
+}
+
 export function Plans(props) {
   const params = useParams();
   const history = useHistory();
   const [plan, setPlan] = useState()
-  const { item, version } = useDraftOfAPI();
+  const { item, version, isDraft, draft, updateAPI, api, updateItem } = useDraftOfAPI();
+
+  const [showImportPlanModal, setImportPlanModal] = useState(false)
 
   useEffect(() => {
     props.setTitle({
@@ -699,8 +762,8 @@ export function Plans(props) {
     return updateItem({
       ...item,
       documentation: {
-        ...documentation,
-        plans: item.plans.filter(c => c.id !== plan.id)
+        ...item.documentation,
+        plans: item.documentation.plans.filter(c => c.id !== plan.id)
       }
     })
   }
@@ -708,36 +771,50 @@ export function Plans(props) {
   if (plan)
     return <NewSubscription plan={plan} {...props} />
 
-  return <Table
-    parentProps={{ params }}
-    navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
-    navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
-    selfUrl="plans"
-    defaultTitle="Plans"
-    itemName="Plan"
-    formSchema={null}
-    formFlow={null}
-    columns={columns}
-    deleteItem={(item) => deleteItem(item)}
-    defaultSort="name"
-    defaultSortDesc="true"
-    fetchItems={() => Promise.resolve(plans)}
-    fetchTemplate={() => Promise.resolve({})}
-    showActions={true}
-    showLink={false}
-    extractKey={(item) => item.id}
-    rowNavigation={true}
-    hideAddItemAction={true}
-    itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
-    rawEditUrl={true}
-    injectTopBar={() => (<DraftOnly>
-      <div className="btn-group input-group-btn">
-        <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
-          <i className="fas fa-plus-circle" /> Create new plan
-        </Link>
-      </div>
-    </DraftOnly>)}
-  />
+  return <>
+
+    {showImportPlanModal && !isDraft && <ImportPlanModal
+      draft={draft}
+      api={api}
+      updateAPI={updateAPI}
+      hide={() => setImportPlanModal(false)} />}
+
+    <Table
+      parentProps={{ params }}
+      navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
+      navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
+      selfUrl="plans"
+      defaultTitle="Plans"
+      itemName="Plan"
+      formSchema={null}
+      formFlow={null}
+      columns={columns}
+      deleteItem={(item) => deleteItem(item)}
+      defaultSort="name"
+      defaultSortDesc="true"
+      fetchItems={() => Promise.resolve(plans)}
+      fetchTemplate={() => Promise.resolve({})}
+      showActions={true}
+      showLink={false}
+      extractKey={(item) => item.id}
+      rowNavigation={true}
+      hideAddItemAction={true}
+      itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
+      rawEditUrl={true}
+      injectTopBar={() => <div className='d-flex'>
+        <div className="btn-group input-group-btn mx-1">
+          <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
+            <i className="fas fa-plus-circle" /> Create new plan
+          </Link>
+        </div>
+        {!isDraft && <div className="btn-group input-group-btn">
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setImportPlanModal(true)}>
+            <i className="fas fa-plus-circle" /> Importer un plan
+          </button>
+        </div>}
+      </div>}
+    />
+  </>
 }
 
 export function PlanEditor(props) {
