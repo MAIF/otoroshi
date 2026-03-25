@@ -10,7 +10,7 @@ An API key is a unique credential used to authenticate and authorize calls to ro
 <img src="/img/docs/models-apikey.png" />
 </div>
 
-You can find a practical example [here](../how-to-s/secure-with-apikey.mdx).
+You can find a practical example [here](../tutorials/secure-with-apikey.mdx).
 
 ## UI page
 
