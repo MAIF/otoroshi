@@ -1,10 +1,10 @@
 ---
-title: "How to's"
+title: "Tutorials"
 sidebar_label: "Overview"
 sidebar_position: 1
-slug: /how-to-s
+slug: /tutorials
 ---
-# How to's
+# Tutorials
 
 in this section, we will explain some mainstream Otoroshi usage scenario's 
 
