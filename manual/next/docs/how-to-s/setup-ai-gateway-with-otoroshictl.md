@@ -4,7 +4,7 @@ sidebar_position: 30
 ---
 # Set up an AI Gateway with otoroshictl
 
-In this tutorial, you will set up Otoroshi as an AI Gateway using the LLM extension and `otoroshictl`. By the end, you will have:
+In this tutorial, you will set up Otoroshi as an AI Gateway using the [The Otoroshi LLM Extension](https://cloud-apim.github.io/otoroshi-llm-extension/) and [`otoroshictl`](https://cloud-apim.github.io/otoroshictl/). By the end, you will have:
 
 - An Otoroshi instance running with the LLM extension
 - An OpenAI provider configured with the API key stored securely via environment vault
