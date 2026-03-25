@@ -4,7 +4,7 @@ sidebar_position: 28
 ---
 # Managing Otoroshi with otoroshictl
 
-`otoroshictl` is a command-line tool for managing Otoroshi clusters. It works similarly to `kubectl` for Kubernetes: you configure contexts pointing to different Otoroshi clusters, then use commands to query, create, update, delete, and synchronize resources. It is particularly useful for managing production environments and integrating Otoroshi into CI/CD pipelines.
+[`otoroshictl`](https://cloud-apim.github.io/otoroshictl/) is a command-line tool for managing Otoroshi clusters developped by the folks at [Cloud APIM](https://www.cloud-apim.com/). It works similarly to `kubectl` for Kubernetes: you configure contexts pointing to different Otoroshi clusters, then use commands to query, create, update, delete, and synchronize resources. It is particularly useful for managing production environments and integrating Otoroshi into CI/CD pipelines.
 
 ## Installation
 
