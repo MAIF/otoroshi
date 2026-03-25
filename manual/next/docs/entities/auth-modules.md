@@ -96,7 +96,7 @@ for instance to check if the current user has the right `two`, you can write the
 
 ## OAuth 2.0 / OIDC provider
 
-If you want to secure an app or your Otoroshi UI with this provider, you can check these tutorials : [Secure an app with keycloak](../how-to-s/secure-app-with-keycloak.mdx) or [Secure an app with auth0](../how-to-s/secure-app-with-auth0.mdx)
+If you want to secure an app or your Otoroshi UI with this provider, you can check these tutorials : [Secure an app with keycloak](../tutorials/secure-app-with-keycloak.mdx) or [Secure an app with auth0](../tutorials/secure-app-with-auth0.mdx)
 
 * `Use cookie`: If your OAuth2 provider does not support query param in redirect uri, you can use cookies instead
 * `Use json payloads`: the access token, sended to retrieve the user info, will be pass in body as JSON. If disabled, it will sended as Map.
@@ -143,7 +143,7 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 
 ## OAuth 1.0a provider
 
-If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with OAuth 1.0a](../how-to-s/secure-with-oauth1-client.mdx)
+If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with OAuth 1.0a](../tutorials/secure-with-oauth1-client.mdx)
 
 * `Http Method`: method used to get request token and the access token 
 * `Consumer key`: the identifier portion of the client credentials (equivalent to a username)
@@ -157,7 +157,7 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 
 ## LDAP Authentication provider
 
-If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with LDAP](../how-to-s/secure-app-with-ldap.mdx)
+If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with LDAP](../tutorials/secure-app-with-ldap.mdx)
 
 * `Basic auth.`: if enabled, user and password will be extract from the `Authorization` header as a Basic authentication. It will skipped the login Otoroshi page 
 * `Allow empty password`: LDAP servers configured by default with the possibility to connect without password can be secured by this module to ensure that user provides a password
@@ -232,7 +232,7 @@ PATCH  /api/auths/:id       # Partially update an auth module
 
 ## Related pages
 
-* [Secure an app with auth0](../how-to-s/secure-app-with-auth0.mdx)
-* [Secure an app with keycloak](../how-to-s/secure-app-with-keycloak.mdx)
-* [Secure an app with LDAP](../how-to-s/secure-app-with-ldap.mdx)
-* [Secure an app with OAuth 1.0a](../how-to-s/secure-with-oauth1-client.mdx)
+* [Secure an app with auth0](../tutorials/secure-app-with-auth0.mdx)
+* [Secure an app with keycloak](../tutorials/secure-app-with-keycloak.mdx)
+* [Secure an app with LDAP](../tutorials/secure-app-with-ldap.mdx)
+* [Secure an app with OAuth 1.0a](../tutorials/secure-with-oauth1-client.mdx)
