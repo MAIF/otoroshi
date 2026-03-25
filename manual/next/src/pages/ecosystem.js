@@ -84,7 +84,7 @@ const devPortals = [
     name: 'Cloud APIM API Portal',
     description: 'A developer portal for Otoroshi APIs by Cloud APIM. Expose and document your APIs for external consumers.',
     url: 'https://github.com/cloud-apim/otoroshi-api-portal',
-    tags: ['Open Source', 'Portal', 'Cloud APIM'],
+    tags: ['Open Source', 'Portal', 'Plugin', 'Cloud APIM'],
   },
 ];
 
@@ -264,7 +264,7 @@ function SupportSection() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Community Discord
+                Community support (Discord)
               </a>
             </div>
           </div>
