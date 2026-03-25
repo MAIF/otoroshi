@@ -213,7 +213,7 @@ function ManagedProvidersSection() {
               </ul>
               <div className={styles.providerAction}>
                 <a href={provider.url} target="_blank" rel="noopener noreferrer">
-                  Visit {provider.name}
+                  Visit {provider.name} website
                 </a>
               </div>
             </div>
