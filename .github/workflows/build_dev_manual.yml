@@ -38,7 +38,7 @@ jobs:
         run: |
           cd manual/next
           npm ci --legacy-peer-deps
-          npm run build
+          npm run build-dev
           rm -rf ../../docs/devmanual
           cp -r build ../../docs/devmanual
       - name: Commit files
