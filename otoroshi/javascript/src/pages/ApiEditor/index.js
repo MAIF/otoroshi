@@ -20,9 +20,15 @@ import { NewAPI, Apis } from './Apis';
 import { Informations } from './Informations';
 import { Dashboard } from './Dashboard';
 import { ClientEditor, Clients } from './Clients';
+import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 
-const RouteWithProps = ({ component: Component, ...rest }) => (
-  <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
+const RouteWithProps = ({ component: Component, props: extraProps, ...rest }) => (
+  <Route
+    render={(routeProps) => {
+      return <Component {...routeProps} {...extraProps} {...rest}
+        params={{ ...(routeProps.match.params || {}), ...(rest.params || {}) }} />
+    }}
+  />
 );
 
 export default function ApiEditor(props) {
@@ -36,6 +42,8 @@ export default function ApiEditor(props) {
         <SidebarComponent {...props} />
 
         <Switch>
+          <RouteWithProps exact path="/apis/:apiId/apikeys/:taction/:titem" component={ServiceApiKeysPage} props={props} />
+          <RouteWithProps exact path="/apis/:apiId/apikeys" component={ServiceApiKeysPage} props={props} />
           <RouteWithProps exact path="/apis/:apiId/actions" component={Actions} props={props} />
           <RouteWithProps exact path="/apis/:apiId/api-gateway" component={APIGateway} props={props} />
           <RouteWithProps exact path="/apis/:apiId/plans" component={Plans} props={props} />

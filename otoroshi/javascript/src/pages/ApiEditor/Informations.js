@@ -86,7 +86,7 @@ export function Informations(props) {
       schema: {
         kind: {
           label: 'Kind',
-          type: 'select',
+          type: 'dots',
           props: {
             defaultValue: 'public',
             options: [

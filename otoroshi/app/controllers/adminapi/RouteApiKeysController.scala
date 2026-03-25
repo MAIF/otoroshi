@@ -1,8 +1,10 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions.ApiAction
+import next.models.Api
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.models.ApiKey
+import otoroshi.next.models.NgRoute
 import otoroshi.utils.controllers.{
   AdminApiHelper,
   ApiError,
@@ -17,8 +19,9 @@ import otoroshi.utils.controllers.{
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.security.IdGenerator
+import otoroshi.storage.BasicStore
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,33 +36,98 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
 
   lazy val logger = Logger("otoroshi-apikeys-fs-api")
 
-  def apiKeyQuotas(routeId: String, clientId: String) =
+  private def canReadOrWrite[T](
+      ctx: ApiActionContext[AnyContent],
+      entityId: String,
+      datastore: BasicStore[T],
+      readOrWrite: (ApiActionContext[AnyContent], T) => Boolean
+  ): Future[Either[Result, T]] = {
+    datastore.findById(entityId).flatMap {
+      case None                                      => Left[Result, T](NotFound(Json.obj("error" -> s"Entity with id '$entityId' not found"))).future
+      case Some(entity) if !readOrWrite(ctx, entity) =>
+        ctx.fforbidden.map(_.left)
+      case Some(entity)                              => entity.rightf
+    }
+  }
+
+  def apiKeyQuotasOfRoute(routeId: String, clientId: String) = {
     ApiAction.async { ctx =>
-      env.datastores.routeDataStore.findById(routeId).flatMap {
-        case None                                 => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture
-        case Some(desc) if !ctx.canUserRead(desc) => ctx.fforbidden
-        case Some(desc)                           =>
-          env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-            case None                                                 => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-            case Some(apiKey) if !ctx.canUserRead(apiKey)             => ctx.fforbidden
-            case Some(apiKey) if !apiKey.authorizedOnService(desc.id) =>
-              NotFound(
-                Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$routeId'")
-              ).asFuture
-            case Some(apiKey) if apiKey.authorizedOnService(desc.id)  => {
-              sendAudit(
-                "ACCESS_SERVICE_APIKEY_QUOTAS",
-                s"User accessed an apikey quotas from a service descriptor",
-                Json.obj("routeId" -> routeId, "clientId" -> clientId),
-                ctx
-              )
-              apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
-            }
+      apiKeyQuotas[NgRoute](ctx, env.datastores.routeDataStore, routeId, clientId)
+    }
+  }
+
+  def apiKeyQuotasOfApi(apiId: String, clientId: String) = {
+    ApiAction.async { ctx =>
+      apiKeyQuotas[Api](ctx, env.datastores.apiDataStore, apiId, clientId)
+    }
+  }
+
+  private def apiKeyQuotas[T](
+      ctx: ApiActionContext[AnyContent],
+      datastore: BasicStore[T],
+      id: String,
+      clientId: String,
+      isRoute: Boolean
+  ) = {
+    canReadOrWrite[T](ctx, id, datastore, (ctx, entity) => ctx.canUserRead(entity)).flatMap {
+      case Left(err) => err.vfuture
+      case Right(_)  =>
+        env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+          case None                                            => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+          case Some(apiKey) if !ctx.canUserRead(apiKey)        => ctx.fforbidden
+          case Some(apiKey) if !apiKey.authorizedOnService(id) =>
+            NotFound(
+              Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
+            ).asFuture
+          case Some(apiKey) if apiKey.authorizedOnService(id)  => {
+            sendAudit(
+              "ACCESS_SERVICE_APIKEY_QUOTAS",
+              s"User accessed an apikey quotas",
+              Json
+                .obj("clientId" -> clientId)
+                .applyOn { payload =>
+                  if (isRoute)
+                    payload.deepMerge(Json.obj("routeId" -> id))
+                  else
+                    payload.deepMerge(Json.obj("apiId" -> id))
+                },
+              ctx
+            )
+            apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
           }
-      }
+        }
+    }
+  }
+
+  private def resetApiKeyQuotasOfRoute[T](
+      ctx: ApiActionContext[AnyContent],
+      datastore: BasicStore[T],
+      id: String,
+      clientId: String
+  ) =
+    canReadOrWrite[T](ctx, id, datastore, (ctx, entity) => ctx.canUserWrite(entity)).flatMap {
+      case Left(err) => err.vfuture
+      case Right(_)  =>
+        env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+          case None                                                                 => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+          case Some(apiKey) if !ctx.canUserWrite(apiKey)                            => ctx.fforbidden
+          case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(id, desc.groups) =>
+            NotFound(
+              Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$routeId'")
+            ).asFuture
+          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(id, desc.groups)  => {
+            sendAudit(
+              "RESET_SERVICE_APIKEY_QUOTAS",
+              s"User reset an apikey quotas for a service descriptor",
+              Json.obj("routeId" -> routeId, "clientId" -> clientId),
+              ctx
+            )
+            env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
+          }
+        }
     }
 
-  def resetApiKeyQuotas(routeId: String, clientId: String) =
+  private def resetApiKeyQuotas(routeId: String, clientId: String) =
     ApiAction.async { ctx =>
       env.datastores.routeDataStore.findById(routeId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id: '$routeId' not found")).asFuture

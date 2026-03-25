@@ -99,6 +99,13 @@ const LINK_GROUPS = (id) => [
         tooltip: { ...createTooltip(`Show subscriptions tab`) },
       },
       {
+        to: `/apis/${id}/apikeys`,
+        icon: 'fa-key',
+        title: 'API Keys',
+        tab: 'apikeys',
+        tooltip: { ...createTooltip(`Manage all API keys that can access`) },
+      },
+      {
         to: `/apis/${id}/documentation`,
         icon: 'fa-file',
         title: 'Documentation',
