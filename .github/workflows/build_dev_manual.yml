@@ -40,7 +40,7 @@ jobs:
           npm ci --legacy-peer-deps
           npm run build-dev
           rm -rf ../../docs/devmanual
-          cp -r build ../../docs/devmanual
+          cp -r build-dev ../../docs/devmanual
       - name: Commit files
         run: |
           git config --local user.email "otoroshi-github-actions@users.noreply.github.com"
