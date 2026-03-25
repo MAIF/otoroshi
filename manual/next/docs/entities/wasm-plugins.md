@@ -175,5 +175,5 @@ For a detailed overview of WASM in Otoroshi, available plugin types, and how the
 
 For practical guides:
 
-* [Install a Wasmo](../how-to-s/wasmo-installation.mdx) to set up a Wasmo instance for compiling WASM plugins
-* [Use a WASM plugin](../how-to-s/wasm-usage.mdx) for a step-by-step tutorial on creating and using WASM plugins
+* [Install a Wasmo](../tutorials/wasmo-installation.mdx) to set up a Wasmo instance for compiling WASM plugins
+* [Use a WASM plugin](../tutorials/wasm-usage.mdx) for a step-by-step tutorial on creating and using WASM plugins
