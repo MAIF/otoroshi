@@ -9,7 +9,6 @@ import { Restrictions } from '../components/Restrictions';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
-import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import InfoCollapse from '../components/InfoCollapse';
@@ -57,9 +56,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -256,11 +255,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -884,9 +881,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -946,6 +942,7 @@ export class ServiceApiKeysPage extends Component {
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+  onApis = window.location.pathname.indexOf('/bo/dashboard/apis') === 0;
 
   sidebarContent(name) {
     if (this.onRoutes) {
@@ -955,6 +952,9 @@ export class ServiceApiKeysPage extends Component {
           setSidebarContent={this.props.setSidebarContent}
         />
       );
+    }
+    else if (this.onApis) {
+      return null
     }
     return (
       <ServiceSidebar
@@ -971,14 +971,22 @@ export class ServiceApiKeysPage extends Component {
 
   componentDidMount() {
     const fu = this.onRoutes
-      ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
-      : nextClient
+      ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES)
+        .findById(this.props.params.routeId) :
+      this.onApis ? nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+        .findById(this.props.params.apiId) :
+        nextClient
           .forEntityNext(nextClient.ENTITIES.SERVICES)
           .findById(this.props.params.serviceId);
+
     fu.then((service) => {
-      this.onRoutes
-        ? this.props.setTitle(this.props.title || `HTTP Routes Apikeys`)
-        : this.props.setTitle(`Service Apikeys`);
+      if (this.onRoutes)
+        this.props.setTitle(this.props.title || `HTTP Routes Apikeys`)
+      else if (this.onApis)
+        this.props.setTitle(this.props.title || `APIs Apikeys`)
+      else
+        this.props.setTitle(`Service Apikeys`);
+
       this.setState({ service, loading: false }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
         if (this.table) {
@@ -993,7 +1001,7 @@ export class ServiceApiKeysPage extends Component {
 
   fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchApiKeysForPage(
-      this.props.params.serviceId || this.props.params.routeId
+      this.props.params.serviceId || this.props.params.routeId || this.props.params.apiId
     );
   };
 
@@ -1003,6 +1011,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.createApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -1014,6 +1023,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.updateApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -1022,6 +1032,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.deleteApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -1034,11 +1045,12 @@ export class ServiceApiKeysPage extends Component {
           parentProps={this.props}
           selfUrl={
             this.onRoutes
-              ? // ? `services/${this.props.params.routeId}/apikeys`
-                `routes/${this.props.params.routeId}/apikeys`
-              : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
+              ? `routes/${this.props.params.routeId}/apikeys`
+              : this.onApis
+                ? `apis/${this.props.params.apiId}/apikeys`
+                : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
-          defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
+          defaultTitle={this.onRoutes ? 'Route Apikeys' : this.onApis ? 'APIs Apikeys' : 'Service Apikeys'}
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)
@@ -1046,10 +1058,11 @@ export class ServiceApiKeysPage extends Component {
               .then((apk) => ({
                 ...apk,
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-                authorizedEntities: [
-                  //...(this.state.service.groups || []).map((g) => 'group_' + g), // Here we authorize the group by default, can be dangerous
+                authorizedEntities: this.onRoutes ? [
                   `route_${this.props.params.routeId}`, // just authorize the route
-                ],
+                ] : this.onApis ? [
+                  `api_${this.props.params.apiId}`, // just authorize the api
+                ] : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
               }))
           }
           _defaultValue={() => ({
@@ -1085,10 +1098,9 @@ export class ServiceApiKeysPage extends Component {
           kubernetesKind="apim.otoroshi.io/ApiKey"
           navigateTo={(item) => {
             if (this.onRoutes) {
-              this.props.history.push(
-                `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
-                // `/apikeys/edit/${item.clientId}`
-              );
+              this.props.history.push(`/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`);
+            } else if (this.onApis) {
+              this.props.history.push(`/apis/${this.props.params.apiId}/apikeys/edit/${item.clientId}`);
             } else {
               this.props.history.push(
                 `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`
@@ -1098,6 +1110,8 @@ export class ServiceApiKeysPage extends Component {
           itemUrl={(i) => {
             if (this.onRoutes) {
               return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
+            } else if (this.onApis) {
+              return `/bo/dashboard/apis/${this.props.params.apiId}/apikeys/edit/${i.clientId}`;
             } else {
               return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
             }

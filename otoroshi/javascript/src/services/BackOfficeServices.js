@@ -471,10 +471,12 @@ export function fetchApiKeyById(serviceId, apkid) {
   }).then((r) => r.json());
 }
 
-export function deleteApiKey(serviceId, routeId, ak) {
+export function deleteApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
-    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}` :
+    routeId ?
+      `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}` :
+      `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'DELETE',
     credentials: 'include',
@@ -484,10 +486,12 @@ export function deleteApiKey(serviceId, routeId, ak) {
   }).then((r) => r.json());
 }
 
-export function createApiKey(serviceId, routeId, ak) {
+export function createApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
-    ? `/bo/api/proxy/api/services/${serviceId}/apikeys`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys` :
+    apiId ?
+      `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys` :
+      `/bo/api/proxy/api/routes/${routeId}/apikeys`;
   return fetch(url, {
     method: 'POST',
     credentials: 'include',
@@ -511,10 +515,12 @@ export function createRawApiKey(ak) {
   }).then((r) => r.json());
 }
 
-export function updateApiKey(serviceId, routeId, ak) {
+export function updateApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
-    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+    ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}` :
+    apiId ?
+      `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys/${ak.clientId}`
+      : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'PUT',
     credentials: 'include',
