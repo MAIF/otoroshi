@@ -77,11 +77,11 @@ sidebar_position: 4
 * Visual workflow engine for building complex processing pipelines ([workflows](./entities/workflows.md), [workflow editor](./topics/workflows-editor.md))
 * Write your own custom middlewares: ([create plugins](./plugins/create-plugins.md))
     * in Scala deployed as jar files
-    * in whatever language you want that can be compiled to WASM ([WASM how-to](./how-to-s/wasm-usage.mdx))
+    * in whatever language you want that can be compiled to WASM ([WASM how-to](./tutorials/wasm-usage.mdx))
 
 **Security**
 
-* Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./how-to-s/instantiate-waf-coraza.mdx))
+* Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./tutorials/instantiate-waf-coraza.mdx))
 * IP address allow and block lists (with CIDR support) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Domain name allow and block lists ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Fail2Ban-style automatic IP banning ([built-in plugins](./plugins/built-in-plugins.mdx))
@@ -94,15 +94,15 @@ sidebar_position: 4
 
 **API security**
 
-* Access management with API keys and quotas ([API keys](./entities/apikeys.md), [how-to](./how-to-s/secure-with-apikey.mdx))
+* Access management with API keys and quotas ([API keys](./entities/apikeys.md), [how-to](./tutorials/secure-with-apikey.mdx))
 * Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) ([API keys](./entities/apikeys.md))
 * Automatic API key secrets rotation ([API keys](./entities/apikeys.md))
 * Mandatory tags and metadata validation on API keys
 * HTTPS and TLS ([TLS](./topics/tls.md))
-* End-to-end mTLS calls ([mTLS how-to](./how-to-s/end-to-end-mtls.md))
+* End-to-end mTLS calls ([mTLS how-to](./tutorials/end-to-end-mtls.md))
 * Routing constraints and restrictions
 * Public/private path separation
-* JWT token validation and manipulation ([JWT verifiers](./entities/jwt-verifiers.md), [how-to](./how-to-s/secure-an-app-with-jwt-verifiers.mdx))
+* JWT token validation and manipulation ([JWT verifiers](./entities/jwt-verifiers.md), [how-to](./tutorials/secure-an-app-with-jwt-verifiers.mdx))
     * Multiple validators on the same route
     * JWE (encrypted JWT) support
     * JWT signing
@@ -122,13 +122,13 @@ sidebar_position: 4
 * OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.md))
 * Datadog, StatsD metrics export ([monitoring](./topics/monitoring.md))
 * Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.md))
-    * Elasticsearch ([how-to](./how-to-s/export-events-to-elastic.mdx))
-    * Apache Kafka ([how-to](./how-to-s/communicate-with-kafka.md))
+    * Elasticsearch ([how-to](./tutorials/export-events-to-elastic.mdx))
+    * Apache Kafka ([how-to](./tutorials/communicate-with-kafka.md))
     * Apache Pulsar
     * Webhook (HTTP)
     * File
     * S3
-    * Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) ([how-to](./how-to-s/export-alerts-using-mailgun.md))
+    * Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) ([how-to](./tutorials/export-alerts-using-mailgun.md))
     * Console / Logger
     * Splunk
     * Datadog
@@ -143,26 +143,26 @@ sidebar_position: 4
 **Services discovery**
 
 * Through DNS
-* Through Eureka (internal and external) ([how-to](./how-to-s/working-with-eureka.mdx))
+* Through Eureka (internal and external) ([how-to](./tutorials/working-with-eureka.mdx))
 * Through Kubernetes API (namespace scanning) ([Kubernetes](./deploy/kubernetes.mdx))
 * Through custom Otoroshi protocol (self-registration) ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
-* Through Tailscale network ([how-to](./how-to-s/tailscale-integration.md))
+* Through Tailscale network ([how-to](./tutorials/tailscale-integration.md))
 
 **Authentication**
 
 * OAuth 2.0/2.1 authentication (with PKCE support) ([auth modules](./entities/auth-modules.md))
-* OpenID Connect (OIDC) authentication ([auth modules](./entities/auth-modules.md), [Keycloak how-to](./how-to-s/secure-app-with-keycloak.mdx))
-* LDAP authentication (with nested groups) ([auth modules](./entities/auth-modules.md), [LDAP how-to](./how-to-s/secure-app-with-ldap.mdx))
+* OpenID Connect (OIDC) authentication ([auth modules](./entities/auth-modules.md), [Keycloak how-to](./tutorials/secure-app-with-keycloak.mdx))
+* LDAP authentication (with nested groups) ([auth modules](./entities/auth-modules.md), [LDAP how-to](./tutorials/secure-app-with-ldap.mdx))
 * JWT authentication ([auth modules](./entities/auth-modules.md))
-* OAuth 1.0a authentication ([how-to](./how-to-s/secure-with-oauth1-client.mdx))
+* OAuth 1.0a authentication ([how-to](./tutorials/secure-with-oauth1-client.mdx))
 * SAML V2 authentication ([auth modules](./entities/auth-modules.md))
 * Basic authentication (username/password) ([auth modules](./entities/auth-modules.md))
 * WebAuthn / FIDO2 passwordless authentication
-* Auth0 passwordless flow ([Auth0 how-to](./how-to-s/secure-app-with-auth0.mdx))
+* Auth0 passwordless flow ([Auth0 how-to](./tutorials/secure-app-with-auth0.mdx))
 * WASM-based custom authentication ([auth modules](./entities/auth-modules.md), [WASM usage](./topics/wasm-usage.mdx))
 * Internal users management ([Otoroshi admins](./entities/otoroshi-admins.md))
 * Multi-authentication module chaining ([auth modules](./entities/auth-modules.md))
-* Client credentials OAuth2 flow with token endpoint ([how-to](./how-to-s/secure-with-oauth2-client-credentials.md))
+* Client credentials OAuth2 flow with token endpoint ([how-to](./tutorials/secure-with-oauth2-client-credentials.md))
 
 **Secret vaults support** ([secrets management](./topics/secrets.md))
 
@@ -183,19 +183,19 @@ sidebar_position: 4
 **Certificates management** ([PKI](./topics/pki.md), [certificates](./entities/certificates.md))
 
 * Dynamic TLS certificates store ([TLS](./topics/tls.md))
-* Dynamic TLS termination ([TLS how-to](./how-to-s/tls-termination-using-own-certificates.mdx))
+* Dynamic TLS termination ([TLS how-to](./tutorials/tls-termination-using-own-certificates.mdx))
 * Internal PKI ([PKI](./topics/pki.md))
     * generate self-signed certificates/CAs
     * generate/sign certificates/CAs/sub-CAs
     * AIA (Authority Information Access)
     * OCSP responder
     * import P12/certificate bundles
-* ACME / Let's Encrypt support ([Let's Encrypt how-to](./how-to-s/tls-using-lets-encrypt.md))
+* ACME / Let's Encrypt support ([Let's Encrypt how-to](./tutorials/tls-using-lets-encrypt.md))
 * On-the-fly certificate generation based on a CA certificate without request loss
 * JWKS exposition for public key pairs ([PKI](./topics/pki.md))
 * Default certificate
-* Customize mTLS trusted CAs in the TLS handshake ([mTLS how-to](./how-to-s/end-to-end-mtls.md))
-* Tailscale certificates integration ([how-to](./how-to-s/tailscale-integration.md))
+* Customize mTLS trusted CAs in the TLS handshake ([mTLS how-to](./tutorials/end-to-end-mtls.md))
+* Tailscale certificates integration ([how-to](./tutorials/tailscale-integration.md))
 
 **Clustering** ([clustering](./deploy/clustering.md))
 
@@ -209,7 +209,7 @@ sidebar_position: 4
 
 * Serve static files from local filesystem ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Serve static files from Amazon S3 ([built-in plugins](./plugins/built-in-plugins.mdx))
-* Serve static files from ZIP archives ([ZIP backend how-to](./how-to-s/zip-backend-plugin.mdx))
+* Serve static files from ZIP archives ([ZIP backend how-to](./tutorials/zip-backend-plugin.mdx))
 * Echo backend for debugging ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Static response / mock backends ([built-in plugins](./plugins/built-in-plugins.mdx))
 
