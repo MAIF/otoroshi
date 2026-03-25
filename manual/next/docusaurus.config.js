@@ -14,7 +14,7 @@ const config = {
   },
 
   url: 'https://maif.github.io',
-  baseUrl: '/otoroshi/manual/',
+  baseUrl: '/otoroshi/manual/', 
 
   organizationName: 'MAIF',
   projectName: 'otoroshi',
