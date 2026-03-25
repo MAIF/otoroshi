@@ -7,6 +7,7 @@
     "start": "docusaurus start",
     "build": "docusaurus build",
     "build-root": "docusaurus build --config docusaurus-root.config.js --out-dir build-root",
+    "build-dev": "docusaurus build --config docusaurus-dev.config.js --out-dir build-dev",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
