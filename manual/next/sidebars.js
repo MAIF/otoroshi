@@ -100,7 +100,7 @@ const sidebars = {
     },
     {
       type: 'category',
-      label: 'Quick Tutorials',
+      label: 'Recipes',
       link: {
         type: 'doc',
         id: 'quick-tutorials/index',
@@ -112,7 +112,7 @@ const sidebars = {
     },
     {
       type: 'category',
-      label: 'How-to Guides',
+      label: 'Tutorials',
       link: {
         type: 'doc',
         id: 'how-to-s/index',
