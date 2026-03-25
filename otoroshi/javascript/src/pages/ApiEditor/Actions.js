@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { fetchWrapperNext, nextClient } from '../../services/BackOfficeServices';
+import { duplicateAPI, fetchWrapperNext, nextClient } from '../../services/BackOfficeServices';
 import { API_STATE } from './model';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI } from './hooks';
 import { VersionBadge } from './DraftOnly';
 import { LIFECYCLE_STEPS, MAX_WIDTH, STATE_PERMISSIONS } from './constants';
+import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
+import { Header } from '../../components/wizardframe';
+import { NgForm } from '../../components/nginputs';
 
 function ActionCard({ icon, title, description, onClick, color }) {
   return (
@@ -69,10 +72,83 @@ export function publishAPI(draft, api, history) {
     });
 }
 
+function DuplicateModal({ hide, api }) {
+  const history = useHistory()
+  const [value, setValue] = useState({ version: "", contextPath: "" })
+
+  const schema = {
+    version: {
+      type: 'string',
+      label: 'New version'
+    },
+    contextPath: {
+      type: 'string',
+      label: 'Context path',
+      placeholder: "/v1, /v2, etc"
+    }
+  }
+  const flow = ['contextPath', 'version']
+
+  return <div className='wizard'>
+    <div className='wizard-container' style={{ padding: '1.5rem' }}>
+      <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+        <Header title="Create a new version" />
+        <div className="wizard-content">
+          <NgForm
+            schema={schema}
+            flow={flow}
+            value={value}
+            onChange={setValue}
+          />
+        </div>
+      </div>
+      <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+        <FeedbackButton
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            borderColor: 'var(--color-primary)',
+            padding: '12px 48px',
+          }}
+          disabled={value.version.length === 0 || value.contextPath.length === 0}
+          onPress={() => {
+            window
+              .newConfirm(
+                'This will create a copy of this API with all its configuration. The new API will start in staging mode.',
+                {
+                  title: 'Duplicate API',
+                  yesText: 'Duplicate',
+                }
+              )
+              .then((ok) => {
+                if (ok) {
+                  console.log('Duplicate API', api.id);
+                  duplicateAPI(api.id, value)
+                    .then(res => {
+                      console.log(res.id)
+                      if (res.id)
+                        history.push(`/apis/${res.id}`)
+                      else
+                        alert(res.error)
+                    })
+                }
+              })
+            return Promise.resolve()
+          }}
+          onSuccess={hide}
+          icon={() => <i className="fas fa-paper-plane" />}
+          text="Copy to prod, then edit"
+        />
+      </div>
+    </div>
+  </div>
+}
+
 export function Actions(props) {
   const history = useHistory();
   const { draft, api, item, updateAPI, updateDraft } = useDraftOfAPI();
   const [previewStep, setPreviewStep] = useState(null);
+
+  const [duplicateModal, setDuplicateModal] = useState(false)
 
   useEffect(() => {
     props.setTitle({
@@ -95,23 +171,6 @@ export function Actions(props) {
   const viewedState = previewStep || currentState;
   const isPreview = previewStep && previewStep !== currentState;
   const permissions = STATE_PERMISSIONS[viewedState] || STATE_PERMISSIONS[API_STATE.STAGING];
-
-  const onDuplicateAPI = () => {
-    window
-      .newConfirm(
-        'This will create a copy of this API with all its configuration. The new API will start in staging mode.',
-        {
-          title: 'Duplicate API',
-          yesText: 'Duplicate',
-        }
-      )
-      .then((ok) => {
-        if (ok) {
-          // TODO: call backend to duplicate the API
-          console.log('Duplicate API', api.id);
-        }
-      });
-  };
 
   const transitionTo = (targetState, confirmMessage, confirmTitle, confirmYes) => {
     window
@@ -195,6 +254,9 @@ export function Actions(props) {
 
   return (
     <div className="actions-page mt-3" style={{ maxWidth: MAX_WIDTH }}>
+
+      {duplicateModal && <DuplicateModal hide={() => setDuplicateModal(false)} api={api} />}
+
       {/* Lifecycle section */}
       <div className="actions-section">
         <h3 className="actions-section-title">
@@ -422,7 +484,7 @@ export function Actions(props) {
             icon="fas fa-clone"
             title="Duplicate API"
             description="Create a full copy of this API in staging mode"
-            onClick={onDuplicateAPI}
+            onClick={() => setDuplicateModal(true)}
           /> : <p className="actions-section-description">
             Actions tabs is not available in staging mode. Please use the publish button from the dashboard.
           </p>}

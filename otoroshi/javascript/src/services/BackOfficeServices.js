@@ -2137,6 +2137,19 @@ export const findDraftsByKind = kind => {
   }).then((r) => r.json());
 }
 
+export const duplicateAPI = (apiId, body) => {
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/duplicate`, {
+    credentials: 'include',
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      "Content-Type": 'application/json'
+    },
+    body: JSON.stringify(body)
+  })
+    .then((r) => r.json());
+}
+
 export const findAllWithPagination = (
   route,
   { page, pageSize, fields, filtered, sorted } = { page: 1 },

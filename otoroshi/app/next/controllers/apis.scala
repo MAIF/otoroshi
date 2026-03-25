@@ -18,6 +18,7 @@ import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
@@ -349,6 +350,47 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                   case false => BadRequest(Json.obj("error" -> "something bad happened"))
                 }
             }
+        }
+      }
+    }
+  }
+
+  def duplicate(apiId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to duplicate an API",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> apiId)
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None      => Results.NotFound.vfuture
+          case Some(api) =>
+            val newApiId = s"api_${IdGenerator.uuid}"
+            env.datastores.apiDataStore
+              .set(
+                api.copy(
+                  id = newApiId,
+                  state = ApiStaging,
+                  deployments = Seq.empty,
+                  contextPath = ctx.request.body.selectAsOptString("contextPath").getOrElse("/vnew"),
+                  version = ctx.request.body.selectAsOptString("version").getOrElse("vnew"),
+                  metadata = api.metadata + ("copy_from_api" -> apiId)
+                )
+              )
+              .map {
+                case false => BadRequest(Json.obj("error" -> "failed to duplicate API"))
+                case true  => Ok(Json.obj("id" -> newApiId))
+              }
         }
       }
     }
