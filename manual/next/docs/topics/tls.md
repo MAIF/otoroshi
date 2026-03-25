@@ -250,7 +250,7 @@ Key pairs with the `exposed` flag set to `true` are published on the JWKS endpoi
 
 * [PKI](./pki.md) - Certificate management, generation, OCSP, and JWKS
 * [Certificates](../entities/certificates.md) - Certificate entity reference
-* [End-to-end mTLS](../how-to-s/end-to-end-mtls.md) - Step-by-step mTLS guide
-* [TLS termination with your own certificates](../how-to-s/tls-termination-using-own-certificates.mdx) - Custom TLS termination how-to
-* [Let's Encrypt](../how-to-s/tls-using-lets-encrypt.md) - Automatic certificate provisioning
+* [End-to-end mTLS](../tutorials/end-to-end-mtls.md) - Step-by-step mTLS guide
+* [TLS termination with your own certificates](../tutorials/tls-termination-using-own-certificates.mdx) - Custom TLS termination how-to
+* [Let's Encrypt](../tutorials/tls-using-lets-encrypt.md) - Automatic certificate provisioning
 * [Custom HTTP Listeners](./http-listeners.md) - Per-listener TLS and mTLS settings
