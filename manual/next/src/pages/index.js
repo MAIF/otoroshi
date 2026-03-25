@@ -223,6 +223,42 @@ function AIGatewaySection() {
   );
 }
 
+function ProgrammableSection() {
+  return (
+    <section className={styles.programmableSection}>
+      <div className="container">
+        <div className={styles.programmableCard}>
+          <div className={styles.programmableIntro}>
+            <div className={styles.programmableEyebrow}>API-First Gateway</div>
+            <Heading as="h2">Fully Programmable, Fully Automatable</Heading>
+            <p>
+              Every single aspect of Otoroshi is accessible through its Admin API.
+              Manage your gateway programmatically, automate your workflows, and treat your configuration as code.
+            </p>
+          </div>
+          <div className={styles.programmableItems}>
+            <div className={styles.programmableItem}>
+              <div className={styles.programmableItemIcon}>{"{ }"}</div>
+              <Heading as="h4">Complete Admin API</Heading>
+              <p>A comprehensive REST API covering every entity — routes, backends, API keys, certificates, plugins, and more. Integrate Otoroshi into any CI/CD pipeline or custom tooling.</p>
+            </div>
+            <div className={styles.programmableItem}>
+              <div className={styles.programmableItemIcon}>{">_"}</div>
+              <Heading as="h4">otoroshictl CLI</Heading>
+              <p>A dedicated command-line tool to manage your gateway from the terminal. Import, export, sync configurations, and script your operations with ease.</p>
+            </div>
+            <div className={styles.programmableItem}>
+              <div className={styles.programmableItemIcon}>{"< />"}</div>
+              <Heading as="h4">Infrastructure as Code</Heading>
+              <p>Use Remote Catalogs to sync your configuration from Git repositories (GitHub, GitLab, Bitbucket), S3 buckets, or any HTTP source — with automatic reconciliation.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function UseCasesSection() {
   return (
     <section className={styles.useCasesSection}>
@@ -419,6 +455,7 @@ export default function Home() {
         <StatsSection />
         <FeaturesSection />
         <AIGatewaySection />
+        <ProgrammableSection />
         <ComparisonSection />
         <UseCasesSection />
         <QuickStartSection />

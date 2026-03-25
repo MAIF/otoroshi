@@ -296,6 +296,87 @@
   color: #f9b000;
 }
 
+/* ===== Programmable Section ===== */
+.programmableSection {
+  padding: 0 0 5rem;
+}
+
+.programmableCard {
+  padding: 2.5rem;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(249, 176, 0, 0.06), rgba(249, 176, 0, 0.02)),
+    var(--ifm-background-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.programmableIntro {
+  margin-bottom: 2rem;
+}
+
+.programmableEyebrow {
+  margin-bottom: 0.75rem;
+  color: #c67c00;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-theme='dark'] .programmableEyebrow {
+  color: #f9b000;
+}
+
+.programmableIntro h2 {
+  margin-bottom: 0.75rem;
+}
+
+.programmableIntro p {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.8;
+  max-width: 48rem;
+}
+
+.programmableItems {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.programmableItem {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ifm-background-surface-color) 72%, transparent);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.programmableItemIcon {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: var(--ifm-font-family-monospace);
+  color: #f9b000;
+  margin-bottom: 0.75rem;
+}
+
+.programmableItem h4 {
+  margin-bottom: 0.5rem;
+}
+
+.programmableItem p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 996px) {
+  .programmableItems {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Use Cases Section ===== */
 .useCasesSection {
   padding: 5rem 0;
