@@ -4,7 +4,7 @@ sidebar_position: 29
 ---
 # AI / LLM Gateway
 
-The Otoroshi LLM Extension transforms Otoroshi into a full-featured **AI Gateway**. It provides a unified, OpenAI-compatible API layer in front of 50+ LLM providers, with built-in cost tracking, guardrails, caching, load balancing, and observability. The extension is distributed as a jar that plugs into Otoroshi's admin extension system.
+[The Otoroshi LLM Extension](https://cloud-apim.github.io/otoroshi-llm-extension/) transforms Otoroshi into a full-featured **AI Gateway**. It provides a unified, OpenAI-compatible API layer in front of 50+ LLM providers, with built-in cost tracking, guardrails, caching, load balancing, and observability. The extension is distributed as a jar that plugs into Otoroshi's admin extension system. [The Otoroshi LLM Extension](https://cloud-apim.github.io/otoroshi-llm-extension/) is not part of the Otoroshi core and is developped by the folks at [Cloud APIM](https://www.cloud-apim.com/). You can download it on the [project github page](https://github.com/cloud-apim/otoroshi-llm-extension).
 
 ## Overview
 
