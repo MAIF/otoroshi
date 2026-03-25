@@ -103,11 +103,11 @@ const sidebars = {
       label: 'Recipes',
       link: {
         type: 'doc',
-        id: 'quick-tutorials/index',
+        id: 'recipes/index',
       },
       items: [
-        'quick-tutorials/one-header-to-rule-them-all',
-        'quick-tutorials/stop-sharing-secrets-use-asymmetric-signatures',
+        'recipes/one-header-to-rule-them-all',
+        'recipes/stop-sharing-secrets-use-asymmetric-signatures',
       ],
     },
     {
