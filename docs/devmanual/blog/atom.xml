@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://maif.github.io/otoroshi/next/blog</id>
+    <id>https://maif.github.io/otoroshi/devmanual/blog</id>
     <title>Otoroshi Blog</title>
     <updated>2026-03-16T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://maif.github.io/otoroshi/next/blog"/>
+    <link rel="alternate" href="https://maif.github.io/otoroshi/devmanual/blog"/>
     <subtitle>Otoroshi Blog</subtitle>
-    <icon>https://maif.github.io/otoroshi/next/img/favicon.png</icon>
+    <icon>https://maif.github.io/otoroshi/devmanual/img/favicon.png</icon>
     <entry>
         <title type="html"><![CDATA[Welcome to the Otoroshi Blog]]></title>
-        <id>https://maif.github.io/otoroshi/next/blog/welcome</id>
-        <link href="https://maif.github.io/otoroshi/next/blog/welcome"/>
+        <id>https://maif.github.io/otoroshi/devmanual/blog/welcome</id>
+        <link href="https://maif.github.io/otoroshi/devmanual/blog/welcome"/>
         <updated>2026-03-16T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[Welcome to the official Otoroshi blog! This is the place where we will share news, release announcements, tutorials, and insights about Otoroshi and the API gateway ecosystem.]]></summary>
         <content type="html"><![CDATA[<p>Welcome to the official Otoroshi blog! This is the place where we will share news, release announcements, tutorials, and insights about Otoroshi and the API gateway ecosystem.</p>
-<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-expect">What to expect<a href="https://maif.github.io/otoroshi/next/blog/welcome#what-to-expect" class="hash-link" aria-label="Direct link to What to expect" title="Direct link to What to expect" translate="no">​</a></h2>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-expect">What to expect<a href="https://maif.github.io/otoroshi/devmanual/blog/welcome#what-to-expect" class="hash-link" aria-label="Direct link to What to expect" title="Direct link to What to expect" translate="no">​</a></h2>
 <p>Here are some of the topics we plan to cover:</p>
 <ul>
 <li class=""><strong>Release announcements</strong> — details about new versions, features, and improvements</li>

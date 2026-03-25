@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[7472],{5513(o){o.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Welcome to the Otoroshi Blog","permalink":"/otoroshi/devmanual/blog/welcome","unlisted":false,"date":"2026-03-16T00:00:00.000Z"}]}')}}]);
