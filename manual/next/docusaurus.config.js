@@ -147,8 +147,8 @@ const config = {
                 to: '/docs/topics',
               },
               {
-                label: 'How-to Guides',
-                to: '/docs/how-to-s',
+                label: 'Tutorials',
+                to: '/docs/tutorials',
               },
             ],
           },
