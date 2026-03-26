@@ -992,8 +992,8 @@ class OIDCJwtVerifier extends NgAccessValidator {
                         }
                       }
                       .map {
-                        case Left(result) if config.mandatory  => NgAccess.NgAllowed
-                        case Left(result) if !config.mandatory => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Left(result) if !config.mandatory  => NgAccess.NgAllowed
+                        case Left(result) if config.mandatory => NgAccess.NgDenied(customResult.getOrElse(result))
                         case Right(r)                          => r
                       }
                 }
