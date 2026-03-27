@@ -205,9 +205,9 @@ const config = {
           },
         ],
         logo: {
-          alt: 'MAIF OSS Logo',
+          alt: 'Otoroshi Logo',
           src: 'img/otoroshi-logo.png',
-          href: 'https://maif.github.io/',
+          href: 'https://www.otoroshi.io/',
           width: 50,
           height: 50,
         },
