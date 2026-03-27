@@ -5,9 +5,10 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import MonacoEditor from '@monaco-editor/react';
 import { Form } from '../../components/inputs/Form';
 
-import { useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
 import { MAX_WIDTH } from './constants';
+import { VersionBadge } from './DraftOnly';
+import { useDraftOfAPI } from './hooks';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -53,9 +54,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -92,9 +93,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -123,9 +124,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -160,9 +161,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -187,9 +188,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-                props.value[props.idx] = v;
-                props.onChange(props.value);
-              }
+              props.value[props.idx] = v;
+              props.onChange(props.value);
+            }
             : props.onChange
         }
       />
@@ -367,7 +368,7 @@ export function Documentation(props) {
             onChange={(newValue) => {
               try {
                 setNewItem(JSON.parse(newValue));
-              } catch (e) {}
+              } catch (e) { }
             }}
           />
         )}

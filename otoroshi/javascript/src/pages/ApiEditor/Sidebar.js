@@ -4,7 +4,7 @@ import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
-import { VersionToggle } from '.';
+import { VersionToggle } from './DraftOnly';
 
 const LINK_GROUPS = (id) => [
   {

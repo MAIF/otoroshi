@@ -550,9 +550,9 @@ object ThrottlingStrategyConfig {
 }
 
 case class AllowedQuota(
-    window: Long = Long.MaxValue,
-    daily: Long = Long.MaxValue,
-    monthly: Long = Long.MaxValue
+    window: Long = RemainingQuotas.MaxValue,
+    daily: Long = RemainingQuotas.MaxValue,
+    monthly: Long = RemainingQuotas.MaxValue
 ) {
   def json: JsValue = Json.obj(
     "window"  -> window,
@@ -566,9 +566,9 @@ object AllowedQuota {
 
     override def reads(json: JsValue): JsResult[AllowedQuota] = Try {
       AllowedQuota(
-        window = json.selectAsOptLong("window").getOrElse(Long.MaxValue),
-        daily = json.selectAsOptLong("daily").getOrElse(Long.MaxValue),
-        monthly = json.selectAsOptLong("monthly").getOrElse(Long.MaxValue)
+        window = json.selectAsOptLong("window").getOrElse(RemainingQuotas.MaxValue),
+        daily = json.selectAsOptLong("daily").getOrElse(RemainingQuotas.MaxValue),
+        monthly = json.selectAsOptLong("monthly").getOrElse(RemainingQuotas.MaxValue)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -599,9 +599,9 @@ case class QuotaState(
 }
 
 case class Quota(
-    limit: Long = Long.MaxValue,
-    consumed: Long = Long.MaxValue,
-    resetsAt: Long = Long.MaxValue
+    limit: Long = RemainingQuotas.MaxValue,
+    consumed: Long = RemainingQuotas.MaxValue,
+    resetsAt: Long = RemainingQuotas.MaxValue
 ) {
   def remaining: Long      = Math.max(0, limit - consumed)
   def withinLimit: Boolean = consumed < (limit + 1)
@@ -609,7 +609,7 @@ case class Quota(
 }
 
 object Quota {
-  val unlimited: Quota = Quota(Long.MaxValue, 0, Long.MaxValue)
+  val unlimited: Quota = Quota(RemainingQuotas.MaxValue, 0, RemainingQuotas.MaxValue)
 }
 
 trait ThrottlingStrategy {
