@@ -2,6 +2,7 @@ package otoroshi.next.models
 
 import otoroshi.env.Env
 import otoroshi.netty.NettyRequestKeys
+import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.plugins.{OverrideHost, WasmJob}
 import otoroshi.next.plugins.api._
@@ -151,18 +152,6 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
   def nonEmpty: Boolean = slots.nonEmpty
 
   def add(plugin: NgPluginInstance): NgPlugins = copy(slots = slots :+ plugin)
-
-  def remove(pluginId: String): NgPlugins = copy(slots = slots.filterNot(_.plugin == pluginId))
-
-  def togglePluginState(pluginId: String, enabled: Boolean): NgPlugins = copy(slots =
-    slots.map(slot =>
-      if (slot.plugin == pluginId) {
-        slot.copy(enabled = enabled)
-      } else {
-        slot
-      }
-    )
-  )
 
   def json: JsValue = JsArray(slots.map(_.json))
 
@@ -375,6 +364,7 @@ case class NgContextualPlugins(
   lazy val (allPlugins, filteredPlugins) = currentListenerPLugin
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .filterNot(_.plugin.endsWith(classOf[WorkflowJob].getName))
+    .filterNot(_.plugin.endsWith(classOf[RemoteCatalogJob].getName))
     .partition(_.matches(request))
 
   lazy val requestSinkPlugins = {

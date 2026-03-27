@@ -149,6 +149,7 @@ import ZipFileBackend from './ZipFileBackend';
 import GrpcWebProxyPlugin from './GrpcWeb';
 import KubernetesNamespaceScanBackend from './KubernetesNamespaceScanBackend';
 import LocalTokenBucket from './LocalTokenBucket'
+import IzanamiV2Proxy from './IzanamiV2Proxy';
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
@@ -198,6 +199,7 @@ const pluginsArray = [
   ImageReplacer,
   IpAddressAllowedList,
   IpAddressBlockList,
+  IzanamiV2Proxy,
   JQ,
   JQRequest,
   JQResponse,
@@ -309,7 +311,7 @@ const pluginsArray = [
   WasmWebsocketTransformer,
   JqWebsocketMessageTransformer,
   ZipFileBackend,
-  GrpcWebProxyPlugin
+  GrpcWebProxyPlugin,
 ];
 
 export function addPluginForm(plugin) {

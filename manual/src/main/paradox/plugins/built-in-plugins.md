@@ -4,6 +4,99 @@ Otoroshi next provides some plugins out of the box. Here is the available plugin
 
 <div id="plugins-container"></div>
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployMany }
+
+## Remote Catalog Deploy Many
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeployMany`
+
+### Description
+
+This plugin deploys entities from multiple remote catalogs
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeploySingle }
+
+## Remote Catalog Deploy Single
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeploySingle`
+
+### Description
+
+This plugin deploys entities from a single remote catalog
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.catalogs.RemoteCatalogDeployWebhook }
+
+## Remote Catalog Deploy Webhook
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.catalogs.RemoteCatalogDeployWebhook`
+
+### Description
+
+This plugin handles webhooks from Git providers to deploy entities from remote catalogs
+
+
+
+### Default configuration
+
+```json
+{ }
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.AdditionalCookieIn }
 
 ## Additional cookies in
@@ -1415,6 +1508,42 @@ This plugin can be used to call GraphQL query endpoints and expose it as a REST 
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GrpcWebProxyPlugin }
+
+## gRPC-Web Proxy
+
+### Defined on steps
+
+  - `TransformRequest`
+  - `TransformResponse`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.GrpcWebProxyPlugin`
+
+### Description
+
+Proxies gRPC-Web requests to gRPC backend - Envoy compatible
+
+
+
+### Default configuration
+
+```json
+{
+  "allowed_services" : [ ],
+  "allow_methods" : [ ],
+  "blocked_methods" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.GzipResponseCompressor }
 
 ## Gzip compression
@@ -1692,6 +1821,50 @@ This plugin verifies the current request ip address is not in the blocked list
 ```json
 {
   "addresses" : [ ]
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.IzanamiV2Proxy }
+
+## Izanami V2 proxy
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.IzanamiV2Proxy`
+
+### Description
+
+This plugin exposes Izanami routes
+
+
+
+### Default configuration
+
+```json
+{
+  "tls" : {
+    "certs" : [ ],
+    "trusted_certs" : [ ],
+    "enabled" : false,
+    "loose" : false,
+    "trust_all" : false
+  },
+  "url" : "",
+  "clientId" : "",
+  "clientSecret" : "",
+  "context" : null,
+  "timeout" : 5000
 }
 ```
 
@@ -2099,6 +2272,39 @@ This plugin verifies the current request with one jwt verifier
   "custom_response_status" : 401,
   "custom_response_headers" : { },
   "custom_response_body" : "{\"error\":\"unauthorized\"}"
+}
+```
+
+
+
+
+
+@@@
+
+
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.KubernetesNamespaceScanBackend }
+
+## Kubernetes Namespace Scanner
+
+### Defined on steps
+
+  - `CallBackend`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.KubernetesNamespaceScanBackend`
+
+### Description
+
+Triggers Kubernetes CRD controller to scan specified namespaces
+
+
+
+### Default configuration
+
+```json
+{
+  "namespaces" : [ ]
 }
 ```
 
@@ -3388,6 +3594,7 @@ Check if client certificate matches the following configuration
 
 ```json
 {
+  "mandatory" : true,
   "serial_numbers" : [ ],
   "subject_dns" : [ ],
   "issuer_dns" : [ ],
@@ -4045,7 +4252,9 @@ This plugin will mirror every request to other targets
   "enabled" : true,
   "capture_response" : false,
   "generate_events" : false,
-  "headers" : { }
+  "headers" : { },
+  "salt" : "none",
+  "percentage" : 100
 }
 ```
 
@@ -4431,6 +4640,45 @@ This plugin injects headers containing tokens and profile from current OIDC prov
 @@@
 
 
+@@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OIDCJwtVerifier }
+
+## OIDC JWT verification
+
+### Defined on steps
+
+  - `ValidateAccess`
+
+### Plugin reference
+
+`cp:otoroshi.next.plugins.OIDCJwtVerifier`
+
+### Description
+
+This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module
+
+
+
+### Default configuration
+
+```json
+{
+  "mandatory" : true,
+  "ref" : null,
+  "source" : null,
+  "custom_response" : false,
+  "custom_response_status" : 401,
+  "custom_response_headers" : { },
+  "custom_response_body" : "{\"error\":\"unauthorized\"}"
+}
+```
+
+
+
+
+
+@@@
+
+
 @@@ div { .ng-plugin .plugin-hidden .pl #otoroshi.next.plugins.OpenFGAValidator }
 
 ## OpenFGA validator
@@ -4501,7 +4749,10 @@ This plugin provide an endpoint to return Otoroshi Authority Information Access 
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4677,7 +4928,10 @@ This plugin provide an endpoint to return Otoroshi JWKS data
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4743,7 +4997,10 @@ This plugin provide an endpoint to act as the Otoroshi OCSP Responder
 
 ```json
 {
-  "cert_ids" : [ ]
+  "cert_ids" : [ ],
+  "include_algorithms" : false,
+  "rsa_algorithms" : [ ],
+  "es_algorithms" : [ ]
 }
 ```
 
@@ -4785,7 +5042,7 @@ This plugin override the current Host header with the Host of the backend target
 
 ### Defined on steps
 
-  - `TransformRequest`
+  - `TransformResponse`
 
 ### Plugin reference
 
@@ -4793,9 +5050,17 @@ This plugin override the current Host header with the Host of the backend target
 
 ### Description
 
-This plugin override the current Location header with the Host of the backend target
+This plugin override the current Location header with the current frontend host if the location start with the Host of the backend target
 
 
+
+### Default configuration
+
+```json
+{
+  "matching_hostnames" : [ ]
+}
+```
 
 
 
@@ -5818,7 +6083,7 @@ This plugin is able to call SOAP actions and expose it as a rest endpoint
 
 ### Description
 
-Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options)
+Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protection, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
 
 
 
@@ -5839,6 +6104,11 @@ Inject common HTTP security headers on responses (HSTS, CSP, XFO, X-XSS-Protecti
   "csp" : {
     "mode" : "DISABLED",
     "csp" : ""
+  },
+  "referrer_policy" : "DISABLED",
+  "permissions_policy" : {
+    "enabled" : false,
+    "policy" : ""
   }
 }
 ```
@@ -6173,8 +6443,8 @@ This plugin can split a portion of the traffic to canary backends between two da
 
 ```json
 {
-  "start" : "2026-01-07T13:12:21.800Z",
-  "stop" : "2026-01-08T13:12:21.821Z",
+  "start" : "2026-03-27T14:27:34.351Z",
+  "stop" : "2026-03-28T14:27:34.373Z",
   "increment_percent" : 1,
   "targets" : [ ],
   "root" : "/"

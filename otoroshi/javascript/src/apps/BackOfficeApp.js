@@ -79,15 +79,16 @@ class ServiceDescriptorsMigrationPopup extends Component {
           <p style={{ textAlign: 'justify' }}>
             It seems that you are still using Service Descriptors to route traffic, as you may know,
             Service Descriptors have been deprecated for{' '}
-            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 2 years</span>,
+            <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>the last 4 years</span>,
             since the rewrite of the proxy engine.
           </p>
           <p style={{ textAlign: 'justify' }}>
             The next major version of Otoroshi (
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
-            for Service Descriptors. Once this version will be deployed, all your remaning Service
-            Descriptors will be automatically migrated and deleted without further notice.
+            for Service Descriptors (probably in 2026). Once this version will be deployed, all your
+            remaning Service Descriptors will be automatically migrated and deleted without further
+            notice.
           </p>
           <p style={{ textAlign: 'justify' }}>
             We count{' '}

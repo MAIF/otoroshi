@@ -82,8 +82,8 @@ export const graph = (env) => {
           link: '/services',
         },
         {
-          title: 'Routes',
-          description: 'All your routes',
+          title: 'HTTP Routes',
+          description: 'All your HTTP routes',
           img: 'routes',
           display: () => true,
           icon: () => 'fa-road',
@@ -395,7 +395,7 @@ export const graph = (env) => {
         },
       ],
     },
-    ...Otoroshi.extensions().flatMap((ext) => ext.categories || [])
+    ...Otoroshi.extensions().flatMap((ext) => ext.categories || []),
   ];
   return mergeByTitle(links);
 };

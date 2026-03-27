@@ -471,10 +471,12 @@ export function fetchApiKeyById(serviceId, apkid) {
   }).then((r) => r.json());
 }
 
-export function deleteApiKey(serviceId, routeId, ak) {
+export function deleteApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
     ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+    : routeId
+      ? `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`
+      : `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'DELETE',
     credentials: 'include',
@@ -484,10 +486,12 @@ export function deleteApiKey(serviceId, routeId, ak) {
   }).then((r) => r.json());
 }
 
-export function createApiKey(serviceId, routeId, ak) {
+export function createApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
     ? `/bo/api/proxy/api/services/${serviceId}/apikeys`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
+    : apiId
+      ? `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys`
+      : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
   return fetch(url, {
     method: 'POST',
     credentials: 'include',
@@ -511,10 +515,12 @@ export function createRawApiKey(ak) {
   }).then((r) => r.json());
 }
 
-export function updateApiKey(serviceId, routeId, ak) {
+export function updateApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
     ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+    : apiId
+      ? `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys/${ak.clientId}`
+      : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'PUT',
     credentials: 'include',
@@ -2084,6 +2090,7 @@ export function jsonToGraphqlSchema(schema, types) {
     }),
   }).then((r) => r.json());
 }
+
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) => {
@@ -2127,6 +2134,24 @@ const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
     credentials: 'include',
     headers: headers,
     body: body ? JSON.stringify(body) : undefined,
+  }).then((r) => r.json());
+};
+
+export const findDraftsByKind = (kind) => {
+  return fetch(`/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${kind}`, {
+    credentials: 'include',
+  }).then((r) => r.json());
+};
+
+export const duplicateAPI = (apiId, body) => {
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/duplicate`, {
+    credentials: 'include',
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
   }).then((r) => r.json());
 };
 
@@ -2183,7 +2208,7 @@ export const nextClient = {
     DRAFTS: 'drafts',
     APIS: 'apis',
     GROUPS: 'service-groups',
-    API_CONSUMER_SUBSCRIPTIONS: 'apiconsumersubscriptions',
+    API_SUBSCRIPTIONS: 'apisubscriptions',
     ROUTE_TEMPLATES: 'route-templates',
   },
   find: (entity) => fetchWrapper(`/${entity}`),

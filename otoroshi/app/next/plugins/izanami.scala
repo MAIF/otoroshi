@@ -5,9 +5,12 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
+import otoroshi.gateway.Errors
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.security.IdGenerator
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
@@ -485,6 +488,147 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
       ctx.otoroshiResponse.copy(cookies = cookies).rightf
     } getOrElse {
       ctx.otoroshiResponse.rightf
+    }
+  }
+}
+
+case class IzanamiV2ProxyConfig(
+    tls: NgTlsConfig = NgTlsConfig.default,
+    url: String = "",
+    clientId: String = "",
+    clientSecret: String = "",
+    timeout: FiniteDuration = 5000.millis,
+    context: Option[String] = None
+) extends NgPluginConfig {
+  override def json: JsValue = Json.obj(
+    "tls"          -> NgTlsConfig.format.writes(tls),
+    "url"          -> url,
+    "clientId"     -> clientId,
+    "clientSecret" -> clientSecret,
+    "context"      -> context,
+    "timeout"      -> timeout.toMillis
+  )
+}
+
+object IzanamiV2ProxyConfig {
+  val format: Format[IzanamiV2ProxyConfig] = new Format[IzanamiV2ProxyConfig] {
+
+    override def reads(json: JsValue): JsResult[IzanamiV2ProxyConfig] = Try {
+      IzanamiV2ProxyConfig(
+        tls =
+          json.select("tls").asOpt[JsValue].flatMap(NgTlsConfig.format.reads(_).asOpt).getOrElse(NgTlsConfig.default),
+        url = json.selectAsString("url"),
+        clientId = json.selectAsString("clientId"),
+        clientSecret = json.selectAsString("clientSecret"),
+        timeout = json.selectAsLong("timeout").millis,
+        context = json.selectAsOptString("context")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+
+    override def writes(o: IzanamiV2ProxyConfig): JsValue = o.json
+  }
+}
+
+class IzanamiV2Proxy extends NgBackendCall {
+
+  override def useDelegates: Boolean  = false
+  override def multiInstance: Boolean = false
+  override def core: Boolean          = false
+
+  override def defaultConfigObject: Option[NgPluginConfig] = Some(IzanamiV2ProxyConfig())
+  override def name: String                                = "Izanami V2 proxy"
+  override def description: Option[String]                 = "This plugin exposes Izanami routes".some
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
+
+  private def applyExpressionLangage(value: String, ctx: NgbBackendCallContext)(implicit env: Env): String = {
+    GlobalExpressionLanguage.apply(
+      value = value,
+      req = ctx.rawRequest.some,
+      service = None,
+      route = ctx.route.some,
+      apiKey = ctx.apikey,
+      user = ctx.user,
+      context = Map(),
+      attrs = ctx.attrs,
+      env = env
+    )
+  }
+
+  override def callBackend(
+      ctx: NgbBackendCallContext,
+      delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+    val config = ctx.cachedConfig(internalName)(IzanamiV2ProxyConfig.format).getOrElse(IzanamiV2ProxyConfig())
+
+    val queryPart = ctx.request.queryParams
+      .applyOnWithOpt(config.context)((map, izaCtx) => {
+        val shouldNotReplaceContext =
+          map.get("context").exists(requestCtx => requestCtx.dropWhile(_ == '/').startsWith(izaCtx.dropWhile(_ == '/')))
+        if (shouldNotReplaceContext) {
+          map
+        } else {
+          map + ("context" -> applyExpressionLangage(izaCtx, ctx))
+        }
+      })
+      .map { case (key, value) =>
+        s"${key}=${value}"
+      }
+      .mkString("&")
+
+    val baseRequest = env.MtlsWs
+      .url(s"${config.url}/api/v2${ctx.request.path}?${queryPart}", config.tls.legacy)
+      .withRequestTimeout(config.timeout)
+      .withHttpHeaders(
+        "Izanami-Client-Id"     -> applyExpressionLangage(config.clientId, ctx),
+        "Izanami-Client-Secret" -> applyExpressionLangage(config.clientSecret, ctx)
+      )
+
+    val method   = ctx.request.method
+    val response = if (method == "GET") {
+      baseRequest.get().map(r => r.right)
+    } else if (method == "POST") {
+      ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+        baseRequest.post(bodyRaw).map(r => r.right)
+      }
+    } else {
+
+      Errors
+        .craftResponseResult(
+          "Izanami can only be called with GET or POST methods",
+          Results.Status(400),
+          ctx.rawRequest,
+          None,
+          None,
+          attrs = ctx.attrs,
+          maybeRoute = ctx.route.some
+        )
+        .map(r => NgProxyEngineError.NgResultProxyEngineError(r).left)
+    }
+
+    response.map {
+      case Left(err)   => Left(err)
+      case Right(resp) => {
+        Right(
+          BackendCallResponse(
+            NgPluginHttpResponse(
+              resp.status,
+              resp.headers.mapValues(_.last),
+              Seq.empty,
+              ByteString(Json.stringify(resp.json)).chunks(16 * 1024)
+            ),
+            None
+          )
+        )
+      }
     }
   }
 }

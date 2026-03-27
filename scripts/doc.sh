@@ -13,93 +13,89 @@ clean () {
   rm -rf $LOCATION/docs/manual
 }
 
-buildDev () {
-  cd $LOCATION/otoroshi
-  #sbt ';clean;compile;testOnly PluginDocNextTests'
-  sbt ';clean;compile;testOnly PluginDocNextTests; testOnly PluginDocNgTests'
-  # sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
-  # cp $LOCATION/otoroshi/public/openapi.json $LOCATION/manual/src/main/paradox/code/
-  cd $LOCATION/manual
-  cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
-  rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
-  node indexer.js
-  rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  echo "\n\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  node config.js
-  sbt ';clean;paradox'
-  rm -rf $LOCATION/docs/devmanual
-  cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
-  mv $LOCATION/docs/main $LOCATION/docs/devmanual
-  cd $LOCATION/docs/devmanual;
-  npx -y pagefind --site . --output-subdir ./search;
-  cd $LOCATION;
-  rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-}
+# buildDev () {
+#   cd $LOCATION/otoroshi
+#   #sbt ';clean;compile;testOnly PluginDocNextTests'
+#   sbt ';clean;compile;testOnly PluginDocNextTests; testOnly PluginDocNgTests'
+#   # sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
+#   # cp $LOCATION/otoroshi/public/openapi.json $LOCATION/manual/src/main/paradox/code/
+#   cd $LOCATION/manual
+#   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
+#   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
+#   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
+#   node indexer.js
+#   rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
+#   touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
+#   cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   echo "\n\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   node config.js
+#   sbt ';clean;paradox'
+#   rm -rf $LOCATION/docs/devmanual
+#   cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
+#   mv $LOCATION/docs/main $LOCATION/docs/devmanual
+#   cd $LOCATION/docs/devmanual;
+#   npx -y pagefind --site . --output-subdir ./search;
+#   cd $LOCATION;
+#   rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
+#   touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
+#   touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
+# }
 
 build () {
   cd $LOCATION/otoroshi
-  # sbt ';clean;compile;testOnly OpenapiGeneratorTests;testOnly PluginDocNextTests'
-  # sbt ';clean;compile;testOnly PluginDocNextTests'
   sbt ';clean;compile;testOnly PluginDocNextTests; testOnly PluginDocNgTests'
-  # TODO: run screenshot generator
   cd $LOCATION/manual
-  cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
-  rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
+  cp -R $LOCATION/kubernetes $LOCATION/manual/next/docs/snippets
+  rm -rf $LOCATION/manual/next/docs/snippets/kubernetes/.old
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/base/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
+  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
   node indexer.js
-  rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  echo "\n\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  rm $LOCATION/manual/next/docs/snippets/reference.conf
+  rm $LOCATION/manual/next/docs/snippets/reference-env.conf
+  touch $LOCATION/manual/next/docs/snippets/reference.conf
+  touch $LOCATION/manual/next/docs/snippets/reference-env.conf
+  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/next/docs/snippets/reference.conf
+  echo "\n\n" >> $LOCATION/manual/next/docs/snippets/reference.conf
+  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/next/docs/snippets/reference.conf
   node config.js
-  sbt ';clean;paradox'
+  cd $LOCATION/manual/next
+  npm ci --legacy-peer-deps
+  npm run build
+  npm run build-root
   rm -rf $LOCATION/docs/manual
-  cp -r $LOCATION/manual/target/paradox/site/main $LOCATION/docs
-  mv $LOCATION/docs/main $LOCATION/docs/manual
-  cd $LOCATION/docs/manual;
-  npx -y pagefind --site . --output-subdir ./search;
+  rm -rf $LOCATION/docs/manual-root
+  cp -r $LOCATION/manual/next/build $LOCATION/docs/manual
+  cp -r $LOCATION/manual/next/build-root $LOCATION/docs/manual-root
+  # mv $LOCATION/docs/main $LOCATION/docs/manual ?
   cd $LOCATION;
-  # rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  # rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  # touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  # touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
 }
 
 buildReferenceConf () {
   cd $LOCATION/manual
-  rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
-  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  echo "\n\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
-  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  rm $LOCATION/manual/next/docs/snippets/reference.conf
+  rm $LOCATION/manual/next/docs/snippets/reference-env.conf
+  touch $LOCATION/manual/next/docs/snippets/reference.conf
+  touch $LOCATION/manual/next/docs/snippets/reference-env.conf
+  cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/next/docs/snippets/reference.conf
+  echo "\n\n" >> $LOCATION/manual/next/docs/snippets/reference.conf
+  cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/next/docs/snippets/reference.conf
   node config.js
   node indexer.js
 }
@@ -119,9 +115,9 @@ case "${1}" in
   build)
     build
     ;;
-  buildDev)
-    buildDev
-    ;;
+  # buildDev)
+  #   buildDev
+  #   ;;
   cleanbuild)
     clean
     build

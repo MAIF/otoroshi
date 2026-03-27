@@ -1,20 +1,90 @@
 # Service groups
 
-A service group is composed of an unique `id`, a `Group name`, a `Group description`, an `Organization` and a `Team`. As all Otoroshi resources, a service group have a list of tags and metadata associated.
+A service group is a logical grouping of services (routes, APIs) primarily used for API key authorization. Instead of authorizing an API key for each individual service, you can group services together and grant authorization on the entire group.
+
+## UI page
+
+You can find all service groups [here](http://otoroshi.oto.tools:8080/bo/dashboard/groups)
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | string | Unique identifier of the group |
+| `name` | string | Display name of the group |
+| `description` | string | Description of the group |
+| `tags` | array of string | Tags for categorization |
+| `metadata` | object | Key/value metadata |
 
 @@@ div { .centered-img }
 <img src="../imgs/models-group.png" />
 @@@
 
-The first instinctive usage of service group is to group a list of services. 
+## How it works
 
-When it's done, you can authorize an api key on a specific group. Instead of authorize an api key for each service, you can regroup a list of services together, and give authorization on the group (read the page on the api keys and the usage of the `Authorized on.` field).
+1. **Create a group** with a meaningful name (e.g., "Payment APIs", "Public APIs")
+2. **Assign routes to the group** by adding the group ID to a route's `groups` field
+3. **Authorize API keys on the group** using the API key's `authorizedEntities` field
 
-## Access to the list of service groups
+When an API key is authorized on a group, it automatically has access to all routes that belong to that group. This simplifies API key management significantly when you have many routes that share the same access control requirements.
 
-To visualize and edit the list of groups, you can navigate to your instance on the `https://otoroshi.xxxxx/bo/dashboard/groups` route or click on the cog icon and select the Service groups button.
+## JSON example
 
-Once on the page, you can create a new item, edit an existing service group or delete an existing one.
+```json
+{
+  "id": "group_payment_apis",
+  "name": "Payment APIs",
+  "description": "All payment-related API routes",
+  "metadata": {
+    "department": "finance"
+  },
+  "tags": ["payment", "finance"]
+}
+```
 
-> When a service group is deleted, the resources associated are not deleted. On the other hand, the service group of associated resources is let empty.
+### Authorizing an API key on a group
 
+In the API key entity, reference the group in `authorizedEntities`:
+
+```json
+{
+  "clientId": "my-api-key-id",
+  "clientSecret": "my-api-key-secret",
+  "clientName": "Payment service key",
+  "authorizedEntities": ["group_payment_apis"]
+}
+```
+
+### Adding a route to a group
+
+In the route entity, add the group ID to the `groups` array:
+
+```json
+{
+  "id": "route_process_payment",
+  "name": "Process payment",
+  "groups": ["group_payment_apis"],
+  "frontend": { "..." : "..." },
+  "backend": { "..." : "..." },
+  "plugins": { "..." : "..." }
+}
+```
+
+## Admin API
+
+```
+GET    /api/groups           # List all service groups
+POST   /api/groups           # Create a service group
+GET    /api/groups/:id       # Get a service group
+PUT    /api/groups/:id       # Update a service group
+DELETE /api/groups/:id       # Delete a service group
+PATCH  /api/groups/:id       # Partially update a service group
+```
+
+> When a service group is deleted, the resources associated are not deleted. The group reference on those resources will become invalid (empty).
+
+## Related entities
+
+* @ref:[Routes](./routes.md) - Routes reference groups in their `groups` field
+* @ref:[API Keys](./apikeys.md) - API keys reference groups in their `authorizedEntities` field
+* @ref:[APIs](./apis.md) - APIs also create virtual groups automatically for their routes

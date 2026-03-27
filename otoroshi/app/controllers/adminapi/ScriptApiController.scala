@@ -4,6 +4,7 @@ import otoroshi.actions.ApiAction
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
+import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.workflow.WorkflowJob
 import otoroshi.plugins.jobs.kubernetes.{KubernetesCRDsJob, KubernetesConfig}
@@ -217,6 +218,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpJobNames
             .filter(_ != classOf[WasmJob].getName)
             .filter(_ != classOf[WorkflowJob].getName)
+            .filter(_ != classOf[RemoteCatalogJob].getName)
             .map(extractInfosFromJob)
             .filter {
               case JsNull => false

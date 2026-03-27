@@ -2,15 +2,26 @@ package otoroshi.next.controllers.adminapi
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import next.models.{Api, ApiConsumerStatus, ApiDeployment, ApiPublished, ApiStaging}
+import next.models.{
+  Api,
+  ApiDeployment,
+  ApiDeprecated,
+  ApiDocumentationPlan,
+  ApiPlanStatus,
+  ApiPublished,
+  ApiRemoved,
+  ApiStaging,
+  ApiSubscription
+}
 import org.joda.time.DateTime
-import otoroshi.actions.ApiAction
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
@@ -94,6 +105,20 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
             Ok.chunked(Source.single(1).flatMapConcat(_ => Source.future(fetch()))).as("application/json").future
         }
       }
+    }
+
+  def findAllByKind(kind: String) =
+    ApiAction.async { ctx =>
+      Results
+        .Ok(
+          JsArray(
+            env.proxyState
+              .allDrafts()
+              .filter(_.id.startsWith(kind))
+              .map(_.json)
+          )
+        )
+        .future
     }
 
   def foldStats(stats: Seq[RouteStats]) = {
@@ -262,102 +287,113 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     }
   }
 
-  def publishConsumer(apiId: String, consumerId: String): Action[AnyContent] = {
-    ApiAction.async { ctx =>
-      ctx.canReadService(apiId) {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_API_CONSUMER",
-            "User published the consumer",
-            ctx.from,
-            ctx.ua,
-            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
-          )
-        )
-
-        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Published)
-      }
-    }
-  }
-
-  def updateConsumerStatus(apiId: String, consumerId: String, status: ApiConsumerStatus): Future[Result] = {
-    env.datastores.apiDataStore.findById(apiId).flatMap {
-      case Some(api) =>
-        var result: Option[String] = Some("")
-        val newAPI                 = api.copy(consumers = api.consumers.map(consumer => {
-          if (consumer.id == consumerId) {
-            if (Api.updateConsumerStatus(consumer, consumer.copy(status = status))) {
-              consumer.copy(status = status)
-            } else {
-              result = None
-              consumer
-            }
-          } else {
-            consumer
-          }
-        }))
-
-        result match {
-          case None    => Results.BadRequest(Json.obj("error" -> "you can't update consumer status")).future
-          case Some(_) =>
-            env.datastores.apiDataStore
-              .set(newAPI)
-              .flatMap(_ => Results.Ok.vfuture)
-        }
-      case None      => Results.NotFound.future
-    }
-  }
-
-  def deprecateConsumer(apiId: String, consumerId: String) = {
-    ApiAction.async { ctx =>
-      ctx.canReadService(apiId) {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_API_CONSUMER",
-            "User deprecated the consumer",
-            ctx.from,
-            ctx.ua,
-            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
-          )
-        )
-
-        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Deprecated)
-      }
-    }
-  }
-
-  def closeConsumer(apiId: String, consumerId: String) = {
-    ApiAction.async { ctx =>
-      ctx.canReadService(apiId) {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_API_CONSUMER",
-            "User deprecated the consumer",
-            ctx.from,
-            ctx.ua,
-            Json.obj("apiId" -> apiId, "consumerId" -> consumerId)
-          )
-        )
-
-        updateConsumerStatus(apiId, consumerId, ApiConsumerStatus.Closed)
-      }
-    }
-  }
-
   def getHttpClientSettings(apiId: String) = ApiAction.async { _ =>
     Ok(NgClientConfig.default.json).future
+  }
+
+  private def validateApi(api: Api): Either[Result, Api] = {
+    if (!api.enabled)
+      Left(BadRequest(Json.obj("error" -> "api is disabled")))
+    else if (api.state == ApiDeprecated || api.state == ApiRemoved)
+      Left(BadRequest(Json.obj("error" -> s"api is ${api.state.name}")))
+    else
+      Right(api)
+  }
+
+  private def validatePlan(api: Api, planId: String): Either[Result, ApiDocumentationPlan] =
+    api.documentation.flatMap(_.plans.find(_.id == planId)) match {
+      case None                                                 => Left(BadRequest(Json.obj("error" -> "plan not found")))
+      case Some(plan) if plan.status != ApiPlanStatus.Published =>
+        Left(BadRequest(Json.obj("error" -> "plan is not published")))
+      case Some(plan)                                           => Right(plan)
+    }
+
+  private def validateBody(ctx: ApiActionContext[JsValue]): Either[Result, ApiSubscription] =
+    ctx.request.body
+      .asOpt(ApiSubscription.format)
+      .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
+
+  def subscribe(apiId: String, planId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to subscribe to a plan of an API",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"  -> apiId,
+              "planId" -> planId
+            )
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None      => Results.NotFound.vfuture
+          case Some(api) =>
+            val result = for {
+              validApi     <- validateApi(api)
+              _validPlan   <- validatePlan(validApi, apiId)
+              subscription <- validateBody(ctx)
+            } yield subscription
+
+            result match {
+              case Left(errorResult)   => errorResult.vfuture
+              case Right(subscription) =>
+                env.datastores.apiSubscriptionDataStore.set(subscription).map {
+                  case true  => Ok(Json.obj("done" -> true))
+                  case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                }
+            }
+        }
+      }
+    }
+  }
+
+  def duplicate(apiId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canReadService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to duplicate an API",
+            ctx.from,
+            ctx.ua,
+            Json.obj("apiId" -> apiId)
+          )
+        )
+
+        env.datastores.apiDataStore.findById(apiId) flatMap {
+          case None      => Results.NotFound.vfuture
+          case Some(api) =>
+            val newApiId = s"api_${IdGenerator.uuid}"
+            env.datastores.apiDataStore
+              .set(
+                api.copy(
+                  id = newApiId,
+                  state = ApiStaging,
+                  deployments = Seq.empty,
+                  contextPath = ctx.request.body.selectAsOptString("contextPath").getOrElse("/vnew"),
+                  version = ctx.request.body.selectAsOptString("version").getOrElse("vnew"),
+                  metadata = api.metadata + ("copy_from_api" -> apiId)
+                )
+              )
+              .map {
+                case false => BadRequest(Json.obj("error" -> "failed to duplicate API"))
+                case true  => Ok(Json.obj("id" -> newApiId))
+              }
+        }
+      }
+    }
   }
 
   def createNewVersion(apiId: String) = {
@@ -392,13 +428,14 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                       case JsError(_)             => Results.NotFound.future
                       case JsSuccess(apiDraft, _) =>
                         val updatedApi = apiDraft.copy(
-                          versions = api.versions :+ deployment.version,
                           deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
-                          version = deployment.version,
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
-                          state = if (apiDraft.state == ApiStaging) ApiPublished else api.state
+                          state = if (apiDraft.state == ApiStaging) ApiPublished else api.state,
+                          documentation = api.documentation,
+                          clients = api.clients
                         )
+
                         env.datastores.apiDataStore
                           .set(updatedApi)
                           .map(result => {
@@ -412,7 +449,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                                 else deployment.owner,
                               at = deployment.at,
                               apiDefinition = deployment.apiDefinition,
-                              version = deployment.version,
+                              version = api.version,
                               `@service` = api.name,
                               `@serviceId` = apiId
                             ).toAnalytics()
@@ -436,14 +473,15 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
       (
         body.selectAsOptString("domain"),
         body.selectAsOptString("openapi"),
-        body.selectAsOptString("serverURL"),
-        body.selectAsOptString("root")
+        body.selectAsOptString("contextPath"),
+        body.selectAsOptString("backendHostname"),
+        body.selectAsOptString("backendPath")
       ) match {
-        case (Some(domain), Some(openapi), serverURL, root) =>
+        case (Some(domain), Some(openapi), Some(contextPath), Some(backendHostname), Some(backendPath)) =>
           Api
-            .fromOpenApi(domain, openapi, serverURL, root)
+            .fromOpenApi(domain, openapi, contextPath, backendHostname, backendPath)
             .map(service => Ok(service.json))
-        case _                                              => BadRequest(Json.obj("error" -> "missing domain and/or openapi value")).vfuture
+        case _                                                                                          => BadRequest(Json.obj("error" -> "missing values")).vfuture
       }
     }
   }

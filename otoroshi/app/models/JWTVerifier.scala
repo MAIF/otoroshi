@@ -532,17 +532,25 @@ case class JWKSAlgoSettings(
                 case Some(values) => {
                   val keys = values.value.flatMap { k =>
                     val jwk = JWK.parse(Json.stringify(k))
-                    Seq(
-                      (s"${jwk.getAlgorithm.getName}${jwk.getKeyID}", jwk),
-                      (jwk.getKeyID, jwk)
-                    )
+                    if (jwk.getAlgorithm != null) {
+                      Seq(
+                        (s"${jwk.getAlgorithm.getName}${jwk.getKeyID}", jwk),
+                        (jwk.getKeyID, jwk)
+                      )
+                    } else {
+                      Seq(
+                        (jwk.getKeyID, jwk)
+                      )
+                    }
                   }.toMap
                   //println(s"keys: ${keys.mkString(",")}")
                   JWKSAlgoSettings.cache.put(url, (stop, keys, false))
+                  //println(s"exists kid: ${keys.contains(kid)}")
+                  //println(s"exist alg+kid: ${keys.contains(alg+kid)}")
                   keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
                     case Some(jwk) =>
                       logger.info(
-                        s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                        s"jwks call - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${Option(jwk.getAlgorithm).map(_.getName).getOrElse("--")}"
                       )
                       algoFromJwk(alg, jwk)
                     case None      =>
@@ -582,7 +590,7 @@ case class JWKSAlgoSettings(
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
                 logger.info(
-                  s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                  s"jwks cache 1 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${Option(jwk.getAlgorithm).map(_.getName).getOrElse("--")}"
                 )
                 FastFuture.successful(algoFromJwk(alg, jwk))
               case None      =>
@@ -595,7 +603,7 @@ case class JWKSAlgoSettings(
             keys.get(s"${alg}${kid}").orElse(keys.get(kid)) match {
               case Some(jwk) =>
                 logger.info(
-                  s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${jwk.getAlgorithm.getName}"
+                  s"jwks cache 2 - requested: ${kid}/${alg} - found: ${jwk.getKeyID}/${Option(jwk.getAlgorithm).map(_.getName).getOrElse("--")}"
                 )
                 FastFuture.successful(algoFromJwk(alg, jwk))
               case None      =>
@@ -1361,9 +1369,11 @@ sealed trait JwtVerifier extends AsJson {
                 // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
                 val signedToken       = sign(correctedToken, outputAlgorithm, algoSettings.keyId)
                 val decodedToken      = JWT.decode(signedToken)
-                attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> correctedToken)
-                attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> correctedToken)
-                attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> correctedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> correctedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> signedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> signedToken)
+                attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                 source.asJwtInjection(decodedToken, signedToken).right
               }
             }
@@ -1416,7 +1426,6 @@ sealed trait JwtVerifier extends AsJson {
             val verificationResult = JwtVerifier.signatureCache.get(key, _ => Try(verification.build().verify(token)))
             verificationResult match {
               case Failure(e)            =>
-                logger.error("Bad JWT token", e)
                 Errors
                   .craftResponseResultSync(
                     "error.bad.token",
@@ -1445,15 +1454,19 @@ sealed trait JwtVerifier extends AsJson {
                   }
                   case s @ DefaultToken(false, _, _)          =>
                     val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
-                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                     JwtInjection(decodedToken.some).right[Result]
                   case s @ PassThrough(_)                     =>
                     val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
-                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                     JwtInjection(decodedToken.some).right[Result]
                   case s @ Sign(_, aSettings)                 =>
                     aSettings.asAlgorithm(OutputMode) match {
@@ -1476,9 +1489,11 @@ sealed trait JwtVerifier extends AsJson {
                           outputAlgorithm,
                           aSettings.keyId
                         )
-                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> newToken)
+                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                         source.asJwtInjection(decodedToken, newToken).right[Result]
                       }
                     }
@@ -1548,9 +1563,11 @@ sealed trait JwtVerifier extends AsJson {
                             .toMap
                         )
                         val newToken                     = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
-                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> newJsonToken)
-                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> newJsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> newToken)
+                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                         source match {
                           case _: InQueryParam =>
                             tSettings.location.asJwtInjection(decodedToken, newToken).right[Result]
@@ -1654,9 +1671,11 @@ sealed trait JwtVerifier extends AsJson {
                 // it's okay to use algoSettings here as it's the default token, so it's not used as an input but as output algo
                 val signedToken       = sign(correctedToken, outputAlgorithm, algoSettings.keyId)
                 val decodedToken      = JWT.decode(signedToken)
-                attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> correctedToken)
-                attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> correctedToken)
-                attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> correctedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> correctedToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> signedToken)
+                attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                 f(source.asJwtInjection(decodedToken, signedToken)).right[Result]
               }
             }
@@ -1744,15 +1763,19 @@ sealed trait JwtVerifier extends AsJson {
                   }
                   case s @ DefaultToken(false, _, _)          =>
                     val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
-                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                     f(JwtInjection(decodedToken.some)).right[Result]
                   case s @ PassThrough(_)                     =>
                     val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
-                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                    attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> decodedToken.getToken)
+                    attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                     f(JwtInjection(decodedToken.some)).right[Result]
                   case s @ Sign(_, aSettings)                 =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {
@@ -1775,9 +1798,11 @@ sealed trait JwtVerifier extends AsJson {
                           outputAlgorithm,
                           aSettings.keyId
                         )
-                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> jsonToken)
-                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> decodedToken.getToken)
+                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                         f(source.asJwtInjection(decodedToken, newToken)).right[Result]
                       }
                     }
@@ -1847,9 +1872,11 @@ sealed trait JwtVerifier extends AsJson {
                             .toMap
                         )
                         val newToken                     = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
-                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey  -> jsonToken)
-                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey -> newJsonToken)
-                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey        -> this)
+                        attrs.put(otoroshi.plugins.Keys.MatchedInputTokenKey     -> jsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedOutputTokenKey    -> newJsonToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawInputTokenKey  -> decodedToken.getToken)
+                        attrs.put(otoroshi.plugins.Keys.MatchedRawOutputTokenKey -> newToken)
+                        attrs.put(otoroshi.plugins.Keys.JwtVerifierKey           -> this)
                         source match {
                           case _: InQueryParam =>
                             f(tSettings.location.asJwtInjection(decodedToken, newToken)).right[Result]

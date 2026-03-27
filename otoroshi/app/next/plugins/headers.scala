@@ -8,7 +8,7 @@ import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, RemainingQuotas}
-import otoroshi.next.models.NgRoute
+import otoroshi.next.models.{NgDomainAndPath, NgRoute}
 import otoroshi.next.plugins.api._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -116,8 +116,8 @@ case class OverrideLocationHeaderConfig(matchingHostnames: Seq[String] = Seq.emp
 }
 
 object OverrideLocationHeaderConfig {
-  val default = OverrideLocationHeaderConfig()
-  val format = new Format[OverrideLocationHeaderConfig] {
+  val default                        = OverrideLocationHeaderConfig()
+  val format                         = new Format[OverrideLocationHeaderConfig] {
     override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
       OverrideLocationHeaderConfig(
         matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -126,7 +126,7 @@ object OverrideLocationHeaderConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(e) => JsSuccess(e)
     }
-    override def writes(o: OverrideLocationHeaderConfig): JsValue = o.json
+    override def writes(o: OverrideLocationHeaderConfig): JsValue             = o.json
   }
   val configFlow: Seq[String]        = Seq("matching_hostnames")
   val configSchema: Option[JsObject] = Some(
@@ -135,7 +135,7 @@ object OverrideLocationHeaderConfig {
         "type"  -> "array",
         "label" -> "Matching hostnames",
         "props" -> Json.obj(
-          "label"  -> "Matching hostnames",
+          "label" -> "Matching hostnames"
         )
       )
     )
@@ -161,8 +161,8 @@ class OverrideLocationHeader extends NgRequestTransformer {
     "This plugin override the current Location header with the current frontend host if the location start with the Host of the backend target".some
   override def defaultConfigObject: Option[NgPluginConfig] = Some(OverrideLocationHeaderConfig.default)
   override def noJsForm: Boolean                           = true
-  override def configFlow: Seq[String] = OverrideLocationHeaderConfig.configFlow
-  override def configSchema: Option[JsObject] = OverrideLocationHeaderConfig.configSchema
+  override def configFlow: Seq[String]                     = OverrideLocationHeaderConfig.configFlow
+  override def configSchema: Option[JsObject]              = OverrideLocationHeaderConfig.configSchema
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
@@ -177,8 +177,10 @@ class OverrideLocationHeader extends NgRequestTransformer {
             case Some(location) if !(location.startsWith("http://") || location.startsWith("https://")) =>
               ctx.otoroshiResponse.rightf
             case Some(location)                                                                         => {
-              val config = ctx.cachedConfig(internalName)(OverrideLocationHeaderConfig.format).getOrElse(OverrideLocationHeaderConfig.default)
-              val backendHost = TargetExpressionLanguage(
+              val config          = ctx
+                .cachedConfig(internalName)(OverrideLocationHeaderConfig.format)
+                .getOrElse(OverrideLocationHeaderConfig.default)
+              val backendHost     = TargetExpressionLanguage(
                 backend.hostname,
                 Some(ctx.request),
                 ctx.route.serviceDescriptor.some,
@@ -192,13 +194,28 @@ class OverrideLocationHeader extends NgRequestTransformer {
               val oldLocation     = Uri(location)
               val oldLocationHost = oldLocation.authority.host.toString()
               if (oldLocationHost.equalsIgnoreCase(backendHost) || config.matches(oldLocationHost)) {
-                val frontendHost =
+                val frontendHost     =
                   Option(ctx.request.domain)
                     .filterNot(_.isBlank)
                     .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
-                val newLocation  =
-                  oldLocation.copy(authority = oldLocation.authority.copy(host = Uri.Host(frontendHost))).toString()
-                val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
+                val currentPort: Int =
+                  if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
+                val processedPath    = if (!ctx.route.backend.rewrite && ctx.route.backend.root != "/") {
+                  val newPath = oldLocation.path.toString().replaceFirst(ctx.route.backend.root, "")
+                  if (newPath.startsWith("/")) Uri.Path(newPath) else Uri.Path(s"/$newPath")
+                } else oldLocation.path //stripPathIfMatch(ctx.route, oldLocation.path)
+                val newLocation      =
+                  oldLocation
+                    .copy(
+                      scheme = ctx.request.theProtocol,
+                      path = processedPath,
+                      authority = oldLocation.authority.copy(
+                        host = Uri.Host(frontendHost),
+                        port = currentPort
+                      )
+                    )
+                    .toString()
+                val headers          = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
                 ctx.otoroshiResponse.copy(headers = headers).rightf
               } else {
                 ctx.otoroshiResponse.rightf

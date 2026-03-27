@@ -1,6 +1,6 @@
 # Proxy engine
 
-Starting from the `1.5.3` release, otoroshi offers a new plugin that implements the next generation of the proxy engine. 
+Starting from the `1.5.3` release (Feb 14, 2022), otoroshi offers a new plugin that implements the next generation of the proxy engine. 
 This engine has been designed based on our 5 years experience building, maintaining and running the previous one.
 It tries to fix all the drawback we may have encountered during those years and highly improve performances, user experience, reporting and debugging capabilities. 
 

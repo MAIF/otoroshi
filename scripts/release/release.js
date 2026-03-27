@@ -43,19 +43,23 @@ const files = [
   { file: './demos/service-mesh/docker-compose-manual.yml' },
   { file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
+
   // { file: './manual/build.sbt' },
-  { file: './manual/src/main/paradox/code/openapi.json' },
-  { file: './manual/src/main/paradox/getting-started.md' },
-  { file: './manual/src/main/paradox/how-to-s/import-export-otoroshi-datastore.md' },
-  { file: './manual/src/main/paradox/how-to-s/setup-otoroshi-cluster.md' },
-  { file: './manual/src/main/paradox/includes/fetch-and-start.md' },
-  { file: './manual/src/main/paradox/includes/initialize.md' },
-  { file: './manual/src/main/paradox/index.md' },
-  { file: './manual/src/main/paradox/install/get-otoroshi.md' },
-  { file: './manual/src/main/paradox/topics/expression-language.md' },
-  { file: './manual/src/main/paradox/snippets/build.gradle' },
-  { file: './manual/src/main/paradox/snippets/build.sbt' },
-  { file: './manual/src/main/paradox/snippets/fetch.sh' },
+  // { file: './manual/src/main/paradox/getting-started.md' },
+  // { file: './manual/src/main/paradox/how-to-s/import-export-otoroshi-datastore.md' },
+  // { file: './manual/src/main/paradox/how-to-s/setup-otoroshi-cluster.md' },
+  // { file: './manual/src/main/paradox/includes/fetch-and-start.md' },
+  // { file: './manual/src/main/paradox/includes/initialize.md' },
+  // { file: './manual/src/main/paradox/index.md' },
+  // { file: './manual/src/main/paradox/install/get-otoroshi.md' },
+  // { file: './manual/src/main/paradox/topics/expression-language.md' },
+
+  { file: './manual/next/version.js' },
+  { file: './manual/next/static/openapi.json' },
+  { file: './manual/next/docs/snippets/build.gradle' },
+  { file: './manual/next/docs/snippets/build.sbt' },
+  { file: './manual/next/docs/snippets/fetch.sh' },
+
   { file: './otoroshi/app/controllers/SwaggerController.scala' },
   { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
@@ -413,6 +417,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
     await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
+    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `[release ${to}] Update version to ${next}`], location);
@@ -421,7 +426,6 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
       await runSystemCommand('git', ['push', '--tags'], location);
     });
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
-    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     console.log("Release done !");
     process.exit(0);
   }

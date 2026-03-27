@@ -1,0 +1,74 @@
+---
+title: Scaling Otoroshi
+sidebar_position: 4
+---
+# Scaling Otoroshi
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+## Using multiple instances with a front load balancer
+
+Otoroshi has been designed to work with multiple instances. If you already have an infrastructure using frontal load balancing, you just have to declare Otoroshi instances as the target of all domain names handled by Otoroshi
+
+## Using master / workers mode of Otoroshi
+
+You can read everything about it in [the clustering section](../deploy/clustering.md) of the documentation.
+
+## Using IPVS
+
+You can use [IPVS](https://en.wikipedia.org/wiki/IP_Virtual_Server) to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi. You can find example of configuration [here](http://www.linuxvirtualserver.org/VS-DRouting.html)
+
+## Using DNS Round Robin
+
+You can use [DNS round robin technique](https://en.wikipedia.org/wiki/Round-robin_DNS) to declare multiple A records under the domain names handled by Otoroshi.
+
+## Using software L4/L7 load balancers
+
+You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.
+
+<Tabs>
+<TabItem value="NGINX L7" label="NGINX L7" default>
+
+```conf include=../snippets/nginx-http.conf
+```
+
+</TabItem>
+<TabItem value="NGINX L4" label="NGINX L4">
+
+```conf include=../snippets/nginx-tcp.conf
+```
+
+</TabItem>
+<TabItem value="HA Proxy L7" label="HA Proxy L7">
+
+```conf include=../snippets/haproxy-http.conf
+```
+
+</TabItem>
+<TabItem value="HA Proxy L4" label="HA Proxy L4">
+
+```conf include=../snippets/haproxy-tcp.conf
+```
+
+</TabItem>
+</Tabs>
+
+## Using a custom TCP load balancer
+
+You can also use any other TCP load balancer, from a hardware box to a small js file like
+
+<Tabs>
+<TabItem value="tcp-proxy.js" label="tcp-proxy.js" default>
+
+```javascript include=../snippets/tcp-proxy.js
+```
+
+</TabItem>
+<TabItem value="tcp-proxy.rs" label="tcp-proxy.rs">
+
+```rust include=../snippets/proxy.rs
+```
+
+</TabItem>
+</Tabs>

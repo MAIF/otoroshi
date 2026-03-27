@@ -117,13 +117,13 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
           implicit val env = otoroshiComponents.env
 
           router
-            .find("api.oto.tools", "/api/services")
+            .find("api.oto.tools", "/api/services", true)
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)
             .mustBe(true)
           router
-            .find("api.oto.tools", "/api/apikeys/123/foo")
+            .find("api.oto.tools", "/api/apikeys/123/foo", true)
             .map(_.routes.map(_.name))
             .debugPrintln
             .exists(_.size == 1)

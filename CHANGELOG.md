@@ -6,6 +6,110 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.14.0] - 2026-03-27
+
+
+https://github.com/MAIF/otoroshi/milestone/136?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.13.0...v17.14.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.14.0
+
+
+### Added 
+
+- Update remote catalog to scan organizations (#2449 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide more GitHub alternatives in remote catalogs providers (#2450 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support patterns in remote catalog descriptor files (#2452 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support `yaml` format for remote catalog descriptor files (#2453 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add mandatory flags on client certificate plugins (#2448 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `APIs`: Add mandatory flag on `OIDC JWT verification` (#2447 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support kubernetes like manifests in remote catalogs (#2454 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support PostgreSQL as a possible data exporter (#2459 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support path based read in expression language for deep structures like user profile (#2487 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Redis integration: add support for Sentinel passwords with the Lettuce driver (#2486 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Stringify complex structures in expression language path based read (#2491 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- rebuild documentation using docusaurus (#2495 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- tunnel handler plugins are not visible in the route designer (#2451 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Disable host validation for kafka data exporter when using Otoroshi mTLS settings (#2461 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Keep current scheme and port in the `Override Location header` plugin (#2488 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Cleanup path in the `Override Location header` plugin (#2489 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Mandatory flag broken in OIDCJwtVerifier plugin (#2506 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Mandatory flag broken in Apikeys plugin (#2507 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
+## [17.13.0] - 2026-02-23
+
+
+https://github.com/MAIF/otoroshi/milestone/135?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.12.0...v17.13.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.13.0
+
+
+### Added 
+
+- Add config. options to expose public keys with algorithms in JWKS (#2429 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Experimental support for k8s Gateway api (#2437 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Fixed 
+
+- Search a JWK in a JWKS can fail when alg not present (#2428 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router most specific path matching does not work with wildcard domains (#2444 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router does not prioritize routes with query/header/cookie matching in the final stage of the routing pipeline (#2445 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- router should treat trailing slash in frontend domains as exact segment match (#2446 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Strict mode of the `JWT user extractor plugin` is broken (#2455 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
+## [17.12.0] - 2026-01-28
+
+
+https://github.com/MAIF/otoroshi/milestone/134?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.11.0...v17.12.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.12.0
+
+
+### Added 
+
+- Support Monaco editor in classic forms (#2407 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support JWT verification based on the settings of an OIDC auth. module (#2410 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provider helpers to create customizable errors in plugins (#2422 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Allow Fail2Ban to be triggered by other plugins that can't use `requestError` phase (#2423 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDCJwtVerifier can be used to populate the current user session (#2426 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Always display plugins, even if missing from the JS plugins list (#2406 fixed by [Zwiterrion](https://github.com/Zwiterrion))       
+      
+### Changed 
+
+- Add `USERS.md` in the Otoroshi repository (#2409 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Otoroshi containers should run with a non root user (#2399 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Release process does not publish helm chart (#2425 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Bad name used for netty experimental server (#2400 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Bad group name used for dynamic http-listeners (#2401 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- bad content-type check when proxying grpc request (#2402 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OverrideLocationHeader plugin was badly configured + description was wrong (#2403 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.11.0] - 2025-12-31
 
 

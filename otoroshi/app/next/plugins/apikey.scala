@@ -224,9 +224,11 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
             )
             .map {
               case Left(result)
-                  if result.header.status == 400 && result.header.headers
+                  if result.header.status == 400 && (result.header.headers
                     .get(env.Headers.OtoroshiErrorMsg)
-                    .contains("no apikey") =>
+                    .contains("no apikey") || result.header.headers
+                    .get(env.Headers.OtoroshiErrorMsg)
+                    .contains("invalid apikey tuple")) =>
                 NgAccess.NgAllowed
               case Left(result)  =>
                 NgAccess.NgDenied(result)

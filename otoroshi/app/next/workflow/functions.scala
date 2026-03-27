@@ -31,6 +31,7 @@ object WorkflowFunctionsInitializer {
     WorkflowFunction.registerFunction("core.system_call", new SystemCallFunction())
     WorkflowFunction.registerFunction("core.store_keys", new StoreKeysFunction())
     WorkflowFunction.registerFunction("core.store_mget", new StoreMgetFunction())
+    WorkflowFunction.registerFunction("core.store_get_all", new StoreGetAllFunction())
     WorkflowFunction.registerFunction("core.store_match", new StoreMatchFunction())
     WorkflowFunction.registerFunction("core.store_get", new StoreGetFunction())
     WorkflowFunction.registerFunction("core.store_set", new StoreSetFunction())
@@ -1137,6 +1138,55 @@ class StoreDelFunction extends WorkflowFunction {
     env.datastores.rawDataStore.del(keys).map { r =>
       Right(r.json)
     }
+  }
+}
+
+class StoreGetAllFunction extends WorkflowFunction {
+  override def documentationName: String                  = "core.store_get_all"
+  override def documentationDisplayName: String           = "Datastore get all"
+  override def documentationIcon: String                  = "fas fa-download"
+  override def documentationDescription: String           = "This function gets keys and values from the store"
+  override def documentationFormSchema: Option[JsObject]  = Json
+    .obj(
+      "keys" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Key",
+        "props" -> Json.obj(
+          "description" -> "The keys to get"
+        )
+      )
+    )
+    .some
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("keys"),
+      "properties" -> Json.obj(
+        "keys" -> Json.obj("type" -> "string", "description" -> "The keys to get")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "kind"     -> "call",
+      "function" -> "core.store_get_all",
+      "args"     -> Json.obj(
+        "keys" -> Json.arr("my_key")
+      )
+    )
+  )
+  override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
+    Future
+      .sequence(keys.map(key => env.datastores.rawDataStore.get(key)))
+      .map(values =>
+        keys
+          .zip(values)
+          .foldLeft(Json.obj()) { case (acc, (key, value)) =>
+            acc ++ Json.obj(key -> value)
+          }
+          .right
+      )
   }
 }
 

@@ -1,47 +1,117 @@
-# TCP services
+# TCP Services
 
-TCP service are special kind of otoroshi services meant to proxy pure TCP connections (ssh, database, http, etc)
+TCP services are a special kind of Otoroshi service designed to proxy pure TCP connections (SSH, databases, HTTP, etc.) without HTTP-level processing.
 
-## Global information
+## UI page
 
-* `Id`: generated unique identifier
-* `TCP service name`: the name of your TCP service
-* `Enabled`: enable and disable the service
-* `TCP service port`: the listening port
-* `TCP service interface`: network interface listen by the service
-* `Tags`: list of tags associated to the service
-* `Metadata`: list of metadata associated to the service
+You can find all TCP services [here](http://otoroshi.oto.tools:8080/bo/dashboard/tcp/services)
 
-## TLS
+## Properties
 
-this section controls the TLS exposition of the service
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `id` | string |     | Unique identifier |
+| `name` | string |     | Display name of the TCP service |
+| `description` | string |     | Description |
+| `enabled` | boolean | `true` | Whether the service is active |
+| `port` | number |     | The listening port for incoming TCP connections |
+| `interface` | string | `0.0.0.0` | Network interface the service listens on |
+| `tags` | array of string | `[]` | Tags |
+| `metadata` | object | `{}` | Key/value metadata |
+| `tls` | string | `Disabled` | TLS mode (see below) |
+| `clientAuth` | string | `None` | mTLS client authentication mode (see below) |
+| `sni` | object |     | SNI configuration (see below) |
+| `rules` | array of object | `[]` | Routing rules (see below) |
 
-* `TLS mode`
-    * `Disabled`: no TLS
-    * `PassThrough`: as the target exposes TLS, the call will pass through otoroshi and use target TLS
-    * `Enabled`: the service will be exposed using TLS and will chose certificate based on SNI
-* `Client Auth.`
-    * `None` no mTLS needed to pass
-    * `Want` pass with or without mTLS
-    * `Need` need mTLS to pass
+## TLS modes
 
-## Server Name Indication (SNI)
+| Mode | Description |
+|------|-------------|
+| `Disabled` | No TLS. TCP traffic is proxied as-is |
+| `PassThrough` | The target exposes TLS. Traffic passes through Otoroshi without termination |
+| `Enabled` | Otoroshi terminates TLS and selects the certificate based on SNI |
 
-this section control how SNI should be treated
+## Client authentication
 
-* `SNI routing enabled`: if enabled, the server will use the SNI hostname to determine which certificate to present to the client
-* `Forward to target if no SNI match`: if enabled, a call without any SNI match will be forward to the target
-* `Target host`: host of the target called if no SNI
-* `Target ip address`: ip of the target called if no SNI
-* `Target port`: port of the target called if no SNI
-* `TLS call`: encrypt the communication with TLS
+| Mode | Description |
+|------|-------------|
+| `None` | No client certificate required |
+| `Want` | Client certificate is requested but not required |
+| `Need` | Valid client certificate is mandatory |
+
+## SNI (Server Name Indication)
+
+SNI allows Otoroshi to select different targets based on the hostname in the TLS handshake.
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `enabled` | boolean | `false` | Enable SNI-based routing |
+| `forwardIfNoMatch` | boolean | `false` | Forward to a default target if no SNI match is found |
+| `forwardsTo.host` | string |     | Default target hostname (when no SNI match) |
+| `forwardsTo.ip` | string |     | Default target IP address |
+| `forwardsTo.port` | number |     | Default target port |
+| `forwardsTo.tls` | boolean | `false` | Use TLS to connect to the default target |
 
 ## Rules
 
-for any listening TCP proxy, it is possible to route to multiple targets based on SNI or extracted http host (if proxying http)
+For any listening TCP proxy, you can define multiple routing rules based on SNI or extracted HTTP host (when proxying HTTP).
 
-* `Matching domain name`: regex used to filter the list of domains where the rule will be applied
-* `Target host`: host of the target
-* `Target ip address`: ip of the target
-* `Target port`: port of the target
-* `TLS call`: enable this flag if the target is exposed using TLS
+| Property | Type | Description |
+|----------|------|-------------|
+| `domain` | string | Regex pattern to match against the domain name |
+| `targets` | array of object | List of targets for this rule |
+| `targets[].host` | string | Target hostname |
+| `targets[].ip` | string | Target IP address |
+| `targets[].port` | number | Target port |
+| `targets[].tls` | boolean | Use TLS to connect to this target |
+
+## JSON example
+
+```json
+{
+  "id": "tcp_service_postgres",
+  "name": "PostgreSQL proxy",
+  "description": "TCP proxy for the production PostgreSQL cluster",
+  "enabled": true,
+  "port": 5432,
+  "interface": "0.0.0.0",
+  "tls": "Enabled",
+  "clientAuth": "None",
+  "sni": {
+    "enabled": true,
+    "forwardIfNoMatch": true,
+    "forwardsTo": {
+      "host": "postgres-primary.internal",
+      "ip": null,
+      "port": 5432,
+      "tls": false
+    }
+  },
+  "rules": [
+    {
+      "domain": ".*read.*",
+      "targets": [
+        {
+          "host": "postgres-replica.internal",
+          "ip": null,
+          "port": 5432,
+          "tls": false
+        }
+      ]
+    }
+  ],
+  "tags": ["database", "production"],
+  "metadata": {}
+}
+```
+
+## Admin API
+
+```
+GET    /api/tcp/services           # List all TCP services
+POST   /api/tcp/services           # Create a TCP service
+GET    /api/tcp/services/:id       # Get a TCP service
+PUT    /api/tcp/services/:id       # Update a TCP service
+DELETE /api/tcp/services/:id       # Delete a TCP service
+PATCH  /api/tcp/services/:id       # Partially update a TCP service
+```

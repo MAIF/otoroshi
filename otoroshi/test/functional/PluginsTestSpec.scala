@@ -709,5 +709,23 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .run()
         .futureValue
     }
+    "izanami v2 proxy - should call izanami correctly" in {
+      new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()
+    }
+    "izanami v2 proxy - should add request context if specified" in {
+      new IzanamiV2ProxyTests(this).contextShouldBeUsedWhenNeeded()
+    }
+    "OIDCJwtVerifier" in {
+      new OIDCJwtVerifierTests(this).verifyOIDC()
+    }
+    "Remote Catalogs - deploy with admin API" in {
+      new RemoteCatalogsTests(this).deployWithAdminApi()
+    }
+    "Remote Catalogs - deploy with plugin" in {
+      new RemoteCatalogsTests(this).deployWithPlugin()
+    }
+    "Remote Catalogs - deploy many with plugin" in {
+      new RemoteCatalogsTests(this).deployManyWithPlugin()
+    }
   }
 }

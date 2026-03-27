@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.12.0-dev"
+version := "17.15.0-dev"
 scalaVersion := scalaLangVersion
 
 inThisBuild(
@@ -418,11 +418,13 @@ reStart / javaOptions ++= Seq(
   // "-Dotoroshi.next.experimental.netty-server.native.driver=IOUring",
   "-DVAULT_VALUE=admin-api-apikey-secret",
   "-Dapp.redis.lettuce.pooling.enabled=true",
-  "-Dotoroshi.storage=file",
+  "-Dotoroshi.storage=file"
   //"-Dotoroshi.storage=ext:foo",
-  //"-Dotoroshi.storage=lettuce",
+//  "-Dotoroshi.storage=lettuce",
+//  "-Dapp.redis.lettuce.uri=redis-sentinel://masterpassword@localhost:26379?sentinelMasterId=mymaster",
+//  "-Dapp.redis.lettuce.sentinels.password=sentinelpassword",
+//  "-Dapp.redis.lettuce.sentinels.username=default"
   //"-Dotoroshi.storage=inmemory",
   //"-Dotoroshi.storage=pg",
   //"-Dotoroshi.storage=redis",
-  "-Dotoroshi.redis.lettuce.uri=redis://localhost:5432/"
 )

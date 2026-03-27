@@ -225,8 +225,8 @@ class NgJwtUserExtractor extends NgPreRouting {
             ctx.attrs
           ) { jwtInjection =>
             jwtInjection.decodedToken match {
-              case None if !config.strict => Results.Unauthorized(Json.obj()).future
-              case None if config.strict  => Results.Ok(Json.obj()).future
+              case None if config.strict  => Results.Unauthorized(Json.obj()).future
+              case None if !config.strict => Results.Ok(Json.obj()).future
               case Some(token)            => {
                 val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
                 val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]
@@ -240,7 +240,8 @@ class NgJwtUserExtractor extends NgPreRouting {
                   case (key, JsBoolean(value)) => (key, value.toString)
                 }.toMap
                 val meta: Option[JsValue]             =
-                  config.metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
+                  config.metaPath
+                    .flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
                 val user: PrivateAppsUser             = PrivateAppsUser(
                   randomId = IdGenerator.uuid,
                   name = JsonPathUtils.getAt[String](jsonToken, config.namePath.getOrElse("name")).getOrElse("--"),
@@ -264,19 +265,23 @@ class NgJwtUserExtractor extends NgPreRouting {
               }
             }
           }
-          .recover { case e: Throwable =>
-            Results.Unauthorized(Json.obj())
+          .recover { case _: Throwable =>
+            if (config.strict) Results.Unauthorized(Json.obj())
+            else Results.Ok(Json.obj())
           }
           .flatMap { result =>
             result.header.status match {
               case 200 =>
                 Done.rightf
               case _   =>
-                NgPreRoutingErrorWithResult(
-                  Results.Unauthorized(
-                    Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
-                  )
-                ).leftf
+                if (!config.strict)
+                  Done.rightf
+                else
+                  NgPreRoutingErrorWithResult(
+                    Results.Unauthorized(
+                      Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user")
+                    )
+                  ).leftf
             }
           }
       }

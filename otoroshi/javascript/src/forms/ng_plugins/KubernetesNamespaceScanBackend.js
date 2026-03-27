@@ -8,9 +8,7 @@ export default {
         description: 'List of Kubernetes namespaces to scan for CRDs',
         placeholder: 'default, kube-system, otoroshi',
       },
-    }
+    },
   },
-  config_flow: [
-    'namespaces'
-  ],
+  config_flow: ['namespaces'],
 };

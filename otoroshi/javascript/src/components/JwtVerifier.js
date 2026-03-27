@@ -156,7 +156,7 @@ export class JwtVerifier extends Component {
 
   render() {
     const { isConfigView, verifier } = this.state;
-    const isLegacyView = this.props.showAdvancedForm;
+    const isLegacyView = true; // this.props.showAdvancedForm;
 
     const restrictedStrategy = this.props.allowedNewStrategy || this.props.strategy;
 

@@ -534,7 +534,7 @@ export class NgNumberRenderer extends Component {
           <div
             style={{
               position: unit ? 'relative' : 'initial',
-              display: unit ? 'flex' : 'initial',
+              display: unit || props.suffix ? 'flex' : 'initial',
             }}
           >
             {!readOnly && (
@@ -565,6 +565,15 @@ export class NgNumberRenderer extends Component {
               >
                 {unit}
               </div>
+            )}
+            {props.suffix && (
+              <span
+                className="input-group-text"
+                onClick={props.suffixCb ? () => props.suffixCb(props.value) : undefined}
+                style={props.suffixStyle || {}}
+              >
+                {props.suffix}
+              </span>
             )}
           </div>
           {props.subTitle && <span style={{ fontStyle: 'italic' }}>{props.subTitle}</span>}

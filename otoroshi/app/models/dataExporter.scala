@@ -745,6 +745,56 @@ object JMSExporterSettings {
   }
 }
 
+case class PostgresExporterSettings(
+    uri: Option[String] = None,
+    host: String = "localhost",
+    port: Int = 5432,
+    database: String = "otoroshi",
+    user: String = "otoroshi",
+    password: String = "otoroshi",
+    schema: String = "otoroshi",
+    table: String = "otoroshi_events",
+    poolSize: Int = 5,
+    ssl: Boolean = false
+) extends Exporter {
+  override def toJson: JsValue = PostgresExporterSettings.format.writes(this)
+}
+
+object PostgresExporterSettings {
+  val format = new Format[PostgresExporterSettings] {
+    override def reads(json: JsValue): JsResult[PostgresExporterSettings] = Try {
+      PostgresExporterSettings(
+        uri = json.select("uri").asOptString.filterNot(_.isEmpty),
+        host = json.select("host").asOptString.getOrElse("localhost"),
+        port = json.select("port").asOptInt.getOrElse(5432),
+        database = json.select("database").asOptString.getOrElse("otoroshi"),
+        user = json.select("user").asOptString.getOrElse("otoroshi"),
+        password = json.select("password").asOptString.getOrElse("otoroshi"),
+        schema = json.select("schema").asOptString.getOrElse("otoroshi"),
+        table = json.select("table").asOptString.getOrElse("otoroshi_events"),
+        poolSize = json.select("pool_size").asOptInt.getOrElse(5),
+        ssl = json.select("ssl").asOptBoolean.getOrElse(false)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: PostgresExporterSettings): JsValue = Json.obj(
+      "uri"       -> o.uri.map(v => JsString(v)).getOrElse(JsNull).asValue,
+      "host"      -> o.host,
+      "port"      -> o.port,
+      "database"  -> o.database,
+      "user"      -> o.user,
+      "password"  -> o.password,
+      "schema"    -> o.schema,
+      "table"     -> o.table,
+      "pool_size" -> o.poolSize,
+      "ssl"       -> o.ssl
+    )
+  }
+}
+
 object DataExporterConfig {
 
   import scala.concurrent.duration._
@@ -856,6 +906,7 @@ object DataExporterConfig {
             case "udp"           => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "jms"           => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "postgresql"    => PostgresExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case v               => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )
@@ -978,6 +1029,10 @@ case object DataExporterConfigTypeOtlpMetrics extends DataExporterConfigType {
   def name: String = "otlp-metrics"
 }
 
+case object DataExporterConfigTypePostgres extends DataExporterConfigType {
+  def name: String = "postgresql"
+}
+
 object DataExporterConfigType {
 
   val Kafka         = DataExporterConfigTypeKafka
@@ -1006,6 +1061,7 @@ object DataExporterConfigType {
   val UDP           = DataExporterConfigTypeUDP
   val Syslog        = DataExporterConfigTypeSyslog
   val JMS           = DataExporterConfigTypeJMS
+  val Postgres      = DataExporterConfigTypePostgres
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
@@ -1035,6 +1091,7 @@ object DataExporterConfigType {
       case "udp"           => UDP
       case "syslog"        => Syslog
       case "jms"           => JMS
+      case "postgresql"    => Postgres
       case _               => None
     }
   }
@@ -1103,6 +1160,7 @@ case class DataExporterConfig(
       case c: UDPExporterSettings         => new UDPExporter(this)
       case c: SyslogExporterSettings      => new SyslogExporter(this)
       case c: JMSExporterSettings         => new JMSExporter(this)
+      case c: PostgresExporterSettings    => new PostgresExporter(this)
       case _                              => throw new RuntimeException("unsupported exporter type")
     }
   }

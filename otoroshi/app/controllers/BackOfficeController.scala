@@ -11,6 +11,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
 import io.otoroshi.wasm4s.scaladsl._
+import next.models.Api
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -66,6 +67,7 @@ object ServiceLike {
   def fromService(service: ServiceDescriptor): ServiceLike           = ServiceLike(service, service.groups)
   def fromRoute(service: NgRoute): ServiceLike                       = ServiceLike(service, service.groups)
   def fromRouteComposition(service: NgRouteComposition): ServiceLike = ServiceLike(service, service.groups)
+  def fromApi(service: Api): ServiceLike                             = ServiceLike(service, service.groups)
 }
 
 case class BackofficeFlags(
@@ -1820,9 +1822,13 @@ class BackOfficeController(
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => ServiceLike.fromRoute(service).some.vfuture
           case None          =>
-            env.datastores.routeCompositionDataStore.findById(serviceId) map {
-              case Some(service) => ServiceLike.fromRouteComposition(service).some
-              case None          => None
+            env.datastores.apiDataStore.findById(serviceId) flatMap {
+              case Some(service) => ServiceLike.fromApi(service).some.vfuture
+              case None          =>
+                env.datastores.routeCompositionDataStore.findById(serviceId) map {
+                  case Some(service) => ServiceLike.fromRouteComposition(service).some
+                  case None          => None
+                }
             }
         }
     }

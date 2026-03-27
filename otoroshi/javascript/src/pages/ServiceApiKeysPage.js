@@ -9,10 +9,10 @@ import { Restrictions } from '../components/Restrictions';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
-import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { NgForm } from '../components/nginputs';
+import InfoCollapse from '../components/InfoCollapse';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -285,16 +285,14 @@ const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
   <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
-      {env && (
-        <input
-          onChange={(e) => ''}
-          type="text"
-          className="form-control"
-          value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
-            rawValue.clientId + ':' + rawValue.clientSecret
-          )}' http://xxxxxx --include`}
-        />
-      )}
+      <input
+        onChange={(e) => ''}
+        type="text"
+        className="form-control"
+        value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
+          rawValue.clientId + ':' + rawValue.clientSecret
+        )}' http://xxxxxx --include`}
+      />
     </div>
   </div>
 );
@@ -693,6 +691,50 @@ class DailyRemainingQuotas extends Component {
   }
 }
 
+function InfoApikeysCollapse() {
+  return (
+    <InfoCollapse title="What is an API Key?">
+      <p>
+        An API Key is the <strong>main entity for API management</strong> in Otoroshi. It is a
+        unique credential — composed of a <strong>client ID</strong> and a{' '}
+        <strong>client secret</strong> — that identifies and authenticates a consumer when calling
+        your protected routes and services.
+      </p>
+      <p>
+        API keys give you fine-grained control over who can access what, how often, and under which
+        conditions. Here are some examples of what you can achieve with them:
+      </p>
+      <ul>
+        <li>
+          <strong>Authenticate consumers</strong> — clients present their credentials via HTTP
+          headers, Basic auth, or even client ID only for simpler use cases.
+        </li>
+        <li>
+          <strong>Enforce quotas and rate limiting</strong> — set throttling (calls per second),
+          daily, and monthly quotas to control usage and prevent abuse.
+        </li>
+        <li>
+          <strong>Restrict access</strong> — limit which routes or services a key can access,
+          restrict by IP address, allowed/forbidden paths, or HTTP methods (e.g. read-only mode).
+        </li>
+        <li>
+          <strong>Manage lifecycle</strong> — enable or disable keys instantly, set expiration
+          dates, and rotate secrets automatically with a configurable grace period.
+        </li>
+        <li>
+          <strong>Track and audit usage</strong> — monitor consumption in real time, track remaining
+          quotas, and identify which consumer is responsible for each call.
+        </li>
+        <li>
+          <strong>Organize with metadata</strong> — tag and annotate keys with custom metadata for
+          easier management across teams and tenants.
+        </li>
+      </ul>
+      <p>Each API key can be scoped to specific routes, services, or groups.</p>
+    </InfoCollapse>
+  );
+}
+
 const ApiKeysConstants = {
   formSchema: (that) => ({
     _loc: {
@@ -762,6 +804,10 @@ const ApiKeysConstants = {
     curlCommandWithBasicAuth: {
       type: CurlCommandWithBasicAuth,
       props: { label: 'Curl Command with Basic Auth. Header', env: that.props.env },
+    },
+    apikeyBearer: {
+      type: ApikeyBearer,
+      props: { label: 'Curl Command with Apikey header as bearer', env: that.props.env },
     },
     clientName: {
       type: 'string',
@@ -1064,6 +1110,7 @@ export class ServiceApiKeysPage extends Component {
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+  onApis = window.location.pathname.indexOf('/bo/dashboard/apis') === 0;
 
   sidebarContent(name) {
     if (this.onRoutes) {
@@ -1073,6 +1120,8 @@ export class ServiceApiKeysPage extends Component {
           setSidebarContent={this.props.setSidebarContent}
         />
       );
+    } else if (this.onApis) {
+      return null;
     }
     return (
       <ServiceSidebar
@@ -1090,13 +1139,17 @@ export class ServiceApiKeysPage extends Component {
   componentDidMount() {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
-      : nextClient
-        .forEntityNext(nextClient.ENTITIES.SERVICES)
-        .findById(this.props.params.serviceId);
+      : this.onApis
+        ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
+        : nextClient
+          .forEntityNext(nextClient.ENTITIES.SERVICES)
+          .findById(this.props.params.serviceId);
+
     fu.then((service) => {
-      this.onRoutes
-        ? this.props.setTitle(this.props.title || `Routes Apikeys`)
-        : this.props.setTitle(`Service Apikeys`);
+      if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);
+      else if (this.onApis) this.props.setTitle(this.props.title || `APIs Apikeys`);
+      else this.props.setTitle(`Service Apikeys`);
+
       this.setState({ service, loading: false }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
         if (this.table) {
@@ -1111,7 +1164,7 @@ export class ServiceApiKeysPage extends Component {
 
   fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchApiKeysForPage(
-      this.props.params.serviceId || this.props.params.routeId
+      this.props.params.serviceId || this.props.params.routeId || this.props.params.apiId
     );
   };
 
@@ -1121,6 +1174,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.createApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -1132,6 +1186,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.updateApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -1140,6 +1195,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.deleteApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -1147,15 +1203,20 @@ export class ServiceApiKeysPage extends Component {
   render() {
     return (
       <Loader loading={this.state.loading}>
+        <InfoApikeysCollapse />
         <Table
           parentProps={this.props}
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
               `routes/${this.props.params.routeId}/apikeys`
-              : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
+              : this.onApis
+                ? `apis/${this.props.params.apiId}/apikeys`
+                : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
-          defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
+          defaultTitle={
+            this.onRoutes ? 'Route Apikeys' : this.onApis ? 'APIs Apikeys' : 'Service Apikeys'
+          }
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)
@@ -1163,10 +1224,15 @@ export class ServiceApiKeysPage extends Component {
               .then((apk) => ({
                 ...apk,
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-                authorizedEntities: [
-                  //...(this.state.service.groups || []).map((g) => 'group_' + g), // Here we authorize the group by default, can be dangerous
-                  `route_${this.props.params.routeId}`, // just authorize the route
-                ],
+                authorizedEntities: this.onRoutes
+                  ? [
+                    `route_${this.props.params.routeId}`, // just authorize the route
+                  ]
+                  : this.onApis
+                    ? [
+                      `api_${this.props.params.apiId}`, // just authorize the api
+                    ]
+                    : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
               }))
           }
           _defaultValue={() => ({
@@ -1204,7 +1270,10 @@ export class ServiceApiKeysPage extends Component {
             if (this.onRoutes) {
               this.props.history.push(
                 `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
-                // `/apikeys/edit/${item.clientId}`
+              );
+            } else if (this.onApis) {
+              this.props.history.push(
+                `/apis/${this.props.params.apiId}/apikeys/edit/${item.clientId}`
               );
             } else {
               this.props.history.push(
@@ -1215,6 +1284,8 @@ export class ServiceApiKeysPage extends Component {
           itemUrl={(i) => {
             if (this.onRoutes) {
               return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
+            } else if (this.onApis) {
+              return `/bo/dashboard/apis/${this.props.params.apiId}/apikeys/edit/${i.clientId}`;
             } else {
               return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
             }
@@ -1375,6 +1446,7 @@ export class ApiKeysPage extends Component {
 
     return (
       <Loader loading={this.state.loading}>
+        <InfoApikeysCollapse />
         <Table
           ref={this.ref}
           parentProps={this.props}

@@ -1,0 +1,39 @@
+---
+title: Get Otoroshi
+sidebar_label: "Get Otoroshi"
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
+
+# Get Otoroshi
+
+All release can be bound on the releases page of the [repository](https://github.com/MAIF/otoroshi/releases).
+
+## From zip
+
+<CodeBlock language="sh">
+{`# Download the latest version
+wget https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi-${version}.zip
+unzip ./otoroshi-${version}.zip
+cd otoroshi-${version}`}
+</CodeBlock>
+
+## From jar file
+
+<CodeBlock language="sh">
+{`# Download the latest version
+wget https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar`}
+</CodeBlock>
+
+## From Docker
+
+<CodeBlock language="sh">
+{`# Download the latest version
+docker pull maif/otoroshi:${version}-jdk11`}
+</CodeBlock>
+
+## From Sources
+
+To build Otoroshi from sources, just go to the [dev documentation](../dev.md)

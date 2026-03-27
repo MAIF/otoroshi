@@ -14,7 +14,7 @@ import { Separator } from './Separator';
 import deepSet from 'set-value';
 // import _ from 'lodash';
 
-class RestrictionPath extends Component {
+export class RestrictionPath extends Component {
   changeTheValue = (key, value) => {
     const arrayValue = [...this.props.value];
     const item = arrayValue[this.props.idx];

@@ -7,10 +7,10 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.ConfigFactory
 import next.models.{
-  ApiConsumerSubscriptionDataStore,
   ApiDataStore,
-  KvApiConsumerSubscriptionDataStore,
+  ApiSubscriptionDataStore,
   KvApiDataStore,
+  KvApiSubscriptionDataStore,
   KvRouteTemplateDataStore,
   RouteTemplateDataStore
 }
@@ -185,9 +185,9 @@ class GenericDataStores(
 
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore = new KvApiConsumerSubscriptionDataStore(redis, env)
+  private lazy val _apiSubscriptionDataStore = new KvApiSubscriptionDataStore(redis, env)
 
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
   private lazy val _routeTemplateDataStore = new KvRouteTemplateDataStore(redis, env)
 

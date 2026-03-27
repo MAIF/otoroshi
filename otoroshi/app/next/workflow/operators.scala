@@ -9,6 +9,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
 import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.util.Try
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {
@@ -1535,9 +1536,18 @@ class AddOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
-      case _             => 0.json
+    opts.select("values").asOpt[Seq[JsValue]] match {
+      case Some(values) =>
+        val numbers: Seq[BigDecimal] = values.map {
+          case JsNumber(n) => n
+          case JsString(s) =>
+            Try {
+              BigDecimal(s)
+            } recover { case _: NumberFormatException => BigDecimal(0) } get
+          case _           => BigDecimal(0)
+        }
+        JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b))
+      case _            => 0.json
     }
   }
 }
@@ -1576,9 +1586,18 @@ class SubtractOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))
-      case _             => 0.json
+    opts.select("values").asOpt[Seq[JsValue]] match {
+      case Some(values) =>
+        val numbers: Seq[BigDecimal] = values.map {
+          case JsNumber(n) => n
+          case JsString(s) =>
+            Try {
+              BigDecimal(s)
+            } recover { case _: NumberFormatException => BigDecimal(0) } get
+          case _           => BigDecimal(0)
+        }
+        JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b))
+      case _            => 0.json
     }
   }
 }
@@ -2568,37 +2587,50 @@ class MemRefOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator gets a value from the memory"
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-      "name" -> Json.obj(
+      "name"          -> Json.obj(
         "type"  -> "string",
         "label" -> "Memory Name"
       ),
-      "path" -> Json.obj(
+      "path"          -> Json.obj(
         "type"  -> "string",
         "label" -> "Memory Path",
         "props" -> Json.obj(
           "description" -> "Only useful if the variable is an object"
+        )
+      ),
+      "default_value" -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Default value",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "If value is not defined"
         )
       )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
-      "name" -> Json.obj(
+      "name"          -> Json.obj(
         "type"  -> "string",
         "label" -> "Memory Name"
       ),
-      "path" -> Json.obj(
+      "path"          -> Json.obj(
         "type"  -> "string",
         "label" -> "Memory Path",
         "help"  -> "Only useful if the variable is an object"
+      ),
+      "default_value" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Default value"
       )
     )
   )
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "$memref" -> Json.obj(
-        "name" -> "my_memory",
-        "path" -> "my_path"
+        "name"          -> "my_memory",
+        "path"          -> "my_path",
+        "default_value" -> ""
       )
     )
   )
@@ -2618,7 +2650,16 @@ class MemRefOperator extends WorkflowOperator {
         }
       }
     }
-    first.getOrElse(JsNull)
+
+    first match {
+      case Some(JsNull) =>
+        opts
+          .select("default_value")
+          .asOptString
+          .map(defaultValue => WorkflowOperator.processOperators(JsString(defaultValue), wfr, env))
+          .getOrElse(JsNull)
+      case v            => v.getOrElse(JsNull)
+    }
     // wfr.memory.get(name) match {
     //   case None                          => JsNull
     //   case Some(value) if path.isEmpty   => value

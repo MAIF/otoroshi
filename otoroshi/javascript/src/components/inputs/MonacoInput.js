@@ -1,11 +1,10 @@
 import MonacoEditor from '@monaco-editor/react';
-import React, {Component} from "react";
-import isEqual from "lodash/isEqual";
+import React, { Component } from 'react';
+import isEqual from 'lodash/isEqual';
 
 window.__support_monaco_input = window.__support_monaco_input || true;
 
 export class MonacoInput extends Component {
-
   state = {
     value: null,
     mounted: true,
@@ -78,9 +77,7 @@ export class MonacoInput extends Component {
         <label htmlFor={`input-${this.props.label}`} className="col-sm-2 col-form-label">
           {this.props.label}
         </label>
-        <div className='col-sm-10'>
-          {editor}
-        </div>
+        <div className="col-sm-10">{editor}</div>
       </div>
     );
   }

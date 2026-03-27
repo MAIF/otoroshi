@@ -382,6 +382,9 @@ class Env(
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
+  lazy val trailingSlashMeansExactSegments: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.router.trailingSlashMeansExactSegments").getOrElse(true)
+
   lazy val metricsEvery: FiniteDuration =
     configuration
       .getOptionalWithFileSupport[Long]("otoroshi.metrics.every")
@@ -1105,6 +1108,31 @@ class Env(
     // FastFuture.successful(())
   })
 
+  lazy val confJwksIncludeAlgorithms                               =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jwks.include-algorithms").getOrElse(true)
+  lazy val confJwksRsaAlgorithms: Seq[com.nimbusds.jose.Algorithm] =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.jwks.rsa-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(
+        Seq(
+          com.nimbusds.jose.JWSAlgorithm.RS256,
+          com.nimbusds.jose.JWSAlgorithm.RS384,
+          com.nimbusds.jose.JWSAlgorithm.RS512
+        )
+      )
+  lazy val confJwksEsAlgorithms: Seq[com.nimbusds.jose.Algorithm]  =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.jwks.es-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(
+        Seq(
+          com.nimbusds.jose.JWSAlgorithm.ES256,
+          com.nimbusds.jose.JWSAlgorithm.ES384,
+          com.nimbusds.jose.JWSAlgorithm.ES512
+        )
+      )
+
   lazy val port = getHttpPort.getOrElse(
     configuration
       .getOptionalWithFileSupport[Int]("play.server.http.port")
@@ -1278,7 +1306,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.12.0-dev"
+  lazy val otoroshiVersion    = "17.15.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 

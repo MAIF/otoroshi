@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import SimpleLoader from './SimpleLoader';
 import PageTitle from '../../components/PageTitle';
@@ -8,6 +7,7 @@ import { Form } from '../../components/inputs/Form';
 
 import { useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
+import { MAX_WIDTH } from './constants';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -53,78 +53,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
-            : props.onChange
-        }
-      />
-    </div>
-  );
-}
-
-function ApiDocumentationPlan(props) {
-  const flow = [
-    'id',
-    'name',
-    'description',
-    'throttling_quota',
-    'daily_quota',
-    'monthly_quota',
-    'consumer_id',
-    'tags',
-    'metadata',
-  ];
-  const schema = {
-    id: {
-      type: 'string',
-      props: { label: 'ID' },
-    },
-    name: {
-      type: 'string',
-      props: { label: 'Name' },
-    },
-    description: {
-      type: 'string',
-      props: { label: 'Description' },
-    },
-    throttling_quota: {
-      type: 'number',
-      props: { label: 'Throttling Quota', suffix: 'per window' },
-    },
-    daily_quota: {
-      type: 'number',
-      props: { label: 'Daily Quota', suffix: 'calls/day' },
-    },
-    monthly_quota: {
-      type: 'number',
-      props: { label: 'Monthly Quota', suffix: 'calls/month' },
-    },
-    consumer_id: {
-      type: 'string',
-      props: { label: 'Consumer Id' },
-    },
-    tags: {
-      type: 'array',
-      props: { label: 'tags' },
-    },
-    metadata: {
-      type: 'object',
-      props: { label: 'Metadata' },
-    },
-  };
-  return (
-    <div className="col-sm-12">
-      <Form
-        flow={flow}
-        schema={schema}
-        value={props.itemValue || props.value}
-        onChange={
-          props.itemValue
-            ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -161,9 +92,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -192,9 +123,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -229,9 +160,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -256,9 +187,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -268,13 +199,13 @@ function ApiDocumentationSidebar(props) {
 
 export function Documentation(props) {
   const [showJson, setShowJson] = useState(false);
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
   const [code, setCode] = useState('');
   const [newItem, setNewItem] = useState(null);
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && code === '') {
@@ -306,8 +237,6 @@ export function Documentation(props) {
     'footer',
     '>>>Banner',
     'banner',
-    '>>>Plans',
-    'plans',
     '>>>Redirections',
     'redirections',
     '>>>References',
@@ -382,15 +311,11 @@ export function Documentation(props) {
       type: ApiDocumentationResource,
       props: { label: 'Banner' },
     },
-    plans: {
-      type: 'array',
-      props: { component: ApiDocumentationPlan },
-    },
   };
 
   if (!item) return <SimpleLoader />;
   return (
-    <>
+    <div>
       <PageTitle title="Documentation" {...props}>
         <div className="btn-group" style={{ marginRight: 10 }}>
           <PillButton
@@ -399,50 +324,57 @@ export function Documentation(props) {
             leftText="Form"
             rightText="Json editor"
             onChange={() => {
-              setShowJson(!showJson)
+              setShowJson(!showJson);
               if (!showJson) {
-                setCode(JSON.stringify(newItem || {}, null, 2))
+                setCode(JSON.stringify(newItem || {}, null, 2));
               }
-            }} />
+            }}
+          />
         </div>
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-auto"
-          onPress={updateDoc}
-          text={
-            <div className="d-flex align-items-center">
-              Update <VersionBadge size="xs" />
-            </div>
-          }
-        />
+
+        {isDraft ? (
+          <FeedbackButton
+            type="success"
+            className="d-flex ms-auto"
+            onPress={updateDoc}
+            text={
+              <div className="d-flex align-items-center">
+                Update <VersionBadge size="xs" />
+              </div>
+            }
+          />
+        ) : null}
       </PageTitle>
-      {showJson && (
-        <MonacoEditor
-          height={window.innerHeight - 140}
-          width="100%"
-          theme="vs-dark"
-          defaultLanguage="json"
-          value={code}
-          options={{
-            automaticLayout: true,
-            selectOnLineNumbers: true,
-            minimap: { enabled: true },
-            lineNumbers: true,
-            glyphMargin: false,
-            folding: true,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 0,
-          }}
-          onChange={(newValue) => {
-            try {
-              setNewItem(JSON.parse(newValue));
-            } catch (e) { }
-          }}
-        />
-      )}
-      {!showJson && (
-        <Form flow={flow} schema={schema} value={newItem || {}} onChange={(e) => setNewItem(e)} />
-      )}
-    </>
+
+      <div style={{ maxWidth: MAX_WIDTH }}>
+        {showJson && (
+          <MonacoEditor
+            height={window.innerHeight - 140}
+            width="100%"
+            theme="vs-dark"
+            defaultLanguage="json"
+            value={code}
+            options={{
+              automaticLayout: true,
+              selectOnLineNumbers: true,
+              minimap: { enabled: true },
+              lineNumbers: true,
+              glyphMargin: false,
+              folding: true,
+              lineDecorationsWidth: 0,
+              lineNumbersMinChars: 0,
+            }}
+            onChange={(newValue) => {
+              try {
+                setNewItem(JSON.parse(newValue));
+              } catch (e) {}
+            }}
+          />
+        )}
+        {!showJson && (
+          <Form flow={flow} schema={schema} value={newItem || {}} onChange={(e) => setNewItem(e)} />
+        )}
+      </div>
+    </div>
   );
 }

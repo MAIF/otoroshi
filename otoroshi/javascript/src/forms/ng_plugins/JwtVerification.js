@@ -20,6 +20,11 @@ export default {
     custom_response_body: {
       type: 'code',
       label: 'Custom error body',
+      props: {
+        ngOptions: {
+          spread: true,
+        },
+      },
     },
     verifiers: {
       label: 'Chain of verifiers',

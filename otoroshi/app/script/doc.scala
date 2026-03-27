@@ -335,6 +335,7 @@ class PluginDocumentationGenerator(docPath: String) {
       (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames ++ handlerNames).distinct
         .filterNot(_ == "otoroshi.next.plugins.WasmJob")
         .filterNot(_ == "otoroshi.next.workflow.WorkflowJob")
+        .filterNot(_ == "otoroshi.next.catalogs.RemoteCatalogJob")
     val contents: Seq[String] = plugins
       .map { pl =>
         this.getClass.getClassLoader.loadClass(pl).newInstance()
