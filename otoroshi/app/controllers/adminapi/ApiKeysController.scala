@@ -846,11 +846,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
           )
           val strategy = env.rateLimiter.getOrCreate(
             clientId,
-            ctx.request.some,
             TypedMap.empty,
-            None,
-            ctx.apiKey.some,
-            None,
             apiKey.throttlingStrategy
           )
           strategy.quotas(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
@@ -873,11 +869,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
           )
           val strategy = env.rateLimiter.getOrCreate(
             clientId,
-            ctx.request.some,
             TypedMap.empty,
-            None,
-            ctx.apiKey.some,
-            None,
             apiKey.throttlingStrategy
           )
           strategy.reset(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))

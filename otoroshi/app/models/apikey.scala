@@ -2387,11 +2387,7 @@ object ApiKeyHelper {
             }
             val strategy = env.rateLimiter.getOrCreate(
               apikey.clientId,
-              req = req.some,
               attrs = attrs,
-              route = route,
-              apiKey = apikey.some,
-              user = None,
               throttlingStrategy = apikey.throttlingStrategy
             )
             if (incrementQuotas) {

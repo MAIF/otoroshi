@@ -12,7 +12,7 @@ import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader, BetterSyntax}
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results.TooManyRequests
@@ -429,16 +429,11 @@ class LocalTokenBucket extends NgAccessValidator {
       .cachedConfig(internalName)(LocalTokensBucketStrategyConfig.format)
       .getOrElse(LocalTokensBucketStrategyConfig())
 
-    val key =
-      RateLimiterUtils.getKey(config.bucketKey, ctx.request.some, ctx.attrs, ctx.route.some, ctx.apikey, ctx.user)
+    val key = config.bucketKey.evaluateEl(ctx.attrs)
 
     val strategy = env.rateLimiter.getOrCreate(
       key,
-      req = ctx.request.some,
       attrs = ctx.attrs,
-      route = ctx.route.some,
-      apiKey = ctx.apikey,
-      user = ctx.user,
       throttlingStrategy = config.some
     )
 
@@ -485,23 +480,11 @@ class FixedWindow extends NgAccessValidator {
       .cachedConfig(internalName)(FixedWindowStrategyConfig.format)
       .getOrElse(FixedWindowStrategyConfig())
 
-    val key =
-      RateLimiterUtils.getKey(
-        config.bucketKey.getOrElse(""),
-        ctx.request.some,
-        ctx.attrs,
-        ctx.route.some,
-        ctx.apikey,
-        ctx.user
-      )
+    val key = config.bucketKey.getOrElse("").evaluateEl(ctx.attrs)
 
     val strategy = env.rateLimiter.getOrCreate(
       key,
-      req = ctx.request.some,
       attrs = ctx.attrs,
-      route = ctx.route.some,
-      apiKey = ctx.apikey,
-      user = ctx.user,
       throttlingStrategy = config.some
     )
 
@@ -630,8 +613,8 @@ object Quota {
 }
 
 trait ThrottlingStrategy {
-  def throttlingKey(name: String)(implicit env: Env): String =
-    s"${env.storageRoot}:ratelimiter:quotas:window:$name"
+  def throttlingKey(isApikey: Boolean, name: String)(implicit env: Env): String =
+    s"${env.storageRoot}:${if (isApikey) "apikey" else "ratelimiter"}:quotas:window:$name"
 
   def dailyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:daily:$name"
@@ -870,29 +853,6 @@ object ThrottlingStrategy {
   def default(clientId: String) = LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig())
 }
 
-object RateLimiterUtils {
-  def getKey(
-      key: String,
-      req: Option[RequestHeader] = None,
-      attrs: TypedMap,
-      route: Option[NgRoute] = None,
-      apiKey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
-  )(implicit env: Env) = {
-    GlobalExpressionLanguage.apply(
-      value = key,
-      req = req.orElse(attrs.get(otoroshi.plugins.Keys.RequestKey)),
-      service = None,
-      route = route.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey)),
-      apiKey = apiKey.orElse(attrs.get(otoroshi.plugins.Keys.ApiKeyKey)),
-      user = user.orElse(attrs.get(otoroshi.plugins.Keys.UserKey)),
-      context = attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-      attrs = attrs,
-      env = env
-    )
-  }
-}
-
 class RateLimiter(env: Env) {
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -900,15 +860,10 @@ class RateLimiter(env: Env) {
 
   def getOrCreate(
       value: String,
-      req: Option[RequestHeader] = None,
       attrs: TypedMap,
-      route: Option[NgRoute] = None,
-      apiKey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None,
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
-
-    val key = RateLimiterUtils.getKey(value, req, attrs, route, apiKey, user)(env)
+    val key = value.evaluateEl(attrs)(env)
 
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)
