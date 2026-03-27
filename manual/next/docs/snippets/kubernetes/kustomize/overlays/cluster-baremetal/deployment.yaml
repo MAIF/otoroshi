@@ -23,7 +23,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:17.6.0-dev
+      - image: maif/otoroshi:17.14.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -184,23 +184,23 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-worker-deployment
-    replicas: 2
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       restartPolicy: Always   
       containers:
-      - image: maif/otoroshi:17.6.0-dev
+      - image: maif/otoroshi:16.20.1-dev-dev
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:

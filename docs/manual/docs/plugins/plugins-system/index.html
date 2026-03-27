@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-plugins/plugins-system" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.9.2">
+<title data-rh="true">Otoroshi plugin system | Otoroshi</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://maif.github.io/otoroshi/manual/img/otoroshi-social-card.png"><meta data-rh="true" name="twitter:image" content="https://maif.github.io/otoroshi/manual/img/otoroshi-social-card.png"><meta data-rh="true" property="og:url" content="https://maif.github.io/otoroshi/manual/docs/plugins/plugins-system"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Otoroshi plugin system | Otoroshi"><meta data-rh="true" name="description" content="Otoroshi has an extensible plugin system that lets you customize every aspect of request processing. Plugins are Scala classes that implement one or more plugin traits. They are loaded from the classpath and can be attached to any route."><meta data-rh="true" property="og:description" content="Otoroshi has an extensible plugin system that lets you customize every aspect of request processing. Plugins are Scala classes that implement one or more plugin traits. They are loaded from the classpath and can be attached to any route."><link data-rh="true" rel="icon" href="/otoroshi/manual/img/favicon.png"><link data-rh="true" rel="canonical" href="https://maif.github.io/otoroshi/manual/docs/plugins/plugins-system"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/manual/docs/plugins/plugins-system" hreflang="en"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/manual/docs/plugins/plugins-system" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Plugins","item":"https://maif.github.io/otoroshi/manual/docs/plugins"},{"@type":"ListItem","position":2,"name":"Plugin System","item":"https://maif.github.io/otoroshi/manual/docs/plugins/plugins-system"}]}</script><link rel="alternate" type="application/rss+xml" href="/otoroshi/manual/blog/rss.xml" title="Otoroshi RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/otoroshi/manual/blog/atom.xml" title="Otoroshi Atom Feed"><link rel="stylesheet" href="/otoroshi/manual/assets/css/styles.35332c2c.css">
+<script src="/otoroshi/manual/assets/js/runtime~main.c00f22b6.js" defer="defer"></script>
+<script src="/otoroshi/manual/assets/js/main.8240997b.js" defer="defer"></script>
+</head>
+<body class="navigation-with-keyboard">
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const n=new URLSearchParams(window.location.search).entries();for(var[t,e]of n)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}(),document.documentElement.setAttribute("data-announcement-bar-initially-dismissed",function(){try{return"true"===localStorage.getItem("docusaurus.announcement.dismiss")}catch(t){}return!1}())</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><div class="theme-announcement-bar announcementBar_mb4j" style="background-color:#f9b000;color:#1b1b1d" role="banner"><div class="announcementBarPlaceholder_vyr4"></div><div class="content_knG7 announcementBarContent_xLdY">If you like Otoroshi, give it a <a target="_blank" rel="noopener noreferrer" href="https://github.com/MAIF/otoroshi">star on GitHub</a>!</div><button type="button" aria-label="Close" class="clean-btn close closeButton_CVFx announcementBarClose_gvF7"><svg viewBox="0 0 15 15" width="14" height="14"><g stroke="currentColor" stroke-width="3.1"><path d="M.75.75l13.5 13.5M14.25.75L.75 14.25"></path></g></svg></button></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/otoroshi/manual/"><div class="navbar__logo"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Otoroshi</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/otoroshi/manual/docs/">Documentation</a><a class="navbar__item navbar__link" href="/otoroshi/manual/api-reference">API Reference</a><a class="navbar__item navbar__link" href="/otoroshi/manual/blog">Blog</a><a class="navbar__item navbar__link" href="/otoroshi/manual/ecosystem">Ecosystem</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG menuWithAnnouncementBar_GW3s"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/"><span title="Overview" class="linkLabel_WmDU">Overview</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/about"><span title="About Otoroshi" class="linkLabel_WmDU">About Otoroshi</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/architecture"><span title="Architecture" class="linkLabel_WmDU">Architecture</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/features"><span title="Features" class="linkLabel_WmDU">Features</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/getting-started"><span title="Getting Started" class="linkLabel_WmDU">Getting Started</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/install"><span title="Installation" class="categoryLinkLabel_W154">Installation</span></a><button aria-label="Expand sidebar category &#x27;Installation&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/entities"><span title="Main Entities" class="categoryLinkLabel_W154">Main Entities</span></a><button aria-label="Expand sidebar category &#x27;Main Entities&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/topics"><span title="Detailed Topics" class="categoryLinkLabel_W154">Detailed Topics</span></a><button aria-label="Expand sidebar category &#x27;Detailed Topics&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/recipes"><span title="Recipes" class="categoryLinkLabel_W154">Recipes</span></a><button aria-label="Expand sidebar category &#x27;Recipes&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/tutorials"><span title="Tutorials" class="categoryLinkLabel_W154">Tutorials</span></a><button aria-label="Expand sidebar category &#x27;Tutorials&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--active" href="/otoroshi/manual/docs/plugins"><span title="Plugins" class="categoryLinkLabel_W154">Plugins</span></a><button aria-label="Collapse sidebar category &#x27;Plugins&#x27;" aria-expanded="true" type="button" class="clean-btn menu__caret"></button></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/otoroshi/manual/docs/plugins/plugins-system"><span title="Plugin System" class="linkLabel_WmDU">Plugin System</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/plugins/create-plugins"><span title="Create Plugins" class="linkLabel_WmDU">Create Plugins</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/plugins/built-in-plugins"><span title="Built-in Plugins" class="linkLabel_WmDU">Built-in Plugins</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/deploy"><span title="Deploy to Production" class="categoryLinkLabel_W154">Deploy to Production</span></a><button aria-label="Expand sidebar category &#x27;Deploy to Production&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/api"><span title="Admin REST API" class="linkLabel_WmDU">Admin REST API</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/dev"><span title="Developing Otoroshi" class="linkLabel_WmDU">Developing Otoroshi</span></a></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/otoroshi/manual/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/otoroshi/manual/docs/plugins"><span>Plugins</span></a></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Plugin System</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Otoroshi plugin system</h1></header>
+<p>Otoroshi has an extensible plugin system that lets you customize every aspect of request processing. Plugins are Scala classes that implement one or more plugin traits. They are loaded from the classpath and can be attached to any route.</p>
+<p>All plugin traits extend <code>NgPlugin</code>, which itself extends <code>StartableAndStoppable</code>, <code>NgNamedPlugin</code>, and <code>InternalEventListener</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="plugin-lifecycle-steps">Plugin lifecycle steps<a href="#plugin-lifecycle-steps" class="hash-link" aria-label="Direct link to Plugin lifecycle steps" title="Direct link to Plugin lifecycle steps" translate="no">​</a></h2>
+<p>Each plugin declares which steps of the request lifecycle it participates in via the <code>steps</code> method. The proxy engine executes plugins in the following order:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Step</th><th>Trait</th><th>Description</th></tr></thead><tbody><tr><td><code>MatchRoute</code></td><td><code>NgRouteMatcher</code></td><td>Additional matching logic after the router selects a route. Can reject a route match based on custom criteria</td></tr><tr><td><code>PreRoute</code></td><td><code>NgPreRouting</code></td><td>Runs before access validation. Used to extract values (custom API keys, tokens, etc.) and store them in the request attributes for downstream plugins</td></tr><tr><td><code>ValidateAccess</code></td><td><code>NgAccessValidator</code></td><td>Decides whether the request is allowed to proceed. Returns <code>NgAllowed</code> or <code>NgDenied(result)</code></td></tr><tr><td><code>TransformRequest</code></td><td><code>NgRequestTransformer</code></td><td>Transforms the outgoing request to the backend (headers, body, URL). Can also short-circuit with a direct response</td></tr><tr><td><code>CallBackend</code></td><td><code>NgBackendCall</code></td><td>Replaces or wraps the default backend call. Used for custom backends (static responses, mock servers, protocol bridges)</td></tr><tr><td><code>TransformResponse</code></td><td><code>NgRequestTransformer</code></td><td>Transforms the response from the backend before sending it to the client</td></tr><tr><td><code>HandlesTunnel</code></td><td><code>NgTunnelHandler</code></td><td>Handles WebSocket tunnel connections</td></tr><tr><td><code>HandlesRequest</code></td><td><code>NgBackendCall</code></td><td>Handles the full request (alternative to <code>CallBackend</code>)</td></tr><tr><td><code>Sink</code></td><td><code>NgRequestSink</code></td><td>Catches requests that did not match any route</td></tr><tr><td><code>Router</code></td><td><code>NgRouter</code></td><td>Custom routing logic (replaces the default router)</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="plugin-metadata">Plugin metadata<a href="#plugin-metadata" class="hash-link" aria-label="Direct link to Plugin metadata" title="Direct link to Plugin metadata" translate="no">​</a></h2>
+<p>Every plugin must declare the following metadata through the <code>NgNamedPlugin</code> trait:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>name</code></td><td><code>String</code></td><td>Human-readable name displayed in the UI</td></tr><tr><td><code>description</code></td><td><code>Option[String]</code></td><td>Short description of what the plugin does</td></tr><tr><td><code>visibility</code></td><td><code>NgPluginVisibility</code></td><td><code>NgUserLand</code> (visible in UI) or <code>NgInternal</code> (hidden, used internally)</td></tr><tr><td><code>categories</code></td><td><code>Seq[NgPluginCategory]</code></td><td>One or more categories for organizing plugins in the UI</td></tr><tr><td><code>steps</code></td><td><code>Seq[NgStep]</code></td><td>Which lifecycle steps this plugin participates in</td></tr><tr><td><code>defaultConfigObject</code></td><td><code>Option[NgPluginConfig]</code></td><td>Default configuration object. Return <code>None</code> if the plugin has no configuration</td></tr><tr><td><code>multiInstance</code></td><td><code>Boolean</code></td><td>Whether the plugin can be added multiple times to the same route (default: <code>true</code>)</td></tr><tr><td><code>noJsForm</code></td><td><code>Boolean</code></td><td>If <code>true</code>, the UI will not generate a form from the config schema (default: <code>false</code>)</td></tr><tr><td><code>configFlow</code></td><td><code>Seq[String]</code></td><td>Ordered list of config field names for the UI form layout</td></tr><tr><td><code>configSchema</code></td><td><code>Option[JsObject]</code></td><td>JSON schema describing each config field for the UI form</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="plugin-categories">Plugin categories<a href="#plugin-categories" class="hash-link" aria-label="Direct link to Plugin categories" title="Direct link to Plugin categories" translate="no">​</a></h2>
+<p>Categories help organize plugins in the Otoroshi UI:</p>
+<p><code>AccessControl</code>, <code>Authentication</code>, <code>Classic</code>, <code>Custom</code>, <code>Experimental</code>, <code>Headers</code>, <code>Integrations</code>, <code>Logging</code>, <code>Monitoring</code>, <code>Other</code>, <code>Security</code>, <code>ServiceDiscovery</code>, <code>TrafficControl</code>, <code>Transformations</code>, <code>Tunnel</code>, <code>Wasm</code>, <code>Websocket</code></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="plugin-types-reference">Plugin types reference<a href="#plugin-types-reference" class="hash-link" aria-label="Direct link to Plugin types reference" title="Direct link to Plugin types reference" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngprerouting">NgPreRouting<a href="#ngprerouting" class="hash-link" aria-label="Direct link to NgPreRouting" title="Direct link to NgPreRouting" translate="no">​</a></h3>
+<p>Runs before access validation. Typically used to extract custom credentials or enrich the request context.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgPreRouting </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> preRoute</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgPreRoutingContext</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgPreRoutingError</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> Done</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p><strong>Context</strong> (<code>NgPreRoutingContext</code>):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>snowflake</code></td><td><code>String</code></td><td>Unique request ID</td></tr><tr><td><code>request</code></td><td><code>RequestHeader</code></td><td>The incoming Play request</td></tr><tr><td><code>route</code></td><td><code>NgRoute</code></td><td>The matched route</td></tr><tr><td><code>config</code></td><td><code>JsValue</code></td><td>Plugin configuration (merged default + instance)</td></tr><tr><td><code>globalConfig</code></td><td><code>JsValue</code></td><td>Global Otoroshi configuration</td></tr><tr><td><code>attrs</code></td><td><code>TypedMap</code></td><td>Shared attributes map (read/write)</td></tr></tbody></table>
+<p><strong>Return</strong>: <code>Right(Done)</code> to continue, <code>Left(NgPreRoutingError)</code> to short-circuit with an error response.</p>
+<p>A synchronous variant is available via <code>preRouteSync</code>. Set <code>isPreRouteAsync = false</code> when using the synchronous variant for better performance.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngaccessvalidator">NgAccessValidator<a href="#ngaccessvalidator" class="hash-link" aria-label="Direct link to NgAccessValidator" title="Direct link to NgAccessValidator" translate="no">​</a></h3>
+<p>Validates whether a request is allowed to proceed.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgAccessValidator </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> access</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgAccessContext</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgAccess</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p><strong>Context</strong> (<code>NgAccessContext</code>):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>snowflake</code></td><td><code>String</code></td><td>Unique request ID</td></tr><tr><td><code>request</code></td><td><code>RequestHeader</code></td><td>The incoming Play request</td></tr><tr><td><code>route</code></td><td><code>NgRoute</code></td><td>The matched route</td></tr><tr><td><code>user</code></td><td><code>Option[PrivateAppsUser]</code></td><td>Authenticated user (if any)</td></tr><tr><td><code>apikey</code></td><td><code>Option[ApiKey]</code></td><td>API key (if any)</td></tr><tr><td><code>config</code></td><td><code>JsValue</code></td><td>Plugin configuration</td></tr><tr><td><code>globalConfig</code></td><td><code>JsValue</code></td><td>Global Otoroshi configuration</td></tr><tr><td><code>attrs</code></td><td><code>TypedMap</code></td><td>Shared attributes map</td></tr></tbody></table>
+<p><strong>Return</strong>: <code>NgAccess.NgAllowed</code> or <code>NgAccess.NgDenied(result)</code>.</p>
+<p>The context provides a helper <code>deniedAccess(status, message)</code> to craft a properly formatted error response.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngrequesttransformer">NgRequestTransformer<a href="#ngrequesttransformer" class="hash-link" aria-label="Direct link to NgRequestTransformer" title="Direct link to NgRequestTransformer" translate="no">​</a></h3>
+<p>Transforms requests and responses. This is the most versatile plugin type.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgRequestTransformer </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> transformRequest</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgTransformerRequestContext</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> mat</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Materializer</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Result</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> NgPluginHttpRequest</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> transformResponse</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgTransformerResponseContext</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> mat</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Materializer</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Result</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> NgPluginHttpResponse</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> transformError</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgTransformerErrorContext</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> mat</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Materializer</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgPluginHttpResponse</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> beforeRequest</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgBeforeRequestContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> mat</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Materializer</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token builtin">Unit</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> afterRequest</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgAfterRequestContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> mat</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Materializer</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token builtin">Unit</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p><strong>Performance flags</strong> (override to <code>false</code> when not needed):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Flag</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>usesCallbacks</code></td><td><code>true</code></td><td>Set to <code>false</code> if you don&#x27;t use <code>beforeRequest</code>/<code>afterRequest</code></td></tr><tr><td><code>transformsRequest</code></td><td><code>true</code></td><td>Set to <code>false</code> if you only transform responses</td></tr><tr><td><code>transformsResponse</code></td><td><code>true</code></td><td>Set to <code>false</code> if you only transform requests</td></tr><tr><td><code>transformsError</code></td><td><code>true</code></td><td>Set to <code>false</code> if you don&#x27;t handle errors</td></tr></tbody></table>
+<p><strong>Request context</strong> (<code>NgTransformerRequestContext</code>):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>rawRequest</code></td><td><code>NgPluginHttpRequest</code></td><td>The original unmodified request</td></tr><tr><td><code>otoroshiRequest</code></td><td><code>NgPluginHttpRequest</code></td><td>The request as modified by previous plugins</td></tr><tr><td><code>snowflake</code></td><td><code>String</code></td><td>Unique request ID</td></tr><tr><td><code>route</code></td><td><code>NgRoute</code></td><td>The matched route</td></tr><tr><td><code>apikey</code></td><td><code>Option[ApiKey]</code></td><td>API key (if any)</td></tr><tr><td><code>user</code></td><td><code>Option[PrivateAppsUser]</code></td><td>Authenticated user (if any)</td></tr><tr><td><code>request</code></td><td><code>RequestHeader</code></td><td>The incoming Play request</td></tr><tr><td><code>config</code></td><td><code>JsValue</code></td><td>Plugin configuration</td></tr><tr><td><code>attrs</code></td><td><code>TypedMap</code></td><td>Shared attributes map</td></tr></tbody></table>
+<p><strong>Return</strong>: <code>Right(modifiedRequest)</code> to continue, <code>Left(result)</code> to short-circuit and return a response directly to the client.</p>
+<p>Synchronous variants are available (<code>transformRequestSync</code>, <code>transformResponseSync</code>). Set <code>isTransformRequestAsync = false</code> or <code>isTransformResponseAsync = false</code> when using them.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngbackendcall">NgBackendCall<a href="#ngbackendcall" class="hash-link" aria-label="Direct link to NgBackendCall" title="Direct link to NgBackendCall" translate="no">​</a></h3>
+<p>Replaces or wraps the default HTTP call to the backend. Useful for mock backends, protocol translation, or custom logic.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgBackendCall </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> useDelegates</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token builtin">Boolean</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> callBackend</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgbBackendCallContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    delegates</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">(</span><span class="token punctuation" style="color:#393A34">)</span><span class="token plain"> </span><span class="token keyword" style="color:#00009f">=&gt;</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgProxyEngineError</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> BackendCallResponse</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> mat</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Materializer</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgProxyEngineError</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> BackendCallResponse</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p>When <code>useDelegates</code> is <code>true</code>, the <code>delegates</code> function calls the next backend plugin or the default HTTP backend. When <code>false</code>, the default backend is never called.</p>
+<p>Helper methods are available on the trait:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>Description</th></tr></thead><tbody><tr><td><code>inMemoryBodyResponse(status, headers, body: ByteString)</code></td><td>Create a response from an in-memory body</td></tr><tr><td><code>sourceBodyResponse(status, headers, body: Source[ByteString, _])</code></td><td>Create a response from a streaming body</td></tr><tr><td><code>emptyBodyResponse(status, headers)</code></td><td>Create a response with no body</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngroutematcher">NgRouteMatcher<a href="#ngroutematcher" class="hash-link" aria-label="Direct link to NgRouteMatcher" title="Direct link to NgRouteMatcher" translate="no">​</a></h3>
+<p>Additional matching logic run after the router selects a route candidate.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgRouteMatcher </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> matches</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgRouteMatcherContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token builtin">Boolean</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p>Return <code>true</code> if the route should be used, <code>false</code> to reject it and try the next route candidate.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngrequestsink">NgRequestSink<a href="#ngrequestsink" class="hash-link" aria-label="Direct link to NgRequestSink" title="Direct link to NgRequestSink" translate="no">​</a></h3>
+<p>Catches requests that did not match any route.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgRequestSink </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> matches</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgRequestSinkContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token builtin">Boolean</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> handle</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgRequestSinkContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Result</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p><code>matches</code> determines if this sink should handle the request. If multiple sinks match, the first one wins.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngtunnelhandler">NgTunnelHandler<a href="#ngtunnelhandler" class="hash-link" aria-label="Direct link to NgTunnelHandler" title="Direct link to NgTunnelHandler" translate="no">​</a></h3>
+<p>Handles WebSocket tunnel connections. Extends <code>NgAccessValidator</code> to control access before establishing the tunnel.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgTunnelHandler </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token keyword" style="color:#00009f">with</span><span class="token plain"> NgAccessValidator </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> handle</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgTunnelHandlerContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Flow</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Message</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> Message</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> _</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngwebsocketplugin">NgWebsocketPlugin<a href="#ngwebsocketplugin" class="hash-link" aria-label="Direct link to NgWebsocketPlugin" title="Direct link to NgWebsocketPlugin" translate="no">​</a></h3>
+<p>Intercepts and transforms WebSocket messages on an established connection.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgWebsocketPlugin </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> onRequestMessage</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgWebsocketPluginContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> message</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> WebsocketMessage</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgWebsocketError</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> WebsocketMessage</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> onResponseMessage</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgWebsocketPluginContext</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> message</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> WebsocketMessage</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Future</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">Either</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgWebsocketError</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> WebsocketMessage</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p>Set <code>onRequestFlow</code> and/or <code>onResponseFlow</code> to <code>true</code> to enable interception on each direction.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngwebsocketbackendplugin">NgWebsocketBackendPlugin<a href="#ngwebsocketbackendplugin" class="hash-link" aria-label="Direct link to NgWebsocketBackendPlugin" title="Direct link to NgWebsocketBackendPlugin" translate="no">​</a></h3>
+<p>Provides a custom WebSocket backend (replaces the default WebSocket proxy to the backend target).</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgWebsocketBackendPlugin </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> callBackend</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgWebsocketPluginContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Flow</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">PlayWSMessage</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> PlayWSMessage</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> _</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngrouter">NgRouter<a href="#ngrouter" class="hash-link" aria-label="Direct link to NgRouter" title="Direct link to NgRouter" translate="no">​</a></h3>
+<p>Provides entirely custom routing logic. Replaces the default Otoroshi router.</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token keyword" style="color:#00009f">trait</span><span class="token plain"> NgRouter </span><span class="token keyword" style="color:#00009f">extends</span><span class="token plain"> NgPlugin </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token keyword" style="color:#00009f">def</span><span class="token plain"> findRoute</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">ctx</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> NgRouterContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token keyword" style="color:#00009f">implicit</span><span class="token plain"> env</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Env</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> ec</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> ExecutionContext</span><span class="token punctuation" style="color:#393A34">)</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> Option</span><span class="token punctuation" style="color:#393A34">[</span><span class="token plain">NgMatchedRoute</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="http-request-and-response-models">HTTP request and response models<a href="#http-request-and-response-models" class="hash-link" aria-label="Direct link to HTTP request and response models" title="Direct link to HTTP request and response models" translate="no">​</a></h2>
+<p>Plugins work with <code>NgPluginHttpRequest</code> and <code>NgPluginHttpResponse</code> instead of raw Play objects. These are mutable-friendly case classes that represent the HTTP message flowing through the proxy.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngpluginhttprequest">NgPluginHttpRequest<a href="#ngpluginhttprequest" class="hash-link" aria-label="Direct link to NgPluginHttpRequest" title="Direct link to NgPluginHttpRequest" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>url</code></td><td><code>String</code></td><td>Full URL</td></tr><tr><td><code>method</code></td><td><code>String</code></td><td>HTTP method</td></tr><tr><td><code>headers</code></td><td><code>Map[String, String]</code></td><td>Request headers</td></tr><tr><td><code>cookies</code></td><td><code>Seq[WSCookie]</code></td><td>Request cookies</td></tr><tr><td><code>version</code></td><td><code>String</code></td><td>HTTP version</td></tr><tr><td><code>clientCertificateChain</code></td><td><code>() =&gt; Option[Seq[X509Certificate]]</code></td><td>Client TLS certificate chain (lazy)</td></tr><tr><td><code>body</code></td><td><code>Source[ByteString, _]</code></td><td>Request body as a streaming source</td></tr><tr><td><code>backend</code></td><td><code>Option[NgTarget]</code></td><td>Selected backend target</td></tr></tbody></table>
+<p>Useful computed fields: <code>path</code>, <code>host</code>, <code>queryString</code>, <code>queryParams</code>, <code>contentType</code>, <code>contentLength</code>, <code>hasBody</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="ngpluginhttpresponse">NgPluginHttpResponse<a href="#ngpluginhttpresponse" class="hash-link" aria-label="Direct link to NgPluginHttpResponse" title="Direct link to NgPluginHttpResponse" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>status</code></td><td><code>Int</code></td><td>HTTP status code</td></tr><tr><td><code>headers</code></td><td><code>Map[String, String]</code></td><td>Response headers</td></tr><tr><td><code>cookies</code></td><td><code>Seq[WSCookie]</code></td><td>Response cookies</td></tr><tr><td><code>body</code></td><td><code>Source[ByteString, _]</code></td><td>Response body as a streaming source</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="configuration-caching">Configuration caching<a href="#configuration-caching" class="hash-link" aria-label="Direct link to Configuration caching" title="Direct link to Configuration caching" translate="no">​</a></h2>
+<p>All plugin contexts extend <code>NgCachedConfigContext</code>, which provides efficient configuration parsing with a 5-second TTL cache:</p>
+<div class="language-scala codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-scala codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token comment" style="color:#999988;font-style:italic">// Parse config using a Play JSON Reads (cached per route + plugin + index)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token keyword" style="color:#00009f">val</span><span class="token plain"> config </span><span class="token operator" style="color:#393A34">=</span><span class="token plain"> ctx</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">cachedConfig</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">internalName</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">MyConfig</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">format</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">getOrElse</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">MyConfig</span><span class="token punctuation" style="color:#393A34">(</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token comment" style="color:#999988;font-style:italic">// Parse config using a custom function (cached)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token keyword" style="color:#00009f">val</span><span class="token plain"> config </span><span class="token operator" style="color:#393A34">=</span><span class="token plain"> ctx</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">cachedConfigFn</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">internalName</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">json </span><span class="token keyword" style="color:#00009f">=&gt;</span><span class="token plain"> MyConfig</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">parse</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">json</span><span class="token punctuation" style="color:#393A34">)</span><span class="token punctuation" style="color:#393A34">)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token comment" style="color:#999988;font-style:italic">// Parse config without caching (re-parsed on every call)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token keyword" style="color:#00009f">val</span><span class="token plain"> config </span><span class="token operator" style="color:#393A34">=</span><span class="token plain"> ctx</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">rawConfig</span><span class="token punctuation" style="color:#393A34">(</span><span class="token plain">MyConfig</span><span class="token punctuation" style="color:#393A34">.</span><span class="token plain">format</span><span class="token punctuation" style="color:#393A34">)</span><br></span></code></pre></div></div>
+<p>Always prefer <code>cachedConfig</code> in hot paths for performance.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="related">Related<a href="#related" class="hash-link" aria-label="Direct link to Related" title="Direct link to Related" translate="no">​</a></h2>
+<ul>
+<li class=""><a class="" href="/otoroshi/manual/docs/plugins/create-plugins">Create plugins</a> - How to build, package, and deploy custom plugins</li>
+<li class=""><a class="" href="/otoroshi/manual/docs/plugins/built-in-plugins">Built-in plugins</a> - All built-in plugin references</li>
+<li class=""><a class="" href="/otoroshi/manual/docs/topics/admin-extensions">Admin extensions</a> - Extend Otoroshi with custom entities, routes, and UIs</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/MAIF/otoroshi/tree/master/manual/next/docs/plugins/plugins-system.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/otoroshi/manual/docs/plugins"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Overview</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/otoroshi/manual/docs/plugins/create-plugins"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Create Plugins</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#plugin-lifecycle-steps" class="table-of-contents__link toc-highlight">Plugin lifecycle steps</a></li><li><a href="#plugin-metadata" class="table-of-contents__link toc-highlight">Plugin metadata</a></li><li><a href="#plugin-categories" class="table-of-contents__link toc-highlight">Plugin categories</a></li><li><a href="#plugin-types-reference" class="table-of-contents__link toc-highlight">Plugin types reference</a><ul><li><a href="#ngprerouting" class="table-of-contents__link toc-highlight">NgPreRouting</a></li><li><a href="#ngaccessvalidator" class="table-of-contents__link toc-highlight">NgAccessValidator</a></li><li><a href="#ngrequesttransformer" class="table-of-contents__link toc-highlight">NgRequestTransformer</a></li><li><a href="#ngbackendcall" class="table-of-contents__link toc-highlight">NgBackendCall</a></li><li><a href="#ngroutematcher" class="table-of-contents__link toc-highlight">NgRouteMatcher</a></li><li><a href="#ngrequestsink" class="table-of-contents__link toc-highlight">NgRequestSink</a></li><li><a href="#ngtunnelhandler" class="table-of-contents__link toc-highlight">NgTunnelHandler</a></li><li><a href="#ngwebsocketplugin" class="table-of-contents__link toc-highlight">NgWebsocketPlugin</a></li><li><a href="#ngwebsocketbackendplugin" class="table-of-contents__link toc-highlight">NgWebsocketBackendPlugin</a></li><li><a href="#ngrouter" class="table-of-contents__link toc-highlight">NgRouter</a></li></ul></li><li><a href="#http-request-and-response-models" class="table-of-contents__link toc-highlight">HTTP request and response models</a><ul><li><a href="#ngpluginhttprequest" class="table-of-contents__link toc-highlight">NgPluginHttpRequest</a></li><li><a href="#ngpluginhttpresponse" class="table-of-contents__link toc-highlight">NgPluginHttpResponse</a></li></ul></li><li><a href="#configuration-caching" class="table-of-contents__link toc-highlight">Configuration caching</a></li><li><a href="#related" class="table-of-contents__link toc-highlight">Related</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Documentation</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/getting-started">Getting Started</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/entities">Main Entities</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/topics">Detailed Topics</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/tutorials">Tutorials</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/discussions" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub Discussions<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://stackoverflow.com/questions/tagged/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">Stack Overflow<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/releases" target="_blank" rel="noopener noreferrer" class="footer__link-item">Releases<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/orgs/MAIF/projects/20/views/1" target="_blank" rel="noopener noreferrer" class="footer__link-item">Roadmap<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://maif.github.io/" target="_blank" rel="noopener noreferrer" class="footer__link-item">MAIF Open Source<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Ecosystem</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/ecosystem">Otoroshi&#x27;s Ecosystem</a></li><li class="footer__item"><a href="https://maif.github.io/daikoku/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Daikoku<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://maif.github.io/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="MAIF OSS Logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="50" height="50"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="MAIF OSS Logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="50" height="50"></a></div><div class="footer__copyright">Copyright © 2026 #OSSbyMAIF. Built with Docusaurus.</div></div></div></footer></div>
+</body>
+</html>
