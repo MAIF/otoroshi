@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.14.0] - 2026-03-27
+
+
+https://github.com/MAIF/otoroshi/milestone/136?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.13.0...v17.14.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.14.0
+
+
+### Added 
+
+- Update remote catalog to scan organizations (#2449 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide more GitHub alternatives in remote catalogs providers (#2450 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support patterns in remote catalog descriptor files (#2452 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support `yaml` format for remote catalog descriptor files (#2453 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add mandatory flags on client certificate plugins (#2448 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `APIs`: Add mandatory flag on `OIDC JWT verification` (#2447 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support kubernetes like manifests in remote catalogs (#2454 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support PostgreSQL as a possible data exporter (#2459 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support path based read in expression language for deep structures like user profile (#2487 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Redis integration: add support for Sentinel passwords with the Lettuce driver (#2486 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Stringify complex structures in expression language path based read (#2491 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- rebuild documentation using docusaurus (#2495 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- tunnel handler plugins are not visible in the route designer (#2451 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Disable host validation for kafka data exporter when using Otoroshi mTLS settings (#2461 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Keep current scheme and port in the `Override Location header` plugin (#2488 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Cleanup path in the `Override Location header` plugin (#2489 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Mandatory flag broken in OIDCJwtVerifier plugin (#2506 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Mandatory flag broken in Apikeys plugin (#2507 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.13.0] - 2026-02-23
 
 
