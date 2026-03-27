@@ -860,18 +860,16 @@ export function PlanEditor(props) {
 
   return <div style={{ maxWidth: MAX_WIDTH }}>
     <PageTitle title={isNew ? 'New Plan' : plan.name} {...props}>
-      <DraftOnly>
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-2"
-          onPress={save}
-          text={
-            <div className="d-flex align-items-center">
-              {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
-            </div>
-          }
-        />
-      </DraftOnly>
+      <FeedbackButton
+        type="success"
+        className="d-flex ms-2"
+        onPress={save}
+        text={
+          <div className="d-flex align-items-center">
+            {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
+          </div>
+        }
+      />
     </PageTitle>
     <PlanForm plan={plan} onChange={setPlan} />
   </div>
