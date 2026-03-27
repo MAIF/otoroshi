@@ -613,8 +613,8 @@ object Quota {
 }
 
 trait ThrottlingStrategy {
-  def throttlingKey(isApikey: Boolean, name: String)(implicit env: Env): String =
-    s"${env.storageRoot}:${if (isApikey) "apikey" else "ratelimiter"}:quotas:window:$name"
+  def throttlingKey(name: String)(implicit env: Env): String =
+    s"${env.storageRoot}:ratelimiter:quotas:window:$name"
 
   def dailyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:daily:$name"
