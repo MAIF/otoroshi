@@ -118,7 +118,7 @@ case class NgHasClientCertMatchingValidatorConfig(
     regexIssuerDNs: Seq[String] = Seq.empty
 ) extends NgPluginConfig {
   override def json: JsValue = Json.obj(
-    "mandatory" -> mandatory,
+    "mandatory"         -> mandatory,
     "serial_numbers"    -> serialNumbers,
     "subject_dns"       -> subjectDNs,
     "issuer_dns"        -> issuerDNs,
@@ -175,15 +175,15 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
 
   override def access(context: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = context
-          .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
-          .getOrElse(NgHasClientCertMatchingValidatorConfig())
+      .cachedConfig(internalName)(NgHasClientCertMatchingValidatorConfig.format)
+      .getOrElse(NgHasClientCertMatchingValidatorConfig())
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
           SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectDN.getName), DN(cert.getIssuerDN.getName))
         )
       ) match {
-      case Some(certs) => {
+      case Some(certs)            => {
         if (
           certs.exists { cert =>
             config.serialNumbers.contains(cert.sn) ||
@@ -195,7 +195,7 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         ) {
           NgAccess.NgAllowed.vfuture
         } else {
-          forbidden(context)   
+          forbidden(context)
         }
       }
       case _ if config.mandatory  => forbidden(context)

@@ -51,7 +51,7 @@ export function publishAPI(draft, api, history) {
             ...draft.content,
             deployments: [],
           },
-          draftId: draft.id
+          draftId: draft.id,
         };
         fetchWrapperNext(
           `/${nextClient.ENTITIES.APIS}/${api.id}/deployments`,
@@ -73,74 +73,68 @@ export function publishAPI(draft, api, history) {
 }
 
 function DuplicateModal({ hide, api }) {
-  const history = useHistory()
-  const [value, setValue] = useState({ version: "", contextPath: "" })
+  const history = useHistory();
+  const [value, setValue] = useState({ version: '', contextPath: '' });
 
   const schema = {
     version: {
       type: 'string',
-      label: 'New version'
+      label: 'New version',
     },
     contextPath: {
       type: 'string',
       label: 'Context path',
-      placeholder: "/v1, /v2, etc"
-    }
-  }
-  const flow = ['contextPath', 'version']
+      placeholder: '/v1, /v2, etc',
+    },
+  };
+  const flow = ['contextPath', 'version'];
 
-  return <div className='wizard'>
-    <div className='wizard-container' style={{ padding: '1.5rem' }}>
-      <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
-        <Header title="Create a new version" />
-        <div className="wizard-content">
-          <NgForm
-            schema={schema}
-            flow={flow}
-            value={value}
-            onChange={setValue}
+  return (
+    <div className="wizard">
+      <div className="wizard-container" style={{ padding: '1.5rem' }}>
+        <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+          <Header title="Create a new version" />
+          <div className="wizard-content">
+            <NgForm schema={schema} flow={flow} value={value} onChange={setValue} />
+          </div>
+        </div>
+        <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+          <FeedbackButton
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              borderColor: 'var(--color-primary)',
+              padding: '12px 48px',
+            }}
+            disabled={value.version.length === 0 || value.contextPath.length === 0}
+            onPress={() => {
+              window
+                .newConfirm(
+                  'This will create a copy of this API with all its configuration. The new API will start in staging mode.',
+                  {
+                    title: 'Duplicate API',
+                    yesText: 'Duplicate',
+                  }
+                )
+                .then((ok) => {
+                  if (ok) {
+                    console.log('Duplicate API', api.id);
+                    duplicateAPI(api.id, value).then((res) => {
+                      console.log(res.id);
+                      if (res.id) history.push(`/apis/${res.id}`);
+                      else alert(res.error);
+                    });
+                  }
+                });
+              return Promise.resolve();
+            }}
+            onSuccess={hide}
+            icon={() => <i className="fas fa-paper-plane" />}
+            text="Copy to prod, then edit"
           />
         </div>
       </div>
-      <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
-        <FeedbackButton
-          style={{
-            backgroundColor: 'var(--color-primary)',
-            borderColor: 'var(--color-primary)',
-            padding: '12px 48px',
-          }}
-          disabled={value.version.length === 0 || value.contextPath.length === 0}
-          onPress={() => {
-            window
-              .newConfirm(
-                'This will create a copy of this API with all its configuration. The new API will start in staging mode.',
-                {
-                  title: 'Duplicate API',
-                  yesText: 'Duplicate',
-                }
-              )
-              .then((ok) => {
-                if (ok) {
-                  console.log('Duplicate API', api.id);
-                  duplicateAPI(api.id, value)
-                    .then(res => {
-                      console.log(res.id)
-                      if (res.id)
-                        history.push(`/apis/${res.id}`)
-                      else
-                        alert(res.error)
-                    })
-                }
-              })
-            return Promise.resolve()
-          }}
-          onSuccess={hide}
-          icon={() => <i className="fas fa-paper-plane" />}
-          text="Copy to prod, then edit"
-        />
-      </div>
     </div>
-  </div>
+  );
 }
 
 export function Actions(props) {
@@ -148,20 +142,17 @@ export function Actions(props) {
   const { draft, api, item, updateAPI, updateDraft } = useDraftOfAPI();
   const [previewStep, setPreviewStep] = useState(null);
 
-  const [duplicateModal, setDuplicateModal] = useState(false)
+  const [duplicateModal, setDuplicateModal] = useState(false);
 
   useEffect(() => {
     props.setTitle({
       value: 'Actions',
       noThumbtack: true,
-      children: <div
-        className='m-0 ms-2'
-        style={{ fontSize: '1rem' }}
-      >
-        <span className={`badge bg-xs bg-danger`}>
-          PROD
-        </span>
-      </div>,
+      children: (
+        <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
+          <span className={`badge bg-xs bg-danger`}>PROD</span>
+        </div>
+      ),
     });
   }, []);
 
@@ -184,21 +175,16 @@ export function Actions(props) {
             publishAPI(draft, api, history);
           } else {
             Promise.all([
-              updateDraft({ ...item, state: targetState, }),
-              updateAPI({ ...api, state: targetState, })
-            ])
-              .then(() => window.location.reload());
+              updateDraft({ ...item, state: targetState }),
+              updateAPI({ ...api, state: targetState }),
+            ]).then(() => window.location.reload());
           }
         }
       });
   };
 
   const exportJSON = () => {
-    const name = item.id
-      .replace(/ /g, '-')
-      .replace(/\(/g, '')
-      .replace(/\)/g, '')
-      .toLowerCase();
+    const name = item.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
     const json = JSON.stringify({ ...item, kind: 'apis.otoroshi.io/Api' }, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -210,14 +196,10 @@ export function Actions(props) {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
-  }
+  };
 
   const exportYAML = () => {
-    const name = item.id
-      .replace(/ /g, '-')
-      .replace(/\(/g, '')
-      .replace(/\)/g, '')
-      .toLowerCase();
+    const name = item.id.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
 
     fetch('/bo/api/json_to_yaml', {
       method: 'POST',
@@ -246,15 +228,14 @@ export function Actions(props) {
         a.click();
         setTimeout(() => document.body.removeChild(a), 300);
       });
-  }
+  };
 
   const stepMeta = LIFECYCLE_STEPS.find((s) => s.key === viewedState);
 
-  const isStaging = item.state === 'staging'
+  const isStaging = item.state === 'staging';
 
   return (
     <div className="actions-page mt-3" style={{ maxWidth: MAX_WIDTH }}>
-
       {duplicateModal && <DuplicateModal hide={() => setDuplicateModal(false)} api={api} />}
 
       {/* Lifecycle section */}
@@ -290,8 +271,13 @@ export function Actions(props) {
                   <div
                     className="actions-lifecycle-step-dot"
                     style={{
-                      borderColor: isCurrent || isPast || isViewed ? step.color : 'var(--bg-color_level3)',
-                      backgroundColor: isCurrent ? step.color : isViewed ? `${step.color}33` : 'transparent',
+                      borderColor:
+                        isCurrent || isPast || isViewed ? step.color : 'var(--bg-color_level3)',
+                      backgroundColor: isCurrent
+                        ? step.color
+                        : isViewed
+                          ? `${step.color}33`
+                          : 'transparent',
                     }}
                   >
                     {(isCurrent || isPast) && (
@@ -301,10 +287,7 @@ export function Actions(props) {
                       />
                     )}
                     {isViewed && !isCurrent && !isPast && (
-                      <i
-                        className="fas fa-eye"
-                        style={{ color: step.color, fontSize: '.6rem' }}
-                      />
+                      <i className="fas fa-eye" style={{ color: step.color, fontSize: '.6rem' }} />
                     )}
                   </div>
                   <span
@@ -342,7 +325,9 @@ export function Actions(props) {
               <ul className="actions-permissions-list">
                 {permissions.allowed.map((perm, i) => (
                   <li key={i} className="actions-permission-item actions-permission-item--allowed">
-                    <i className={`${perm.icon} actions-permission-icon actions-permission-icon--allowed`} />
+                    <i
+                      className={`${perm.icon} actions-permission-icon actions-permission-icon--allowed`}
+                    />
                     <span>{perm.text}</span>
                   </li>
                 ))}
@@ -358,7 +343,9 @@ export function Actions(props) {
               <ul className="actions-permissions-list">
                 {permissions.denied.map((perm, i) => (
                   <li key={i} className="actions-permission-item actions-permission-item--denied">
-                    <i className={`${perm.icon} actions-permission-icon actions-permission-icon--denied`} />
+                    <i
+                      className={`${perm.icon} actions-permission-icon actions-permission-icon--denied`}
+                    />
                     <span>{perm.text}</span>
                   </li>
                 ))}
@@ -367,107 +354,109 @@ export function Actions(props) {
           )}
         </div>
 
-        {!isStaging && <>
-          {/* Transition action cards */}
-          <div className="actions-general-actions">
-            {currentState === API_STATE.STAGING && (
-              <ActionCard
-                icon="fas fa-rocket"
-                title="Publish API"
-                description="Make your API fully available to clients in production"
-                onClick={() =>
-                  transitionTo(
-                    API_STATE.PUBLISHED,
-                    'Publishing makes your API fully available to clients. Clients will be able to subscribe and use it in production.',
-                    'Publish API',
-                    'Publish'
-                  )
-                }
-              />
-            )}
-
-            {currentState === API_STATE.PUBLISHED && (
-              <>
+        {!isStaging && (
+          <>
+            {/* Transition action cards */}
+            <div className="actions-general-actions">
+              {currentState === API_STATE.STAGING && (
                 <ActionCard
-                  icon="fas fa-exclamation-triangle"
-                  title="Deprecate API"
-                  description="Prevent new subscriptions while keeping existing traffic"
-                  color="hsla(40, 94%, 58%, 1)"
-                  onClick={() =>
-                    transitionTo(
-                      API_STATE.DEPRECATED,
-                      'Deprecating the API will prevent new access modes from subscribing. Existing subscriptions will continue to work.',
-                      'Deprecate API',
-                      'Deprecate'
-                    )
-                  }
-                />
-                <ActionCard
-                  icon="fas fa-times-circle"
-                  title="Close API"
-                  description="Shut down the API entirely — all traffic will be rejected"
-                  color="hsla(0, 65%, 55%, 1)"
-                  onClick={() =>
-                    transitionTo(
-                      API_STATE.REMOVED,
-                      'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
-                      'Close API',
-                      'Close API'
-                    )
-                  }
-                />
-              </>
-            )}
-
-            {currentState === API_STATE.DEPRECATED && (
-              <>
-                <ActionCard
-                  icon="fas fa-check-circle"
-                  title="Re-publish API"
-                  description="Make the API available again for new subscriptions"
+                  icon="fas fa-rocket"
+                  title="Publish API"
+                  description="Make your API fully available to clients in production"
                   onClick={() =>
                     transitionTo(
                       API_STATE.PUBLISHED,
-                      'Re-publishing will make the API available again for new subscriptions.',
-                      'Re-publish API',
-                      'Re-publish'
+                      'Publishing makes your API fully available to clients. Clients will be able to subscribe and use it in production.',
+                      'Publish API',
+                      'Publish'
                     )
                   }
                 />
+              )}
+
+              {currentState === API_STATE.PUBLISHED && (
+                <>
+                  <ActionCard
+                    icon="fas fa-exclamation-triangle"
+                    title="Deprecate API"
+                    description="Prevent new subscriptions while keeping existing traffic"
+                    color="hsla(40, 94%, 58%, 1)"
+                    onClick={() =>
+                      transitionTo(
+                        API_STATE.DEPRECATED,
+                        'Deprecating the API will prevent new access modes from subscribing. Existing subscriptions will continue to work.',
+                        'Deprecate API',
+                        'Deprecate'
+                      )
+                    }
+                  />
+                  <ActionCard
+                    icon="fas fa-times-circle"
+                    title="Close API"
+                    description="Shut down the API entirely — all traffic will be rejected"
+                    color="hsla(0, 65%, 55%, 1)"
+                    onClick={() =>
+                      transitionTo(
+                        API_STATE.REMOVED,
+                        'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
+                        'Close API',
+                        'Close API'
+                      )
+                    }
+                  />
+                </>
+              )}
+
+              {currentState === API_STATE.DEPRECATED && (
+                <>
+                  <ActionCard
+                    icon="fas fa-check-circle"
+                    title="Re-publish API"
+                    description="Make the API available again for new subscriptions"
+                    onClick={() =>
+                      transitionTo(
+                        API_STATE.PUBLISHED,
+                        'Re-publishing will make the API available again for new subscriptions.',
+                        'Re-publish API',
+                        'Re-publish'
+                      )
+                    }
+                  />
+                  <ActionCard
+                    icon="fas fa-times-circle"
+                    title="Close API"
+                    description="Shut down the API entirely — all traffic will be rejected"
+                    color="hsla(0, 65%, 55%, 1)"
+                    onClick={() =>
+                      transitionTo(
+                        API_STATE.REMOVED,
+                        'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
+                        'Close API',
+                        'Close API'
+                      )
+                    }
+                  />
+                </>
+              )}
+
+              {currentState === API_STATE.REMOVED && (
                 <ActionCard
-                  icon="fas fa-times-circle"
-                  title="Close API"
-                  description="Shut down the API entirely — all traffic will be rejected"
-                  color="hsla(0, 65%, 55%, 1)"
+                  icon="fas fa-undo"
+                  title="Reopen API"
+                  description="Move the API back to staging — you will need to publish it again"
                   onClick={() =>
                     transitionTo(
-                      API_STATE.REMOVED,
-                      'Closing the API will shut it down entirely. All traffic will be rejected. This action can be reversed.',
-                      'Close API',
-                      'Close API'
+                      API_STATE.STAGING,
+                      'This will move the API back to staging. You will need to publish it again to make it available.',
+                      'Reopen API',
+                      'Move to Staging'
                     )
                   }
                 />
-              </>
-            )}
-
-            {currentState === API_STATE.REMOVED && (
-              <ActionCard
-                icon="fas fa-undo"
-                title="Reopen API"
-                description="Move the API back to staging — you will need to publish it again"
-                onClick={() =>
-                  transitionTo(
-                    API_STATE.STAGING,
-                    'This will move the API back to staging. You will need to publish it again to make it available.',
-                    'Reopen API',
-                    'Move to Staging'
-                  )
-                }
-              />
-            )}
-          </div>
-        </>}
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="actions-section">
@@ -475,19 +464,22 @@ export function Actions(props) {
           <i className="fas fa-cog me-2" />
           General
         </h3>
-        <p className="actions-section-description">
-          Other operations you can perform on this API.
-        </p>
+        <p className="actions-section-description">Other operations you can perform on this API.</p>
 
         <div className="actions-general-actions">
-          {!isStaging ? <ActionCard
-            icon="fas fa-clone"
-            title="Duplicate API"
-            description="Create a full copy of this API in staging mode"
-            onClick={() => setDuplicateModal(true)}
-          /> : <p className="actions-section-description">
-            Actions tabs is not available in staging mode. Please use the publish button from the dashboard.
-          </p>}
+          {!isStaging ? (
+            <ActionCard
+              icon="fas fa-clone"
+              title="Duplicate API"
+              description="Create a full copy of this API in staging mode"
+              onClick={() => setDuplicateModal(true)}
+            />
+          ) : (
+            <p className="actions-section-description">
+              Actions tabs is not available in staging mode. Please use the publish button from the
+              dashboard.
+            </p>
+          )}
 
           <ActionCard
             icon="fas fa-file-export"

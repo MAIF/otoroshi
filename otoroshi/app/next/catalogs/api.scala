@@ -29,13 +29,13 @@ object RemoteEntity {
       kind <- json.select("kind").asOpt[String]
       spec <- json.select("spec").asOpt[JsObject]
     } yield {
-      val specKind    = spec.select("kind").asOpt[String]
+      val specKind     = spec.select("kind").asOpt[String]
       val resolvedKind = specKind match {
         case Some(sk) if sk == kind || sk.endsWith(s"/$kind") => sk
-        case _                                                 => kind
+        case _                                                => kind
       }
-      val content  = spec ++ Json.obj("kind" -> resolvedKind)
-      val entityId = content
+      val content      = spec ++ Json.obj("kind" -> resolvedKind)
+      val entityId     = content
         .select("id")
         .asOpt[String]
         .orElse(content.select("clientId").asOpt[String])

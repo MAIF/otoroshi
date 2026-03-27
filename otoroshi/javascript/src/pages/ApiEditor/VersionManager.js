@@ -13,7 +13,7 @@ export function VersionManager({ api, draft, owner, setState }) {
       ...draft.content,
       deployments: [],
     },
-    draftId: draft.id
+    draftId: draft.id,
   });
 
   const getCompareStep = (field) => ({
@@ -41,8 +41,8 @@ export function VersionManager({ api, draft, owner, setState }) {
     },
     changes: {
       renderer: () => {
-        return <p>Changes</p>
-      }
+        return <p>Changes</p>;
+      },
     },
     routes: getCompareStep('routes'),
     flows: getCompareStep('flows'),
@@ -58,20 +58,20 @@ export function VersionManager({ api, draft, owner, setState }) {
   };
 
   const getCompareFlowGroup = (name) => {
-    const hasChanged = mergeData(api[name], draft.content[name]).changed
+    const hasChanged = mergeData(api[name], draft.content[name]).changed;
 
     const migration = {
-      "routes": "endpoints"
-    }
+      routes: 'endpoints',
+    };
 
     return {
       type: 'group',
       name: firstLetterUppercase(migration[name] ?? name),
       collapsed: true,
       fields: [name],
-      hasChanged
-    }
-  }
+      hasChanged,
+    };
+  };
 
   const flow = [
     'owner',
@@ -88,12 +88,12 @@ export function VersionManager({ api, draft, owner, setState }) {
         name: 'Global',
         collapsed: true,
         fields: ['apiDefinition'],
-        hasChanged: mergeData(api[name], draft.content[name]).changed
+        hasChanged: mergeData(api[name], draft.content[name]).changed,
       },
     ]
       .sort((a, b) => Number(b.hasChanged) - Number(a.hasChanged))
-      .filter(item => item.hasChanged)
-  ]
+      .filter((item) => item.hasChanged),
+  ];
 
   return (
     <div className="d-flex flex-column flex-grow gap-3 mt-3" style={{ maxWidth: 820 }}>

@@ -8,48 +8,50 @@ import { MAX_WIDTH } from './constants';
 import { RoutesView } from './Dashboard';
 
 function TestingConfiguration(props) {
-  return <>
-    <Row title="Configuration">
-      Enable testing on your API to allow you to call all enabled routes. You just need to pass the
-      following specific header when making the calls. This security measure, enforced by Otoroshi,
-      prevents unauthorized users from accessing your draft API.
-    </Row>
-    <Row title="Header">
-      <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
-    </Row>
-    <Row title="Value">
-      <div className='d-flex'>
-        <input
-          className="form-control"
-          disabled
-          type="text"
-          value={props.rootValue?.headerValue}
-          style={{
-            borderTopRightRadius: 0,
-            borderBottomRightRadius: 0,
-            borderRight: 'none'
-          }}
-        />
+  return (
+    <>
+      <Row title="Configuration">
+        Enable testing on your API to allow you to call all enabled routes. You just need to pass
+        the following specific header when making the calls. This security measure, enforced by
+        Otoroshi, prevents unauthorized users from accessing your draft API.
+      </Row>
+      <Row title="Header">
+        <input className="form-control" readOnly type="text" value={props.rootValue?.headerKey} />
+      </Row>
+      <Row title="Value">
+        <div className="d-flex">
+          <input
+            className="form-control"
+            disabled
+            type="text"
+            value={props.rootValue?.headerValue}
+            style={{
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              borderRight: 'none',
+            }}
+          />
 
-        <button
-          className="btn btn-primary"
-          style={{
-            borderTopLeftRadius: 0,
-            borderBottomLeftRadius: 0
-          }}
-          title="copy bearer"
-          onClick={() => {
-            props.onSecretRotation({
-              ...props.item.testing,
-              headerValue: v4(),
-            });
-          }}
-        >
-          <i className="fas fa-rotate" />
-        </button>
-      </div>
-    </Row>
-  </>
+          <button
+            className="btn btn-primary"
+            style={{
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+            }}
+            title="copy bearer"
+            onClick={() => {
+              props.onSecretRotation({
+                ...props.item.testing,
+                headerValue: v4(),
+              });
+            }}
+          >
+            <i className="fas fa-rotate" />
+          </button>
+        </div>
+      </Row>
+    </>
+  );
 }
 
 export function Testing(props) {
@@ -110,7 +112,7 @@ export function Testing(props) {
     <>
       <div
         style={{
-          maxWidth: MAX_WIDTH
+          maxWidth: MAX_WIDTH,
         }}
       >
         <NgForm

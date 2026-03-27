@@ -41,7 +41,7 @@ export function Informations(props) {
     },
     version: {
       type: 'string',
-      label: 'Version'
+      label: 'Version',
     },
     metadata: {
       type: 'object',
@@ -55,33 +55,31 @@ export function Informations(props) {
       type: 'box-bool',
       label: 'Capture endpoint traffic',
       props: {
-        description: 'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.'
+        description:
+          'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.',
       },
     },
     owner: {
-      label: "Owner",
+      label: 'Owner',
       type: 'form',
       schema: {
         ref: {
           label: 'Owner ref.',
-          type: "string",
+          type: 'string',
         },
         config: {
           type: 'json',
           label: 'Owner ref. config.',
           props: {
             defaultValue: '{}',
-            height: 100
-          }
-        }
+            height: 100,
+          },
+        },
       },
-      flow: [
-        "ref",
-        "config",
-      ],
+      flow: ['ref', 'config'],
     },
     visibility: {
-      label: "Visibility",
+      label: 'Visibility',
       type: 'form',
       schema: {
         kind: {
@@ -102,72 +100,63 @@ export function Informations(props) {
           label: 'Visibility config.',
           props: {
             defaultValue: '{}',
-            height: 100
-          }
-        }
+            height: 100,
+          },
+        },
       },
-      flow: [
-        "kind",
-        "config",
-      ],
+      flow: ['kind', 'config'],
     },
     members: {
       array: true,
-      label: "Members",
+      label: 'Members',
       type: 'form',
       schema: {
         ref: {
           label: 'Owner ref.',
-          type: "string",
+          type: 'string',
         },
         config: {
           type: 'json',
           label: 'Owner ref. config.',
           props: {
             defaultValue: '{}',
-            height: 100
-          }
-        }
+            height: 100,
+          },
+        },
       },
-      flow: [
-        "ref",
-        "config",
-      ],
+      flow: ['ref', 'config'],
     },
     hooks: {
       array: true,
-      label: "State hooks",
+      label: 'State hooks',
       type: 'form',
       schema: {
         ref: {
           label: 'Hook ref.',
-          type: "string",
+          type: 'string',
         },
         config: {
           type: 'json',
           label: 'Hook config.',
           props: {
             defaultValue: '{}',
-            height: 100
-          }
-        }
+            height: 100,
+          },
+        },
       },
-      flow: [
-        "ref",
-        "config",
-      ],
+      flow: ['ref', 'config'],
     },
     debug_flow: {
       type: 'box-bool',
       label: 'Debug the endpoint',
-      props: {
-      },
+      props: {},
     },
     export_reporting: {
       type: 'box-bool',
       label: 'Export reporting',
       props: {
-        description: 'Export execution of each steps of the route as RequestFlowReport event. It can be exported using Data Exporters. This feature can have actual impact on CPU and RAM consumption'
+        description:
+          'Export execution of each steps of the route as RequestFlowReport event. It can be exported using Data Exporters. This feature can have actual impact on CPU and RAM consumption',
       },
     },
     danger_zone: {
@@ -213,32 +202,23 @@ export function Informations(props) {
       type: 'group',
       collapsed: true,
       name: 'Informations',
-      fields: [
-        'owner',
-        'visibility',
-        'members',
-        'hooks',
-      ],
+      fields: ['owner', 'visibility', 'members', 'hooks'],
     },
     {
       type: 'group',
       name: 'Misc.',
       collapsed: true,
-      fields: [
-        'tags',
-        'metadata',
-        'debug_flow',
-        'export_reporting',
-        'capture'
-      ],
+      fields: ['tags', 'metadata', 'debug_flow', 'export_reporting', 'capture'],
     },
-    isDraft ? {
-      type: 'group',
-      name: 'Danger zone',
-      collapsed: true,
-      fields: ['danger_zone'],
-    } : null,
-  ].filter(f => f);
+    isDraft
+      ? {
+          type: 'group',
+          name: 'Danger zone',
+          collapsed: true,
+          fields: ['danger_zone'],
+        }
+      : null,
+  ].filter((f) => f);
 
   const updateAPI = () => {
     updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
@@ -246,27 +226,29 @@ export function Informations(props) {
 
   if (!item) return <SimpleLoader />;
 
-  return <>
-    <PageTitle
-      style={{
-        paddingBottom: 0,
-      }}
-      title="Informations"
-      {...props}
-    >
-      <FeedbackButton
-        type="success"
-        className="ms-2 mb-1 d-flex align-items-center"
-        onPress={updateAPI}
-        text={
-          <>
-            Update <VersionBadge size="xs" className="ms-2" />
-          </>
-        }
-      />
-    </PageTitle>
-    <div style={{ maxWidth: MAX_WIDTH }}>
-      <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
-    </div>
-  </>
+  return (
+    <>
+      <PageTitle
+        style={{
+          paddingBottom: 0,
+        }}
+        title="Informations"
+        {...props}
+      >
+        <FeedbackButton
+          type="success"
+          className="ms-2 mb-1 d-flex align-items-center"
+          onPress={updateAPI}
+          text={
+            <>
+              Update <VersionBadge size="xs" className="ms-2" />
+            </>
+          }
+        />
+      </PageTitle>
+      <div style={{ maxWidth: MAX_WIDTH }}>
+        <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
+      </div>
+    </>
+  );
 }

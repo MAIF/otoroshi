@@ -29,26 +29,26 @@ const STATUS_BADGES = {
 };
 
 const CURRENCIES = [
-  { code: "EUR", name: "Euro", symbol: "€" },
-  { code: "USD", name: "United States Dollar", symbol: "$" },
-  { code: "GBP", name: "British Pound Sterling", symbol: "£" },
-  { code: "JPY", name: "Japanese Yen", symbol: "¥" },
-  { code: "CHF", name: "Swiss Franc", symbol: "CHF" },
-  { code: "AUD", name: "Australian Dollar", symbol: "A$" },
-  { code: "CAD", name: "Canadian Dollar", symbol: "C$" },
-  { code: "CNY", name: "Chinese Yuan Renminbi", symbol: "¥" },
-  { code: "SEK", name: "Swedish Krona", symbol: "kr" },
-  { code: "NZD", name: "New Zealand Dollar", symbol: "NZ$" },
-  { code: "MXN", name: "Mexican Peso", symbol: "$" },
-  { code: "SGD", name: "Singapore Dollar", symbol: "S$" },
-  { code: "HKD", name: "Hong Kong Dollar", symbol: "HK$" },
-  { code: "NOK", name: "Norwegian Krone", symbol: "kr" },
-  { code: "KRW", name: "South Korean Won", symbol: "₩" },
-  { code: "TRY", name: "Turkish Lira", symbol: "₺" },
-  { code: "INR", name: "Indian Rupee", symbol: "₹" },
-  { code: "RUB", name: "Russian Ruble", symbol: "₽" },
-  { code: "BRL", name: "Brazilian Real", symbol: "R$" },
-  { code: "ZAR", name: "South African Rand", symbol: "R" }
+  { code: 'EUR', name: 'Euro', symbol: '€' },
+  { code: 'USD', name: 'United States Dollar', symbol: '$' },
+  { code: 'GBP', name: 'British Pound Sterling', symbol: '£' },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
+  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
+  { code: 'CNY', name: 'Chinese Yuan Renminbi', symbol: '¥' },
+  { code: 'SEK', name: 'Swedish Krona', symbol: 'kr' },
+  { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$' },
+  { code: 'MXN', name: 'Mexican Peso', symbol: '$' },
+  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$' },
+  { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$' },
+  { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr' },
+  { code: 'KRW', name: 'South Korean Won', symbol: '₩' },
+  { code: 'TRY', name: 'Turkish Lira', symbol: '₺' },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
+  { code: 'RUB', name: 'Russian Ruble', symbol: '₽' },
+  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$' },
+  { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
 ];
 
 const ACCESS_MODE_LABELS = {
@@ -173,12 +173,20 @@ const ApiKeysConstants = {
         rotationEvery: {
           type: 'number',
           label: 'Rotation every',
-          props: { placeholder: 'rotate secrets every', suffix: 'hours', help: 'rotate secrets every' },
+          props: {
+            placeholder: 'rotate secrets every',
+            suffix: 'hours',
+            help: 'rotate secrets every',
+          },
         },
         gracePeriod: {
           type: 'number',
           label: 'Grace period',
-          props: { placeholder: 'period when both secrets can be used', suffix: 'hours', help: 'period when both secrets can be used' },
+          props: {
+            placeholder: 'period when both secrets can be used',
+            suffix: 'hours',
+            help: 'period when both secrets can be used',
+          },
         },
         nextSecret: {
           type: 'string',
@@ -234,7 +242,7 @@ const AccessModePluginConfigurationForm = {
             findById: findAuthConfigById,
           },
         },
-      }
+      },
     },
     flow: ['verifier'],
   },
@@ -245,17 +253,17 @@ const AccessModePluginConfigurationForm = {
       // 'subject_dns',
       // 'issuer_dns',
       'regex_subject_dns',
-      'regex_issuer_dns'
+      'regex_issuer_dns',
     ],
   },
   keyless: {
     schema: {},
-    flow: []
+    flow: [],
   },
   public: {
     schema: {},
-    flow: []
-  }
+    flow: [],
+  },
 };
 
 function AccessModeConfigurationTypeSelector({ onChange, value }) {
@@ -271,7 +279,7 @@ function AccessModeConfigurationTypeSelector({ onChange, value }) {
           {
             id: 'public',
             key: 'Public',
-            text: 'Public plan available to all developers. Clients can subscribe directly from the developer portal without requiring manual approval.'
+            text: 'Public plan available to all developers. Clients can subscribe directly from the developer portal without requiring manual approval.',
           },
           {
             id: 'mtls',
@@ -333,81 +341,104 @@ function NewAccessModeSettingsForm(props) {
 }
 
 function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfirm }) {
-  return <div className="wizard">
-    <div className="wizard-container" style={{ maxWidth: 750 }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '2.5rem', paddingBottom: '5rem' }}>
-        <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
-          <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
-          <span>Edit {accessModeConfigurationType}</span>
-        </label>
-        {children}
+  return (
+    <div className="wizard">
+      <div className="wizard-container" style={{ maxWidth: 750 }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '2.5rem',
+            paddingBottom: '5rem',
+          }}
+        >
+          <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
+            <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
+            <span>Edit {accessModeConfigurationType}</span>
+          </label>
+          {children}
 
-        <div style={{
-          position: 'fixed',
-          right: '2rem',
-          bottom: 0,
-          left: 0,
-          zIndex: 1000,
-          background: 'var(--bg-color_level1)',
-          borderTop: '1px solid var(--bg-color_level3)'
-        }} className='p-3 d-flex justify-content-end'>
-          <button onClick={onConfirm} type="btn" className='btn btn-primaryColor'>
-            Save {accessModeConfigurationType}
-          </button>
+          <div
+            style={{
+              position: 'fixed',
+              right: '2rem',
+              bottom: 0,
+              left: 0,
+              zIndex: 1000,
+              background: 'var(--bg-color_level1)',
+              borderTop: '1px solid var(--bg-color_level3)',
+            }}
+            className="p-3 d-flex justify-content-end"
+          >
+            <button onClick={onConfirm} type="btn" className="btn btn-primaryColor">
+              Save {accessModeConfigurationType}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  );
 }
 
 function AccessModeConfiguration({ value, hide, onConfirm }) {
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
 
-  const accessModeConfigurationType = value.access_mode_configuration_type
+  const accessModeConfigurationType = value.access_mode_configuration_type;
 
-  if (['mtls', 'oauth2-local', 'oauth2-remote', 'jwt', 'public', 'keyless'].includes(accessModeConfigurationType))
-    return <AccessModeConfigurationExceptApikey value={value} hide={hide} onConfirm={onConfirm} />
+  if (
+    ['mtls', 'oauth2-local', 'oauth2-remote', 'jwt', 'public', 'keyless'].includes(
+      accessModeConfigurationType
+    )
+  )
+    return <AccessModeConfigurationExceptApikey value={value} hide={hide} onConfirm={onConfirm} />;
 
-  return <AccessModeLayout
-    hide={hide}
-    accessModeConfigurationType={accessModeConfigurationType}
-    onConfirm={() => onConfirm(accessModeConfiguration)}>
-    <NgForm
-      value={accessModeConfiguration}
-      schema={ApiKeysConstants.schema}
-      flow={[
-        'clientIdPattern',
-        'clientNamePattern',
-        'description',
-        'authorizedEntities',
-        'validUntil',
-        'readOnly',
-        'allowClientIdOnly',
-        'constrainedServicesOnly',
-        'restrictions',
-        'rotation',
-        { type: 'group', name: 'Miscellaneous', fields: ['metadata', 'tags'] }
-      ]}
-      onChange={setAccessModeConfiguration}
-    />
-  </AccessModeLayout>
+  return (
+    <AccessModeLayout
+      hide={hide}
+      accessModeConfigurationType={accessModeConfigurationType}
+      onConfirm={() => onConfirm(accessModeConfiguration)}
+    >
+      <NgForm
+        value={accessModeConfiguration}
+        schema={ApiKeysConstants.schema}
+        flow={[
+          'clientIdPattern',
+          'clientNamePattern',
+          'description',
+          'authorizedEntities',
+          'validUntil',
+          'readOnly',
+          'allowClientIdOnly',
+          'constrainedServicesOnly',
+          'restrictions',
+          'rotation',
+          { type: 'group', name: 'Miscellaneous', fields: ['metadata', 'tags'] },
+        ]}
+        onChange={setAccessModeConfiguration}
+      />
+    </AccessModeLayout>
+  );
 }
 
 function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
-  const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value)
-  const accessModeConfigurationType = value.access_mode_configuration_type
+  const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
+  const accessModeConfigurationType = value.access_mode_configuration_type;
 
-  return <AccessModeLayout
-    accessModeConfigurationType={accessModeConfigurationType}
-    onConfirm={() => onConfirm(accessModeConfiguration)}
-    hide={hide}>
-    <NewAccessModeSettingsForm
-      schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
-      flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
-      value={accessModeConfiguration}
-      onChange={setAccessModeConfiguration}
-    />
-  </AccessModeLayout>
+  return (
+    <AccessModeLayout
+      accessModeConfigurationType={accessModeConfigurationType}
+      onConfirm={() => onConfirm(accessModeConfiguration)}
+      hide={hide}
+    >
+      <NewAccessModeSettingsForm
+        schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
+        flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
+        value={accessModeConfiguration}
+        onChange={setAccessModeConfiguration}
+      />
+    </AccessModeLayout>
+  );
 }
 
 function PlanForm({ plan, onChange }) {
@@ -428,7 +459,7 @@ function PlanForm({ plan, onChange }) {
       renderer: ({ rootValue }) => {
         const descriptions = {
           staging:
-            'This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won\'t be visible or accessible to users',
+            "This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won't be visible or accessible to users",
           published:
             'When your plan is finalized, you can publish it to allow subscriptions through the APIM Portal. Once published, subscriptions can access the API via the plan. Published plans remain editable.',
           deprecated:
@@ -452,7 +483,7 @@ function PlanForm({ plan, onChange }) {
       ),
     },
     access_mode_configuration: {
-      visible: props => !['keyless', 'public'].includes(props?.access_mode_configuration_type),
+      visible: (props) => !['keyless', 'public'].includes(props?.access_mode_configuration_type),
       renderer: ({ rootValue, value }) => {
         if (!rootValue.access_mode_configuration_type) return null;
 
@@ -487,18 +518,18 @@ function PlanForm({ plan, onChange }) {
               { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
               { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
             ],
-          }
+          },
         },
         perIp: {
           type: 'bool',
-          label: 'Per IP'
+          label: 'Per IP',
         },
         customPattern: {
           type: 'string',
-          label: 'Custom group via expression (header, JWT claim)'
-        }
+          label: 'Custom group via expression (header, JWT claim)',
+        },
       },
-      flow: ['strategy', 'perIp', 'customPattern']
+      flow: ['strategy', 'perIp', 'customPattern'],
     },
     pricing: {
       type: 'form',
@@ -507,39 +538,39 @@ function PlanForm({ plan, onChange }) {
       schema: {
         enabled: {
           type: 'bool',
-          label: "Enabled",
+          label: 'Enabled',
         },
         name: {
-          visible: props => props?.enabled,
+          visible: (props) => props?.enabled,
           type: 'string',
-          label: 'Name'
+          label: 'Name',
         },
         price: {
-          visible: props => props?.enabled,
+          visible: (props) => props?.enabled,
           type: 'number',
-          label: 'Price'
+          label: 'Price',
         },
         currency: {
-          visible: props => props?.enabled,
+          visible: (props) => props?.enabled,
           type: 'select',
           label: 'Currency',
           props: {
             options: CURRENCIES.map(({ code, name, symbol }) => ({
               value: code,
-              label: `${name} - ${symbol}`
-            }))
-          }
+              label: `${name} - ${symbol}`,
+            })),
+          },
         },
         params: {
-          visible: props => props?.enabled,
+          visible: (props) => props?.enabled,
           type: 'code',
           label: 'Extra parameters',
           props: {
             ngOptions: {
               spread: true,
-            }
-          }
-        }
+            },
+          },
+        },
       },
     },
     tags: { type: 'array', label: 'Tags' },
@@ -561,21 +592,21 @@ function PlanForm({ plan, onChange }) {
               { value: 'wasm', label: 'Wasm' },
               { value: 'custom', label: 'Custom' },
             ],
-          }
+          },
         },
         config: {
           type: 'json',
           label: 'Validation config.',
           props: {
             defaultValue: '{}',
-            height: 100
-          }
-        }
+            height: 100,
+          },
+        },
       },
-      flow: ['kind', 'config']
+      flow: ['kind', 'config'],
     },
     visibility: {
-      label: "Visibility",
+      label: 'Visibility',
       type: 'form',
       schema: {
         kind: {
@@ -596,22 +627,29 @@ function PlanForm({ plan, onChange }) {
           label: 'Visibility config.',
           props: {
             defaultValue: '{}',
-            height: 100
-          }
-        }
+            height: 100,
+          },
+        },
       },
-      flow: [
-        "kind",
-        "config",
-      ],
+      flow: ['kind', 'config'],
     },
   };
 
   const flow = [
     { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
-    { type: 'group', name: 'Lifecycle', collapsable: false, fields: ['status', 'statusDescription'] },
+    {
+      type: 'group',
+      name: 'Lifecycle',
+      collapsable: false,
+      fields: ['status', 'statusDescription'],
+    },
     'visibility',
-    { type: 'group', name: 'Access Mode', collapsable: false, fields: ['access_mode_configuration_type', 'access_mode_configuration'] },
+    {
+      type: 'group',
+      name: 'Access Mode',
+      collapsable: false,
+      fields: ['access_mode_configuration_type', 'access_mode_configuration'],
+    },
     'rateLimiting',
     'pricing',
     'validation',
@@ -623,12 +661,12 @@ function PlanForm({ plan, onChange }) {
       {accessMode && (
         <AccessModeConfiguration
           value={accessMode}
-          onConfirm={data => {
+          onConfirm={(data) => {
             onChange({
               ...plan,
-              access_mode_configuration: data
-            })
-            setAccessMode(undefined)
+              access_mode_configuration: data,
+            });
+            setAccessMode(undefined);
           }}
           hide={() => setAccessMode(undefined)}
         />
@@ -639,10 +677,10 @@ function PlanForm({ plan, onChange }) {
 }
 
 function ImportPlanModal({ hide, draft, api, updateAPI }) {
-  const [planId, setPlan] = useState()
+  const [planId, setPlan] = useState();
 
   const importPlan = () => {
-    const plan = draft.documentation.plans.find(p => p.id === planId)
+    const plan = draft.documentation.plans.find((p) => p.id === planId);
 
     return updateAPI({
       ...api,
@@ -653,58 +691,59 @@ function ImportPlanModal({ hide, draft, api, updateAPI }) {
           {
             ...plan,
             enabled: false,
-            id: `prod-${plan.id}`
-          }
-        ]
-      }
-    })
-      .then(() => window.location.reload())
-  }
+            id: `prod-${plan.id}`,
+          },
+        ],
+      },
+    }).then(() => window.location.reload());
+  };
 
-  return <div className='wizard'>
-    <div className='wizard-container' style={{ padding: '1.5rem' }}>
-      <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
-        <Header title="Import a plan from draft" />
-        <div className="wizard-content">
-          <NgSelectRenderer
-            value={planId}
-            onChange={setPlan}
-            ngOptions={{ spread: true }}
-            options={(draft.documentation?.plans || [])}
-            optionsTransformer={(arr) =>
-              arr.map((item) => ({
-                value: item.id,
-                label: item.name,
-              }))
-            }
+  return (
+    <div className="wizard">
+      <div className="wizard-container" style={{ padding: '1.5rem' }}>
+        <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+          <Header title="Import a plan from draft" />
+          <div className="wizard-content">
+            <NgSelectRenderer
+              value={planId}
+              onChange={setPlan}
+              ngOptions={{ spread: true }}
+              options={draft.documentation?.plans || []}
+              optionsTransformer={(arr) =>
+                arr.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))
+              }
+            />
+          </div>
+        </div>
+        <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
+          <FeedbackButton
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              borderColor: 'var(--color-primary)',
+              padding: '12px 48px',
+            }}
+            disabled={!planId}
+            onPress={importPlan}
+            onSuccess={hide}
+            icon={() => <i className="fas fa-paper-plane" />}
+            text="Copy to prod, then edit"
           />
         </div>
       </div>
-      <div className="d-flex mt-auto ms-auto justify-content-between align-items-center">
-        <FeedbackButton
-          style={{
-            backgroundColor: 'var(--color-primary)',
-            borderColor: 'var(--color-primary)',
-            padding: '12px 48px',
-          }}
-          disabled={!planId}
-          onPress={importPlan}
-          onSuccess={hide}
-          icon={() => <i className="fas fa-paper-plane" />}
-          text="Copy to prod, then edit"
-        />
-      </div>
     </div>
-  </div>
+  );
 }
 
 export function Plans(props) {
   const params = useParams();
   const history = useHistory();
-  const [plan, setPlan] = useState()
+  const [plan, setPlan] = useState();
   const { item, version, isDraft, draft, updateAPI, api, updateItem } = useDraftOfAPI();
 
-  const [showImportPlanModal, setImportPlanModal] = useState(false)
+  const [showImportPlanModal, setImportPlanModal] = useState(false);
 
   useEffect(() => {
     props.setTitle({
@@ -733,88 +772,110 @@ export function Plans(props) {
       title: 'Type',
       notFilterable: true,
       cell: (_, plan) => {
-        return plan.access_mode_configuration_type
-          ? <span className="badge custom-badge api-status-started">
-            {ACCESS_MODE_LABELS[plan.access_mode_configuration_type] || plan.access_mode_configuration_type}
+        return plan.access_mode_configuration_type ? (
+          <span className="badge custom-badge api-status-started">
+            {ACCESS_MODE_LABELS[plan.access_mode_configuration_type] ||
+              plan.access_mode_configuration_type}
           </span>
-          : <span>—</span>
-      }
+        ) : (
+          <span>—</span>
+        );
+      },
     },
     {
       title: 'Status',
       notFilterable: true,
       cell: (_, plan) => {
-        return STATUS_BADGES[plan.status] ? <span className={`badge custom-badge ${STATUS_BADGES[plan.status]?.cls}`}>
-          {STATUS_BADGES[plan.status]?.label || plan.status}
-        </span> : null
-      }
+        return STATUS_BADGES[plan.status] ? (
+          <span className={`badge custom-badge ${STATUS_BADGES[plan.status]?.cls}`}>
+            {STATUS_BADGES[plan.status]?.label || plan.status}
+          </span>
+        ) : null;
+      },
     },
     {
       title: 'Subscribe',
       notFilterable: true,
-      cell: (_, plan) => <Button type='primary' className='btn-sm' onClick={() => setPlan(plan)}>
-        Subscribe
-      </Button>
-    }
-  ]
+      cell: (_, plan) => (
+        <Button type="primary" className="btn-sm" onClick={() => setPlan(plan)}>
+          Subscribe
+        </Button>
+      ),
+    },
+  ];
 
-  const deleteItem = plan => {
+  const deleteItem = (plan) => {
     return updateItem({
       ...item,
       documentation: {
         ...item.documentation,
-        plans: item.documentation.plans.filter(c => c.id !== plan.id)
-      }
-    })
-  }
+        plans: item.documentation.plans.filter((c) => c.id !== plan.id),
+      },
+    });
+  };
 
-  if (plan)
-    return <NewSubscription plan={plan} {...props} />
+  if (plan) return <NewSubscription plan={plan} {...props} />;
 
-  return <>
+  return (
+    <>
+      {showImportPlanModal && !isDraft && (
+        <ImportPlanModal
+          draft={draft}
+          api={api}
+          updateAPI={updateAPI}
+          hide={() => setImportPlanModal(false)}
+        />
+      )}
 
-    {showImportPlanModal && !isDraft && <ImportPlanModal
-      draft={draft}
-      api={api}
-      updateAPI={updateAPI}
-      hide={() => setImportPlanModal(false)} />}
-
-    <Table
-      parentProps={{ params }}
-      navigateTo={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
-      navigateOnEdit={(plan) => history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)}
-      selfUrl="plans"
-      defaultTitle="Plans"
-      itemName="Plan"
-      formSchema={null}
-      formFlow={null}
-      columns={columns}
-      deleteItem={(item) => deleteItem(item)}
-      defaultSort="name"
-      defaultSortDesc="true"
-      fetchItems={() => Promise.resolve(plans)}
-      fetchTemplate={() => Promise.resolve({})}
-      showActions={true}
-      showLink={false}
-      extractKey={(item) => item.id}
-      rowNavigation={true}
-      hideAddItemAction={true}
-      itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
-      rawEditUrl={true}
-      injectTopBar={() => <div className='d-flex'>
-        <div className="btn-group input-group-btn mx-1">
-          <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
-            <i className="fas fa-plus-circle" /> Create new plan
-          </Link>
-        </div>
-        {!isDraft && <div className="btn-group input-group-btn">
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setImportPlanModal(true)}>
-            <i className="fas fa-plus-circle" /> Importer un plan
-          </button>
-        </div>}
-      </div>}
-    />
-  </>
+      <Table
+        parentProps={{ params }}
+        navigateTo={(plan) =>
+          history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)
+        }
+        navigateOnEdit={(plan) =>
+          history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)
+        }
+        selfUrl="plans"
+        defaultTitle="Plans"
+        itemName="Plan"
+        formSchema={null}
+        formFlow={null}
+        columns={columns}
+        deleteItem={(item) => deleteItem(item)}
+        defaultSort="name"
+        defaultSortDesc="true"
+        fetchItems={() => Promise.resolve(plans)}
+        fetchTemplate={() => Promise.resolve({})}
+        showActions={true}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(plan) => `/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`}
+        rawEditUrl={true}
+        injectTopBar={() => (
+          <div className="d-flex">
+            <div className="btn-group input-group-btn mx-1">
+              <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
+                <i className="fas fa-plus-circle" /> Create new plan
+              </Link>
+            </div>
+            {!isDraft && (
+              <div className="btn-group input-group-btn">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setImportPlanModal(true)}
+                >
+                  <i className="fas fa-plus-circle" /> Importer un plan
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      />
+    </>
+  );
 }
 
 export function PlanEditor(props) {
@@ -825,15 +886,19 @@ export function PlanEditor(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   const isNew = !params.planId;
-  const [plan, setPlan] = useState(isNew ? {
-    id: v4(),
-    name: 'New plan',
-    status: 'staging',
-    access_mode_configuration_type: 'apikey',
-    access_mode_configuration: {
-      enabled: true
-    }
-  } : null);
+  const [plan, setPlan] = useState(
+    isNew
+      ? {
+          id: v4(),
+          name: 'New plan',
+          status: 'staging',
+          access_mode_configuration_type: 'apikey',
+          access_mode_configuration: {
+            enabled: true,
+          },
+        }
+      : null
+  );
 
   useEffect(() => {
     if (!isNew && item && !plan) {
@@ -854,23 +919,24 @@ export function PlanEditor(props) {
     const plans = isNew
       ? [...(item.documentation?.plans || []), plan]
       : item.documentation.plans.map((p) => (p.id === plan.id ? plan : p));
-    return updateItem({ ...item, documentation: { ...item.documentation, plans } })
-      .then(back);
+    return updateItem({ ...item, documentation: { ...item.documentation, plans } }).then(back);
   };
 
-  return <div style={{ maxWidth: MAX_WIDTH }}>
-    <PageTitle title={isNew ? 'New Plan' : plan.name} {...props}>
-      <FeedbackButton
-        type="success"
-        className="d-flex ms-2"
-        onPress={save}
-        text={
-          <div className="d-flex align-items-center">
-            {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
-          </div>
-        }
-      />
-    </PageTitle>
-    <PlanForm plan={plan} onChange={setPlan} />
-  </div>
+  return (
+    <div style={{ maxWidth: MAX_WIDTH }}>
+      <PageTitle title={isNew ? 'New Plan' : plan.name} {...props}>
+        <FeedbackButton
+          type="success"
+          className="d-flex ms-2"
+          onPress={save}
+          text={
+            <div className="d-flex align-items-center">
+              {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </PageTitle>
+      <PlanForm plan={plan} onChange={setPlan} />
+    </div>
+  );
 }

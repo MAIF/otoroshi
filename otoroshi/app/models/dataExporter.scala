@@ -764,16 +764,16 @@ object PostgresExporterSettings {
   val format = new Format[PostgresExporterSettings] {
     override def reads(json: JsValue): JsResult[PostgresExporterSettings] = Try {
       PostgresExporterSettings(
-        uri      = json.select("uri").asOptString.filterNot(_.isEmpty),
-        host     = json.select("host").asOptString.getOrElse("localhost"),
-        port     = json.select("port").asOptInt.getOrElse(5432),
+        uri = json.select("uri").asOptString.filterNot(_.isEmpty),
+        host = json.select("host").asOptString.getOrElse("localhost"),
+        port = json.select("port").asOptInt.getOrElse(5432),
         database = json.select("database").asOptString.getOrElse("otoroshi"),
-        user     = json.select("user").asOptString.getOrElse("otoroshi"),
+        user = json.select("user").asOptString.getOrElse("otoroshi"),
         password = json.select("password").asOptString.getOrElse("otoroshi"),
-        schema   = json.select("schema").asOptString.getOrElse("otoroshi"),
-        table    = json.select("table").asOptString.getOrElse("otoroshi_events"),
+        schema = json.select("schema").asOptString.getOrElse("otoroshi"),
+        table = json.select("table").asOptString.getOrElse("otoroshi_events"),
         poolSize = json.select("pool_size").asOptInt.getOrElse(5),
-        ssl      = json.select("ssl").asOptBoolean.getOrElse(false)
+        ssl = json.select("ssl").asOptBoolean.getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

@@ -23,8 +23,8 @@ export default {
       props: {
         ngOptions: {
           spread: true,
-        }
-      }
+        },
+      },
     },
     verifiers: {
       label: 'Chain of verifiers',

@@ -181,30 +181,32 @@ export function DefaultSidebar(props) {
           }, 50); // delay to avoid simple click
         }}
       >
-        {openedSidebar && !onRouteTab && <div className='mb-2'>
-          <p className='sidebar-title'>Gateway Management</p>
-          <CoreSidebarLink
-            rootClassName={rootClassName}
-            openedSidebar={openedSidebar}
-            clearSidebar={clearSidebar}
-            title='HTTP Routes'
-            description='All your routes'
-            img='routes'
-            icon='fa-road'
-            link='/routes'
-          />
-          <CoreSidebarLink
-            rootClassName={rootClassName}
-            openedSidebar={openedSidebar}
-            clearSidebar={clearSidebar}
-            title='APIs'
-            description='All apis'
-            img='apis'
-            icon='fa-brush'
-            link='/apis'
-            tag={<span className="badge bg-xs bg-warning">ALPHA</span>}
-          />
-        </div>}
+        {openedSidebar && !onRouteTab && (
+          <div className="mb-2">
+            <p className="sidebar-title">Gateway Management</p>
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="HTTP Routes"
+              description="All your routes"
+              img="routes"
+              icon="fa-road"
+              link="/routes"
+            />
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="APIs"
+              description="All apis"
+              img="apis"
+              icon="fa-brush"
+              link="/apis"
+              tag={<span className="badge bg-xs bg-warning">ALPHA</span>}
+            />
+          </div>
+        )}
 
         {openedSidebar && !onRouteTab && shortcuts.length > 0 && (
           <p className="sidebar-title">Shortcuts</p>

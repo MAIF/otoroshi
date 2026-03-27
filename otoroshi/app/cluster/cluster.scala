@@ -17,10 +17,10 @@ import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import next.models.{
-  ApiSubscriptionDataStore,
   ApiDataStore,
-  KvApiSubscriptionDataStore,
+  ApiSubscriptionDataStore,
   KvApiDataStore,
+  KvApiSubscriptionDataStore,
   KvRouteTemplateDataStore,
   RouteTemplateDataStore
 }
@@ -3093,7 +3093,7 @@ class SwappableInMemoryDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiSubscriptionDataStore                              = new KvApiSubscriptionDataStore(redis, env)
+  private lazy val _apiSubscriptionDataStore                      = new KvApiSubscriptionDataStore(redis, env)
   override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)

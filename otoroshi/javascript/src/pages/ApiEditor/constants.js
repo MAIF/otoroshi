@@ -3,10 +3,30 @@ import { API_STATE } from './model';
 export const MAX_WIDTH = 720;
 
 export const LIFECYCLE_STEPS = [
-  { key: API_STATE.STAGING, label: 'Staging', icon: 'fas fa-flask', color: 'hsla(184, 9%, 62%, 1)' },
-  { key: API_STATE.PUBLISHED, label: 'Published', icon: 'fas fa-check-circle', color: 'hsla(150, 52%, 51%, 1)' },
-  { key: API_STATE.DEPRECATED, label: 'Deprecated', icon: 'fas fa-exclamation-triangle', color: 'hsla(40, 94%, 58%, 1)' },
-  { key: API_STATE.REMOVED, label: 'Closed', icon: 'fas fa-times-circle', color: 'hsla(0, 75%, 55%, 1)' },
+  {
+    key: API_STATE.STAGING,
+    label: 'Staging',
+    icon: 'fas fa-flask',
+    color: 'hsla(184, 9%, 62%, 1)',
+  },
+  {
+    key: API_STATE.PUBLISHED,
+    label: 'Published',
+    icon: 'fas fa-check-circle',
+    color: 'hsla(150, 52%, 51%, 1)',
+  },
+  {
+    key: API_STATE.DEPRECATED,
+    label: 'Deprecated',
+    icon: 'fas fa-exclamation-triangle',
+    color: 'hsla(40, 94%, 58%, 1)',
+  },
+  {
+    key: API_STATE.REMOVED,
+    label: 'Closed',
+    icon: 'fas fa-times-circle',
+    color: 'hsla(0, 75%, 55%, 1)',
+  },
 ];
 
 export const STATE_PERMISSIONS = {
@@ -38,9 +58,7 @@ export const STATE_PERMISSIONS = {
       { icon: 'fas fa-pen', text: 'Edit configuration via draft mode' },
       { icon: 'fas fa-clone', text: 'Duplicate this API' },
     ],
-    denied: [
-      { icon: 'fas fa-user-plus', text: 'Accept new subscriptions' },
-    ],
+    denied: [{ icon: 'fas fa-user-plus', text: 'Accept new subscriptions' }],
   },
   [API_STATE.REMOVED]: {
     allowed: [

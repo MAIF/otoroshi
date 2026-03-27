@@ -38,7 +38,7 @@ const ROUTE_FORM_SETTINGS = {
           domains: {
             ...NgFrontend.schema.domains,
             label: 'Paths',
-          }
+          },
         },
         flow: NgFrontend.flow,
       },
@@ -46,7 +46,7 @@ const ROUTE_FORM_SETTINGS = {
         type: 'select',
         label: 'Plugin chain',
         props: {
-          options: item.flows.map(r => ({ value: r.id, label: r.name }))
+          options: item.flows.map((r) => ({ value: r.id, label: r.name })),
         },
       },
       backend: {
@@ -54,19 +54,22 @@ const ROUTE_FORM_SETTINGS = {
           <Row title="Backend">
             <div>
               <p>
-                A backend represents the HTTP service that will be called when requests match a endpoint.
-                You can create a backend specifically for a single API and reuse it across multiple endpoints,
-                or create separate backends for each endpoint via the <em>Backends</em> menu.
+                A backend represents the HTTP service that will be called when requests match a
+                endpoint. You can create a backend specifically for a single API and reuse it across
+                multiple endpoints, or create separate backends for each endpoint via the{' '}
+                <em>Backends</em> menu.
               </p>
               <p>
-                In short, the backend defines where your requests are sent and how Otoroshi forwards them.
+                In short, the backend defines where your requests are sent and how Otoroshi forwards
+                them.
               </p>
 
               <p>Usage:</p>
               <ul>
                 <li>
                   <span className="badge bg-success me-2">LOCAL</span>
-                  defined directly in this API, only visible here, can be reused across this API's routes
+                  defined directly in this API, only visible here, can be reused across this API's
+                  routes
                 </li>
                 <li>
                   <span className="badge bg-warning me-2">GLOBAL</span>
@@ -76,9 +79,18 @@ const ROUTE_FORM_SETTINGS = {
 
               <p>Example:</p>
               <ul>
-                <li>You create a LOCAL backend for your "Users API" pointing to <code>https://users.example.com</code></li>
-                <li>You can then assign this backend to all endpoints of your Users API, avoiding duplication</li>
-                <li>Or, if you have different upstream services per endpoint, you can create a dedicated backend for each</li>
+                <li>
+                  You create a LOCAL backend for your "Users API" pointing to{' '}
+                  <code>https://users.example.com</code>
+                </li>
+                <li>
+                  You can then assign this backend to all endpoints of your Users API, avoiding
+                  duplication
+                </li>
+                <li>
+                  Or, if you have different upstream services per endpoint, you can create a
+                  dedicated backend for each
+                </li>
               </ul>
             </div>
             <NgSelectRenderer
@@ -166,7 +178,7 @@ const ROUTE_FORM_SETTINGS = {
       name: '4. Configure the backend',
       fields: ['backend'],
       summaryFields: ['backend'],
-    }
+    },
   ],
 };
 
@@ -289,7 +301,7 @@ export function NewRoute(props) {
 
   useEffect(() => {
     if (item) {
-      console.log(item)
+      console.log(item);
       nextClient
         .forEntityNext(nextClient.ENTITIES.ROUTES)
         .template()
@@ -300,7 +312,7 @@ export function NewRoute(props) {
             enabled: true,
             frontend: {
               ...frontend,
-              domains: ['/foo']
+              domains: ['/foo'],
             },
             backend: item.backends.length && item.backends[0].id,
             usingExistingBackend: true,
@@ -319,18 +331,17 @@ export function NewRoute(props) {
         <InfoCollapse title="What is an Endpoint ?">
           <ul>
             <li>
-              <strong>Path & HTTP method</strong> — define the operation
-              (e.g. <code>GET /users</code>, <code>POST /orders</code>).
+              <strong>Path & HTTP method</strong> — define the operation (e.g.{' '}
+              <code>GET /users</code>, <code>POST /orders</code>).
             </li>
             <li>
-              <strong>Plugin chains</strong> — apply a dedicated chain of plugins
-              executed for this endpoint (validation, transformation, rate limiting,
-              custom logic, etc.)
+              <strong>Plugin chains</strong> — apply a dedicated chain of plugins executed for this
+              endpoint (validation, transformation, rate limiting, custom logic, etc.)
             </li>
             <li>
-              <strong>Backend target</strong> — forward traffic to a specific backend
-              service. The endpoint ultimately routes the request to its configured
-              backend after all plugins have been executed.
+              <strong>Backend target</strong> — forward traffic to a specific backend service. The
+              endpoint ultimately routes the request to its configured backend after all plugins
+              have been executed.
             </li>
           </ul>
         </InfoCollapse>
@@ -381,7 +392,7 @@ export function Endpoints(props) {
           </>
         );
       },
-    }
+    },
   ];
 
   const { item, updateItem, isDraft } = useDraftOfAPI();
@@ -405,65 +416,68 @@ export function Endpoints(props) {
 
   if (!item) return <SimpleLoader />;
 
-  return <>
-    <InfoCollapse title="What is an Endpoint?">
-      <p>
-        An Endpoint represents a <strong>concrete operation</strong> exposed by your API.
-        While the API defines the global governance (domain, context path, security, lifecycle),
-        an endpoint defines <strong>how a specific request is matched and processed</strong>.
-      </p>
-      <p>
-        Each endpoint defines a <strong>path</strong> that is automatically
-        concatenated with the API domain and context path.
-        The final exposed URL is therefore: API domain + API context path + Endpoint path
-      </p>
-      <p>
-        For example, if your API is exposed on <code className='me-1'>api.company.com</code>
-        with a context path <code className='me-1'>/v1</code>, and your endpoint path is
-        <code className='me-1'>/users</code>, the resulting public route becomes: <code>https://api.company.com/v1/users</code>
-      </p>
-    </InfoCollapse>
+  return (
+    <>
+      <InfoCollapse title="What is an Endpoint?">
+        <p>
+          An Endpoint represents a <strong>concrete operation</strong> exposed by your API. While
+          the API defines the global governance (domain, context path, security, lifecycle), an
+          endpoint defines <strong>how a specific request is matched and processed</strong>.
+        </p>
+        <p>
+          Each endpoint defines a <strong>path</strong> that is automatically concatenated with the
+          API domain and context path. The final exposed URL is therefore: API domain + API context
+          path + Endpoint path
+        </p>
+        <p>
+          For example, if your API is exposed on <code className="me-1">api.company.com</code>
+          with a context path <code className="me-1">/v1</code>, and your endpoint path is
+          <code className="me-1">/users</code>, the resulting public route becomes:{' '}
+          <code>https://api.company.com/v1/users</code>
+        </p>
+      </InfoCollapse>
 
-    <Table
-      parentProps={{ params }}
-      navigateTo={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
-      }
-      navigateOnEdit={(item) =>
-        historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
-      }
-      selfUrl="endpoints"
-      defaultTitle="Endpoint"
-      itemName="Endpoint"
-      columns={columns}
-      deleteItem={deleteItem}
-      fetchTemplate={client.template}
-      fetchItems={() => Promise.resolve(item.routes || [])}
-      defaultSort="name"
-      defaultSortDesc="true"
-      showActions={isDraft}
-      showLink={false}
-      extractKey={(item) => item.id}
-      rowNavigation={true}
-      hideAddItemAction={true}
-      itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/endpoints/${i.id}/edit`)}
-      rawEditUrl={true}
-      injectTopBar={() => (
-        <DraftOnly>
-          <div className="btn-group input-group-btn">
-            <Link
-              className="btn btn-primary btn-sm"
-              to={{
-                pathname: 'endpoints/new',
-                search: location.search,
-              }}
-            >
-              <i className="fas fa-plus-circle" /> Create new endpoint
-            </Link>
-            {props.injectTopBar}
-          </div>
-        </DraftOnly>
-      )}
-    />
-  </>
+      <Table
+        parentProps={{ params }}
+        navigateTo={(item) =>
+          historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
+        }
+        navigateOnEdit={(item) =>
+          historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
+        }
+        selfUrl="endpoints"
+        defaultTitle="Endpoint"
+        itemName="Endpoint"
+        columns={columns}
+        deleteItem={deleteItem}
+        fetchTemplate={client.template}
+        fetchItems={() => Promise.resolve(item.routes || [])}
+        defaultSort="name"
+        defaultSortDesc="true"
+        showActions={isDraft}
+        showLink={false}
+        extractKey={(item) => item.id}
+        rowNavigation={true}
+        hideAddItemAction={true}
+        itemUrl={(i) => linkWithQuery(`/bo/dashboard/apis/${params.apiId}/endpoints/${i.id}/edit`)}
+        rawEditUrl={true}
+        injectTopBar={() => (
+          <DraftOnly>
+            <div className="btn-group input-group-btn">
+              <Link
+                className="btn btn-primary btn-sm"
+                to={{
+                  pathname: 'endpoints/new',
+                  search: location.search,
+                }}
+              >
+                <i className="fas fa-plus-circle" /> Create new endpoint
+              </Link>
+              {props.injectTopBar}
+            </div>
+          </DraftOnly>
+        )}
+      />
+    </>
+  );
 }

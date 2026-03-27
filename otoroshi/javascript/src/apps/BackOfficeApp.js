@@ -86,8 +86,9 @@ class ServiceDescriptorsMigrationPopup extends Component {
             The next major version of Otoroshi (
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
-            for Service Descriptors (probably in 2026). Once this version will be deployed, all your remaning Service
-            Descriptors will be automatically migrated and deleted without further notice.
+            for Service Descriptors (probably in 2026). Once this version will be deployed, all your
+            remaning Service Descriptors will be automatically migrated and deleted without further
+            notice.
           </p>
           <p style={{ textAlign: 'justify' }}>
             We count{' '}

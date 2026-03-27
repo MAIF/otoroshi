@@ -151,20 +151,20 @@ export function NewBackend(props) {
           ...data.backend,
           targets: [
             {
-              id: "target_1",
-              hostname: "request.otoroshi.io",
+              id: 'target_1',
+              hostname: 'request.otoroshi.io',
               port: 443,
               tls: true,
-              weight: 1
-            }
-          ]
+              weight: 1,
+            },
+          ],
         },
       }),
   });
 
   if (!backend || !item) return <SimpleLoader />;
 
-  console.log(backend)
+  console.log(backend);
 
   return (
     <>
@@ -183,7 +183,7 @@ export function NewBackend(props) {
 
       <div
         style={{
-          maxWidth: MAX_WIDTH
+          maxWidth: MAX_WIDTH,
         }}
       >
         <BackendForm
@@ -224,7 +224,6 @@ export function NewBackend(props) {
                   type: 'form',
                   schema: {
                     ...NgBackend.schema,
-
                   },
                   flow: NgBackend.flow.filter((f) => f !== 'client'),
                 },
@@ -287,7 +286,7 @@ export function EditBackend(props) {
 
       <div
         style={{
-          maxWidth: MAX_WIDTH
+          maxWidth: MAX_WIDTH,
         }}
       >
         <BackendForm

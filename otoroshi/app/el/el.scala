@@ -371,8 +371,8 @@ object GlobalExpressionLanguage {
                 json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
               }
             }
-            case "in_raw_jwt" if matchedRawInputToken.isDefined => matchedRawInputToken.get 
-            case "out_raw_jwt" if matchedRawOutputToken.isDefined => matchedRawOutputToken.get
+            case "in_raw_jwt" if matchedRawInputToken.isDefined                     => matchedRawInputToken.get
+            case "out_raw_jwt" if matchedRawOutputToken.isDefined                   => matchedRawOutputToken.get
 
             case r"apikeyjwt.$field@(.*)" if field.contains(".")              => {
               attrs

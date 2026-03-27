@@ -7,10 +7,10 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.ConfigFactory
 import next.models.{
-  ApiSubscriptionDataStore,
   ApiDataStore,
-  KvApiSubscriptionDataStore,
+  ApiSubscriptionDataStore,
   KvApiDataStore,
+  KvApiSubscriptionDataStore,
   KvRouteTemplateDataStore,
   RouteTemplateDataStore
 }

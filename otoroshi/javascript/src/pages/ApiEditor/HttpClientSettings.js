@@ -195,12 +195,14 @@ export function EditHttpClientSettings(props) {
   const [client, setClient] = useState();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   useEffect(() => {
     if (item && !client) {
-      setClient(item.clients_backend_config.find((item) => item.id === params.httpClientSettingsId));
+      setClient(
+        item.clients_backend_config.find((item) => item.id === params.httpClientSettingsId)
+      );
     }
   }, [item]);
 

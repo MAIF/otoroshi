@@ -194,25 +194,28 @@ class OverrideLocationHeader extends NgRequestTransformer {
               val oldLocation     = Uri(location)
               val oldLocationHost = oldLocation.authority.host.toString()
               if (oldLocationHost.equalsIgnoreCase(backendHost) || config.matches(oldLocationHost)) {
-                val frontendHost =
+                val frontendHost     =
                   Option(ctx.request.domain)
                     .filterNot(_.isBlank)
                     .getOrElse(ctx.route.frontend.domains.head.domainLowerCase)
-                val currentPort: Int = if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
-                val processedPath = if (!ctx.route.backend.rewrite && ctx.route.backend.root != "/") {
+                val currentPort: Int =
+                  if (ctx.request.theHost.contains(":")) ctx.request.theHost.split(":").last.toInt else 0
+                val processedPath    = if (!ctx.route.backend.rewrite && ctx.route.backend.root != "/") {
                   val newPath = oldLocation.path.toString().replaceFirst(ctx.route.backend.root, "")
                   if (newPath.startsWith("/")) Uri.Path(newPath) else Uri.Path(s"/$newPath")
                 } else oldLocation.path //stripPathIfMatch(ctx.route, oldLocation.path)
-                val newLocation  =
-                  oldLocation.copy(
-                    scheme = ctx.request.theProtocol,
-                    path = processedPath,
-                    authority = oldLocation.authority.copy(
-                      host = Uri.Host(frontendHost),
-                      port = currentPort
+                val newLocation      =
+                  oldLocation
+                    .copy(
+                      scheme = ctx.request.theProtocol,
+                      path = processedPath,
+                      authority = oldLocation.authority.copy(
+                        host = Uri.Host(frontendHost),
+                        port = currentPort
+                      )
                     )
-                  ).toString()
-                val headers      = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
+                    .toString()
+                val headers          = ctx.otoroshiResponse.headers.-("Location").-("location").+("Location" -> newLocation)
                 ctx.otoroshiResponse.copy(headers = headers).rightf
               } else {
                 ctx.otoroshiResponse.rightf

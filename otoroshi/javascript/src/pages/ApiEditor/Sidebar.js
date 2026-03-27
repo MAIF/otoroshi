@@ -30,8 +30,8 @@ const LINK_GROUPS = (id) => [
         title: 'Actions',
         tab: 'actions',
         tooltip: { ...createTooltip(`Show actions tab`) },
-        isProd: true
-      }
+        isProd: true,
+      },
     ],
   },
   {
@@ -144,7 +144,9 @@ export default (props) => {
   const params = props.params;
 
   const currentTab = location.pathname.split('/')[3];
-  const noneTabIsActive = !ALL_LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
+  const noneTabIsActive = !ALL_LINKS().find(
+    (r) => r.tab?.toLowerCase() === currentTab?.toLowerCase()
+  );
 
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
@@ -182,9 +184,11 @@ export default (props) => {
         </li>
         {!isOnApisHome && (
           <>
-            {openedSidebar && version && version !== 'staging' && <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
-              <VersionToggle isDraft={version === 'Draft'} />
-            </div>}
+            {openedSidebar && version && version !== 'staging' && (
+              <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
+                <VersionToggle isDraft={version === 'Draft'} />
+              </div>
+            )}
             {LINK_GROUPS(params.apiId).map((group) => (
               <React.Fragment key={group.label}>
                 {openedSidebar && (
@@ -204,19 +208,25 @@ export default (props) => {
                         search: location.search,
                       }}
                       {...(tooltip || {})}
-                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-1' : ''
-                        } m-0 ${isActive(tab)}`}
+                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                        openedSidebar ? 'ms-1' : ''
+                      } m-0 ${isActive(tab)}`}
                     >
                       <div style={{ width: '20px' }} className="d-flex justify-content-center">
                         <i className={`fas ${icon}`} />
                       </div>
                       <div className="title"> {openedSidebar ? title : ''}</div>
 
-                      {isProd && openedSidebar && <span className='dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto' style={{
-                        color: 'var(--text) !important'
-                      }}>
-                        PROD
-                      </span>}
+                      {isProd && openedSidebar && (
+                        <span
+                          className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
+                          style={{
+                            color: 'var(--text) !important',
+                          }}
+                        >
+                          PROD
+                        </span>
+                      )}
                     </Link>
                   </li>
                 ))}

@@ -56,9 +56,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-        this.props.rawValue.clientId +
-        '/bearer?newSecret=' +
-        this.props.rawValue.clientSecret,
+          this.props.rawValue.clientId +
+          '/bearer?newSecret=' +
+          this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,9 +255,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -881,8 +883,9 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
-                }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -952,9 +955,8 @@ export class ServiceApiKeysPage extends Component {
           setSidebarContent={this.props.setSidebarContent}
         />
       );
-    }
-    else if (this.onApis) {
-      return null
+    } else if (this.onApis) {
+      return null;
     }
     return (
       <ServiceSidebar
@@ -971,21 +973,17 @@ export class ServiceApiKeysPage extends Component {
 
   componentDidMount() {
     const fu = this.onRoutes
-      ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES)
-        .findById(this.props.params.routeId) :
-      this.onApis ? nextClient.forEntityNext(nextClient.ENTITIES.APIS)
-        .findById(this.props.params.apiId) :
-        nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+      ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
+      : this.onApis
+        ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
+        : nextClient
+            .forEntityNext(nextClient.ENTITIES.SERVICES)
+            .findById(this.props.params.serviceId);
 
     fu.then((service) => {
-      if (this.onRoutes)
-        this.props.setTitle(this.props.title || `HTTP Routes Apikeys`)
-      else if (this.onApis)
-        this.props.setTitle(this.props.title || `APIs Apikeys`)
-      else
-        this.props.setTitle(`Service Apikeys`);
+      if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);
+      else if (this.onApis) this.props.setTitle(this.props.title || `APIs Apikeys`);
+      else this.props.setTitle(`Service Apikeys`);
 
       this.setState({ service, loading: false }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
@@ -1050,7 +1048,9 @@ export class ServiceApiKeysPage extends Component {
                 ? `apis/${this.props.params.apiId}/apikeys`
                 : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
-          defaultTitle={this.onRoutes ? 'Route Apikeys' : this.onApis ? 'APIs Apikeys' : 'Service Apikeys'}
+          defaultTitle={
+            this.onRoutes ? 'Route Apikeys' : this.onApis ? 'APIs Apikeys' : 'Service Apikeys'
+          }
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)
@@ -1058,11 +1058,15 @@ export class ServiceApiKeysPage extends Component {
               .then((apk) => ({
                 ...apk,
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-                authorizedEntities: this.onRoutes ? [
-                  `route_${this.props.params.routeId}`, // just authorize the route
-                ] : this.onApis ? [
-                  `api_${this.props.params.apiId}`, // just authorize the api
-                ] : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
+                authorizedEntities: this.onRoutes
+                  ? [
+                      `route_${this.props.params.routeId}`, // just authorize the route
+                    ]
+                  : this.onApis
+                    ? [
+                        `api_${this.props.params.apiId}`, // just authorize the api
+                      ]
+                    : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
               }))
           }
           _defaultValue={() => ({
@@ -1098,9 +1102,13 @@ export class ServiceApiKeysPage extends Component {
           kubernetesKind="apim.otoroshi.io/ApiKey"
           navigateTo={(item) => {
             if (this.onRoutes) {
-              this.props.history.push(`/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`);
+              this.props.history.push(
+                `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
+              );
             } else if (this.onApis) {
-              this.props.history.push(`/apis/${this.props.params.apiId}/apikeys/edit/${item.clientId}`);
+              this.props.history.push(
+                `/apis/${this.props.params.apiId}/apikeys/edit/${item.clientId}`
+              );
             } else {
               this.props.history.push(
                 `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}?group=${item.id}`

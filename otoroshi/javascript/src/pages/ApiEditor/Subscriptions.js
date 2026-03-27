@@ -34,8 +34,8 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         label: 'Owner',
         type: 'select',
         props: {
-          options: item.clients.map(({ id, name }) => ({ value: id, label: name }))
-        }
+          options: item.clients.map(({ id, name }) => ({ value: id, label: name })),
+        },
       },
       plan_ref: {
         type: 'select',
@@ -43,11 +43,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         props: {
           options: item.documentation?.plans || [],
           noOptionsMessage: ({ children, ...props }) => {
-            return (
-              <components.NoOptionsMessage {...props}>
-                No Plans
-              </components.NoOptionsMessage>
-            );
+            return <components.NoOptionsMessage {...props}>No Plans</components.NoOptionsMessage>;
           },
           optionsTransformer: {
             value: 'id',
@@ -60,7 +56,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         label: 'Token refs',
         type: 'string',
       },
-    }
+    };
   },
   flow: [
     'location',
@@ -91,48 +87,41 @@ export function Subscriptions(props) {
       title: 'Name',
       filterId: 'name',
       content: (item) => item.name,
-    }
+    },
   ];
 
   useEffect(() => {
     props.setTitle({
       value: 'Subscriptions',
       noThumbtack: true,
-      children: <VersionBadge />
+      children: <VersionBadge />,
     });
   }, []);
 
-  const client = nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
+  const client = nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS);
 
   const fetchSubscriptions = () => {
     if (version) {
-      if (isDraft)
-        return findDraftsByKind("api-subscription")
-          .then(d => ({ data: d }))
+      if (isDraft) return findDraftsByKind('api-subscription').then((d) => ({ data: d }));
 
-      return nextClient
-        .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
-        .findAllWithPagination({
-          page: 1,
-          pageSize: 15,
-          filtered: [
-            {
-              id: 'api_ref',
-              value: params.apiId,
-            },
-          ],
-        });
+      return nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS).findAllWithPagination({
+        page: 1,
+        pageSize: 15,
+        filtered: [
+          {
+            id: 'api_ref',
+            value: params.apiId,
+          },
+        ],
+      });
     }
-  }
+  };
 
   const deleteItem = (item) => {
-    if (isDraft)
-      return nextClient
-        .forEntityNext(nextClient.ENTITIES.DRAFTS)
-        .deleteById(item.id)
+    if (isDraft) return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(item.id);
 
     return client.delete(item).then(() => window.location.reload());
-  }
+  };
 
   return (
     <Table
@@ -183,42 +172,38 @@ export function SubscriptionDesigner(props) {
     ['getSubscription', params.subscriptionId, version, isDraft],
     () => {
       if (isDraft)
-        return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
-          .findById(params.subscriptionId)
+        return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).findById(params.subscriptionId);
       return nextClient
         .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
-        .findById(params.subscriptionId)
+        .findById(params.subscriptionId);
     },
     {
       enabled: !!version,
-      onSuccess: res => {
-        if (isDraft)
-          setDraftSubscription(res)
-        else
-          setSubscription(res)
+      onSuccess: (res) => {
+        if (isDraft) setDraftSubscription(res);
+        else setSubscription(res);
       },
     }
   );
 
-  const goToSubscriptions = () => historyPush(history, location, `/apis/${params.apiId}/subscriptions`)
+  const goToSubscriptions = () =>
+    historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
 
   const updateSubscription = () => {
     if (isDraft)
-      return nextClient
-        .forEntityNext(nextClient.ENTITIES.DRAFTS)
-        .update(draftSubscription)
+      return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).update(draftSubscription);
 
     return nextClient
       .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .update(subscription)
-      .then(goToSubscriptions)
+      .then(goToSubscriptions);
   };
 
   if (!item || (isDraft ? !draftSubscription : !subscription)) return <SimpleLoader />;
 
-  const sub = isDraft ? draftSubscription : subscription
+  const sub = isDraft ? draftSubscription : subscription;
 
-  console.log(draftSubscription)
+  console.log(draftSubscription);
 
   return (
     <>
@@ -239,7 +224,11 @@ export function SubscriptionDesigner(props) {
           value={isDraft ? draftSubscription.content : subscription}
           schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
           flow={SUBSCRIPTION_FORM_SETTINGS.flow}
-          onChange={res => isDraft ? setDraftSubscription({ ...draftSubscription, content: res }) : setSubscription(res)}
+          onChange={(res) =>
+            isDraft
+              ? setDraftSubscription({ ...draftSubscription, content: res })
+              : setSubscription(res)
+          }
         />
       </div>
     </>
@@ -248,8 +237,8 @@ export function SubscriptionDesigner(props) {
 
 export function NewSubscription(props) {
   const location = useLocation();
-  const params = useParams()
-  const history = useHistory()
+  const params = useParams();
+  const history = useHistory();
 
   const [subscription, setSubscription] = useState();
   const [error, setError] = useState();
@@ -276,9 +265,11 @@ export function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
-    return (isDraft ? nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS) :
-      nextClient
-        .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS))
+    return (
+      isDraft
+        ? nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+        : nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
+    )
       .create({
         ...subscription,
         api_ref: params.apiId,
@@ -290,8 +281,8 @@ export function NewSubscription(props) {
         } else {
           historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
         }
-      })
-  }
+      });
+  };
 
   return (
     <>

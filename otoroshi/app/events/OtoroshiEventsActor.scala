@@ -2178,17 +2178,18 @@ object Exporters {
     }
 
     override def start(): Future[Unit] = {
-      exporter[PostgresExporterSettings].map { settings =>
-        val pool = PgPool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
-        poolRef.set(pool)
-        initTable(pool, settings).recover {
-          case e: Throwable =>
+      exporter[PostgresExporterSettings]
+        .map { settings =>
+          val pool = PgPool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
+          poolRef.set(pool)
+          initTable(pool, settings).recover { case e: Throwable =>
             logger.error(
               s"[postgres-exporter] Error while initializing table '${settings.schema}.${settings.table}'",
               e
             )
+          }
         }
-      }.getOrElse(FastFuture.successful(()))
+        .getOrElse(FastFuture.successful(()))
     }
 
     override def stop(): Future[Unit] = {
@@ -2232,13 +2233,12 @@ object Exporters {
                 .executeBatch(tuples)
                 .scala
                 .map(_ => ExportResult.ExportResultSuccess: ExportResult)
-                .recover {
-                  case e: Throwable =>
-                    logger.error(
-                      s"[postgres-exporter] Error while inserting events into '${settings.schema}.${settings.table}'",
-                      e
-                    )
-                    ExportResult.ExportResultFailure(e.getMessage)
+                .recover { case e: Throwable =>
+                  logger.error(
+                    s"[postgres-exporter] Error while inserting events into '${settings.schema}.${settings.table}'",
+                    e
+                  )
+                  ExportResult.ExportResultFailure(e.getMessage)
                 }
           }
       }

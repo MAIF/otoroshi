@@ -21,8 +21,8 @@ export default {
       props: {
         ngOptions: {
           spread: true,
-        }
-      }
+        },
+      },
     },
     verifier: {
       label: 'Verifier',
@@ -49,13 +49,9 @@ export default {
     'custom_response',
     {
       type: 'group',
-      visible: props => props?.custom_response,
+      visible: (props) => props?.custom_response,
       title: 'Custom response information',
-      fields: [
-        'custom_response_status',
-        'custom_response_headers',
-        'custom_response_body'
-      ]
-    }
+      fields: ['custom_response_status', 'custom_response_headers', 'custom_response_body'],
+    },
   ],
 };

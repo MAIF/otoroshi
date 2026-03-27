@@ -75,15 +75,17 @@ object SourceUtils {
               logger.warn(s"Error resolving glob $path from $sourceName: ${err.toString}")
               Seq.empty[RemoteEntity].vfuture
             case Right(resolvedPaths) =>
-              resolvedPaths.mapAsync { relativePath =>
-                fetchRelativePath(relativePath).map {
-                  case Left(err)         =>
-                    logger.warn(s"Error fetching $relativePath from $sourceName: ${err.toString}")
-                    Seq.empty[RemoteEntity]
-                  case Right(rawContent) =>
-                    parseEntityContent(rawContent, s"$sourceName/$relativePath", allResources)
+              resolvedPaths
+                .mapAsync { relativePath =>
+                  fetchRelativePath(relativePath).map {
+                    case Left(err)         =>
+                      logger.warn(s"Error fetching $relativePath from $sourceName: ${err.toString}")
+                      Seq.empty[RemoteEntity]
+                    case Right(rawContent) =>
+                      parseEntityContent(rawContent, s"$sourceName/$relativePath", allResources)
+                  }
                 }
-              }.map(_.flatten)
+                .map(_.flatten)
           }
         } else {
           fetchRelativePath(path).map {
@@ -146,9 +148,10 @@ object SourceUtils {
 
   def resolveRemoteGlob(allFiles: Seq[String], basePath: String, globPattern: String): Seq[String] = {
     allFiles.flatMap { file =>
-      val relativeOpt = if (basePath.isEmpty) Some(file)
-                        else if (file.startsWith(basePath + "/")) Some(file.stripPrefix(basePath + "/"))
-                        else None
+      val relativeOpt =
+        if (basePath.isEmpty) Some(file)
+        else if (file.startsWith(basePath + "/")) Some(file.stripPrefix(basePath + "/"))
+        else None
       relativeOpt.filter(r => matchesGlob(r, globPattern))
     }
   }
@@ -245,7 +248,10 @@ class CatalogSourceFile extends CatalogSource {
                   s"file://$path",
                   allRes,
                   resolveGlob = Some(glob =>
-                    (Right(SourceUtils.resolveLocalGlob(new File(basePath), glob)): Either[JsValue, Seq[String]]).vfuture
+                    (Right(SourceUtils.resolveLocalGlob(new File(basePath), glob)): Either[
+                      JsValue,
+                      Seq[String]
+                    ]).vfuture
                   )
                 )
               case None      =>
@@ -614,15 +620,15 @@ class CatalogSourceGithub extends CatalogSource {
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val repoUrl     = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
-    val branch      = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
-    val path        = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
-    val token       = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
-    val apiBase     =
+    val repoUrl      = catalog.sourceConfig.select("repo").asOpt[String].getOrElse("")
+    val branch       = catalog.sourceConfig.select("branch").asOpt[String].getOrElse("main")
+    val path         = catalog.sourceConfig.select("path").asOpt[String].getOrElse("/").stripPrefix("/")
+    val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
+    val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.github.com").stripSuffix("/")
     val repoPatterns =
       catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val allRes      = env.allResources.resources ++ env.adminExtensions.resources()
+    val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
       case Some((owner, repo)) =>
@@ -633,9 +639,10 @@ class CatalogSourceGithub extends CatalogSource {
             listOrgRepos(apiBase, org, token, env).flatMap {
               case Left(err)    => err.leftf
               case Right(repos) =>
-                val filtered = if (repoPatterns.nonEmpty)
-                  repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
-                else repos
+                val filtered =
+                  if (repoPatterns.nonEmpty)
+                    repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
+                  else repos
                 logger.info(s"Scanning ${filtered.size} repos in org '$org' for path '$path'")
                 filtered
                   .mapAsync { repoName =>
@@ -1377,8 +1384,8 @@ class CatalogSourceBitbucket extends CatalogSource {
     if (parts.length == 1) Some(parts(0)) else None
   }
 
-  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(
-      implicit ec: ExecutionContext
+  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(implicit
+      ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace"
     env.Ws
@@ -1490,9 +1497,10 @@ class CatalogSourceBitbucket extends CatalogSource {
             listWorkspaceRepos(apiBase, workspace, token, username, env).flatMap {
               case Left(err)    => err.leftf
               case Right(repos) =>
-                val filtered = if (repoPatterns.nonEmpty)
-                  repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
-                else repos
+                val filtered =
+                  if (repoPatterns.nonEmpty)
+                    repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
+                  else repos
                 logger.info(s"Scanning ${filtered.size} repos in workspace '$workspace' for path '$path'")
                 filtered
                   .mapAsync { repoName =>
@@ -1567,7 +1575,10 @@ class CatalogSourceGiteaCompat(
         }
       }
       .recover { case e: Throwable =>
-        Left(Json.obj("error" -> s"Error fetching $filePath from $sourceKind: ${e.getMessage}")): Either[JsValue, String]
+        Left(Json.obj("error" -> s"Error fetching $filePath from $sourceKind: ${e.getMessage}")): Either[
+          JsValue,
+          String
+        ]
       }
   }
 
@@ -1635,7 +1646,7 @@ class CatalogSourceGiteaCompat(
                 if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
               Right(files): Either[JsValue, Seq[String]]
-            case _ =>
+            case _            =>
               Left(Json.obj("error" -> s"$sourceKind API did not return an array for directory listing")): Either[
                 JsValue,
                 Seq[String]
@@ -1798,9 +1809,10 @@ class CatalogSourceGiteaCompat(
             listOrgRepos(baseUrl, org, token, env).flatMap {
               case Left(err)    => err.leftf
               case Right(repos) =>
-                val filtered = if (repoPatterns.nonEmpty)
-                  repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
-                else repos
+                val filtered =
+                  if (repoPatterns.nonEmpty)
+                    repos.filter(name => repoPatterns.exists(p => SourceUtils.matchesGlob(name, p)))
+                  else repos
                 logger.info(s"Scanning ${filtered.size} repos in org '$org' on $sourceKind for path '$path'")
                 filtered
                   .mapAsync { repoName =>
@@ -1818,8 +1830,8 @@ class CatalogSourceGiteaCompat(
   }
 }
 
-class CatalogSourceGitea extends CatalogSourceGiteaCompat("gitea", "http://localhost:3000")
-class CatalogSourceForgejo extends CatalogSourceGiteaCompat("forgejo", "http://localhost:3000")
+class CatalogSourceGitea    extends CatalogSourceGiteaCompat("gitea", "http://localhost:3000")
+class CatalogSourceForgejo  extends CatalogSourceGiteaCompat("forgejo", "http://localhost:3000")
 class CatalogSourceCodeberg extends CatalogSourceGiteaCompat("codeberg", "https://codeberg.org")
 
 class CatalogSourceGit extends CatalogSource {
@@ -1933,10 +1945,10 @@ class CatalogSourceGit extends CatalogSource {
         val rawContent = new String(Files.readAllBytes(target.toPath), StandardCharsets.UTF_8)
         SourceUtils.isDeployListing(rawContent) match {
           case Some(arr) =>
-            val basePath  = target.getParentFile.getAbsolutePath
-            val baseDir_  = new File(basePath)
-            val rawPaths  = arr.value.flatMap(_.asOpt[String])
-            val resolved  = rawPaths.flatMap { relativePath =>
+            val basePath                    = target.getParentFile.getAbsolutePath
+            val baseDir_                    = new File(basePath)
+            val rawPaths                    = arr.value.flatMap(_.asOpt[String])
+            val resolved                    = rawPaths.flatMap { relativePath =>
               if (SourceUtils.isGlobPattern(relativePath)) {
                 SourceUtils.resolveLocalGlob(baseDir_, relativePath)
               } else {

@@ -2585,13 +2585,25 @@ const possibleExporterConfigFormValues = {
   },
   postgresql: {
     label: 'PostgreSQL',
-    flow: ['uri', 'host', 'port', 'database', 'user', 'password', 'schema', 'table', 'pool_size', 'ssl'],
+    flow: [
+      'uri',
+      'host',
+      'port',
+      'database',
+      'user',
+      'password',
+      'schema',
+      'table',
+      'pool_size',
+      'ssl',
+    ],
     schema: {
       uri: {
         type: 'string',
         props: {
           label: 'Connection URI',
-          placeholder: 'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+          placeholder:
+            'postgresql://user:password@host:5432/database (optional, overrides fields below)',
         },
       },
       host: {

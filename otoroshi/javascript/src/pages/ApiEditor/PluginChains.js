@@ -18,8 +18,8 @@ const FLOW_FORM_SETTINGS = {
   schema: (item) => ({
     name: {
       type: 'string',
-      label: 'Plugin chain name'
-    }
+      label: 'Plugin chain name',
+    },
   }),
   flow: [
     {
@@ -27,7 +27,7 @@ const FLOW_FORM_SETTINGS = {
       name: 'Informations',
       collapsable: false,
       fields: ['name'],
-    }
+    },
   ],
 };
 
@@ -61,7 +61,7 @@ export function EditPluginChains(props) {
       ...item,
       flows: item.flows.map((ite) => {
         if (ite.id === params.flowId) {
-          return flow
+          return flow;
         } else {
           return ite;
         }
@@ -108,7 +108,7 @@ export function NewPluginChains(props) {
   const [flow, setFlow] = useState({
     id: uuid(),
     name: 'New plugin chains name',
-    plugins: []
+    plugins: [],
   });
 
   const { item, updateItem } = useDraftOfAPI();
@@ -116,10 +116,7 @@ export function NewPluginChains(props) {
   const createFlow = () => {
     return updateItem({
       ...item,
-      flows: [
-        ...item.flows,
-        flow
-      ],
+      flows: [...item.flows, flow],
     }).then(() =>
       historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${flow.id}/designer`)
     );
@@ -206,7 +203,7 @@ export function PluginChainsDesigner(props) {
           };
         return flow;
       }),
-    })
+    });
   };
 
   if (!item || !flow) return <SimpleLoader />;
@@ -217,7 +214,7 @@ export function PluginChainsDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ ...(value || {}) })}
-        setSaveButton={() => { }}
+        setSaveButton={() => {}}
       />
     </div>
   );

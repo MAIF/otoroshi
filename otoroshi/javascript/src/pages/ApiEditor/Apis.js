@@ -50,7 +50,7 @@ export function NewAPI(props) {
         step: 0,
         api: undefined,
         backendHostname: 'petstore3.swagger.io',
-        backendPath: '/api/v3/'
+        backendPath: '/api/v3/',
       });
     }
   }, [choice]);
@@ -93,12 +93,19 @@ export function NewAPI(props) {
       label: 'Backend path',
     },
     action: {
-      renderer: props => {
+      renderer: (props) => {
         return (
           <Row title=" " className="col-sm-10 d-flex align-items-center">
             <Button
               type="primaryColor"
-              disabled={!(props.rootValue.domain && props.rootValue.contextPath && props.rootValue.backendHostname && props.rootValue.backendPath)}
+              disabled={
+                !(
+                  props.rootValue.domain &&
+                  props.rootValue.contextPath &&
+                  props.rootValue.backendHostname &&
+                  props.rootValue.backendPath
+                )
+              }
               className="btn-sm"
               text="Read information from OpenAPI"
               onClick={() => {
@@ -199,21 +206,28 @@ export function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-        'location',
-        choice === 'openapi'
-          ? {
-            type: 'group',
-            name: 'OpenAPI',
-            collapsable: false,
-            fields: ['openapi', 'domain', 'contextPath', 'backendHostname', 'backendPath', 'action'],
-          }
-          : {
-            type: 'group',
-            name: 'Informations',
-            collapsable: false,
-            fields: ['id', 'name', 'description'],
-          },
-      ];
+          'location',
+          choice === 'openapi'
+            ? {
+                type: 'group',
+                name: 'OpenAPI',
+                collapsable: false,
+                fields: [
+                  'openapi',
+                  'domain',
+                  'contextPath',
+                  'backendHostname',
+                  'backendPath',
+                  'action',
+                ],
+              }
+            : {
+                type: 'group',
+                name: 'Informations',
+                collapsable: false,
+                fields: ['id', 'name', 'description'],
+              },
+        ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -252,7 +266,8 @@ export function NewAPI(props) {
             <i className="fa fa-chevron-left me-2" />
             Back
           </Button>
-          <Button type="primaryColor"
+          <Button
+            type="primaryColor"
             className="btn-sm d-flex"
             onClick={createApi}
             text="Create"
@@ -300,15 +315,17 @@ export function Apis(props) {
     {
       title: 'Version',
       content: (item) => item.version,
-      cell: (value) => <span
-        className="badge custom-badge api-status-started"
-        style={{
-          fontSize: '.75rem',
-        }}
-      >
-        {value}
-      </span>,
-      notFilterable: true
+      cell: (value) => (
+        <span
+          className="badge custom-badge api-status-started"
+          style={{
+            fontSize: '.75rem',
+          }}
+        >
+          {value}
+        </span>
+      ),
+      notFilterable: true,
     },
     {
       title: 'State',
@@ -327,26 +344,50 @@ export function Apis(props) {
     <>
       <InfoCollapse title="What is an API?">
         <p>
-          An API is one of the <strong>core entities</strong> of Otoroshi's API Management, alongside HTTP Routes.
-          While a HTTP route handles a single routing rule, an API lets you <strong>aggregate multiple routes together</strong> and
-          manage them as a unified whole — same security policies, same plugins, same dashboard.
+          An API is one of the <strong>core entities</strong> of Otoroshi's API Management,
+          alongside HTTP Routes. While a HTTP route handles a single routing rule, an API lets you{' '}
+          <strong>aggregate multiple routes together</strong> and manage them as a unified whole —
+          same security policies, same plugins, same dashboard.
         </p>
         <p>
-          Think of it as a higher-level abstraction that brings structure and governance to your routes.
-          Here is what you can do with APIs:
+          Think of it as a higher-level abstraction that brings structure and governance to your
+          routes. Here is what you can do with APIs:
         </p>
         <ul>
-          <li><strong>Group routes under one umbrella</strong> — combine multiple routes (e.g. <code>/users</code>, <code>/products</code>, <code>/orders</code>) into a single API with shared configuration.</li>
-          <li><strong>Apply consistent security</strong> — enforce the same authentication, rate limiting, and access control policies across all routes of the API.</li>
-          <li><strong>Share plugins and patterns</strong> — define plugin chains once at the API level and have them apply to every route, avoiding duplication.</li>
-          <li><strong>Unified dashboard</strong> — monitor traffic, errors, and performance for all routes of the API from a single view.</li>
-          <li><strong>Version and deploy</strong> — manage the lifecycle of your API with versioned deployments, making it easy to evolve your API over time.</li>
-          <li><strong>Draft and production modes</strong> — work on a draft version of your API, test it, and promote it to production when ready — without impacting live traffic.</li>
-          <li><strong>Manage access modes and subscriptions</strong> — control who can access your API, issue API keys, and track access mode usage.</li>
+          <li>
+            <strong>Group routes under one umbrella</strong> — combine multiple routes (e.g.{' '}
+            <code>/users</code>, <code>/products</code>, <code>/orders</code>) into a single API
+            with shared configuration.
+          </li>
+          <li>
+            <strong>Apply consistent security</strong> — enforce the same authentication, rate
+            limiting, and access control policies across all routes of the API.
+          </li>
+          <li>
+            <strong>Share plugins and patterns</strong> — define plugin chains once at the API level
+            and have them apply to every route, avoiding duplication.
+          </li>
+          <li>
+            <strong>Unified dashboard</strong> — monitor traffic, errors, and performance for all
+            routes of the API from a single view.
+          </li>
+          <li>
+            <strong>Version and deploy</strong> — manage the lifecycle of your API with versioned
+            deployments, making it easy to evolve your API over time.
+          </li>
+          <li>
+            <strong>Draft and production modes</strong> — work on a draft version of your API, test
+            it, and promote it to production when ready — without impacting live traffic.
+          </li>
+          <li>
+            <strong>Manage access modes and subscriptions</strong> — control who can access your
+            API, issue API keys, and track access mode usage.
+          </li>
         </ul>
         <p>
-          APIs give you the power to operate at scale — instead of managing dozens of individual routes,
-          you manage a single API entity with full control over its lifecycle, security, and observability.
+          APIs give you the power to operate at scale — instead of managing dozens of individual
+          routes, you manage a single API entity with full control over its lifecycle, security, and
+          observability.
         </p>
       </InfoCollapse>
       <Table

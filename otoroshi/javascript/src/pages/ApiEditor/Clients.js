@@ -30,13 +30,10 @@ export function ClientForm({ client, onChange }) {
         placeholder: 'admin',
         help: 'The tags assigned to this apikey',
       },
-    }
-  }
+    },
+  };
 
-  return <NgForm
-    value={client}
-    schema={schema}
-    onChange={onChange} />
+  return <NgForm value={client} schema={schema} onChange={onChange} />;
 }
 
 export function Clients(props) {
@@ -66,22 +63,26 @@ export function Clients(props) {
       title: 'Description',
       filterId: 'description',
       content: (item) => item.description,
-    }
-  ]
+    },
+  ];
 
-  const deleteItem = client => {
+  const deleteItem = (client) => {
     return updateItem({
       ...item,
-      clients: item.clients.filter(c => c.id !== client.id)
-    })
-  }
+      clients: item.clients.filter((c) => c.id !== client.id),
+    });
+  };
 
   return (
     <>
       <Table
         parentProps={{ params }}
-        navigateTo={client => history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)}
-        navigateOnEdit={client => history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)}
+        navigateTo={(client) =>
+          history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)
+        }
+        navigateOnEdit={(client) =>
+          history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)
+        }
         selfUrl="clients"
         defaultTitle="Clients"
         itemName="Client"
@@ -120,11 +121,15 @@ export function ClientEditor(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   const isNew = !params.clientId;
-  const [client, setClient] = useState(isNew ? {
-    id: v4(),
-    name: 'New client',
-    description: 'New client description'
-  } : null);
+  const [client, setClient] = useState(
+    isNew
+      ? {
+          id: v4(),
+          name: 'New client',
+          description: 'New client description',
+        }
+      : null
+  );
 
   useEffect(() => {
     if (!isNew && item && !client) {
@@ -148,23 +153,24 @@ export function ClientEditor(props) {
       ? [...(item.clients || []), client]
       : item.clients.map((p) => (p.id === client.id ? client : p));
 
-    return updateItem({ ...item, clients })
-      .then(back);
+    return updateItem({ ...item, clients }).then(back);
   };
 
-  return <div style={{ maxWidth: MAX_WIDTH }}>
-    <PageTitle title={isNew ? 'New client' : client.name} {...props}>
-      <FeedbackButton
-        type="success"
-        className="d-flex ms-2"
-        onPress={save}
-        text={
-          <div className="d-flex align-items-center">
-            {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
-          </div>
-        }
-      />
-    </PageTitle>
-    <ClientForm client={client} onChange={setClient} />
-  </div>
+  return (
+    <div style={{ maxWidth: MAX_WIDTH }}>
+      <PageTitle title={isNew ? 'New client' : client.name} {...props}>
+        <FeedbackButton
+          type="success"
+          className="d-flex ms-2"
+          onPress={save}
+          text={
+            <div className="d-flex align-items-center">
+              {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </PageTitle>
+      <ClientForm client={client} onChange={setClient} />
+    </div>
+  );
 }

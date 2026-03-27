@@ -236,7 +236,10 @@ function HighlighedText({ text, link }) {
 function HighlighedPluginsText({ plural }) {
   const params = useParams();
   return (
-    <HighlighedText text={plural ? 'plugins' : 'plugin'} link={`/apis/${params.apiId}/plugin-chains`} />
+    <HighlighedText
+      text={plural ? 'plugins' : 'plugin'}
+      link={`/apis/${params.apiId}/plugin-chains`}
+    />
   );
 }
 
@@ -263,13 +266,21 @@ function HighlighedFrontendText({ plural }) {
 function HighlighedEndpointText({ plural }) {
   const params = useParams();
   return (
-    <HighlighedText text={plural ? 'endpoints' : 'endpoint'} link={`/apis/${params.apiId}/endpoints`} />
+    <HighlighedText
+      text={plural ? 'endpoints' : 'endpoint'}
+      link={`/apis/${params.apiId}/endpoints`}
+    />
   );
 }
 
 function HighlighedPluginChainsText({ plural }) {
   const params = useParams();
-  return <HighlighedText text={plural ? 'plugin chains' : 'plugin chain'} link={`/apis/${params.apiId}/plugin-chains`} />;
+  return (
+    <HighlighedText
+      text={plural ? 'plugin chains' : 'plugin chain'}
+      link={`/apis/${params.apiId}/plugin-chains`}
+    />
+  );
 }
 
 function BackendsCard({ backends }) {
@@ -321,7 +332,8 @@ function EndpointsCard({ routes }) {
         <p className="cards-description relative">
           Define your <HighlighedEndpointText />: connect <HighlighedFrontendText plural /> to{' '}
           <HighlighedBackendText plural /> and customize behavior with{' '}
-          <HighlighedPluginChainsText plural /> like authentication, rate limiting, and transformations.
+          <HighlighedPluginChainsText plural /> like authentication, rate limiting, and
+          transformations.
           <i className="fas fa-chevron-right fa-lg navigate-icon" />
         </p>
       </div>
@@ -374,7 +386,7 @@ function RouteItem({ item, api, ports }) {
 
     const domain = item.frontend.domains[idx];
 
-    const scheme = isSecured ? 'https://' : 'http://'
+    const scheme = isSecured ? 'https://' : 'http://';
 
     return `${scheme}${api.domain}:${ports.http}${api.contextPath}${domain}`;
   };
@@ -384,14 +396,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -700,12 +712,14 @@ export function Dashboard(props) {
   const hasCreateFlow = item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
   const hasCreateBackend = item.backends.filter((f) => f.name !== 'default_backend').length > 0;
   const hasCreateRoute = item.routes.length > 0;
-  const hasCreatePlan = item.documentation?.plans.length > 0
+  const hasCreatePlan = item.documentation?.plans.length > 0;
   const hasTestingEnabled = item.testing.enabled;
-  const hasDomainConfigured = !!(item.domain && item.contextPath)
+  const hasDomainConfigured = !!(item.domain && item.contextPath);
 
   const isStaging = item.state === API_STATE.STAGING;
-  const showGettingStarted = isDraft && item.state !== API_STATE.DEPRECATED &&
+  const showGettingStarted =
+    isDraft &&
+    item.state !== API_STATE.DEPRECATED &&
     (!hasCreateFlow || !hasCreateRoute || isStaging);
 
   const currentStep =
@@ -716,8 +730,8 @@ export function Dashboard(props) {
     Number(hasDomainConfigured) +
     Number(item.state === API_STATE.PUBLISHED);
 
-    // TODO
-  const totalSubscriptions = 0// item.consumers.flatMap((c) => c.subscriptions).length;
+  // TODO
+  const totalSubscriptions = 0; // item.consumers.flatMap((c) => c.subscriptions).length;
 
   return (
     <>
@@ -734,9 +748,7 @@ export function Dashboard(props) {
         {/* API Header */}
         <ContainerBlock full highlighted>
           <APIHeader api={item} version={version} draft={draft} />
-          {version !== 'staging' && (
-            <VersionToggle isDraft={version === 'Draft'} />
-          )}
+          {version !== 'staging' && <VersionToggle isDraft={version === 'Draft'} />}
         </ContainerBlock>
 
         {/* Quick Stats Row */}
@@ -770,7 +782,6 @@ export function Dashboard(props) {
         {/* Getting Started */}
         {showGettingStarted && (
           <ProgressCard step={currentStep}>
-
             {!hasCreateRoute && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/endpoints/new`}
@@ -784,7 +795,11 @@ export function Dashboard(props) {
               <ObjectiveCard
                 to={`/apis/${params.apiId}/api-gateway`}
                 title="Configure the API Gateway"
-                description={<p className="objective-link">Set the domain and context path in the API Gateway tab</p>}
+                description={
+                  <p className="objective-link">
+                    Set the domain and context path in the API Gateway tab
+                  </p>
+                }
                 icon={<i className="fas fa-network-wired" />}
               />
             )}
@@ -824,7 +839,6 @@ export function Dashboard(props) {
                 icon={<i className="fas fa-rocket" />}
               />
             )}
-
           </ProgressCard>
         )}
 
@@ -887,11 +901,7 @@ export function Dashboard(props) {
               <ContainerBlock full>
                 <SectionHeader
                   text="Subscriptions"
-                  description={
-                    totalSubscriptions <= 0
-                      ? 'Subscriptions will appear here'
-                      : ''
-                  }
+                  description={totalSubscriptions <= 0 ? 'Subscriptions will appear here' : ''}
                   icon="fas fa-key"
                   actions={
                     <DraftOnly>
@@ -900,11 +910,7 @@ export function Dashboard(props) {
                         text="Subscribe"
                         className="btn-sm"
                         onClick={() =>
-                          historyPush(
-                            history,
-                            location,
-                            `/apis/${params.apiId}/subscriptions/new`
-                          )
+                          historyPush(history, location, `/apis/${params.apiId}/subscriptions/new`)
                         }
                       />
                     </DraftOnly>

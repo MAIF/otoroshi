@@ -5,7 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
-import next.models.{ApiSubscriptionDataStore, ApiDataStore, RouteTemplateDataStore}
+import next.models.{ApiDataStore, ApiSubscriptionDataStore, RouteTemplateDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterMode, ClusterStateDataStore}
 import otoroshi.env.Env
