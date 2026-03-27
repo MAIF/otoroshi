@@ -1,1 +1,0 @@
-(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[5741],{5741(){}}]);
