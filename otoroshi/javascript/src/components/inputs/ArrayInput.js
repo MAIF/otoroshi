@@ -12,7 +12,7 @@ export class ArrayInput extends Component {
     if (next.possibleValues !== this.props.possibleValues) {
       this.setState({ values: next.possibleValues });
     }
-    if (next.value !== this.props.value && !!this.props.valuesFrom) {
+    if (JSON.stringify(next.value) !== JSON.stringify(this.props.value) && !!this.props.valuesFrom) {
       this.updateValuesFrom();
     }
   }

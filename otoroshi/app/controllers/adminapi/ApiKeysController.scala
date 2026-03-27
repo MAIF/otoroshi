@@ -19,6 +19,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
 import otoroshi.security.IdGenerator
+import otoroshi.utils.TypedMap
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -843,7 +844,13 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             Json.obj("clientId" -> clientId),
             ctx
           )
-          apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
+          val strategy = env.rateLimiter.getOrCreate(
+            clientId,
+            TypedMap.empty,
+            apiKey.throttlingStrategy
+          )
+          strategy.quotas(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
+//          apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
         }
       }
     }
@@ -860,7 +867,13 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             Json.obj("clientId" -> clientId),
             ctx
           )
-          env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
+          val strategy = env.rateLimiter.getOrCreate(
+            clientId,
+            TypedMap.empty,
+            apiKey.throttlingStrategy
+          )
+          strategy.reset(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
+//          env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
         }
       }
     }

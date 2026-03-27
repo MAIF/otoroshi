@@ -1134,7 +1134,7 @@ object ApiBackendClient {
       ApiBackendClient(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        client = json.select("client").as(NgClientConfig.format)
+        client = json.select("client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig.default)
       )
     } match {
       case Failure(ex)    =>

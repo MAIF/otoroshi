@@ -704,6 +704,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .authorizationRules()
         .futureValue
     }
+    "Local token bucket" in {
+      new LocalTokenBucketTests(this)
+        .run()
+        .futureValue
+    }
     "izanami v2 proxy - should call izanami correctly" in {
       new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()
     }

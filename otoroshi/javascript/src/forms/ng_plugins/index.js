@@ -148,10 +148,12 @@ import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 import GrpcWebProxyPlugin from './GrpcWeb';
 import KubernetesNamespaceScanBackend from './KubernetesNamespaceScanBackend';
+import LocalTokenBucket from './LocalTokenBucket'
 import IzanamiV2Proxy from './IzanamiV2Proxy';
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
+import FixedWindow from './FixedWindow';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -179,6 +181,7 @@ const pluginsArray = [
   EurekaServerSink,
   EurekaTarget,
   ExternalEurekaTarget,
+  FixedWindow,
   ForceHttpsTraffic,
   ForwardedHeader,
   GlobalMaintenanceMode,
@@ -208,6 +211,7 @@ const pluginsArray = [
   JwtVerification,
   JwtVerificationOnly,
   KubernetesNamespaceScanBackend,
+  LocalTokenBucket,
   MaintenanceMode,
   MissingHeadersIn,
   MissingHeadersOut,

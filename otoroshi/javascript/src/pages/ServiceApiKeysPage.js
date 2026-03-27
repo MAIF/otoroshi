@@ -11,6 +11,7 @@ import Loader from '../components/Loader';
 import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { NgForm } from '../components/nginputs';
 import InfoCollapse from '../components/InfoCollapse';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
@@ -56,9 +57,9 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       fetch(
         '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
+        this.props.rawValue.clientId +
+        '/bearer?newSecret=' +
+        this.props.rawValue.clientSecret,
         {
           method: 'GET',
           credentials: 'include',
@@ -255,11 +256,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
-            rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
-            rawValue.clientSecret
-          }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
+            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
+            }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -410,6 +409,165 @@ function CopyFromLineItem({ item }) {
       <i className={copyIconName} />
     </button>
   );
+}
+
+function LocalTokensBucketStrategyConfig({ value, onChange }) {
+  return <NgForm value={value}
+    onChange={onChange}
+    schema={{
+      capacity: {
+        type: 'number',
+        label: 'Bucket capacity',
+        props: {
+          defaultValue: 300
+        }
+      },
+      refillRequestIntervalMs: {
+        type: 'number',
+        label: 'Refill request interval (ms)',
+        props: {
+          defaultValue: 50
+        }
+      },
+      refillRequestedTokens: {
+        type: 'number',
+        label: 'Refill requested tokens',
+        props: {
+          defaultValue: 50
+        }
+      },
+      example: {
+        renderer: () => {
+          const { capacity = 300, refillRequestIntervalMs = 50, refillRequestedTokens = 50 } = value || {};
+          const refillsPerSecond = 1000 / refillRequestIntervalMs;
+          const tokensPerSecond = refillsPerSecond * refillRequestedTokens;
+          const timeToFillBucket = capacity / tokensPerSecond;
+          return (
+            <div className='row mb-3'>
+              <label className='col-xs-12 col-sm-2 col-form-label'>Example</label>
+              <div className='col-sm-10'>
+                <p className='m-1'>With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens every <b>{refillRequestIntervalMs}ms</b></p>
+                <p className='m-1'>which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.</p>
+                <p className='m-1'>Starting at full capacity, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
+              </div>
+            </div>
+          );
+        }
+      },
+      quota: {
+        type: 'form',
+        collapsable: false,
+        label: 'Allowed Quota',
+        schema: {
+          daily: {
+            type: 'number',
+            label: 'Daily Request Quota',
+            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
+          },
+          monthly: {
+            type: 'number',
+            label: 'Monthly Request Quota',
+            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
+          }
+        },
+        flow: ['daily', 'monthly']
+      }
+    }} />
+}
+function LegacyThrottlingStrategyConfig({ value, onChange }) {
+  return <NgForm value={value}
+    onChange={onChange}
+    schema={{
+      quota: {
+        type: 'form',
+        collapsable: false,
+        label: 'Allowed Quota',
+        schema: {
+          window: {
+            type: 'number',
+            label: 'Request Quota',
+            help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.'
+          },
+          daily: {
+            type: 'number',
+            label: 'Daily Request Quota',
+            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
+          },
+          monthly: {
+            type: 'number',
+            label: 'Monthly Request Quota',
+            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
+          }
+        },
+        flow: ['window', 'daily', 'monthly']
+      }
+    }} />
+}
+
+function FixedWindowStrategyConfig({ value, onChange }) {
+  return <NgForm value={value}
+    onChange={onChange}
+    schema={{
+      windowDurationMs: {
+        type: 'number',
+        label: 'Window Duration (ms)',
+        help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.'
+      },
+      quota: {
+        type: 'form',
+        collapsable: false,
+        label: 'Allowed Quota',
+        schema: {
+          window: {
+            type: 'number',
+            label: 'Request Quota',
+            help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.'
+          },
+          daily: {
+            type: 'number',
+            label: 'Daily Request Quota',
+            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
+          },
+          monthly: {
+            type: 'number',
+            label: 'Monthly Request Quota',
+            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
+          }
+        },
+        flow: ['window', 'daily', 'monthly']
+      }
+    }} />
+}
+
+function ThrottlingStrategy({ value, onChange }) {
+  const strategies = {
+    LegacyThrottlingStrategyConfig,
+    LocalTokensBucketStrategyConfig,
+    FixedWindowStrategyConfig
+  };
+
+  const Component = strategies[value.id]
+
+  return <>
+    <NgForm schema={{
+      id: {
+        type: 'select',
+        label: 'Strategy',
+        props: {
+          defaultValue: 'LegacyThrottlingStrategyConfig',
+          options: [
+            { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
+            { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+            { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
+          ],
+        },
+      }
+    }}
+      value={value}
+      onChange={onChange} />
+
+    {Component && <Component value={value} onChange={onChange} />}
+  </>
 }
 
 class DailyRemainingQuotas extends Component {
@@ -587,6 +745,12 @@ const ApiKeysConstants = {
       type: DailyRemainingQuotas,
       props: {
         onRoutes: that.props.onRoutes,
+        label: '',
+      },
+    },
+    throttlingStrategy: {
+      type: ThrottlingStrategy,
+      props: {
         label: '',
       },
     },
@@ -883,9 +1047,8 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${
-                that.state.service ? that.state.service.id : '-'
-              }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
+                }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -927,7 +1090,9 @@ const ApiKeysConstants = {
     'curlCommand',
     'basicAuth',
     'curlCommandWithBasicAuth',
-    '>>>Quotas',
+    '>>>Throttling strategy',
+    'throttlingStrategy',
+    '>>>Legacy Quotas',
     'throttlingQuota',
     'dailyQuota',
     'monthlyQuota',
@@ -977,8 +1142,8 @@ export class ServiceApiKeysPage extends Component {
       : this.onApis
         ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
         : nextClient
-            .forEntityNext(nextClient.ENTITIES.SERVICES)
-            .findById(this.props.params.serviceId);
+          .forEntityNext(nextClient.ENTITIES.SERVICES)
+          .findById(this.props.params.serviceId);
 
     fu.then((service) => {
       if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);
@@ -1043,7 +1208,8 @@ export class ServiceApiKeysPage extends Component {
           parentProps={this.props}
           selfUrl={
             this.onRoutes
-              ? `routes/${this.props.params.routeId}/apikeys`
+              ? // ? `services/${this.props.params.routeId}/apikeys`
+              `routes/${this.props.params.routeId}/apikeys`
               : this.onApis
                 ? `apis/${this.props.params.apiId}/apikeys`
                 : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
@@ -1060,12 +1226,12 @@ export class ServiceApiKeysPage extends Component {
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
                 authorizedEntities: this.onRoutes
                   ? [
-                      `route_${this.props.params.routeId}`, // just authorize the route
-                    ]
+                    `route_${this.props.params.routeId}`, // just authorize the route
+                  ]
                   : this.onApis
                     ? [
-                        `api_${this.props.params.apiId}`, // just authorize the api
-                      ]
+                      `api_${this.props.params.apiId}`, // just authorize the api
+                    ]
                     : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
               }))
           }
