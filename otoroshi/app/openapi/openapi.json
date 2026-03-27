@@ -3,7 +3,7 @@
   "info" : {
     "title" : "Otoroshi Admin API",
     "description" : "Admin API of the Otoroshi reverse proxy",
-    "version" : "17.13.0",
+    "version" : "17.14.0",
     "contact" : {
       "name" : "Otoroshi Team",
       "email" : "oss@maif.fr"
@@ -18,7 +18,7 @@
     "description" : "Otoroshi website"
   },
   "servers" : [ {
-    "url" : "http://otoroshi-api.oto.tools:38721",
+    "url" : "http://otoroshi-api.oto.tools:35207",
     "description" : "your local otoroshi server"
   } ],
   "tags" : [ {
@@ -85,8 +85,8 @@
     "name" : "api",
     "description" : "all the operations about the api entity"
   }, {
-    "name" : "apiconsumersubscription",
-    "description" : "all the operations about the apiconsumersubscription entity"
+    "name" : "apisubscription",
+    "description" : "all the operations about the apisubscription entity"
   }, {
     "name" : "route-template",
     "description" : "all the operations about the route-template entity"
@@ -228,66 +228,6 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/ByteStreamBody"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/apis/apis.otoroshi.io/v1/apiconsumersubscriptions/_count" : {
-      "get" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Get number of entity of kind ApiConsumerSubscription",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.count",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resources count",
-                  "type" : "object",
-                  "properties" : {
-                    "count" : {
-                      "type" : "number",
-                      "description" : "the number of resources"
-                    }
-                  }
-                }
               }
             }
           }
@@ -2875,267 +2815,6 @@
         }
       }
     },
-    "/apis/apis.otoroshi.io/v1/apiconsumersubscriptions/{id}" : {
-      "get" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Find resource of kind ApiConsumerSubscription by its id",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.findById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resource of kind ApiConsumerSubscription",
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Updates a specific ApiConsumerSubscription using its id",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.updateById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : true,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-              }
-            }
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Updates (using json-patch) a specific ApiConsumerSubscription using its id",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.pathById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : true,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Deletes a specific ApiConsumerSubscription using its id",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.deleteById",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "schema" : {
-            "type" : "string"
-          },
-          "required" : true,
-          "description" : "The id param of the target entity"
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/apis/apis.otoroshi.io/v1/apis/{id}" : {
       "get" : {
         "tags" : [ "api", "apis.otoroshi.io" ],
@@ -4015,6 +3694,60 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/apis.otoroshi.io.Api"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/apis.otoroshi.io/v1/apisubscriptions/_template" : {
+      "get" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Return a template of a resource of kind ApiSubscription",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.template",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind ApiSubscription",
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
               }
             }
           }
@@ -6000,251 +5733,6 @@
                       "description" : "the number of resources"
                     }
                   }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/apis/apis.otoroshi.io/v1/apiconsumersubscriptions/_bulk" : {
-      "post" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Create multiple ApiConsumerSubscription at the same time",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.bulk_create",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : false,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Update multiple ApiConsumerSubscription at the same time",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.bulk_update",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : false,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Update (using json-patch) multiple ApiConsumerSubscription at the same time",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.bulk_patch",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : false,
-          "content" : {
-            "application/x-ndjson" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/BulkPatchBody"
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Delete multiple ApiConsumerSubscription at the same time",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.bulk_delete",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/x-ndjson" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BulkResponseBody"
                 }
               }
             }
@@ -8816,6 +8304,267 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/proxy.otoroshi.io.Route"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/apis.otoroshi.io/v1/apisubscriptions/{id}" : {
+      "get" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Find resource of kind ApiSubscription by its id",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.findById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resource of kind ApiSubscription",
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Updates a specific ApiSubscription using its id",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.updateById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Updates (using json-patch) a specific ApiSubscription using its id",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.pathById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Deletes a specific ApiSubscription using its id",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.deleteById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "The id param of the target entity"
+        } ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
               }
             }
           }
@@ -12585,60 +12334,6 @@
         }
       }
     },
-    "/apis/apis.otoroshi.io/v1/apiconsumersubscriptions/_template" : {
-      "get" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Return a template of a resource of kind ApiConsumerSubscription",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.template",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "description" : "Resource of kind ApiConsumerSubscription",
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/cluster/user-tokens/{id}" : {
       "get" : {
         "tags" : [ "cluster" ],
@@ -13288,6 +12983,66 @@
               "application/x-ndjson" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/pki.otoroshi.io.Certificate"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/apis.otoroshi.io/v1/apisubscriptions/_count" : {
+      "get" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Get number of entity of kind ApiSubscription",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.count",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "description" : "Resources count",
+                  "type" : "object",
+                  "properties" : {
+                    "count" : {
+                      "type" : "number",
+                      "description" : "the number of resources"
+                    }
+                  }
                 }
               }
             }
@@ -14239,6 +13994,124 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/events.otoroshi.io.DataExporter"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/apis.otoroshi.io/v1/apisubscriptions" : {
+      "get" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Find all possible ApiSubscription entities",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.findAll",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Creates a ApiSubscription",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
               }
             }
           }
@@ -17208,124 +17081,6 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/plugins.otoroshi.io.Workflow"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/apis/apis.otoroshi.io/v1/apiconsumersubscriptions" : {
-      "get" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Find all possible ApiConsumerSubscription entities",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.findAll",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "apiconsumersubscription", "apis.otoroshi.io" ],
-        "summary" : "Creates a ApiConsumerSubscription",
-        "operationId" : "apis.otoroshi.io.ApiConsumerSubscription.create",
-        "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "201" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "the request body in nd-json format (1 stringified entity per line)",
-          "required" : true,
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/apis.otoroshi.io.ApiConsumerSubscription"
               }
             }
           }
@@ -22298,6 +22053,251 @@
         }
       }
     },
+    "/apis/apis.otoroshi.io/v1/apisubscriptions/_bulk" : {
+      "post" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Create multiple ApiSubscription at the same time",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.bulk_create",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Update multiple ApiSubscription at the same time",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.bulk_update",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/apis.otoroshi.io.ApiSubscription"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Update (using json-patch) multiple ApiSubscription at the same time",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.bulk_patch",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        },
+        "requestBody" : {
+          "description" : "the request body in nd-json format (1 stringified entity per line)",
+          "required" : false,
+          "content" : {
+            "application/x-ndjson" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkPatchBody"
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "apisubscription", "apis.otoroshi.io" ],
+        "summary" : "Delete multiple ApiSubscription at the same time",
+        "operationId" : "apis.otoroshi.io.ApiSubscription.bulk_delete",
+        "parameters" : [ ],
+        "security" : [ {
+          "otoroshi_auth" : [ ]
+        } ],
+        "responses" : {
+          "401" : {
+            "description" : "You have to provide an Api Key. Api Key can be passed using basic http authentication",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Resource not found or does not exist",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/x-ndjson" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResponseBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pki/certs/_valid" : {
       "post" : {
         "tags" : [ "pki" ],
@@ -22708,43 +22708,6 @@
         "title" : "Try node",
         "required" : [ "json" ]
       },
-      "apiconsumer" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "name" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "description" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "autoValidation" : {
-            "type" : "boolean"
-          },
-          "consumerKind" : {
-            "$ref" : "#/components/schemas/apiconsumerkind"
-          },
-          "settings" : {
-            "$ref" : "#/components/schemas/apiconsumersettings"
-          },
-          "status" : {
-            "$ref" : "#/components/schemas/apiconsumerstatus"
-          },
-          "subscriptions" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/apiconsumersubscriptionref"
-            }
-          }
-        },
-        "title" : "Api consumer",
-        "required" : [ "id", "name", "autoValidation", "consumerKind", "settings", "status", "subscriptions" ]
-      },
       "teamaccess" : {
         "type" : "object",
         "properties" : {
@@ -22983,11 +22946,6 @@
           }
         },
         "title" : "Sec com headers"
-      },
-      "staging" : {
-        "type" : "object",
-        "properties" : { },
-        "title" : "Staging"
       },
       "random" : {
         "type" : "object",
@@ -23722,6 +23680,11 @@
         "title" : "Local jwt verifier",
         "required" : [ "enabled", "strict", "excludedPatterns", "source", "algoSettings", "strategy" ]
       },
+      "custom" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Custom"
+      },
       "waitnode" : {
         "type" : "object",
         "properties" : {
@@ -23751,6 +23714,11 @@
         "title" : "Orphans",
         "required" : [ "nodes", "edges" ]
       },
+      "private" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Private"
+      },
       "weightedbestresponsetime" : {
         "type" : "object",
         "properties" : {
@@ -23760,6 +23728,50 @@
         },
         "title" : "Weighted best response time",
         "required" : [ "ratio" ]
+      },
+      "postgresexportersettings" : {
+        "type" : "object",
+        "properties" : {
+          "uri" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "host" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "port" : {
+            "type" : "number"
+          },
+          "database" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "user" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "password" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "schema" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "table" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "poolSize" : {
+            "type" : "number"
+          },
+          "ssl" : {
+            "type" : "boolean"
+          }
+        },
+        "title" : "Postgres exporter settings",
+        "required" : [ "host", "port", "database", "user", "password", "schema", "table", "poolSize", "ssl" ]
       },
       "apiflows" : {
         "type" : "object",
@@ -23772,85 +23784,12 @@
             "type" : "string",
             "minLength" : 1
           },
-          "consumers" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
           "plugins" : {
             "$ref" : "#/components/schemas/ngplugins"
           }
         },
         "title" : "Api flows",
-        "required" : [ "id", "name", "consumers", "plugins" ]
-      },
-      "apis.otoroshi.io.ApiConsumerSubscription" : {
-        "type" : "object",
-        "properties" : {
-          "location" : {
-            "$ref" : "#/components/schemas/entitylocation"
-          },
-          "id" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "name" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "description" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "tags" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
-          "metadata" : {
-            "type" : "object",
-            "patternProperties" : {
-              ".*" : {
-                "type" : "string",
-                "minLength" : 1
-              }
-            }
-          },
-          "enabled" : {
-            "type" : "boolean"
-          },
-          "dates" : {
-            "$ref" : "#/components/schemas/apiconsumersubscriptiondates"
-          },
-          "ownerRef" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "consumerRef" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "apiRef" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "subscriptionKind" : {
-            "$ref" : "#/components/schemas/apiconsumerkind"
-          },
-          "tokenRefs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          }
-        },
-        "title" : "Api consumer subscription",
-        "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "dates", "ownerRef", "consumerRef", "apiRef", "subscriptionKind", "tokenRefs" ]
+        "required" : [ "id", "name", "plugins" ]
       },
       "catalogs.otoroshi.io.RemoteCatalog" : {
         "type" : "object",
@@ -24529,11 +24468,6 @@
         "title" : "Ng backend",
         "required" : [ "targets", "root", "rewrite", "loadBalancing", "client" ]
       },
-      "closed" : {
-        "type" : "object",
-        "properties" : { },
-        "title" : "Closed"
-      },
       "wasmauthmoduleconfig" : {
         "type" : "object",
         "properties" : {
@@ -24771,37 +24705,6 @@
         "anyOf" : [ {
           "$ref" : "#/components/schemas/defaultwsproxyserver"
         } ]
-      },
-      "apiconsumersubscriptiondates" : {
-        "type" : "object",
-        "properties" : {
-          "created_at" : {
-            "type" : "string",
-            "format" : "date"
-          },
-          "processed_at" : {
-            "type" : "string",
-            "format" : "date"
-          },
-          "started_at" : {
-            "type" : "string",
-            "format" : "date"
-          },
-          "paused_at" : {
-            "type" : "string",
-            "format" : "date"
-          },
-          "ending_at" : {
-            "type" : "string",
-            "format" : "date"
-          },
-          "closed_at" : {
-            "type" : "string",
-            "format" : "date"
-          }
-        },
-        "title" : "Api consumer subscription dates",
-        "required" : [ "created_at", "processed_at", "started_at", "paused_at", "ending_at", "closed_at" ]
       },
       "goreplays3settings" : {
         "type" : "object",
@@ -25132,11 +25035,6 @@
         "title" : "Simple otoroshi admin",
         "required" : [ "username", "password", "label", "createdAt", "typ", "tags", "metadata", "rights", "location", "adminEntityValidators" ]
       },
-      "published" : {
-        "type" : "object",
-        "properties" : { },
-        "title" : "Published"
-      },
       "otoroshiadmintype" : {
         "anyOf" : [ {
           "$ref" : "#/components/schemas/otoroshiadmintypesimpleadmin"
@@ -25148,6 +25046,37 @@
         "type" : "object",
         "properties" : { },
         "title" : "Sec com info token version latest"
+      },
+      "apisubscriptiondates" : {
+        "type" : "object",
+        "properties" : {
+          "created_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "processed_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "started_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "paused_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "ending_at" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "closed_at" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "title" : "Api subscription dates",
+        "required" : [ "created_at", "processed_at", "started_at", "paused_at", "ending_at", "closed_at" ]
       },
       "whilenode" : {
         "type" : "object",
@@ -25253,19 +25182,6 @@
         "type" : "object",
         "properties" : { },
         "title" : "Apikey"
-      },
-      "apiconsumersettings" : {
-        "anyOf" : [ {
-          "$ref" : "#/components/schemas/apikey"
-        }, {
-          "$ref" : "#/components/schemas/jwt"
-        }, {
-          "$ref" : "#/components/schemas/keyless"
-        }, {
-          "$ref" : "#/components/schemas/mtls"
-        }, {
-          "$ref" : "#/components/schemas/oauth2"
-        } ]
       },
       "proxy.otoroshi.io.Route" : {
         "type" : "object",
@@ -25725,19 +25641,6 @@
         "title" : "Ng tls config",
         "required" : [ "certs", "trustedCerts", "enabled", "loose", "trustAll" ]
       },
-      "apiconsumerkind" : {
-        "anyOf" : [ {
-          "$ref" : "#/components/schemas/apikey"
-        }, {
-          "$ref" : "#/components/schemas/jwt"
-        }, {
-          "$ref" : "#/components/schemas/keyless"
-        }, {
-          "$ref" : "#/components/schemas/mtls"
-        }, {
-          "$ref" : "#/components/schemas/oauth2"
-        } ]
-      },
       "samlprotocolbindingpost" : {
         "type" : "object",
         "properties" : { },
@@ -25797,6 +25700,21 @@
           "$ref" : "#/components/schemas/seccomversionv1"
         }, {
           "$ref" : "#/components/schemas/seccomversionv2"
+        } ]
+      },
+      "apikind" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/apikey"
+        }, {
+          "$ref" : "#/components/schemas/jwt"
+        }, {
+          "$ref" : "#/components/schemas/keyless"
+        }, {
+          "$ref" : "#/components/schemas/mtls"
+        }, {
+          "$ref" : "#/components/schemas/oauth2local"
+        }, {
+          "$ref" : "#/components/schemas/oauth2remote"
         } ]
       },
       "ngroute" : {
@@ -25875,6 +25793,72 @@
         },
         "title" : "Ng route",
         "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "debugFlow", "capture", "exportReporting", "groups", "boundListeners", "frontend", "backend", "plugins" ]
+      },
+      "apis.otoroshi.io.ApiSubscription" : {
+        "type" : "object",
+        "properties" : {
+          "location" : {
+            "$ref" : "#/components/schemas/entitylocation"
+          },
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "dates" : {
+            "$ref" : "#/components/schemas/apisubscriptiondates"
+          },
+          "ownerRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "planRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "apiRef" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "subscriptionKind" : {
+            "$ref" : "#/components/schemas/apikind"
+          },
+          "tokenRefs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          }
+        },
+        "title" : "Api subscription",
+        "required" : [ "location", "id", "name", "description", "tags", "metadata", "enabled", "dates", "ownerRef", "planRef", "apiRef", "subscriptionKind", "tokenRefs" ]
       },
       "finiteduration" : {
         "type" : "object",
@@ -25968,6 +25952,41 @@
         "title" : "Call node",
         "required" : [ "json" ]
       },
+      "apiclient" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "minLength" : 1
+            }
+          },
+          "metadata" : {
+            "type" : "object",
+            "patternProperties" : {
+              ".*" : {
+                "type" : "string",
+                "minLength" : 1
+              }
+            }
+          }
+        },
+        "title" : "Api client",
+        "required" : [ "id", "name", "tags", "metadata" ]
+      },
       "proxy.otoroshi.io.TcpService" : {
         "type" : "object",
         "properties" : {
@@ -26051,11 +26070,6 @@
         "properties" : { },
         "title" : "Best response time"
       },
-      "deprecated" : {
-        "type" : "object",
-        "properties" : { },
-        "title" : "Deprecated"
-      },
       "restrictions" : {
         "type" : "object",
         "properties" : {
@@ -26131,34 +26145,6 @@
         "title" : "Api testing",
         "required" : [ "enabled", "headerKey", "headerValue" ]
       },
-      "ngclientcredentialtokenendpointconfig" : {
-        "type" : "object",
-        "properties" : {
-          "expiration" : {
-            "$ref" : "#/components/schemas/finiteduration"
-          },
-          "defaultKeyPair" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "allowedApikeys" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
-          "allowedGroups" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          }
-        },
-        "title" : "Ng client credential token endpoint config",
-        "required" : [ "expiration", "defaultKeyPair", "allowedApikeys", "allowedGroups" ]
-      },
       "dataexporterconfigtypecustommetrics" : {
         "type" : "object",
         "properties" : { },
@@ -26174,6 +26160,11 @@
         },
         "title" : "Tenant id",
         "required" : [ "rawValue" ]
+      },
+      "semipublic" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Semi public"
       },
       "ipfiltering" : {
         "type" : "object",
@@ -26217,6 +26208,11 @@
         "type" : "object",
         "properties" : { },
         "title" : "Always match"
+      },
+      "oauth2remote" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "O auth2 remote"
       },
       "samlcanocalizationmethodexclusive" : {
         "type" : "object",
@@ -26317,6 +26313,11 @@
         "properties" : { },
         "title" : "Cron"
       },
+      "public" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Public"
+      },
       "snowmonkeyconfig" : {
         "type" : "object",
         "properties" : {
@@ -26374,17 +26375,6 @@
         },
         "title" : "R s a k p algo settings",
         "required" : [ "size", "certId" ]
-      },
-      "apiconsumerstatus" : {
-        "anyOf" : [ {
-          "$ref" : "#/components/schemas/closed"
-        }, {
-          "$ref" : "#/components/schemas/deprecated"
-        }, {
-          "$ref" : "#/components/schemas/published"
-        }, {
-          "$ref" : "#/components/schemas/staging"
-        } ]
       },
       "ngminimalroute" : {
         "type" : "object",
@@ -26512,6 +26502,10 @@
       "apis.otoroshi.io.Api" : {
         "type" : "object",
         "properties" : {
+          "kind" : {
+            "type" : "string",
+            "minLength" : 1
+          },
           "location" : {
             "$ref" : "#/components/schemas/entitylocation"
           },
@@ -26524,6 +26518,14 @@
             "minLength" : 1
           },
           "description" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "domain" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "contextPath" : {
             "type" : "string",
             "minLength" : 1
           },
@@ -26542,6 +26544,18 @@
                 "minLength" : 1
               }
             }
+          },
+          "owner" : {
+            "$ref" : "#/components/schemas/userref"
+          },
+          "members" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/userref"
+            }
+          },
+          "visibility" : {
+            "$ref" : "#/components/schemas/apivisibility"
           },
           "version" : {
             "type" : "string",
@@ -26597,7 +26611,7 @@
               "$ref" : "#/components/schemas/apiflows"
             }
           },
-          "clients" : {
+          "clientsBackendConfig" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/apibackendclient"
@@ -26606,24 +26620,30 @@
           "documentation" : {
             "$ref" : "#/components/schemas/apidocumentation"
           },
-          "consumers" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/apiconsumer"
-            }
-          },
           "deployments" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/apideployment"
             }
           },
+          "clients" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apiclient"
+            }
+          },
           "testing" : {
             "$ref" : "#/components/schemas/apitesting"
+          },
+          "hooks" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/apistatehook"
+            }
           }
         },
         "title" : "Api",
-        "required" : [ "location", "id", "name", "description", "tags", "metadata", "version", "versions", "debugFlow", "capture", "exportReporting", "groups", "state", "enabled", "blueprint", "routes", "backends", "flows", "clients", "consumers", "deployments", "testing" ]
+        "required" : [ "kind", "location", "id", "name", "description", "domain", "contextPath", "tags", "metadata", "owner", "members", "visibility", "version", "versions", "debugFlow", "capture", "exportReporting", "groups", "state", "enabled", "blueprint", "routes", "backends", "flows", "clientsBackendConfig", "deployments", "clients", "testing", "hooks" ]
       },
       "httpprotocol" : {
         "type" : "object",
@@ -26806,6 +26826,8 @@
         }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypeotlpmetrics"
         }, {
+          "$ref" : "#/components/schemas/dataexporterconfigtypepostgres"
+        }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypepulsar"
         }, {
           "$ref" : "#/components/schemas/dataexporterconfigtypes3file"
@@ -26933,6 +26955,8 @@
           "$ref" : "#/components/schemas/newreliccallsettings"
         }, {
           "$ref" : "#/components/schemas/noneexporter"
+        }, {
+          "$ref" : "#/components/schemas/postgresexportersettings"
         }, {
           "$ref" : "#/components/schemas/s3exportersettings"
         }, {
@@ -28247,17 +28271,6 @@
         "title" : "Team",
         "required" : [ "id", "tenant", "name", "description", "tags", "metadata" ]
       },
-      "apiconsumersubscriptionref" : {
-        "type" : "object",
-        "properties" : {
-          "ref" : {
-            "type" : "string",
-            "minLength" : 1
-          }
-        },
-        "title" : "Api consumer subscription ref",
-        "required" : [ "ref" ]
-      },
       "pkceconfig" : {
         "type" : "object",
         "properties" : {
@@ -29333,6 +29346,11 @@
         "properties" : { },
         "title" : "Keyless"
       },
+      "dataexporterconfigtypepostgres" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Data exporter config type postgres"
+      },
       "dataexporterconfigtypeconsole" : {
         "type" : "object",
         "properties" : { },
@@ -29993,6 +30011,11 @@
         "properties" : { },
         "title" : "Name i d format kerberos"
       },
+      "oauth2local" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "O auth2 local"
+      },
       "apiremoved" : {
         "type" : "object",
         "properties" : { },
@@ -30088,6 +30111,17 @@
         "type" : "object",
         "properties" : { },
         "title" : "Data exporter config type j m s"
+      },
+      "apivisibilitykind" : {
+        "anyOf" : [ {
+          "$ref" : "#/components/schemas/custom"
+        }, {
+          "$ref" : "#/components/schemas/private"
+        }, {
+          "$ref" : "#/components/schemas/public"
+        }, {
+          "$ref" : "#/components/schemas/semipublic"
+        } ]
       },
       "dataexporterconfigtypesplunk" : {
         "type" : "object",
@@ -30323,6 +30357,20 @@
         },
         "title" : "Transform settings",
         "required" : [ "location", "mappingSettings" ]
+      },
+      "userref" : {
+        "type" : "object",
+        "properties" : {
+          "ref" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "config" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "User ref",
+        "required" : [ "ref", "config" ]
       },
       "mailgunsettings" : {
         "type" : "object",
@@ -30783,7 +30831,7 @@
           "team" : {
             "$ref" : "#/components/schemas/jsobject"
           },
-          "apiConsumerSubscription" : {
+          "apiSubscription" : {
             "$ref" : "#/components/schemas/jsobject"
           },
           "routeTemplate" : {
@@ -31103,6 +31151,20 @@
             "description" : "???"
           }
         }
+      },
+      "apistatehook" : {
+        "type" : "object",
+        "properties" : {
+          "ref" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "config" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api state hook",
+        "required" : [ "ref", "config" ]
       },
       "saslconfig" : {
         "type" : "object",
@@ -31476,48 +31538,6 @@
         "title" : "Chaos config",
         "required" : [ "enabled" ]
       },
-      "nghasclientcertmatchingvalidatorconfig" : {
-        "type" : "object",
-        "properties" : {
-          "serialNumbers" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
-          "subjectDNs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
-          "issuerDNs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
-          "regexSubjectDNs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          },
-          "regexIssuerDNs" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "minLength" : 1
-            }
-          }
-        },
-        "title" : "Ng has client cert matching validator config",
-        "required" : [ "serialNumbers", "subjectDNs", "issuerDNs", "regexSubjectDNs", "regexIssuerDNs" ]
-      },
       "GlobalConfigImportBody" : {
         "type" : "object",
         "description" : ""
@@ -31567,11 +31587,6 @@
         "properties" : { },
         "title" : "Data exporter config type otlp metrics"
       },
-      "oauth2" : {
-        "type" : "object",
-        "properties" : { },
-        "title" : "O auth2"
-      },
       "proxy.otoroshi.io.RouteTemplate" : {
         "type" : "object",
         "properties" : {
@@ -31617,39 +31632,6 @@
         "type" : "object",
         "properties" : { },
         "title" : "Client auth none"
-      },
-      "ngjwtverificationonlyconfig" : {
-        "type" : "object",
-        "properties" : {
-          "verifier" : {
-            "type" : "string",
-            "minLength" : 1
-          },
-          "failIfAbsent" : {
-            "type" : "boolean"
-          },
-          "customResponse" : {
-            "type" : "boolean"
-          },
-          "customResponseStatus" : {
-            "type" : "number"
-          },
-          "customResponseHeaders" : {
-            "type" : "object",
-            "patternProperties" : {
-              ".*" : {
-                "type" : "string",
-                "minLength" : 1
-              }
-            }
-          },
-          "customResponseBody" : {
-            "type" : "string",
-            "minLength" : 1
-          }
-        },
-        "title" : "Ng jwt verification only config",
-        "required" : [ "failIfAbsent", "customResponse", "customResponseStatus", "customResponseHeaders", "customResponseBody" ]
       },
       "proxy.otoroshi.io.Backend" : {
         "type" : "object",
@@ -31805,6 +31787,19 @@
         }, {
           "$ref" : "#/components/schemas/servicegroupidentifier"
         } ]
+      },
+      "apivisibility" : {
+        "type" : "object",
+        "properties" : {
+          "kind" : {
+            "$ref" : "#/components/schemas/apivisibilitykind"
+          },
+          "config" : {
+            "$ref" : "#/components/schemas/jsobject"
+          }
+        },
+        "title" : "Api visibility",
+        "required" : [ "kind", "config" ]
       },
       "wscookie" : {
         "anyOf" : [ {
