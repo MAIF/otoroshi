@@ -10,6 +10,23 @@ java = "openjdk-17.0.2"
 sbt = "1.7.2"
 node = "20"
 
+[tasks.setup-frontend]
+description = "Setup frontend dependencies"
+dir = "otoroshi/javascript"
+run = "npm install"
+
+[tasks.setup-doc]
+description = "Setup documentation dependencies"
+dir = "manual/next"
+run = "npm install"
+
+[tasks.setup]
+description = "Setup js dependencies"
+run = [
+  { task = "setup-frontend" },
+  { task = "setup-doc"}
+]
+
 [tasks.dev-doc]
 description = "Run documentation dev server"
 dir = "manual/next"
