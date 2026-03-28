@@ -1,9 +1,12 @@
 # Mise file (https://mise.jdx.dev/) for otoroshi
 #
 # prepare: mise install
+# setup: install js dependencies
 # dev: mise run dev
 # build jar: mise run build
-# run jar: mise run
+# run jar: mise run 
+# dev doc: mise run dev-doc 
+# build doc: mise run build-doc
 
 [tools]
 java = "openjdk-17.0.2"
