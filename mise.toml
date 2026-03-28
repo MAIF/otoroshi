@@ -10,6 +10,16 @@ java = "openjdk-17.0.2"
 sbt = "1.7.2"
 node = "20"
 
+[tasks.dev-doc]
+description = "Run documentation dev server"
+dir = "manual/next"
+run = "npm run start"
+
+[tasks.build-doc]
+description = "Build the documentation site"
+dir = "manual/next"
+run = "npm run build"
+
 [tasks.dev-backend]
 description = "Run otoroshi in dev mode with sbt"
 dir = "otoroshi"
