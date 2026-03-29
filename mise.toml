@@ -1,33 +1,33 @@
 # Mise file (https://mise.jdx.dev/) for otoroshi
 #
 # prepare: mise install
-# setup: install js dependencies
+# install all js deps: mise run install-js-deps
 # dev: mise run dev
 # build jar: mise run build
 # run jar: mise run 
-# dev doc: mise run dev-doc 
-# build doc: mise run build-doc
+# run dev doc server: mise run dev-doc 
+# build doc website: mise run build-doc
 
 [tools]
 java = "openjdk-17.0.2"
 sbt = "1.7.2"
 node = "20"
 
-[tasks.setup-frontend]
-description = "Setup frontend dependencies"
+[tasks.install-frontend-js-deps]
+description = "Install frontend dependencies"
 dir = "otoroshi/javascript"
 run = "npm install"
 
-[tasks.setup-doc]
-description = "Setup documentation dependencies"
+[tasks.install-doc-js-deps]
+description = "Install documentation dependencies"
 dir = "manual/next"
 run = "npm install"
 
-[tasks.setup]
-description = "Setup js dependencies"
+[tasks.install-js-deps]
+description = "Install js dependencies"
 run = [
-  { task = "setup-frontend" },
-  { task = "setup-doc"}
+  { task = "install-frontend-js-deps" },
+  { task = "install-doc-js-deps"}
 ]
 
 [tasks.dev-doc]
