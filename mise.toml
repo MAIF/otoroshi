@@ -56,6 +56,13 @@ description = "Start frontend dev server"
 dir = "otoroshi/javascript"
 run = "npm run webpack:start"
 
+[tasks.dev-w-doc]
+description = "Start otoroshi backend + frontend + doc in dev mode"
+dir = "otoroshi"
+depends = ["dev-backend", "dev-frontend", "dev-doc"]
+run = "true"
+
+
 [tasks.dev]
 description = "Start otoroshi backend + frontend in dev mode"
 dir = "otoroshi"
@@ -71,6 +78,14 @@ run = "sbt --java-home $JAVA_HOME clean compile assembly"
 description = "Build otoroshi frontend"
 dir = "otoroshi/javascript"
 run = "npm run webpack:build"
+
+[tasks.build-w-doc]
+description = "Build otoroshi (backend + frontend + doc)"
+run = [
+  { task = "build-frontend" },
+  { task = "build-backend" },
+  { task = "build-doc" }
+]
 
 [tasks.build]
 description = "Build otoroshi (backend + frontend)"
