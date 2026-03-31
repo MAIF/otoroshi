@@ -221,7 +221,7 @@ export default (props) => {
                         <span
                           className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
                           style={{
-                            color: 'var(--text) !important',
+                            color: '#fff',
                           }}
                         >
                           PROD

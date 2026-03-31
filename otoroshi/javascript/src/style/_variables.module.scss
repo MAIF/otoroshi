@@ -27,12 +27,12 @@ $color-dark-4-opa80: #1d232a80;
 $color-dark-5-opa80: #191e2480;
 $color-dark-6-opa80: #15191e80;
 
-//light mode var — warm white/cream
-$color-white-1: #fff;
-$color-white-2: #f5f5f0;
-$color-white-3: #eaeae3;
-$color-white-4: #ddddd4;
-$color-white-5: #1e2130;
+//light mode var — notion/linear style
+$color-white-1: #ffffff;
+$color-white-2: #f7f7f5;
+$color-white-3: #efefed;
+$color-white-4: #e8e8e5;
+$color-white-5: #37352f;
 
 $color-white-2-opa80: #f5f5f080;
 $color-white-3-opa80: #eaeae380;
@@ -87,17 +87,17 @@ $color-white-4-opa80: #ddddd480;
   --bg-color_level3: #{$color-white-4};
   --color_level3: #{$color-white-5};
 
-  --text: #000;
+  --text: #37352f;
   --reverse-text: #fff;
-  --raw-text: 0, 0, 0;
+  --raw-text: 55, 53, 47;
   --bg-color_level1_opa80: #{$color-white-2-opa80};
   --bg-color_level2_opa80: #{$color-white-3-opa80};
   --bg-color_level3_opa80: #{$color-white-4-opa80};
 
   --input-bg: #ffffff;
-  --input-border: rgba(0, 0, 0, 0.15);
-  --input-border-hover: rgba(0, 0, 0, 0.3);
-  --text-muted: #888880;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --border-color-strong: rgba(0, 0, 0, 0.2);
+  --input-border: rgba(55, 53, 47, 0.16);
+  --input-border-hover: rgba(55, 53, 47, 0.3);
+  --text-muted: #9b9a97;
+  --border-color: rgba(55, 53, 47, 0.09);
+  --border-color-strong: rgba(55, 53, 47, 0.18);
 }

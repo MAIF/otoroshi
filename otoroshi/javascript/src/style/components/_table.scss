@@ -1,39 +1,54 @@
 .table {
-  color: $fondGrisclairSurvolMenu;
+  color: var(--color_level1);
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
 
-  tr {
-    // cursor: pointer;
+// thead — sobre, pas de fond flashy
+thead {
+  background-color: transparent;
+
+  > tr > th,
+  > tr > td > span {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
   }
 }
 
-.table-striped > tbody > tr:nth-of-type(odd) {
-  background-color:rgba(0, 0, 0, 0.03);
-}
-
-.table-striped > tbody > tr:nth-of-type(2n+1) > *{
-  color: $fondGrisclairSurvolMenu;
-}
-
-
-.table-hover tbody tr:hover td,
-.table-hover tbody tr:hover th {
-  background-color: var(--bg-color_level2);
-  color: var(--color_level2);;
-}
-
+// rows
 .table > tbody > tr > td,
-.table > tbody > tr > th,
+.table > tbody > tr > th {
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 12px;
+  vertical-align: middle;
+  color: var(--color_level1);
+}
+
 .table > tfoot > tr > td,
-.table > tfoot > tr > th,
-.table > thead > tr > td,
-.table > thead > tr > th,
+.table > tfoot > tr > th {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  padding: 8px 12px;
+}
+
+// supprimer toutes les bordures Bootstrap table-bordered
 .table-bordered,
 .table-bordered > tbody > tr > td,
 .table-bordered > tbody > tr > th,
 .table-bordered > tfoot > tr > td,
 .table-bordered > tfoot > tr > th,
 .table-bordered > thead > tr > td,
-.table-bordered > thead > tr > th {
+.table-bordered > thead > tr > th,
+.table > thead > tr > td,
+.table > thead > tr > th {
   border: none;
 }
 
@@ -41,38 +56,72 @@
   border-width: 0;
 }
 
-thead > tr,
-thead > tr > td > span {
-  color: #FFF;
+// striped — très subtil
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
+[data-theme="light"] .table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(55, 53, 47, 0.03);
+}
+
+.table-striped > tbody > tr:nth-of-type(2n+1) > * {
+  color: var(--color_level1);
+}
+
+// hover row
+.table-hover tbody tr:hover td,
+.table-hover tbody tr:hover th {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--color_level1);
+  cursor: pointer;
+}
+
+[data-theme="light"] .table-hover tbody tr:hover td,
+[data-theme="light"] .table-hover tbody tr:hover th {
+  background-color: rgba(55, 53, 47, 0.04);
+}
+
+// pagination
 .pagination > .active > a,
 .pagination > .active > a:focus,
 .pagination > .active > a:hover,
 .pagination > .active > span,
 .pagination > .active > span:focus,
 .pagination > .active > span:hover {
-  background-color: var(--bg-color_level2);
-  border-color: var(--color-grey);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #000;
+  border-radius: 6px;
 }
 
 .pagination > li > a,
 .pagination > li > span {
   background: none;
-  color: var(--color-grey);
+  color: var(--color_level1);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  transition: background 150ms ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 
+// misc
 .titleTable {
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   padding: 5px 5px 5px 10px;
+  border-radius: 6px;
 }
 
 .active > .titleTable {
   background-color: var(--color-blue);
   color: #fff;
-  border: thin solid $fondGrisclairSurvolMenu;
+  border: none;
 }
 
 .titleTable:hover {
@@ -80,29 +129,22 @@ thead > tr > td > span {
   color: #fff;
 }
 
-thead {
-  background-color: var(--color-primary);
-}
-
 .fa-download {
   cursor: pointer;
-  // color: var(--color-blue);
 }
 
 .table-liste {
   flex: 1 1 100%;
-  -webkit-box-pack: center;
-  -ms-flex-pack: center;
   justify-content: center;
   text-align: center;
 }
 
 .link-service {
-  color: var(--color-grey);
+  color: var(--color_level1);
   text-decoration: none;
 
   &:hover {
-    color: #fff;
+    color: var(--color-primary);
     text-decoration: none;
   }
 }
@@ -111,7 +153,7 @@ thead {
   text-align: center;
 }
 
-table .displayGroupBtn{
+table .displayGroupBtn {
   min-width: 100px;
 }
 
@@ -119,14 +161,17 @@ table .displayGroupBtn{
   position: absolute;
   left: 50%;
   top: 50%;
-  -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-color_level2_opa80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
   transition: all .3s ease;
   z-index: 2;
   pointer-events: none;
   padding: 20px;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--color_level1);
   width: 130px;
   align-items: center;
   justify-content: center;
