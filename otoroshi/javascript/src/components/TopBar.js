@@ -1993,7 +1993,7 @@ export class TopBar extends Component {
                         aria-labelledby="add-components"
                         style={{
                           background: 'var(--bg-color_level1)',
-                          border: '1px solid var(--bg-color_level1)',
+                          border: '1px solid var(--border-color)',
                           borderTop: 0,
                           padding: '12px',
                           zIndex: 4000,

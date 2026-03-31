@@ -24,7 +24,7 @@ export function Dropdown({ children, className = '', style = {}, buttonStyle, h1
           backgroundColor: 'var(--bg-color_level2)',
           color: 'var(--color_level2)',
           border: '1px solid',
-          borderColor: 'var(--bg-color_level2)',
+          borderColor: 'var(--border-color)',
           borderTop: 0,
           padding: '12px',
           zIndex: 4000,

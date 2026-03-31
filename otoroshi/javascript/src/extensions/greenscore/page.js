@@ -198,7 +198,7 @@ function FilterSelector({
                 style={{
                   flex: 1,
                   borderRadius: 8,
-                  border: '2px solid var(--bg-color_level3)',
+                  border: '2px solid var(--border-color)',
                   color: 'var(--text)',
                 }}
               >
@@ -391,7 +391,7 @@ function DatePicker({ date, onChange, options, open, onClose, opened }) {
                 style={{
                   flex: 1,
                   borderRadius: 8,
-                  border: '2px solid var(--bg-color_level3)',
+                  border: '2px solid var(--border-color)',
                   color: 'var(--text)',
                 }}
               >

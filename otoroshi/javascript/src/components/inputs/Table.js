@@ -82,7 +82,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
             maxWidth: '50vw',
             minWidth: '360px',
             zIndex: 1000,
-            border: 'var(--bg-color_level2) solid 1px',
+            border: 'var(--border-color) solid 1px',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -128,7 +128,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
 
                   <div
                     style={{
-                      border: 'var(--bg-color_level2) solid 1px',
+                      border: 'var(--border-color) solid 1px',
                       borderRadius: '4px',
                     }}
                     className="p-2 mb-2"
@@ -150,7 +150,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                   </div>
                   <div
                     style={{
-                      border: 'var(--bg-color_level2) solid 1px',
+                      border: 'var(--border-color) solid 1px',
                       borderRadius: '4px',
                     }}
                     className="p-2"
@@ -196,7 +196,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                         <div
                           className="mb-1 p-1 px-3 d-flex"
                           style={{
-                            border: 'var(--bg-color_level2) solid 1px',
+                            border: 'var(--border-color) solid 1px',
                             width: '100%',
                             borderRadius: '4px',
                             cursor: 'pointer',

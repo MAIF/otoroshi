@@ -235,7 +235,7 @@ export default class CustomTable extends React.Component {
                   <div style={{ minWidth: 40 }}>
                     <span>{group.net}</span>
                   </div>
-                  <span style={{ borderLeft: '2px solid var(--bg-color_level3)' }} className="ps-1">
+                  <span style={{ borderLeft: '2px solid var(--border-color)' }} className="ps-1">
                     6000
                   </span>
                 </div>
@@ -332,7 +332,7 @@ export default class CustomTable extends React.Component {
                             <span>{net}</span>
                           </div>
                           <span
-                            style={{ borderLeft: '2px solid var(--bg-color_level3)' }}
+                            style={{ borderLeft: '2px solid var(--border-color)' }}
                             className="ps-1"
                           >
                             6000

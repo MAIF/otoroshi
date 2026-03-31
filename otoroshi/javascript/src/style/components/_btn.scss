@@ -168,13 +168,13 @@
 .btn-quiet:focus {
   color: var(--color_level2);
   border: 1px solid;
-  border-color: var(--bg-color_level2);
+  border-color: var(--border-color);
   background-color: var(--bg-color_level2);
 
   &:hover {
     color: var(--color_level3);
     border: 1px solid;
-    border-color: var(--bg-color_level2);
+    border-color: var(--border-color);
     background-color: var(--bg-color_level3);
   }
 }

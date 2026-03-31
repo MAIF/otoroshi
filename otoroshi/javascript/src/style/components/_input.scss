@@ -2,12 +2,18 @@ input[type=search]::-webkit-search-cancel-button {
     -webkit-appearance: searchfield-cancel-button;
 }
 
-input.form-control, textarea.form-control, select.form-control{
-    color:var(--color_level2);
-    background-color: var(--bg-color_level2);
-    border-color: 	var(--bg-color_level1);
+input.form-control, textarea.form-control, select.form-control {
+    color: var(--color_level1);
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-input.form-control:focus{
-    background-color: var(--bg-color_level3);
-    color:var(--color_level3);
+input.form-control:hover, textarea.form-control:hover, select.form-control:hover {
+    border-color: var(--input-border-hover);
+}
+input.form-control:focus, textarea.form-control:focus, select.form-control:focus {
+    background-color: var(--input-bg);
+    color: var(--color_level1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }

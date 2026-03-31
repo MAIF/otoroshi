@@ -732,7 +732,7 @@ export class NgBoxBooleanRenderer extends Component {
           }}
           className="d-flex"
           style={{
-            border: 'var(--bg-color_level2) solid 1px',
+            border: 'var(--border-color) solid 1px',
             padding: '5px',
             margin: '5px 0px',
             width: this.props.width || '100%',
@@ -855,7 +855,7 @@ export class NgArrayRenderer extends Component {
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    border: 'var(--bg-color_level2) solid 1px',
+                    border: 'var(--border-color) solid 1px',
                     borderRadius: 6,
                     padding: 12,
                     marginBottom: 6,
@@ -1109,7 +1109,7 @@ export class NgArraySelectRenderer extends Component {
                       styles={{
                         control: (baseStyles) => ({
                           ...baseStyles,
-                          border: '1px solid var(--bg-color_level3)',
+                          border: '1px solid var(--border-color)',
                           color: 'var(--text)',
                           backgroundColor: 'var(--bg-color_level2)',
                           boxShadow: 'none',
@@ -1380,7 +1380,7 @@ export class NgSelectRenderer extends Component {
               }),
               control: (baseStyles) => ({
                 ...baseStyles,
-                border: '1px solid var(--bg-color_level3)',
+                border: '1px solid var(--border-color)',
                 color: 'var(--text)',
                 backgroundColor: 'var(--bg-color_level2)',
                 boxShadow: 'none',

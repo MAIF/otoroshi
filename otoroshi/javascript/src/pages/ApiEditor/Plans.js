@@ -358,7 +358,7 @@ function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfi
               left: 0,
               zIndex: 1000,
               background: 'var(--bg-color_level1)',
-              borderTop: '1px solid var(--bg-color_level3)',
+              borderTop: '1px solid var(--border-color)',
             }}
             className="p-3 d-flex justify-content-end"
           >

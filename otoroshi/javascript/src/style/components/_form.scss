@@ -2,17 +2,26 @@
 .form-control[readonly],
 fieldset[disabled] .form-control {
   background: none;
-  border: 1px solid #6b6b6b;
-  color: #858585;
+  border: 1px solid var(--input-border);
+  color: var(--text-muted);
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .form-control:focus {
   border-color: var(--color-primary);
-  box-shadow: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 label {
   color: var(--color_level1);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+}
+
+.col-form-label {
+  font-weight: 500;
 }
 
 .has-error .col-form-label {
@@ -21,9 +30,10 @@ label {
 
 .has-error .form-control {
   border-color: var(--color-red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-red) 20%, transparent);
 }
 
-.form-control::placeholder{
-  color: var(--color_level2);
-  opacity: 0.7; 
+.form-control::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
 }

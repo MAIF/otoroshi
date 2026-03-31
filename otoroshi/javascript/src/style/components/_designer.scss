@@ -23,7 +23,7 @@
 
     .graphql-form-type {
         background-color: var(--bg-color_level2);
-        border: 1px solid var(--bg-color_level1);
+        border: 1px solid var(--border-color);
     }
 
     .graphql-form-element {
@@ -574,7 +574,7 @@
     }
 
     .route-forms-header {
-        border-bottom: 1px solid var(--bg-color_level3);
+        border-bottom: 1px solid var(--border-color);
     }
 
     div[role*="button"] svg {
