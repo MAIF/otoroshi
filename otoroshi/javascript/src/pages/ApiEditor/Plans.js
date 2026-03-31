@@ -77,15 +77,6 @@ const ApiKeysConstants = {
         placeholder: `A useful description for this apikey`,
       },
     },
-    authorizedEntities: {
-      type: 'array-select',
-      label: 'Authorized on',
-      props: {
-        placeholder: 'The groups/services of the api key',
-        help: 'The groups/services linked to this api key',
-        optionsFrom: '/bo/api/groups-and-services',
-      },
-    },
     validUntil: {
       type: 'date',
       label: 'Valid until',
@@ -406,7 +397,6 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
           'clientIdPattern',
           'clientNamePattern',
           'description',
-          'authorizedEntities',
           'validUntil',
           'readOnly',
           'allowClientIdOnly',

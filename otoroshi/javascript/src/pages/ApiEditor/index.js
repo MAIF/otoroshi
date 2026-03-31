@@ -33,16 +33,16 @@ import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 
 const RouteWithProps = ({ component: Component, props: extraProps, ...rest }) => (
   <Route
-    render={(routeProps) => {
-      return (
-        <Component
-          {...routeProps}
-          {...extraProps}
-          {...rest}
-          params={{ ...(routeProps.match.params || {}), ...(rest.params || {}) }}
-        />
-      );
-    }}
+    path={rest.path}
+    exact={rest.exact}
+    render={(routeProps) => (
+      <Component
+        {...routeProps}
+        {...extraProps}
+        {...rest}
+        params={{ ...(routeProps.match.params || {}), ...(rest.params || {}) }}
+      />
+    )}
   />
 );
 

@@ -60,7 +60,7 @@ export function Informations(props) {
       },
     },
     owner: {
-      label: 'Owner',
+      label: ' ',
       type: 'form',
       schema: {
         ref: {
@@ -79,7 +79,7 @@ export function Informations(props) {
       flow: ['ref', 'config'],
     },
     visibility: {
-      label: 'Visibility',
+      label: ' ',
       type: 'form',
       schema: {
         kind: {
@@ -201,8 +201,14 @@ export function Informations(props) {
     {
       type: 'group',
       collapsed: true,
-      name: 'Informations',
-      fields: ['owner', 'visibility', 'members', 'hooks'],
+      name: 'Collaborators and teams',
+      fields: ['owner', 'members'],
+    },
+    {
+      type: 'group',
+      collapsed: true,
+      name: 'Visibility & Hook Exposure',
+      fields: ['visibility', 'hooks']
     },
     {
       type: 'group',
@@ -212,11 +218,11 @@ export function Informations(props) {
     },
     isDraft
       ? {
-          type: 'group',
-          name: 'Danger zone',
-          collapsed: true,
-          fields: ['danger_zone'],
-        }
+        type: 'group',
+        name: 'Danger zone',
+        collapsed: true,
+        fields: ['danger_zone'],
+      }
       : null,
   ].filter((f) => f);
 
