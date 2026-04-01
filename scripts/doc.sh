@@ -56,17 +56,17 @@ build () {
   cd $LOCATION/otoroshi
   sbt ';clean;compile;testOnly PluginDocNextTests; testOnly PluginDocNgTests'
   cd $LOCATION/manual
-  cp -R $LOCATION/kubernetes $LOCATION/manual/next/docs/snippets
-  rm -rf $LOCATION/manual/next/docs/snippets/kubernetes/.old
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/base/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
-  rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
-  node indexer.js
+  # cp -R $LOCATION/kubernetes $LOCATION/manual/next/docs/snippets
+  # rm -rf $LOCATION/manual/next/docs/snippets/kubernetes/.old
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/base/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
+  # rm -f $LOCATION/manual/next/docs/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
+  # node indexer.js
   rm $LOCATION/manual/next/docs/snippets/reference.conf
   rm $LOCATION/manual/next/docs/snippets/reference-env.conf
   touch $LOCATION/manual/next/docs/snippets/reference.conf
