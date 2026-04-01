@@ -39,7 +39,7 @@ When a request hits Otoroshi, it goes through the following steps:
 6. **Response transformation plugins** — plugins that modify the response before sending it back to the client (e.g., add security headers, transform the body).
 7. **Client response** — the final response is streamed back to the caller.
 
-Each step is recorded in an execution report (when `debug_flow` or `export_reporting` is enabled), making it easy to understand exactly what happened during a request. See [engine docs](../topics/engine.md#reporting) for details.
+Each step is recorded in an execution report (when `debug_flow` or `export_reporting` is enabled), making it easy to understand exactly what happened during a request. See [engine docs](../topics/engine.mdx#reporting) for details.
 
 ## Frontend matching in depth
 
@@ -126,9 +126,9 @@ You can find all routes [here](http://otoroshi.oto.tools:8080/bo/dashboard/route
 | `tags` | array of string | `[]` | Tags for categorization and API automation |
 | `metadata` | object | `{}` | Key/value metadata. Some keys are [reserved](#reserved-metadata) |
 | `enabled` | boolean | `true` | Whether the route is active. Disabled routes are ignored by the router |
-| `debug_flow` | boolean | `false` | Enable debug flow. Execution reports will contain all input/output values. See [engine docs](../topics/engine.md#reporting) |
-| `capture` | boolean | `false` | Enable request/response capture. Generates events with full request content. Use with caution! See [engine docs](../topics/engine.md#http-traffic-capture) |
-| `export_reporting` | boolean | `false` | Export execution reports for each request via [data exporters](./data-exporters.mdx). See [engine docs](../topics/engine.md#reporting) |
+| `debug_flow` | boolean | `false` | Enable debug flow. Execution reports will contain all input/output values. See [engine docs](../topics/engine.mdx#reporting) |
+| `capture` | boolean | `false` | Enable request/response capture. Generates events with full request content. Use with caution! See [engine docs](../topics/engine.mdx#http-traffic-capture) |
+| `export_reporting` | boolean | `false` | Export execution reports for each request via [data exporters](./data-exporters.mdx). See [engine docs](../topics/engine.mdx#reporting) |
 | `groups` | array of string | `["default"]` | Service groups this route belongs to. Used for API key authorization |
 | `bound_listeners` | array of string | `[]` | List of [HTTP listener](./http-listeners.md) IDs this route is bound to. When a listener is exclusive, only bound routes are served on its port |
 | `frontend` | object |    | Frontend configuration (how the router matches this route). See [below](#frontend-configuration) |
@@ -171,7 +171,7 @@ The frontend defines how the Otoroshi router matches incoming requests to this r
 | `cookies` | object | `{}` | Required cookies to match. If empty, any cookies match |
 | `methods` | array of string | `[]` | Allowed HTTP methods. If empty, any method matches |
 
-For more information about routing, check the [engine documentation](../topics/engine.md#routing).
+For more information about routing, check the [engine documentation](../topics/engine.mdx#routing).
 
 ### Frontend JSON example
 
@@ -299,7 +299,7 @@ PATCH  /api/routes/:id       # Partially update a route
 ## Related entities
 
 * [Backends](./backends.md) - Reusable backend configurations
-* [APIs](./apis.md) - Group multiple routes into a managed API
+* [APIs](./apis.mdx) - Group multiple routes into a managed API
 * [HTTP Listeners](./http-listeners.md) - Custom listeners that routes can be bound to
 * [Route Templates](./route-templates.md) - Reusable route blueprints
-* [Service Groups](./service-groups.md) - Group routes for API key authorization
+* [Service Groups](./service-groups.mdx) - Group routes for API key authorization
