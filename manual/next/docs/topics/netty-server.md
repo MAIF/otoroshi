@@ -4,7 +4,7 @@ sidebar_position: 18
 ---
 # Netty Server
 
-Otoroshi uses a Netty-based HTTP server built on [Reactor Netty](https://projectreactor.io/docs/netty/release/reference/index.html) as an alternative to Akka HTTP. This server supports HTTP/1.1, HTTP/2 (including H2C cleartext), and HTTP/3 (QUIC). It is also the foundation for [custom HTTP listeners](./http-listeners.md).
+Otoroshi uses a Netty-based HTTP server built on [Reactor Netty](https://projectreactor.io/docs/netty/release/reference/index.html) as an alternative to Akka HTTP. This server supports HTTP/1.1, HTTP/2 (including H2C cleartext), and HTTP/3 (QUIC). It is also the foundation for [custom HTTP listeners](./http-listeners.mdx).
 
 ## Enable the server
 
@@ -226,10 +226,10 @@ The HTTP/3 server uses its own `NioEventLoopGroup` with the same thread count se
 
 ## Relationship with custom HTTP listeners
 
-The Netty server described here is the "experimental" built-in server started from the configuration file. [Custom HTTP listeners](./http-listeners.md) use the same Netty infrastructure but can be created dynamically at runtime, each with its own port, protocol, and TLS settings. Custom listeners also support exclusive mode and route/plugin binding.
+The Netty server described here is the "experimental" built-in server started from the configuration file. [Custom HTTP listeners](./http-listeners.mdx) use the same Netty infrastructure but can be created dynamically at runtime, each with its own port, protocol, and TLS settings. Custom listeners also support exclusive mode and route/plugin binding.
 
 ## Related
 
 * [HTTP/3](./http3.md) - HTTP/3 protocol details
-* [Custom HTTP Listeners](./http-listeners.md) - Dynamic listeners with route binding
+* [Custom HTTP Listeners](./http-listeners.mdx) - Dynamic listeners with route binding
 * [TLS](./tls.md) - TLS and certificate management
