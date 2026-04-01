@@ -184,7 +184,7 @@ This tells the client that HTTP/3 is available on port 10048 and the information
 
 ## HTTP/3 on custom HTTP listeners
 
-[Custom HTTP listeners](./http-listeners.md) also support HTTP/3. Enable it in the listener configuration:
+[Custom HTTP listeners](./http-listeners.mdx) also support HTTP/3. Enable it in the listener configuration:
 
 ```json
 {
@@ -205,5 +205,5 @@ HTTP/3 requires TLS to be enabled (`tls: true`). When enabled, the listener star
 ## Related
 
 * [Netty Server](./netty-server.md) - Netty server configuration and HTTP/2 support
-* [Custom HTTP Listeners](./http-listeners.md) - Dynamic listeners with HTTP/3 support
+* [Custom HTTP Listeners](./http-listeners.mdx) - Dynamic listeners with HTTP/3 support
 * [TLS](./tls.md) - TLS and certificate management
