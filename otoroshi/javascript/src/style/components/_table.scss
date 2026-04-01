@@ -56,30 +56,17 @@ thead {
   border-width: 0;
 }
 
-// striped — très subtil
+// pas de rayures — séparateur suffit
 .table-striped > tbody > tr:nth-of-type(odd) {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-[data-theme="light"] .table-striped > tbody > tr:nth-of-type(odd) {
-  background-color: rgba(55, 53, 47, 0.03);
-}
-
-.table-striped > tbody > tr:nth-of-type(2n+1) > * {
-  color: var(--color_level1);
+  background-color: transparent;
 }
 
 // hover row
 .table-hover tbody tr:hover td,
 .table-hover tbody tr:hover th {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: var(--hover-bg);
   color: var(--color_level1);
   cursor: pointer;
-}
-
-[data-theme="light"] .table-hover tbody tr:hover td,
-[data-theme="light"] .table-hover tbody tr:hover th {
-  background-color: rgba(55, 53, 47, 0.04);
 }
 
 // pagination
@@ -105,7 +92,7 @@ thead {
   transition: background 150ms ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--hover-bg);
   }
 }
 

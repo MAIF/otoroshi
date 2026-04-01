@@ -293,7 +293,6 @@ Otoroshi supports the following access modes for plans:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `clientIdPattern` | string | Regex pattern for generated client IDs |
 | `clientNamePattern` | string | Regex pattern for generated client names |
 | `description` | string | Description for generated API keys |
 | `authorizedEntities` | array | Entities the API key is authorized on |

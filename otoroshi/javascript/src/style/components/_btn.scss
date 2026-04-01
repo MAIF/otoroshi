@@ -64,7 +64,7 @@
   &-off {
     @extend .content-switch-button;
     background-color: var(--color-white);
-    border: 1px solid #dfdfdf;
+    border: 1px solid var(--border-color-strong);
     justify-content: flex-start;
   }
 }
@@ -88,7 +88,7 @@
     height: 22px;
     margin-top: -1px;
     margin-left: -1px;
-    border: 1px solid #dfdfdf;
+    border: 1px solid var(--border-color-strong);
     box-shadow: 1px 0px 5px 0px rgba(0, 0, 0, 0.3);
   }
 }

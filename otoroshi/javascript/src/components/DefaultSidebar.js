@@ -232,8 +232,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                          clientY: client.clientY - start.clientY,
-                        }
+                        clientY: client.clientY - start.clientY,
+                      }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -335,19 +335,18 @@ function Block({
   writeStorage,
 }) {
   const [open, setOpen] = useState(false);
-  const history = useHistory();
 
   return (
     <div
       key={title}
       style={{
-        background: 'var(--bg-color_level1)',
+        border: '1px solid var(--input-border)',
+        borderBottom: last ? 1 : 0,
         borderTopLeftRadius: first ? 6 : 0,
         borderTopRightRadius: first ? 6 : 0,
         borderBottomLeftRadius: last ? 6 : 0,
         borderBottomRightRadius: last ? 6 : 0,
         cursor: 'pointer',
-        marginBottom: 1,
         opacity: hightlighted ? 1 : 0.5,
       }}
       className="py-2"
@@ -527,9 +526,8 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
-        openedSidebar ? 'nav-item--open' : ''
-      }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
+        }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -622,9 +620,8 @@ function CoreSidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
-        openedSidebar ? 'nav-item--open' : ''
-      }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
+        }`}
       style={{
         border: openedSidebar ? '2px solid transparent' : 'none',
       }}

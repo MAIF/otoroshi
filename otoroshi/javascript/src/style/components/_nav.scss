@@ -14,7 +14,7 @@
 
 .dashboard-button {
   padding: .5em 1em;
-  color: #fff;
+  color: var(--text);
 }
 
 .active,
@@ -27,9 +27,9 @@
 }
 
 .dashboard-button:hover {
-  background-color: $fondGrisclairSurvolMenu;
-  color: #fff;
-  border-color: $primaryColor;
+  background-color: var(--bg-color_level3);
+  color: var(--color_level3);
+  border-color: var(--color-primary);
   border-radius: 5px;
 }
 
@@ -49,17 +49,17 @@
   &:focus,
   &:hover {
     text-decoration: none;
-    background-color: $fondGrisclairSurvolMenu;
-    color: #fff;
+    background-color: var(--bg-color_level3);
+    color: var(--color_level3);
   }
 }
 
 .nav-link {
   padding: 0 1rem;
-  color: #fff;
+  color: var(--color_level1);
 
   &:focus {
-    color: $primaryColor;
+    color: var(--color-primary);
   }
 }
 

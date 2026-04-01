@@ -1,70 +1,181 @@
 .ReactTable {
   border: none !important;
-  overflow-y: scroll;
+  font-size: 0.875rem;
 
-  input {
-    color: var(--color_level2) !important;
-    background-color: var(--bg-color_level2) !important;
-    border-color: var(--border-color) !important;
-    border-radius: 4px;
-    border: none;
+  // ─── Table wrapper ────────────────────────────────────────────
+  .rt-table {
+    border-collapse: separate;
+    border-spacing: 0;
   }
 
-  .rt-td {
-    height: 40px !important;
+  // ─── Header ───────────────────────────────────────────────────
+  .rt-thead {
+
+    &.-header {
+      box-shadow: none !important;
+      border-bottom: 1px solid var(--border-color);
+
+      .rt-th {
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 8px 12px;
+        border: none !important;
+        text-align: left;
+        white-space: nowrap;
+        background: transparent;
+        box-shadow: none !important;
+      }
+    }
+
+    // filter row
+    &.-filters {
+      border-bottom: 1px solid var(--border-color);
+
+      .rt-th {
+        border: none !important;
+        padding: 4px 8px;
+      }
+
+      input {
+        color: var(--color_level1) !important;
+        background-color: var(--bg-color_level2) !important;
+        border: 1px solid var(--input-border) !important;
+        border-radius: 6px !important;
+        padding: 4px 8px;
+        font-size: 0.8125rem;
+        width: 100%;
+        transition: border-color 0.15s ease;
+
+        &:focus {
+          border-color: var(--color-primary) !important;
+          outline: none;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+        }
+      }
+    }
   }
 
-  .rt-thead .rt-tr{
-    text-align: left;
-    font-weight: bold;
-    font-size: 16px;
+  // ─── Body ─────────────────────────────────────────────────────
+  .rt-tbody {
+    overflow: visible !important;
+
+    .rt-tr-group {
+      border-bottom: 1px solid var(--border-color) !important;
+
+      &:last-child {
+        border-bottom: none !important;
+      }
+    }
+
+    // no stripes — just a separator line
+    .rt-tr {
+      transition: background 100ms ease;
+
+      &.-odd,
+      &.-even {
+        background: transparent;
+      }
+
+      &:hover {
+        background: var(--hover-bg) !important;
+      }
+    }
+
+    .rt-td {
+      height: 44px !important;
+      padding: 0 12px !important;
+      border: none !important;
+      color: var(--color_level1);
+      vertical-align: middle;
+      display: flex;
+      align-items: center;
+    }
   }
-  
+
+  // ─── Sort indicators ──────────────────────────────────────────
+  .rt-th.-sort-asc {
+    box-shadow: inset 0 3px 0 0 var(--color-primary) !important;
+  }
+
+  .rt-th.-sort-desc {
+    box-shadow: inset 0 -3px 0 0 var(--color-primary) !important;
+  }
+
+  // ─── Pagination ───────────────────────────────────────────────
+  .-pagination {
+    box-shadow: none !important;
+    border-top: 1px solid var(--border-color) !important;
+    padding: 8px 0;
+    justify-content: center;
+    gap: 6px;
+
+    .-previous,
+    .-next {
+      flex: none;
+    }
+
+    .-btn {
+      color: var(--color_level1) !important;
+      background: transparent !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 6px !important;
+      padding: 4px 14px;
+      font-size: 0.8125rem;
+      transition: background 150ms ease, border-color 150ms ease;
+
+      &:not([disabled]):hover {
+        background: var(--hover-bg) !important;
+        border-color: var(--border-color-strong) !important;
+      }
+
+      &[disabled] {
+        opacity: 0.4;
+      }
+    }
+
+    .-center {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: none !important;
+      margin: 0 4px;
+    }
+
+    .-pageInfo {
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    .-pageJump input,
+    .-pageSizeOptions select {
+      color: var(--color_level1) !important;
+      background: var(--bg-color_level2) !important;
+      border: 1px solid var(--input-border) !important;
+      border-radius: 6px !important;
+      padding: 2px 6px;
+    }
+  }
+
   .-pageSizeOptions {
     display: none !important;
   }
 
-  .-next .-btn {
-    color: var(--color_level2) !important;
-    border: 1px solid var(--color_level2) !important;
-    border-radius: 4px !important;
+  // ─── Loading overlay ──────────────────────────────────────────
+  .-loading {
+    background: var(--bg-color_level1_opa80) !important;
+    backdrop-filter: blur(4px);
+
+    .-loading-inner {
+      color: var(--text-muted) !important;
+      font-size: 0.875rem;
+    }
   }
 
-  .-previous .-btn {
-    color: var(--color_level2) !important;
-    border: 1px solid var(--color_level2) !important;
-    border-radius: 4px !important;
-  }
-
-  .-pagination {
-    justify-content: center;
-  }
-
-  .-pagination .-previous,
-  .-pagination .-next {
-    flex: none;
-  }
-
-  .-pagination .-center {
-    flex: none;
-    border: 1px solid rgba(181, 179, 179, 0.5);
-    border-radius: 4px;
-    margin-left: 5px;
-    margin-right: 5px;
-  }
-
-  .-pagination .-btn:not([disabled]):hover {
-    background: var(--bg-color_level2);
-  }
-
-  span.label.table-env {
-    margin-right: 10px;
-  }
-
-  select {
-    background: none;
-  }
-
+  // ─── Icons ────────────────────────────────────────────────────
   .fa-check-circle,
   .fa-times-circle {
     font-size: 16px;
@@ -80,5 +191,13 @@
   .fa-unlock-alt,
   .fa-times-circle.alertorange {
     color: orange;
+  }
+
+  span.label.table-env {
+    margin-right: 10px;
+  }
+
+  select {
+    background: none;
   }
 }

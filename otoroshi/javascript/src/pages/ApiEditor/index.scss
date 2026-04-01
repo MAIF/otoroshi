@@ -104,10 +104,6 @@
         cursor: pointer;
     }
 
-    .apis-cards:hover .cards-body {
-        background-color: hsla(0, 0%, 35%, .5);
-    }
-
     .apis-cards:hover button {
         background-color: var(--color-primary);
         color: var(--text);
@@ -121,7 +117,7 @@
 
     .container {
         width: fit-content;
-        background-color: var(--bg-color_level2);
+        border: 1px solid var(--input-border);
         padding: 1rem;
         border-radius: 1rem;
     }
@@ -133,7 +129,8 @@
     }
 
     .container--highlighted {
-        background-color: var(--bg-color_level2);
+        background: none;
+        border: 1px solid var(--input-border);
     }
 
     h3 {
@@ -246,7 +243,7 @@
         border-radius: .5rem;
         align-items: start;
         justify-content: space-around;
-        background-color: var(--bg-color_level3);
+        border: 1px solid var(--input-border);
         padding: .5rem 0;
     }
 
@@ -394,8 +391,7 @@
         display: flex;
         align-items: center;
         gap: .75rem;
-        background-color: var(--bg-color_level2);
-        border: 1px solid transparent;
+        border: 1px solid var(--input-border);
         border-radius: .75rem;
         padding: .75rem 1rem;
         cursor: pointer;
@@ -403,7 +399,7 @@
 
         &:hover {
             border-color: var(--color-primary);
-            background-color: var(--bg-color_level3);
+            background-color: var(--bg-color_level2);
         }
     }
 
@@ -540,7 +536,7 @@
     padding: .5rem 1rem;
     border-radius: .5rem;
     border: 1px solid var(--bg-color_level3);
-    background-color: var(--bg-color_level3);
+    background: none;
     color: var(--text);
     cursor: pointer;
     font-size: .85rem;
@@ -599,10 +595,13 @@
     flex-direction: column;
     gap: 1.5rem;
     max-width: 720px;
+    border: 1px solid var(--input-border);
+    border-radius: .5rem;
+    padding: 1rem;
 }
 
 .actions-section {
-    background-color: var(--bg-color_level2);
+    border: 1px solid var(--input-border);
     border-radius: 1rem;
     padding: 1.5rem;
 }
@@ -736,7 +735,8 @@
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding: 1rem;
-    background-color: var(--bg-color_level3);
+    border: 1px solid var(--input-border);
+    background-color: var(--bg-color_level2);
     border-radius: .75rem;
 }
 
@@ -821,10 +821,9 @@
     gap: 1rem;
     padding: .85rem 1rem;
     border-radius: .5rem;
-    background-color: var(--bg-color_level3);
+    border: 1px solid var(--input-border);
     cursor: pointer;
     transition: border-color .2s, background-color .15s;
-    border: 1px solid transparent;
 
     &:hover {
         border-color: var(--color-primary);

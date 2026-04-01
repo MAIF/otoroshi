@@ -17,8 +17,9 @@ export function PillButton({
         className="p-1"
         style={{
           borderRadius: '24px',
-          backgroundColor: 'var(--bg-color_level2)',
-          color: 'var(--color_level2)',
+          // backgroundColor: 'var(--bg-color_level3)',
+          border: '1px solid var(--input-border)',
+          color: 'var(--color_level3)',
           position: 'relative',
           width: 'fit-content',
           ...style,

@@ -1,5 +1,17 @@
 .designer {
 
+    .search-plugin {
+        border: none;
+        outline: none;
+    }
+
+    .search-plugin:hover,
+    .search-plugin:focus {
+        border: none;
+        outline: none;
+        box-shadow: none;
+    }
+
     .graphql-form {
         position: absolute;
         top: 1em;
@@ -118,14 +130,15 @@
     .element {
         margin: 6px;
         margin-right: 0;
-        background-color: var(--bg-color_level3);
+        background-color: var(--bg-color_level1);
         color: var(--color_level3);
+        border: 1px solid var(--input-border);
         display: flex;
         align-items: center;
         border-bottom-left-radius: 6px;
         border-top-left-radius: 6px;
         overflow: hidden;
-        box-shadow: 0 1px 2px rgba(.25, .25, .25, .6);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
         cursor: pointer;
     }
 
@@ -171,11 +184,12 @@
 
     .search-group-header,
     .group-header {
-        background-color: var(--bg-color_level2);
+        background-color: var(--bg-color_level1);
         display: flex;
         align-items: center;
         font-weight: 500;
         color: var(--color_level2);
+        border: 1px solid var(--input-border);
         border-right: 3px solid var(--color-primary);
         border-top-left-radius: 4px;
         border-bottom-left-radius: 4px;
@@ -191,6 +205,8 @@
         background-color: var(--color-primary);
         min-width: 42px;
         height: 42px;
+        border-radius: 0;
+        border: 1px solid var(--color-primary);
     }
 
     .main-view {
@@ -204,13 +220,13 @@
     .vertical-line {
         height: 8px;
         width: 8px;
-        background-color: #eee;
+        background-color: var(--border-color-strong);
     }
 
     .tab {
         margin: 6px 0;
         background: none;
-        color: #fff;
+        color: var(--color_level2);
         border: none;
         background-color: var(--bg-color_level2);
         border-radius: 8px;
@@ -235,8 +251,8 @@
     }
 
     .dot {
-        color: $grisTexte;
-        border: 1px solid #eee;
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
         // border-radius: 4px;
         width: 100%;
         display: flex;
@@ -304,13 +320,14 @@
         width: 100%;
         cursor: pointer;
         background-color: var(--bg-color_level2);
-        color: $grisTexte;
+        color: var(--text-muted);
         border-radius: 4px;
     }
 
     .dark-background {
-        color: var(--color_level3);
-        background-color: var(--bg-color_level3);
+        color: var(--color_level1);
+        background-color: var(--bg-color_level1);
+        border: 1px solid var(--input-border);
     }
 
     .plugins-stack-column {
@@ -334,13 +351,12 @@
     }
 
     .frontend-button {
-        // z-index: 100;
         position: absolute;
         top: 0;
-        left: -12px;
+        left: -11px;
         height: 32px;
         padding-left: 4px;
-        border: 1px solid #eee;
+        border: 1px solid var(--input-border);
         border-right-width: 0;
         border-radius: 4px;
         border-top-right-radius: 0;
@@ -356,7 +372,7 @@
     }
 
     .frontend-button-icon {
-        font-size: 20px;
+        font-size: 16px;
     }
 
     .editor-view-form {
@@ -387,7 +403,7 @@
 
     .editor-view-informations {
         border-bottom: 1px solid var(--color-primary);
-        border-right: 0;
+        border-right: 1px solid var(--input-border);
         border-radius: 0;
     }
 
@@ -448,7 +464,7 @@
         flex: 0;
         padding: 1px;
         position: relative;
-        border: 1px solid #fff;
+        border: 1px solid var(--border-color-strong);
         // border-radius: 4px;
     }
 
@@ -457,7 +473,7 @@
         top: -6px;
         right: -12px;
         font-size: 42px;
-        color: #fff;
+        color: var(--color-white);
         background-color: var(--color-primary);
         border-radius: 50%;
         z-index: 100;
@@ -496,12 +512,12 @@
     }
 
     .node-cursor i {
-        color: #fff;
+        color: var(--text);
         min-width: 22px;
     }
 
     .delete-node-button i {
-        color: #fff;
+        color: var(--color_level3);
     }
 
     .delete-node-button {
@@ -512,15 +528,15 @@
         border-radius: 4px;
         min-width: 18px;
         height: 18px;
-        background-color: #595959;
-        border: 1px solid #fff;
+        background-color: var(--bg-color_level3);
+        border: 1px solid var(--border-color-strong);
     }
 
     .plugins-action {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        background-color: #595959;
+        color: var(--text) !important;
     }
 
     .plugins-action:hover {
@@ -549,7 +565,7 @@
     }
 
     .target_information {
-        color: #E6E6E6;
+        color: var(--color_level3);
         background-color: var(--bg-color_level3);
         border-color: var(--color_level3);
         padding: 4px 8px;
@@ -570,7 +586,7 @@
     }
 
     .route-forms-title {
-        color: #fff;
+        color: var(--text);
     }
 
     .route-forms-header {
@@ -578,7 +594,7 @@
     }
 
     div[role*="button"] svg {
-        fill: #494849;
+        fill: currentColor;
     }
 
     .main-view .cm-editor {
@@ -622,7 +638,7 @@
     left: 0;
     right: 0;
     z-index: 1050;
-    background-color: #494948a6;
+    background-color: rgba(0, 0, 0, 0.65);
     transition: all .2s ease-in-out;
 }
 
@@ -684,10 +700,10 @@
 
 .wizard-h3--small {
     font-size: 1.25em !important;
-    color: #eee;
+    color: var(--text-muted);
 
     +label {
-        color: #eee;
+        color: var(--text-muted);
     }
 }
 

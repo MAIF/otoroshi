@@ -235,7 +235,7 @@ export function Actions(props) {
   const isStaging = item.state === 'staging';
 
   return (
-    <div className="actions-page mt-3" style={{ maxWidth: MAX_WIDTH }}>
+    <div className="mt-3" style={{ maxWidth: MAX_WIDTH }}>
       {duplicateModal && <DuplicateModal hide={() => setDuplicateModal(false)} api={api} />}
 
       {/* Lifecycle section */}

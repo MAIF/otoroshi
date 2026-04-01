@@ -1829,7 +1829,6 @@ export class TopBar extends Component {
                               border: '1px solid rgba(var(--raw-text), .25)',
                               width: 400,
                               color: 'var(--text)',
-                              // backgroundColor: 'var(--bg-color_level3)',
                               background: 'transparent',
                               boxShadow: 'none',
                             }),
@@ -1843,6 +1842,7 @@ export class TopBar extends Component {
                               margin: 0,
                               borderTopLeftRadius: 0,
                               borderTopRightRadius: 0,
+                              border: '1px solid var(--input-border)',
                               backgroundColor: 'var(--bg-color_level2)',
                               color: 'var(--text)',
                             }),
@@ -1899,9 +1899,10 @@ export class TopBar extends Component {
                                     display: 'flex',
                                     alignItems: 'center',
                                     padding: '.5rem',
+                                    borderBottom: '1px solid var(--input-border)',
                                     background: props.isFocused
-                                      ? 'var(--bg-color_level2)'
-                                      : 'var(--bg-color_level3)',
+                                      ? 'var(--bg-color_level3)'
+                                      : 'none',
                                   }}
                                   ref={props.innerRef}
                                   {...props.innerProps}
