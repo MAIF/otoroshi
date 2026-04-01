@@ -4,6 +4,7 @@ sidebar_position: 2
 ---
 
 import { Image } from '@site/src/components/Image';
+import { TabItemWithVersion } from '@site/src/components/TabItemWithVersion';
 
 # Kubernetes
 
@@ -212,18 +213,18 @@ $ otoroshictl resources crds | kubectl apply -f -
 Here we have 2 replicas connected to the same redis instance. Nothing fancy. We use a service of type `LoadBalancer` to expose otoroshi to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the `LoadBalancer` external `CNAME` (see the example below)
 
 <Tabs>
-<TabItem value="deployment.yaml" label="deployment.yaml" default>
+<TabItemWithVersion value="deployment.yaml" label="deployment.yaml" default>
 
 ```yaml include=../snippets/kubernetes/kustomize/overlays/simple/deployment.yaml
 ```
 
-</TabItem>
-<TabItem value="dns.example" label="dns.example">
+</TabItemWithVersion>
+<TabItemWithVersion value="dns.example" label="dns.example">
 
 ```text include=../snippets/kubernetes/kustomize/overlays/simple/dns.example
 ```
 
-</TabItem>
+</TabItemWithVersion>
 </Tabs>
 
 ### Deploy a simple otoroshi instanciation on a bare metal kubernetes cluster
