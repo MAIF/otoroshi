@@ -76,7 +76,7 @@ async function echoReadable(readable) {
 function runSystemCommand(command, args, location, env = {}) {
   const source = spawn(command, args, {
     cwd: location,
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', process.stderr]
   });
   return echoReadable(source.stdout);
