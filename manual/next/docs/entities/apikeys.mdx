@@ -7,7 +7,56 @@ import { Image } from '@site/src/components/Image';
 
 # API Keys
 
-An API key is a unique credential used to authenticate and authorize calls to routes and APIs.
+An API key is a credential pair (`clientId` + `clientSecret`) that **authenticates and authorizes** machine-to-machine or developer calls to your routes and APIs. 
+It is the simplest way to protect an endpoint in Otoroshi: create a key, bind it to one or more routes, 
+and every request must prove it holds the key before being forwarded to the backend.
+
+## Why use API keys
+
+API keys solve a common problem: you need to know **who** is calling your API, **control how much** they can call it, 
+and **revoke access** instantly when needed, all without requiring an external identity provider or a full OAuth2 flow. They are ideal for:
+
+- **Service-to-service communication** within a trusted network, where a lightweight shared secret is sufficient.
+- **Developer access** to public or partner APIs, where each consumer receives their own key with individual quotas.
+- **Quick prototyping**, where you need authentication up and running in minutes rather than configuring a full identity stack.
+
+For user-facing authentication (login flows, SSO, session management), consider [authentication modules](./auth-modules) instead. For fine-grained token validation without a shared secret, look at [JWT verifiers](./jwt-verifiers.mdx). API keys and these other mechanisms are complementary and can be combined on the same route through the plugin chain.
+
+## How API keys work in Otoroshi
+
+Each API key consists of two values:
+
+- **`clientId`** -- a unique public identifier (16 random characters by default).
+- **`clientSecret`** -- a private secret (64 random characters by default) that proves ownership of the key.
+
+The client includes these credentials in every request. Otoroshi supports several extraction methods so you can pick the one that fits your stack:
+
+| Method | How it works |
+|--------|-------------|
+| **Custom headers** | Send `Otoroshi-Client-Id` and `Otoroshi-Client-Secret` headers (header names are configurable) |
+| **Basic authentication** | Send an `Authorization: Basic <base64(clientId:clientSecret)>` header |
+| **Bearer token** | Otoroshi-specific bearer token format (`otoapk_<clientId>_<secret_hash>`) |
+| **JWT token** | Embed the `clientId` and `clientSecret` inside a signed JWT sent as a bearer |
+| **Client ID only** | When `allowClientIdOnly` is enabled, the client ID alone (in a header, query param, or cookie) is enough |
+
+Once extracted, Otoroshi verifies the credentials, checks that the key is enabled and not expired, confirms it is authorized on the target route or group, enforces quotas and restrictions, and only then forwards the request to the backend.
+
+## Key features at a glance
+
+- **Quotas** -- throttling (calls per second), daily, and monthly call limits, all tracked automatically and enforceable per key.
+- **Automatic secret rotation** -- the secret can rotate on a configurable schedule with a grace period during which both old and new secrets are accepted, enabling zero-downtime credential updates.
+- **Restrictions** -- fine-grained allow/deny rules based on HTTP method and path, so a single key can be scoped to specific operations.
+- **Expiration** -- a `validUntil` timestamp that automatically disables the key after a given date, useful for time-limited access.
+- **Read-only mode** -- restricts the key to `GET`, `HEAD`, and `OPTIONS` methods only.
+- **Tags and metadata** -- arbitrary labels and key-value pairs used for routing constraints, filtering, and organizational purposes.
+- **Authorization scope** -- each key declares which routes, service groups, and APIs it is authorized on, so a single key can cover multiple endpoints or be tightly scoped to just one.
+
+## How API keys relate to other entities
+
+- **[Routes](./routes.md)** and **[APIs](./apis.mdx)** -- an API key is bound to specific routes or APIs through its `authorizedEntities` list. A route can require API key authentication via the `ApikeyCalls` plugin in its plugin chain.
+- **[Service Groups](./service-groups.mdx)** -- keys can be authorized on an entire group, automatically granting access to every route in that group.
+- **[JWT Verifiers](./jwt-verifiers.mdx)** -- API keys can coexist with JWT verifiers on the same route. One of the extraction methods even allows embedding the API key credentials inside a signed JWT.
+- **[Authentication Modules](./auth-modules)** -- while API keys handle programmatic/machine access, authentication modules handle user login flows. Both can be active on different routes or even on the same route for different use cases.
 
 <Image src="/img/docs/models-apikey.png" />
 
