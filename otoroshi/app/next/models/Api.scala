@@ -406,7 +406,6 @@ object OAuth2AccessModeConfiguration {
 }
 
 case class ApikeyAccessModeConfiguration(
-    clientIdPattern: Option[String] = None,
     clientNamePattern: Option[String] = None,
     description: Option[String] = None,
     authorizedEntities: Seq[EntityIdentifier] = Seq.empty,
@@ -435,7 +434,6 @@ case class ApikeyAccessModeConfiguration(
       .map(JsString.apply)
       .getOrElse(JsNull) // simulate old behavior
     Json.obj(
-      "clientIdPattern"         -> clientIdPattern,
       "clientNamePattern"       -> clientNamePattern,
       "description"             -> description,
       "authorizedGroup"         -> authGroup,
@@ -462,7 +460,6 @@ object ApikeyAccessModeConfiguration {
     new Format[ApikeyAccessModeConfiguration] {
       override def reads(json: JsValue): JsResult[ApikeyAccessModeConfiguration] = Try {
         ApikeyAccessModeConfiguration(
-          clientIdPattern = json.selectAsOptString("clientIdPattern"),
           clientNamePattern = json.selectAsOptString("clientNamePattern"),
           description = (json \ "description").asOpt[String],
           authorizedEntities = {
@@ -938,14 +935,12 @@ object ApiSubscription {
           .getOrElse(ApikeyAccessModeConfiguration())
 
         val attrs = TypedMap(
-          otoroshi.next.plugins.Keys.PlanKey -> plan,
-          otoroshi.next.plugins.Keys.ApiKey  -> api
+          otoroshi.plugins.Keys.PlanKey -> plan,
+          otoroshi.plugins.Keys.ApiKey  -> api
         )
 
         val defaultApikey = ApiKey(
-          clientId = configPlan.clientIdPattern
-            .map(_.evaluateEl(attrs)(env))
-            .getOrElse(IdGenerator.lowerCaseToken(16)),
+          clientId = IdGenerator.lowerCaseToken(16),
           clientSecret = IdGenerator.lowerCaseToken(64),
           clientName = configPlan.clientNamePattern
             .map(_.evaluateEl(attrs)(env))

@@ -61,10 +61,6 @@ const ACCESS_MODE_LABELS = {
 
 const ApiKeysConstants = {
   schema: {
-    clientIdPattern: {
-      type: 'string',
-      label: 'ApiKey Id Pattern',
-    },
     clientNamePattern: {
       type: 'string',
       label: 'ApiKey Name Pattern',
@@ -390,7 +386,6 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
         value={accessModeConfiguration}
         schema={ApiKeysConstants.schema}
         flow={[
-          'clientIdPattern',
           'clientNamePattern',
           'description',
           'validUntil',

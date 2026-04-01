@@ -2,6 +2,7 @@ package otoroshi.plugins
 
 import akka.Done
 import akka.util.ByteString
+import next.models.{Api, ApiDocumentationPlan}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
 import otoroshi.models._
@@ -58,4 +59,7 @@ object Keys {
   val ResponseEndPromiseKey             = TypedKey[Promise[Done]]("otoroshi.core.ResponseEndPromise")
   val ForCurrentListenerOnlyKey         = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")
   val CurrentListenerKey                = TypedKey[String]("otoroshi.core.CurrentListener")
+
+  val PlanKey                           = TypedKey[ApiDocumentationPlan]("otoroshi.core.Plan")
+  val ApiKey                            = TypedKey[Api]("otoroshi.core.Api")
 }

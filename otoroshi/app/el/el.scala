@@ -63,7 +63,9 @@ object GlobalExpressionLanguage {
       user = attrs.get(otoroshi.plugins.Keys.UserKey),
       context = attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
       attrs = attrs,
-      env = env
+      env = env,
+      plan = attrs.get(otoroshi.plugins.Keys.PlanKey),
+      api = attrs.get(otoroshi.plugins.Keys.ApiKey)
     )
   }
 
