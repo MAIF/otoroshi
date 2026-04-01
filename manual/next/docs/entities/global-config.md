@@ -4,9 +4,43 @@ sidebar_position: 9
 ---
 # Global config
 
-The global config, named `Danger zone` in Otoroshi, is the place to configure Otoroshi globally. 
+The global configuration is the single, system-wide configuration object that governs the behavior of the entire Otoroshi gateway. There is exactly one global config per Otoroshi instance (or cluster), and every change made here affects **all** traffic flowing through the gateway, not just a single route or API.
 
-> Warning: In this page, the configuration is really sensitive and affects the global behaviour of Otoroshi.
+## Why is it called "Danger Zone"?
+
+In the Otoroshi admin UI, this page is labeled **Danger Zone** for a reason: the settings here are powerful and far-reaching. Modifying global throttling limits, enabling maintenance mode, or changing IP filtering rules will immediately impact every service proxied by Otoroshi. Unlike route-level configuration, which is scoped to a single route or service, the global config acts as a blanket policy layer across the entire platform.
+
+## What does the global config control?
+
+The global config covers the following areas:
+
+- **Global throttling and rate limiting** -- system-wide request-per-second limits, both globally and per IP address
+- **IP address filtering** -- gateway-wide allow lists, block lists, and endless-response addresses that apply before any route matching
+- **Maintenance mode and read-only mode** -- instantly put every service into maintenance or freeze the datastore
+- **Global plugins** -- plugins that run on every single request processed by Otoroshi, on top of any route-level plugins
+- **TLS settings** -- default certificate behavior, trusted CAs, SNI defaults, and automatic certificate generation
+- **Analytics and metrics** -- Elasticsearch datasource configuration, StatsD/Datadog integration, and live metrics toggle
+- **Let's Encrypt / ACME** -- automated certificate provisioning settings
+- **Geolocation and user-agent extraction** -- enrichment of analytics events with geographic and device information
+- **Backoffice authentication** -- the authentication module protecting the Otoroshi admin UI itself
+- **Proxies** -- HTTP proxy configuration for outgoing calls (webhooks, OAuth, Elasticsearch, etc.)
+- **Quotas alerting** -- thresholds for API key quota warnings
+- **Snowflake ID generator** -- unique instance identifier used for distributed ID generation
+- **Chaos engineering (Snow Monkey)** -- fault injection settings that apply across all services
+- **Global metadata and tags** -- labels attached to the global config for organizational purposes
+
+## Global config vs. route-level config
+
+Most of your configuration should happen at the **route level**. Routes let you define specific behavior (authentication, rate limiting, transformations, etc.) for individual APIs or groups of APIs. The global config is reserved for policies that genuinely need to apply everywhere:
+
+- Use **route-level config** when you want to protect a specific API with an auth module, apply a custom rate limit to one consumer, or transform headers for a particular backend.
+- Use **global config** when you need a gateway-wide IP block list, a system-wide request ceiling, TLS defaults for all domains, or plugins that must execute on every request regardless of the route.
+
+## Hot-reloadable
+
+All global config changes are **hot-reloadable**: they take effect immediately without restarting Otoroshi. This makes the Danger Zone both powerful and sensitive -- there is no deployment step between saving a change and it being live in production.
+
+---
 
 
 ### Misc. Settings
