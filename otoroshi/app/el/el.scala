@@ -10,6 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
+import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
@@ -84,7 +85,9 @@ object GlobalExpressionLanguage {
       user: Option[PrivateAppsUser],
       context: Map[String, String],
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      plan: Option[ApiDocumentationPlan] = None,
+      api: Option[Api] = None
   ): String = env.metrics.withTimer(s"el.apply") {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
@@ -111,7 +114,7 @@ object GlobalExpressionLanguage {
                   if (hasDefaultValue) lastParts.lastOption.getOrElse("no-chain-value-d") else "no-chain-value"
                 parts.iterator
                   .map { str =>
-                    apply(s"""$${${str.trim}}""", req, service, route, apiKey, user, context, attrs, env)
+                    apply(s"""$${${str.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
                   }
                   .find { str =>
                     str != "bad-expr" && !str.startsWith("no-")
@@ -158,17 +161,23 @@ object GlobalExpressionLanguage {
               str match {
                 case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .plusMillis(field.toInt)
                     .toString()
                 case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .plusMillis(field.toInt)
                     .toString(format)
                 case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms"                  =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .plusMillis(field.toInt)
                     .getMillis
                     .toString
@@ -176,24 +185,44 @@ object GlobalExpressionLanguage {
                   TimeUnit.MILLISECONDS
                     .toSeconds(
                       DateTime
-                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .parse(
+                          apply(
+                            s"""$${${date.trim}}""",
+                            req,
+                            service,
+                            route,
+                            apiKey,
+                            user,
+                            context,
+                            attrs,
+                            env,
+                            plan,
+                            api
+                          )
+                        )
                         .plusMillis(field.toInt)
                         .getMillis
                     )
                     .toString
                 case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .minusMillis(field.toInt)
                     .toString()
                 case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .minusMillis(field.toInt)
                     .toString(format)
                 case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms"                 =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .minusMillis(field.toInt)
                     .getMillis
                     .toString
@@ -201,25 +230,57 @@ object GlobalExpressionLanguage {
                   TimeUnit.MILLISECONDS
                     .toSeconds(
                       DateTime
-                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .parse(
+                          apply(
+                            s"""$${${date.trim}}""",
+                            req,
+                            service,
+                            route,
+                            apiKey,
+                            user,
+                            context,
+                            attrs,
+                            env,
+                            plan,
+                            api
+                          )
+                        )
                         .minusMillis(field.toInt)
                         .getMillis
                     )
                     .toString
                 case r"date_el\($date@(.*)\).format\('$format@(.*)'\)"                         =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .toString(format)
                 case r"date_el\($date@(.*)\).epoch_ms"                                         =>
                   DateTime
-                    .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
                     .getMillis
                     .toString
                 case r"date_el\($date@(.*)\).epoch_sec"                                        =>
                   TimeUnit.MILLISECONDS
                     .toSeconds(
                       DateTime
-                        .parse(apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env))
+                        .parse(
+                          apply(
+                            s"""$${${date.trim}}""",
+                            req,
+                            service,
+                            route,
+                            apiKey,
+                            user,
+                            context,
+                            attrs,
+                            env,
+                            plan,
+                            api
+                          )
+                        )
                         .getMillis
                     )
                     .toString
@@ -548,6 +609,10 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(dv)
+            case "plan.id" if plan.isDefined                                                     => plan.get.id
+            case "plan.name" if plan.isDefined                                                   => plan.get.name
+            case "api.id" if api.isDefined                                                       => api.get.id
+            case "api.name" if api.isDefined                                                     => api.get.name
             case r"user.profile.$field@(.*)" if user.isDefined                                   =>
               user
                 .map(_.profile)
@@ -646,7 +711,9 @@ object HeadersExpressionLanguage {
       user: Option[PrivateAppsUser],
       context: Map[String, String],
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      plan: Option[ApiDocumentationPlan] = None,
+      api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -658,7 +725,9 @@ object HeadersExpressionLanguage {
       context =
         Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
-      env = env
+      env = env,
+      plan = plan,
+      api = api
     )
   }
 }
@@ -674,7 +743,9 @@ object RedirectionExpressionLanguage {
       user: Option[PrivateAppsUser],
       context: Map[String, String],
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      plan: Option[ApiDocumentationPlan] = None,
+      api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -686,7 +757,9 @@ object RedirectionExpressionLanguage {
       context =
         Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
-      env = env
+      env = env,
+      plan,
+      api
     )
   }
 }
@@ -702,7 +775,9 @@ object TargetExpressionLanguage {
       user: Option[PrivateAppsUser],
       context: Map[String, String],
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      plan: Option[ApiDocumentationPlan] = None,
+      api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -714,7 +789,9 @@ object TargetExpressionLanguage {
       context =
         Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
-      env = env
+      env = env,
+      plan,
+      api
     )
   }
 }
@@ -730,7 +807,9 @@ object JwtExpressionLanguage {
       user: Option[PrivateAppsUser],
       context: Map[String, String],
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      plan: Option[ApiDocumentationPlan] = None,
+      api: Option[Api] = None
   ): String = {
     GlobalExpressionLanguage.apply(
       value = value,
@@ -742,7 +821,9 @@ object JwtExpressionLanguage {
       context =
         Some(context).filter(_.nonEmpty).getOrElse(attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty)),
       attrs = attrs,
-      env = env
+      env = env,
+      plan,
+      api
     )
   }
 
@@ -755,26 +836,30 @@ object JwtExpressionLanguage {
       user: Option[PrivateAppsUser],
       context: Map[String, String],
       attrs: TypedMap,
-      env: Env
+      env: Env,
+      plan: Option[ApiDocumentationPlan] = None,
+      api: Option[Api] = None
   ): JsValue = {
     value match {
       case JsObject(map)   =>
         new JsObject(map.toSeq.map {
           case (key, JsString(str))     =>
-            (key, JsString(apply(str, req, service, route, apiKey, user, context, attrs, env)))
-          case (key, obj @ JsObject(_)) => (key, fromJson(obj, req, service, route, apiKey, user, context, attrs, env))
-          case (key, arr @ JsArray(_))  => (key, fromJson(arr, req, service, route, apiKey, user, context, attrs, env))
+            (key, JsString(apply(str, req, service, route, apiKey, user, context, attrs, env, plan, api)))
+          case (key, obj @ JsObject(_)) =>
+            (key, fromJson(obj, req, service, route, apiKey, user, context, attrs, env, plan, api))
+          case (key, arr @ JsArray(_))  =>
+            (key, fromJson(arr, req, service, route, apiKey, user, context, attrs, env, plan, api))
           case (key, v)                 => (key, v)
         }.toMap)
       case JsArray(values) =>
         new JsArray(values.map {
-          case JsString(str) => JsString(apply(str, req, service, route, apiKey, user, context, attrs, env))
-          case obj: JsObject => fromJson(obj, req, service, route, apiKey, user, context, attrs, env)
-          case arr: JsArray  => fromJson(arr, req, service, route, apiKey, user, context, attrs, env)
+          case JsString(str) => JsString(apply(str, req, service, route, apiKey, user, context, attrs, env, plan, api))
+          case obj: JsObject => fromJson(obj, req, service, route, apiKey, user, context, attrs, env, plan, api)
+          case arr: JsArray  => fromJson(arr, req, service, route, apiKey, user, context, attrs, env, plan, api)
           case v             => v
         })
       case JsString(str)   => {
-        apply(str, req, service, route, apiKey, user, context, attrs, env) match {
+        apply(str, req, service, route, apiKey, user, context, attrs, env, plan, api) match {
           case "true"               => JsBoolean(true)
           case "false"              => JsBoolean(false)
           case r"$nbr@([0-9\\.,]+)" => JsNumber(nbr.toDouble)

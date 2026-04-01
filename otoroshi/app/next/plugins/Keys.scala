@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
 import otoroshi.next.models._
 import otoroshi.next.proxy.NgExecutionReport
@@ -24,4 +25,7 @@ object Keys {
   val JwtInjectionKey            = TypedKey[JwtInjection]("otoroshi.next.core.JwtInjection")
   val ResultTransformerKey       = TypedKey[Function[Result, Future[Result]]]("otoroshi.next.core.ResultTransformer")
   val ResponseAddHeadersKey      = TypedKey[Seq[(String, String)]]("otoroshi.next.core.ResponseAddHeaders")
+
+  val PlanKey = TypedKey[ApiDocumentationPlan]("otoroshi.next.core.Plan")
+  val ApiKey  = TypedKey[Api]("otoroshi.next.core.Api")
 }

@@ -260,58 +260,54 @@ const AccessModePluginConfigurationForm = {
 function AccessModeConfigurationTypeSelector({ onChange, value }) {
   return (
     <Row title="Type">
-      <div className="d-flex flex-column gap-2 m-2">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '8px',
+        margin: '8px',
+      }}>
         {[
-          {
-            id: 'keyless',
-            key: 'Keyless',
-            text: 'Open access without any authentication. Clients can call the API freely without providing credentials. Useful for public APIs that do not require identification or rate limiting per client.',
-          },
-          {
-            id: 'public',
-            key: 'Public',
-            text: 'Public plan available to all developers. Clients can subscribe directly from the developer portal without requiring manual approval.',
-          },
-          {
-            id: 'mtls',
-            key: 'MTLS',
-            text: "Mutual TLS authentication requiring the client to present a valid client certificate. Both parties verify each other's identity, ensuring a strong level of trust and encryption between the client and the gateway.",
-          },
-          {
-            id: 'oauth2-local',
-            key: 'OAuth2 Local',
-            text: 'Machine-to-machine authentication using the OAuth 2.0 client credentials flow. The client obtains an access token from an authorization server and includes it in each request to the API.',
-          },
-          {
-            id: 'oauth2-remote',
-            key: 'OAuth2 Remote',
-            text: 'Machine-to-machine authentication using the OAuth 2.0 client credentials flow. The client obtains an access token from an authorization server and includes it in each request to the API.',
-          },
-          {
-            id: 'apikey',
-            key: 'Apikey',
-            text: 'Authentication via a unique API key provided by the client in the request headers or query parameters. Enables identification, rate limiting, and usage tracking per client.',
-          },
-          {
-            id: 'jwt',
-            key: 'JWT',
-            text: 'Authentication using a signed JSON Web Token. The client includes a JWT in the request, which the gateway validates against a trusted issuer to verify identity and granted permissions.',
-          },
-        ].map(({ key, text, id }) => (
-          <button
-            type="button"
-            className={`btn d-flex flex-column ${value === id ? 'btn-primaryColor' : 'btn-quiet'} pb-3`}
-            onClick={() => onChange(id)}
-            key={id}
-          >
-            <div style={{ fontWeight: 'bold', textAlign: 'left' }} className="py-2">
-              {key}
-            </div>
-            <p className="m-0" style={{ textAlign: 'left', fontSize: '.9rem' }}>
-              {text}
-            </p>
-          </button>
-        ))}
+          { id: 'keyless',      key: 'Keyless',       icon: 'fa-lock-open',  text: 'Open access without authentication. Clients call freely without credentials.' },
+          { id: 'public',       key: 'Public',        icon: 'fa-globe',      text: 'Available to all developers. Subscribe directly from the portal without approval.' },
+          { id: 'apikey',       key: 'API Key',       icon: 'fa-key',        text: 'Unique key in headers or query params. Enables rate limiting and usage tracking.' },
+          { id: 'jwt',          key: 'JWT',           icon: 'fa-id-badge',   text: 'Signed JSON Web Token validated against a trusted issuer to verify identity.' },
+          { id: 'mtls',         key: 'mTLS',          icon: 'fa-certificate', text: 'Mutual TLS — both client and gateway verify each other\'s certificate.' },
+          { id: 'oauth2-local', key: 'OAuth2 Local',  icon: 'fa-shield-halved', text: 'Client credentials flow with a local authorization server.' },
+          { id: 'oauth2-remote',key: 'OAuth2 Remote', icon: 'fa-shield',     text: 'Client credentials flow with a remote external authorization server.' },
+        ].map(({ key, text, id, icon }) => {
+          const selected = value === id;
+          return (
+            <button
+              type="button"
+              key={id}
+              onClick={() => onChange(id)}
+              style={{
+                background: selected
+                  ? 'color-mix(in srgb, var(--color-primary) 12%, transparent)'
+                  : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${selected ? 'var(--color-primary)' : 'var(--border-color)'}`,
+                borderRadius: '10px',
+                padding: '12px 14px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={e => { if (!selected) e.currentTarget.style.border = '1px solid var(--border-color-strong)'; }}
+              onMouseLeave={e => { if (!selected) e.currentTarget.style.border = '1px solid var(--border-color)'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <i className={`fas ${icon}`} style={{ color: selected ? 'var(--color-primary)' : 'var(--text-muted)', fontSize: '13px', width: '16px' }} />
+                <span style={{ fontWeight: 600, fontSize: '13px', color: selected ? 'var(--color-primary)' : 'var(--color_level1)' }}>
+                  {key}
+                </span>
+                {selected && <i className="fas fa-circle-check ms-auto" style={{ color: 'var(--color-primary)', fontSize: '12px' }} />}
+              </div>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                {text}
+              </p>
+            </button>
+          );
+        })}
       </div>
     </Row>
   );
@@ -613,9 +609,12 @@ function PlanForm({ plan, onChange }) {
           },
         },
         config: {
-          type: 'json',
+          type: 'any',
           label: 'Visibility config.',
           props: {
+            mode: 'jsonOrPlaintext',
+            language: 'json',
+            useInternalState: true,
             defaultValue: '{}',
             height: 100,
           },

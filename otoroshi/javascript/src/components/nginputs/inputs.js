@@ -145,9 +145,8 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${
-                    backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
-                  } me-1 px-3 mb-1`}
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                    } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}
                   style={style}
@@ -325,6 +324,14 @@ export class NgCodeRenderer extends Component {
 }
 
 export class NgAnyRenderer extends Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: this.props.defaultValue || this.props.value
+    }
+  }
+
   render() {
     const schema = this.props.schema || {};
     const props = schema.props || this.props || {};
@@ -342,7 +349,7 @@ export class NgAnyRenderer extends Component {
       ...(props.config || {}),
     };
 
-    let code = this.props.value;
+    let code = props.useInternalState ? this.state.value : this.props.value;
 
     if (typeof code === 'object' && code !== null) {
       code = JSON.stringify(code, null, 2);
@@ -368,6 +375,9 @@ export class NgAnyRenderer extends Component {
           value={code}
           options={options}
           onChange={(newValue) => {
+            if (props.useInternalState)
+              this.setState({ value: newValue })
+
             if (props.mode === 'jsonOrPlaintext') {
               try {
                 this.props.onChange(JSON.parse(newValue));
@@ -375,7 +385,8 @@ export class NgAnyRenderer extends Component {
                 this.props.onChange(newValue);
               }
             } else this.props.onChange(newValue);
-          }}
+          }
+          }
         />
       );
     };
@@ -716,13 +727,13 @@ export class NgBoxBooleanRenderer extends Component {
     const Container = this.props.rawDisplay
       ? ({ children }) => children
       : ({ children }) => (
-          <div className={`row mb-${margin} ${className || ''}`}>
-            <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
-              {label}
-            </label>
-            <div className="col-sm-10">{children}</div>
-          </div>
-        );
+        <div className={`row mb-${margin} ${className || ''}`}>
+          <label className="col-xs-12 col-sm-2 col-form-label" style={{ textAlign: 'right' }}>
+            {label}
+          </label>
+          <div className="col-sm-10">{children}</div>
+        </div>
+      );
 
     return (
       <Container>
@@ -796,8 +807,8 @@ export class NgArrayRenderer extends Component {
       form: () => ({
         ...this.generateDefaultValue(current.schema),
       }),
-      object: () => {},
-      json: () => {},
+      object: () => { },
+      json: () => { },
     };
 
     if (values[idx]) return values[idx]();
@@ -1003,26 +1014,26 @@ export class NgObjectRenderer extends Component {
             itemRenderer={
               ItemRenderer
                 ? (key, value, idx, onChangeKey, onChangeValue) => {
-                    return (
-                      <ItemRenderer
-                        embedded
-                        flow={this.props.flow}
-                        schema={this.props.schema}
-                        value={value}
-                        key={`field${idx}`}
-                        entry={[key, value]}
-                        idx={idx}
-                        onChangeKey={(key) => onChangeKey({ target: { value: key } })}
-                        onChangeValue={(value) => onChangeValue({ target: { value } })}
-                        onChange={(e) => {
-                          const newObject = this.props.value ? { ...this.props.value } : {};
-                          newObject[key] = e;
-                          this.props.onChange(newObject);
-                        }}
-                        {...props}
-                      />
-                    );
-                  }
+                  return (
+                    <ItemRenderer
+                      embedded
+                      flow={this.props.flow}
+                      schema={this.props.schema}
+                      value={value}
+                      key={`field${idx}`}
+                      entry={[key, value]}
+                      idx={idx}
+                      onChangeKey={(key) => onChangeKey({ target: { value: key } })}
+                      onChangeValue={(value) => onChangeValue({ target: { value } })}
+                      onChange={(e) => {
+                        const newObject = this.props.value ? { ...this.props.value } : {};
+                        newObject[key] = e;
+                        this.props.onChange(newObject);
+                      }}
+                      {...props}
+                    />
+                  );
+                }
                 : null
             }
           />

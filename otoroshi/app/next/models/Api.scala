@@ -2,16 +2,21 @@ package next.models
 
 import akka.http.scaladsl.model.Uri
 import akka.util.ByteString
+import next.models.ApiKind.JWT
 import org.joda.time.DateTime
 import otoroshi.api.WriteAction
+import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
+import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.{ApikeyQuotas, _}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.UrlSanitizer.sanitize
+import otoroshi.utils.controllers.{GenericAlert, SendAuditAndAlert}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
@@ -304,22 +309,11 @@ case class ApiDocumentationResourceRef(raw: JsObject) {
 
 trait ApiDocumentationAccessModeConfiguration {
   def apiKind: ApiKind
-  def throttlingQuota: Long
-  def dailyQuota: Long
-  def monthlyQuota: Long
-}
-
-// TODO: fixit !!!!
-trait ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible
-    extends ApiDocumentationAccessModeConfiguration {
-  def throttlingQuota: Long = RemainingQuotas.MaxValue
-  def dailyQuota: Long      = RemainingQuotas.MaxValue
-  def monthlyQuota: Long    = RemainingQuotas.MaxValue
 }
 
 case class JWTAccessModeConfiguration(
     verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+) extends ApiDocumentationAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.JWT
 }
 
@@ -342,7 +336,7 @@ object JWTAccessModeConfiguration {
 case class MtlsAccessModeConfiguration(
     regexSubjectDNs: Seq[String] = Seq.empty,
     regexIssuerDNs: Seq[String] = Seq.empty
-) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+) extends ApiDocumentationAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.Mtls
 }
 
@@ -366,7 +360,7 @@ object MtlsAccessModeConfiguration {
 
 case class OAuth2RemoteAccessModeConfiguration(
     verifier: Option[String] = None
-) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+) extends ApiDocumentationAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Remote
 }
 
@@ -389,7 +383,7 @@ object OAuth2RemoteAccessModeConfiguration {
 case class OAuth2AccessModeConfiguration(
     defaultKeyPair: String,
     expiration: Int
-) extends ApiDocumentationAccessModeConfigurationWithoutQuotasForNowButWeNeedToFixThisAsSoonAsPossible {
+) extends ApiDocumentationAccessModeConfiguration {
   override def apiKind: ApiKind = ApiKind.OAuth2Local
 }
 
@@ -415,11 +409,7 @@ case class ApikeyAccessModeConfiguration(
     clientIdPattern: Option[String] = None,
     clientNamePattern: Option[String] = None,
     description: Option[String] = None,
-    // TODO: do we actually need this ? it should be automatically handled right ?
     authorizedEntities: Seq[EntityIdentifier] = Seq.empty,
-    throttlingQuota: Long = RemainingQuotas.MaxValue,
-    dailyQuota: Long = RemainingQuotas.MaxValue,
-    monthlyQuota: Long = RemainingQuotas.MaxValue,
     enabled: Boolean = true,
     readOnly: Boolean = false,
     allowClientIdOnly: Boolean = false,
@@ -451,9 +441,9 @@ case class ApikeyAccessModeConfiguration(
       "authorizedGroup"         -> authGroup,
       "authorizedEntities"      -> JsArray(authorizedEntities.map(_.json)),
       "authorizations"          -> JsArray(authorizedEntities.map(_.modernJson)),
-      "throttlingQuota"         -> throttlingQuota,
-      "dailyQuota"              -> dailyQuota,
-      "monthlyQuota"            -> monthlyQuota,
+//      "throttlingQuota"         -> throttlingQuota,
+//      "dailyQuota"              -> dailyQuota,
+//      "monthlyQuota"            -> monthlyQuota,
       "enabled"                 -> enabled,
       "readOnly"                -> readOnly,
       "allowClientIdOnly"       -> allowClientIdOnly,
@@ -472,8 +462,8 @@ object ApikeyAccessModeConfiguration {
     new Format[ApikeyAccessModeConfiguration] {
       override def reads(json: JsValue): JsResult[ApikeyAccessModeConfiguration] = Try {
         ApikeyAccessModeConfiguration(
-          clientIdPattern = json.selectAsOptString("client_id_pattern"),
-          clientNamePattern = json.selectAsOptString("client_name_pattern"),
+          clientIdPattern = json.selectAsOptString("clientIdPattern"),
+          clientNamePattern = json.selectAsOptString("clientNamePattern"),
           description = (json \ "description").asOpt[String],
           authorizedEntities = {
             val authorizations: Seq[EntityIdentifier]     = json
@@ -507,21 +497,21 @@ object ApikeyAccessModeConfiguration {
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
           constrainedServicesOnly = (json \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-          throttlingQuota = json
-            .select("throttlingQuota")
-            .asOptLong
-            .orElse(json.select("throttling_quota").asOptLong)
-            .getOrElse(RemainingQuotas.MaxValue),
-          dailyQuota = json
-            .select("dailyQuota")
-            .asOptLong
-            .orElse(json.select("daily_quota").asOptLong)
-            .getOrElse(RemainingQuotas.MaxValue),
-          monthlyQuota = json
-            .select("monthlyQuota")
-            .asOptLong
-            .orElse(json.select("monthly_quota").asOptLong)
-            .getOrElse(RemainingQuotas.MaxValue),
+//          throttlingQuota = json
+//            .select("throttlingQuota")
+//            .asOptLong
+//            .orElse(json.select("throttling_quota").asOptLong)
+//            .getOrElse(RemainingQuotas.MaxValue),
+//          dailyQuota = json
+//            .select("dailyQuota")
+//            .asOptLong
+//            .orElse(json.select("daily_quota").asOptLong)
+//            .getOrElse(RemainingQuotas.MaxValue),
+//          monthlyQuota = json
+//            .select("monthlyQuota")
+//            .asOptLong
+//            .orElse(json.select("monthly_quota").asOptLong)
+//            .getOrElse(RemainingQuotas.MaxValue),
           restrictions = Restrictions.format
             .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Restrictions()),
@@ -646,6 +636,10 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
   lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(ApiPricing.format)
+  lazy val rateLimiting: Option[ThrottlingStrategyConfig]                           =
+    raw.select("rateLimiting").asOpt(ThrottlingStrategyConfig.fmt)
+//  throttlingStrategy = json.select("throttlingStrategy").asOpt(ThrottlingStrategyConfig.fmt),
+//  throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
@@ -930,27 +924,64 @@ case class ApiSubscription(
 
 object ApiSubscription {
 
-  def validate(apiRef: String, entity: ApiSubscription)(implicit
+  private def onNewSubscription(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+      env: Env
+  ): Future[Either[String, ApiSubscription]] = {
+    subscription.subscriptionKind match {
+      case ApiKind.Apikey =>
+        implicit val ec = env.otoroshiExecutionContext
+
+        println(plan, plan.accessModeConfiguration)
+
+        val configPlan = plan.accessModeConfiguration
+          .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
+          .getOrElse(ApikeyAccessModeConfiguration())
+
+        val attrs = TypedMap(
+          otoroshi.next.plugins.Keys.PlanKey -> plan,
+          otoroshi.next.plugins.Keys.ApiKey  -> api
+        )
+
+        val defaultApikey = ApiKey(
+          clientId = configPlan.clientIdPattern
+            .map(_.evaluateEl(attrs)(env))
+            .getOrElse(IdGenerator.lowerCaseToken(16)),
+          clientSecret = IdGenerator.lowerCaseToken(64),
+          clientName = configPlan.clientNamePattern
+            .map(_.evaluateEl(attrs)(env))
+            .getOrElse(IdGenerator.lowerCaseToken(22)),
+          authorizedEntities = Seq(ApiIdentifier(api.id))
+        )
+
+        defaultApikey.save().map {
+          case false => "failed to create the apikey".left
+          case true  => subscription.copy(tokenRefs = subscription.tokenRefs :+ defaultApikey.clientId).right
+        }
+      case _              => subscription.rightf
+    }
+  }
+
+  def validate(apiRef: String, entity: ApiSubscription, action: WriteAction)(implicit
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec = env.otoroshiExecutionContext
     env.datastores.apiDataStore
       .findById(apiRef)
-      .map {
+      .flatMap {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
           api.documentation match {
             case Some(documentation) =>
               documentation.plans.find(_.id == entity.planRef) match {
                 case None                                                                                         =>
-                  "plan not found".left
+                  "plan not found".leftf
                 case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
-                  entity.right
+                  onNewSubscription(api, plan, entity)
                 case _                                                                                            =>
-                  "wrong status plan".left
+                  "wrong status plan".leftf
               }
-            case None                => "plan not found".left
+            case None                => "plan not found".leftf
           }
-        case _                                                                 => "wrong status api".left
+        case _                                                                 => "wrong status api".leftf
       }
   }
 
@@ -974,7 +1005,7 @@ object ApiSubscription {
       )
       .left
 
-    validate(entity.apiRef, entity)
+    validate(entity.apiRef, entity, action)
       .map {
         case Left(error) => onError(error)
         case Right(r)    => Right(r)
