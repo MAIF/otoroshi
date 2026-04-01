@@ -3,6 +3,9 @@ title: Setup Otoroshi
 sidebar_label: "Setup Otoroshi"
 sidebar_position: 3
 ---
+
+import { Image } from '@site/src/components/Image';
+
 # Setup Otoroshi
 
 in this section we are going to configure otoroshi before running it for the first time
@@ -19,7 +22,7 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
     <span className="provider-card-tag recommended">Recommended</span>
   </div>
   <p>The <strong>redis</strong> datastore is quite nice when you want to easily deploy several Otoroshi instances.</p>
-  <div className="provider-card-img"><img src="/img/docs/redis.png" alt="Redis" /></div>
+  <div className="provider-card-img"><Image src="/img/docs/redis.png" alt="Redis" /></div>
   <div className="provider-card-action"><a href="https://redis.io/topics/quickstart">Documentation</a></div>
 </div>
 <div className="provider-card">
@@ -27,7 +30,7 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
     <h4>In memory</h4>
   </div>
   <p>The <strong>in-memory</strong> datastore is kind of interesting. It can be used for testing purposes, but it is also a good candidate for production because of its fastness.</p>
-  <div className="provider-card-img"><img src="/img/docs/inmemory.png" alt="In memory" /></div>
+  <div className="provider-card-img"><Image src="/img/docs/inmemory.png" alt="In memory" /></div>
   <div className="provider-card-action"><a href="../getting-started">Start with</a></div>
 </div>
 <div className="provider-card">
@@ -36,7 +39,7 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
     <span className="provider-card-tag clustering">Clustering</span>
   </div>
   <p>Experimental support, should be used in cluster mode for leaders</p>
-  <div className="provider-card-img"><img src="/img/docs/cassandra.png" alt="Cassandra" /></div>
+  <div className="provider-card-img"><Image src="/img/docs/cassandra.png" alt="Cassandra" /></div>
   <div className="provider-card-action"><a href="https://cassandra.apache.org/doc/latest/cassandra/getting_started/installing.html">Documentation</a></div>
 </div>
 <div className="provider-card">
@@ -45,7 +48,7 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
     <span className="provider-card-tag clustering">Clustering</span>
   </div>
   <p>Or any postgresql compatible database like cockroachdb for instance (experimental support, should be used in cluster mode for leaders)</p>
-  <div className="provider-card-img"><img src="/img/docs/postgres.png" alt="PostgreSQL" /></div>
+  <div className="provider-card-img"><Image src="/img/docs/postgres.png" alt="PostgreSQL" /></div>
   <div className="provider-card-action"><a href="https://www.postgresql.org/docs/10/tutorial-install.html">Documentation</a></div>
 </div>
 <div className="provider-card">
@@ -53,13 +56,11 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
     <h4>FileDB</h4>
   </div>
   <p>The <strong>filedb</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode. Not suitable for production usage.</p>
-  <div className="provider-card-img"><img src="/img/docs/filedb.png" alt="FileDB" /></div>
+  <div className="provider-card-img"><Image src="/img/docs/filedb.png" alt="FileDB" /></div>
 </div>
 </div>
 
-<div align="center">
-<img src="/img/docs/datastores.png" />
-</div>
+<Image src="/img/docs/datastores.png" />
 
 the first thing to setup is what kind of datastore you want to use with the `otoroshi.storage` setting
 
