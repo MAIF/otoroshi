@@ -36,12 +36,6 @@
   }
 }
 
-.btn-save {
-  color: var(--color-white);
-  border-color: var(--color-green);
-  background-color: var(--color-green);
-}
-
 .input-group-btn>.btn,
 .input-group-btn>.btn-group {
   margin-left: 4px;
@@ -167,6 +161,8 @@
   }
 }
 
+.btn-save,
+.btn-save:focus,
 .btn-success,
 .btn-success:focus {
   background-color: var(--text) !important;

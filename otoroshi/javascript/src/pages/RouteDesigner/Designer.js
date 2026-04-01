@@ -24,7 +24,7 @@ import {
   firstLetterUppercase,
   unsecuredCopyToClipboard,
 } from '../../util';
-import { NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgAnyRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 import snakeCase from 'lodash/snakeCase';
@@ -45,6 +45,7 @@ import {
 import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 import { HTTP_COLORS } from './MocksDesigner';
+import { MonacoInput } from '../../components/inputs';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -2302,14 +2303,13 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   <>
     {value && value.toString().length > 0 && (
       <Suspense fallback={<div>Loading ...</div>}>
-        <CodeInput
-          mode="json"
+        <NgAnyRenderer
+          ngOptions={{ spread: true }}
+          useInternalState
+          language="json"
+          mode="jsonOrPlaintext"
           editorOnly={true}
-          themeStyle={{
-            maxHeight: readOnly ? '300px' : '-1',
-            minHeight: '100px',
-            width: '100%',
-          }}
+          height={readOnly ? '300px' : '500px'}
           value={value}
           onChange={(e) => {
             if (!readOnly) onChange(e);
