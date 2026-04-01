@@ -253,4 +253,4 @@ Key pairs with the `exposed` flag set to `true` are published on the JWKS endpoi
 * [End-to-end mTLS](../tutorials/end-to-end-mtls.md) - Step-by-step mTLS guide
 * [TLS termination with your own certificates](../tutorials/tls-termination-using-own-certificates.mdx) - Custom TLS termination how-to
 * [Let's Encrypt](../tutorials/tls-using-lets-encrypt.md) - Automatic certificate provisioning
-* [Custom HTTP Listeners](./http-listeners.md) - Per-listener TLS and mTLS settings
+* [Custom HTTP Listeners](./http-listeners.mdx) - Per-listener TLS and mTLS settings
