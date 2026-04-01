@@ -277,7 +277,7 @@ a.navbar-brand:hover {
 }
 
 .login-card img {
-  width: 400px;
+  width: 200px;
 }
 
 .login-card h1 {
@@ -321,10 +321,8 @@ a.navbar-brand:hover {
   background-color:  rgba(249, 176, 0, .2);
 }
 
-.login-card img {
-  transform: translateY(-30px);
-}
-
 #app {
   padding-top: 20px !important;
+  display: flex;
+  align-items: center;
 }
