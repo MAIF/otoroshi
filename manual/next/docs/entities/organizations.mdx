@@ -7,7 +7,50 @@ import { Image } from '@site/src/components/Image';
 
 # Organizations
 
-Organizations (also called tenants) are the highest level for grouping resources in Otoroshi. Every entity in Otoroshi belongs to an organization and one or more [teams](./teams.mdx).
+Organizations (also called tenants) are the highest level for grouping resources in Otoroshi. 
+They provide **lightweight multi-tenancy**, allowing multiple business units, projects, or environments 
+to share a single Otoroshi instance while keeping their configurations fully isolated from one another.
+
+### The problem they solve
+
+When a single Otoroshi instance serves several departments, clients, or environments, you need clear boundaries so 
+that one group's routes, API keys, certificates, and other entities do not leak into another group's view. 
+Organizations solve this by acting as a top-level isolation boundary: every entity in Otoroshi belongs to exactly one 
+organization, and administrators can be scoped so they only see and manage the organizations they are responsible for.
+
+This means you get the benefits of multi-tenancy -- resource isolation, scoped administration, independent configuration -- 
+without the operational overhead of running separate Otoroshi instances for each group.
+
+### Hierarchy
+
+Organizations sit at the top of the resource hierarchy:
+
+**Organization > Team > Entities**
+
+An organization contains one or more [teams](./teams.mdx), and teams contain entities (routes, API keys, certificates, etc.). 
+This two-level structure gives you coarse-grained isolation at the organization level and fine-grained grouping at the team level.
+
+### Default organization
+
+Otoroshi ships with a built-in `default` organization. When you start a fresh instance, all entities are automatically placed into 
+this default organization. You only need to create additional organizations when you want to introduce multi-tenancy.
+
+### Admin access control
+
+Admin users can be scoped to specific organizations. A super-admin sees everything, but a tenant-scoped admin only has visibility 
+into the organizations (and teams within them) that have been explicitly granted to them. This makes it safe to delegate administration: 
+you can give a department full control over its own organization without exposing the rest of the platform.
+
+### When to use multiple organizations
+
+Consider creating multiple organizations when:
+
+- Different departments or business units share the same Otoroshi infrastructure but should not see each other's configuration
+- You want to delegate admin access per team or project without granting global visibility
+- You need a logical separation between environments (e.g., production vs. staging) on the same instance
+- You serve multiple external customers from one Otoroshi deployment and need strict tenant isolation
+
+If none of these apply, the single `default` organization is sufficient.
 
 ## UI page
 
