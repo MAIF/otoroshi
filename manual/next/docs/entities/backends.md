@@ -217,4 +217,4 @@ PATCH  /api/backends/:id       # Partially update a stored backend
 ## Related entities
 
 * [Routes](./routes.md) - Routes reference backends inline or via `backend_ref`
-* [APIs](./apis.md) - APIs define backends that are shared across API routes
+* [APIs](./apis.mdx) - APIs define backends that are shared across API routes
