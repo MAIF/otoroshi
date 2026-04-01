@@ -4,7 +4,37 @@ sidebar_position: 21
 ---
 # WASM Plugins
 
-WASM Plugins are reusable WebAssembly plugin configurations that can be referenced by multiple routes. Instead of configuring WASM settings inline on each route, you can create a WASM plugin entity and reference it by ID, making it easier to manage and share WASM logic across your infrastructure.
+## Overview
+
+Otoroshi ships with a large library of built-in plugins, but there are always cases where you need custom logic that does not exist out of the box: a proprietary authentication check, a domain-specific request transformation, a compliance rule unique to your organization. Traditionally, extending a JVM-based gateway meant writing Scala code, rebuilding the project, and redeploying. WASM plugins remove that constraint entirely.
+
+A **WASM plugin** lets you write gateway extension logic in **any language that compiles to WebAssembly** -- Rust, TinyGo, JavaScript, or AssemblyScript -- and run it inside Otoroshi without modifying or recompiling the gateway itself. The compiled `.wasm` binary is loaded into a sandboxed runtime (powered by [Extism](https://extism.org/)) that executes at near-native speed while remaining fully isolated from the host process: a plugin cannot access the filesystem, the network, or Otoroshi internals unless explicitly authorized through a fine-grained permission model.
+
+### Why a dedicated entity
+
+WASM configuration can be embedded inline in a route's plugin chain, but that approach becomes hard to maintain when the same logic is used in many places. The **WASM plugin entity** solves this by letting you declare a WASM module with its configuration -- source location, memory limits, authorizations, concurrency settings -- once, under a stable ID. Any number of routes can then reference that ID instead of duplicating the configuration. Updating the entity automatically propagates the change everywhere it is used.
+
+### Key capabilities
+
+- **Multi-language support** -- Write plugins in Rust, TinyGo, JavaScript, or AssemblyScript. The companion tool [Wasmo](../tutorials/wasmo-installation.mdx) provides an in-browser editor that compiles your code to WASM so you do not need a local toolchain.
+- **Sandboxed execution** -- Each WASM VM runs in its own memory space. Network access, file access, and datastore access are all denied by default and must be granted through explicit authorizations.
+- **Host functions** -- Plugins communicate with Otoroshi through a set of host functions that give controlled access to HTTP calls, the proxy state, persistent and in-memory data stores, request/response attributes, logging, and the cluster configuration.
+- **Flexible sourcing** -- Load WASM binaries from a base64 string, a local file, an HTTP URL, a Wasmo instance, or by referencing another WASM plugin entity.
+- **Hot reload** -- WASM binaries are cached and automatically refreshed. You can update a module at its source and Otoroshi will pick up the new version without a restart.
+- **Multiple instances** -- Configure the number of concurrent WASM VM instances per plugin to match your throughput requirements.
+- **OPA integration** -- Use Open Policy Agent WASM modules directly for policy evaluation, without a separate OPA server.
+
+### When to use WASM plugins
+
+| Scenario | Recommended approach |
+|----------|---------------------|
+| Standard functionality (rate limiting, headers, auth delegation, ...) | Use a **built-in plugin** -- no custom code required. |
+| Custom logic that needs deep JVM or Otoroshi API access | Write a **Scala plugin** compiled into the gateway. |
+| Custom logic in your team's preferred language, deployed without gateway rebuild | Write a **WASM plugin**. Best when you want language flexibility, safe sandboxing, and independent deployment. |
+
+### How it works at runtime
+
+When a request reaches a route that references a WASM plugin, Otoroshi acquires a pre-warmed VM instance from a pool, passes the request context as a JSON structure, calls the designated function, reads back the JSON result, and applies it to the request or response. The VM instance is then returned to the pool for reuse. Data is exchanged between the JVM and the WASM VM as JSON strings through the Extism SDK, so all plugin input and output follows a well-defined schema documented in the [WASM usage topic](../topics/wasm-usage.mdx).
 
 ## UI page
 
