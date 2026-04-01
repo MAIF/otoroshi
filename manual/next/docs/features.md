@@ -6,9 +6,9 @@ sidebar_position: 4
 
 **Traffic Management**
 
-* Can proxy any HTTP(s) service (APIs, webapps, websocket, etc) ([routes](./entities/routes.md), [engine](./topics/engine.md))
+* Can proxy any HTTP(s) service (APIs, webapps, websocket, etc) ([routes](./entities/routes.md), [engine](./topics/engine.mdx))
 * Can proxy any TCP service (app, database, etc) ([TCP services](./entities/tcp-services.md))
-* Can proxy any gRPC service (using a netty listener), also gRPC-Web support ([HTTP listeners](./topics/http-listeners.md))
+* Can proxy any gRPC service (using a netty listener), also gRPC-Web support ([HTTP listeners](./topics/http-listeners.mdx))
 * Can proxy any GraphQL service (proxy, query composition, and schema-first backend) ([GraphQL composer](./topics/graphql-composer.mdx))
 * Full WebSocket support with message validation, transformation, and mirroring
 * End-to-end HTTP/1.1 support
@@ -33,16 +33,16 @@ sidebar_position: 4
 * Request and response bandwidth throttling
 * Request and response body size limiting
 * Traffic mirroring to secondary backends ([built-in plugins](./plugins/built-in-plugins.mdx))
-* Traffic capture (GoReplay format) ([engine](./topics/engine.md))
+* Traffic capture (GoReplay format) ([engine](./topics/engine.mdx))
 * Canary deployments (percentage-based and time-controlled)
-* Relay routing across network zones ([relay routing](./topics/relay-routing.md))
-* Tunnels for easier network exposition (TCP, UDP, WebSocket-based) ([tunnels](./topics/tunnels.md))
+* Relay routing across network zones ([relay routing](./topics/relay-routing.mdx))
+* Tunnels for easier network exposition (TCP, UDP, WebSocket-based) ([tunnels](./topics/tunnels.mdx))
 * Custom error templates ([error templates](./entities/error-templates.md))
 
 **Routing**
 
-* Router can support tens of thousands of concurrent routes ([engine](./topics/engine.md))
-* Router supports path parameter extraction (with regex validation) ([engine](./topics/engine.md))
+* Router can support tens of thousands of concurrent routes ([engine](./topics/engine.mdx))
+* Router supports path parameter extraction (with regex validation) ([engine](./topics/engine.mdx))
 * Routing based on: ([routes](./entities/routes.md))
     * HTTP method
     * hostname (exact, wildcard)
@@ -74,7 +74,7 @@ sidebar_position: 4
     * etc
 * Support middlewares compiled to WASM (using Extism) ([WASM plugins](./entities/wasm-plugins.md), [WASM usage](./topics/wasm-usage.mdx))
 * Support Open Policy Agent policies for traffic control (via WASM) ([WASM usage](./topics/wasm-usage.mdx))
-* Visual workflow engine for building complex processing pipelines ([workflows](./entities/workflows.md), [workflow editor](./topics/workflows-editor.md))
+* Visual workflow engine for building complex processing pipelines ([workflows](./entities/workflows.md), [workflow editor](./topics/workflows-editor.mdx))
 * Write your own custom middlewares: ([create plugins](./plugins/create-plugins.md))
     * in Scala deployed as jar files
     * in whatever language you want that can be compiled to WASM ([WASM how-to](./tutorials/wasm-usage.mdx))
@@ -94,9 +94,9 @@ sidebar_position: 4
 
 **API security**
 
-* Access management with API keys and quotas ([API keys](./entities/apikeys.md), [how-to](./tutorials/secure-with-apikey.mdx))
-* Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) ([API keys](./entities/apikeys.md))
-* Automatic API key secrets rotation ([API keys](./entities/apikeys.md))
+* Access management with API keys and quotas ([API keys](./entities/apikeys.mdx), [how-to](./tutorials/secure-with-apikey.mdx))
+* Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) ([API keys](./entities/apikeys.mdx))
+* Automatic API key secrets rotation ([API keys](./entities/apikeys.mdx))
 * Mandatory tags and metadata validation on API keys
 * HTTPS and TLS ([TLS](./topics/tls.md))
 * End-to-end mTLS calls ([mTLS how-to](./tutorials/end-to-end-mtls.md))
@@ -119,11 +119,11 @@ sidebar_position: 4
 * Calls tracing using W3C Trace Context ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Real-time traffic metrics ([monitoring](./topics/monitoring.md))
 * Prometheus metrics export ([monitoring](./topics/monitoring.md))
-* OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.md))
+* OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.mdx))
 * Datadog, StatsD metrics export ([monitoring](./topics/monitoring.md))
-* Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.md))
+* Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.mdx))
     * Elasticsearch ([how-to](./tutorials/export-events-to-elastic.mdx))
-    * Apache Kafka ([how-to](./tutorials/communicate-with-kafka.md))
+    * Apache Kafka ([how-to](./tutorials/communicate-with-kafka.mdx))
     * Apache Pulsar
     * Webhook (HTTP)
     * File
@@ -138,7 +138,7 @@ sidebar_position: 4
     * JMS
     * WASM-based custom exporter ([WASM usage](./topics/wasm-usage.mdx))
     * Workflow-based custom exporter ([workflows](./topics/workflows.md))
-* GreenScore: ecological scoring of API routes based on efficiency rules ([GreenScore](./topics/green-score.md))
+* GreenScore: ecological scoring of API routes based on efficiency rules ([GreenScore](./topics/green-score.mdx))
 
 **Services discovery**
 
@@ -197,12 +197,12 @@ sidebar_position: 4
 * Customize mTLS trusted CAs in the TLS handshake ([mTLS how-to](./tutorials/end-to-end-mtls.md))
 * Tailscale certificates integration ([how-to](./tutorials/tailscale-integration.md))
 
-**Clustering** ([clustering](./deploy/clustering.md))
+**Clustering** ([clustering](./deploy/clustering.mdx))
 
 * Based on a control plane / data plane pattern
 * Encrypted communication between nodes
 * Backup capabilities allowing data planes to start without control plane (improved resilience)
-* Relay routing to forward traffic across network zones ([relay routing](./topics/relay-routing.md))
+* Relay routing to forward traffic across network zones ([relay routing](./topics/relay-routing.mdx))
 * Distributed web authentication across nodes ([sessions management](./topics/sessions-mgmt.md))
 
 **Static content and backends**
@@ -217,10 +217,10 @@ sidebar_position: 4
 
 * Manage and organize all resources
 * Secured user access with authentication module ([auth modules](./entities/auth-modules.md))
-* Audited user actions ([events and analytics](./topics/events-and-analytics.md))
+* Audited user actions ([events and analytics](./topics/events-and-analytics.mdx))
 * Dynamic changes at runtime without full reload
 * Test your routes without any external tools
-* Visual workflow designer with step-by-step debugger ([workflow editor](./topics/workflows-editor.md))
+* Visual workflow designer with step-by-step debugger ([workflow editor](./topics/workflows-editor.mdx))
 * Extensible via admin extensions (custom entities, routes, frontend modules)
 
 **Kubernetes integration** ([Kubernetes](./deploy/kubernetes.mdx))
@@ -233,7 +233,7 @@ sidebar_position: 4
 * Sidecar injection for service mesh
 * Bidirectional TLS certificate synchronization (Kubernetes secrets <-> Otoroshi certificates)
 
-**Dynamic HTTP listeners** ([topic](./topics/http-listeners.md), [entity](./entities/http-listeners.md))
+**Dynamic HTTP listeners** ([topic](./topics/http-listeners.mdx), [entity](./entities/http-listeners.md))
 
 * Create and manage additional HTTP listeners on custom ports
 * Multi-protocol support (HTTP/1.1, HTTP/2, HTTP/3, H2C)
@@ -276,10 +276,10 @@ sidebar_position: 4
 
 **Organize**
 
-* Multi-organizations ([organizations](./entities/organizations.md))
-* Multi-teams ([teams](./entities/teams.md))
-* Routes groups ([service groups](./entities/service-groups.md))
+* Multi-organizations ([organizations](./entities/organizations.mdx))
+* Multi-teams ([teams](./entities/teams.mdx))
+* Routes groups ([service groups](./entities/service-groups.mdx))
 
 **Developers portal**
 
-* Using [Daikoku](https://maif.github.io/daikoku/manual/index.html) ([dev portal](./topics/dev-portal.md))
+* Using [Daikoku](https://maif.github.io/daikoku/manual/index.html) ([dev portal](./topics/dev-portal.mdx))
