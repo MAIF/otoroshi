@@ -128,7 +128,7 @@ DELETE /apis/http-listeners.otoroshi.io/v1/http-listeners/:id       # Delete a l
 
 ## Learn more
 
-For detailed information about setting up HTTP listeners, binding routes, and using static vs dynamic listeners, see [Custom HTTP Listeners](../topics/http-listeners.md).
+For detailed information about setting up HTTP listeners, binding routes, and using static vs dynamic listeners, see [Custom HTTP Listeners](../topics/http-listeners.mdx).
 
 You can also check:
 
