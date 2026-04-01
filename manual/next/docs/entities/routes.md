@@ -4,7 +4,113 @@ sidebar_position: 16
 ---
 # Routes
 
-A route is a unique routing rule based on hostname, path, method and headers that will execute a chain of plugins and eventually forward the request to the backend application.
+A route is the core entity of the Otoroshi proxy engine. It defines a unique routing rule: **which incoming requests to match** (the frontend), **where to forward them** (the backend), and **what processing to apply along the way** (the plugin chain).
+
+Routes are the building blocks of your API gateway configuration. Every HTTP request that reaches Otoroshi is matched against the set of enabled routes. When a match is found, the request flows through the route's plugin pipeline and is ultimately forwarded to one of the backend targets.
+
+## How a route works
+
+A route is made of three main parts:
+
+```
+                          ┌─────────────────────────────────────┐
+  Incoming request  ───►  │  Frontend     (match the request)   │
+                          │  Plugin chain (process the request)  │
+                          │  Backend      (forward the request)  │
+                          └──────────────────┬──────────────────┘
+                                             │
+                                             ▼
+                                      Backend targets
+```
+
+1. **Frontend** — defines the matching criteria: domain names, paths, HTTP methods, headers, query parameters, and cookies. If an incoming request satisfies all the criteria, the route is selected.
+2. **Backend** — defines where matched requests are forwarded: a list of target servers with load balancing, health checks, timeouts, retries, and TLS settings.
+3. **Plugins** — an ordered chain of plugins that process the request and response as they flow through the route. Plugins handle cross-cutting concerns like authentication, rate limiting, header manipulation, CORS, caching, etc.
+
+## Request lifecycle
+
+When a request hits Otoroshi, it goes through the following steps:
+
+1. **Route matching** — the router compares the request against all enabled routes. It matches on domain, path, method, headers, query params, and cookies. The router is optimized to handle thousands of routes without performance impact.
+2. **Pre-route plugins** — plugins that run before the request is routed (e.g., early redirections, pre-routing logic).
+3. **Access validation plugins** — plugins that decide whether the request is allowed to proceed (e.g., API key validation, IP filtering, OAuth token verification).
+4. **Request transformation plugins** — plugins that modify the request before it is sent to the backend (e.g., add/remove headers, rewrite the body).
+5. **Backend call** — Otoroshi selects a target using the configured load balancing strategy and forwards the (possibly transformed) request.
+6. **Response transformation plugins** — plugins that modify the response before sending it back to the client (e.g., add security headers, transform the body).
+7. **Client response** — the final response is streamed back to the caller.
+
+Each step is recorded in an execution report (when `debug_flow` or `export_reporting` is enabled), making it easy to understand exactly what happened during a request. See [engine docs](../topics/engine.md#reporting) for details.
+
+## Frontend matching in depth
+
+The frontend controls which requests a route captures. All specified criteria must match (AND logic).
+
+### Domain and path patterns
+
+Domains and paths are combined in the `domains` field (e.g., `api.example.com/v1/users`). Several patterns are supported:
+
+| Pattern | Example | Matches |
+|---------|---------|---------|
+| Exact domain | `api.example.com` | only `api.example.com` |
+| Wildcard subdomain | `*.example.com` | `api.example.com`, `admin.example.com`, etc. |
+| Wildcard segment | `api.*.com` | `api.example.com`, `api.test.com`, etc. |
+| Plain path | `api.example.com/users` | `/users`, `/users/123` (prefix mode) or just `/users` (exact mode) |
+| Wildcard path | `api.example.com/users/*/bills` | `/users/42/bills`, `/users/abc/bills` |
+| Named path param | `api.example.com/users/:id/bills` | `/users/42/bills` (captures `id=42`) |
+| Regex path param | `api.example.com/users/$id<[0-9]+>/bills` | `/users/42/bills` but not `/users/abc/bills` |
+
+### Path matching modes
+
+- **Prefix mode** (`exact: false`, the default) — `/api/users` matches `/api/users`, `/api/users/123`, `/api/users/123/orders`, etc.
+- **Exact mode** (`exact: true`) — `/api/users` matches only `/api/users` and nothing else.
+
+### Strip path
+
+When `strip_path` is `true` (the default), the matched path prefix is removed before forwarding to the backend. For example:
+
+| Frontend path | Incoming request | `strip_path: true` | `strip_path: false` |
+|---------------|-----------------|---------------------|----------------------|
+| `/api/users` | `/api/users/123` | backend receives `/123` | backend receives `/api/users/123` |
+| `/v1` | `/v1/orders` | backend receives `/orders` | backend receives `/v1/orders` |
+
+Combined with the backend `root` path, this gives full control over URL rewriting. If `root` is `/legacy-api` and `strip_path` is `true`, then a request to `/api/users/123` on a route matching `/api` is forwarded to `/legacy-api/users/123`.
+
+### Named path params and URL rewriting
+
+When using named path parameters (`:id` or `$id<regex>`), captured values are available for URL rewriting on the backend side. For example:
+
+- Frontend: `api.example.com/users/$id<[0-9]+>/bills`
+- Backend rewrite target: `/apis/v1/basic_users/${req.pathparams.id}/all_bills`
+
+This allows completely reshaping URLs between the client-facing API and the actual backend.
+
+### Header, query, and cookie matching
+
+Headers, query parameters, and cookies support several matching modes:
+
+| Syntax | Meaning |
+|--------|---------|
+| `"exact_value"` | The value must match exactly |
+| `"Regex(pattern)"` | The value must match the regex pattern |
+| `"Wildcard(val*)"` | The value must match the wildcard pattern |
+| `"Exists()"` or `"IsDefined()"` | The header/param/cookie must be present (any value) |
+| `"NotDefined()"` | The header/param/cookie must **not** be present |
+
+If the map is empty, any value is accepted (no constraint).
+
+## Plugin pipeline
+
+Plugins are the primary extension mechanism. Each plugin in the chain can inspect, modify, or short-circuit the request at a specific phase of the lifecycle. A route's plugin list is an ordered array of plugin slots, each with its own configuration.
+
+Key concepts:
+
+- **Ordering**: plugins execute in array order by default. Use `plugin_index` to set explicit positions per phase (e.g., `{ "pre_route": 0, "validate_access": 1 }`).
+- **Scoping**: each plugin can have `include`/`exclude` path patterns so it only applies to certain sub-paths of the route.
+- **Per-plugin debug**: enable `debug: true` on a single plugin slot to get detailed execution info for that plugin only, without turning on `debug_flow` for the entire route.
+- **Listener binding**: a plugin can be restricted to specific [HTTP listeners](./http-listeners.md) via `bound_listeners`.
+- **Enable/disable**: toggle a plugin with `enabled: true/false` without removing it from the configuration.
+
+For the full list of available plugins, see [built-in plugins](../plugins/built-in-plugins.mdx).
 
 ## UI page
 
