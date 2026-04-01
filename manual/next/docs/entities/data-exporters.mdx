@@ -7,8 +7,30 @@ import { FilteringDocs, ProjectionDocs } from '@site/src/components/DataExporter
 
 # Data Exporters
 
-Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems. 
-They allow you to feed your observability stack (Elasticsearch, Datadog, Kafka, etc.) with everything that happens inside Otoroshi (almost) in real time.
+Otoroshi is not a monitoring tool, but as a reverse proxy sitting in front of all your services it naturally observes everything: 
+every HTTP request, every admin action, every backend health check, every security alert. 
+Data exporters are the bridge between this rich stream of telemetry and your observability stack. 
+They push events out of Otoroshi and into the external systems where you actually analyze, visualize, 
+and alert on them -- Elasticsearch, Kafka, Datadog, Pulsar, and many others.
+
+Without data exporters, events live only in memory and are lost when Otoroshi restarts. 
+In production, you almost always want at least one exporter configured so that you have persistent visibility into what is flowing through the gateway.
+
+Otoroshi supports a wide range of export destinations out of the box:
+
+- **Search and analytics**: Elasticsearch, Splunk, Datadog, New Relic
+- **Streaming platforms**: Kafka, Pulsar, JMS
+- **Observability protocols**: OTLP Metrics, OTLP Logs, custom Prometheus metrics
+- **Storage**: PostgreSQL, file, S3
+- **Network**: webhook (HTTP), TCP, UDP, Syslog
+- **Traffic replay**: GoReplay (file or S3)
+- **Notifications**: email via Mailgun, Mailjet, Sendgrid, or generic HTTP mailer
+- **Programmable**: WASM plugins, workflow processing, custom exporter plugins
+- **Development**: console (stdout)
+
+Each exporter runs its own independent pipeline with configurable filtering (which events to keep), projection (which fields to include), 
+and batching (how many events to group before sending). You can run as many exporters in parallel 
+as you need, each with a different destination and different rules.
 
 To try them out, you can follow [this tutorial](../tutorials/export-alerts-using-mailgun.md).
 
