@@ -15,8 +15,8 @@ A route is made of three main parts:
 ```
                           ┌─────────────────────────────────────┐
   Incoming request  ───►  │  Frontend     (match the request)   │
-                          │  Plugin chain (process the request)  │
-                          │  Backend      (forward the request)  │
+                          │  Plugin chain (process the request) │
+                          │  Backend      (forward the request) │
                           └──────────────────┬──────────────────┘
                                              │
                                              ▼
