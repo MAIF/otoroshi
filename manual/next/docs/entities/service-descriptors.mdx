@@ -24,7 +24,7 @@ Service Descriptors follow a **monolithic design**: frontend matching (domains, 
 In version 1.5.3 (February 2022), Otoroshi introduced a **new proxy engine** along with a new set of entities that replaced Service Descriptors:
 
 - **[Routes](./routes.md)** provide fine-grained, low-level HTTP routing with a clean separation between frontend matching, backend targeting, and plugin chains. Routes are more flexible, more composable, and support the full plugin system with proper ordering and scoping.
-- **[APIs](./apis.md)** group multiple routes together for full API management, providing a higher-level abstraction when you need to manage an entire API surface as a single unit.
+- **[APIs](./apis.mdx)** group multiple routes together for full API management, providing a higher-level abstraction when you need to manage an entire API surface as a single unit.
 
 The new route engine is also **more performant** and supports advanced features such as request/response body transformations, traffic policies, and a richer plugin lifecycle that were not possible with the original Service Descriptor model.
 

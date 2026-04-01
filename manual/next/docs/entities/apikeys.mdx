@@ -20,7 +20,7 @@ and **revoke access** instantly when needed, all without requiring an external i
 - **Developer access** to public or partner APIs, where each consumer receives their own key with individual quotas.
 - **Quick prototyping**, where you need authentication up and running in minutes rather than configuring a full identity stack.
 
-For user-facing authentication (login flows, SSO, session management), consider [authentication modules](./auth-modules) instead. For fine-grained token validation without a shared secret, look at [JWT verifiers](./jwt-verifiers.mdx). API keys and these other mechanisms are complementary and can be combined on the same route through the plugin chain.
+For user-facing authentication (login flows, SSO, session management), consider [authentication modules](./auth-modules) instead. For fine-grained token validation without a shared secret, look at [JWT verifiers](./jwt-verifiers.md). API keys and these other mechanisms are complementary and can be combined on the same route through the plugin chain.
 
 ## How API keys work in Otoroshi
 
@@ -55,7 +55,7 @@ Once extracted, Otoroshi verifies the credentials, checks that the key is enable
 
 - **[Routes](./routes.md)** and **[APIs](./apis.mdx)** -- an API key is bound to specific routes or APIs through its `authorizedEntities` list. A route can require API key authentication via the `ApikeyCalls` plugin in its plugin chain.
 - **[Service Groups](./service-groups.mdx)** -- keys can be authorized on an entire group, automatically granting access to every route in that group.
-- **[JWT Verifiers](./jwt-verifiers.mdx)** -- API keys can coexist with JWT verifiers on the same route. One of the extraction methods even allows embedding the API key credentials inside a signed JWT.
+- **[JWT Verifiers](./jwt-verifiers.md)** -- API keys can coexist with JWT verifiers on the same route. One of the extraction methods even allows embedding the API key credentials inside a signed JWT.
 - **[Authentication Modules](./auth-modules)** -- while API keys handle programmatic/machine access, authentication modules handle user login flows. Both can be active on different routes or even on the same route for different use cases.
 
 <Image src="/img/docs/models-apikey.png" />
