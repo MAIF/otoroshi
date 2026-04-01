@@ -7,7 +7,30 @@ import { Image } from '@site/src/components/Image';
 
 # Service groups
 
-A service group is a logical grouping of services (routes, APIs) primarily used for API key authorization. Instead of authorizing an API key for each individual service, you can group services together and grant authorization on the entire group.
+## Overview
+
+A service group is a logical grouping of services (routes, APIs) whose primary purpose is to define the **authorization scope of API keys**. Without service groups, you would need to authorize each API key on every individual route it should access. Service groups solve this problem by letting you bundle related routes together and authorize an API key on the group as a whole, granting it access to all routes within that group.
+
+### How service groups interact with API keys
+
+An API key has an `authorizedEntities` field that lists the entities it is allowed to access. When a service group identifier appears in this list, the API key is automatically authorized on **every route that belongs to that group**. A single API key can be authorized on multiple service groups, and a single route can belong to multiple groups, providing a flexible many-to-many authorization model.
+
+This means credentials can span multiple services without being duplicated: rather than creating separate API keys for each route, you create one key and authorize it on the appropriate groups.
+
+### Service groups vs. organizations and teams
+
+It is important not to confuse service groups with [organizations](./organizations.mdx) (tenants) and [teams](./teams.mdx). They serve different purposes:
+
+- **Organizations and teams** are multi-tenancy and admin access control constructs. They determine which users can view and manage entities in the Otoroshi admin UI, and they partition the configuration space into logical boundaries.
+- **Service groups** are a runtime authorization construct. They define which API keys can call which routes when traffic flows through the gateway. They have no effect on admin UI access.
+
+### When to use service groups
+
+Use service groups when multiple routes should share the same API key authorization. Typical examples include:
+
+- A set of payment-related APIs that should all accept the same client credentials.
+- A collection of internal microservices that a single upstream gateway needs to reach.
+- A versioned API surface (v1, v2) where a consumer key should work across all versions.
 
 ## UI page
 
