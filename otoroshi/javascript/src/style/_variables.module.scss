@@ -78,9 +78,13 @@ $color-white-4-opa80: #f4f3f080;
   --border-color: rgba(255, 255, 255, 0.15);
   --border-color-strong: rgba(255, 255, 255, 0.35);
   --hover-bg: rgba(255, 255, 255, 0.06);
+  --btn-border: rgba(255, 255, 255, 0.55);
+  --btn-hover-bg: rgba(255, 255, 255, 0.10);
 }
 
 [data-theme="light"] {
+  $primaryColor: #e8a405;
+
   --bg-color_level1: #{$color-white-2};
   --color_level1: #{$color-white-5};
   --bg-color_level2: #{$color-white-3};
@@ -101,5 +105,7 @@ $color-white-4-opa80: #f4f3f080;
   --text-muted: #706f6b;
   --border-color: rgba(55, 53, 47, 0.16);
   --border-color-strong: rgba(55, 53, 47, 0.30);
+  --btn-border: rgba(55, 53, 47, 0.65);
+  --btn-hover-bg: rgba(55, 53, 47, 0.06);
   --hover-bg: rgba(55, 53, 47, 0.06);
 }

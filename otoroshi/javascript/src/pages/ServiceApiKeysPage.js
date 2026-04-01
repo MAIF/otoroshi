@@ -1002,12 +1002,6 @@ const ApiKeysConstants = {
     {
       title: 'Enabled',
       filterId: 'enabled',
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column-reverse',
-        justifyContent: 'flex-start',
-      },
       notFilterable: true,
       content: (item) => item.enabled,
       cell: (v, item, table) => (

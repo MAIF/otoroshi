@@ -9,8 +9,8 @@
 thead {
   background-color: transparent;
 
-  > tr > th,
-  > tr > td > span {
+  >tr>th,
+  >tr>td>span {
     color: var(--text-muted);
     font-size: 11px;
     font-weight: 600;
@@ -23,8 +23,8 @@ thead {
 }
 
 // rows
-.table > tbody > tr > td,
-.table > tbody > tr > th {
+.table>tbody>tr>td,
+.table>tbody>tr>th {
   border: none;
   border-bottom: 1px solid var(--border-color);
   padding: 10px 12px;
@@ -32,8 +32,8 @@ thead {
   color: var(--color_level1);
 }
 
-.table > tfoot > tr > td,
-.table > tfoot > tr > th {
+.table>tfoot>tr>td,
+.table>tfoot>tr>th {
   border: none;
   border-top: 1px solid var(--border-color);
   padding: 8px 12px;
@@ -41,23 +41,23 @@ thead {
 
 // supprimer toutes les bordures Bootstrap table-bordered
 .table-bordered,
-.table-bordered > tbody > tr > td,
-.table-bordered > tbody > tr > th,
-.table-bordered > tfoot > tr > td,
-.table-bordered > tfoot > tr > th,
-.table-bordered > thead > tr > td,
-.table-bordered > thead > tr > th,
-.table > thead > tr > td,
-.table > thead > tr > th {
+.table-bordered>tbody>tr>td,
+.table-bordered>tbody>tr>th,
+.table-bordered>tfoot>tr>td,
+.table-bordered>tfoot>tr>th,
+.table-bordered>thead>tr>td,
+.table-bordered>thead>tr>th,
+.table>thead>tr>td,
+.table>thead>tr>th {
   border: none;
 }
 
-.table-bordered > :not(caption) > * {
+.table-bordered> :not(caption)>* {
   border-width: 0;
 }
 
 // pas de rayures — séparateur suffit
-.table-striped > tbody > tr:nth-of-type(odd) {
+.table-striped>tbody>tr:nth-of-type(odd) {
   background-color: transparent;
 }
 
@@ -70,20 +70,20 @@ thead {
 }
 
 // pagination
-.pagination > .active > a,
-.pagination > .active > a:focus,
-.pagination > .active > a:hover,
-.pagination > .active > span,
-.pagination > .active > span:focus,
-.pagination > .active > span:hover {
+.pagination>.active>a,
+.pagination>.active>a:focus,
+.pagination>.active>a:hover,
+.pagination>.active>span,
+.pagination>.active>span:focus,
+.pagination>.active>span:hover {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: #000;
   border-radius: 6px;
 }
 
-.pagination > li > a,
-.pagination > li > span {
+.pagination>li>a,
+.pagination>li>span {
   background: none;
   color: var(--color_level1);
   border: none;
@@ -105,7 +105,7 @@ thead {
   border-radius: 6px;
 }
 
-.active > .titleTable {
+.active>.titleTable {
   background-color: var(--color-blue);
   color: #fff;
   border: none;
@@ -162,4 +162,20 @@ table .displayGroupBtn {
   width: 130px;
   align-items: center;
   justify-content: center;
+}
+
+.table-export {
+  border-radius: 8px !important;
+}
+
+.table-export-button {
+  width: 100%;
+  border: none !important;
+  color: var(--text);
+  background: none;
+  padding: .5rem;
+}
+
+.table-export-button:first-child {
+  border-bottom: 1px solid var(--input-border) !important;
 }

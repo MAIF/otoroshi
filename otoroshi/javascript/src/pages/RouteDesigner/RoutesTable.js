@@ -453,7 +453,7 @@ export function RoutesTable(props) {
           rawEditUrl={true}
           injectTopBar={() => (
             <div className="btn-group input-group-btn">
-              <Link className="btn btn-primary btn-sm" to={`routes/new?tab=informations`}>
+              <Link className="btn btn-primary btn-sm btn-cta" to={`routes/new?tab=informations`}>
                 <i className="fas fa-plus-circle" /> Create new route
               </Link>
               {props.injectTopBar}

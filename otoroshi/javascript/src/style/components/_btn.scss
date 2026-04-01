@@ -1,6 +1,7 @@
 .btn {
   background-color: transparent;
   background: none;
+  border: 1px solid var(--input-border) !important;
 }
 
 .btnsService {
@@ -10,12 +11,21 @@
   right: 10px;
 }
 
-.btnsService + div {
+.btnsService+div {
   padding-top: 50px;
 }
 
 .displayGroupBtn {
   text-align: right;
+
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  background: var(--bg-color_level2);
+  border-top: 1px solid var(--border-color);
+  padding: 1rem;
+  width: 100%;
+  z-index: 1000;
 
   .btn {
     margin-left: 5px;
@@ -32,12 +42,12 @@
   background-color: var(--color-green);
 }
 
-.input-group-btn > .btn,
-.input-group-btn > .btn-group {
+.input-group-btn>.btn,
+.input-group-btn>.btn-group {
   margin-left: 4px;
 }
 
-.input-group-btn:last-child > .btn {
+.input-group-btn:last-child>.btn {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 
@@ -69,6 +79,11 @@
   }
 }
 
+.rt-table .content-switch-button-off,
+.rt-table .content-switch-button-on {
+  margin: 0;
+}
+
 .switch-button {
   background-color: var(--color-white);
   border-radius: 20px;
@@ -93,19 +108,25 @@
   }
 }
 
+.btn-cta {
+  background-color: var(--text) !important;
+  color: var(--reverse-text) !important;
+}
+
 .btn-primary,
-.btn-primary:focus, .btn-info, .btn-info:focus {
+.btn-primary:focus,
+.btn-info,
+.btn-info:focus {
   color: var(--color_level1);
-  border: 1px solid;
-  border-color: var(--color-blue);
+  border: 1px solid var(--btn-border);
   background-color: transparent;
+
   &:hover,
   &.active,
   &.active:hover {
     color: var(--text);
-    border: 1px solid;
-    border-color: var(--color-blue);
-    background-color: var(--color-blue);
+    border: 1px solid var(--btn-border);
+    background-color: var(--btn-hover-bg);
   }
 }
 
@@ -115,6 +136,7 @@
   border: 1px solid;
   border-color: var(--color-primary);
   background-color: transparent;
+
   &:hover,
   &.active,
   &.active:hover {
@@ -132,16 +154,12 @@
 
 .btn-danger,
 .btn-danger:focus {
-  color: var(--color_level1);
-  border: 1px solid;
-  border-color: var(--color-red);
-  background-color: transparent;
+  color: var(--text);
+  border: 1px solid var(--color-red) !important;
+  background-color: var(--color-red);
 
   &:hover {
-    color: var(--color-white);
-    border: 1px solid;
-    border-color: var(--color-red);
-    background-color: var(--color-red);
+    opacity: .9;
   }
 
   .fa-lock {
@@ -151,16 +169,12 @@
 
 .btn-success,
 .btn-success:focus {
-  color: var(--color_level1);
-  border: 1px solid;
-  border-color: var(--color-green);
-  background-color: transparent;
+  background-color: var(--text) !important;
+  color: var(--reverse-text) !important;
+  border: 1px solid var(--btn-border);
 
   &:hover {
-    color: var(--color-white);
-    border: 1px solid;
-    border-color: var(--color-green);
-    background-color: var(--color-green);
+    opacity: .9;
   }
 }
 
@@ -179,11 +193,9 @@
   }
 }
 
-.btn-dark{
-  color: var(--color-white);
-  border: 1px solid;
-  border-color: var(--color-dark);
-  background-color: var(--color-dark);
+.btn-dark {
+  color: var(--text);
+  border: 1px solid var(--input-border);
 }
 
 [class*="btn-"].disabled,
@@ -192,7 +204,7 @@
 [class*="btn-"][disabled]:hover {
   color: var(--color-dark);
   text-shadow: none;
-  background-color:var(--color-grey);
+  background-color: var(--color-grey);
   border-color: var(--color-grey);
 }
 
@@ -218,8 +230,9 @@
 .pill-cursor {
   transition: left 0.25s;
   position: absolute;
-  background-color: var(--color-primary);
-  color: var(--color-white);
+  background-color: var(--bg-color_level3);
+  border: 1px solid var(--input-border);
+  color: var(--text);
   top: 4px;
   bottom: 4px;
   left: 4px;

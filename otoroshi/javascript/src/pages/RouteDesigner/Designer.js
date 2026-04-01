@@ -1246,7 +1246,7 @@ class Designer extends React.Component {
     return (
       <>
         <span
-          className="badge bg-warning text-dark"
+          className="badge bg-warning"
           style={{
             cursor: 'pointer',
           }}
@@ -1354,7 +1354,7 @@ class Designer extends React.Component {
       return (
         <React.Fragment key={`inbound-${i}`}>
           <span
-            className="badge bg-warning text-dark"
+            className="badge bg-warning"
             style={{
               cursor: 'pointer',
             }}
@@ -1443,7 +1443,7 @@ class Designer extends React.Component {
     return (
       nodes.find((n) => n.plugin_index.TransformResponse !== undefined) && (
         <span
-          className="badge bg-warning text-dark"
+          className="badge bg-warning"
           style={{ cursor: 'pointer' }}
           onClick={() => {
             const hidden_steps = {
@@ -1718,7 +1718,7 @@ class Designer extends React.Component {
                         }}
                       >
                         <span
-                          className="badge bg-warning text-dark"
+                          className="badge bg-warning"
                           style={{
                             width: '100%',
                             opacity: !selectedNode ? 1 : 0.25,
@@ -1760,7 +1760,7 @@ class Designer extends React.Component {
                         }}
                       >
                         <span
-                          className="badge bg-warning text-dark"
+                          className="badge bg-warning"
                           style={{
                             width: '100%',
                             opacity: !selectedNode ? 1 : 0.25,
@@ -1851,7 +1851,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
     <div className="d-flex-between element-text">
       <div>
         {element.legacy ? (
-          <span className="badge bg-info text-dark" style={{ marginRight: 5 }}>
+          <span className="badge bg-info" style={{ marginRight: 5 }}>
             legacy
           </span>
         ) : (
@@ -2170,7 +2170,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                     target.tls_config.enabled &&
                     [...(target.tls_config.certs || [])].length > 0 ? (
                     <span
-                      className="badge bg-warning text-dark"
+                      className="badge bg-warning"
                       style={{
                         marginRight: 10,
                         fontSize: '.75rem',
@@ -2750,7 +2750,7 @@ export const Description = ({ text, steps, legacy }) => {
           Active on steps{' '}
           {steps.map((step, i) => (
             <span
-              className="badge bg-warning text-dark"
+              className="badge bg-warning"
               style={{ marginLeft: 5 }}
               key={`steps-${i}`}
             >
@@ -2762,7 +2762,7 @@ export const Description = ({ text, steps, legacy }) => {
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
           This plugin is a{' '}
-          <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
+          <span className="badge bg-info" style={{ marginLeft: 5 }}>
             legacy plugin
           </span>
         </div>

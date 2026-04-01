@@ -128,7 +128,7 @@ export class NgDotsRenderer extends Component {
               // let btnBackground = '';
 
               if (option.color) backgroundColorFromOption = `${option.color}`;
-              opacityFromOption = `${selected ? 1 : 0.45}`;
+              opacityFromOption = `${selected ? 1 : 0.75}`;
 
               let style = {
                 borderRadius: '24px',

@@ -5,7 +5,6 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
-import { useHistory } from 'react-router-dom/';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 import isString from 'lodash/isString';
 import isObject from 'lodash/isObject';
@@ -183,7 +182,7 @@ export function DefaultSidebar(props) {
       >
         {openedSidebar && !onRouteTab && (
           <div className="mb-2">
-            <p className="sidebar-title">Gateway Management</p>
+            <p className="sidebar-title mt-0">Gateway Management</p>
             <CoreSidebarLink
               rootClassName={rootClassName}
               openedSidebar={openedSidebar}
@@ -250,25 +249,7 @@ export function DefaultSidebar(props) {
             })}
       </ul>
       {openedSidebar && !onRouteTab && (
-        <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
-          <p className="sidebar-title">Categories</p>
-          <div className="d-flex flex-column">
-            {links.sort(sortCategory).map((item, i) => {
-              return (
-                <Block
-                  key={item.title}
-                  {...item}
-                  first={i === 0}
-                  last={i === links.length - 1}
-                  shortcuts={shortcuts}
-                  writeStorage={writeStorage}
-                  hightlighted={!hightlighted || item.title === hightlighted}
-                  setHighlighted={() => setHighlighted(item.title)}
-                  onClose={() => setHighlighted(undefined)}
-                />
-              );
-            })}
-          </div>
+        <ul className="nav flex-column nav-sidebar me-2">
 
           <li
             className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} mt-3`}
@@ -292,6 +273,24 @@ export function DefaultSidebar(props) {
               <span style={{ marginTop: '4px' }}>{!openedSidebar ? '' : 'Features'}</span>
             </Link>
           </li>
+          <p className="sidebar-title">Categories</p>
+          <div className="d-flex flex-column">
+            {links.sort(sortCategory).map((item, i) => {
+              return (
+                <Block
+                  key={item.title}
+                  {...item}
+                  first={i === 0}
+                  last={i === links.length - 1}
+                  shortcuts={shortcuts}
+                  writeStorage={writeStorage}
+                  hightlighted={!hightlighted || item.title === hightlighted}
+                  setHighlighted={() => setHighlighted(item.title)}
+                  onClose={() => setHighlighted(undefined)}
+                />
+              );
+            })}
+          </div>
         </ul>
       )}
     </>

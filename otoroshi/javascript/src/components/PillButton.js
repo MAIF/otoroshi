@@ -29,7 +29,7 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
-          style={rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
+          style={pillButtonStyle}
           onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}
         >
           {leftText}
@@ -37,7 +37,7 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
-          style={!rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
+          style={pillButtonStyle}
           onClick={() => (onRightClick ? onRightClick() : onChange(false))}
         >
           {rightText}

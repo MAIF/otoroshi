@@ -11,7 +11,7 @@
   justify-content: center;
   align-items: center;
   border-radius: 4px;
-  background-color: var(--bg-color_level2);
+  background-color: var(--bg-color_level3);
   height: 100px;
   margin: 10px;
   font-family: 'Roboto';
@@ -38,12 +38,12 @@
 }
 
 
-.metric-text-value{
+.metric-text-value {
   text-shadow: rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px;
 }
 
-.metric-text-title{
-    text-shadow: rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px;
-        font-size: 22px;
-        font-weight: normal;
+.metric-text-title {
+  text-shadow: rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px;
+  font-size: 22px;
+  font-weight: normal;
 }

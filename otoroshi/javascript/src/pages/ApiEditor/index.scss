@@ -1,10 +1,11 @@
+.bg-warning {
+    color: var(--text) !important;
+    background-color: var(--bg-color_level3) !important;
+    border: 1px solid var(--input-border) !important;
+}
+
 .editor {
     padding-bottom: 10rem;
-
-    .bg-warning {
-        color: var(--text) !important;
-        background-color: var(--color-primary) !important;
-    }
 
     .btn-warning {
         border-color: var(--color-primary) !important;
@@ -133,7 +134,8 @@
         border: 1px solid var(--input-border);
     }
 
-    h3 {
+    h3,
+    h4 {
         color: var(--text) !important;
     }
 

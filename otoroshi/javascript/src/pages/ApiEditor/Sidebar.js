@@ -164,7 +164,7 @@ export default (props) => {
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
       }}
     >
-      {openedSidebar && <p className="sidebar-title">Shortcuts</p>}
+      {openedSidebar && <p className="sidebar-title mt-0">Shortcuts</p>}
       <ul className="nav flex-column nav-sidebar">
         <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="APIs">
           <Link
