@@ -12,7 +12,39 @@ import { NewTabLink } from '@site/src/components/NewTabLink';
 :::warning
 Service Descriptors are now deprecated and will sunset soon (probably in 2026). You can use [Routes](./routes.md) instead. You can read more about sunsetting Service Descriptors [here](../topics/deprecating-sd.mdx). 
 :::
-Services or service descriptor, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). 
+
+## Context and deprecation
+
+Service Descriptors were the **original and historical way** to configure HTTP proxying in Otoroshi. Since the very first version of the project, they served as the single entity used to define how incoming requests should be matched, authenticated, transformed, and forwarded to backend services.
+
+### Why they are deprecated
+
+Service Descriptors follow a **monolithic design**: frontend matching (domains, paths), backend targets, authentication, API key constraints, CORS, header manipulation, JWT verification, plugins, and many other concerns are all configured within a single large entity. While this approach was simple for basic use cases, it became increasingly difficult to manage, reuse, and compose as configurations grew more complex.
+
+In version 1.5.3 (February 2022), Otoroshi introduced a **new proxy engine** along with a new set of entities that replaced Service Descriptors:
+
+- **[Routes](./routes.md)** provide fine-grained, low-level HTTP routing with a clean separation between frontend matching, backend targeting, and plugin chains. Routes are more flexible, more composable, and support the full plugin system with proper ordering and scoping.
+- **[APIs](./apis.md)** group multiple routes together for full API management, providing a higher-level abstraction when you need to manage an entire API surface as a single unit.
+
+The new route engine is also **more performant** and supports advanced features such as request/response body transformations, traffic policies, and a richer plugin lifecycle that were not possible with the original Service Descriptor model.
+
+### Migration path
+
+Service Descriptors **still work and are fully supported** for backward compatibility. Under the hood, the new proxy engine automatically converts Service Descriptors into Routes at runtime to handle traffic. However, all new configurations should use Routes or APIs instead.
+
+Otoroshi provides several tools to help migrate existing Service Descriptors to Routes:
+
+- A **migration job** that can be enabled at startup to convert all descriptors automatically
+- A **migration API** endpoint to convert individual descriptors programmatically
+- A **"convert to route" button** in the admin UI on each Service Descriptor page
+
+You can read more about the migration process in the [Sunsetting Service Descriptors](../topics/deprecating-sd.mdx) topic.
+
+---
+
+## Overview
+
+Services, or service descriptors, let you declare how to proxy a call from a domain name to another domain name (or multiple domain names).
 
 <Image src="/img/docs/models-service.png" />
 
