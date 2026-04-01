@@ -4,9 +4,31 @@ sidebar_position: 10
 ---
 # HTTP Listeners
 
-HTTP Listeners allow you to create custom HTTP listeners on specific ports, enabling Otoroshi to serve traffic on multiple ports with different protocol configurations. Each listener can be configured independently for TLS, HTTP/1.1, HTTP/2, H2C, and HTTP/3 support.
+By default, Otoroshi listens on a single HTTP port and a single HTTPS port. This works well for many deployments, but real-world infrastructure often demands more flexibility. You may need to isolate internal APIs from public traffic, enforce mutual TLS on a dedicated port, expose HTTP/3 alongside HTTP/2, or bind an admin interface to a private network interface. HTTP Listeners solve this problem by letting you open additional ports, each with its own independent configuration, without running multiple Otoroshi instances.
 
-This is useful when you need to expose different services on different ports, separate public and internal traffic, or run specific protocols on dedicated ports.
+## How it works
+
+Each HTTP Listener creates a new [Netty](../topics/netty-server.md) server binding on the port and host you specify. The listener runs its own protocol stack, so you can mix and match settings per port:
+
+- **TLS configuration** -- enable or disable TLS independently, choose a client authentication mode (`None`, `Want`, or `Need` for mTLS), all separate from the main Otoroshi ports.
+- **Protocol support** -- enable HTTP/1.1, HTTP/2, H2C (HTTP/2 cleartext, useful for internal gRPC without TLS), or [HTTP/3](../topics/http3.md) (QUIC) on a per-listener basis.
+- **Network binding** -- bind to `0.0.0.0` for all interfaces, or restrict to a specific address like `127.0.0.1` or an internal network interface.
+
+Listeners can be **static** (defined in the Otoroshi configuration file and started at boot) or **dynamic** (created and managed at runtime through the admin API or UI). Dynamic listeners are synchronized automatically: when you create, update, or delete a listener entity, Otoroshi starts, restarts, or stops the corresponding Netty server without requiring a full restart.
+
+## Relationship with routes
+
+Routes can be scoped to specific listeners through the `bound_listeners` field on the [route](./routes.md) entity. When a listener is marked as `exclusive`, it will only serve routes that explicitly reference it -- all other routes are ignored on that port. This creates fully isolated traffic channels: for example, internal management routes accessible only on a private port, with no risk of accidental exposure on the public port.
+
+Individual plugins within a route can also be scoped to specific listeners, giving even finer control over which processing logic runs depending on the port that received the request.
+
+## Typical use cases
+
+- **Public / internal separation** -- run a public-facing listener on port 443 and an internal listener on port 9443 bound to a private interface, with `exclusive` mode so internal APIs are never reachable from the outside.
+- **Dedicated admin port** -- expose the Otoroshi admin API and backoffice on a separate port restricted to a management network.
+- **Per-port TLS policies** -- require client certificates (`clientAuth: Need`) on a specific port for services that need mTLS, while keeping the main port open for standard HTTPS.
+- **Protocol-specific listeners** -- dedicate a port to HTTP/3 traffic, or run H2C on an internal port for gRPC services that do not need TLS.
+- **Multi-port deployment** -- serve webhooks, health checks, or monitoring endpoints on dedicated ports with their own access logging settings.
 
 ## UI page
 
