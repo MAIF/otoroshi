@@ -7,9 +7,66 @@ import { FilteringDocs, ProjectionDocs } from '@site/src/components/DataExporter
 
 # Data Exporters
 
-Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems.
+Data exporters are the way to export alerts, events, and analytics from Otoroshi to external storage and monitoring systems. 
+They allow you to feed your observability stack (Elasticsearch, Datadog, Kafka, etc.) with everything that happens inside Otoroshi (almost) in real time.
 
 To try them out, you can follow [this tutorial](../tutorials/export-alerts-using-mailgun.md).
+
+## Why use data exporters?
+
+Otoroshi generates a continuous stream of events as it processes traffic: every proxied request, every admin action, every alert, every health check result. 
+By default these events live only in memory and are lost when the instance restarts. Data exporters let you **push those events to external systems** so you can:
+
+- **Monitor traffic** in real time (dashboards, alerting)
+- **Audit admin activity** (who changed what, and when)
+- **Debug issues** by replaying request/response flows
+- **Meet compliance requirements** with long-term event archival
+- **Feed custom analytics pipelines** (data lakes, ML, billing)
+
+You can create as many exporters as needed. Each exporter runs independently with its own destination, filtering rules, and batching settings. 
+For example, you might send all traffic events to Elasticsearch for dashboards, alerts to a Slack webhook, and audit events to S3 for long-term storage, all at the same time.
+
+## Event types
+
+Otoroshi produces several categories of events:
+
+| Event type | Description |
+|------------|-------------|
+| **GatewayEvent** | Emitted for every proxied HTTP request. Contains full request/response metadata: status code, latency, headers, upstream target, etc. This is the highest-volume event type. |
+| **AlertEvent** | Triggered when something notable happens: a circuit breaker opens, a quota is exceeded, an API key is about to rotate, a certificate is expiring, etc. |
+| **AuditEvent** | Tracks admin operations: back-office logins, API key creation, route changes, and any admin API call. |
+| **HealthCheckEvent** | Result of periodic backend health checks (up/down, response time). |
+| **TrafficCaptureEvent** | Full request and response body capture (only when the `capture` flag is enabled on a route). Used with GoReplay exporters. |
+| **TcpEvent** | Events from the TCP proxy (non-HTTP traffic). |
+| **RequestBodyEvent / ResponseBodyEvent** | Request or response body content, captured by specific plugins. |
+| **Other events from plugins or extensions** | for anything useful |
+
+Each event is enriched before export with additional context: geolocation data derived from client IP, parsed user-agent details, Otoroshi instance metadata (name, zone, region, datacenter), and cluster information.
+
+## How the pipeline works
+
+Each data exporter runs an independent streaming pipeline built on top of Akka Streams:
+
+```
+Events → Queue → JSON enrichment → Filtering → Projection → Batching → Send
+```
+
+1. **Queue**: every event produced by Otoroshi is published to all active exporters. Each exporter holds an in-memory bounded queue (`bufferSize`, default 5000). When the queue is full, the **oldest events are dropped** to keep the system responsive.
+2. **JSON enrichment**: events are converted to JSON and enriched with geolocation, user-agent parsing, and instance metadata. The `jsonWorkers` parameter controls the parallelism of this step.
+3. **Filtering**: include/exclude rules are applied (see [Matching and projections](#matching-and-projections)). Events that do not match are discarded.
+4. **Projection**: if a projection is defined, only the selected fields are kept in the JSON payload.
+5. **Batching**: events are grouped into batches by count (`groupSize`, default 100) or by time (`groupDuration`, default 30 seconds), whichever comes first. This reduces the number of network calls to the destination.
+6. **Send**: batches are sent to the configured destination. The `sendWorkers` parameter controls how many batches can be sent concurrently. If a send fails, the events are re-queued for retry.
+
+### Tuning tips
+
+- **High-traffic environments**: increase `bufferSize` to avoid dropping events, increase `jsonWorkers` and `sendWorkers` for more parallelism, and increase `groupSize` for fewer but larger network calls.
+- **Low-latency alerting**: decrease `groupDuration` (e.g. 5000 ms) so batches are sent more frequently.
+- **Resource-constrained setups**: keep worker counts low and use filtering aggressively to reduce the volume of events processed.
+
+### Lifecycle
+
+Exporters are hot-configurable. When you create or update an exporter through the admin API or the UI, Otoroshi gracefully drains the old pipeline (letting in-flight batches complete) and starts a new one with the updated settings. No restart is required.
 
 ## UI page
 
