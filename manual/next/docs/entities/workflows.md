@@ -193,4 +193,4 @@ A workflow that periodically checks the health of all backends:
 
 For detailed information about node configuration, operators, expression syntax, and examples, see [Otoroshi Workflows](../topics/workflows.md).
 
-For information about the visual editor, debugging tools, and breakpoints, see [Workflows Editor](../topics/workflows-editor.md).
+For information about the visual editor, debugging tools, and breakpoints, see [Workflows Editor](../topics/workflows-editor.mdx).
