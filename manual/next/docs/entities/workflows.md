@@ -4,7 +4,38 @@ sidebar_position: 22
 ---
 # Workflows
 
-Workflows are a JSON-based orchestration engine that lets you build complex automation pipelines using a visual editor. A workflow is a directed graph of nodes that can call functions, transform data, handle conditions, iterate over collections, and more. Workflows can be executed manually, triggered via API, or scheduled as periodic jobs.
+## Overview
+
+Managing a modern API infrastructure often involves repetitive, multi-step operations that go beyond simple request routing: rotating certificates before they expire, cleaning up unused API keys, synchronizing configuration across environments, or orchestrating health checks with automated incident response. Traditionally, these tasks require stitching together external orchestration platforms such as Apache Airflow, n8n, or custom cron scripts, adding operational complexity and another system to maintain.
+
+Otoroshi Workflows bring these automation capabilities directly into the API gateway. A workflow is a JSON-based directed graph of nodes, where each node represents a discrete operation: calling a function, evaluating a condition, iterating over a collection, transforming data, or controlling execution flow. Workflows are designed and edited through a built-in visual editor in the Otoroshi admin UI, making it possible to build, test, and debug complex automation pipelines without leaving the gateway.
+
+### How workflows work
+
+A workflow is structured as a tree of **nodes**. Execution starts at the root node (typically a `workflow` node that contains a sequential list of steps) and progresses through the graph. Each node produces a result that is stored in the workflow's shared **memory**, where subsequent nodes can reference it using expression syntax (e.g., `${nodes.fetch_data.response.body}`). The three primary building blocks are:
+
+- **Nodes** -- the execution units that form the workflow steps. Control flow nodes (`if`, `switch`, `foreach`, `while`, `try`, `parallel`) direct the execution path, while data nodes (`call`, `assign`, `value`) perform work and store results.
+- **Functions** -- reusable logic units invoked by `call` nodes. Otoroshi ships with built-in functions for HTTP requests, key-value storage, proxy state access, file I/O, email, WASM execution, event emission, and more. You can also define custom functions within the workflow itself or register them via Scala plugins.
+- **Operators** -- data transformation helpers (prefixed with `$`) that let you manipulate JSON values inline: array operations (`$array_append`, `$array_at`, `$projection`), string operations (`$str_concat`, `$str_replace`, `$str_upper_case`), comparisons (`$eq`, `$gt`, `$contains`), arithmetic (`$add`, `$multiply`, `$incr`), encoding (`$encode_base64`, `$basic_auth`), and JQ expressions (`$jq`).
+
+### Execution modes
+
+Workflows support three execution modes:
+
+- **Manual trigger via API** -- execute a workflow on demand by calling the admin API endpoint, useful for one-off operations or integration with external systems.
+- **Scheduled as periodic jobs** -- attach a cron expression or interval to a workflow so it runs automatically on a recurring schedule, with configurable instantiation (per cluster node or singleton).
+- **Event-driven** -- workflows can be used as route backends or request/response transformers through dedicated plugins (`WorkflowBackend`, `WorkflowRequestTransformer`, `WorkflowResponseTransformer`), executing in response to incoming HTTP traffic.
+
+Workflows also support **pause and resume**: a running workflow can pause its execution at any point, persist its state, and be resumed later via an API call with new input data. This enables human-in-the-loop approval patterns and long-running processes.
+
+### Use cases
+
+- **Automated certificate rotation** -- periodically check certificate expiration dates and trigger renewal before they expire.
+- **API key cleanup** -- scan for unused or expired API keys and deactivate or remove them on a schedule.
+- **Health check orchestration** -- iterate over all backends, perform health checks, and emit alerts or trigger failover when backends are unresponsive.
+- **Data synchronization** -- pull configuration or data from external systems and synchronize it with Otoroshi entities.
+- **Incident response automation** -- detect anomalies through health checks or metrics, then automatically notify teams via email, update route configurations, or scale backends.
+- **Dynamic API composition** -- use workflows as route backends to aggregate data from multiple upstream services into a single response.
 
 ## UI page
 
