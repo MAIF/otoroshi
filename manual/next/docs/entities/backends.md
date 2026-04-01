@@ -4,9 +4,25 @@ sidebar_position: 5
 ---
 # Backends
 
-A backend represents a list of target servers to forward requests to, along with its client settings, load balancing, and health check configuration.
+In Otoroshi, every [route](./routes.md) is built from three building blocks: a **frontend** (what to match), a **backend** (where to forward), and a **plugin chain** (what processing to apply). The backend is the part that answers the question: *"once a request has been matched, where should it go?"*
 
-Backends can be defined inline on a route or on their dedicated page to be reusable across multiple routes and APIs.
+A backend encapsulates the full downstream configuration: the list of target servers, how to distribute traffic across them, how to connect to them, and how to react when they fail. By grouping all of this into a single entity, Otoroshi cleanly separates routing decisions from forwarding decisions -- you can change your target servers, adjust timeouts, or switch load balancing strategies without touching any routing rule.
+
+### Inline vs stored backends
+
+Backends can be used in two ways:
+
+- **Inline** -- the backend configuration is embedded directly inside a route definition. This is the simplest approach when a backend is used by a single route.
+- **Stored (global)** -- the backend is saved as a standalone entity with its own identifier. Multiple routes and [APIs](./apis.mdx) can then reference the same backend via `backend_ref`. When you update the stored backend, every route that references it picks up the change automatically. This is the recommended approach when several routes share the same set of targets.
+
+### Key capabilities
+
+- **Multiple targets with weights** -- define several downstream servers and assign each a weight to control how traffic is distributed. Mark targets as `backup` so they only receive traffic when all primary targets are down.
+- **Load balancing strategies** -- choose from RoundRobin, Random, Sticky, IpAddressHash, BestResponseTime, WeightedBestResponseTime, LeastConnections, PowerOfTwoRandomChoices, Failover, or hash-based strategies on cookies, headers, and query parameters.
+- **Health checks** -- periodically probe your targets so that unhealthy servers are automatically removed from the load balancing pool.
+- **TLS and mTLS to backends** -- call targets over HTTPS, present client certificates, pin trusted CA certificates, or trust all certificates for development environments.
+- **Path rewriting** -- prepend a root path to every forwarded request, or completely rewrite the request path using named path parameters and the [expression language](../topics/expression-language.mdx).
+- **Client configuration** -- fine-tune how Otoroshi connects to your targets with retries (with exponential backoff), connection/idle/call timeouts, circuit breaker thresholds, connection pooling, path-specific timeout overrides, and HTTP proxy support.
 
 ## UI page
 
