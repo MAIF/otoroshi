@@ -29,7 +29,7 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [The resources loader](./resources-loader.md)
 * [Log levels customization](./custom-log-levels.md)
 * [Initial state customization](./custom-initial-state.md)
-* [Communicate with Kafka](./communicate-with-kafka.md)
+* [Communicate with Kafka](./communicate-with-kafka.mdx)
 * [Create your custom Authentication module](./create-custom-auth-module.md)
 * [Working with Eureka](./working-with-eureka.mdx)
 * [Instantiate a WAF with Coraza](./instantiate-waf-coraza.mdx)
