@@ -7,7 +7,19 @@ import { Image } from '@site/src/components/Image';
 
 # Teams
 
-In Otoroshi, all resources are attached to an [Organization](./organizations.mdx) and one or more Teams. Teams provide a second level of grouping within an organization, allowing you to control visibility and access to entities.
+When multiple groups share a single Otoroshi instance, you need a way to keep each group's configuration separate. Without boundaries, one team can accidentally edit or delete another team's routes, API keys, or certificates. Teams solve this problem by organizing entities within an organization so that each group only sees and manages what belongs to them.
+
+## Multi-tenancy model
+
+Otoroshi uses a two-level hierarchy for multi-tenancy:
+
+**Organization (tenant) > Team > Entities**
+
+Every entity in Otoroshi belongs to exactly one [Organization](./organizations.mdx) and one or more Teams. Organizations provide broad isolation (for example, separating business units or environments), while teams provide fine-grained grouping within an organization. This structure lets you run a single Otoroshi instance for your entire infrastructure while still giving each team its own slice of the configuration.
+
+Admin users can be scoped to specific organizations and teams. Each admin's rights define which teams they can read from and write to, making it possible to delegate management: a team lead can have full control over their own team's entities without being able to touch anything else. A super admin (with wildcard access) can manage everything across all organizations and teams.
+
+This is lightweight multi-tenancy for shared infrastructure. Rather than running separate Otoroshi instances for each department or project -- with the operational overhead that entails -- you create teams within a shared instance and let the access control model enforce the boundaries. In small deployments with a single operator, teams can be ignored entirely (everything stays in the `default` team). In large deployments, they become essential for preventing configuration conflicts and maintaining clear ownership.
 
 ## UI page
 
