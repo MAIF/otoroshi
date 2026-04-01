@@ -10,13 +10,78 @@ import { Badge } from '@site/src/components/Badge';
 
 <Badge />
 
-Otoroshi introduces a core entity: **APIs**. This feature marks a major step towards a more API Management-oriented experience by allowing users to manage their APIs as a whole, rather than configuring them route by route.
+## Why the API entity?
 
-With the API entity, you can define reusable [backends](#backends), declare multiple plugin [flows](#flows) that can be applied across different [routes](#routes), manage [consumers (plans)](#plans) and [subscriptions](#subscriptions), and track the state of an API throughout its lifecycle.
+In a typical API gateway setup, each HTTP endpoint is configured as an individual [route](./routes.md). 
+This works well for simple use cases, but as your platform grows, you end up with dozens or hundreds of routes that 
+logically belong to the same service — they share the same backends, the same security policies, the same documentation. 
+Managing them individually becomes tedious and error-prone.
 
-This evolution unlocks powerful capabilities for building developer portals and brings Otoroshi closer to the expectations of a full-featured API Management platform.
+The **API** entity solves this problem by providing a **higher-level abstraction** that groups everything related to a single API under one roof:
+
+- **Multiple routes** — define all the endpoints of your API (`GET /users`, `POST /orders`, etc.) in one place, with a shared domain and context path
+- **Shared backends** — define backend targets once and reuse them across routes, instead of duplicating target configurations
+- **Plugin flows** — create named plugin chains (authentication, rate limiting, transformations, etc.) and assign them to different routes as needed
+- **Consumer plans** — define who can access your API and how (API keys, JWT, mTLS, OAuth2), with pricing and quotas
+- **Subscriptions** — let developers or machines subscribe to your plans and receive auto-generated credentials
+- **Lifecycle management** — track your API from `staging` through `published`, `deprecated`, and `removed`
+- **Testing mode** — test draft changes safely before publishing, using a special header to access draft routes
+- **Versioning and deployments** — keep a history of published versions with full snapshots
+- **Built-in documentation** — attach pages, navigation, logos, and banners to power a developer portal
+
+In short, the API entity turns Otoroshi from a route-level proxy into a **full API Management platform**: 
+you design, secure, publish, version, and document your APIs in one place.
 
 <Image src="/img/docs/apis-home.png" />
+
+## How it works at runtime
+
+When Otoroshi starts or when an API is updated, each API is converted into a set of standard [NgRoute](./routes.md) objects that the proxy engine uses for request matching and forwarding. This conversion happens transparently:
+
+1. Each API route's frontend paths are prefixed with the API's `domain` and `context_path` (e.g., a route with path `/users` on an API with domain `api.example.com` and context path `/v1` becomes `api.example.com/v1/users`)
+2. Backend references are resolved — either from the API's local backends or from global [stored backends](./backends.md)
+3. The plugin flow referenced by each route is attached as the route's plugin chain
+4. Published [consumer plans](#plans) inject the appropriate security plugins (API key validation, JWT verification, mTLS checks, etc.) into each route automatically
+5. If [testing mode](#testing) is enabled, additional draft routes are generated that require a special header to access
+
+This means you get the organizational benefits of the API entity without any runtime overhead — under the hood, Otoroshi's engine processes the same optimized route structures it always has.
+
+## APIs vs. Routes — when to use which
+
+Otoroshi offers two levels of abstraction for configuring your HTTP traffic, and they serve different purposes:
+
+### Routes: low-level HTTP routing
+
+A [route](./routes.md) is a **low-level, flexible building block**. It gives you direct control over every aspect of HTTP proxying: exact domain matching, path patterns, headers, the full plugin chain, backend targets, TLS settings, etc. There are no constraints — you can wire anything to anything.
+
+Routes are the right choice when:
+
+- You need maximum flexibility and fine-grained control over how a specific request is handled
+- You are proxying traffic that doesn't fit the "managed API" model (static assets, internal redirects, catch-all rules, WebSocket tunnels, TCP proxying, etc.)
+- You want to set up a quick one-off reverse proxy rule without the overhead of lifecycle management
+
+### APIs: structured API Management
+
+An API is a **higher-level, more opinionated entity** built on top of routes. It adds structure and guardrails: a shared domain, a context path, a lifecycle (`staging` → `published` → `deprecated` → `removed`), consumer plans, subscriptions, versioning, deployments, and documentation.
+
+This structure is deliberate — it trades some of the route-level flexibility for **consistency and governance**:
+
+- All routes in an API share the same domain and context path, so your URL scheme stays coherent
+- Security policies are defined as consumer plans rather than per-route plugin configurations, making it easier to reason about who has access to what
+- Lifecycle states prevent accidental exposure of work-in-progress endpoints
+- Subscriptions and credential generation provide a self-service workflow for API consumers
+- Deployment history gives you traceability of what was published and when
+
+APIs are the right choice when:
+
+- You are exposing a service to external or internal consumers and want to manage access in a structured way
+- You need lifecycle management, versioning, and deployment tracking
+- You want to offer subscription plans with auto-generated credentials (API keys, JWT, OAuth2, mTLS)
+- You are building a developer portal
+
+### Under the hood, it's all routes
+
+The key insight is that APIs are ultimately **compiled down to routes** at runtime. An API is a management-layer abstraction — it doesn't introduce a different proxy engine. When you create an API with 5 endpoints, Otoroshi generates 5 `NgRoute` objects behind the scenes, with the domain/context path prefixed, the backends resolved, and the consumer plan security plugins injected. So the choice between APIs and routes is really about **how you want to organize and govern your configuration**, not about runtime behavior.
 
 ## UI page
 
