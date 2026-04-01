@@ -4,7 +4,53 @@ sidebar_position: 14
 ---
 # Remote Catalogs
 
-A Remote Catalog allows Otoroshi to synchronize entities from external sources such as GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg, S3, HTTP endpoints, Git repositories, Consul KV stores, or local files. It provides an infrastructure-as-code approach where entity definitions are stored externally and deployed into Otoroshi with full reconciliation (create, update, delete).
+Remote Catalogs bring a **GitOps and infrastructure-as-code approach** to Otoroshi configuration management. Instead of manually configuring routes, backends, API keys, and other entities through the admin UI or API, you define them as JSON or YAML files in an external source of truth -- a Git repository, an S3 bucket, a Consul KV store, or any HTTP endpoint -- and let Otoroshi synchronize them automatically.
+
+### The problem they solve
+
+In production environments, managing API gateway configuration through a UI or imperative API calls can lead to configuration drift, lack of auditability, and difficulty reproducing environments. Remote Catalogs solve this by treating Otoroshi configuration as code: entity definitions are versioned, reviewed, and deployed through the same workflows you already use for application code.
+
+### How they work
+
+When a Remote Catalog is deployed (either manually or on a schedule), Otoroshi performs a **full reconciliation cycle**:
+
+1. **Fetch** -- Otoroshi connects to the configured external source and retrieves entity definitions
+2. **Parse** -- Each file is parsed as JSON or YAML (with support for multi-document YAML files separated by `---`)
+3. **Compare** -- Fetched entities are compared with the current state of entities in Otoroshi that were previously managed by this catalog
+4. **Reconcile** -- Entities are **created**, **updated**, or **deleted** to make the Otoroshi state match the external source of truth
+
+This is not a one-way import: if an entity is removed from the external source, it will also be removed from Otoroshi on the next sync. Otoroshi tracks which entities were created by each catalog through metadata tagging, so manually created entities are never affected.
+
+### Supported sources
+
+Remote Catalogs support a wide range of external sources:
+
+- **Git hosting platforms**: GitHub, GitLab, Bitbucket, Gitea, Forgejo, Codeberg (using their respective APIs with token-based authentication)
+- **Git repositories**: any Git repository cloned directly
+- **Object storage**: S3-compatible buckets (AWS S3, MinIO, etc.)
+- **HTTP endpoints**: any URL returning entity definitions (custom config servers, CI/CD artifact stores, etc.)
+- **Key-value stores**: Consul KV
+- **Local filesystem**: file paths on the Otoroshi host
+
+### Key features
+
+- **Full reconciliation**: not just creates, but also updates and deletes -- the external source is the single source of truth
+- **Flexible scheduling**: fixed-interval polling, cron expressions, or manual deployment
+- **Dry-run mode**: test what a deployment would do before applying changes
+- **Undeploy**: cleanly remove all entities that were created by a catalog
+- **Multi-format**: JSON and YAML, including multi-document YAML files and Kubernetes-style manifests
+- **Webhook triggers**: some sources support webhook-based deployment in addition to polling
+- **Deploy listings**: use a listing file to control exactly which entity files are deployed and in what order
+
+### When to use Remote Catalogs
+
+- **GitOps workflows**: store your Otoroshi configuration alongside your application code in Git, and have changes deployed automatically when merged
+- **CI/CD pipelines**: generate or update entity definitions as part of your build pipeline and push them to a source that Otoroshi watches
+- **Environment synchronization**: share a common configuration baseline across development, staging, and production environments
+- **Disaster recovery**: rebuild an Otoroshi instance from a known, versioned configuration stored externally
+- **Multi-team collaboration**: let different teams manage their own route and API key definitions through pull requests, with review and approval workflows
+
+The underlying philosophy is straightforward: Otoroshi configuration should be treated like any other piece of infrastructure -- defined declaratively, stored in version control, reviewed through standard processes, and deployed automatically.
 
 ## UI page
 
