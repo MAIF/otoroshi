@@ -54,6 +54,7 @@ const files = [
   // { file: './manual/src/main/paradox/install/get-otoroshi.md' },
   // { file: './manual/src/main/paradox/topics/expression-language.md' },
 
+  { file: './manual/next/package.json', replace: (from, to, source) => source.replace(`"version": "${from}",`, `"version": "${to}",`) },
   { file: './manual/next/version.js' },
   { file: './manual/next/static/openapi.json' },
   { file: './manual/next/docs/snippets/build.gradle' },
