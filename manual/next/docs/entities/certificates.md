@@ -4,7 +4,45 @@ sidebar_position: 6
 ---
 # Certificates
 
-Certificates are used across Otoroshi for TLS termination, mTLS, JWT token signing and verification, and more. All generated and imported certificates are managed in a central store and can be referenced by routes, backends, auth modules, and other entities.
+## Overview
+
+In an API gateway architecture, every connection between clients, the gateway, and backend services can be secured with TLS. Managing these certificates across dozens or hundreds of services quickly becomes a burden when each backend server maintains its own certificates. Otoroshi solves this by providing **centralized certificate management**: all certificates -- whether imported, generated, or automatically provisioned -- are stored in a single place and dynamically applied at runtime without restarts.
+
+Certificates in Otoroshi serve several purposes:
+
+- **TLS termination** -- Routes reference certificates to serve HTTPS traffic. Otoroshi dynamically selects the right certificate based on the SNI (Server Name Indication) sent by the client, so a single gateway instance can terminate TLS for many domains simultaneously.
+- **Backend mTLS** -- When backend services require mutual TLS, Otoroshi can present a client certificate during the upstream connection. This is configured at the backend level, and the client certificate is managed centrally like any other certificate.
+- **Client certificate authentication** -- Otoroshi can require connecting clients to present a valid certificate signed by a trusted CA, enabling strong mutual authentication at the edge.
+- **JWT signing and verification** -- Key pairs stored as certificate entities can be used by JWT verifiers and auth modules to sign or validate tokens. Public keys can be exposed on the standard `/.well-known/jwks.json` endpoint.
+
+### Built-in PKI
+
+One of Otoroshi's distinctive features is its **built-in Public Key Infrastructure (PKI)**. Otoroshi can act as its own Certificate Authority, which means you can:
+
+- Generate a **root CA** and **intermediate CA** (Otoroshi creates these automatically on first startup: `otoroshi-root-ca` and `otoroshi-intermediate-ca`).
+- Issue server certificates, client certificates, and sub-CAs signed by an Otoroshi CA, with full control over key type (RSA, ECDSA), key size, signature algorithm, validity period, and Subject Alternative Names.
+- Sign Certificate Signing Requests (CSRs) submitted through the admin API.
+- Manage the full certificate chain, including Authority Information Access (AIA) extensions.
+
+This eliminates the need for an external CA for internal service-to-service communication and development environments.
+
+### ACME / Let's Encrypt integration
+
+For publicly-facing domains, Otoroshi integrates with **ACME-compatible providers** such as Let's Encrypt. Once ACME is enabled in the global configuration, you can request a trusted certificate for any hostname directly from the admin UI or the API. Let's Encrypt certificates are renewed automatically before expiration.
+
+### OCSP responder
+
+Otoroshi includes a built-in **OCSP responder** that can answer Online Certificate Status Protocol queries for certificates issued by its own PKI. This allows TLS clients to verify in real time whether a certificate has been revoked, without relying on CRL distribution points.
+
+### Certificate lifecycle
+
+Certificates in Otoroshi follow a managed lifecycle:
+
+1. **Provisioning** -- Certificates can be imported (PEM, PKCS#12), generated from an Otoroshi CA, requested from Let's Encrypt, or created as self-signed.
+2. **Active use** -- Once stored, certificates are immediately available for TLS termination, mTLS, or JWT operations. Otoroshi watches certificate validity and flags certificates that are approaching expiration.
+3. **Auto-renewal** -- When the `autoRenew` flag is enabled, Otoroshi automatically renews certificates that reach the last 20% of their validity period. The previous certificate is preserved with an "[UNTIL EXPIRATION]" prefix so that in-flight connections are not disrupted.
+4. **Revocation** -- Certificates can be marked as revoked. Revoked certificates are excluded from TLS selection and reported as such by the OCSP responder.
+5. **Expiration** -- Expired certificates are flagged and trigger alerts (CertExpiredAlert, CertAlmostExpiredAlert) that can be forwarded through data exporters.
 
 ## UI page
 
