@@ -1,47 +1,42 @@
 # Mise file (https://mise.jdx.dev/) for otoroshi
 #
-# prepare: mise install
-# install all js deps: mise run install-js-deps
-# dev: mise run dev
-# build jar: mise run build
-# run jar: mise run 
-# run dev doc server: mise run dev-doc 
-# build doc website: mise run build-doc
+# setup:    mise install && mise run install-js-deps
+# dev:      mise run dev
+# test:     mise run test
+# build:    mise run build
+# format:   mise run fmt
+# doc:      mise run dev-doc
+
+# ─── Tools ───────────────────────────────────────────────────────────
 
 [tools]
 java = "openjdk-17"
 sbt = "1.7.2"
 node = "22"
 
+# ─── Install ─────────────────────────────────────────────────────────
+
 [tasks.install-frontend-js-deps]
-description = "Install frontend dependencies"
+description = "Install frontend JS dependencies"
 dir = "otoroshi/javascript"
 run = "npm install"
 
 [tasks.install-doc-js-deps]
-description = "Install documentation dependencies"
+description = "Install documentation JS dependencies"
 dir = "manual/next"
 run = "npm install"
 
 [tasks.install-js-deps]
-description = "Install js dependencies"
+description = "Install all JS dependencies (frontend + doc)"
 run = [
   { task = "install-frontend-js-deps" },
   { task = "install-doc-js-deps"}
 ]
 
-[tasks.dev-doc]
-description = "Run documentation dev server"
-dir = "manual/next"
-run = "npm run start"
-
-[tasks.build-doc]
-description = "Build the documentation site"
-dir = "manual/next"
-run = "npm run build"
+# ─── Development ─────────────────────────────────────────────────────
 
 [tasks.dev-backend]
-description = "Run otoroshi in dev mode with sbt"
+description = "Run otoroshi backend in dev mode (sbt ~reStart, hot reload)"
 dir = "otoroshi"
 run = "sbt --java-home $JAVA_HOME ~reStart"
 
@@ -52,50 +47,66 @@ run = "sbt --java-home $JAVA_HOME ~reStart"
 #OTOROSHI_API_CLIENT_SECRET = "secret"
 
 [tasks.dev-frontend]
-description = "Start frontend dev server"
+description = "Start frontend webpack dev server (port 3040)"
 dir = "otoroshi/javascript"
 run = "npm run webpack:start"
 
-[tasks.dev-w-doc]
-description = "Start otoroshi backend + frontend + doc in dev mode"
-dir = "otoroshi"
-depends = ["dev-backend", "dev-frontend", "dev-doc"]
-run = "true"
-
+[tasks.dev-doc]
+description = "Run documentation Docusaurus dev server"
+dir = "manual/next"
+run = "npm run start"
 
 [tasks.dev]
-description = "Start otoroshi backend + frontend in dev mode"
-dir = "otoroshi"
+description = "Start backend + frontend in dev mode"
 depends = ["dev-backend", "dev-frontend"]
 run = "true"
 
+[tasks.dev-w-doc]
+description = "Start backend + frontend + doc in dev mode"
+depends = ["dev-backend", "dev-frontend", "dev-doc"]
+run = "true"
+
+# ─── Build ───────────────────────────────────────────────────────────
+
+[tasks.compile]
+description = "Compile Scala backend (no assembly)"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME clean compile"
+
 [tasks.build-backend]
-description = "Build otoroshi backend (compile , assembly)"
+description = "Build otoroshi backend jar (compile + assembly)"
 dir = "otoroshi"
 run = "sbt --java-home $JAVA_HOME clean compile assembly"
 
 [tasks.build-frontend]
-description = "Build otoroshi frontend"
+description = "Build otoroshi frontend (webpack production)"
 dir = "otoroshi/javascript"
 run = "npm run webpack:build"
 
+[tasks.build-doc]
+description = "Build the documentation static site"
+dir = "manual/next"
+run = "npm run build"
+
+[tasks.build]
+description = "Build otoroshi (frontend + backend jar)"
+run = [
+  { task = "build-frontend" },
+  { task = "build-backend" }
+]
+
 [tasks.build-w-doc]
-description = "Build otoroshi (backend + frontend + doc)"
+description = "Build otoroshi (frontend + backend + doc)"
 run = [
   { task = "build-frontend" },
   { task = "build-backend" },
   { task = "build-doc" }
 ]
 
-[tasks.build]
-description = "Build otoroshi (backend + frontend)"
-run = [
-  { task = "build-frontend" },
-  { task = "build-backend" }
-]
+# ─── Run ─────────────────────────────────────────────────────────────
 
 [tasks.jar]
-description = "Run otoroshi locally"
+description = "Run the built otoroshi jar locally"
 dir = "otoroshi"
 run = "$JAVA_HOME/bin/java -jar target/scala-2.12/otoroshi.jar"
 
@@ -107,4 +118,63 @@ OTOROSHI_INITIAL_ADMIN_LOGIN = "admin@otoroshi.io"
 OTOROSHI_INITIAL_ADMIN_PASSWORD = "password"
 OTOROSHI_API_CLIENT_ID = "admin"
 OTOROSHI_API_CLIENT_SECRET = "secret"
-OTOROSHI_DOMAIN = "oto.tools" # default oto.tools, resolves to 127.0.0.1
+OTOROSHI_DOMAIN = "oto.tools"
+
+# ─── Test ────────────────────────────────────────────────────────────
+
+[tasks.test]
+description = "Run the main backend test suite (OtoroshiTests)"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME 'testOnly OtoroshiTests'"
+
+[tasks.test.env]
+TEST_STORE = "inmemory"
+
+[tasks.test-plugins]
+description = "Run the plugins test suite"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME 'testOnly functional.PluginsTestSpec'"
+
+[tasks.test-plugins.env]
+TEST_STORE = "inmemory"
+
+[tasks.test-all]
+description = "Run all backend tests (main + plugins)"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME 'testOnly OtoroshiTests' 'testOnly functional.PluginsTestSpec'"
+
+[tasks.test-all.env]
+TEST_STORE = "inmemory"
+
+[tasks.test-e2e]
+description = "Run Playwright end-to-end tests (requires running otoroshi)"
+dir = "otoroshi/javascript"
+run = "npx playwright test"
+
+# ─── Format ──────────────────────────────────────────────────────────
+
+[tasks.fmt-frontend]
+description = "Format frontend code with prettier"
+dir = "otoroshi/javascript"
+run = "npx prettier --write --single-quote --trailing-comma es5 --print-width 100 --tab-width 2 --jsx-bracket-same-line 'src/**/*.js'"
+
+[tasks.fmt-backend]
+description = "Format Scala code with scalafmt"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME ';scalafmt;scalafmtSbt;test:scalafmt'"
+
+[tasks.fmt]
+description = "Format all code (frontend + backend)"
+run = [
+  { task = "fmt-frontend" },
+  { task = "fmt-backend" }
+]
+
+# ─── Clean ───────────────────────────────────────────────────────────
+
+[tasks.clean]
+description = "Clean all build artifacts (backend + frontend + doc)"
+run = [
+  "rm -rf otoroshi/target/scala-2.12/otoroshi.jar",
+  "rm -rf manual/next/build",
+]
