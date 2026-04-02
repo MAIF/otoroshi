@@ -145,7 +145,7 @@ export class NgDotsRenderer extends Component {
 
               return (
                 <button
-                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-primary' : 'btn-dark'
+                  className={`btn btn-radius-25 btn-sm ${backgroundColorFromOption ? '' : selected ? 'btn-success' : 'btn-dark'
                     } me-1 px-3 mb-1`}
                   type="button"
                   key={rawOption}

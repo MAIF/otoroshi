@@ -268,7 +268,7 @@ export function NewAPI(props) {
           </Button>
           <Button
             type="primaryColor"
-            className="btn-sm d-flex"
+            className="d-flex"
             onClick={createApi}
             text="Create"
             disabled={choice !== 'fromScratch' && !value.api}

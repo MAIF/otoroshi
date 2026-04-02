@@ -111,7 +111,7 @@ export default function ApiEditor(props) {
           />
           <RouteWithProps
             exact
-            path="/apis/:apiId/clients/:planId/:action"
+            path="/apis/:apiId/clients/:clientId/:action"
             component={ClientEditor}
             props={props}
           />

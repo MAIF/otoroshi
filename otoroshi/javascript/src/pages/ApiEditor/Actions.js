@@ -4,11 +4,11 @@ import { duplicateAPI, fetchWrapperNext, nextClient } from '../../services/BackO
 import { API_STATE } from './model';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI } from './hooks';
-import { VersionBadge } from './DraftOnly';
 import { LIFECYCLE_STEPS, MAX_WIDTH, STATE_PERMISSIONS } from './constants';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import { Header } from '../../components/wizardframe';
 import { NgForm } from '../../components/nginputs';
+import PageTitle from '../../components/PageTitle';
 
 function ActionCard({ icon, title, description, onClick, color }) {
   return (
@@ -144,18 +144,6 @@ export function Actions(props) {
 
   const [duplicateModal, setDuplicateModal] = useState(false);
 
-  useEffect(() => {
-    props.setTitle({
-      value: 'Actions',
-      noThumbtack: true,
-      children: (
-        <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
-          <span className={`badge bg-xs bg-danger`}>PROD</span>
-        </div>
-      ),
-    });
-  }, []);
-
   if (!item) return <SimpleLoader />;
 
   const currentState = item.state;
@@ -235,7 +223,12 @@ export function Actions(props) {
   const isStaging = item.state === 'staging';
 
   return (
-    <div className="mt-3" style={{ maxWidth: MAX_WIDTH }}>
+    <div className="actions-page">
+      <PageTitle title="Actions">
+        <div className="m-0 ms-2" style={{ fontSize: '1rem' }}>
+          <span className={`badge bg-xs bg-danger`}>PROD</span>
+        </div>
+      </PageTitle>
       {duplicateModal && <DuplicateModal hide={() => setDuplicateModal(false)} api={api} />}
 
       {/* Lifecycle section */}

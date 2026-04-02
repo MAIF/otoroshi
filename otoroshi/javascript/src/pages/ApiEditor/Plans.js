@@ -263,13 +263,13 @@ function AccessModeConfigurationTypeSelector({ onChange, value }) {
         margin: '8px',
       }}>
         {[
-          { id: 'keyless',      key: 'Keyless',       icon: 'fa-lock-open',  text: 'Open access without authentication. Clients call freely without credentials.' },
-          { id: 'public',       key: 'Public',        icon: 'fa-globe',      text: 'Available to all developers. Subscribe directly from the portal without approval.' },
-          { id: 'apikey',       key: 'API Key',       icon: 'fa-key',        text: 'Unique key in headers or query params. Enables rate limiting and usage tracking.' },
-          { id: 'jwt',          key: 'JWT',           icon: 'fa-id-badge',   text: 'Signed JSON Web Token validated against a trusted issuer to verify identity.' },
-          { id: 'mtls',         key: 'mTLS',          icon: 'fa-certificate', text: 'Mutual TLS — both client and gateway verify each other\'s certificate.' },
-          { id: 'oauth2-local', key: 'OAuth2 Local',  icon: 'fa-shield-halved', text: 'Client credentials flow with a local authorization server.' },
-          { id: 'oauth2-remote',key: 'OAuth2 Remote', icon: 'fa-shield',     text: 'Client credentials flow with a remote external authorization server.' },
+          { id: 'keyless', key: 'Keyless', icon: 'fa-lock-open', text: 'Open access without authentication. Clients call freely without credentials.' },
+          { id: 'public', key: 'Public', icon: 'fa-globe', text: 'Available to all developers. Subscribe directly from the portal without approval.' },
+          { id: 'apikey', key: 'API Key', icon: 'fa-key', text: 'Unique key in headers or query params. Enables rate limiting and usage tracking.' },
+          { id: 'jwt', key: 'JWT', icon: 'fa-id-badge', text: 'Signed JSON Web Token validated against a trusted issuer to verify identity.' },
+          { id: 'mtls', key: 'mTLS', icon: 'fa-certificate', text: 'Mutual TLS — both client and gateway verify each other\'s certificate.' },
+          { id: 'oauth2-local', key: 'OAuth2 Local', icon: 'fa-shield-halved', text: 'Client credentials flow with a local authorization server.' },
+          { id: 'oauth2-remote', key: 'OAuth2 Remote', icon: 'fa-shield', text: 'Client credentials flow with a remote external authorization server.' },
         ].map(({ key, text, id, icon }) => {
           const selected = value === id;
           return (
@@ -301,6 +301,10 @@ function AccessModeConfigurationTypeSelector({ onChange, value }) {
               <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
                 {text}
               </p>
+
+              {selected && <button className='btn btn-primary'>
+                Edit
+              </button>}
             </button>
           );
         })}
@@ -686,7 +690,7 @@ function ImportPlanModal({ hide, draft, api, updateAPI }) {
     <div className="wizard">
       <div className="wizard-container" style={{ padding: '1.5rem' }}>
         <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
-          <Header title="Import a plan from draft" />
+          <Header title="Import a plan from draft" onClose={hide} />
           <div className="wizard-content">
             <NgSelectRenderer
               value={planId}
@@ -873,14 +877,14 @@ export function PlanEditor(props) {
   const [plan, setPlan] = useState(
     isNew
       ? {
-          id: v4(),
-          name: 'New plan',
-          status: 'staging',
-          access_mode_configuration_type: 'apikey',
-          access_mode_configuration: {
-            enabled: true,
-          },
-        }
+        id: v4(),
+        name: 'New plan',
+        status: 'staging',
+        access_mode_configuration_type: 'apikey',
+        access_mode_configuration: {
+          enabled: true,
+        },
+      }
       : null
   );
 
@@ -906,21 +910,19 @@ export function PlanEditor(props) {
     return updateItem({ ...item, documentation: { ...item.documentation, plans } }).then(back);
   };
 
-  return (
-    <div style={{ maxWidth: MAX_WIDTH }}>
-      <PageTitle title={isNew ? 'New Plan' : plan.name} {...props}>
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-2"
-          onPress={save}
-          text={
-            <div className="d-flex align-items-center">
-              {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
-            </div>
-          }
-        />
-      </PageTitle>
-      <PlanForm plan={plan} onChange={setPlan} />
+  return <div className='page'>
+    <PageTitle title={isNew ? 'New Plan' : plan.name} {...props} />
+    <div className='displayGroupBtn'>
+      <FeedbackButton
+        type="success"
+        onPress={save}
+        text={
+          <div className="d-flex align-items-center">
+            {isNew ? 'Create' : 'Save'} <VersionBadge size="xs" />
+          </div>
+        }
+      />
     </div>
-  );
+    <PlanForm plan={plan} onChange={setPlan} />
+  </div>
 }

@@ -1959,7 +1959,7 @@ export class TopBar extends Component {
                     )}
                     <div className="dropdown">
                       <Button
-                        type="quiet"
+                        type="success"
                         className="d-flex align-items-center justify-content-between dropdown dropdown-toggle mx-1"
                         id="add-components"
                         data-bs-toggle="dropdown"

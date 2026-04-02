@@ -7,7 +7,7 @@ import { Form } from '../../components/inputs/Form';
 
 import { PillButton } from '../../components/PillButton';
 import { MAX_WIDTH } from './constants';
-import { VersionBadge } from './DraftOnly';
+import { DraftOnly, VersionBadge } from './DraftOnly';
 import { useDraftOfAPI } from './hooks';
 
 function ApiDocumentationResource(props) {
@@ -333,18 +333,19 @@ export function Documentation(props) {
           />
         </div>
 
-        {isDraft ? (
-          <FeedbackButton
-            type="success"
-            className="d-flex ms-auto"
-            onPress={updateDoc}
-            text={
-              <div className="d-flex align-items-center">
-                Update <VersionBadge size="xs" />
-              </div>
-            }
-          />
-        ) : null}
+        <DraftOnly>
+          <div className='displayGroupBtn'>
+            <FeedbackButton
+              type="success"
+              onPress={updateDoc}
+              text={
+                <div className="d-flex align-items-center">
+                  Save <VersionBadge size="xs" />
+                </div>
+              }
+            />
+          </div>
+        </DraftOnly>
       </PageTitle>
 
       <div style={{ maxWidth: MAX_WIDTH }}>

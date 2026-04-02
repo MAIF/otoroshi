@@ -517,6 +517,7 @@ class BackOfficeAppContainer extends Component {
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+                            openedSidebar={this.state.openedSidebar}
                             {...props}
                           />
                         )}
@@ -530,6 +531,7 @@ class BackOfficeAppContainer extends Component {
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+                            openedSidebar={this.state.openedSidebar}
                             {...props}
                           />
                         )}

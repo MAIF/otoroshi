@@ -6,9 +6,8 @@ import PageTitle from '../../components/PageTitle';
 import { Table } from '../../components/inputs';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
-import { DraftOnly, VersionBadge } from './DraftOnly';
+import { VersionBadge } from './DraftOnly';
 import { v4 } from 'uuid';
-import { MAX_WIDTH } from './constants';
 
 export function ClientForm({ client, onChange }) {
   const schema = {
@@ -33,7 +32,9 @@ export function ClientForm({ client, onChange }) {
     },
   };
 
-  return <NgForm value={client} schema={schema} onChange={onChange} />;
+  return <div style={{ border: '1px solid var(--input-border)', borderRadius: '1rem' }} className='p-3'>
+    <NgForm value={client} schema={schema} onChange={onChange} />
+  </div>
 }
 
 export function Clients(props) {
@@ -124,10 +125,10 @@ export function ClientEditor(props) {
   const [client, setClient] = useState(
     isNew
       ? {
-          id: v4(),
-          name: 'New client',
-          description: 'New client description',
-        }
+        id: v4(),
+        name: 'New client',
+        description: 'New client description',
+      }
       : null
   );
 
@@ -157,11 +158,11 @@ export function ClientEditor(props) {
   };
 
   return (
-    <div style={{ maxWidth: MAX_WIDTH }}>
-      <PageTitle title={isNew ? 'New client' : client.name} {...props}>
+    <div className='actions-page'>
+      <PageTitle title={isNew ? 'New client' : client.name} {...props} />
+      <div className='displayGroupBtn'>
         <FeedbackButton
           type="success"
-          className="d-flex ms-2"
           onPress={save}
           text={
             <div className="d-flex align-items-center">
@@ -169,7 +170,7 @@ export function ClientEditor(props) {
             </div>
           }
         />
-      </PageTitle>
+      </div>
       <ClientForm client={client} onChange={setClient} />
     </div>
   );

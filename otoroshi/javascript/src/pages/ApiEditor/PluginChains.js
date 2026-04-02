@@ -45,12 +45,6 @@ export function EditPluginChains(props) {
       const currentFlow = item.flows.find((flow) => flow.id === params.flowId);
 
       if (currentFlow) {
-        props.setTitle({
-          value: `Update ${currentFlow.name}`,
-          noThumbtack: true,
-          children: <VersionBadge />,
-        });
-
         setFlow(currentFlow);
       }
     }
@@ -72,7 +66,8 @@ export function EditPluginChains(props) {
   if (!item) return <SimpleLoader />;
 
   return (
-    <div style={{ maxWidth: MAX_WIDTH }}>
+    <div className='page'>
+      <PageTitle title='Plugin chains Settings' />
       <NgForm
         schema={FLOW_FORM_SETTINGS.schema(item)}
         flow={FLOW_FORM_SETTINGS.flow}
@@ -80,13 +75,16 @@ export function EditPluginChains(props) {
         onChange={setFlow}
       />
       <DraftOnly>
-        <Button
-          type="success"
-          className="btn-sm ms-auto d-flex align-items-center"
-          onClick={updateFlow}
-        >
-          Update <VersionBadge size="xs" className="ms-2" />
-        </Button>
+        <div className='displayGroupBtn'>
+          <Button
+            type="success"
+            onClick={updateFlow}
+          >
+            <div className='d-flex align-items-center'>
+              Save <VersionBadge size="xs" className="ms-2" />
+            </div>
+          </Button>
+        </div>
       </DraftOnly>
     </div>
   );
@@ -98,11 +96,7 @@ export function NewPluginChains(props) {
   const location = useLocation();
 
   useEffect(() => {
-    props.setTitle({
-      value: 'Create a new Flow',
-      noThumbtack: true,
-      children: <VersionBadge />,
-    });
+    props.setTitle(undefined);
   }, []);
 
   const [flow, setFlow] = useState({
@@ -125,7 +119,8 @@ export function NewPluginChains(props) {
   if (!item) return <SimpleLoader />;
 
   return (
-    <div style={{ maxWidth: MAX_WIDTH }}>
+    <div className='page'>
+      <PageTitle title='Plugin chains Settings' />
       <NgForm
         schema={FLOW_FORM_SETTINGS.schema(item)}
         flow={FLOW_FORM_SETTINGS.flow}
@@ -133,13 +128,16 @@ export function NewPluginChains(props) {
         onChange={setFlow}
       />
       <DraftOnly>
-        <Button
-          type="success"
-          className="btn-sm ms-auto d-flex align-items-center"
-          onClick={createFlow}
-        >
-          Create <VersionBadge size="xs" className="ms-2" />
-        </Button>
+        <div className='displayGroupBtn'>
+          <Button
+            type="success"
+            onClick={createFlow}
+          >
+            <div className='d-flex align-items-center'>
+              Create <VersionBadge size="xs" className="ms-2" />
+            </div>
+          </Button>
+        </div>
       </DraftOnly>
     </div>
   );
@@ -214,7 +212,7 @@ export function PluginChainsDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ ...(value || {}) })}
-        setSaveButton={() => {}}
+        setSaveButton={() => { }}
       />
     </div>
   );

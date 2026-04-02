@@ -17,6 +17,10 @@ export function Informations(props) {
 
   const { item, setItem, updateItem, isDraft } = useDraftOfAPI();
 
+  useEffect(() => {
+    props.setTitle(undefined)
+  }, [])
+
   const schema = {
     location: {
       type: 'location',
@@ -232,29 +236,26 @@ export function Informations(props) {
 
   if (!item) return <SimpleLoader />;
 
-  return (
-    <>
-      <PageTitle
-        style={{
-          paddingBottom: 0,
-        }}
-        title="Informations"
-        {...props}
-      >
-        <FeedbackButton
-          type="success"
-          className="ms-2 mb-1 d-flex align-items-center"
-          onPress={updateAPI}
-          text={
-            <>
-              Update <VersionBadge size="xs" className="ms-2" />
-            </>
-          }
-        />
-      </PageTitle>
-      <div style={{ maxWidth: MAX_WIDTH }}>
-        <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
-      </div>
-    </>
-  );
+  return <div className='page'>
+    <PageTitle
+      style={{
+        paddingBottom: 0,
+      }}
+      title="Informations"
+      {...props}
+    />
+
+    <div className='displayGroupBtn'>
+      <FeedbackButton
+        type="success"
+        onPress={updateAPI}
+        text={<div className='d-flex align-items-center'>
+          Save <VersionBadge size="xs" className="ms-2" />
+        </div>}
+      />
+    </div>
+
+    <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
+
+  </div>
 }

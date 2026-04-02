@@ -126,7 +126,7 @@ const LINK_GROUPS = (id) => [
       },
       {
         to: `/apis/${id}/testing`,
-        icon: 'fa-play',
+        icon: 'fa-flask',
         title: 'Testing',
         tab: 'testing',
         tooltip: { ...createTooltip(`Show testing tab`) },

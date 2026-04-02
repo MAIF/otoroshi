@@ -6,7 +6,6 @@ import InfoCollapse from '../../components/InfoCollapse';
 import { Row } from '../../components/Row';
 import { useDraftOfAPI } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
-import { MAX_WIDTH } from './constants';
 
 export function APIGateway(props) {
   const { item, updateItem } = useDraftOfAPI();
@@ -86,12 +85,13 @@ export function APIGateway(props) {
   };
 
   return (
-    <>
-      <PageTitle title="API Gateway" {...props}>
-        <DraftOnly>
+    <div className='page'>
+      <PageTitle title="API Gateway" {...props} />
+
+      <DraftOnly>
+        <div className='displayGroupBtn'>
           <FeedbackButton
             type="success"
-            className="d-flex ms-auto"
             onPress={() =>
               updateItem({
                 ...item,
@@ -100,16 +100,20 @@ export function APIGateway(props) {
             }
             text={
               <div className="d-flex align-items-center">
-                Update <VersionBadge size="xs" />
+                Save <VersionBadge size="xs" />
               </div>
             }
           />
-        </DraftOnly>
-      </PageTitle>
+        </div>
+      </DraftOnly>
 
-      <div className="actions-page mt-3" style={{ maxWidth: MAX_WIDTH }}>
-        <NgForm value={state} onChange={setState} schema={schema} />
+      <div className="actions-page mt-3">
+        <NgForm value={state} onChange={setState} schema={schema} flow={['explanation', {
+          type: 'group',
+          fields: ['domain', 'contextPath', 'merge'],
+          collapsable: false
+        }]} />
       </div>
-    </>
+    </div>
   );
 }

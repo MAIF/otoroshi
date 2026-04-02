@@ -203,36 +203,30 @@ export function SubscriptionDesigner(props) {
 
   const sub = isDraft ? draftSubscription : subscription;
 
-  console.log(draftSubscription);
-
-  return (
-    <>
-      <PageTitle title={sub.name} {...props}>
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-auto"
-          onPress={updateSubscription}
-          text={
-            <div className="d-flex align-items-center">
-              Update <VersionBadge size="xs" />
-            </div>
-          }
-        />
-      </PageTitle>
-      <div style={{ maxWidth: MAX_WIDTH }}>
-        <NgForm
-          value={isDraft ? draftSubscription.content : subscription}
-          schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
-          flow={SUBSCRIPTION_FORM_SETTINGS.flow}
-          onChange={(res) =>
-            isDraft
-              ? setDraftSubscription({ ...draftSubscription, content: res })
-              : setSubscription(res)
-          }
-        />
-      </div>
-    </>
-  );
+  return <div className='page'>
+    <PageTitle title={sub.name} {...props} />
+    <div className='displayGroupBtn'>
+      <FeedbackButton
+        type="success"
+        onPress={updateSubscription}
+        text={
+          <div className="d-flex align-items-center">
+            Save <VersionBadge size="xs" />
+          </div>
+        }
+      />
+    </div>
+    <NgForm
+      value={isDraft ? draftSubscription.content : subscription}
+      schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+      flow={SUBSCRIPTION_FORM_SETTINGS.flow}
+      onChange={(res) =>
+        isDraft
+          ? setDraftSubscription({ ...draftSubscription, content: res })
+          : setSubscription(res)
+      }
+    />
+  </div>
 }
 
 export function NewSubscription(props) {
@@ -284,44 +278,41 @@ export function NewSubscription(props) {
       });
   };
 
-  return (
-    <>
-      <PageTitle title={subscription.name} {...props} />
-      <div style={{ maxWidth: MAX_WIDTH }}>
-        <NgForm
-          value={subscription}
-          schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
-          flow={SUBSCRIPTION_FORM_SETTINGS.flow}
-          onChange={(newSub) => {
-            setSubscription(newSub);
-            setError(undefined);
-          }}
-        />
+  return <div className='page'>
+    <PageTitle title="Subscription Settings" {...props} />
 
-        {error && (
-          <div
-            className="mt-3 p-3"
-            style={{
-              borderLeft: '2px solid #D5443F',
-              background: '#D5443F',
-              color: 'var(--text)',
-              borderRadius: '.25rem',
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <FeedbackButton
-          type="success"
-          className="d-flex ms-auto mt-3 d-flex align-items-center"
-          onPress={updateSubscription}
-          text={
-            <>
-              Create <VersionBadge size="xs" />
-            </>
-          }
-        />
+    <NgForm
+      value={subscription}
+      schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+      flow={SUBSCRIPTION_FORM_SETTINGS.flow}
+      onChange={(newSub) => {
+        setSubscription(newSub);
+        setError(undefined);
+      }}
+    />
+
+    {error && (
+      <div
+        className="mt-3 p-3"
+        style={{
+          borderLeft: '2px solid #D5443F',
+          background: '#D5443F',
+          color: 'var(--text)',
+          borderRadius: '.25rem',
+        }}
+      >
+        {error}
       </div>
-    </>
-  );
+    )}
+
+    <div className='displayGroupBtn'>
+      <FeedbackButton
+        type="success"
+        onPress={updateSubscription}
+        text={<div className="d-flex align-items-center">
+          Create <VersionBadge size="xs" />
+        </div>}
+      />
+    </div>
+  </div>
 }

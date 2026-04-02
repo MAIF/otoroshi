@@ -1,0 +1,29 @@
+frontend front_nodes_http
+    bind *:80
+    mode tcp
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode tcp
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode tcp
+    balance roundrobin
+    server kubernetes-node1 10.2.2.40:31080
+    server kubernetes-node2 10.2.2.41:31080
+    server kubernetes-node3 10.2.2.42:31080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode tcp
+    balance roundrobin
+    server kubernetes-node1 10.2.2.40:31443
+    server kubernetes-node2 10.2.2.41:31443
+    server kubernetes-node3 10.2.2.42:31443
+    timeout connect        10s
+    timeout server          1m

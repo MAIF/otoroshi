@@ -13,7 +13,6 @@ import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
-import { MAX_WIDTH } from './constants';
 
 export function Backends(props) {
   const history = useHistory();
@@ -167,75 +166,66 @@ export function NewBackend(props) {
   console.log(backend);
 
   return (
-    <>
-      <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
+    <div className='page'>
+      <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }} />
+      <div className='displayGroupBtn'>
         <FeedbackButton
           type="success"
-          className="ms-2 mb-1 d-flex align-items-center"
           onPress={saveBackend}
-          text={
-            <>
-              Create <VersionBadge size="xs" />
-            </>
-          }
-        />
-      </PageTitle>
-
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-        }}
-      >
-        <BackendForm
-          state={{
-            form: {
-              schema: {
-                name: {
-                  label: 'Name',
-                  type: 'string',
-                  placeholder: 'New backend',
-                  disabled: backend?.name === 'default_backend',
-                },
-                client: {
-                  renderer: (props) => (
-                    <Row title="HTTP client">
-                      <NgSelectRenderer
-                        id="client_select"
-                        value={props.rootValue.client}
-                        placeholder="Select an existing http client"
-                        label={' '}
-                        ngOptions={{ spread: true }}
-                        isClearable
-                        onChange={(client) => {
-                          props.rootOnChange({
-                            ...props.rootValue,
-                            client,
-                          });
-                        }}
-                        options={item.clients}
-                        optionsTransformer={(arr) =>
-                          arr.map((item) => ({ label: item.name, value: item.id }))
-                        }
-                      />
-                    </Row>
-                  ),
-                },
-                backend: {
-                  type: 'form',
-                  schema: {
-                    ...NgBackend.schema,
-                  },
-                  flow: NgBackend.flow.filter((f) => f !== 'client'),
-                },
-              },
-              flow: ['name', 'client', 'backend'],
-              value: backend,
-            },
-          }}
-          onChange={setBackend}
+          text={<div className="d-flex align-items-center">
+            Create <VersionBadge size="xs" />
+          </div>}
         />
       </div>
-    </>
+      <BackendForm
+        state={{
+          form: {
+            schema: {
+              name: {
+                label: 'Name',
+                type: 'string',
+                placeholder: 'New backend',
+                disabled: backend?.name === 'default_backend',
+              },
+              client: {
+                renderer: (props) => (
+                  <Row title="HTTP client">
+                    <NgSelectRenderer
+                      id="client_select"
+                      value={props.rootValue.client}
+                      placeholder="Select an existing http client"
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      isClearable
+                      onChange={(client) => {
+                        props.rootOnChange({
+                          ...props.rootValue,
+                          client,
+                        });
+                      }}
+                      options={item.clients}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({ label: item.name, value: item.id }))
+                      }
+                    />
+                  </Row>
+                ),
+              },
+              backend: {
+                type: 'form',
+                schema: {
+                  ...NgBackend.schema,
+                },
+                flow: NgBackend.flow.filter((f) => f !== 'client'),
+              },
+            },
+            flow: ['name', 'client', 'backend'],
+            value: backend,
+          },
+        }}
+        onChange={setBackend}
+      />
+    </div>
   );
 }
 
@@ -268,73 +258,71 @@ export function EditBackend(props) {
   if (!item || !backend) return <SimpleLoader />;
 
   return (
-    <>
-      <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
+    <div className='page'>
+      <PageTitle title="Backend Settings" {...props} style={{ paddingBottom: 0 }} />
+
+      <div className='displayGroupBtn'>
         <DraftOnly>
           <FeedbackButton
             type="success"
-            className="ms-2 mb-1 d-flex align-items-center"
             onPress={updateBackend}
-            text={
-              <>
-                Update <VersionBadge size="xs" />
-              </>
-            }
+            text={<div className="d-flex align-items-center">
+              Save <VersionBadge size="xs" />
+            </div>}
           />
         </DraftOnly>
-      </PageTitle>
-
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-        }}
-      >
-        <BackendForm
-          state={{
-            form: {
-              schema: {
-                name: {
-                  label: 'Name',
-                  type: 'string',
-                  placeholder: 'New backend',
-                },
-                client: {
-                  renderer: (props) => (
-                    <Row title="HTTP client">
-                      <NgSelectRenderer
-                        id="client_select"
-                        value={props.rootValue.client}
-                        placeholder="Select an existing http client"
-                        label={' '}
-                        ngOptions={{ spread: true }}
-                        isClearable
-                        onChange={(client) => {
-                          props.rootOnChange({
-                            ...props.rootValue,
-                            client,
-                          });
-                        }}
-                        options={item.clients}
-                        optionsTransformer={(arr) =>
-                          arr.map((item) => ({ label: item.name, value: item.id }))
-                        }
-                      />
-                    </Row>
-                  ),
-                },
-                backend: {
-                  type: 'form',
-                  schema: NgBackend.schema,
-                  flow: NgBackend.flow.filter((f) => f !== 'client'),
-                },
-              },
-              flow: ['name', 'client', 'backend'],
-              value: backend,
-            },
-          }}
-          onChange={setBackend}
-        />
       </div>
-    </>
+
+      <BackendForm
+        state={{
+          form: {
+            schema: {
+              name: {
+                label: 'Name',
+                type: 'string',
+                placeholder: 'New backend',
+              },
+              client: {
+                renderer: (props) => (
+                  <Row title="HTTP client">
+                    <NgSelectRenderer
+                      id="client_select"
+                      value={props.rootValue.client}
+                      placeholder="Select an existing http client"
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      isClearable
+                      onChange={(client) => {
+                        props.rootOnChange({
+                          ...props.rootValue,
+                          client,
+                        });
+                      }}
+                      options={item.clients}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({ label: item.name, value: item.id }))
+                      }
+                    />
+                  </Row>
+                ),
+              },
+              backend: {
+                type: 'form',
+                label: 'Configuration',
+                schema: NgBackend.schema,
+                flow: NgBackend.flow.filter((f) => f !== 'client'),
+              },
+            },
+            flow: [{
+              type: 'group',
+              fields: ['name', 'client'],
+              collapsable: false
+            }, 'backend'],
+            value: backend,
+          },
+        }}
+        onChange={setBackend}
+      />
+    </div>
   );
 }
