@@ -1,8 +1,0 @@
-# if your loadbalancer is at ip address 10.2.2.50
-
-otoroshi.your.otoroshi.domain      IN A 10.2.2.50
-otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
-privateapps.your.otoroshi.domain   IN A 10.2.2.50
-api1.another.domain                IN A 10.2.2.50
-api2.another.domain                IN A 10.2.2.50
-*.api.the.api.domain               IN A 10.2.2.50
