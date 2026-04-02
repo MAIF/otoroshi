@@ -9,9 +9,9 @@
 # build doc website: mise run build-doc
 
 [tools]
-java = "openjdk-17.0.2"
+java = "openjdk-17"
 sbt = "1.7.2"
-node = "20"
+node = "22"
 
 [tasks.install-frontend-js-deps]
 description = "Install frontend dependencies"
