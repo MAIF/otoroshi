@@ -1,7 +1,4 @@
-FROM keymetrics/pm2:14-alpine
-# FROM node:14
-
-LABEL maintainer "MAIF <oss@maif.fr>"
+FROM keymetrics/pm2:18-alpine
 
 RUN mkdir -p /app
 
