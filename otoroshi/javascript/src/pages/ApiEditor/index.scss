@@ -545,7 +545,7 @@
     transition: border-color .2s, background-color .2s;
 
     &:hover {
-        border-color: var(--color-primary);
+        opacity: .9;
     }
 
     i {
@@ -596,7 +596,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-width: 720px;
+    max-width: 1000px;
     border: 1px solid var(--input-border);
     border-radius: .5rem;
     padding: 1rem;

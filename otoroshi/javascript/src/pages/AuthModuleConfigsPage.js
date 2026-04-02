@@ -142,18 +142,16 @@ export class AuthModuleConfigsPage extends Component {
           kubernetesKind="security.otoroshi.io/AuthModule"
           injectToolbar={(s, ss) => {
             return (
-              <div className="mb-3 btnsService">
-                <div className="displayGroupBtn">
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    title="Duplicate auth. module"
-                    style={{ marginRight: 20 }}
-                    onClick={(e) => this.duplicate(s, ss, e)}
-                  >
-                    <i className="far fa-copy" aria-hidden="true" />
-                  </button>
-                </div>
+              <div className="displayGroupBtn">
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  title="Duplicate auth. module"
+                  style={{ marginRight: 20 }}
+                  onClick={(e) => this.duplicate(s, ss, e)}
+                >
+                  <i className="far fa-copy" aria-hidden="true" />
+                </button>
               </div>
             );
           }}

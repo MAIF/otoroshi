@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export default function InfoCollapse({ title, icon, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  const location = useLocation()
+
+  const isEdition = location.pathname.includes("/edit")
 
   return (
     <div
@@ -10,6 +14,7 @@ export default function InfoCollapse({ title, icon, children, defaultOpen = fals
         borderRadius: 4,
         backgroundColor: 'rgba(23, 162, 184, 0.08)',
         marginBottom: 10,
+        maxWidth: isEdition ? 1000 : 'inherit'
       }}
     >
       <div

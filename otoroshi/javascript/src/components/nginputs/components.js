@@ -155,7 +155,7 @@ export class NgFormRenderer extends Component {
     if (!this.props.embedded) {
       return (
         <form
-          style={this.props.style}
+          style={{ maxWidth: 1000, ...this.props.style }}
           className={this.props.className}
           onSubmit={(e) => {
             e.preventDefault();

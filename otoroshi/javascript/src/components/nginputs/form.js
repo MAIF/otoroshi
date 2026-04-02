@@ -585,14 +585,15 @@ export class NgForm extends Component {
       const FormRenderer = config.components.FormRenderer;
       return (
         <FormRenderer
+          style={this.props.style}
           embedded={true}
           breadcrumb={config.breadcrumb}
           setBreadcrumb={
             !config.setBreadcrumb
               ? null
               : () => {
-                  config.setBreadcrumb(fullPath);
-                }
+                config.setBreadcrumb(fullPath);
+              }
           }
           useBreadcrumb={config.useBreadcrumb}
           path={fullPath}
@@ -853,10 +854,10 @@ export class NgForm extends Component {
             toHome={
               root
                 ? () => {
-                    this.setState({
-                      breadcrumb: [],
-                    });
-                  }
+                  this.setState({
+                    breadcrumb: [],
+                  });
+                }
                 : null
             }
             setBreadcrumb={(i) => {

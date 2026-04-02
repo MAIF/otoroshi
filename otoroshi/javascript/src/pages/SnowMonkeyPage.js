@@ -173,25 +173,23 @@ export class SnowMonkeyPage extends Component {
     return (
       <div class="container">
         <div className="row">
-          <div className="mb-3 btnsService">
-            <div className="displayGroupBtn">
-              <button
-                type="button"
-                className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
-                onClick={this.toggle}
-              >
-                <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
-                {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
-              </button>
-              <button
-                type="button"
-                className={`btn btn-success`}
-                {...moreProps}
-                onClick={this.saveChanges}
-              >
-                Save
-              </button>
-            </div>
+          <div className="displayGroupBtn">
+            <button
+              type="button"
+              className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
+              onClick={this.toggle}
+            >
+              <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
+              {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
+            </button>
+            <button
+              type="button"
+              className={`btn btn-success`}
+              {...moreProps}
+              onClick={this.saveChanges}
+            >
+              Save
+            </button>
           </div>
           <div className="col-md-12 text-center">
             <svg

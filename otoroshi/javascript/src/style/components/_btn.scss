@@ -4,27 +4,20 @@
   border: 1px solid var(--input-border) !important;
 }
 
-.btnsService {
-  width: 100%;
-  background-color: var(--bg-color_level1);
-  padding-bottom: 16px;
-  right: 10px;
-}
-
-.btnsService+div {
-  padding-top: 50px;
+.displayGroupBtn--small {
+  left: 0 !important;
 }
 
 .displayGroupBtn {
-  text-align: right;
-
+  text-align: center;
   position: fixed;
   bottom: 0;
+  left: 250px;
   right: 0;
   background: var(--bg-color_level2);
   border-top: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
   padding: 1rem;
-  width: 100%;
   z-index: 1000;
 
   .btn {
@@ -148,7 +141,7 @@
 
 .btn-danger,
 .btn-danger:focus {
-  color: var(--text);
+  color: #fff;
   border: 1px solid var(--color-red) !important;
   background-color: var(--color-red);
 

@@ -740,6 +740,7 @@ class TableComponent extends Component {
   };
 
   render() {
+    console.log(this.props)
     if (this.state.hasError) {
       return <h3>Something went wrong !!!</h3>;
     }
@@ -892,6 +893,7 @@ class TableComponent extends Component {
         {this.state.currentItem && !this.state.showAddForm && (
           <>
             <DraftEditorContainer
+              containerStyle={this.props.formStyle}
               className="mb-3"
               entityId={this.props.extractKey(this.state.currentItem)}
               value={this.state.currentItem}
@@ -1098,6 +1100,7 @@ class TableComponent extends Component {
               !this.props.formFunction &&
               (this.actualFlow().find((item) => this.isAnObject(item)) ? (
                 <NgForm
+                  style={this.props.formStyle}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
@@ -1105,6 +1108,7 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  style={this.props.formStyle}
                   create={this.state.showAddForm}
                   update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
@@ -1117,10 +1121,7 @@ class TableComponent extends Component {
             <hr />
             {!this.props.hideAllActions && (
               <>
-                <div className="displayGroupBtn float-end">
-                  {/* <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
-                    <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
-                  </button> */}
+                <div className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}>
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
@@ -1146,7 +1147,7 @@ class TableComponent extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
+              <form className="form-horizontal" style={{ ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onStateChange: this.props.onStateChange,
                   onChange: (currentItem) => {
@@ -1181,6 +1182,7 @@ class TableComponent extends Component {
               !this.props.formFunction &&
               (this.actualFlow().find((item) => this.isAnObject(item)) ? (
                 <NgForm
+                  style={this.props.formStyle}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
@@ -1188,6 +1190,7 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  style={this.props.formStyle}
                   create={this.state.showAddForm}
                   update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
@@ -1198,7 +1201,7 @@ class TableComponent extends Component {
                 />
               ))}
             <hr />
-            <div className="displayGroupBtn float-end">
+            <div className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}>
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button type="button" className="btn btn-danger" title="Delete current item">
                   Delete {this.props.itemName}

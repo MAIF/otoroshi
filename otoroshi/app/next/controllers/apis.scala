@@ -15,6 +15,7 @@ import next.models.{
 }
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
+import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.next.models.{NgClientConfig, NgRoute}
@@ -345,10 +346,24 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
             result match {
               case Left(errorResult)   => errorResult.vfuture
               case Right(subscription) =>
-                env.datastores.apiSubscriptionDataStore.set(subscription).map {
-                  case true  => Ok(Json.obj("done" -> true))
-                  case false => BadRequest(Json.obj("error" -> "something bad happened"))
-                }
+                ApiSubscription
+                  .writeValidator(
+                    subscription,
+                    ctx.request.body,
+                    None,
+                    "apisubscription",
+                    subscription.id.some,
+                    Create,
+                    env
+                  )
+                  .flatMap {
+                    case Right(sub)  =>
+                      env.datastores.apiSubscriptionDataStore.set(sub).map {
+                        case true  => Ok(Json.obj("done" -> true))
+                        case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                      }
+                    case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
+                  }
             }
         }
       }

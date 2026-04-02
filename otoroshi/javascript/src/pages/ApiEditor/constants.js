@@ -1,6 +1,6 @@
 import { API_STATE } from './model';
 
-export const MAX_WIDTH = 720;
+export const MAX_WIDTH = 1000;
 
 export const LIFECYCLE_STEPS = [
   {

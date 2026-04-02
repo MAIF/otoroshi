@@ -8,11 +8,15 @@ export function PillButton({
   rightText,
   onRightClick,
   style = {},
+  containerStyle = {},
   className = '',
   pillButtonStyle = {},
 }) {
   return (
-    <div className={`d-flex justify-content-center ${className}`}>
+    <div className={`d-flex justify-content-center ${className}`} style={{
+      maxWidth: 1000,
+      ...containerStyle
+    }}>
       <div
         className="p-1"
         style={{

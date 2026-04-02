@@ -338,15 +338,19 @@ function Block({
   return (
     <div
       key={title}
-      style={{
+      style={last ? {
         border: '1px solid var(--input-border)',
-        borderBottom: last ? 1 : 0,
+        borderBottomLeftRadius: 6,
+        borderBottomRightRadius: 6
+      } : {
+        border: '1px solid var(--input-border)',
+        borderBottom: 0,
         borderTopLeftRadius: first ? 6 : 0,
         borderTopRightRadius: first ? 6 : 0,
-        borderBottomLeftRadius: last ? 6 : 0,
-        borderBottomRightRadius: last ? 6 : 0,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
         cursor: 'pointer',
-        opacity: hightlighted ? 1 : 0.5,
+        opacity: hightlighted ? 1 : 0.5
       }}
       className="py-2"
       onClick={() => {

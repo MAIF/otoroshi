@@ -64,7 +64,7 @@ function updateSignalFromQuery(response, entityId, queryVersion) {
   };
 }
 
-function DraftEditor({ entityId, value, className = '' }) {
+function DraftEditor({ entityId, value, className = '', containerStyle = {} }) {
   const versionContext = useSignalValue(draftVersionSignal);
   const draftContext = useSignalValue(draftSignal);
 
@@ -151,7 +151,8 @@ function DraftEditor({ entityId, value, className = '' }) {
 
   return (
     <PillButton
-      className={`mx-auto ${className}`}
+      className={`${className}`}
+      containerStyle={containerStyle}
       rightEnabled={versionContext.version !== 'draft'}
       leftText="Published"
       rightText="Draft"
