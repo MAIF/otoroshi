@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'node:fs';
 
 const clientbackend = fs.readFileSync('./clientbackend.out').toString('utf8');
 const clientfrontend = fs.readFileSync('./clientfrontend.out').toString('utf8');

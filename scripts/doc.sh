@@ -4,10 +4,6 @@ LOCATION=`pwd`
 
 export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
 
-build_schemas () {
-  sh $LOCATION/scripts/schemas.sh
-}
-
 clean () {
   rm -rf $LOCATION/manual/target/paradox
   rm -rf $LOCATION/docs/manual
@@ -102,12 +98,8 @@ buildReferenceConf () {
 
 case "${1}" in
   all)
-    build_schemas
     clean
     build
-    ;;
-  build_schemas)
-    build_schemas
     ;;
   clean)
     clean
@@ -126,7 +118,6 @@ case "${1}" in
     buildReferenceConf
     ;;
   *)
-    build_schemas
     clean
     build
 esac

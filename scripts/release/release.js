@@ -21,10 +21,10 @@ const files = [
   { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
   { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
   { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  {
-    file: './manual/src/main/paradox/deploy/kubernetes.md',
-    replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)
-  },
+  //{
+  //  file: './manual/src/main/paradox/deploy/kubernetes.md',
+  //  replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)
+  //},
   {
     file: './kubernetes/helm/otoroshi/Chart.yaml',
     replace: (from, to, source) => source
@@ -35,13 +35,13 @@ const files = [
     file: './kubernetes/helm/otoroshi/values.yaml',
     replace: (from, to, source) => source.replace(`tag: ${from}`, `tag: ${to}`)
   },
-  {
-    file: './tools/tcp-udp-tunnel-client/client.js',
-    replace: (from, to, source) => source.replace(`Otoroshi TCP tunnel CLI, version ${from}`, `Otoroshi TCP tunnel CLI, version ${to}`)
-  },
-  { file: './demos/basic-setup/docker-compose.yml' },
-  { file: './demos/service-mesh/docker-compose-manual.yml' },
-  { file: './demos/service-mesh/docker-compose.yml' },
+  //{
+  //  file: './tools/tcp-udp-tunnel-client/client.js',
+  //  replace: (from, to, source) => source.replace(`Otoroshi TCP tunnel CLI, version ${from}`, `Otoroshi TCP tunnel CLI, version ${to}`)
+  //},
+  //{ file: './demos/basic-setup/docker-compose.yml' },
+  //{ file: './demos/service-mesh/docker-compose-manual.yml' },
+  //{ file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
 
   // { file: './manual/build.sbt' },
@@ -186,7 +186,7 @@ async function buildOpenApi(version, where, releaseDir) {
   await runSystemCommand('git', ['add', `--all`], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update openapi file before release`], location);
 }
-
+/*
 async function buildPluginDoc(version, where, releaseDir) {
   // build plugins doc
   // needs JDK11 !!!! 
@@ -197,7 +197,7 @@ async function buildPluginDoc(version, where, releaseDir) {
   await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/plugins`], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update plugin documentation`], location); 
 }
-
+*/
 async function buildDocumentation(version, where, releaseDir, releaseFile) {
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
@@ -242,7 +242,7 @@ async function publishDockerOtoroshi(location, version) {
 async function publishHelmChart(location, version) {
   await runSystemCommand('/bin/sh', [path.resolve(location, './scripts/helm.sh'), version], location);
 }
-
+/*
 async function buildTcpTunnelingCli(location, version) {
   await runScript(`
     cd ${location}/tools/tcp-udp-tunnel-client
@@ -297,6 +297,7 @@ async function buildTlsTermination(location, version) {
     }
   );
 }
+  */
 
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Prepare the release of Otoroshi version ${version}`], location);
@@ -411,8 +412,8 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   });
   // await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir, releaseFile));
   await buildVersion(to, location, releaseDir, releaseFile);
-  await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
-  await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
+  //await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
+  //await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
   //await ensureStep('BUILD_TLS_TERMINATION', releaseFile, () => buildTlsTermination(location, to));
   if (!dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));

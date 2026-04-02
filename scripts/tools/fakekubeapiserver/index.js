@@ -1,9 +1,8 @@
-const express = require('express');
-const bodyParsers = require('body-parser');
+import express from 'express';
 
 const app = express();
 
-app.use(bodyParsers.json());
+app.use(express.json());
 
 const mockJwtVerifier = {
   "apiVersion": "proxy.otoroshi.io/v1alpha1",
