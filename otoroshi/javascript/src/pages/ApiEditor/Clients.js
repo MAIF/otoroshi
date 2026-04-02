@@ -104,7 +104,7 @@ export function Clients(props) {
         rawEditUrl={true}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
-            <Link className="btn btn-primary btn-sm" to={`clients/new?version=${version}`}>
+            <Link className="btn btn-success btn-sm" to={`clients/new?version=${version}`}>
               <i className="fas fa-plus-circle" /> Create new client
             </Link>
           </div>

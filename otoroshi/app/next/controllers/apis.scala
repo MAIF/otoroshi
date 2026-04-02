@@ -11,18 +11,22 @@ import next.models.{
   ApiPublished,
   ApiRemoved,
   ApiStaging,
-  ApiSubscription
+  ApiSubscription,
+  ApiSubscriptionDisabled,
+  ApiSubscriptionEnabled,
+  ApiSubscriptionPending
 }
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.api.WriteAction.Create
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
+import otoroshi.models.Draft
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json, Reads}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
@@ -316,7 +320,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
   def subscribe(apiId: String, planId: String) = {
     ApiAction.async(parse.json) { ctx =>
-      ctx.canReadService(apiId) {
+      ctx.canWriteService(apiId) {
         Audit.send(
           AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
@@ -334,12 +338,39 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
           )
         )
 
-        env.datastores.apiDataStore.findById(apiId) flatMap {
+        val isDraft = ctx.request.getQueryString("version").contains("Draft")
+
+        def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
+          env.proxyState
+            .allDrafts()
+            .find(_.id == id)
+            .flatMap(draft => fmt.reads(draft.content).asOpt)
+            .future
+
+        def findApi(): Future[Option[Api]] =
+          if (isDraft) findDraft(apiId, Api.format)
+          else env.datastores.apiDataStore.findById(apiId)
+
+        def saveSubscription(sub: ApiSubscription): Future[Boolean] =
+          if (isDraft) {
+            val draft = Draft(
+              id = sub.id,
+              content = ApiSubscription.format.writes(sub).as[JsObject],
+              name = sub.name,
+              description = sub.description,
+              kind = "api-subscription"
+            )
+            env.datastores.draftsDataStore.set(draft)
+          } else {
+            env.datastores.apiSubscriptionDataStore.set(sub)
+          }
+
+        findApi().flatMap {
           case None      => Results.NotFound.vfuture
           case Some(api) =>
             val result = for {
               validApi     <- validateApi(api)
-              _validPlan   <- validatePlan(validApi, apiId)
+              _validPlan   <- validatePlan(validApi, planId)
               subscription <- validateBody(ctx)
             } yield subscription
 
@@ -357,13 +388,89 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                     env
                   )
                   .flatMap {
+                    case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
                     case Right(sub)  =>
-                      env.datastores.apiSubscriptionDataStore.set(sub).map {
+                      saveSubscription(sub.copy(status = ApiSubscriptionPending)).map {
                         case true  => Ok(Json.obj("done" -> true))
                         case false => BadRequest(Json.obj("error" -> "something bad happened"))
                       }
-                    case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
                   }
+            }
+        }
+      }
+    }
+  }
+
+  def confirmSubscription(apiId: String, subscriptionId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canWriteService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User tried to confirm a subscription",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"          -> apiId,
+              "subscriptionId" -> subscriptionId
+            )
+          )
+        )
+
+        val isDraft = ctx.request.getQueryString("version").contains("Draft")
+
+        def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
+          env.proxyState
+            .allDrafts()
+            .find(_.id == id)
+            .flatMap(draft => fmt.reads(draft.content).asOpt)
+            .future
+
+        def findApi(): Future[Option[Api]] =
+          if (isDraft) findDraft(apiId, Api.format)
+          else env.datastores.apiDataStore.findById(apiId)
+
+        def findSubscription(): Future[Option[ApiSubscription]] =
+          if (isDraft) findDraft(subscriptionId, ApiSubscription.format)
+          else env.datastores.apiSubscriptionDataStore.findById(subscriptionId)
+
+        def enableSubscription(subscription: ApiSubscription): Future[Boolean] =
+          if (isDraft) {
+            env.proxyState.allDrafts().find(_.id == subscriptionId) match {
+              case None        => false.future
+              case Some(draft) =>
+                val updated = draft.copy(
+                  content = draft.content.as[JsObject].deepMerge(Json.obj("status" -> ApiSubscriptionEnabled.name))
+                )
+                env.datastores.draftsDataStore.set(updated)
+            }
+          } else {
+            env.datastores.apiSubscriptionDataStore.set(subscription.copy(status = ApiSubscriptionEnabled))
+          }
+
+        findApi().flatMap {
+          case None      => Results.NotFound.vfuture
+          case Some(api) =>
+            validateApi(api) match {
+              case Left(errorResult) => errorResult.vfuture
+              case Right(_)          =>
+                findSubscription().flatMap {
+                  case None               =>
+                    NotFound(Json.obj("error" -> "subscription not found")).future
+                  case Some(subscription) =>
+                    validatePlan(api, subscription.planRef) match {
+                      case Left(_)  => BadRequest(Json.obj("error" -> "invalid plan")).future
+                      case Right(_) =>
+                        enableSubscription(subscription).map {
+                          case true  => NoContent
+                          case false => BadRequest(Json.obj("error" -> "something bad happened"))
+                        }
+                    }
+                }
             }
         }
       }

@@ -2199,6 +2199,20 @@ export const findAllWithPagination = (
   });
 };
 
+export const subscribeToPlan = (apiId, planId, version, body) => {
+  return fetchWrapperNext(`/apis/${apiId}/plans/${planId}/subscribe?version=${version}`,
+    'POST',
+    body,
+    'apis.otoroshi.io')
+}
+
+export const confirmSubscription = (apiId, subscriptionId, version) => {
+  return fetchWrapperNext(`/apis/${apiId}/subscriptions/${subscriptionId}/confirm?version=${version}`,
+    'POST',
+    {},
+    'apis.otoroshi.io')
+}
+
 export const nextClient = {
   ENTITIES: {
     ROUTES: 'routes',

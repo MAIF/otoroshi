@@ -785,7 +785,7 @@ export function Plans(props) {
       title: 'Subscribe',
       notFilterable: true,
       cell: (_, plan) => (
-        <Button type="primary" className="btn-sm" onClick={() => setPlan(plan)}>
+        <Button type="success" className="btn-sm" onClick={() => setPlan(plan)}>
           Subscribe
         </Button>
       ),
@@ -799,7 +799,7 @@ export function Plans(props) {
         ...item.documentation,
         plans: item.documentation.plans.filter((c) => c.id !== plan.id),
       },
-    });
+    })
   };
 
   if (plan) return <NewSubscription plan={plan} {...props} />;
@@ -844,7 +844,7 @@ export function Plans(props) {
         injectTopBar={() => (
           <div className="d-flex">
             <div className="btn-group input-group-btn mx-1">
-              <Link className="btn btn-primary btn-sm" to={`plans/new?version=${version}`}>
+              <Link className="btn btn-success btn-sm" to={`plans/new?version=${version}`}>
                 <i className="fas fa-plus-circle" /> Create new plan
               </Link>
             </div>

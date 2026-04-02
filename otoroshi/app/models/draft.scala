@@ -87,7 +87,7 @@ object Draft {
         case "api-subscription" =>
           ApiSubscription.format.reads(entity.content) match {
             case JsSuccess(value, _) =>
-              ApiSubscription.validate(entity.id, value, action)(env).map {
+              ApiSubscription.validate(value.apiRef, value, action)(env).map {
                 case Left(r)  => JsString(r).left
                 case Right(r) => entity.right
               }

@@ -328,7 +328,7 @@ export class NgAnyRenderer extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: this.props.defaultValue || this.props.value
+      value: this.props.defaultValue || this.props.schema?.props.defaultValue || this.props.value
     }
   }
 

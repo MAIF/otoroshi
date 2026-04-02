@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useHistory, useLocation, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { components } from 'react-select';
 import { findDraftsByKind, nextClient } from '../../services/BackOfficeServices';
+import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
 import { NgForm } from '../../components/nginputs';
 import PageTitle from '../../components/PageTitle';
@@ -10,7 +11,8 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
 import { VersionBadge } from './DraftOnly';
-import { MAX_WIDTH } from './constants';
+import { Button } from '../../components/Button';
+import { Row } from '../../components/Row';
 
 const SUBSCRIPTION_FORM_SETTINGS = {
   schema: (item) => {
@@ -26,9 +28,43 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         type: 'string',
         label: 'Description',
       },
-      enabled: {
-        type: 'boolean',
-        label: 'Enabled',
+      status: {
+        renderer: (props) => {
+          const STATUS_OPTIONS = ['disabled', 'pending', 'enabled', 'deprecated', 'custom'];
+          const isCustom = props.value !== undefined && !['disabled', 'pending', 'enabled', 'deprecated'].includes(props.value);
+          const dotValue = isCustom ? 'custom' : (props.value || 'disabled');
+
+          console.log(isCustom, dotValue)
+
+          return (
+            <Row title="Status">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                {STATUS_OPTIONS.map((s) => {
+                  const active = dotValue === s;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => props.onChange(s)}
+                      className={`btn btn-sm ${active ? 'btn-success' : 'btn-primary'}`}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+              {dotValue === 'custom' && (
+                <input
+                  className="form-control mt-2"
+                  style={{ maxWidth: 300 }}
+                  placeholder="Custom status value..."
+                  value={isCustom ? props.value : ''}
+                  onChange={(e) => props.onChange(e.target.value)}
+                  autoFocus
+                />
+              )}
+            </Row>
+          );
+        },
       },
       owner_ref: {
         label: 'Owner',
@@ -56,22 +92,38 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         label: 'Token refs',
         type: 'string',
       },
+      payment_ref: {
+        type: 'any',
+        label: 'Payment information',
+        props: {
+          mode: 'jsonOrPlaintext',
+          language: 'json',
+          useInternalState: true,
+          defaultValue: '{}',
+        }
+      }
     };
   },
-  flow: [
+  flow: (isEdition) => [
     'location',
     {
       type: 'group',
       name: 'Informations',
       collapsable: false,
-      fields: ['name', 'description', 'enabled'],
+      fields: ['name', 'description', isEdition ? 'status' : undefined].filter(f => f),
     },
     {
       type: 'group',
       name: 'Ownership',
       collapsable: false,
-      fields: ['owner_ref', 'plan_ref', 'token_refs'],
+      fields: ['owner_ref', 'plan_ref', isEdition ? 'token_refs' : undefined].filter(f => f),
     },
+    {
+      type: 'group',
+      name: 'Payment',
+      collapsable: false,
+      fields: ['payment_ref']
+    }
   ],
 };
 
@@ -80,13 +132,31 @@ export function Subscriptions(props) {
   const params = useParams();
   const location = useLocation();
 
-  const { isDraft, version } = useDraftOfAPI();
+  const { isDraft, version, item } = useDraftOfAPI();
 
   const columns = [
     {
       title: 'Name',
       filterId: 'name',
       content: (item) => item.name,
+    },
+    {
+      title: 'Status',
+      filterId: 'status',
+      notFilterable: true,
+      content: (item) => item.content?.status,
+      cell: (v, subscription, table) => {
+        if (subscription.content?.status === 'pending') {
+          return <Button type="success" className='btn-sm' onClick={() => {
+            BackOfficeServices.confirmSubscription(item.id, subscription.id, version)
+              .then(() => window.location.reload())
+          }}>Confirm</Button>
+        }
+
+        return <span className="badge bg-success">
+          {subscription.content?.status}
+        </span>
+      }
     },
   ];
 
@@ -120,7 +190,8 @@ export function Subscriptions(props) {
   const deleteItem = (item) => {
     if (isDraft) return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(item.id);
 
-    return client.delete(item).then(() => window.location.reload());
+    return client.delete(item)
+      .then(() => window.location.reload());
   };
 
   return (
@@ -168,7 +239,7 @@ export function SubscriptionDesigner(props) {
     props.setTitle(undefined);
   }, []);
 
-  const rawSubscription = useQuery(
+  useQuery(
     ['getSubscription', params.subscriptionId, version, isDraft],
     () => {
       if (isDraft)
@@ -196,7 +267,6 @@ export function SubscriptionDesigner(props) {
     return nextClient
       .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
       .update(subscription)
-      .then(goToSubscriptions);
   };
 
   if (!item || (isDraft ? !draftSubscription : !subscription)) return <SimpleLoader />;
@@ -219,7 +289,7 @@ export function SubscriptionDesigner(props) {
     <NgForm
       value={isDraft ? draftSubscription.content : subscription}
       schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
-      flow={SUBSCRIPTION_FORM_SETTINGS.flow}
+      flow={SUBSCRIPTION_FORM_SETTINGS.flow(true)}
       onChange={(res) =>
         isDraft
           ? setDraftSubscription({ ...draftSubscription, content: res })
@@ -234,7 +304,9 @@ export function NewSubscription(props) {
   const params = useParams();
   const history = useHistory();
 
-  const [subscription, setSubscription] = useState();
+  const [subscription, setSubscription] = useState({
+    plan_ref: props.plan?.id
+  });
   const [error, setError] = useState();
 
   const { item, version, isDraft } = useDraftOfAPI();
@@ -251,6 +323,7 @@ export function NewSubscription(props) {
       onSuccess: (sub) =>
         setSubscription({
           ...sub,
+          plan_ref: props.plan?.id || sub.plan_ref,
           consumer_ref: item.consumers?.length > 0 ? item.consumers[0]?.id : undefined,
         }),
     }
@@ -259,23 +332,33 @@ export function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
-    return (
-      isDraft
-        ? nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
-        : nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
-    )
-      .create({
-        ...subscription,
-        api_ref: params.apiId,
-        draft: version === 'staging' || version === 'draft',
-      })
-      .then((res) => {
-        if (res && res.error) {
-          setError(res.error);
-        } else {
-          historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
-        }
+
+    return BackOfficeServices.subscribeToPlan(params.apiId, props.plan.id, version, {
+      ...subscription,
+      api_ref: params.apiId,
+      draft: version === 'staging' || version === 'draft',
+    })
+      .then(() => {
+        historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
       });
+
+    // return (
+    //   isDraft
+    //     ? nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
+    //     : nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
+    // )
+    //   .create({
+    //     ...subscription,
+    //     api_ref: params.apiId,
+    //     draft: version === 'staging' || version === 'draft',
+    //   })
+    //   .then((res) => {
+    //     if (res && res.error) {
+    //       setError(res.error);
+    //     } else {
+    //       historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
+    //     }
+    //   });
   };
 
   return <div className='page'>
@@ -284,7 +367,7 @@ export function NewSubscription(props) {
     <NgForm
       value={subscription}
       schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
-      flow={SUBSCRIPTION_FORM_SETTINGS.flow}
+      flow={SUBSCRIPTION_FORM_SETTINGS.flow(false)}
       onChange={(newSub) => {
         setSubscription(newSub);
         setError(undefined);

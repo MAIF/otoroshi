@@ -42,40 +42,26 @@ case object ApiDeprecated extends ApiState {
 case object ApiRemoved    extends ApiState {
   def name: String = "removed"
 }
-//
-//object ApiFrontend {
-//  val _fmt = new Format[ApiFrontend] {
-//
-//    override def reads(json: JsValue): JsResult[ApiFrontend] = Try {
-//      val optDomain = json.select("domain").asOptString.map(NgDomainAndPath.apply)
-//      ApiFrontend(
-//        domains = optDomain
-//          .map(d => Seq(d))
-//          .orElse(json.select("domains").asOpt[Seq[String]].map(_.map(NgDomainAndPath.apply)))
-//          .getOrElse(Seq.empty),
-//        stripPath = json.select("strip_path").asOpt[Boolean].getOrElse(true),
-//        exact = json.select("exact").asOpt[Boolean].getOrElse(false),
-//        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-//        query = json.select("query").asOpt[Map[String, String]].getOrElse(Map.empty),
-//        methods = json.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-//      )
-//    } match {
-//      case Failure(ex)    =>
-//        ex.printStackTrace()
-//        JsError(ex.getMessage)
-//      case Success(value) => JsSuccess(value)
-//    }
-//
-//    override def writes(o: ApiFrontend): JsValue = Json.obj(
-//      "domains"    -> JsArray(o.domains.map(_.json)),
-//      "strip_path" -> o.stripPath,
-//      "exact"      -> o.exact,
-//      "headers"    -> o.headers,
-//      "query"      -> o.query,
-//      "methods"    -> o.methods
-//    )
-//  }
-//}
+
+sealed trait ApiSubscriptionState {
+  def name: String
+}
+
+case object ApiSubscriptionPending              extends ApiSubscriptionState {
+  def name: String = "pending"
+}
+case object ApiSubscriptionEnabled              extends ApiSubscriptionState {
+  def name: String = "enabled"
+}
+case object ApiSubscriptionDisabled             extends ApiSubscriptionState {
+  def name: String = "disabled"
+}
+case object ApiSubscriptionDeprecated           extends ApiSubscriptionState {
+  def name: String = "deprecated"
+}
+case class ApiSubscriptionCustom(value: String) extends ApiSubscriptionState {
+  def name: String = value
+}
 
 case class ApiRoute(
     id: String,
@@ -903,12 +889,12 @@ case class ApiSubscription(
     description: String,
     tags: Seq[String],
     metadata: Map[String, String],
-    enabled: Boolean,
+    status: ApiSubscriptionState,
     dates: ApiSubscriptionDates,
     ownerRef: String,
     planRef: String,
     apiRef: String,
-//    paymentRef: String,
+    paymentRef: JsObject = Json.obj(),
     subscriptionKind: ApiKind,
     tokenRefs: Seq[String] // ref to apikey, cert, etc
 ) extends EntityLocationSupport {
@@ -1017,10 +1003,19 @@ object ApiSubscription {
         description = json.select("description").asString,
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
+        status = (json \ "status").asOptString
+          .map {
+            case "enabled"    => ApiSubscriptionEnabled
+            case "disabled"   => ApiSubscriptionDisabled
+            case "deprecated" => ApiSubscriptionDeprecated
+            case "pending"    => ApiSubscriptionPending
+            case value        => ApiSubscriptionCustom(value)
+          }
+          .getOrElse(ApiSubscriptionDisabled),
         dates = json.select("dates").as(ApiSubscriptionDates._fmt),
         ownerRef = json.selectAsString("owner_ref"),
         planRef = json.select("plan_ref").asString,
+        paymentRef = json.selectAsOptObject("payment_ref").getOrElse(Json.obj()),
         subscriptionKind = json.select("subscription_kind").asString.toLowerCase match {
           case "apikey"        => ApiKind.Apikey
           case "mtls"          => ApiKind.Mtls
@@ -1043,10 +1038,11 @@ object ApiSubscription {
       "description"       -> o.description,
       "tags"              -> o.tags,
       "metadata"          -> o.metadata,
-      "enabled"           -> o.enabled,
+      "status"            -> o.status.name,
       "dates"             -> ApiSubscriptionDates._fmt.writes(o.dates),
       "owner_ref"         -> o.ownerRef,
       "plan_ref"          -> o.planRef,
+      "payment_ref"       -> o.paymentRef,
       "api_ref"           -> o.apiRef,
       "subscription_kind" -> o.subscriptionKind.name,
       "token_refs"        -> o.tokenRefs
@@ -1665,12 +1661,10 @@ object Api {
       )
       .left
 
-    entity.rightf
-
-//    env.datastores.apiDataStore
-//      .findById(entity.id)
-//      .map {
-//        case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
+    env.datastores.apiDataStore
+      .findById(entity.id)
+      .map {
+        case Some(api) if api.state == ApiStaging || api.state == ApiPublished => entity.right
 //          api.documentation match {
 //            case Some(documentation) =>
 //              documentation.plans.find(_.id == entity.) match {
@@ -1681,8 +1675,8 @@ object Api {
 //              }
 //            case None                => onError("plan not found")
 //          }
-//        case _                                                                 => onError("wrong status api")
-//      }
+        case _                                                                 => onError("wrong status api")
+      }
   }
 
   def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(
@@ -1964,7 +1958,7 @@ trait ApiSubscriptionDataStore extends BasicStore[ApiSubscription] {
       description = "New API Subscription description",
       metadata = Map.empty,
       tags = Seq.empty,
-      enabled = true,
+      status = ApiSubscriptionDisabled,
       dates = ApiSubscriptionDates(
         created_at = DateTime.now(),
         processed_at = DateTime.now(),

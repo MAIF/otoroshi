@@ -307,7 +307,7 @@ export function PluginChains(props) {
         <DraftOnly>
           <div className="btn-group input-group-btn">
             <Link
-              className="btn btn-primary btn-sm"
+              className="btn btn-success btn-sm"
               to={{
                 pathname: 'plugin-chains/new',
                 search: location.search,

@@ -460,7 +460,7 @@ export function Endpoints(props) {
           <DraftOnly>
             <div className="btn-group input-group-btn">
               <Link
-                className="btn btn-primary btn-sm"
+                className="btn btn-success btn-sm"
                 to={{
                   pathname: 'endpoints/new',
                   search: location.search,
