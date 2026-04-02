@@ -19,7 +19,7 @@ node = "22"
 [tasks.install-frontend-js-deps]
 description = "Install frontend JS dependencies"
 dir = "otoroshi/javascript"
-run = "npm install"
+run = "npm install --legacy-peer-deps"
 
 [tasks.install-doc-js-deps]
 description = "Install documentation JS dependencies"
