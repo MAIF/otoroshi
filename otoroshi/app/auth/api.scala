@@ -388,6 +388,7 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
       case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
       case "oauth1"        => Oauth1ModuleConfig._fmt.reads(json)
       case "wasm"          => WasmAuthModuleConfig.format.reads(json)
+      case "workflow"      => WorkflowAuthModuleConfig.format.reads(json)
       case ref             =>
         env.datastores.authConfigsDataStore
           .templates()(env)
