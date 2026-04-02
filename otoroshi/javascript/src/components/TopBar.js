@@ -1136,6 +1136,8 @@ export class TopBar extends Component {
       if (
         e.keyCode === 191 &&
         e.target.tagName?.toLowerCase() !== 'input' &&
+        e.target.tagName?.toLowerCase() !== 'textarea' &&
+        e.target?.className?.toLowerCase().indexOf('monaco') === -1 &&
         hasClassNameAndNotAceInput
       ) {
         setTimeout(() => this.selector.focus());
