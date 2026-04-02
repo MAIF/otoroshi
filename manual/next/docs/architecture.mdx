@@ -3,8 +3,6 @@ title: Architecture
 sidebar_position: 3
 ---
 
-import { Image } from '@site/src/components/Image';
-
 # Architecture
 
 When we started the development of Otoroshi, we had several classical patterns in mind like `Service gateway`, `Service locator`, `Circuit breakers`, etc ...
@@ -13,8 +11,78 @@ At start we thought about providing a bunch of librairies that would be included
 
 We chose to make Otoroshi the central part of our microservices system, something between a reverse-proxy, a service gateway and a service locator where each call to a microservice (even from another microservice) must pass through Otoroshi. There are multiple benefits to do that, each call can be logged, audited, monitored, integrated with a circuit breaker, etc without imposing libraries and technical stack. Any service is exposed through its own domain and we rely only on DNS to handle the service location part. Any access to a service is secured by default with an api key and is supervised by a circuit breaker to avoid cascading failures.
 
-<Image src="/img/docs/architecture-1-bis.png" />
+```mermaid
+flowchart TD
+    A1(App 1):::client --> O[Otoroshi]:::otoroshi
+    A2(App 2):::client --> O
+    MA(Mobile App):::client --> O
+    P(Partner):::client --> O
+    O <--> M1(Microservice 1):::backend
+    O <--> M2(Microservice 2):::backend
+    O <--> M3(Microservice 3):::backend
+    O <--> M4(Microservice 4):::backend
+
+    classDef client fill:#ddd,stroke:#333
+    classDef otoroshi fill:#ea0,stroke:#333,color:#000
+    classDef backend fill:#0b0,stroke:#333,color:#fff
+```
 
 Otoroshi tries to embrace our [global philosophy](./about.md#philosophy) by providing a full featured REST admin api, a gorgeous admin dashboard written in [React](https://reactjs.org) that uses the api, by generating traffic events, alerts events, audit events that can be consumed by several channels. Otoroshi also supports a bunch of datastores to better match with different use cases.
 
-<Image src="/img/docs/architecture-2-bis.png" />
+```mermaid
+flowchart TD
+    subgraph clients[Clients]
+        B(Browser):::client
+        C(curl):::client
+        MA(Mobile App):::client
+        CL(Client):::client
+    end
+
+    subgraph otoroshi[Otoroshi]
+        PA[Private Apps]:::otocomp
+        UI[Admin React UI]:::otocomp
+        API[REST Admin API]:::otocomp
+        RP[Reverse Proxy]:::otocomp
+    end
+
+    clients --> otoroshi
+
+    subgraph integrations[Integrations]
+        ST[statsd]
+        MG[Mailgun]
+        CA[Clever API]
+        OI[OIDC]
+    end
+
+    otoroshi -.->|events| integrations
+
+    subgraph exporters[Event Exporters]
+        ES[(Elasticsearch)]
+        KF[(Kafka)]
+        WH[Webhooks]
+    end
+
+    otoroshi -.->|events| exporters
+
+    subgraph backends[Backends]
+        BK1(Backend 1):::backend
+        BK2(Backend 2):::backend
+        BK3(Backend 3):::backend
+    end
+
+    RP <--> backends
+
+    subgraph datastores[Datastores]
+        RE[(Redis)]:::datastore
+        FD[(FileDB)]:::datastore
+        IM[(In-memory)]:::datastore
+        CS[(Cassandra)]:::datastore
+    end
+
+    otoroshi --- datastores
+
+    classDef client fill:#ddd,stroke:#333
+    classDef otocomp fill:#ea0,stroke:#333,color:#000
+    classDef backend fill:#0b0,stroke:#333,color:#fff
+    classDef datastore fill:#39f,stroke:#333,color:#fff
+```

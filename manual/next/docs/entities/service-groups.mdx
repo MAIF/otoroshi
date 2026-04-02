@@ -3,8 +3,6 @@ title: Service groups
 sidebar_position: 18
 ---
 
-import { Image } from '@site/src/components/Image';
-
 # Service groups
 
 ## Overview
@@ -46,7 +44,12 @@ You can find all service groups [here](http://otoroshi.oto.tools:8080/bo/dashboa
 | `tags` | array of string | Tags for categorization |
 | `metadata` | object | Key/value metadata |
 
-<Image src="/img/docs/models-group.png" />
+```mermaid
+erDiagram
+    GROUP }o--o{ SERVICE : contains
+    GROUP }o--o{ API-KEY : authorizes
+    SERVICE }o--o{ API-KEY : "is called by"
+```
 
 ## How it works
 

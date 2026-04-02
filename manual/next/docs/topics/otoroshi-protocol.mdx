@@ -16,7 +16,19 @@ The exchange protocol secure the communication with an app. When it's enabled, O
 
 If you enable secure communication for a given service with `V1 - simple values exchange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`.
 
-<Image src="/img/docs/exchange.png" />
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant O as Otoroshi
+    participant B as Backend
+
+    C->>O: Otoroshi-Client-Id / Otoroshi-Client-Secret
+    O->>B: Otoroshi-State: yyy
+    Note over O,B: + Otoroshi-Request-Id<br/>+ Otoroshi-Proxied-Host<br/>+ Otoroshi-Claim (JWT)
+    B->>O: Otoroshi-State-Resp: yyy
+    O->>C: Otoroshi-Proxy-Latency: 42
+    Note over O,C: + Otoroshi-Upstream-Latency<br/>+ Daily-Calls-Remaining<br/>+ Monthly-Calls-Remaining
+```
 
 you can find an example project that implements V1 challenge [here](https://github.com/MAIF/otoroshi/tree/master/demos/challenge)
 
@@ -24,7 +36,19 @@ you can find an example project that implements V1 challenge [here](https://gith
 
 If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL. The audience of the response token must be `Otoroshi` and you have to specify `iat`, `nbf` and `exp`.
 
-<Image src="/img/docs/exchange-2.png" />
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant O as Otoroshi
+    participant B as Backend
+
+    C->>O: Otoroshi-Client-Id / Otoroshi-Client-Secret
+    O->>B: Otoroshi-State: jwt1 (signed JWT with state claim)
+    Note over O,B: + Otoroshi-Request-Id<br/>+ Otoroshi-Proxied-Host<br/>+ Otoroshi-Claim (JWT)
+    B->>O: Otoroshi-State-Resp: jwt2 (JWT with state-resp claim, aud=Otoroshi)
+    O->>C: Otoroshi-Proxy-Latency: 42
+    Note over O,C: + Otoroshi-Upstream-Latency<br/>+ Daily-Calls-Remaining<br/>+ Monthly-Calls-Remaining
+```
 
 you can find an example project that implements V2 challenge [here](https://github.com/MAIF/otoroshi/tree/master/demos/challenge)
 

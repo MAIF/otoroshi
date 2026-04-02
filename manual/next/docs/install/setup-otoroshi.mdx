@@ -60,7 +60,17 @@ Right now, Otoroshi supports multiple datastore. You can choose one datastore ov
 </div>
 </div>
 
-<Image src="/img/docs/datastores.png" />
+```mermaid
+flowchart TD
+    O[Otoroshi]:::otoroshi --> R[(Redis)]:::datastore
+    O --> F[(FileDB)]:::datastore
+    O --> I[(In-memory)]:::datastore
+    O --> C[(Cassandra)]:::datastore
+    O --> P[(PostgreSQL)]:::datastore
+
+    classDef otoroshi fill:#ea0,stroke:#333,color:#000
+    classDef datastore fill:#39f,stroke:#333,color:#fff
+```
 
 the first thing to setup is what kind of datastore you want to use with the `otoroshi.storage` setting
 
