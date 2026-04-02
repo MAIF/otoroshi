@@ -908,7 +908,7 @@ case class ApiSubscription(
     ownerRef: String,
     planRef: String,
     apiRef: String,
-    paymentRef: String,
+//    paymentRef: String,
     subscriptionKind: ApiKind,
     tokenRefs: Seq[String] // ref to apikey, cert, etc
 ) extends EntityLocationSupport {
