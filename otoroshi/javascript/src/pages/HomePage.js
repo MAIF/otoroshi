@@ -58,12 +58,8 @@ function EntitiesOverview() {
     { key: 'apikeys', url: '/bo/api/proxy/api/apikeys', label: 'API Keys', icon: 'fas fa-key', to: '/apikeys', color: 'hsla(40,94%,58%,.15)' },
     { key: 'certificates', url: '/bo/api/proxy/api/certificates', label: 'Certificates', icon: 'fas fa-certificate', to: '/certificates', color: 'hsla(150,52%,51%,.15)' },
     { key: 'auths', url: '/bo/api/proxy/api/auths', label: 'Auth. modules', icon: 'fas fa-lock', to: '/auth-configs', color: 'hsla(280,60%,55%,.15)' },
-    { key: 'groups', url: '/bo/api/proxy/api/groups', label: 'Groups', icon: 'fas fa-folder', to: '/groups', color: 'hsla(20,70%,55%,.15)' },
-    { key: 'backends', url: '/bo/api/proxy/api/backends', label: 'Backends', icon: 'fas fa-microchip', to: '/backends', color: 'hsla(330,60%,55%,.15)' },
-    { key: 'data-exporters', url: '/bo/api/proxy/api/data-exporter-configs', label: 'Exporters', icon: 'fas fa-paper-plane', to: '/exporters', color: 'hsla(60,50%,45%,.15)' },
     { key: 'workflows', url: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows', label: 'Workflows', icon: 'fas fa-cubes', to: '/workflows', color: 'hsla(60,50%,45%,.15)' },
     { key: 'WAF', url: '/bo/api/proxy/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs', label: 'WAF', icon: 'fas fa-cubes', to: '/extensions/coraza-waf/coraza-configs', color: 'hsla(60,50%,45%,.15)' },
-    { key: 'wasmplugins', url: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins', label: 'WASM plugins', icon: 'fa fa-plug', to: '/wasm-plugins', color: 'hsla(60,50%,45%,.15)' },
     { key: 'verifiers', url: '/bo/api/proxy/api/verifiers', label: 'JWT Verifiers', icon: 'fa fa-circle-check', to: '/jwt-verifiers', color: 'hsla(60,50%,45%,.15)' },
   ];
 
