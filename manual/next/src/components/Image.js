@@ -14,7 +14,7 @@ export function Image({ src, alt = "", className = "", center, ...props }) {
   );
   if (center) {
     return (
-      <div className="center">{img}</div>
+      <div className="center" style={{ display: 'flex', justifyContent: 'center' }}>{img}</div>
     )
   } else {
     return img;
