@@ -215,6 +215,7 @@ case class NgRoute(
     }
   }
 
+  lazy val apiRef: Option[String]               = metadata.get("Otoroshi-Api-Ref")
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAhcClient: Boolean                = !useAkkaHttpClient && !useNettyClient
   lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-akka-http-client").contains("true")
