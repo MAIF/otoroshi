@@ -1504,7 +1504,7 @@ object ApiKeyHelper {
             errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
           case Some(key)
               if key.restrictions.enabled && key.restrictions
-                .isNotFound(req.method, req.theDomain, req.relativeUri) => {
+                .isNotFound(req.method, req.theDomain, req.relativeUri, NgRoute.fromServiceDescriptor(descriptor, debug = false), key.some) => {
             errorResult(NotFound, "Not Found", "errors.not.found")
           }
           case Some(key)
@@ -2372,104 +2372,102 @@ object ApiKeyHelper {
               "errors.invalid.api.key",
               s"apikey '${apikey.clientId}' routing did not match".some
             )
-          case Right(apikey)
-              if apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)._1 => {
-            apikey.restrictions
-              .handleRestrictions(service, None, route, Some(apikey), req, attrs)
-              ._2
-              .map(v => Left(v))
-          }
-          case Right(apikey)                                                        => {
-            env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
-              rotationInfos.foreach { i =>
-                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-              }
-            }
-            val strategy = env.rateLimiter.getOrCreate(
-              apikey.clientId,
-              attrs = attrs,
-              throttlingStrategy = apikey.throttlingStrategy
-            )
-            if (incrementQuotas) {
-              strategy
-                .checkAndIncrement(
-                  apikey.clientId,
-                  1,
-                  apikey.throttlingStrategy.map(_.quota).getOrElse(AllowedQuota()),
-                  env.throttlingWindow
-                )
-                .flatMap {
-                  case result if result.allowed =>
-                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
-                    sendQuotasAlmostExceededError(apikey, result.quotas.legacy())
-                    apikey.rightf
-
-                  case result =>
-                    // Quota exceeded - reject with 429
-                    attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
-                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
-                    sendQuotasExceededError(apikey, result.quotas.legacy())
-                    error(
-                      Results.TooManyRequests,
-                      "You performed too much requests",
-                      "errors.too.much.requests",
-                      s"apikey '${apikey.clientId}' quotas exceeded".some
-                    )
-                }
+          case Right(apikey) => {
+            val (restricted, errResult) = apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)
+            if (restricted) {
+              errResult.map(v => Left(v))
             } else {
-              strategy
-                .check(
-                  apikey.clientId,
-                  AllowedQuota(
-                    window = apikey.throttlingQuota,
-                    daily = apikey.dailyQuota,
-                    monthly = apikey.monthlyQuota
-                  )
-                )
-//              env.datastores.apiKeyDataStore
-//                .remainingQuotas(apikey)
-                .flatMap { result =>
-                  if (result.allowed) {
-                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
-                    apikey.rightf
-                  } else {
-                    attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
-                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
-                    error(
-                      Results.TooManyRequests,
-                      "You performed too much requests",
-                      "errors.too.much.requests",
-                      s"apikey '${apikey.clientId}' quotas exceeded".some
-                    )
-                  }
+              env.datastores.apiKeyDataStore.keyRotation(apikey).map { rotationInfos =>
+                rotationInfos.foreach { i =>
+                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                 }
-            }
-//            apikey.withinQuotasAndRotationQuotas().flatMap {
-//              case (true, rotationInfos, quotas) =>
-//                rotationInfos.foreach { i =>
-//                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-//                }
-//                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
-//                sendQuotasAlmostExceededError(apikey, quotas)
-//                if (incrementQuotas) {
-//                  apikey.updateQuotas().map { remainingQuotas =>
-//                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
-//                    apikey.right
-//                  }
-//                } else {
-//                  apikey.rightf
-//                }
-//              case (false, _, quotas)            =>
-//                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
-//                sendQuotasExceededError(apikey, quotas)
-//                error(
-//                  Results.TooManyRequests,
-//                  "You performed too much requests",
-//                  "errors.too.much.requests",
-//                  s"apikey '${apikey.clientId}' quotas exceeded".some
-//                )
-//            }
-          }
+              }
+              val strategy = env.rateLimiter.getOrCreate(
+                apikey.clientId,
+                attrs = attrs,
+                throttlingStrategy = apikey.throttlingStrategy
+              )
+              if (incrementQuotas) {
+                strategy
+                  .checkAndIncrement(
+                    apikey.clientId,
+                    1,
+                    apikey.throttlingStrategy.map(_.quota).getOrElse(AllowedQuota()),
+                    env.throttlingWindow
+                  )
+                  .flatMap {
+                    case result if result.allowed =>
+                      attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
+                      sendQuotasAlmostExceededError(apikey, result.quotas.legacy())
+                      apikey.rightf
+
+                    case result =>
+                      // Quota exceeded - reject with 429
+                      attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
+                      attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
+                      sendQuotasExceededError(apikey, result.quotas.legacy())
+                      error(
+                        Results.TooManyRequests,
+                        "You performed too much requests",
+                        "errors.too.much.requests",
+                        s"apikey '${apikey.clientId}' quotas exceeded".some
+                      )
+                  }
+              } else {
+                strategy
+                  .check(
+                    apikey.clientId,
+                    AllowedQuota(
+                      window = apikey.throttlingQuota,
+                      daily = apikey.dailyQuota,
+                      monthly = apikey.monthlyQuota
+                    )
+                  )
+                  //              env.datastores.apiKeyDataStore
+                  //                .remainingQuotas(apikey)
+                  .flatMap { result =>
+                    if (result.allowed) {
+                      attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
+                      apikey.rightf
+                    } else {
+                      attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
+                      attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
+                      error(
+                        Results.TooManyRequests,
+                        "You performed too much requests",
+                        "errors.too.much.requests",
+                        s"apikey '${apikey.clientId}' quotas exceeded".some
+                      )
+                    }
+                  }
+              }
+              //            apikey.withinQuotasAndRotationQuotas().flatMap {
+              //              case (true, rotationInfos, quotas) =>
+              //                rotationInfos.foreach { i =>
+              //                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+              //                }
+              //                attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> quotas)
+              //                sendQuotasAlmostExceededError(apikey, quotas)
+              //                if (incrementQuotas) {
+              //                  apikey.updateQuotas().map { remainingQuotas =>
+              //                    attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> remainingQuotas)
+              //                    apikey.right
+              //                  }
+              //                } else {
+              //                  apikey.rightf
+              //                }
+              //              case (false, _, quotas)            =>
+              //                attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
+              //                sendQuotasExceededError(apikey, quotas)
+              //                error(
+              //                  Results.TooManyRequests,
+              //                  "You performed too much requests",
+              //                  "errors.too.much.requests",
+              //                  s"apikey '${apikey.clientId}' quotas exceeded".some
+              //                )
+              //            }
+              }
+           }
         }
     }
   }
