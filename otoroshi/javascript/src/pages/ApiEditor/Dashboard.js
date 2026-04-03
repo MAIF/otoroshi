@@ -396,14 +396,14 @@ function RouteItem({ item, api, ports }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -716,12 +716,6 @@ export function Dashboard(props) {
   const hasTestingEnabled = item.testing.enabled;
   const hasDomainConfigured = !!(item.domain && item.contextPath);
 
-  const isStaging = item.state === API_STATE.STAGING;
-  const showGettingStarted =
-    isDraft &&
-    item.state !== API_STATE.DEPRECATED &&
-    (!hasCreateFlow || !hasCreateRoute || isStaging);
-
   const currentStep =
     Number(hasCreateFlow) +
     Number(hasCreateRoute) +
@@ -729,6 +723,10 @@ export function Dashboard(props) {
     Number(hasTestingEnabled) +
     Number(hasDomainConfigured) +
     Number(item.state === API_STATE.PUBLISHED);
+
+  const showGettingStarted =
+    isDraft &&
+    item.state !== API_STATE.DEPRECATED && currentStep < 7
 
   // TODO
   const totalSubscriptions = 0; // item.consumers.flatMap((c) => c.subscriptions).length;
@@ -804,7 +802,7 @@ export function Dashboard(props) {
               />
             )}
 
-            {hasCreateRoute && !hasCreateBackend && currentStep >= 4 && (
+            {hasCreateRoute && !hasCreateBackend && currentStep >= 2 && (
               <ObjectiveCard
                 to={`/apis/${params.apiId}/backends/new`}
                 title="Add a backend"

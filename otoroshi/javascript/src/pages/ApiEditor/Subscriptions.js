@@ -34,7 +34,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         label: 'Owner',
         type: 'select',
         props: {
-          options: item.clients.map(({ id, name }) => ({ value: id, label: name })),
+          options: item.clients_backend_config.map(({ id, name }) => ({ value: id, label: name })),
         },
       },
       plan_ref: {

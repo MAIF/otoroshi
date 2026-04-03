@@ -52,7 +52,7 @@ export function Clients(props) {
 
   if (!item) return <SimpleLoader />;
 
-  const clients = item.clients || [];
+  const clients = item.clients_backend_config || [];
 
   const columns = [
     {
@@ -70,7 +70,7 @@ export function Clients(props) {
   const deleteItem = (client) => {
     return updateItem({
       ...item,
-      clients: item.clients.filter((c) => c.id !== client.id),
+      clients: item.clients_backend_config.filter((c) => c.id !== client.id),
     });
   };
 
@@ -134,7 +134,7 @@ export function ClientEditor(props) {
 
   useEffect(() => {
     if (!isNew && item && !client) {
-      const found = (item.clients || []).find((p) => p.id === params.clientId);
+      const found = (item.clients_backend_config || []).find((p) => p.id === params.clientId);
       if (found) {
         setClient(found);
       }
@@ -151,8 +151,8 @@ export function ClientEditor(props) {
 
   const save = () => {
     const clients = isNew
-      ? [...(item.clients || []), client]
-      : item.clients.map((p) => (p.id === client.id ? client : p));
+      ? [...(item.clients_backend_config || []), client]
+      : item.clients_backend_config.map((p) => (p.id === client.id ? client : p));
 
     return updateItem({ ...item, clients }).then(back);
   };

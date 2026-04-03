@@ -163,7 +163,6 @@ export function NewBackend(props) {
 
   if (!backend || !item) return <SimpleLoader />;
 
-  console.log(backend);
 
   return (
     <div className='page'>
@@ -203,7 +202,7 @@ export function NewBackend(props) {
                           client,
                         });
                       }}
-                      options={item.clients}
+                      options={item.clients_backend_config}
                       optionsTransformer={(arr) =>
                         arr.map((item) => ({ label: item.name, value: item.id }))
                       }
@@ -257,6 +256,9 @@ export function EditBackend(props) {
 
   if (!item || !backend) return <SimpleLoader />;
 
+
+  console.log(item);
+
   return (
     <div className='page'>
       <PageTitle title="Backend Settings" {...props} style={{ paddingBottom: 0 }} />
@@ -298,7 +300,7 @@ export function EditBackend(props) {
                           client,
                         });
                       }}
-                      options={item.clients}
+                      options={item.clients_backend_config}
                       optionsTransformer={(arr) =>
                         arr.map((item) => ({ label: item.name, value: item.id }))
                       }

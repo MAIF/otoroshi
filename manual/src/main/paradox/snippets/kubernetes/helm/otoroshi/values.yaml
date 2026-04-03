@@ -1,0 +1,105 @@
+
+name: otoroshi
+
+replicas: 2
+terminationGracePeriodSeconds: 60
+
+global:
+  prod: true
+
+serviceAccount:
+  name: "otoroshi-admin-user"
+  clusterRole: "otoroshi-admin-user"
+  clusterRoleBinding: "otoroshi-admin-user"
+
+image:
+  name: maif/otoroshi
+  tag: 16.25.0-dev
+  pullPolicy: IfNotPresent
+  https: 8443
+  http: 8080
+
+deployment:
+  name: otoroshi-deployment
+  annotations: {}
+
+service:
+  name: otoroshi-service
+  apiName: otoroshi-api-service
+  https: 8443
+  http: 8080
+
+loadbalancer:
+  enabled: true
+  name: otoroshi-external-service
+  https: 443
+  http: 80
+  nodePort:
+    http: 31080
+    https: 31443
+
+env:
+  storageRoot: otoroshi
+  password: password
+  domain: "oto.tools"
+  clientId: "admin-api-apikey-id"
+  clientSecret: "admin-api-apikey-secret"
+  secret: "verysecretvaluethatyoumustoverwrite"
+  redisURL: "redis://otorosi-redis-master:6379"
+
+resources:
+  requests:
+    cpu: "2"
+    memory: "2Gi"
+  limits:
+    cpu: "4"
+    memory: "4Gi"
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+probes:
+  readiness:
+    failureThreshold: 1          
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+  liveness:  
+    failureThreshold: 3
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 80
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageUtilization: 80
+
+# redis
+redis:
+  cluster:
+    enabled: false
+  usePassword: false
+  sentinel:
+    usePassword: false
+  auth:
+    enabled: false
+
+webhooks:
+  validation: true
+  sidecarInject: false
+
