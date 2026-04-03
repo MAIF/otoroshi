@@ -19,7 +19,7 @@ import scala.util.{Failure, Success, Try}
 
 case class NgRestrictionPath(method: String, path: String) {
   def json: JsValue           = NgRestrictionPath.format.writes(this)
-  def legacy: RestrictionPath = RestrictionPath(method, path)
+  def legacy: RestrictionPath = RestrictionPath(method, path, None)
 }
 
 object NgRestrictionPath {
