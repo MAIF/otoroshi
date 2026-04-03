@@ -32,6 +32,7 @@ import otoroshi.models._
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
 import otoroshi.next.plugins.api.NgPluginCategory
+import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
@@ -92,7 +93,8 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   }
 
   def updateExporters(): Future[Unit] = {
-    env.proxyState.allDataExporters().vfuture.map { exporters =>
+    val fu = if (NgProxyStateLoaderJob.firstSync.get()) env.proxyState.allDataExporters().vfuture else env.datastores.dataExporterConfigDataStore.findAll()
+    fu.flatMap { exporters =>
       for {
         _ <- Future.sequence(dataExporters.map {
                case (key, c) if !exporters.exists(e => e.id == c.configUnsafe.id || e.id == key) =>
