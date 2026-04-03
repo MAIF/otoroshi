@@ -132,20 +132,20 @@ export function NewBackend(props) {
       ...item,
       backends: [
         ...item.backends,
-        {
-          ...backend,
-          ...backend.backend,
-        },
+        backend
       ],
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/backends`));
   };
 
-  useQuery(['getTemplate'], nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template, {
+  useQuery(['getTemplate'], nextClient
+    .forEntityNext(nextClient.ENTITIES.BACKENDS)
+    .template, {
     retry: 0,
     onSuccess: (data) =>
       setBackend({
         id: v4(),
         name: 'My new backend',
+        client: "default_backend_client",
         backend: {
           ...data.backend,
           targets: [
@@ -162,7 +162,6 @@ export function NewBackend(props) {
   });
 
   if (!backend || !item) return <SimpleLoader />;
-
 
   return (
     <div className='page'>
@@ -255,9 +254,6 @@ export function EditBackend(props) {
   };
 
   if (!item || !backend) return <SimpleLoader />;
-
-
-  console.log(item);
 
   return (
     <div className='page'>

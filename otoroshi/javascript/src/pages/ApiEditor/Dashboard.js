@@ -756,6 +756,7 @@ export function Dashboard(props) {
       description: "Set up API testing",
       icon: "fas fa-vial",
       completed: item.testing.enabled,
+      to: `/apis/${params.apiId}/testing`
     },
     {
       id: 6,
