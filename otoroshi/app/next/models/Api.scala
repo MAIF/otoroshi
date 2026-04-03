@@ -1661,10 +1661,12 @@ object Api {
       )
       .left
 
-    env.datastores.apiDataStore
-      .findById(entity.id)
-      .map {
-        case Some(api) if api.state == ApiStaging || api.state == ApiPublished => entity.right
+    entity.rightf
+
+//    env.datastores.apiDataStore
+//      .findById(entity.id)
+//      .map {
+//        case Some(api) if api.state == ApiStaging || api.state == ApiPublished => entity.right
 //          api.documentation match {
 //            case Some(documentation) =>
 //              documentation.plans.find(_.id == entity.) match {
@@ -1675,8 +1677,8 @@ object Api {
 //              }
 //            case None                => onError("plan not found")
 //          }
-        case _                                                                 => onError("wrong status api")
-      }
+//        case _                                                                 => onError("wrong status api")
+//      }
   }
 
   def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(

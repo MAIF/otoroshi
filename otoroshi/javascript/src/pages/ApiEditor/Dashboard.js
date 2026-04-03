@@ -696,6 +696,7 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
   );
 }
 
+
 export function Dashboard(props) {
   const params = useParams();
   const history = useHistory();
@@ -716,6 +717,63 @@ export function Dashboard(props) {
   const hasTestingEnabled = item.testing.enabled;
   const hasDomainConfigured = !!(item.domain && item.contextPath);
 
+  const steps = [
+    {
+      id: 1,
+      title: "Create an endpoint",
+      description: "Define how traffic reaches your API",
+      icon: "fas fa-road",
+      completed: item.routes.length > 0,
+      to: `/apis/${params.apiId}/endpoints/new`,
+    },
+    {
+      id: 2,
+      title: "Add a backend",
+      description: "Configure a backend target",
+      icon: "fas fa-microchip",
+      completed: item.backends.some(b => b.name !== "default_backend"),
+      to: `/apis/${params.apiId}/backends/new`,
+    },
+    {
+      id: 3,
+      title: "Create a plugin chain",
+      description: "Add plugin rules and transformations",
+      icon: "fas fa-project-diagram",
+      completed: item.flows.some(f => f.name !== "default_plugin_chain"),
+      to: `/apis/${params.apiId}/plugin-chains/new`,
+      showOnlyIfPublished: true,
+    },
+    {
+      id: 4,
+      title: "Configure the API Gateway",
+      description: "Set the domain and context path in the API Gateway tab",
+      icon: "fas fa-network-wired",
+      completed: !!(item.domain && item.contextPath),
+    },
+    {
+      id: 5,
+      title: "Enable testing",
+      description: "Set up API testing",
+      icon: "fas fa-vial",
+      completed: item.testing.enabled,
+    },
+    {
+      id: 6,
+      title: "Add a plan",
+      description: "Define your API plans",
+      icon: "fas fa-file-alt",
+      completed: item.documentation?.plans?.length > 0,
+    },
+    {
+      id: 7,
+      title: "Deploy your API",
+      description: "Publish to production",
+      icon: "fas fa-rocket",
+      completed: item.state === API_STATE.PUBLISHED,
+      onClick: () => publishAPI(draft, item, history),
+    },
+  ];
+
   const currentStep =
     Number(hasCreateFlow) +
     Number(hasCreateRoute) +
@@ -724,9 +782,16 @@ export function Dashboard(props) {
     Number(hasDomainConfigured) +
     Number(item.state === API_STATE.PUBLISHED);
 
+  // const showGettingStarted =
+  //   isDraft &&
+  //   item.state !== API_STATE.DEPRECATED && currentStep < 7
+
+  const nextStep = steps.find(
+    s => !s.completed && (!s.showOnlyIfPublished || item.state === API_STATE.PUBLISHED)
+  );
+
   const showGettingStarted =
-    isDraft &&
-    item.state !== API_STATE.DEPRECATED && currentStep < 7
+    isDraft && item.state !== API_STATE.DEPRECATED && nextStep;
 
   // TODO
   const totalSubscriptions = 0; // item.consumers.flatMap((c) => c.subscriptions).length;
@@ -777,66 +842,15 @@ export function Dashboard(props) {
           />
         </div>
 
-        {/* Getting Started */}
-        {showGettingStarted && (
-          <ProgressCard step={currentStep}>
-            {!hasCreateRoute && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/endpoints/new`}
-                title="Create an endpoint"
-                description={<p className="objective-link">Define how traffic reaches your API</p>}
-                icon={<i className="fas fa-road" />}
-              />
-            )}
-
-            {hasCreateRoute && hasCreatePlan && !hasDomainConfigured && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/api-gateway`}
-                title="Configure the API Gateway"
-                description={
-                  <p className="objective-link">
-                    Set the domain and context path in the API Gateway tab
-                  </p>
-                }
-                icon={<i className="fas fa-network-wired" />}
-              />
-            )}
-
-            {hasCreateRoute && !hasCreateBackend && currentStep >= 2 && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/backends/new`}
-                title="Add a backend"
-                description={<p className="objective-link">Configure a backend target</p>}
-                icon={<i className="fas fa-microchip" />}
-              />
-            )}
-
-            {hasCreateRoute && hasCreatePlan && !hasTestingEnabled && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/testing`}
-                title="Enable testing"
-                description={<p className="objective-link">Set up API testing</p>}
-                icon={<i className="fas fa-vial" />}
-              />
-            )}
-
-            {!hasCreateFlow && item.state === API_STATE.PUBLISHED && (
-              <ObjectiveCard
-                to={`/apis/${params.apiId}/plugin-chains/new`}
-                title="Create a plugin chain"
-                description={<p className="objective-link">Add plugin rules and transformations</p>}
-                icon={<i className="fas fa-project-diagram" />}
-              />
-            )}
-
-            {currentStep >= 3 && item.state !== API_STATE.PUBLISHED && (
-              <ObjectiveCard
-                onClick={() => publishAPI(draft, item, history)}
-                title="Deploy your API"
-                description={<p className="objective-link">Publish to production</p>}
-                icon={<i className="fas fa-rocket" />}
-              />
-            )}
+        {showGettingStarted && nextStep && (
+          <ProgressCard step={nextStep.id}>
+            <ObjectiveCard
+              to={nextStep.to}
+              onClick={nextStep.onClick}
+              title={nextStep.title}
+              description={<p className="objective-link">{nextStep.description}</p>}
+              icon={<i className={nextStep.icon} />}
+            />
           </ProgressCard>
         )}
 

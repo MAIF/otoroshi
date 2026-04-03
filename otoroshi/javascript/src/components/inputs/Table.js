@@ -1201,7 +1201,7 @@ class TableComponent extends Component {
                 />
               ))}
             <hr />
-            <div className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}>
+            <div className="displayGroupBtn float-end">
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button type="button" className="btn btn-danger" title="Delete current item">
                   Delete {this.props.itemName}
