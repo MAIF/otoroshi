@@ -151,8 +151,8 @@ export function ClientEditor(props) {
 
   const save = () => {
     const clients = isNew
-      ? [...(item.clients_backend_config || []), client]
-      : item.clients_backend_config.map((p) => (p.id === client.id ? client : p));
+      ? [...(item.clients || []), client]
+      : item.clients.map((p) => (p.id === client.id ? client : p));
 
     return updateItem({ ...item, clients }).then(back);
   };

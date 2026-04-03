@@ -621,8 +621,6 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(ApiPricing.format)
   lazy val rateLimiting: Option[ThrottlingStrategyConfig]                           =
     raw.select("rateLimiting").asOpt(ThrottlingStrategyConfig.fmt)
-//  throttlingStrategy = json.select("throttlingStrategy").asOpt(ThrottlingStrategyConfig.fmt),
-//  throttlingStrategy: Option[ThrottlingStrategyConfig] = None,
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)

@@ -231,7 +231,7 @@ export function Informations(props) {
   ].filter((f) => f);
 
   const updateAPI = () => {
-    updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
+    return updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
   };
 
   if (!item) return <SimpleLoader />;
