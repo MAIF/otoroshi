@@ -135,6 +135,50 @@ Restrictions allow fine-grained access control based on request path and method.
 | `forbidden` | array of object | `[]` | Forbidden paths |
 | `notFound` | array of object | `[]` | Paths that return 404 |
 
+Each restriction path entry has the following structure:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `method` | string | | HTTP method to match (`GET`, `POST`, `*` for all, etc.) |
+| `path` | string | | Path pattern to match (supports regex). If it starts with `/`, it matches the path only. Otherwise, it matches `domain + path` |
+| `authorized_entity` | object | `null` | Optional entity scope. When set, the restriction only applies to requests targeting the specified entity |
+
+### Entity-scoped restrictions
+
+By default, a restriction applies to all routes and APIs that the API key is authorized on. You can narrow the scope of a restriction to a specific entity by setting the `authorized_entity` field. This is useful when an API key is authorized on multiple routes or APIs and you want different path restrictions for each one.
+
+The `authorized_entity` object has two fields:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `kind` | string | The type of entity: `route`, `api`, or `group` |
+| `id` | string | The identifier of the entity |
+
+For example, to forbid `DELETE` requests only on a specific route:
+
+```json
+{
+  "restrictions": {
+    "enabled": true,
+    "allowLast": false,
+    "forbidden": [
+      {
+        "method": "DELETE",
+        "path": "/*",
+        "authorized_entity": {
+          "kind": "route",
+          "id": "route_xxxxxxxx"
+        }
+      }
+    ],
+    "allowed": [],
+    "notFound": []
+  }
+}
+```
+
+When `authorized_entity` is not set (or `null`), the restriction applies regardless of which route or API the request targets.
+
 ## Call examples
 
 Once an API key is created, you can call protected routes using one of these methods:
@@ -182,7 +226,16 @@ curl -H "Otoroshi-Client-Id: <clientId>" \
     "enabled": false,
     "allowLast": false,
     "allowed": [],
-    "forbidden": [],
+    "forbidden": [
+      {
+        "method": "DELETE",
+        "path": "/*",
+        "authorized_entity": {
+          "kind": "route",
+          "id": "route_xxxxxxxx"
+        }
+      }
+    ],
     "notFound": []
   },
   "rotation": {
