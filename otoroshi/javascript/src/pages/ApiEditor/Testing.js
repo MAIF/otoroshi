@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { v4 } from 'uuid';
 import { NgForm } from '../../components/nginputs';
 import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI } from './hooks';
-import { MAX_WIDTH } from './constants';
 import { RoutesView } from './Dashboard';
 import PageTitle from '../../components/PageTitle';
 
@@ -113,9 +112,7 @@ export function Testing(props) {
     props.setTitle(undefined);
   }, []);
 
-  if (!item) return <SimpleLoader />;
-
-  const schema = {
+  const schema = useMemo(() => ({
     enabled: {
       type: 'box-bool',
       label: 'Enabled',
@@ -147,11 +144,14 @@ export function Testing(props) {
         </Row>
       ),
     },
-  };
+  }), [item, updateItem]);
 
-  let flow = ['enabled'];
+  const flow = useMemo(() => {
+    const base = ['enabled'];
+    return item?.testing?.enabled ? [...base, 'config', 'routes'] : base;
+  }, [item?.testing?.enabled]);
 
-  if (item.testing.enabled) flow = [...flow, 'config', 'routes'];
+  if (!item) return <SimpleLoader />;
 
   if (version === 'Published')
     return (

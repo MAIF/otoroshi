@@ -70,14 +70,14 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         label: 'Owner',
         type: 'select',
         props: {
-          options: item.clients_backend_config.map(({ id, name }) => ({ value: id, label: name })),
+          options: item.clients.map(({ id, name }) => ({ value: id, label: name })),
         },
       },
       plan_ref: {
         type: 'select',
         label: 'Plan',
         props: {
-          options: item.documentation?.plans || [],
+          options: item.plans || [],
           noOptionsMessage: ({ children, ...props }) => {
             return <components.NoOptionsMessage {...props}>No Plans</components.NoOptionsMessage>;
           },
@@ -100,6 +100,7 @@ const SUBSCRIPTION_FORM_SETTINGS = {
           language: 'json',
           useInternalState: true,
           defaultValue: '{}',
+          height: 200
         }
       }
     };
@@ -148,7 +149,7 @@ export function Subscriptions(props) {
       cell: (v, subscription, table) => {
         if (subscription.content?.status === 'pending') {
           return <Button type="success" className='btn-sm' onClick={() => {
-            BackOfficeServices.confirmSubscription(item.id, subscription.id, version)
+            BackOfficeServices.confirmSubscription(item.id, subscription.id, isDraft ? 'Draft' : 'Published')
               .then(() => window.location.reload())
           }}>Confirm</Button>
         }
@@ -332,8 +333,7 @@ export function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
-
-    return BackOfficeServices.subscribeToPlan(params.apiId, props.plan.id, version, {
+    return BackOfficeServices.subscribeToPlan(params.apiId, props.plan.id, isDraft ? 'Draft' : 'Published', {
       ...subscription,
       api_ref: params.apiId,
       draft: version === 'staging' || version === 'draft',

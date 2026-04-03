@@ -713,7 +713,7 @@ export function Dashboard(props) {
   const hasCreateFlow = item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
   const hasCreateBackend = item.backends.filter((f) => f.name !== 'default_backend').length > 0;
   const hasCreateRoute = item.routes.length > 0;
-  const hasCreatePlan = item.documentation?.plans.length > 0;
+  const hasCreatePlan = item.plans?.length > 0;
   const hasTestingEnabled = item.testing.enabled;
   const hasDomainConfigured = !!(item.domain && item.contextPath);
 
@@ -724,7 +724,7 @@ export function Dashboard(props) {
       description: "Define how traffic reaches your API",
       icon: "fas fa-road",
       completed: item.routes.length > 0,
-      to: `/apis/${params.apiId}/endpoints/new`,
+      to: `/apis/${params.apiId}/endpoints/new?version=${version}`,
     },
     {
       id: 2,
@@ -732,7 +732,7 @@ export function Dashboard(props) {
       description: "Configure a backend target",
       icon: "fas fa-microchip",
       completed: item.backends.some(b => b.name !== "default_backend"),
-      to: `/apis/${params.apiId}/backends/new`,
+      to: `/apis/${params.apiId}/backends/new?version=${version}`,
     },
     {
       id: 3,
@@ -740,7 +740,7 @@ export function Dashboard(props) {
       description: "Add plugin rules and transformations",
       icon: "fas fa-project-diagram",
       completed: item.flows.some(f => f.name !== "default_plugin_chain"),
-      to: `/apis/${params.apiId}/plugin-chains/new`,
+      to: `/apis/${params.apiId}/plugin-chains/new?version=${version}`,
       showOnlyIfPublished: true,
     },
     {
@@ -756,14 +756,15 @@ export function Dashboard(props) {
       description: "Set up API testing",
       icon: "fas fa-vial",
       completed: item.testing.enabled,
-      to: `/apis/${params.apiId}/testing`
+      to: `/apis/${params.apiId}/testing?version=${version}`
     },
     {
       id: 6,
       title: "Add a plan",
       description: "Define your API plans",
       icon: "fas fa-file-alt",
-      completed: item.documentation?.plans?.length > 0,
+      completed: item.plans?.length > 0,
+      to: `/apis/${params.apiId}/plans/new`
     },
     {
       id: 7,

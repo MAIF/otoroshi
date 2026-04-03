@@ -306,7 +306,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
   }
 
   private def validatePlan(api: Api, planId: String): Either[Result, ApiDocumentationPlan] =
-    api.documentation.flatMap(_.plans.find(_.id == planId)) match {
+    api.plans.find(_.id == planId) match {
       case None                                                 => Left(BadRequest(Json.obj("error" -> "plan not found")))
       case Some(plan) if plan.status != ApiPlanStatus.Published =>
         Left(BadRequest(Json.obj("error" -> "plan is not published")))
@@ -378,15 +378,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
               case Left(errorResult)   => errorResult.vfuture
               case Right(subscription) =>
                 ApiSubscription
-                  .writeValidator(
-                    subscription,
-                    ctx.request.body,
-                    None,
-                    "apisubscription",
-                    subscription.id.some,
-                    Create,
-                    env
-                  )
+                  .validate(subscription.apiRef, subscription, Create, isDraft = isDraft)
                   .flatMap {
                     case Left(error) => BadRequest(Json.obj("error" -> error)).vfuture
                     case Right(sub)  =>

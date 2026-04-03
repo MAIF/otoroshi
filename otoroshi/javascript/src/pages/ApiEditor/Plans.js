@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useHistory, useLocation, useParams } from 'react-router-dom';
 import { NgForm, NgSelectRenderer } from '../../components/nginputs';
 import { Button } from '../../components/Button';
@@ -20,6 +20,7 @@ import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLaunch
 import { MAX_WIDTH } from './constants';
 import { NewSubscription } from './Subscriptions';
 import { Header } from '../../components/wizardframe';
+import { ThrottlingStrategy } from '../ServiceApiKeysPage';
 
 const STATUS_BADGES = {
   staging: { label: 'Staging', cls: 'api-status-started' },
@@ -253,7 +254,7 @@ const AccessModePluginConfigurationForm = {
   },
 };
 
-function AccessModeConfigurationTypeSelector({ onChange, value }) {
+function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
   return (
     <Row title="Type">
       <div style={{
@@ -298,11 +299,14 @@ function AccessModeConfigurationTypeSelector({ onChange, value }) {
                 </span>
                 {selected && <i className="fas fa-circle-check ms-auto" style={{ color: 'var(--color-primary)', fontSize: '12px' }} />}
               </div>
-              <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+              <p style={{ margin: 0, fontSize: '12px', lineHeight: '1.4' }}>
                 {text}
               </p>
 
-              {selected && <button className='btn btn-primary'>
+              {selected && <button className='btn btn-success btn-sm ms-auto d-flex' onClick={e => {
+                e.stopPropagation()
+                onEdit()
+              }}>
                 Edit
               </button>}
             </button>
@@ -327,7 +331,7 @@ function NewAccessModeSettingsForm(props) {
   );
 }
 
-function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfirm }) {
+function AccessModeLayout({ children, hide, onConfirm }) {
   return (
     <div className="wizard">
       <div className="wizard-container" style={{ maxWidth: 750 }}>
@@ -342,7 +346,7 @@ function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfi
         >
           <label style={{ fontSize: '1.15rem', marginBottom: '2rem' }}>
             <i className="fas fa-times me-3" onClick={hide} style={{ cursor: 'pointer' }} />
-            <span>Edit {accessModeConfigurationType}</span>
+            <span>Edit</span>
           </label>
           {children}
 
@@ -358,8 +362,8 @@ function AccessModeLayout({ children, hide, accessModeConfigurationType, onConfi
             }}
             className="p-3 d-flex justify-content-end"
           >
-            <button onClick={onConfirm} type="btn" className="btn btn-primaryColor">
-              Save {accessModeConfigurationType}
+            <button onClick={onConfirm} type="btn" className="btn btn-success">
+              Save
             </button>
           </div>
         </div>
@@ -383,7 +387,6 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
   return (
     <AccessModeLayout
       hide={hide}
-      accessModeConfigurationType={accessModeConfigurationType}
       onConfirm={() => onConfirm(accessModeConfiguration)}
     >
       <NgForm
@@ -412,7 +415,6 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
 
   return (
     <AccessModeLayout
-      accessModeConfigurationType={accessModeConfigurationType}
       onConfirm={() => onConfirm(accessModeConfiguration)}
       hide={hide}
     >
@@ -427,9 +429,9 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
 }
 
 function PlanForm({ plan, onChange }) {
-  const [accessMode, setAccessMode] = useState();
+  const [openAccessModeModal, setAccessModeModal] = useState(false);
 
-  const schema = {
+  const schema = useMemo(() => ({
     name: { type: 'string', label: 'Name' },
     description: { type: 'string', label: 'Description' },
     status: {
@@ -464,46 +466,20 @@ function PlanForm({ plan, onChange }) {
     },
     access_mode_configuration_type: {
       renderer: (props) => (
-        <AccessModeConfigurationTypeSelector onChange={props.onChange} value={props.value} />
+        <AccessModeConfigurationTypeSelector
+          onChange={props.onChange}
+          value={props.value}
+          onEdit={() => setAccessModeModal(true)} />
       ),
-    },
-    access_mode_configuration: {
-      visible: (props) => !['keyless', 'public'].includes(props?.access_mode_configuration_type),
-      renderer: ({ rootValue, value }) => {
-        if (!rootValue.access_mode_configuration_type) return null;
-
-        return (
-          <Row title="Access mode configuration">
-            <Button
-              type="primaryColor"
-              onClick={() => {
-                setAccessMode({
-                  ...(value || {}),
-                  access_mode_configuration_type: rootValue.access_mode_configuration_type,
-                });
-              }}
-            >
-              Edit the configuration
-            </Button>
-          </Row>
-        );
-      },
     },
     rateLimiting: {
       type: 'form',
       label: 'Rate Limiting & Quotas',
       schema: {
         strategy: {
-          type: 'select',
-          label: 'Strategy',
-          props: {
-            defaultValue: 'LegacyThrottlingStrategyConfig',
-            options: [
-              { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
-              { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
-              { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
-            ],
-          },
+          renderer: props => {
+            return <ThrottlingStrategy value={props.value} onChange={props.onChange} />
+          }
         },
         perIp: {
           type: 'bool',
@@ -621,9 +597,9 @@ function PlanForm({ plan, onChange }) {
       },
       flow: ['kind', 'config'],
     },
-  };
+  }), [setAccessModeModal]);
 
-  const flow = [
+  const flow = useMemo(() => [
     { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
     {
       type: 'group',
@@ -636,30 +612,34 @@ function PlanForm({ plan, onChange }) {
       type: 'group',
       name: 'Access Mode',
       collapsable: false,
-      fields: ['access_mode_configuration_type', 'access_mode_configuration'],
+      fields: ['access_mode_configuration_type'],
     },
     'rateLimiting',
     'pricing',
     'validation',
     { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
-  ];
+  ], []);
 
   return (
     <>
-      {accessMode && (
+      {openAccessModeModal && (
         <AccessModeConfiguration
-          value={accessMode}
+          value={plan.access_mode_configuration}
           onConfirm={(data) => {
             onChange({
               ...plan,
               access_mode_configuration: data,
             });
-            setAccessMode(undefined);
+            setAccessModeModal(undefined);
           }}
-          hide={() => setAccessMode(undefined)}
+          hide={() => setAccessModeModal(undefined)}
         />
       )}
-      <NgForm value={plan} schema={schema} flow={flow} onChange={onChange} />
+      <NgForm
+        value={plan}
+        schema={schema}
+        flow={flow}
+        onChange={onChange} />
     </>
   );
 }
@@ -668,21 +648,18 @@ function ImportPlanModal({ hide, draft, api, updateAPI }) {
   const [planId, setPlan] = useState();
 
   const importPlan = () => {
-    const plan = draft.documentation.plans.find((p) => p.id === planId);
+    const plan = draft.plans?.find((p) => p.id === planId);
 
     return updateAPI({
       ...api,
-      documentation: {
-        ...api.documentation,
-        plans: [
-          ...(api.documentation.plans || []),
-          {
-            ...plan,
-            enabled: false,
-            id: `prod-${plan.id}`,
-          },
-        ],
-      },
+      plans: [
+        ...(api.plans || []),
+        {
+          ...plan,
+          enabled: false,
+          id: `prod-${plan.id}`,
+        },
+      ],
     }).then(() => window.location.reload());
   };
 
@@ -696,7 +673,7 @@ function ImportPlanModal({ hide, draft, api, updateAPI }) {
               value={planId}
               onChange={setPlan}
               ngOptions={{ spread: true }}
-              options={draft.documentation?.plans || []}
+              options={draft.plans || []}
               optionsTransformer={(arr) =>
                 arr.map((item) => ({
                   value: item.id,
@@ -743,7 +720,7 @@ export function Plans(props) {
 
   if (!item) return <SimpleLoader />;
 
-  const plans = item.documentation?.plans || [];
+  const plans = item.plans || []
 
   const columns = [
     {
@@ -795,10 +772,7 @@ export function Plans(props) {
   const deleteItem = (plan) => {
     return updateItem({
       ...item,
-      documentation: {
-        ...item.documentation,
-        plans: item.documentation.plans.filter((c) => c.id !== plan.id),
-      },
+      plans: item.plans?.filter((c) => c.id !== plan.id),
     })
   };
 
@@ -890,7 +864,7 @@ export function PlanEditor(props) {
 
   useEffect(() => {
     if (!isNew && item && !plan) {
-      const found = (item.documentation?.plans || []).find((p) => p.id === params.planId);
+      const found = item.plans?.find((p) => p.id === params.planId);
       if (found) setPlan(found);
     }
   }, [item]);
@@ -905,9 +879,10 @@ export function PlanEditor(props) {
 
   const save = () => {
     const plans = isNew
-      ? [...(item.documentation?.plans || []), plan]
-      : item.documentation.plans.map((p) => (p.id === plan.id ? plan : p));
-    return updateItem({ ...item, documentation: { ...item.documentation, plans } }).then(back);
+      ? [...(item.plans || []), plan]
+      : item.plans?.map((p) => (p.id === plan.id ? plan : p));
+    return updateItem({ ...item, plans })
+      .then(back);
   };
 
   return <div className='page'>

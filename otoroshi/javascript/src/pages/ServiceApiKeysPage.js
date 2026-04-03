@@ -37,16 +37,13 @@ class ApikeyBearer extends Component {
 
   copy = () => {
     if (this.state.bearer) {
-      console.log('copy');
       try {
         navigator.clipboard.writeText(this.state.bearer);
       } catch (e) {
         console.log(e);
       }
       this.setState({ cname: 'fas fa-check' }, () => {
-        console.log('changed');
         setTimeout(() => {
-          console.log('back');
           this.setState({ cname: 'fas fa-copy' });
         }, 2000);
       });
@@ -539,14 +536,14 @@ function FixedWindowStrategyConfig({ value, onChange }) {
     }} />
 }
 
-function ThrottlingStrategy({ value, onChange }) {
+export function ThrottlingStrategy({ value, onChange }) {
   const strategies = {
     LegacyThrottlingStrategyConfig,
     LocalTokensBucketStrategyConfig,
     FixedWindowStrategyConfig
   };
 
-  const Component = strategies[value.id]
+  const Component = strategies[value?.id]
 
   return <>
     <NgForm schema={{

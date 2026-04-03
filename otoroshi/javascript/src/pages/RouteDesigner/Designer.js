@@ -1841,8 +1841,9 @@ class Designer extends React.Component {
   }
 }
 
-const Element = ({ element, addNode, showPreview, hidePreview }) => (
-  <div
+const Element = ({ element, addNode, showPreview, hidePreview }) => {
+  console.log(element)
+  return <div
     className="element"
     onClick={(e) => {
       e.stopPropagation();
@@ -1858,10 +1859,12 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
         ) : (
           ''
         )}
-        {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+        <p>{element.name.charAt(0).toUpperCase() + element.name.slice(1)}</p>
+
+        {!element.legacy && <p className='mb-0'>{element.description}</p>}
       </div>
       <i
-        className={`fas fa-${element.plugin_multi_inst ? 'plus' : 'arrow-right'} element-arrow`}
+        className={`fas fa-arrow-right element-arrow`}
         onClick={(e) => {
           e.stopPropagation();
           if (element.shortcut) {
@@ -1874,7 +1877,7 @@ const Element = ({ element, addNode, showPreview, hidePreview }) => (
       />
     </div>
   </div>
-);
+}
 
 const Group = ({ group, elements, addNode, ...props }) => {
   const [open, setOpen] = useState(props.forceOpen);
@@ -2333,13 +2336,10 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   </>
 );
 
-const EditViewReadOnlyActions = ({ onCancel, onOk }) => (
+const EditViewReadOnlyActions = ({ onOk }) => (
   <div className="d-flex justify-content-end mt-3">
-    {/* <button className="btn btn-sm btn-danger me-1" onClick={onCancel}>
-      Cancel
-    </button> */}
-    <button className="btn btn-sm btn-save" onClick={onOk}>
-      Add to flow
+    <button className="btn btn-save" onClick={onOk}>
+      Add to Policy Chain
     </button>
   </div>
 );
@@ -2608,10 +2608,6 @@ class EditView extends React.Component {
                   />
                   {readOnly ? (
                     <EditViewReadOnlyActions
-                      onCancel={() => {
-                        setSelectedNode(undefined);
-                        hidePreview();
-                      }}
                       onOk={() => {
                         hidePreview();
                         if (selectedNode.shortcut) selectedNode.shortcut(selectedNode);

@@ -676,8 +676,7 @@ case class ApiDocumentationSource(raw: JsObject) {
                 navigation = remoteDoc.navigation ++ doc.navigation,
                 redirections = remoteDoc.redirections ++ doc.redirections,
                 footer = remoteDoc.footer.orElse(doc.footer),
-                banner = remoteDoc.banner.orElse(doc.banner),
-                plans = remoteDoc.plans ++ doc.plans
+                banner = remoteDoc.banner.orElse(doc.banner)
               )
             }
           } else {
@@ -701,7 +700,6 @@ case class ApiDocumentation(
     footer: Option[ApiDocumentationResource] = None,
     search: ApiDocumentationSearch = ApiDocumentationSearch.default,
     banner: Option[ApiDocumentationResource] = None,
-    plans: Seq[ApiDocumentationPlan] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     tags: Seq[String] = Seq.empty
 ) {
@@ -762,7 +760,6 @@ object ApiDocumentation {
           .asOpt[Seq[JsObject]]
           .getOrElse(Seq.empty)
           .map(o => ApiDocumentationRedirection(o)),
-        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationPlan(o)),
         footer = json.select("footer").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
         search = json
           .select("search")
@@ -785,7 +782,6 @@ object ApiDocumentation {
       "resources"    -> JsArray(o.resources.map(_.raw)),
       "navigation"   -> JsArray(o.navigation.map(_.raw)),
       "redirections" -> JsArray(o.redirections.map(_.raw)),
-      "plans"        -> JsArray(o.plans.map(_.raw)),
       "footer"       -> o.footer.map(_.raw).getOrElse(JsNull).asValue,
       "search"       -> o.search.raw,
       "banner"       -> o.banner.map(_.raw).getOrElse(JsNull).asValue,
@@ -908,60 +904,77 @@ case class ApiSubscription(
 
 object ApiSubscription {
 
-  private def onNewSubscription(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+  private def onNewSubscription(
+      api: Api,
+      plan: ApiDocumentationPlan,
+      subscription: ApiSubscription,
+      action: WriteAction
+  )(implicit
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
-    subscription.subscriptionKind match {
-      case ApiKind.Apikey =>
-        implicit val ec = env.otoroshiExecutionContext
+    if (action == WriteAction.Create) {
+      subscription.subscriptionKind match {
+        case ApiKind.Apikey =>
+          implicit val ec = env.otoroshiExecutionContext
 
-        println(plan, plan.accessModeConfiguration)
+          println(plan, plan.accessModeConfiguration)
 
-        val configPlan = plan.accessModeConfiguration
-          .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
-          .getOrElse(ApikeyAccessModeConfiguration())
+          val configPlan = plan.accessModeConfiguration
+            .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
+            .getOrElse(ApikeyAccessModeConfiguration())
 
-        val attrs = TypedMap(
-          otoroshi.plugins.Keys.PlanKey -> plan,
-          otoroshi.plugins.Keys.ApiKey  -> api
-        )
+          val attrs = TypedMap(
+            otoroshi.plugins.Keys.PlanKey -> plan,
+            otoroshi.plugins.Keys.ApiKey  -> api
+          )
 
-        val defaultApikey = ApiKey(
-          clientId = IdGenerator.lowerCaseToken(16),
-          clientSecret = IdGenerator.lowerCaseToken(64),
-          clientName = configPlan.clientNamePattern
-            .map(_.evaluateEl(attrs)(env))
-            .getOrElse(IdGenerator.lowerCaseToken(22)),
-          authorizedEntities = Seq(ApiIdentifier(api.id))
-        )
+          val defaultApikey = ApiKey(
+            clientId = IdGenerator.lowerCaseToken(16),
+            clientSecret = IdGenerator.lowerCaseToken(64),
+            clientName = configPlan.clientNamePattern
+              .map(_.evaluateEl(attrs)(env))
+              .getOrElse(IdGenerator.lowerCaseToken(22)),
+            authorizedEntities = Seq(ApiIdentifier(api.id)),
+            throttlingStrategy = plan.rateLimiting
+          )
 
-        defaultApikey.save().map {
-          case false => "failed to create the apikey".left
-          case true  => subscription.copy(tokenRefs = subscription.tokenRefs :+ defaultApikey.clientId).right
-        }
-      case _              => subscription.rightf
+          defaultApikey.save().map {
+            case false => "failed to create the apikey".left
+            case true  => subscription.copy(tokenRefs = subscription.tokenRefs :+ defaultApikey.clientId).right
+          }
+        case _              => subscription.rightf
+      }
+    } else {
+      subscription.rightf
     }
   }
 
-  def validate(apiRef: String, entity: ApiSubscription, action: WriteAction)(implicit
+  private def findDraft[A](id: String, fmt: Reads[A])(implicit env: Env): Future[Option[A]] =
+    env.proxyState
+      .allDrafts()
+      .find(_.id == id)
+      .flatMap(draft => fmt.reads(draft.content).asOpt)
+      .future
+
+  private def findApi(apiId: String, isDraft: Boolean)(implicit env: Env, ec: ExecutionContext): Future[Option[Api]] = {
+    if (isDraft) findDraft(apiId, Api.format)
+    else env.datastores.apiDataStore.findById(apiId)
+  }
+
+  def validate(apiRef: String, entity: ApiSubscription, action: WriteAction, isDraft: Boolean)(implicit
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
-    implicit val ec = env.otoroshiExecutionContext
-    env.datastores.apiDataStore
-      .findById(apiRef)
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+    findApi(apiRef, isDraft)
       .flatMap {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
-          api.documentation match {
-            case Some(documentation) =>
-              documentation.plans.find(_.id == entity.planRef) match {
-                case None                                                                                         =>
-                  "plan not found".leftf
-                case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
-                  onNewSubscription(api, plan, entity)
-                case _                                                                                            =>
-                  "wrong status plan".leftf
-              }
-            case None                => "plan not found".leftf
+          api.plans.find(_.id == entity.planRef) match {
+            case None                                                                                         =>
+              "plan not found".leftf
+            case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
+              onNewSubscription(api, plan, entity, action)
+            case _                                                                                            =>
+              "wrong status plan".leftf
           }
         case _                                                                 => "wrong status api".leftf
       }
@@ -987,7 +1000,7 @@ object ApiSubscription {
       )
       .left
 
-    validate(entity.apiRef, entity, action)
+    validate(entity.apiRef, entity, action, isDraft = false)
       .map {
         case Left(error) => onError(error)
         case Right(r)    => Right(r)
@@ -1324,6 +1337,7 @@ case class Api(
     blueprint: ApiBlueprint,
     routes: Seq[ApiRoute] = Seq.empty,
     backends: Seq[ApiBackend] = Seq.empty,
+    plans: Seq[ApiDocumentationPlan] = Seq.empty,
     flows: Seq[ApiFlows] = Seq.empty,
     clientsBackendConfig: Seq[ApiBackendClient] = Seq.empty,
     documentation: Option[ApiDocumentation] = None,
@@ -1344,8 +1358,6 @@ case class Api(
   override def theTags: Seq[String] = tags
 
   override def theMetadata: Map[String, String] = metadata
-
-  def plans: Seq[ApiDocumentationPlan] = documentation.toSeq.flatMap(_.plans)
 
   def resolveDocumentation()(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     documentation.flatMap(_.source) match {
@@ -1498,38 +1510,35 @@ case class Api(
   }
 
   private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
-    routeWithApi.api.documentation
-      .map { documentation =>
-        val route = documentation.plans
-          .filter(plan => plan.status == ApiPlanStatus.Published)
-          .foldLeft(routeWithApi.route) { case (route, plan) =>
-            applyPlan(route, plan)
-          }
+    val route = plans
+      .filter(plan => plan.status == ApiPlanStatus.Published)
+      .foldLeft(routeWithApi.route) { case (route, plan) =>
+        applyPlan(route, plan)
+      }
 
-        if (
-          documentation.plans
-            .exists(plan =>
-              plan.accessModeConfigurationType != "keyless" &&
-              plan.status == ApiPlanStatus.Published
-            )
-        ) {
-          route.copy(
-            plugins = addPluginsToFlow(
-              route.plugins,
-              Seq(
-                PluginWithConfig(
-                  pluginId[NgExpectedConsumer],
-                  Json.obj(),
-                  Some(PluginIndex(validateAccess = 1000.00.some))
-                )
-              )
+    if (
+      plans
+        .exists(plan =>
+          plan.accessModeConfigurationType != "keyless" &&
+          plan.status == ApiPlanStatus.Published
+        )
+    ) {
+      route.copy(
+        plugins = addPluginsToFlow(
+          route.plugins,
+          Seq(
+            PluginWithConfig(
+              pluginId[NgExpectedConsumer],
+              Json.obj(),
+              Some(PluginIndex(validateAccess = 1000.00.some))
             )
           )
-        } else {
-          route
-        }
-      }
-      .getOrElse(routeWithApi.route)
+        )
+      )
+    } else {
+      route
+    }
+
   }
 
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
@@ -1669,7 +1678,7 @@ object Api {
 //        case Some(api) if api.state == ApiStaging || api.state == ApiPublished => entity.right
 //          api.documentation match {
 //            case Some(documentation) =>
-//              documentation.plans.find(_.id == entity.) match {
+//              plans.find(_.id == entity.) match {
 //                case None                                                                                         => onError("plan not found")
 //                case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
 //                  entity.right
@@ -1800,6 +1809,7 @@ object Api {
       "state"                  -> o.state.name,
       "enabled"                -> o.enabled,
       "blueprint"              -> o.blueprint.name,
+      "plans"                  -> JsArray(o.plans.map(_.raw)),
       "routes"                 -> o.routes.map(ApiRoute._fmt.writes),
       "backends"               -> o.backends.map(ApiBackend._fmt.writes),
       "flows"                  -> o.flows.map(ApiFlows._fmt.writes),
@@ -1893,7 +1903,8 @@ object Api {
         hooks = (json \ "hooks")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty),
+        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationPlan(o))
       )
     } match {
       case Failure(ex)    =>

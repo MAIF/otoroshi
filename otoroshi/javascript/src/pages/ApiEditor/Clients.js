@@ -52,7 +52,7 @@ export function Clients(props) {
 
   if (!item) return <SimpleLoader />;
 
-  const clients = item.clients_backend_config || [];
+  const clients = item.clients || [];
 
   const columns = [
     {
@@ -70,7 +70,7 @@ export function Clients(props) {
   const deleteItem = (client) => {
     return updateItem({
       ...item,
-      clients: item.clients_backend_config.filter((c) => c.id !== client.id),
+      clients: item.clients.filter((c) => c.id !== client.id),
     });
   };
 
