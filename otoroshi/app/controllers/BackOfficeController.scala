@@ -2320,4 +2320,27 @@ class BackOfficeController(
       Ok(Json.obj("done" -> true))
     }
   }
+
+  def getAuthorizedEntitiesForApikey(id: String) = BackOfficeActionAuth.async { ctx =>
+    env.proxyState.apikey(id) match {
+      case None => Ok(Json.obj("error" -> "entity not found")).vfuture
+      case Some(apikey) if !ctx.canUserRead(apikey) => Unauthorized(Json.obj("error" -> "entity available")).vfuture
+      case Some(apikey) => {
+        val entities: Seq[JsValue] = ctx.request.getQueryString("kind") match {
+          case Some("route") => apikey.authorizedEntities.collect {
+            case RouteIdentifier(id) => Seq(Json.obj("kind" -> "route", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json))
+            case ServiceGroupIdentifier(id) => env.proxyState.allRoutes().filter(r => r.groups.contains(id)).map(r => Json.obj("kind" -> "route", "value" -> r.id, "label" -> r.name))
+          }.flatten
+          case Some("api") => apikey.authorizedEntities.collect {
+            case ApiIdentifier(id) => Json.obj("kind" -> "api", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json)
+          }
+          case Some("group") => apikey.authorizedEntities.collect {
+            case ServiceGroupIdentifier(id) => Json.obj("kind" -> "group", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json)
+          }
+          case _ => Seq.empty
+        }
+        Ok(JsArray(entities)).vfuture
+      }
+    }
+  }
 }
