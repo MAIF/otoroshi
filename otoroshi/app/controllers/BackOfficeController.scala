@@ -2331,8 +2331,6 @@ class BackOfficeController(
           case JsString(str) => EntityIdentifier.apply(str)
           case _ => None
         }
-        println(ctx.request.getQueryString("kind"))
-        println(authorizedEntities)
         val entities: Seq[JsValue] = ctx.request.getQueryString("kind") match {
           case Some("route") => authorizedEntities.collect {
             case RouteIdentifier(id) => Seq(Json.obj("kind" -> "route", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json))
