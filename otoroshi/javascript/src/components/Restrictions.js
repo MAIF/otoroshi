@@ -35,31 +35,15 @@ export class RestrictionPath extends Component {
   };
 
   updateValues = (kind) => {
-    if (kind === 'api') {
-      fetch('/bo/api/proxy/apis/apis.otoroshi.io/v1/apis', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }).then(r => r.json()).then((values) => this.setState({ values }))
-    } else if (kind === 'route') {
-      fetch('/bo/api/proxy/apis/proxy.otoroshi.io/v1/routes', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }).then(r => r.json()).then((values) => this.setState({ values }))
-    } else if (kind === 'group') {
-      fetch('/bo/api/proxy/apis/organize.otoroshi.io/v1/service-groups', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        }
-      }).then(r => r.json()).then((values) => this.setState({ values }))
-    }
+    fetch(`/bo/api/apikeys/${this.props.apikey.clientId}/authorized_entities?kind=${kind}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ authorized_entities: this.props.apikey.authorized_entities || this.props.apikey.authorizedEntities })
+    }).then(r => r.json()).then((values) => this.setState({ values }))
   }
 
   render() {
@@ -118,7 +102,7 @@ export class RestrictionPath extends Component {
                   arrayValue[this.props.idx] = item;
                   this.props.onChange(arrayValue);
                 }}
-                options={this.state.values.map(v => ({ label: v.name, value: v.id }))}
+                options={this.state.values}
               />
             </div>
           )}
@@ -153,6 +137,7 @@ export class Restrictions extends Component {
           label="Allowed"
           value={value.allowed}
           help="Allowed paths"
+          apikey={this.props.rawValue}
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
           onChange={(v) => this.changeTheValue('allowed', v)}
@@ -161,6 +146,7 @@ export class Restrictions extends Component {
           label="Forbidden"
           value={value.forbidden}
           help="Forbidden paths"
+          apikey={this.props.rawValue}
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
           onChange={(v) => this.changeTheValue('forbidden', v)}
@@ -169,6 +155,7 @@ export class Restrictions extends Component {
           label="Not Found"
           value={value.notFound}
           help="Not found paths"
+          apikey={this.props.rawValue}
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
           onChange={(v) => this.changeTheValue('notFound', v)}

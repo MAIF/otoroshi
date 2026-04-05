@@ -121,7 +121,7 @@ DELETE  /bo/api/me/preferences/:id                            otoroshi.controlle
 DELETE  /bo/api/me/preferences                                otoroshi.controllers.BackOfficeController.clearUserPreferences()
 
 # Helpers
-DELETE  /bo/api/apikeys/:id/authorized_entities               otoroshi.controllers.BackOfficeController.getAuthorizedEntitiesForApikey(id)
+POST  /bo/api/apikeys/:id/authorized_entities                 otoroshi.controllers.BackOfficeController.getAuthorizedEntitiesForApikey(id)
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)
