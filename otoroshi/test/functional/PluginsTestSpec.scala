@@ -81,6 +81,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikeys - respectNoneMetaKeysIn" in {
       new ApikeysTests(this).respectNoneMetaKeysIn()
     }
+    "Apikeys - route specific notFound restriction" in {
+      new ApikeyRestrictionsPerRouteTests(this).routeSpecificNotFoundRestriction()
+    }
     "Additional headers in" in {
       new AdditionalHeadersInTests(this)
     }
