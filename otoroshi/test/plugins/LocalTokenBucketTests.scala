@@ -26,7 +26,7 @@ class LocalTokenBucketTests(parent: PluginsTestSpec) {
               capacity = 2,
               refillRequestIntervalMs = 2000,
               refillRequestedTokens = 2
-            ).json().as[JsObject]
+            ).json.as[JsObject]
           )
         )
       )
