@@ -1642,7 +1642,7 @@ object SecComHeaders {
   }
 }
 
-case class RestrictionPath(method: String, path: String, authorizedEntity: Option[EntityIdentifier]) {
+case class RestrictionPath(method: String, path: String, authorizedEntity: Option[EntityIdentifier] = None) {
   def json: JsValue = RestrictionPath.format.writes(this)
 }
 
