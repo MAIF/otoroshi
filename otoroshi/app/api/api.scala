@@ -649,11 +649,12 @@ class OtoroshiResources(env: Env) {
             ApiKey._fmt.reads(json)
           }
           override def writes(o: ApiKey): JsValue = {
-            var base = Json.obj("bearer" -> o.toBearer())
-            if (o.rotation.enabled && o.rotation.nextSecret.isDefined) {
-              base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> o.toNextBearer()))
-            }
-            ApiKey._fmt.writes(o).asObject.deepMerge(base)
+            // var base = Json.obj("bearer" -> o.toBearer())
+            // if (o.rotation.enabled && o.rotation.nextSecret.isDefined) {
+            //   base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> o.toNextBearer()))
+            // }
+            // ApiKey._fmt.writes(o).asObject.deepMerge(base)
+            o.jsonWithBearer
           }
         },
         classOf[ApiKey],

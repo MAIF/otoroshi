@@ -222,6 +222,13 @@ case class ApiKey(
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = clientName
   def theTags: Seq[String]             = tags
+  def jsonWithBearer: JsValue         = {
+    var base = Json.obj("bearer" -> toBearer())
+    if (rotation.enabled && rotation.nextSecret.isDefined) {
+      base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> toNextBearer()))
+    }
+    json.asObject.deepMerge(base)
+  }
 
   def save()(implicit ec: ExecutionContext, env: Env)     = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
