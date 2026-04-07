@@ -2596,6 +2596,7 @@ const possibleExporterConfigFormValues = {
       'table',
       'pool_size',
       'ssl',
+      'retention_days',
     ],
     schema: {
       uri: {
@@ -2641,6 +2642,14 @@ const possibleExporterConfigFormValues = {
       ssl: {
         type: 'bool',
         props: { label: 'SSL (REQUIRE mode)' },
+      },
+      retention_days: {
+        type: 'number',
+        props: {
+          label: 'Retention (days)',
+          placeholder: '0',
+          help: 'Number of days to keep events. Set to 0 or leave empty to disable cleanup.',
+        },
       },
     },
   },
