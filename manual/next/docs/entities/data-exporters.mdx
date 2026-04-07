@@ -354,6 +354,7 @@ Writes events to a PostgreSQL database.
 | `table` | string | Table name |
 | `poolSize` | number | Connection pool size |
 | `ssl` | boolean | Enable SSL |
+| `retentionDays` | number | Number of days to keep events. If absent, 0 or negative, no cleanup is performed. When set, events older than the specified number of days are automatically deleted (checked at most once per hour). |
 
 ### Workflow
 
