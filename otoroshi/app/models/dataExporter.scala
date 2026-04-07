@@ -755,7 +755,8 @@ case class PostgresExporterSettings(
     schema: String = "otoroshi",
     table: String = "otoroshi_events",
     poolSize: Int = 5,
-    ssl: Boolean = false
+    ssl: Boolean = false,
+    retentionDays: Int = 0
 ) extends Exporter {
   override def toJson: JsValue = PostgresExporterSettings.format.writes(this)
 }
@@ -773,7 +774,8 @@ object PostgresExporterSettings {
         schema = json.select("schema").asOptString.getOrElse("otoroshi"),
         table = json.select("table").asOptString.getOrElse("otoroshi_events"),
         poolSize = json.select("pool_size").asOptInt.getOrElse(5),
-        ssl = json.select("ssl").asOptBoolean.getOrElse(false)
+        ssl = json.select("ssl").asOptBoolean.getOrElse(false),
+        retentionDays = json.select("retention_days").asOptInt.getOrElse(0)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -789,8 +791,9 @@ object PostgresExporterSettings {
       "password"  -> o.password,
       "schema"    -> o.schema,
       "table"     -> o.table,
-      "pool_size" -> o.poolSize,
-      "ssl"       -> o.ssl
+      "pool_size"      -> o.poolSize,
+      "ssl"            -> o.ssl,
+      "retention_days" -> o.retentionDays
     )
   }
 }
