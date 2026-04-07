@@ -15,6 +15,7 @@ import io.netty.channel.unix.DomainSocketAddress
 import io.netty.handler.ssl.SslContextBuilder
 import io.opentelemetry.api.logs.Severity
 import io.otoroshi.wasm4s.scaladsl._
+import io.vertx.sqlclient.impl.ArrayTuple
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import jakarta.jms.ConnectionFactory
 import jakarta.jms.Destination
@@ -2141,7 +2142,8 @@ object Exporters {
     import io.vertx.core.json.JsonObject
     import scala.collection.JavaConverters._
 
-    private val poolRef = new AtomicReference[PgPool](null)
+    private val poolRef        = new AtomicReference[PgPool](null)
+    private val lastCleanupRef = new AtomicReference[Long](0L)
 
     private def buildConnectOptions(settings: PostgresExporterSettings): PgConnectOptions = {
       settings.uri match {
@@ -2199,6 +2201,38 @@ object Exporters {
       FastFuture.successful(())
     }
 
+    def tuple(any: AnyRef): VertxTuple = {
+      val tuple = new ArrayTuple(1)
+      tuple.addValue(any)
+      tuple
+    }
+
+    private def cleanupOldEvents(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+      if (settings.retentionDays > 0) {
+        val now = System.currentTimeMillis()
+        val last = lastCleanupRef.get()
+        val oneHourMillis = 3600000L
+        if (now - last > oneHourMillis && lastCleanupRef.compareAndSet(last, now)) {
+          val cutoff = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).minusDays(settings.retentionDays.toLong)
+          pool
+            .preparedQuery(s"DELETE FROM ${settings.schema}.${settings.table} WHERE timestamp < $$1")
+            .execute(tuple(cutoff))
+            .scala
+            .map { rs =>
+              logger.info(s"[postgres-exporter] Cleaned up ${rs.rowCount()} events older than $cutoff from '${settings.schema}.${settings.table}'")
+            }
+            .recover { case e: Throwable =>
+              lastCleanupRef.set(last)
+              logger.error(s"[postgres-exporter] Error while cleaning up old events from '${settings.schema}.${settings.table}'", e)
+            }
+        } else {
+          FastFuture.successful(())
+        }
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       Option(poolRef.get()) match {
         case None       => FastFuture.successful(ExportResult.ExportResultFailure("PostgreSQL pool not initialized"))
@@ -2206,6 +2240,7 @@ object Exporters {
           exporter[PostgresExporterSettings] match {
             case None           => FastFuture.successful(ExportResult.ExportResultFailure("Bad config type!"))
             case Some(settings) =>
+              cleanupOldEvents(pool, settings)
               val tuples: java.util.List[VertxTuple] = events.map { event =>
                 val id        = event.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
                 val timestamp = event
