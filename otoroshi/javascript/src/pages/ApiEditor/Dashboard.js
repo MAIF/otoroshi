@@ -370,7 +370,7 @@ function PluginChainsCard({ flows }) {
   );
 }
 
-function RouteItem({ item, api, ports }) {
+function RouteItem({ item, api, ports, isDraft }) {
   const { frontend } = item;
 
   const params = useParams();
@@ -378,6 +378,7 @@ function RouteItem({ item, api, ports }) {
   const history = useHistory();
 
   const version = useSignalValue(signalVersion);
+
 
   const routeEntries = (idx) => {
     const isSecured = api.flows.some((r) =>
@@ -451,7 +452,7 @@ function RouteItem({ item, api, ports }) {
             {end}
           </span>
           <div style={{ minWidth: 60 }}>{method}</div>
-          {!api.testing.enabled ? (
+          {isDraft && !api.testing.enabled &&
             <Button
               type="primaryColor"
               className="btn btn-sm"
@@ -459,35 +460,34 @@ function RouteItem({ item, api, ports }) {
             >
               Enable API testing
             </Button>
-          ) : (
-            <div className="d-flex align-items-center justify-content-start">
+          }
+          {(!isDraft || api.testing.enabled) && <div className="d-flex align-items-center justify-content-start">
+            <Button
+              className="btn btn-sm"
+              type="primaryColor"
+              title="Copy URL"
+              onClick={() => copy(routeEntries(idx), rawMethods[i], setCopyIconName)}
+            >
+              <i className={copyIconName} />
+            </Button>
+            {rawMethods[i] === 'GET' && version === 'Published' && (
               <Button
-                className="btn btn-sm"
+                className="btn btn-sm ms-1"
                 type="primaryColor"
-                title="Copy URL"
-                onClick={() => copy(routeEntries(idx), rawMethods[i], setCopyIconName)}
+                title={`Go to ${start}${domain}`}
+                onClick={() => goTo(idx)}
               >
-                <i className={copyIconName} />
+                <i className="fas fa-external-link-alt" />
               </Button>
-              {rawMethods[i] === 'GET' && version === 'Published' && (
-                <Button
-                  className="btn btn-sm ms-1"
-                  type="primaryColor"
-                  title={`Go to ${start}${domain}`}
-                  onClick={() => goTo(idx)}
-                >
-                  <i className="fas fa-external-link-alt" />
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>}
         </div>
       );
     });
   });
 }
 
-export function RoutesView({ api }) {
+export function RoutesView({ api, isDraft }) {
   const ports = useQuery(['getPorts'], routePorts);
 
   if (ports.isLoading) return <SimpleLoader />;
@@ -501,7 +501,7 @@ export function RoutesView({ api }) {
         <div>Actions</div>
       </div>
       {api.routes.map((route) => (
-        <RouteItem item={route} api={api} key={route.id} ports={ports.data} />
+        <RouteItem item={route} api={api} key={route.id} ports={ports.data} isDraft={isDraft} />
       ))}
     </div>
   );
@@ -906,7 +906,7 @@ export function Dashboard(props) {
                   description="Exposed endpoints for this API"
                   icon="fas fa-road"
                 />
-                <RoutesView api={item} />
+                <RoutesView api={item} isDraft={isDraft} />
               </ContainerBlock>
             )}
 

@@ -620,7 +620,10 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
   lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(ApiPricing.format)
   lazy val rateLimiting: Option[ThrottlingStrategyConfig]                           =
-    raw.select("rateLimiting").asOpt(ThrottlingStrategyConfig.fmt)
+    raw
+      .select("rateLimiting")
+      .asOpt[JsObject]
+      .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(ThrottlingStrategyConfig.fmt))
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
       case "apikey"        => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
@@ -890,7 +893,7 @@ case class ApiSubscription(
     apiRef: String,
     paymentRef: JsObject = Json.obj(),
     subscriptionKind: ApiKind,
-    tokenRefs: Seq[String] // ref to apikey, cert, etc
+    tokenRefs: Seq[JsValue] // ref to apikey, cert, etc
 ) extends EntityLocationSupport {
   override def internalId: String               = id
   override def json: JsValue                    = ApiSubscription.format.writes(this)
@@ -902,7 +905,7 @@ case class ApiSubscription(
 
 object ApiSubscription {
 
-  private def onNewSubscription(
+  private def handleSubscriptionChanged(
       api: Api,
       plan: ApiDocumentationPlan,
       subscription: ApiSubscription,
@@ -914,8 +917,6 @@ object ApiSubscription {
       subscription.subscriptionKind match {
         case ApiKind.Apikey =>
           implicit val ec = env.otoroshiExecutionContext
-
-          println(plan, plan.accessModeConfiguration)
 
           val configPlan = plan.accessModeConfiguration
             .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
@@ -938,11 +939,30 @@ object ApiSubscription {
 
           defaultApikey.save().map {
             case false => "failed to create the apikey".left
-            case true  => subscription.copy(tokenRefs = subscription.tokenRefs :+ defaultApikey.clientId).right
+            case true  =>
+              subscription
+                .copy(tokenRefs = subscription.tokenRefs :+ Json.obj("apikey" -> defaultApikey.clientId))
+                .right
           }
         case _              => subscription.rightf
       }
-    } else {
+    }
+//    else if (plan.status ) {
+//      val apikeys: Seq[String] = subscription.tokenRefs
+//        .foldLeft(Seq.empty[String]) { case (acc, item) =>
+//          item match {
+//            case obj @ JsObject(fields) if fields.size == 1 =>
+//              val (_, value) = fields.head
+//              acc :+ value.toString()
+//            case _                                          => acc
+//          }
+//        }
+//
+//
+//
+//      subscription.rightf
+//    }
+    else {
       subscription.rightf
     }
   }
@@ -970,7 +990,7 @@ object ApiSubscription {
             case None                                                                                         =>
               "plan not found".leftf
             case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
-              onNewSubscription(api, plan, entity, action)
+              handleSubscriptionChanged(api, plan, entity, action)
             case _                                                                                            =>
               "wrong status plan".leftf
           }
@@ -1036,7 +1056,7 @@ object ApiSubscription {
           case "jwt"           => ApiKind.JWT
         },
         apiRef = json.select("api_ref").asString,
-        tokenRefs = json.select("token_refs").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tokenRefs = json.select("token_refs").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -1448,6 +1468,7 @@ case class Api(
                 NgApikeyCallsConfig(
                   mandatory = false,
                   extractors = NgApikeyExtractors(
+                    otoBearer = NgApikeyExtractorOtoBearer(enabled = true),
                     basic = NgApikeyExtractorBasic(enabled = false),
                     customHeaders = NgApikeyExtractorCustomHeaders(enabled = false),
                     clientId = NgApikeyExtractorClientId(enabled = false),

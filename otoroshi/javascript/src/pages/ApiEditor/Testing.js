@@ -139,7 +139,7 @@ export function Testing(props) {
       renderer: () => (
         <Row title="Endpoints">
           <div className="relative">
-            <RoutesView api={item} />
+            <RoutesView api={item} isDraft={true} />
           </div>
         </Row>
       ),
@@ -154,11 +154,7 @@ export function Testing(props) {
   if (!item) return <SimpleLoader />;
 
   if (version === 'Published')
-    return (
-      <div className="alert alert-warning">
-        Testing mode is only available in the draft version.
-      </div>
-    );
+    return <TestingProductionMode item={item} />
 
   return <div className='page'>
     <PageTitle title="Testing Mode" />
@@ -179,5 +175,13 @@ export function Testing(props) {
         collapsable: false
       }]}
     />
+  </div>
+}
+
+function TestingProductionMode({ item }) {
+
+  return <div className='page'>
+    <PageTitle title="Testing" />
+    <RoutesView api={item} isDraft={false} />
   </div>
 }

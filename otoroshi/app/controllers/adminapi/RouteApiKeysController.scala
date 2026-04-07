@@ -352,21 +352,21 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
     }
 
   def deleteApiKeyOfRoute(routeId: String, clientId: String) = {
-    ApiAction.async(parse.json) { ctx =>
+    ApiAction.async { ctx =>
       deleteApiKey(ctx, routeId, clientId, isRoute = true)
     }
   }
 
   def deleteApiKeyOfApi(apiId: String, clientId: String) = {
-    ApiAction.async(parse.json) { ctx =>
+    ApiAction.async { ctx =>
       deleteApiKey(ctx, apiId, clientId, isRoute = false)
     }
   }
 
-  private def deleteApiKey(ctx: ApiActionContext[JsValue], id: String, clientId: String, isRoute: Boolean) =
+  private def deleteApiKey(ctx: ApiActionContext[AnyContent], id: String, clientId: String, isRoute: Boolean) =
     (if (isRoute)
-       canReadOrWriteRoute[JsValue](ctx, id, (ctx, entity) => ctx.canUserWrite(entity))
-     else canReadOrWriteApi[JsValue](ctx, id, (ctx, entity) => ctx.canUserWrite(entity))).flatMap {
+       canReadOrWriteRoute[AnyContent](ctx, id, (ctx, entity) => ctx.canUserWrite(entity))
+     else canReadOrWriteApi[AnyContent](ctx, id, (ctx, entity) => ctx.canUserWrite(entity))).flatMap {
       case Left(err)   => err.vfuture
       case Right(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {

@@ -377,8 +377,6 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
             result match {
               case Left(errorResult)   => errorResult.vfuture
               case Right(subscription) =>
-                println(api.plans.map(_.raw))
-                println(api.plans.map(_.rateLimiting))
                 ApiSubscription
                   .validate(subscription.apiRef, subscription, Create, isDraft = isDraft)
                   .flatMap {

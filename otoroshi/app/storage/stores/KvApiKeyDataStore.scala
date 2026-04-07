@@ -283,6 +283,8 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt.vfuture
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))  =>
         opt.vfuture
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ApiIdentifier(serviceId))               =>
+        opt.vfuture
       case Some(apiKey)                                                                                     => {
         // unoptimized
         // apiKey.services.fast.map(services => services.find(_.id == serviceId).map(_ => apiKey))
@@ -316,6 +318,7 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteIdentifier(serviceId))             => opt
       case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(RouteCompositionIdentifier(serviceId))  => opt
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ApiIdentifier(serviceId))               => opt
       case Some(apiKey)                                                                                     => {
         env.proxyState.route(serviceId) match {
           case None          =>

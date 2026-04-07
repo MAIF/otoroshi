@@ -17,7 +17,6 @@ import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
 import { findAuthConfigById } from '../../services/BackOfficeServices';
 import NgJwtUserExtractor from '../../forms/ng_plugins/NgJwtUserExtractor';
 import { SelectorWizardLauncher } from '../../forms/wizards/SelectorWizardLauncher';
-import { MAX_WIDTH } from './constants';
 import { NewSubscription } from './Subscriptions';
 import { Header } from '../../components/wizardframe';
 import { ThrottlingStrategy } from '../ServiceApiKeysPage';

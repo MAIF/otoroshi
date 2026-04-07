@@ -5,7 +5,7 @@ import { components } from 'react-select';
 import { findDraftsByKind, nextClient } from '../../services/BackOfficeServices';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
-import { NgForm } from '../../components/nginputs';
+import { NgAnyRenderer, NgForm } from '../../components/nginputs';
 import PageTitle from '../../components/PageTitle';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import SimpleLoader from './SimpleLoader';
@@ -88,9 +88,15 @@ const SUBSCRIPTION_FORM_SETTINGS = {
         },
       },
       token_refs: {
-        array: true,
+        type: 'any',
         label: 'Token refs',
-        type: 'string',
+        props: {
+          mode: 'jsonOrPlaintext',
+          language: 'json',
+          useInternalState: true,
+          defaultValue: '{}',
+          height: 150,
+        },
       },
       payment_ref: {
         type: 'any',
@@ -147,15 +153,19 @@ export function Subscriptions(props) {
       notFilterable: true,
       content: (item) => item.content?.status,
       cell: (v, subscription, table) => {
-        if (subscription.content?.status === 'pending') {
-          return <Button type="success" className='btn-sm' onClick={() => {
-            BackOfficeServices.confirmSubscription(item.id, subscription.id, isDraft ? 'Draft' : 'Published')
-              .then(() => window.location.reload())
-          }}>Confirm</Button>
+        const sub = (subscription.content ?? subscription) || {}
+        if (sub.status === 'pending') {
+          return <Button
+            type="success"
+            className='btn-sm'
+            onClick={() => {
+              BackOfficeServices.confirmSubscription(item.id, subscription.id, isDraft ? 'Draft' : 'Published')
+                .then(() => window.location.reload())
+            }}>Confirm</Button>
         }
 
         return <span className="badge bg-success">
-          {subscription.content?.status}
+          {sub.status}
         </span>
       }
     },

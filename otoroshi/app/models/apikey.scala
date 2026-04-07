@@ -1511,7 +1511,13 @@ object ApiKeyHelper {
             errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
           case Some(key)
               if key.restrictions.enabled && key.restrictions
-                .isNotFound(req.method, req.theDomain, req.relativeUri, NgRoute.fromServiceDescriptor(descriptor, debug = false), key.some) => {
+                .isNotFound(
+                  req.method,
+                  req.theDomain,
+                  req.relativeUri,
+                  NgRoute.fromServiceDescriptor(descriptor, debug = false),
+                  key.some
+                ) => {
             errorResult(NotFound, "Not Found", "errors.not.found")
           }
           case Some(key)
@@ -2379,8 +2385,9 @@ object ApiKeyHelper {
               "errors.invalid.api.key",
               s"apikey '${apikey.clientId}' routing did not match".some
             )
-          case Right(apikey) => {
-            val (restricted, errResult) = apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)
+          case Right(apikey)                                                        => {
+            val (restricted, errResult) =
+              apikey.restrictions.handleRestrictions(service, None, route, Some(apikey), req, attrs)
             if (restricted) {
               errResult.map(v => Left(v))
             } else {
@@ -2410,7 +2417,7 @@ object ApiKeyHelper {
 
                     case result =>
                       // Quota exceeded - reject with 429
-                      attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
+                      attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
                       attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
                       sendQuotasExceededError(apikey, result.quotas.legacy())
                       error(
@@ -2437,7 +2444,7 @@ object ApiKeyHelper {
                       attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
                       apikey.rightf
                     } else {
-                      attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey -> apikey)
+                      attrs.put(otoroshi.plugins.Keys.ErrorApiKeyKey           -> apikey)
                       attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())
                       error(
                         Results.TooManyRequests,
@@ -2473,8 +2480,8 @@ object ApiKeyHelper {
               //                  s"apikey '${apikey.clientId}' quotas exceeded".some
               //                )
               //            }
-              }
-           }
+            }
+          }
         }
     }
   }

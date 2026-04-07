@@ -13,6 +13,7 @@ import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { NgForm } from '../components/nginputs';
 import InfoCollapse from '../components/InfoCollapse';
+import { WizardFrame } from '../components/wizardframe';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -52,20 +53,9 @@ class ApikeyBearer extends Component {
 
   update = () => {
     if (!window.location.pathname.endsWith('/add')) {
-      fetch(
-        '/bo/api/proxy/api/apikeys/' +
-        this.props.rawValue.clientId +
-        '/bearer?newSecret=' +
-        this.props.rawValue.clientSecret,
-        {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-          },
-        }
-      )
-        .then((r) => r.json())
+      BackOfficeServices.getBearer(
+        this.props.rawValue.clientId,
+        this.props.rawValue.clientSecret)
         .then((r) => {
           this.setState({ bearer: r.bearer_new });
         });
@@ -108,31 +98,31 @@ class ApikeyBearer extends Component {
             {this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
                 title="hide bearer"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye-slash" />
+                <i className="fas fa-eye-slash" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {!this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)', text: 'var(--text)' }}
                 title="show bearer"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye" />
+                <i className="fas fa-eye" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {navigator.clipboard && window.isSecureContext && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)', text: 'var(--text)' }}
                 title="copy bearer"
                 onClick={this.copy}
               >
-                <i className={this.state.cname} />
+                <i className={this.state.cname} style={{ color: 'var(--text)' }} />
               </span>
             )}
           </div>
@@ -196,31 +186,31 @@ class ApikeySecret extends Component {
             {this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
                 title="hide secret"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye-slash" />
+                <i className="fas fa-eye-slash" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {!this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
                 title="show secret"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye" />
+                <i className="fas fa-eye" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {navigator.clipboard && window.isSecureContext && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
                 title="copy secret"
                 onClick={this.copy}
               >
-                <i className={this.state.cname} />
+                <i className={this.state.cname} style={{ color: 'var(--text)' }} />
               </span>
             )}
           </div>
@@ -331,81 +321,178 @@ class ResetQuotas extends Component {
   }
 }
 
-class CopyCredentials extends Component {
-  state = {
-    copyIconName: 'fas fa-copy',
-  };
+// class CopyCredentials extends Component {
+//   state = {
+//     copyIconName: 'fas fa-copy',
+//     showModal: false
+//   };
 
-  copy = (value) => {
+//   copy = (value) => {
+//     if (window.isSecureContext && navigator.clipboard) {
+//       navigator.clipboard.writeText(value);
+//     } else {
+//       unsecuredCopyToClipboard(value);
+//     }
+//     this.setState({
+//       copyIconName: 'fas fa-check',
+//     });
+
+//     setTimeout(() => {
+//       this.setState({
+//         copyIconName: 'fas fa-copy',
+//       });
+//     }, 2000);
+//   };
+//   render() {
+//     const props = this.props;
+
+//     return (
+//       <div className="row mb-3">
+//         <label className="col-sm-2 col-form-label" />
+//         <div className="col-sm-10">
+//           {this.state.showModal && <BearerModal
+//             bearer={this.state.bearer}
+//             onClose={() => this.setState({ showModal: false })}
+//           />}
+//           <input
+//             ref={(r) => (this.clipboard = r)}
+//             style={{ position: 'fixed', left: 0, top: -250 }}
+//             type="text"
+//             value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
+//             alt="copy credentials"
+//           />
+//           <button
+//             type="button"
+//             className="btn btn-success btn-sm"
+//             onClick={() => {
+//               // this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret);
+//               this.setState({ showModal: true })
+//             }}
+//           >
+//             <i className={this.state.copyIconName} /> Copy credentials to clipboard
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+// }
+
+function BearerModal({ bearer, onClose }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
     if (window.isSecureContext && navigator.clipboard) {
-      navigator.clipboard.writeText(value);
+      navigator.clipboard.writeText(bearer);
     } else {
-      unsecuredCopyToClipboard(value);
+      unsecuredCopyToClipboard(bearer);
     }
-    this.setState({
-      copyIconName: 'fas fa-check',
-    });
-
-    setTimeout(() => {
-      this.setState({
-        copyIconName: 'fas fa-copy',
-      });
-    }, 2000);
-  };
-  render() {
-    const props = this.props;
-    return (
-      <div className="row mb-3">
-        <label className="col-sm-2 col-form-label" />
-        <div className="col-sm-10">
-          <input
-            ref={(r) => (this.clipboard = r)}
-            style={{ position: 'fixed', left: 0, top: -250 }}
-            type="text"
-            value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
-            alt="copy credentials"
-          />
-          <button
-            type="button"
-            className="btn btn-success btn-sm"
-            onClick={() => {
-              this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret);
-            }}
-          >
-            <i className={this.state.copyIconName} /> Copy credentials to clipboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-}
-
-function CopyFromLineItem({ item }) {
-  const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-
-  const copy = (value) => {
-    if (window.isSecureContext && navigator.clipboard) {
-      navigator.clipboard.writeText(value);
-    } else {
-      unsecuredCopyToClipboard(value);
-    }
-
-    setCopyIconName('fas fa-check');
-
-    setTimeout(() => {
-      setCopyIconName('fas fa-copy');
-    }, 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
+    <WizardFrame
+      title="How to use this Bearer token"
+      cancel={onClose}
+      noOk
+      noCancel={false}
+      cancelLabel="Close"
+      body={() => (
+        <div className="d-flex flex-column gap-3 mt-3 pe-3">
+          <ol className="mb-0 ps-3" style={{ lineHeight: '2rem', textAlign: 'start' }}>
+            <li>Copy the <strong>Bearer token</strong> below</li>
+            <li>Add it as an <strong>Authorization</strong> header in your request</li>
+          </ol>
+          <div
+            className="p-2 rounded"
+            style={{
+              textAlign: 'left',
+              background: 'var(--bg-color_level3)',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'break-word',
+              fontFamily: 'monospace'
+            }}
+          >
+            <span style={{ color: '#888' }}>curl</span>{' '}
+            <span style={{ color: '#888' }}>https://your-api-host/...</span>{' '}
+            <span style={{ color: '#f9b000' }}>-H</span>{' '}
+            <span style={{ color: '#a3e635' }}>
+              "Authorization: Bearer {bearer}"
+            </span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <input
+              className="form-control form-control-sm"
+              readOnly
+              value={bearer}
+              style={{ fontFamily: 'monospace', fontSize: 12, width: '100%' }}
+            />
+            <button
+              type="button"
+              className={`btn btn-sm ${copied ? 'btn-success' : 'btn-save'}`}
+              style={{ minWidth: 40 }}
+              onClick={handleCopy}
+              title={copied ? 'Copied!' : 'Copy to clipboard'}
+            >
+              <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
+            </button>
+          </div>
+          <p className="mb-0" style={{ fontSize: 12, color: '#888' }}>
+            <i className="fas fa-info-circle me-1" />
+            The header name <code>Authorization</code> may have been changed in the ApiKey extractor settings of the Apikeys plugin on the route or API endpoints.
+          </p>
+        </div>
+      )}
+    />
+  );
+}
+
+function CopyFromLineItem({ item, rowDisplay, text }) {
+  const [bearers, setBearers] = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const fetchAndShow = () => {
+    if (bearers[item.clientId]) {
+      setShowModal(true);
+    } else {
+      setLoading(true);
+      BackOfficeServices.getBearer(item.clientId, item.clientSecret)
+        .then(r => {
+          setBearers(prev => ({ ...prev, [item.clientId]: r.bearer_new }));
+          setShowModal(true);
+        })
+        .finally(() => setLoading(false));
+    }
+  };
+
+  const component = <>
     <button
       type="button"
       className="btn btn-success btn-sm"
-      onClick={() => copy(item.clientId + ':' + item.clientSecret)}
+      onClick={fetchAndShow}
+      disabled={loading}
     >
-      <i className={copyIconName} />
+      {text ? text :
+        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-key'} />}
     </button>
-  );
+    {showModal && bearers[item.clientId] && (
+      <BearerModal
+        bearer={bearers[item.clientId]}
+        onClose={() => setShowModal(false)}
+      />
+    )}
+  </>
+
+  if (rowDisplay)
+    return <div className='row mb-3'>
+      <label className='col-xs-12 col-sm-2 col-form-label'></label>
+      <div className='col-sm-10'>
+        {component}
+      </div>
+    </div>
+
+  return component
 }
 
 function LocalTokensBucketStrategyConfig({ value, onChange }) {
@@ -752,7 +839,12 @@ const ApiKeysConstants = {
       },
     },
     copyCredentials: {
-      type: CopyCredentials,
+      type: props => {
+        return <CopyFromLineItem
+          item={props?.rawValue}
+          text="Copy credentials"
+          rowDisplay />
+      },
       props: {
         label: '',
       },

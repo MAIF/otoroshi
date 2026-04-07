@@ -382,7 +382,6 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
         )
     }
   }
-
 }
 
 case class LegacyThrottlingStrategyConfig(quota: AllowedQuota = AllowedQuota())
