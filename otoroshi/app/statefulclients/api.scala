@@ -86,6 +86,8 @@ class StatefulClientsManager(env: Env) {
       kind match {
         case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
         case "pg" => Seq((id, PgStatefulClientConfig(config)))
+        case "kafka" => Seq((id, KafkaStatefulClientConfig(config)))
+        case "pulsar" => Seq((id, PulsarStatefulClientConfig(config)))
         case _ => Seq.empty
       }
     }
