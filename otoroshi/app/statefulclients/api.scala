@@ -12,7 +12,7 @@ import scala.util.Try
 
 trait StatefulClientConfig[A] {
   def isOpen(client: A): Boolean
-  def start(): A
+  def start(env: Env): A
   def stop(client: A): Unit
   def sameConfig(other: StatefulClientConfig[_]): Boolean
 }
@@ -39,21 +39,21 @@ class StatefulClientsManager(env: Env) {
           typed.client
         } else {
           logger.info(s"stateful client '$id' config changed or connection closed, reconnecting")
-          val newClient: T = config.start()
+          val newClient: T = config.start(env)
           statefulClients.put(id, StatefulClientWrapper[T](config, newClient))
           Try(typed.stopClient())
           newClient
         }
       case None =>
         logger.info(s"starting new stateful client '$id'")
-        val newClient: T = config.start()
+        val newClient: T = config.start(env)
         statefulClients.put(id, StatefulClientWrapper[T](config, newClient))
         newClient
     }
   }
 
   private def startAndRegister[T](id: String, config: StatefulClientConfig[T]): Unit = {
-    val c: T = config.start()
+    val c: T = config.start(env)
     statefulClients.put(id, StatefulClientWrapper[T](config, c))
   }
 
