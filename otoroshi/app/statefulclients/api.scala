@@ -6,9 +6,10 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 
+import java.util.concurrent.Executors
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Try}
 
 trait StatefulClientConfig[A] {
   def isOpen(client: A): Boolean
@@ -30,6 +31,7 @@ class StatefulClientsManager(env: Env) {
 
   private val logger = Logger("otoroshi-stateful-clients-manager")
   private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] = new TrieMap[String, StatefulClientWrapper[_]]()
+  private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
     statefulClients.get(id) match {
@@ -41,7 +43,12 @@ class StatefulClientsManager(env: Env) {
           logger.info(s"stateful client '$id' config changed or connection closed, reconnecting")
           val newClient: T = config.start(env)
           statefulClients.put(id, StatefulClientWrapper[T](config, newClient))
-          Try(typed.stopClient())
+          Future {
+            Try(typed.stopClient()) match {
+              case Failure(e) => logger.error(s"Error while stopping client '${id}'", e)
+              case _ =>
+            }
+          }
           newClient
         }
       case None =>
