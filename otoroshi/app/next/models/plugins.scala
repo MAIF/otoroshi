@@ -6,7 +6,9 @@ import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.plugins.{OverrideHost, WasmJob}
 import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.workflow.WorkflowJob
+import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
@@ -334,10 +336,12 @@ object NgPlugins {
 }
 
 case class NgContextualPlugins(
+    route: NgRoute,
     plugins: NgPlugins,
     global_plugins: NgPlugins,
     request: RequestHeader,
     nextPluginsMerge: Boolean,
+    attrs: TypedMap,
     _env: Env,
     _ec: ExecutionContext
 ) {
@@ -347,7 +351,18 @@ case class NgContextualPlugins(
 
   lazy val currentListener = request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
 
-  lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots).zipWithIndex
+  lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots)
+    .map(inst => (inst, inst.getPlugin[NgPresetPlugin]))
+    .flatMap {
+      case (slot, Some(preset)) if slot.enabled => preset.expand(NgPresetPluginContext(
+        request = request,
+        config = slot.config.raw,
+        attrs = attrs,
+        route = route,
+      ))
+      case (slot, _) => Seq(slot)
+    }
+    .zipWithIndex
     .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
 
@@ -628,6 +643,8 @@ object NgContextualPlugins {
       global_plugins = NgPlugins.empty,
       request = request,
       nextPluginsMerge = true,
+      attrs = TypedMap.empty,
+      route = NgRoute.empty,
       _env = env,
       _ec = ec
     )
