@@ -11,7 +11,7 @@ object LettuceStatefulClientConfig {
   def apply(obj: JsObject) = new LettuceStatefulClientConfig(obj.select("uri").asString)
 }
 
-class LettuceStatefulClientConfig(private val uri: String) extends StatefulClientConfig[StatefulRedisConnection[String, ByteString]] {
+case class LettuceStatefulClientConfig(uri: String) extends StatefulClientConfig[StatefulRedisConnection[String, ByteString]] {
 
   private var redisClient: RedisClient = _
 
