@@ -27,7 +27,7 @@ case class LettuceStatefulClientConfig(uri: String) extends StatefulClientConfig
     Option(redisClient).foreach(_.shutdown())
   }
 
-  override def sameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case l: LettuceStatefulClientConfig => l.uri == uri
     case _ => false
   }
