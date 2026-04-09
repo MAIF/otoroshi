@@ -59,15 +59,9 @@ class StatefulClientsManager(env: Env) {
 
   def start(): Future[Unit] = synchronized {
     logger.info("Starting stateful clients manager")
-    getClientConfigsFromStaticConfig().foreach { case (id, config) =>
-      logger.info(s"starting pre-configured stateful client '$id' from static config")
+    getClientConfigsFromConfig().foreach { case (id, config) =>
+      logger.info(s"starting pre-configured stateful client '$id'")
       startAndRegister(id, config)
-    }
-    getClientConfigsFromGlobalConfig().foreach { case (id, config) =>
-      if (!statefulClients.contains(id)) {
-        logger.info(s"starting pre-configured stateful client '$id' from global config")
-        startAndRegister(id, config)
-      }
     }
     FastFuture.successful(())
   }
@@ -81,22 +75,11 @@ class StatefulClientsManager(env: Env) {
     FastFuture.successful(())
   }
 
-  private def getClientConfigsFromStaticConfig(): List[(String, StatefulClientConfig[_])] = {
-    val configs = env.configurationJson.select("otoroshi").select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList ++
-      env.configurationJson.select("otoroshi").select("stateful-clients-json").asOpt[String].flatMap(str => str.parseJson.asOpt[Seq[JsObject]]).getOrElse(Seq.empty).toList
-    configs.flatMap { config =>
-      val id = config.select("id").asString
-      val kind = config.select("kind").asString
-      kind match {
-        case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
-        case "pg" => Seq((id, PgStatefulClientConfig(config)))
-        case _ => Seq.empty
-      }
-    }
-  }
-
-  private def getClientConfigsFromGlobalConfig(): List[(String, StatefulClientConfig[_])] = {
-    val configs = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).plugins.config.select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList
+  private def getClientConfigsFromConfig(): List[(String, StatefulClientConfig[_])] = {
+    val staticConfigs = env.configurationJson.select("otoroshi").select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList
+    val staticJsonConfigs = env.configurationJson.select("otoroshi").select("stateful-clients-json").asOpt[String].flatMap(str => str.parseJson.asOpt[Seq[JsObject]]).getOrElse(Seq.empty).toList
+    val dynConfigs = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).plugins.config.select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList
+    val configs = staticConfigs ++ staticJsonConfigs ++ dynConfigs
     configs.flatMap { config =>
       val id = config.select("id").asString
       val kind = config.select("kind").asString
