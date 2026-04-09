@@ -400,7 +400,7 @@ class ProxyEngine() extends RequestHandler {
                    }).applyOnIf(route.capture)(_.copy(capture = true))
       _          = report.markDoneAndStart("compute-plugins")
       gplugs     = global_plugins__
-      ctxPlugins = route.contextualPlugins(gplugs, pluginMerge, request).seffectOn(_.allPlugins)
+      ctxPlugins = route.contextualPlugins(gplugs, pluginMerge, attrs, request).seffectOn(_.allPlugins)
       _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _          = report.markDoneAndStart(
                      "tenant-check",
@@ -620,7 +620,7 @@ class ProxyEngine() extends RequestHandler {
                      case _             => _config
                    }
       _          = report.markDoneAndStart("compute-plugins")
-      ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, request).seffectOn(_.allPlugins)
+      ctxPlugins = route.contextualPlugins(global_plugins__, pluginMerge, attrs, request).seffectOn(_.allPlugins)
       _          = attrs.put(Keys.ContextualPluginsKey -> ctxPlugins)
       _          = report.markDoneAndStart(
                      "tenant-check",
