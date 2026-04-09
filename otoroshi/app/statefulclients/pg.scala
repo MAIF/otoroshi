@@ -18,7 +18,7 @@ case class PgStatefulClientConfig(uri: String, poolSize: Int = 10) extends State
 
   private val open = new AtomicBoolean(false)
 
-  override def start(): Pool = {
+  override def start(env: otoroshi.env.Env): Pool = {
     val connectOptions = PgConnectOptions.fromUri(uri)
     val poolOptions = new PoolOptions().setMaxSize(poolSize)
     val pool = Pool.pool(connectOptions, poolOptions)
