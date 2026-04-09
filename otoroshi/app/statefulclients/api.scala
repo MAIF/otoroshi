@@ -23,7 +23,7 @@ case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) 
   def isClientOpen: Boolean = config.isOpen(client)
 }
 
-// allow to bind stateful clients to node lifecycle,
+// StatefulClientsManager allow to bind stateful clients to otoroshi node lifecycle,
 // scoped to node kind (all, leader, worker),
 // with optional pre-allocation from static or global config.
 // id of the client is supposed to be stable
