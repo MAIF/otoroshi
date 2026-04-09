@@ -28,7 +28,7 @@ case class KafkaStatefulClientConfig(config: KafkaConfig) extends StatefulClient
 
   override def isOpen(client: Producer[Array[Byte], String]): Boolean = open.get()
 
-  override def sameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case k: KafkaStatefulClientConfig => k.config == config
     case _ => false
   }
