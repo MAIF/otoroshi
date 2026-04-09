@@ -17,7 +17,7 @@ case class LettuceStatefulClientConfig(uri: String) extends StatefulClientConfig
 
   override def isOpen(client: StatefulRedisConnection[String, ByteString]): Boolean = client.isOpen
 
-  override def start(): StatefulRedisConnection[String, ByteString] = {
+  override def start(env: otoroshi.env.Env): StatefulRedisConnection[String, ByteString] = {
     redisClient = RedisClient.create(uri)
     redisClient.connect(new ByteStringRedisCodec())
   }
