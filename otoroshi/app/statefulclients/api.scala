@@ -14,7 +14,7 @@ trait StatefulClientConfig[A] {
   def isOpen(client: A): Boolean
   def start(env: Env): A
   def stop(client: A): Unit
-  def sameConfig(other: StatefulClientConfig[_]): Boolean
+  def isSameConfig(other: StatefulClientConfig[_]): Boolean
 }
 
 case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) {
@@ -35,7 +35,7 @@ class StatefulClientsManager(env: Env) {
     statefulClients.get(id) match {
       case Some(wrapper) =>
         val typed = wrapper.asInstanceOf[StatefulClientWrapper[T]]
-        if (config.sameConfig(typed.config) && typed.isClientOpen) {
+        if (config.isSameConfig(typed.config) && typed.isClientOpen) {
           typed.client
         } else {
           logger.info(s"stateful client '$id' config changed or connection closed, reconnecting")
