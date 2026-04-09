@@ -8,9 +8,9 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, PrivateAppsUser, Target}
-import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgRoute, NgTarget}
-import otoroshi.next.plugins.RejectStrategy
+import otoroshi.models.{ApiKey, JwtTokenLocation, PrivateAppsUser, Target}
+import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget, PluginIndex}
+import otoroshi.next.plugins.{NgApikeyCallsConfig, NgApikeyMandatoryTagsConfig, OIDCJwtVerifierConfig, RejectStrategy}
 import otoroshi.next.proxy.{NgExecutionReport, NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
@@ -19,14 +19,7 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -1697,4 +1690,22 @@ case class NgIncomingRequestValidatorContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = json.asObject
+}
+
+case class NgPresetPluginContext(
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  route: NgRoute,
+  idx: Int = 0
+) {
+  def json: JsValue = Json.obj(
+    "request"       -> JsonHelpers.requestToJson(request, attrs),
+    "config"        -> config,
+    "attrs"         -> attrs.json
+  )
+}
+
+trait NgPresetPlugin extends NgPlugin {
+  def expand(ctx: NgPresetPluginContext): Seq[NgPluginInstance]
 }
