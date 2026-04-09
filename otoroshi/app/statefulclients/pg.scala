@@ -14,7 +14,7 @@ object PgStatefulClientConfig {
   )
 }
 
-class PgStatefulClientConfig(private val uri: String, private val poolSize: Int = 10) extends StatefulClientConfig[PgPool] {
+case class PgStatefulClientConfig(uri: String, poolSize: Int = 10) extends StatefulClientConfig[PgPool] {
 
   private val open = new AtomicBoolean(false)
 
