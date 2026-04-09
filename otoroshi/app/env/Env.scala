@@ -32,6 +32,7 @@ import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptMa
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
+import otoroshi.statefulclients.StatefulClientsManager
 import otoroshi.storage.{DataStores, DataStoresBuilder}
 import otoroshi.storage.drivers.cassandra._
 import otoroshi.storage.drivers.inmemory._
@@ -1099,6 +1100,7 @@ class Env(
     Option(ahcStats.get()).foreach(_.cancel())
     Option(internalAhcStats.get()).foreach(_.cancel())
     jobManager.stop()
+    statefulClientsManager.stop()
     scriptManager.stop()
     clusterAgent.stop()
     clusterLeaderAgent.stop()
@@ -1194,6 +1196,8 @@ class Env(
   lazy val proxyState = new NgProxyState(this)
 
   lazy val rateLimiter = new RateLimiter(this)
+
+  lazy val statefulClientsManager = new StatefulClientsManager(this)
 
   lazy val http2ClientProxyEnabled = configuration
     .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
@@ -1656,6 +1660,7 @@ class Env(
 
   timeout(1000.millis).andThen { case _ =>
     jobManager.start()
+    statefulClientsManager.start()
     otoroshiEventsActor ! StartExporters
   }(otoroshiExecutionContext)
 

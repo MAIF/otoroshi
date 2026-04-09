@@ -1,0 +1,110 @@
+package otoroshi.statefulclients
+
+import akka.http.scaladsl.util.FastFuture
+import otoroshi.env.Env
+import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.json._
+
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.Future
+import scala.util.Try
+
+trait StatefulClientConfig[A] {
+  def isOpen(client: A): Boolean
+  def start(): A
+  def stop(client: A): Unit
+  def sameConfig(other: StatefulClientConfig[_]): Boolean
+}
+
+case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) {
+  def stopClient(): Unit = config.stop(client)
+  def isClientOpen: Boolean = config.isOpen(client)
+}
+
+// allow to bind stateful clients to node lifecycle,
+// scoped to node kind (all, leader, worker),
+// with optional pre-allocation from static or global config.
+// id of the client is supposed to be stable
+class StatefulClientsManager(env: Env) {
+
+  private val logger = Logger("otoroshi-stateful-clients-manager")
+  private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] = new TrieMap[String, StatefulClientWrapper[_]]()
+
+  def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
+    statefulClients.get(id) match {
+      case Some(wrapper) =>
+        val typed = wrapper.asInstanceOf[StatefulClientWrapper[T]]
+        if (config.sameConfig(typed.config) && typed.isClientOpen) {
+          typed.client
+        } else {
+          logger.info(s"stateful client '$id' config changed or connection closed, reconnecting")
+          val newClient: T = config.start()
+          statefulClients.put(id, StatefulClientWrapper[T](config, newClient))
+          Try(typed.stopClient())
+          newClient
+        }
+      case None =>
+        logger.info(s"starting new stateful client '$id'")
+        val newClient: T = config.start()
+        statefulClients.put(id, StatefulClientWrapper[T](config, newClient))
+        newClient
+    }
+  }
+
+  private def startAndRegister[T](id: String, config: StatefulClientConfig[T]): Unit = {
+    val c: T = config.start()
+    statefulClients.put(id, StatefulClientWrapper[T](config, c))
+  }
+
+  def start(): Future[Unit] = synchronized {
+    logger.info("Starting stateful clients manager")
+    getClientConfigsFromStaticConfig().foreach { case (id, config) =>
+      logger.info(s"starting pre-configured stateful client '$id' from static config")
+      startAndRegister(id, config)
+    }
+    getClientConfigsFromGlobalConfig().foreach { case (id, config) =>
+      if (!statefulClients.contains(id)) {
+        logger.info(s"starting pre-configured stateful client '$id' from global config")
+        startAndRegister(id, config)
+      }
+    }
+    FastFuture.successful(())
+  }
+
+  def stop(): Future[Unit] = synchronized {
+    statefulClients.foreach { case (id, wrapper) =>
+      logger.info(s"stopping stateful client '$id'")
+      Try(wrapper.stopClient())
+    }
+    statefulClients.clear()
+    FastFuture.successful(())
+  }
+
+  private def getClientConfigsFromStaticConfig(): List[(String, StatefulClientConfig[_])] = {
+    val configs = env.configurationJson.select("otoroshi").select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList ++
+      env.configurationJson.select("otoroshi").select("stateful-clients-json").asOpt[String].flatMap(str => str.parseJson.asOpt[Seq[JsObject]]).getOrElse(Seq.empty).toList
+    configs.flatMap { config =>
+      val id = config.select("id").asString
+      val kind = config.select("kind").asString
+      kind match {
+        case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
+        case "pg" => Seq((id, PgStatefulClientConfig(config)))
+        case _ => Seq.empty
+      }
+    }
+  }
+
+  private def getClientConfigsFromGlobalConfig(): List[(String, StatefulClientConfig[_])] = {
+    val configs = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).plugins.config.select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList
+    configs.flatMap { config =>
+      val id = config.select("id").asString
+      val kind = config.select("kind").asString
+      kind match {
+        case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
+        case "pg" => Seq((id, PgStatefulClientConfig(config)))
+        case _ => Seq.empty
+      }
+    }
+  }
+}
