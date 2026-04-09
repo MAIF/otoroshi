@@ -90,12 +90,17 @@ class StatefulClientsManager(env: Env) {
     configs.flatMap { config =>
       val id = config.select("id").asString
       val kind = config.select("kind").asString
-      kind match {
-        case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
-        case "pg" => Seq((id, PgStatefulClientConfig(config)))
-        case "kafka" => Seq((id, KafkaStatefulClientConfig(config)))
-        case "pulsar" => Seq((id, PulsarStatefulClientConfig(config)))
-        case _ => Seq.empty
+      val nodeKind = config.select("node_kind").asOpt[String].getOrElse("all")
+      if (nodeKind != "all" && nodeKind != env.clusterConfig.mode.name.toLowerCase) {
+        Seq.empty
+      } else {
+        kind match {
+          case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
+          case "pg" => Seq((id, PgStatefulClientConfig(config)))
+          case "kafka" => Seq((id, KafkaStatefulClientConfig(config)))
+          case "pulsar" => Seq((id, PulsarStatefulClientConfig(config)))
+          case _ => Seq.empty
+        }
       }
     }
   }
