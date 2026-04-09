@@ -33,7 +33,7 @@ case class PgStatefulClientConfig(uri: String, poolSize: Int = 10) extends State
 
   override def isOpen(client: Pool): Boolean = open.get()
 
-  override def sameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case p: PgStatefulClientConfig => p.uri == uri && p.poolSize == poolSize
     case _ => false
   }
