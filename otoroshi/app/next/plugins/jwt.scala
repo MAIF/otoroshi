@@ -38,6 +38,7 @@ import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.el.JwtExpressionLanguage
+import play.api.libs.typedmap.TypedKey
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.ssl.pki.models.GenKeyPairQuery
 import otoroshi.utils.TypedMap
@@ -1013,6 +1014,485 @@ class OIDCJwtVerifier extends NgAccessValidator {
                     .vfuture
             }
         }
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OAuth2 Token Exchange (RFC 8693)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+case class OAuth2TokenExchangeConfig(
+    ref: Option[String] = None,
+    source: Option[JwtTokenLocation] = None,
+    mandatory: Boolean = true,
+    exchange: OAuth2TokenExchangeParams = OAuth2TokenExchangeParams(),
+    clientCredentialsOverride: Option[OAuth2ClientCredentialsOverride] = None,
+    cacheTtlMs: Long = 0,
+    callTimeoutMs: Long = 10000,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
+  def json: JsValue = OAuth2TokenExchangeConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+    } else {
+      None
+    }
+  }
+}
+
+case class OAuth2TokenExchangeParams(
+    audience: Option[String] = None,
+    resource: Option[String] = None,
+    scope: Option[String] = None,
+    requestedTokenType: String = "urn:ietf:params:oauth:token-type:access_token",
+    actorToken: Option[String] = None,
+    actorTokenType: String = "urn:ietf:params:oauth:token-type:access_token"
+) {
+  def json: JsValue = OAuth2TokenExchangeParams.format.writes(this)
+}
+
+object OAuth2TokenExchangeParams {
+  val format = new Format[OAuth2TokenExchangeParams] {
+    override def reads(json: JsValue): JsResult[OAuth2TokenExchangeParams] = Try {
+      OAuth2TokenExchangeParams(
+        audience = json.select("audience").asOpt[String],
+        resource = json.select("resource").asOpt[String],
+        scope = json.select("scope").asOpt[String],
+        requestedTokenType = json
+          .select("requested_token_type")
+          .asOpt[String]
+          .getOrElse("urn:ietf:params:oauth:token-type:access_token"),
+        actorToken = json.select("actor_token").asOpt[String],
+        actorTokenType = json
+          .select("actor_token_type")
+          .asOpt[String]
+          .getOrElse("urn:ietf:params:oauth:token-type:access_token")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2TokenExchangeParams): JsValue             = Json.obj(
+      "audience"             -> o.audience.map(JsString(_)).getOrElse(JsNull).asValue,
+      "resource"             -> o.resource.map(JsString(_)).getOrElse(JsNull).asValue,
+      "scope"                -> o.scope.map(JsString(_)).getOrElse(JsNull).asValue,
+      "requested_token_type" -> o.requestedTokenType,
+      "actor_token"          -> o.actorToken.map(JsString(_)).getOrElse(JsNull).asValue,
+      "actor_token_type"     -> o.actorTokenType
+    )
+  }
+}
+
+case class OAuth2ClientCredentialsOverride(
+    clientId: String,
+    clientSecret: String
+) {
+  def json: JsValue = OAuth2ClientCredentialsOverride.format.writes(this)
+}
+
+object OAuth2ClientCredentialsOverride {
+  val format = new Format[OAuth2ClientCredentialsOverride] {
+    override def reads(json: JsValue): JsResult[OAuth2ClientCredentialsOverride] = Try {
+      OAuth2ClientCredentialsOverride(
+        clientId = json.select("client_id").as[String],
+        clientSecret = json.select("client_secret").as[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2ClientCredentialsOverride): JsValue             = Json.obj(
+      "client_id"     -> o.clientId,
+      "client_secret" -> o.clientSecret
+    )
+  }
+}
+
+object OAuth2TokenExchangeConfig {
+  val configFlow: Seq[String] = Seq(
+    "ref",
+    "mandatory",
+    "source",
+    ">>>Exchange settings",
+    "exchange.audience",
+    "exchange.resource",
+    "exchange.scope",
+    "exchange.requested_token_type",
+    "exchange.actor_token",
+    "exchange.actor_token_type",
+    ">>>Client credentials override",
+    "client_credentials_override.client_id",
+    "client_credentials_override.client_secret",
+    ">>>Cache",
+    "cache_ttl_ms",
+    ">>>Timeouts",
+    "call_timeout_ms",
+    ">>>Custom error response",
+    "custom_response",
+    "custom_response_status",
+    "custom_response_headers",
+    "custom_response_body"
+  )
+
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "ref"                                    -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Auth. module",
+        "props" -> Json.obj(
+          "optionsFrom"        -> "/bo/api/proxy/apis/security.otoroshi.io/v1/auth-modules",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id"
+          )
+        )
+      ),
+      "mandatory"                              -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Mandatory"
+      ),
+      "source"                                 -> Json.obj(
+        "type"  -> "any",
+        "label" -> "JWT Source",
+        "props" -> Json.obj("height" -> 200)
+      ),
+      "exchange.audience"                      -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Target audience"
+      ),
+      "exchange.resource"                      -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Resource"
+      ),
+      "exchange.scope"                         -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Scope"
+      ),
+      "exchange.requested_token_type"          -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Requested token type"
+      ),
+      "exchange.actor_token"                   -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Actor token"
+      ),
+      "exchange.actor_token_type"              -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Actor token type"
+      ),
+      "client_credentials_override.client_id"  -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Client ID override"
+      ),
+      "client_credentials_override.client_secret" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Client secret override"
+      ),
+      "cache_ttl_ms"                           -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Cache TTL (ms, 0 to disable)"
+      ),
+      "call_timeout_ms"                        -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Call timeout (ms)"
+      ),
+      "custom_response"                        -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Custom error"
+      ),
+      "custom_response_status"                 -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Custom error status"
+      ),
+      "custom_response_headers"                -> Json.obj(
+        "type"  -> "object",
+        "label" -> "Custom error headers"
+      ),
+      "custom_response_body"                   -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Custom error body",
+        "props" -> Json.obj("editorOnly" -> true)
+      )
+    )
+  )
+
+  val format = new Format[OAuth2TokenExchangeConfig] {
+    override def reads(json: JsValue): JsResult[OAuth2TokenExchangeConfig] = Try {
+      OAuth2TokenExchangeConfig(
+        ref = json.select("ref").asOpt[String],
+        source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
+        mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
+        exchange = json
+          .select("exchange")
+          .asOpt[JsObject]
+          .flatMap(o => OAuth2TokenExchangeParams.format.reads(o).asOpt)
+          .getOrElse(OAuth2TokenExchangeParams()),
+        clientCredentialsOverride = json
+          .select("client_credentials_override")
+          .asOpt[JsObject]
+          .flatMap(o => OAuth2ClientCredentialsOverride.format.reads(o).asOpt),
+        cacheTtlMs = json.select("cache_ttl_ms").asOpt[Long].getOrElse(0L),
+        callTimeoutMs = json.select("call_timeout_ms").asOpt[Long].getOrElse(10000L),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders =
+          json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2TokenExchangeConfig): JsValue             = Json.obj(
+      "ref"                         -> o.ref.map(_.json).getOrElse(JsNull).asValue,
+      "source"                      -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
+      "mandatory"                   -> o.mandatory,
+      "exchange"                    -> o.exchange.json,
+      "client_credentials_override" -> o.clientCredentialsOverride.map(_.json).getOrElse(JsNull).asValue,
+      "cache_ttl_ms"                -> o.cacheTtlMs,
+      "call_timeout_ms"             -> o.callTimeoutMs,
+      "custom_response"             -> o.customResponse,
+      "custom_response_status"      -> o.customResponseStatus,
+      "custom_response_headers"     -> o.customResponseHeaders,
+      "custom_response_body"        -> o.customResponseBody
+    )
+  }
+}
+
+class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
+
+  import com.github.blemale.scaffeine.Scaffeine
+  import otoroshi.utils.http.Implicits._
+  import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+
+  private lazy val logger = play.api.Logger("otoroshi-plugin-oauth2-token-exchange")
+
+  private val exchangeCache = Scaffeine()
+    .maximumSize(1000)
+    .build[String, (String, Long)]()
+
+  override def defaultConfigObject: Option[NgPluginConfig] = OAuth2TokenExchangeConfig().some
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory]           =
+    Seq(NgPluginCategory.AccessControl, NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isAccessAsync: Boolean                      = true
+  override def isTransformRequestAsync: Boolean            = true
+  override def name: String                                = "OAuth2 token exchange"
+  override def description: Option[String]                 =
+    "This plugin performs an OAuth 2.0 Token Exchange (RFC 8693) using an OIDC auth. module configuration, validates the incoming token, exchanges it with the IdP, and forwards the exchanged token upstream".some
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OAuth2TokenExchangeConfig.configFlow
+  override def configSchema: Option[JsObject] = OAuth2TokenExchangeConfig.configSchema
+
+  private val ExchangedTokenKey = TypedKey[String]("otoroshi.next.plugins.OAuth2TokenExchange.ExchangedToken")
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(OAuth2TokenExchangeConfig.format)
+      .getOrElse(OAuth2TokenExchangeConfig())
+    config.ref match {
+      case None               =>
+        NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
+      case Some(authModuleId) =>
+        env.proxyState.authModule(authModuleId) match {
+          case None    =>
+            NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
+          case Some(m) =>
+            m match {
+              case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
+                val customResult = config.asResult
+                val verifier     = LocalJwtVerifier()
+                  .copy(
+                    enabled = true,
+                    algoSettings = oidcModule.jwtVerifier.get
+                  )
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None if !config.mandatory => NgAccess.NgAllowed.vfuture
+                  case None if config.mandatory  =>
+                    NgAccess
+                      .NgDenied(
+                        customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
+                      )
+                      .vfuture
+                  case Some((source, token))     =>
+                    verifier
+                      .copy(source = source)
+                      .verifyGen[NgAccess](
+                        ctx.request,
+                        ctx.route.legacy,
+                        ctx.apikey,
+                        ctx.user,
+                        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                        ctx.attrs
+                      ) { _ =>
+                        performTokenExchange(token, config, oidcModule, ctx.attrs).map {
+                          case Left(result) => Left(result)
+                          case Right(_)     => Right(NgAccess.NgAllowed)
+                        }
+                      }
+                      .map {
+                        case Left(result) if !config.mandatory => NgAccess.NgAllowed
+                        case Left(result) if config.mandatory  => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Right(r)                          => r
+                      }
+                }
+              }
+              case _: OAuth2ModuleConfig => {
+                // no jwtVerifier: treat token as opaque, skip local validation, go straight to exchange
+                val customResult = config.asResult
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None if !config.mandatory => NgAccess.NgAllowed.vfuture
+                  case None if config.mandatory  =>
+                    NgAccess
+                      .NgDenied(
+                        customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
+                      )
+                      .vfuture
+                  case Some((_, token))          =>
+                    performTokenExchange(token, config, m.asInstanceOf[OAuth2ModuleConfig], ctx.attrs).map {
+                      case Left(result) if !config.mandatory => NgAccess.NgAllowed
+                      case Left(result) if config.mandatory  => NgAccess.NgDenied(customResult.getOrElse(result))
+                      case Right(_)                          => NgAccess.NgAllowed
+                    }
+                }
+              }
+              case _                     =>
+                if (!config.mandatory) NgAccess.NgAllowed.vfuture
+                else
+                  NgAccess
+                    .NgDenied(
+                      Results.BadRequest(Json.obj("error" -> "auth. module is not an OAuth2/OIDC module"))
+                    )
+                    .vfuture
+            }
+        }
+    }
+  }
+
+  private def performTokenExchange(
+      subjectToken: String,
+      config: OAuth2TokenExchangeConfig,
+      oidcModule: OAuth2ModuleConfig,
+      attrs: TypedMap
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
+    val cacheKey  = s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
+    val cacheTtl  = config.cacheTtlMs
+    val now       = System.currentTimeMillis()
+    val fromCache = if (cacheTtl > 0) {
+      exchangeCache.getIfPresent(cacheKey).flatMap { case (cachedToken, expiresAt) =>
+        if (expiresAt > now) Some(cachedToken) else { exchangeCache.invalidate(cacheKey); None }
+      }
+    } else None
+
+    fromCache match {
+      case Some(cachedToken) =>
+        attrs.put(ExchangedTokenKey -> cachedToken)
+        Right(()).vfuture
+      case None              =>
+        val clientId     = config.clientCredentialsOverride.map(_.clientId).getOrElse(oidcModule.clientId)
+        val clientSecret = config.clientCredentialsOverride.map(_.clientSecret).getOrElse(oidcModule.clientSecret)
+
+        val params = Map(
+          "grant_type"         -> "urn:ietf:params:oauth:grant-type:token-exchange",
+          "subject_token"      -> subjectToken,
+          "subject_token_type" -> "urn:ietf:params:oauth:token-type:access_token",
+          "client_id"          -> clientId,
+          "client_secret"      -> clientSecret
+        ) ++
+          config.exchange.audience.map("audience"             -> _) ++
+          config.exchange.resource.map("resource"             -> _) ++
+          config.exchange.scope.map("scope"                   -> _) ++
+          Some("requested_token_type" -> config.exchange.requestedTokenType) ++
+          config.exchange.actorToken.map("actor_token" -> _) ++
+          config.exchange.actorToken.map(_ => "actor_token_type" -> config.exchange.actorTokenType)
+
+        val timeout = scala.concurrent.duration.Duration(config.callTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+
+        val builder = env.MtlsWs
+          .url(oidcModule.tokenUrl, oidcModule.mtlsConfig)
+          .withMaybeProxyServer(oidcModule.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.auth)))
+          .withRequestTimeout(timeout)
+
+        builder
+          .post(params)(writeableOf_urlEncodedSimpleForm)
+          .map { response =>
+            if (response.status == 200) {
+              val json          = response.json
+              val exchangedToken = json
+                .select(oidcModule.accessTokenField)
+                .asOpt[String]
+                .getOrElse(json.select("access_token").as[String])
+              if (cacheTtl > 0) {
+                val expiresIn = json.select("expires_in").asOpt[Long].map(_ * 1000).getOrElse(cacheTtl)
+                val effectiveTtl = Math.min(expiresIn, cacheTtl)
+                exchangeCache.put(cacheKey, (exchangedToken, now + effectiveTtl))
+              }
+              attrs.put(ExchangedTokenKey -> exchangedToken)
+              Right(())
+            } else {
+              logger.error(
+                s"token exchange failed with status ${response.status}: ${response.body}"
+              )
+              Left(
+                Results.BadGateway(
+                  Json.obj(
+                    "error"            -> "token exchange failed",
+                    "exchange_status"  -> response.status
+                  )
+                )
+              )
+            }
+          }
+          .recover { case e: Throwable =>
+            logger.error("token exchange call failed", e)
+            Left(
+              Results.BadGateway(
+                Json.obj("error" -> "token exchange call failed", "message" -> e.getMessage)
+              )
+            )
+          }
+    }
+  }
+
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    ctx.attrs.get(ExchangedTokenKey) match {
+      case Some(exchangedToken) =>
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers
+              .filterNot(_._1.equalsIgnoreCase("Authorization")) + ("Authorization" -> s"Bearer $exchangedToken")
+          )
+        ).vfuture
+      case None                 =>
+        Right(ctx.otoroshiRequest).vfuture
     }
   }
 }
