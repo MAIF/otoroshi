@@ -3,34 +3,17 @@ package otoroshi.next.plugins
 import akka.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.github.blemale.scaffeine.Scaffeine
 import com.nimbusds.jose.crypto.{AESEncrypter, RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject, Payload}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import otoroshi.env.Env
-import otoroshi.models.{
-  ApiKey,
-  DefaultToken,
-  InCookie,
-  InHeader,
-  InQueryParam,
-  JwtTokenLocation,
-  LocalJwtVerifier,
-  OutputMode,
-  PrivateAppsUser,
-  RefJwtVerifier,
-  ServiceDescriptor
-}
+import otoroshi.models.{ApiKey, DefaultToken, InCookie, InHeader, InQueryParam, JwtTokenLocation, LocalJwtVerifier, OutputMode, PrivateAppsUser, RefJwtVerifier, ServiceDescriptor}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.{
-  BetterJsReadable,
-  BetterJsValue,
-  BetterMapOfStringAndB,
-  BetterString,
-  BetterSyntax
-}
+import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterMapOfStringAndB, BetterString, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -1267,17 +1250,18 @@ object OAuth2TokenExchangeConfig {
   }
 }
 
+object OAuth2TokenExchange {
+  lazy val logger = play.api.Logger("otoroshi-plugin-oauth2-token-exchange")
+  val exchangeCache = Scaffeine()
+    .maximumSize(1000)
+    .build[String, (String, Long)]()
+}
+
 class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
   import com.github.blemale.scaffeine.Scaffeine
   import otoroshi.utils.http.Implicits._
   import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-
-  private lazy val logger = play.api.Logger("otoroshi-plugin-oauth2-token-exchange")
-
-  private val exchangeCache = Scaffeine()
-    .maximumSize(1000)
-    .build[String, (String, Long)]()
 
   override def defaultConfigObject: Option[NgPluginConfig] = OAuth2TokenExchangeConfig().some
   override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
@@ -1405,8 +1389,8 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
     val cacheTtl  = config.cacheTtlMs
     val now       = System.currentTimeMillis()
     val fromCache = if (cacheTtl > 0) {
-      exchangeCache.getIfPresent(cacheKey).flatMap { case (cachedToken, expiresAt) =>
-        if (expiresAt > now) Some(cachedToken) else { exchangeCache.invalidate(cacheKey); None }
+      OAuth2TokenExchange.exchangeCache.getIfPresent(cacheKey).flatMap { case (cachedToken, expiresAt) =>
+        if (expiresAt > now) Some(cachedToken) else { OAuth2TokenExchange.exchangeCache.invalidate(cacheKey); None }
       }
     } else None
 
@@ -1451,12 +1435,12 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
               if (cacheTtl > 0) {
                 val expiresIn = json.select("expires_in").asOpt[Long].map(_ * 1000).getOrElse(cacheTtl)
                 val effectiveTtl = Math.min(expiresIn, cacheTtl)
-                exchangeCache.put(cacheKey, (exchangedToken, now + effectiveTtl))
+                OAuth2TokenExchange.exchangeCache.put(cacheKey, (exchangedToken, now + effectiveTtl))
               }
               attrs.put(ExchangedTokenKey -> exchangedToken)
               Right(())
             } else {
-              logger.error(
+              OAuth2TokenExchange.logger.error(
                 s"token exchange failed with status ${response.status}: ${response.body}"
               )
               Left(
@@ -1470,7 +1454,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
             }
           }
           .recover { case e: Throwable =>
-            logger.error("token exchange call failed", e)
+            OAuth2TokenExchange.logger.error("token exchange call failed", e)
             Left(
               Results.BadGateway(
                 Json.obj("error" -> "token exchange call failed", "message" -> e.getMessage)
