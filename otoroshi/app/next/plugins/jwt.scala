@@ -1103,21 +1103,10 @@ object OAuth2TokenExchangeConfig {
     "ref",
     "mandatory",
     "source",
-    ">>>Exchange settings",
-    "exchange.audience",
-    "exchange.resource",
-    "exchange.scope",
-    "exchange.requested_token_type",
-    "exchange.actor_token",
-    "exchange.actor_token_type",
-    ">>>Client credentials override",
-    "client_credentials_override.client_id",
-    "client_credentials_override.client_secret",
-    ">>>Cache",
+    "exchange",
+    "client_credentials_override",
     "cache_ttl_ms",
-    ">>>Timeouts",
     "call_timeout_ms",
-    ">>>Custom error response",
     "custom_response",
     "custom_response_status",
     "custom_response_headers",
@@ -1126,7 +1115,7 @@ object OAuth2TokenExchangeConfig {
 
   val configSchema: Option[JsObject] = Some(
     Json.obj(
-      "ref"                                    -> Json.obj(
+      "ref"                         -> Json.obj(
         "type"  -> "select",
         "label" -> s"Auth. module",
         "props" -> Json.obj(
@@ -1137,68 +1126,93 @@ object OAuth2TokenExchangeConfig {
           )
         )
       ),
-      "mandatory"                              -> Json.obj(
+      "mandatory"                   -> Json.obj(
         "type"  -> "bool",
         "label" -> "Mandatory"
       ),
-      "source"                                 -> Json.obj(
+      "source"                      -> Json.obj(
         "type"  -> "any",
         "label" -> "JWT Source",
         "props" -> Json.obj("height" -> 200)
       ),
-      "exchange.audience"                      -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Target audience"
+      "exchange"                    -> Json.obj(
+        "type"        -> "form",
+        "label"       -> "Exchange settings",
+        "collapsable" -> true,
+        "collapsed"   -> true,
+        "schema"      -> Json.obj(
+          "audience"             -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Target audience"
+          ),
+          "resource"             -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Resource"
+          ),
+          "scope"                -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Scope"
+          ),
+          "requested_token_type" -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Requested token type"
+          ),
+          "actor_token"          -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Actor token"
+          ),
+          "actor_token_type"     -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Actor token type"
+          )
+        ),
+        "flow"        -> Json.arr(
+          "audience",
+          "resource",
+          "scope",
+          "requested_token_type",
+          "actor_token",
+          "actor_token_type"
+        )
       ),
-      "exchange.resource"                      -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Resource"
+      "client_credentials_override" -> Json.obj(
+        "type"        -> "form",
+        "label"       -> "Client credentials override",
+        "collapsable" -> true,
+        "collapsed"   -> true,
+        "schema"      -> Json.obj(
+          "client_id"     -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Client ID"
+          ),
+          "client_secret" -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Client secret"
+          )
+        ),
+        "flow"        -> Json.arr("client_id", "client_secret")
       ),
-      "exchange.scope"                         -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Scope"
-      ),
-      "exchange.requested_token_type"          -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Requested token type"
-      ),
-      "exchange.actor_token"                   -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Actor token"
-      ),
-      "exchange.actor_token_type"              -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Actor token type"
-      ),
-      "client_credentials_override.client_id"  -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Client ID override"
-      ),
-      "client_credentials_override.client_secret" -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Client secret override"
-      ),
-      "cache_ttl_ms"                           -> Json.obj(
+      "cache_ttl_ms"                -> Json.obj(
         "type"  -> "number",
         "label" -> "Cache TTL (ms, 0 to disable)"
       ),
-      "call_timeout_ms"                        -> Json.obj(
+      "call_timeout_ms"             -> Json.obj(
         "type"  -> "number",
         "label" -> "Call timeout (ms)"
       ),
-      "custom_response"                        -> Json.obj(
+      "custom_response"             -> Json.obj(
         "type"  -> "bool",
         "label" -> "Custom error"
       ),
-      "custom_response_status"                 -> Json.obj(
+      "custom_response_status"      -> Json.obj(
         "type"  -> "number",
         "label" -> "Custom error status"
       ),
-      "custom_response_headers"                -> Json.obj(
+      "custom_response_headers"     -> Json.obj(
         "type"  -> "object",
         "label" -> "Custom error headers"
       ),
-      "custom_response_body"                   -> Json.obj(
+      "custom_response_body"        -> Json.obj(
         "type"  -> "code",
         "label" -> "Custom error body",
         "props" -> Json.obj("editorOnly" -> true)
