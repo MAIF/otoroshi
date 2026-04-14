@@ -1194,7 +1194,10 @@ object OAuth2TokenExchangeConfig {
       ),
       "cache_ttl_ms"                -> Json.obj(
         "type"  -> "number",
-        "label" -> "Cache TTL (ms, 0 to disable)"
+        "label" -> "Cache TTL (ms, 0 to disable)",
+        "props" -> Json.obj(
+          "suffix" -> "ms."
+        )
       ),
       "call_timeout_ms"             -> Json.obj(
         "type"  -> "number",
