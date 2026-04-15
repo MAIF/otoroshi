@@ -1194,14 +1194,17 @@ object OAuth2TokenExchangeConfig {
       ),
       "cache_ttl_ms"                -> Json.obj(
         "type"  -> "number",
-        "label" -> "Cache TTL (ms, 0 to disable)",
+        "label" -> "Cache TTL (0 to disable)",
         "props" -> Json.obj(
           "suffix" -> "ms."
         )
       ),
       "call_timeout_ms"             -> Json.obj(
         "type"  -> "number",
-        "label" -> "Call timeout (ms)"
+        "label" -> "Call timeout",
+        "props" -> Json.obj(
+          "suffix" -> "ms."
+        )
       ),
       "custom_response"             -> Json.obj(
         "type"  -> "bool",
