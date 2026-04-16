@@ -721,6 +721,18 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "OIDCJwtVerifier" in {
       new OIDCJwtVerifierTests(this).verifyOIDC()
     }
+    "OAuth2TokenExchange - basic exchange" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeBasic()
+    }
+    "OAuth2TokenExchange - opaque token (no jwt verifier)" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeNoJwtVerifier()
+    }
+    "OAuth2TokenExchange - IdP failure" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeIdpFailure()
+    }
+    "OAuth2TokenExchange - not mandatory" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeNotMandatory()
+    }
     "Remote Catalogs - deploy with admin API" in {
       new RemoteCatalogsTests(this).deployWithAdminApi()
     }
