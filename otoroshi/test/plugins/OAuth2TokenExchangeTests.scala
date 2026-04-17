@@ -31,7 +31,7 @@ class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
             Json.obj(
               "access_token" -> exchangedToken,
               "token_type"   -> "Bearer",
-              "expires_in"   -> 300
+              "expires_in"   -> 3600
             )
           ),
           None,
