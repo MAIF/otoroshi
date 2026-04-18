@@ -147,6 +147,7 @@ const sidebars = {
         'tutorials/custom-log-levels',
         'tutorials/custom-initial-state',
         'tutorials/setup-ai-gateway-with-otoroshictl',
+        'tutorials/oauth2-token-exchange',
       ],
     },
     {
