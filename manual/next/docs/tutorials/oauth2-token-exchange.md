@@ -31,10 +31,10 @@ For each incoming request, the plugin:
 The key design principle is that the plugin **reuses an existing OIDC auth module** for all provider-related settings (token endpoint, client credentials, JWT verification), avoiding configuration duplication.
 
 ```
-                                 +--------------------+                     +--------------------+
-Client  ──── Bearer token A ────>│      Otoroshi      │ ── exchange ─────>  │  Identity Provider │
-                                 │                    │<── Bearer token B ──│  (token endpoint)  │
-                                 +--------------------+                     +--------------------+
+                                 +--------------------+                               +--------------------+
+Client  ──── Bearer token A ────>│      Otoroshi      │ ── exchange Bearer token A ──>│  Identity Provider │
+                                 │                    │<── Bearer token B ────────────│  (token endpoint)  │
+                                 +--------------------+                               +--------------------+
                                       │                       
                                       │                                                 
                                       ├──── Bearer token B ────>  Backend service
