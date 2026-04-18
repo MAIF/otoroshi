@@ -1,8 +1,8 @@
 ---
-title: OAuth2 Token Exchange (RFC 8693)
+title: OAuth2 Token Exchange
 sidebar_position: 30
 ---
-# OAuth2 Token Exchange (RFC 8693)
+# OAuth2 Token Exchange
 
 <div style={{display: 'flex', alignItems: 'center', gap: '.5rem'}}>
 <span style={{fontWeight: 'bold'}}>Plugin:</span>
@@ -31,11 +31,12 @@ For each incoming request, the plugin:
 The key design principle is that the plugin **reuses an existing OIDC auth module** for all provider-related settings (token endpoint, client credentials, JWT verification), avoiding configuration duplication.
 
 ```
-                                          +-------------------+
-Client  ──── Bearer token A ────>  Otoroshi  ── exchange ──>  │  Identity Provider │
-                                      │                       │  (token endpoint)  │
-                                      │  <── Bearer token B ──+-------------------+
-                                      │
+                                 +--------------------+                     +--------------------+
+Client  ──── Bearer token A ────>│      Otoroshi      │ ── exchange ─────>  │  Identity Provider │
+                                 │                    │<── Bearer token B ──│  (token endpoint)  │
+                                 +--------------------+                     +--------------------+
+                                      │                       
+                                      │                                                 
                                       ├──── Bearer token B ────>  Backend service
 ```
 
