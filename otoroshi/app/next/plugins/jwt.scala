@@ -1008,7 +1008,6 @@ class OIDCJwtVerifier extends NgAccessValidator {
 case class OAuth2TokenExchangeConfig(
     ref: Option[String] = None,
     source: Option[JwtTokenLocation] = None,
-    mandatory: Boolean = true,
     exchange: OAuth2TokenExchangeParams = OAuth2TokenExchangeParams(),
     clientCredentialsOverride: Option[OAuth2ClientCredentialsOverride] = None,
     cacheTtlMs: Long = 0,
@@ -1110,7 +1109,6 @@ object OAuth2ClientCredentialsOverride {
 object OAuth2TokenExchangeConfig {
   val configFlow: Seq[String] = Seq(
     "ref",
-    "mandatory",
     "source",
     "exchange",
     "client_credentials_override",
@@ -1134,10 +1132,6 @@ object OAuth2TokenExchangeConfig {
             "value" -> "id"
           )
         )
-      ),
-      "mandatory"                   -> Json.obj(
-        "type"  -> "bool",
-        "label" -> "Mandatory"
       ),
       "source"                      -> Json.obj(
         "type"  -> "any",
@@ -1240,7 +1234,6 @@ object OAuth2TokenExchangeConfig {
       OAuth2TokenExchangeConfig(
         ref = json.select("ref").asOpt[String],
         source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
-        mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
         exchange = json
           .select("exchange")
           .asOpt[JsObject]
@@ -1266,7 +1259,6 @@ object OAuth2TokenExchangeConfig {
     override def writes(o: OAuth2TokenExchangeConfig): JsValue             = Json.obj(
       "ref"                         -> o.ref.map(_.json).getOrElse(JsNull).asValue,
       "source"                      -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
-      "mandatory"                   -> o.mandatory,
       "exchange"                    -> o.exchange.json,
       "client_credentials_override" -> o.clientCredentialsOverride.map(_.json).getOrElse(JsNull).asValue,
       "cache_ttl_ms"                -> o.cacheTtlMs,
@@ -1341,8 +1333,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                 sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
                   tuple
                 } match {
-                  case None if !config.mandatory => NgAccess.NgAllowed.vfuture
-                  case None if config.mandatory  =>
+                  case None  =>
                     NgAccess
                       .NgDenied(
                         customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
@@ -1365,8 +1356,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                         }
                       }
                       .map {
-                        case Left(result) if !config.mandatory => NgAccess.NgAllowed
-                        case Left(result) if config.mandatory  => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
                         case Right(r)                          => r
                       }
                 }
@@ -1380,8 +1370,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                 sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
                   tuple
                 } match {
-                  case None if !config.mandatory => NgAccess.NgAllowed.vfuture
-                  case None if config.mandatory  =>
+                  case None  =>
                     NgAccess
                       .NgDenied(
                         customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
@@ -1389,20 +1378,17 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                       .vfuture
                   case Some((_, token))          =>
                     performTokenExchange(token, config, m.asInstanceOf[OAuth2ModuleConfig], ctx.attrs).map {
-                      case Left(result) if !config.mandatory => NgAccess.NgAllowed
-                      case Left(result) if config.mandatory  => NgAccess.NgDenied(customResult.getOrElse(result))
+                      case Left(result)  => NgAccess.NgDenied(customResult.getOrElse(result))
                       case Right(_)                          => NgAccess.NgAllowed
                     }
                 }
               }
               case _                     =>
-                if (!config.mandatory) NgAccess.NgAllowed.vfuture
-                else
-                  NgAccess
-                    .NgDenied(
-                      Results.BadRequest(Json.obj("error" -> "auth. module is not an OAuth2/OIDC module"))
-                    )
-                    .vfuture
+                NgAccess
+                  .NgDenied(
+                    Results.BadRequest(Json.obj("error" -> "auth. module is not an OAuth2/OIDC module"))
+                  )
+                  .vfuture
             }
         }
     }
