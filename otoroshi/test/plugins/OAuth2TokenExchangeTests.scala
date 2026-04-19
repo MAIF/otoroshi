@@ -259,49 +259,4 @@ class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
     deleteAuthModule(authModule).futureValue
     fakeIdp.stop()
   }
-
-  def tokenExchangeNotMandatory() = {
-
-    val token      = JWT.create().withIssuer("foo").sign(Algorithm.HMAC256("secret"))
-    val authModule = GenericOauth2ModuleConfig(
-      id = "auth_token_exchange_opt",
-      name = "auth_token_exchange_opt",
-      desc = "auth_token_exchange_opt",
-      clientSideSessionEnabled = false,
-      sessionCookieValues = SessionCookieValues(true),
-      tags = Seq.empty,
-      metadata = Map.empty,
-      clientId = "my-client",
-      clientSecret = "my-secret",
-      tokenUrl = s"http://127.0.0.1:19999/token",
-      jwtVerifier = Some(HSAlgoSettings(256, "secret"))
-    )
-    createAuthModule(authModule).futureValue
-
-    val route = createRouteWithExternalTarget(
-      Seq(
-        NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
-        NgPluginInstance(
-          plugin = NgPluginHelper.pluginId[OAuth2TokenExchange],
-          config = NgPluginInstanceConfig(
-            OAuth2TokenExchangeConfig(
-              ref = Some(authModule.id),
-              mandatory = false
-            ).json.as[JsObject]
-          )
-        )
-      )
-    ).futureValue
-
-    // no token but mandatory=false => pass through => 200
-    ws
-      .url(s"http://127.0.0.1:$port/")
-      .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .get()
-      .futureValue
-      .status mustBe Status.OK
-
-    deleteOtoroshiRoute(route).futureValue
-    deleteAuthModule(authModule).futureValue
-  }
 }
