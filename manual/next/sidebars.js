@@ -121,6 +121,7 @@ const sidebars = {
         'tutorials/create-your-first-api',
         'tutorials/secure-with-apikey',
         'tutorials/secure-an-app-with-jwt-verifiers',
+        'tutorials/oidc-jwt-verifier',
         'tutorials/secure-app-with-auth0',
         'tutorials/secure-app-with-keycloak',
         'tutorials/secure-app-with-ldap',
