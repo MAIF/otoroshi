@@ -1279,7 +1279,6 @@ object OAuth2TokenExchange {
 
 class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
-  import com.github.blemale.scaffeine.Scaffeine
   import otoroshi.utils.http.Implicits._
   import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 
