@@ -1028,6 +1028,15 @@ case class OAuth2TokenExchangeConfig(
       None
     }
   }
+
+  def withExpressionLanguage(attrs: TypedMap)(implicit env: Env): OAuth2TokenExchangeConfig = {
+    OAuth2TokenExchangeConfig.format.reads(json.stringify.evaluateEl(attrs).parseJson) match {
+      case JsError(errs) =>
+        OAuth2TokenExchange.logger.error(s"error while applying EL on OAuth2TokenExchangeConfig: ${errs}")
+        this
+      case JsSuccess(cfg, _) => cfg
+    }
+  }
 }
 
 case class OAuth2TokenExchangeParams(
@@ -1309,6 +1318,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
     val config = ctx
       .cachedConfig(internalName)(OAuth2TokenExchangeConfig.format)
       .getOrElse(OAuth2TokenExchangeConfig())
+      .withExpressionLanguage(ctx.attrs)
     config.ref match {
       case None               =>
         NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
