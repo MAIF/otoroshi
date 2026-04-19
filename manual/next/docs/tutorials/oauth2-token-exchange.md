@@ -80,7 +80,6 @@ Here is a typical configuration:
 ```json
 {
   "ref": "auth_module_xxxxx",
-  "mandatory": true,
   "exchange": {
     "audience": "https://backend-api.example.com",
     "scope": "api:read api:write",
@@ -96,7 +95,6 @@ Here is a typical configuration:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `ref` | string | required | The ID of the OIDC auth module to use as reference |
-| `mandatory` | boolean | `true` | If `false`, requests without a token are allowed through |
 | `source` | object | `null` | Custom JWT token source (default: `Authorization: Bearer` header and `access_token` query param) |
 | `cache_ttl_ms` | number | `0` | Cache duration for exchanged tokens in ms. `0` disables caching |
 | `call_timeout_ms` | number | `10000` | Timeout for the token exchange HTTP call in ms |
@@ -136,7 +134,7 @@ By default, the plugin uses the `client_id` and `client_secret` from the referen
 
 ```sh
 curl -i http://api.example.com:8080/
-# Expected: 401 Unauthorized (or pass-through if mandatory=false)
+# Expected: 401 Unauthorized
 ```
 
 ### With a valid token
@@ -218,7 +216,7 @@ This ensures tokens are never cached longer than their actual validity.
 
 | Scenario | Default HTTP status |
 |----------|-------------------|
-| No token provided (mandatory=true) | `401 Unauthorized` |
+| No token provided | `401 Unauthorized` |
 | Invalid JWT token | `400 Bad Request` |
 | Auth module not found | `400 Bad Request` |
 | Auth module is not an OAuth2/OIDC module | `400 Bad Request` |
