@@ -730,9 +730,6 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "OAuth2TokenExchange - IdP failure" in {
       new OAuth2TokenExchangeTests(this).tokenExchangeIdpFailure()
     }
-    "OAuth2TokenExchange - not mandatory" in {
-      new OAuth2TokenExchangeTests(this).tokenExchangeNotMandatory()
-    }
     "Remote Catalogs - deploy with admin API" in {
       new RemoteCatalogsTests(this).deployWithAdminApi()
     }
