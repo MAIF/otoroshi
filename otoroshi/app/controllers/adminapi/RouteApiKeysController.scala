@@ -279,7 +279,8 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                           "ApiKeyUpdatedAlert",
                           Json.obj(
                             "desc"   -> desc.toJson(),
-                            "apikey" -> apiKey.toJson
+                            "apikey" -> newApiKey.toJson,
+                            "previous_apikey" -> apiKey.toJson
                           ),
                           ctx
                         )
@@ -336,7 +337,8 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                       "ApiKeyUpdatedAlert",
                       Json.obj(
                         "desc"   -> desc.toJson(),
-                        "apikey" -> apiKey.toJson
+                        "apikey" -> newApiKey.toJson,
+                        "previous_apikey" -> apiKey.toJson,
                       ),
                       ctx
                     )
