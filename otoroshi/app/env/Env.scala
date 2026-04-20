@@ -383,6 +383,9 @@ class Env(
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
+  lazy val docResourcesSecret: Option[String] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.doc-resources.accessKey")
+
   lazy val trailingSlashMeansExactSegments: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.router.trailingSlashMeansExactSegments").getOrElse(true)
 
