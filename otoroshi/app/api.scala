@@ -484,6 +484,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val backOfficeAction     = wire[BackOfficeAction]
   lazy val backOfficeAuthAction = wire[BackOfficeActionAuth]
   lazy val privateAppsAction    = wire[PrivateAppsAction]
+  lazy val docAction            = wire[DocAction]
 
   lazy val swaggerController         = wire[SwaggerController]
   lazy val apiController             = wire[ApiController]
