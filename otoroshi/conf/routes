@@ -658,13 +658,23 @@ GET     /apis/:group/:version/:entity                         otoroshi.api.Gener
 POST    /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.create(group, version, entity)
 DELETE  /apis/:group/:version/:entity                         otoroshi.api.GenericApiController.deleteAll(group, version, entity)
 GET     /apis/entities                                        otoroshi.api.GenericApiController.entities()
+
+# Documentation resources
 GET     /apis/openapi.yaml                                    otoroshi.api.GenericApiController.openapiYaml()
 GET     /apis/openapi.yml                                     otoroshi.api.GenericApiController.openapiYaml()
 GET     /apis/openapi.json                                    otoroshi.api.GenericApiController.openapiJson()
+GET     /apis/openapi/ui                                      otoroshi.api.GenericApiController.openapiUi()
 GET     /apis/openapi                                         otoroshi.api.GenericApiController.openapi()
+
 GET     /apis/workflows/doc.json                              otoroshi.api.GenericApiController.workflowDescriptorJson()
+GET     /apis/workflows/doc.yaml                              otoroshi.api.GenericApiController.workflowDescriptorYaml()
+GET     /apis/workflows/doc.yml                               otoroshi.api.GenericApiController.workflowDescriptorYaml()
 GET     /apis/workflows/doc.md                                otoroshi.api.GenericApiController.workflowDescriptorMarkdown()
 GET     /apis/workflows/doc                                   otoroshi.api.GenericApiController.workflowDescriptorWeb()
+
+GET     /apis/plugins.json                                    otoroshi.api.GenericApiController.pluginsJson()
+GET     /apis/plugins.yaml                                    otoroshi.api.GenericApiController.pluginsYaml()
+GET     /apis/plugins.yml                                     otoroshi.api.GenericApiController.pluginsYaml()
 
 ########################################################################################################################
 
