@@ -1,6 +1,7 @@
 package otoroshi.controllers
 
 import controllers.{Assets, AssetsBuilder}
+import otoroshi.api.DocAction
 import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json._
@@ -17,7 +18,7 @@ object Implicits {
 
 }
 
-class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(implicit env: Env)
+class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder, DocAction: DocAction)(implicit env: Env)
     extends AbstractController(cc) {
 
   import Implicits._
@@ -26,31 +27,17 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   lazy val logger = Logger("otoroshi-swagger-controller")
 
-  def swagger =
-    Action { req =>
-      Ok(Json.prettyPrint(swaggerDescriptor())).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
-    }
+  def openapi = DocAction.async { ctx =>
+    assetsBuilder.at("openapi.json").apply(ctx.request)
+  }
 
-  def swaggerUi =
-    Action { req =>
-      Ok(
-        otoroshi.views.html.oto.documentationframe(
-          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/api/swagger.json"
-        )
+  def openapiUi = DocAction { ctx =>
+    Ok(
+      otoroshi.views.html.oto.documentationframe(
+        s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json?doc_secret=${ctx.sec}"
       )
-    }
-
-  def openapi = assetsBuilder.at("openapi.json")
-
-  def openapiUi =
-    Action { req =>
-      Ok(
-        otoroshi.views.html.oto.documentationframe(
-          //s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"
-          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json"
-        )
-      )
-    }
+    )
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
