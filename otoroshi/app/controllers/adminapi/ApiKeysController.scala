@@ -173,7 +173,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                           "ApiKeyUpdatedAlert",
                           Json.obj(
                             "desc"   -> desc.toJson,
-                            "apikey" -> apiKey.toJson
+                            "apikey" -> newApiKey.toJson,
+                            "previous_apikey" -> apiKey.toJson
                           ),
                           ctx
                         )
@@ -214,7 +215,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                     "ApiKeyUpdatedAlert",
                     Json.obj(
                       "desc"   -> desc.toJson,
-                      "apikey" -> apiKey.toJson
+                      "apikey" -> newApiKey.toJson,
+                      "previous_apikey" -> apiKey.toJson
                     ),
                     ctx
                   )
@@ -580,7 +582,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                         "ApiKeyUpdatedAlert",
                         Json.obj(
                           "group"  -> group.toJson,
-                          "apikey" -> apiKey.toJson
+                          "apikey" -> newApiKey.toJson,
+                          "previous_apikey" -> apiKey.toJson
                         ),
                         ctx
                       )
@@ -621,7 +624,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                     "ApiKeyUpdatedAlert",
                     Json.obj(
                       "group"  -> group.toJson,
-                      "apikey" -> apiKey.toJson
+                      "apikey" -> newApiKey.toJson,
+                      "previous_apikey" -> apiKey.toJson,
                     ),
                     ctx
                   )
