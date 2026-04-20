@@ -6,7 +6,7 @@ import controllers.{Assets, AssetsComponents}
 import otoroshi.netty.ReactorNettyServer
 import otoroshi.actions._
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
+import otoroshi.api.{DocAction, GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
 import otoroshi.controllers._
 import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
@@ -101,6 +101,7 @@ package object modules {
     lazy val backOfficeAction     = wire[BackOfficeAction]
     lazy val backOfficeAuthAction = wire[BackOfficeActionAuth]
     lazy val privateAppsAction    = wire[PrivateAppsAction]
+    lazy val docAction            = wire[DocAction]
 
     lazy val swaggerController         = wire[SwaggerController]
     lazy val apiController             = wire[ApiController]
