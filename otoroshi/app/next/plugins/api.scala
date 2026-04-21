@@ -404,15 +404,15 @@ trait NgCachedConfigContext {
     }
   }
 
-  def extractTypedBody(request: NgPluginHttpRequest)(implicit env: Env, ec: ExecutionContext): Future[JsObject] = {
+  def extractTypedBody(request: NgPluginHttpRequest)(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(request).map {
-      case None                                              => Json.obj()
-      case Some((bytes, "application/json"))                 => Json.obj("body_json" -> Json.parse(bytes.toArray))
-      case Some((bytes, "application/xml"))                  => Json.obj("body_str" -> bytes.utf8String)
-      case Some((bytes, ctype)) if ctype.startsWith("text/") => Json.obj("body_str" -> bytes.utf8String)
+      case None                                              => (Json.obj(), None)
+      case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
+      case Some((bytes, "application/xml"))                  => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
+      case Some((bytes, ctype)) if ctype.startsWith("text/") => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
       case Some((bytes, _))                                  => {
         val array = Writes.arrayWrites[Byte].writes(bytes.toArray[Byte])
-        Json.obj("body_bytes" -> array)
+        (Json.obj("body_bytes" -> array), bytes.some)
       }
     }
   }
@@ -425,15 +425,15 @@ trait NgCachedConfigContext {
     }
   }
 
-  def extractTypedBody(response: NgPluginHttpResponse)(implicit env: Env, ec: ExecutionContext): Future[JsObject] = {
+  def extractTypedBody(response: NgPluginHttpResponse)(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(response).map {
-      case None                                              => Json.obj()
-      case Some((bytes, "application/json"))                 => Json.obj("body_json" -> Json.parse(bytes.toArray))
-      case Some((bytes, "application/xml"))                  => Json.obj("body_str" -> bytes.utf8String)
-      case Some((bytes, ctype)) if ctype.startsWith("text/") => Json.obj("body_str" -> bytes.utf8String)
+      case None                                              => (Json.obj(), None)
+      case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
+      case Some((bytes, "application/xml"))                  => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
+      case Some((bytes, ctype)) if ctype.startsWith("text/") => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
       case Some((bytes, _))                                  => {
         val array = Writes.arrayWrites[Byte].writes(bytes.toArray[Byte])
-        Json.obj("body_bytes" -> array)
+        (Json.obj("body_bytes" -> array), bytes.some)
       }
     }
   }
@@ -640,21 +640,23 @@ case class NgTransformerRequestContext(
     "attrs"            -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.requestBody(otoroshiRequest).map { body =>
-      json.asObject ++ Json.obj(
-        "route"              -> route.json,
-        "request_body_bytes" -> body
-      )
+    JsonHelpers.requestBody(otoroshiRequest).map {
+      case (body, bodyBytesOut) =>
+        (json.asObject ++ Json.obj(
+          "route"              -> route.json,
+          "request_body_bytes" -> body
+        ), bodyBytesOut)
     }
   }
-  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
-    extractTypedBody(otoroshiRequest).map { obj =>
-      baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj))
+    extractTypedBody(otoroshiRequest).map {
+      case (obj, bodyBytesOpt) =>
+        (baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj)), bodyBytesOpt)
     }
   }
 }
@@ -690,22 +692,24 @@ case class NgTransformerResponseContext(
     "attrs"             -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
-      json.asObject ++ Json.obj(
-        "route"               -> route.json,
-        "response_body_bytes" -> bodyOut
-      )
+    JsonHelpers.responseBody(otoroshiResponse).map {
+      case (bodyOut, bodyBytesOpt) =>
+        (json.asObject ++ Json.obj(
+          "route"               -> route.json,
+          "response_body_bytes" -> bodyOut
+        ), bodyBytesOpt)
     }
   }
 
-  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
-    extractTypedBody(otoroshiResponse).map { obj =>
-      baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj))
+    extractTypedBody(otoroshiResponse).map {
+      case (obj, bodyBytesOut) =>
+        (baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj)), bodyBytesOut)
     }
   }
 }
@@ -741,13 +745,14 @@ case class NgTransformerErrorContext(
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
   )
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
-      json.asObject ++ Json.obj(
-        "route"               -> route.json,
-        "response_body_bytes" -> bodyOut
-      )
+    JsonHelpers.responseBody(otoroshiResponse).map {
+      case (bodyOut, bodyBytesOpt) =>
+        (json.asObject ++ Json.obj(
+          "route"               -> route.json,
+          "response_body_bytes" -> bodyOut
+        ), bodyBytesOpt)
     }
   }
 }
@@ -997,23 +1002,24 @@ case class NgbBackendCallContext(
     "attrs"         -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.requestBody(request).map { body =>
-      (json.asObject ++ Json.obj(
-        "route"              -> route.json,
-        "request_body_bytes" -> body,
-        "request"            -> request.json
-      ))
+    JsonHelpers.requestBody(request).map {
+      case (body, bodyBytesOpt) =>
+        (json.asObject ++ Json.obj(
+          "route"              -> route.json,
+          "request_body_bytes" -> body,
+          "request"            -> request.json
+        ), bodyBytesOpt)
     }
   }
 
-  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
-    extractTypedBody(request).map { obj =>
-      json.asObject ++ Json.obj(
+  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+    extractTypedBody(request).map { case (obj, bodyBytesOpt) =>
+      (json.asObject ++ Json.obj(
         "route"   -> route.json,
         "request" -> (request.json.asObject ++ obj)
-      )
+      ), bodyBytesOpt)
     }
   }
 }
