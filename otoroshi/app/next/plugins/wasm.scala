@@ -244,7 +244,8 @@ class WasmBackend extends NgBackendCall {
     //WasmUtils.debugLog.debug("callBackend")
 
     ctx.wasmJson
-      .flatMap { input =>
+      .flatMap {
+        case (input, inputBodyBytes) =>
         env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
@@ -445,7 +446,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     ctx.wasmJson
-      .flatMap(input => {
+      .flatMap { case (input, inputBodyBytesOpt) =>
         env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
@@ -493,7 +494,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
                       headers =
                         (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
                       cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                      body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
+                      body = body.map(_.chunks(32 * 1024)).orElse(inputBodyBytesOpt.map(_.chunks(32 * 1024))).getOrElse(Source.empty),
                     )
                   )
                 }
@@ -502,7 +503,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
               vm.release()
             }
         }
-      })
+      }
   }
 }
 
@@ -532,7 +533,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
     ctx.wasmJson
-      .flatMap(input => {
+      .flatMap { case (input, inputBodyBytesOpt) =>
         env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
@@ -578,7 +579,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
                         (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
                       status = (response \ "status").asOpt[Int].getOrElse(200),
                       cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                      body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
+                      body = body.map(_.chunks(32 * 1024)).orElse(inputBodyBytesOpt.map(_.chunks(32 * 1024))).getOrElse(Source.empty)
                     )
                     .right
                 }
@@ -587,7 +588,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
               vm.release()
             }
         }
-      })
+      }
   }
 }
 
