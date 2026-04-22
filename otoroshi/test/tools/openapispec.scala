@@ -20,7 +20,7 @@ class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
     Seq(
       "./public/openapi.json",
       "./app/openapi/openapi.json",
-      "../manual/src/main/paradox/code/openapi.json"
+      "../manual/next/static/openapi.json"
     ),
     scanResult = scanResult,
     write = true
