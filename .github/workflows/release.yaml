@@ -71,7 +71,7 @@ jobs:
           node changelog.js --version=${{ inputs.version_to }} --last=${{ inputs.version_last }} --milestone=${{ inputs.milestone }} --dir=${LOC}
           git commit -am '[release ${{ inputs.version_to }}] Update changelog'
           node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC}
-          git commit -am 'Update helm chart'
+          git commit -am 'Update helm chart' || true
           git push origin master
           curl -L -X PATCH -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_TOKEN}" "https://api.github.com/repos/MAIF/otoroshi/milestones/${{ inputs.milestone }}" -d '{"state":"closed"}'
       - name: Generate SHA-256
