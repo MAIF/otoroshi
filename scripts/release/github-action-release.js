@@ -1,4 +1,4 @@
-// node release.js --from=1.4.2-dev --to=1.4.0 --next=1.4.2-dev --last=1.3.1 --location=/path/to/otoroshi
+// node github-action-release.js --from=1.4.2-dev --to=1.4.0 --next=1.4.2-dev --last=1.3.1 --location=/path/to/otoroshi
 const cmd = require('node-cmd');
 const { spawn } = require('child_process');
 const path = require('path');
@@ -20,10 +20,10 @@ const files = [
   { file: './kubernetes/kustomize/overlays/simple/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
   { file: './kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
   { file: './kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml', replace: (from, to, source) => source.replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`) },
-  {
-    file: './manual/src/main/paradox/deploy/kubernetes.md',
-    replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)
-  },
+  //{
+  //  file: './manual/src/main/paradox/deploy/kubernetes.md',
+  //  replace: (from, to, source) => source.replace(`?ref=v${from}`, `?ref=v${to}`).replace(`maif/otoroshi:${from}`, `maif/otoroshi:${to}`)
+  //},
   {
     file: './kubernetes/helm/otoroshi/Chart.yaml',
     replace: (from, to, source) => source
@@ -34,27 +34,32 @@ const files = [
     file: './kubernetes/helm/otoroshi/values.yaml',
     replace: (from, to, source) => source.replace(`tag: ${from}`, `tag: ${to}`)
   },
-  {
-    file: './tools/tcp-udp-tunnel-client/client.js',
-    replace: (from, to, source) => source.replace(`Otoroshi TCP tunnel CLI, version ${from}`, `Otoroshi TCP tunnel CLI, version ${to}`)
-  },
-  { file: './demos/basic-setup/docker-compose.yml' },
-  { file: './demos/service-mesh/docker-compose-manual.yml' },
-  { file: './demos/service-mesh/docker-compose.yml' },
+  //{
+  //  file: './tools/tcp-udp-tunnel-client/client.js',
+  //  replace: (from, to, source) => source.replace(`Otoroshi TCP tunnel CLI, version ${from}`, `Otoroshi TCP tunnel CLI, version ${to}`)
+  //},
+  //{ file: './demos/basic-setup/docker-compose.yml' },
+  //{ file: './demos/service-mesh/docker-compose-manual.yml' },
+  //{ file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
-  { file: './manual/build.sbt' },
-  { file: './manual/src/main/paradox/code/openapi.json' },
-  { file: './manual/src/main/paradox/getting-started.md' },
-  { file: './manual/src/main/paradox/how-to-s/import-export-otoroshi-datastore.md' },
-  { file: './manual/src/main/paradox/how-to-s/setup-otoroshi-cluster.md' },
-  { file: './manual/src/main/paradox/includes/fetch-and-start.md' },
-  { file: './manual/src/main/paradox/includes/initialize.md' },
-  { file: './manual/src/main/paradox/index.md' },
-  { file: './manual/src/main/paradox/install/get-otoroshi.md' },
-  { file: './manual/src/main/paradox/topics/expression-language.md' },
-  { file: './manual/src/main/paradox/snippets/build.gradle' },
-  { file: './manual/src/main/paradox/snippets/build.sbt' },
-  { file: './manual/src/main/paradox/snippets/fetch.sh' },
+
+  // { file: './manual/build.sbt' },
+  // { file: './manual/src/main/paradox/getting-started.md' },
+  // { file: './manual/src/main/paradox/how-to-s/import-export-otoroshi-datastore.md' },
+  // { file: './manual/src/main/paradox/how-to-s/setup-otoroshi-cluster.md' },
+  // { file: './manual/src/main/paradox/includes/fetch-and-start.md' },
+  // { file: './manual/src/main/paradox/includes/initialize.md' },
+  // { file: './manual/src/main/paradox/index.md' },
+  // { file: './manual/src/main/paradox/install/get-otoroshi.md' },
+  // { file: './manual/src/main/paradox/topics/expression-language.md' },
+
+  { file: './manual/next/package.json', replace: (from, to, source) => source.replace(`"version": "${from}",`, `"version": "${to}",`) },
+  { file: './manual/next/version.js' },
+  { file: './manual/next/static/openapi.json' },
+  { file: './manual/next/docs/snippets/build.gradle' },
+  { file: './manual/next/docs/snippets/build.sbt' },
+  { file: './manual/next/docs/snippets/fetch.sh' },
+
   { file: './otoroshi/app/controllers/SwaggerController.scala' },
   { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
@@ -71,7 +76,7 @@ async function echoReadable(readable) {
 function runSystemCommand(command, args, location, env = {}) {
   const source = spawn(command, args, {
     cwd: location,
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', process.stderr]
   });
   return echoReadable(source.stdout);
@@ -82,7 +87,7 @@ function runScript(script, where, env = {}, fit) {
     const source = spawn(script, [], {
       cwd: where,
       shell: true,
-      env: { ...process.env, ...env },
+      env: { ...process.env, ...env },
       stdio: ['ignore', 'pipe', process.stderr]
     });
     source.on('close', (code) => {
@@ -98,14 +103,6 @@ function runScript(script, where, env = {}, fit) {
     });
     return echoReadable(source.stdout);
   });
-}  
-
-async function keypress() {
-  process.stdin.setRawMode(true)
-  return new Promise(resolve => process.stdin.once('data', () => {
-    process.stdin.setRawMode(false)
-    resolve()
-  }))
 }
 
 let steps = [];
@@ -117,9 +114,9 @@ async function ensureStep(step, file, f) {
     return Promise.resolve('');
   }
   console.log(`
-===================================================================================================  
+===================================================================================================
 == Step: ${step}
-===================================================================================================  
+===================================================================================================
   `);
   fs.appendFileSync(file, JSON.stringify({ timestamp: Date.now(), at: moment().format('YYYY-MM-DD hh:mm:ss.SSS'), step, state: 'start' }) + '\n');
   return f().then(() => {
@@ -172,36 +169,26 @@ async function buildUi(version, where, releaseDir) {
 
 async function buildOpenApi(version, where, releaseDir) {
   // build openapi
-  // await runScript(`
-  //   cd ${where}/otoroshi
-  //   sbt ";clean;compile;testOnly OpenapiGeneratorTests"
-  // `, where);
   await runScript(`
     cd ${where}/otoroshi
     sbt "testOnly tools.GenericOpenApiSpec"
   `, where);
-  // await runSystemCommand('cp', [`${where}/otoroshi/conf/schemas/openapi.json`, `${releaseDir}/openapi.json`], location);
-  await runSystemCommand('cp', [`${where}/otoroshi/public/openapi.json`, `${releaseDir}/openapi.json`], location);
-  // await runSystemCommand('cp', [`${where}/otoroshi/public/openapi.json`, `${releaseDir}/openapi.json`], location);
-  // await runSystemCommand('cp', [`${releaseDir}/openapi.json`, `${where}/manual/src/main/paradox/code/`], location);
-  // await runSystemCommand('git', ['add', `${releaseDir}/openapi.json`], location);
-  await runSystemCommand('git', ['add', `${where}/otoroshi/public/openapi.json`], location);
-  await runSystemCommand('git', ['add', `${where}/otoroshi/app/openapi/openapi.json`], location);
-  await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/code/openapi.json`], location);
+  await runSystemCommand('cp', [`${where}/otoroshi/conf/schemas/openapi.json`, `${releaseDir}/openapi.json`], location);
+  await runSystemCommand('git', ['add', `--all`], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update openapi file before release`], location);
 }
-
+/*
 async function buildPluginDoc(version, where, releaseDir) {
   // build plugins doc
-  // needs JDK11 !!!! 
+  // needs JDK11 !!!!
   await runScript(`
     cd ${where}/otoroshi
     sbt ";clean;compile;testOnly PluginDocTests"
   `, where);
   await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/plugins`], location);
-  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update plugin documentation`], location); 
+  await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update plugin documentation`], location);
 }
-
+*/
 async function buildDocumentation(version, where, releaseDir, releaseFile) {
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
@@ -236,15 +223,15 @@ async function buildVersion(version, where, releaseDir, releaseFile) {
 async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/universal/otoroshi-${version}.zip`), path.resolve(location, `./docker/build/otoroshi-dist.zip`)], location);
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
-  await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'setup-docker', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'build-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./tools/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./tools/sidecar`));
+  //await runSystemCommand('sh', [path.resolve(location, `./tools/otoroshi-wasm-manager/build.sh`), 'push-all', version], path.resolve(location, `./tools/otoroshi-wasm-manager`));
 }
 
 async function publishHelmChart(location, version) {
   await runSystemCommand('/bin/sh', [path.resolve(location, './scripts/helm.sh'), version], location);
 }
-
+/*
 async function buildTcpTunnelingCli(location, version) {
   await runScript(`
     cd ${location}/tools/tcp-udp-tunnel-client
@@ -253,8 +240,8 @@ async function buildTcpTunnelingCli(location, version) {
     cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-linux" "$LOCATION/release-$VERSION/"
     cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-macos" "$LOCATION/release-$VERSION/"
     cp -v "$LOCATION/tools/tcp-udp-tunnel-client/binaries/otoroshi-tcp-udp-tunnel-cli-win.exe" "$LOCATION/release-$VERSION/"
-    `, 
-    location, 
+    `,
+    location,
     {
       LOCATION: location,
       VERSION: version,
@@ -270,8 +257,8 @@ async function buildTcpTunnelingCliGUI(location, version) {
     yarn install
     yarn dist-mac
     # hdiutil create -format UDZO -srcfolder "$LOCATION/tools/tcp-udp-tunnel-client-gui/dist/otoroshi-tunneling-client-darwin-x64/otoroshi-tunneling-client.app" "$LOCATION/release-$VERSION/otoroshi-tunneling-client.dmg"
-    `, 
-    location, 
+    `,
+    location,
     {
       LOCATION: location,
       VERSION: version,
@@ -289,8 +276,8 @@ async function buildTlsTermination(location, version) {
     rm -rf ./target
     docker run --rm --user "$(id -u)":"$(id -g)" -v "$PWD":/usr/src/myapp -w /usr/src/myapp rust:latest cargo build --release --target-dir target-linux
     cp ${location}/experiments/otoroshi-tls-termination/target-linux/release/otoroshi_tls_termination "$LOCATION/release-$VERSION/experimental-tls-termination-linux"
-    `, 
-    location, 
+    `,
+    location,
     {
       LOCATION: location,
       VERSION: version,
@@ -299,6 +286,7 @@ async function buildTlsTermination(location, version) {
     }
   );
 }
+  */
 
 async function githubTag(location, version) {
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Prepare the release of Otoroshi version ${version}`], location);
@@ -310,8 +298,8 @@ async function publishMavenCentral(location, version) {
     cd $LOCATION/otoroshi
     sbt ";doc;packageDoc;publishSigned;sonatypeBundleRelease"
     cd $LOCATION
-    `, 
-    location, 
+    `,
+    location,
     {
       LOCATION: location,
       VERSION: version,
@@ -323,7 +311,7 @@ async function publishMavenCentral(location, version) {
   );
 }
 
-async function createGithubRelease(version, location) {
+async function createGithubRelease(version, location) {
   return fetch('https://api.github.com/repos/MAIF/otoroshi/releases', {
     method: 'POST',
     headers: {
@@ -348,12 +336,12 @@ async function uploadAllFiles(release, location, to) {
   await uploadFilesToRelease(release, { name: 'otoroshi.jar', path: path.resolve(location, `otoroshi.jar`) });
   await uploadFilesToRelease(release, { name: `otoroshi-${to}.zip`, path: path.resolve(location, `otoroshi-${to}.zip`) });
   await uploadFilesToRelease(release, { name: `otoroshi-manual-${to}.zip`, path: path.resolve(location, `otoroshi-manual-${to}.zip`) });
-  // await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-linux`) });
-  // await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-macos`) });
-  // await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-win.exe`) });
-  // await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
-  // await uploadFilesToRelease(release, { name: `experimental-tls-termination-darwin`, path: path.resolve(location, `experimental-tls-termination-darwin`) });
-  // await uploadFilesToRelease(release, { name: `experimental-tls-termination-linux`, path: path.resolve(location, `experimental-tls-termination-linux`) });
+  //await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-linux`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-linux`) });
+  //await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-macos`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-macos`) });
+  //await uploadFilesToRelease(release, { name: `otoroshi-tcp-udp-tunnel-cli-win.exe`, path: path.resolve(location, `otoroshi-tcp-udp-tunnel-cli-win.exe`) });
+  //await uploadFilesToRelease(release, { name: `otoroshi-tunneling-client.dmg`, path: path.resolve(location, `otoroshi-tunneling-client.dmg`) });
+  //await uploadFilesToRelease(release, { name: `experimental-tls-termination-darwin`, path: path.resolve(location, `experimental-tls-termination-darwin`) });
+  //await uploadFilesToRelease(release, { name: `experimental-tls-termination-linux`, path: path.resolve(location, `experimental-tls-termination-linux`) });
 }
 
 async function uploadFilesToRelease(release, file) {
@@ -368,12 +356,12 @@ async function uploadFilesToRelease(release, file) {
   }).then(r => r.text()).then(r => {
     console.log(r);
     return r;
-  })  
+  })
 }
 
 async function installDependencies(location) {
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
+  //await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
+  //await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
 }
 
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
@@ -390,7 +378,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   } else {
     steps = fs.readFileSync(releaseFile, 'utf8').split('\n').map(a => a.trim()).filter(a => a !== '').map(line => JSON.parse(line));
   }
-  
+
   await ensureStep('INSTALL_DEPS', releaseFile, () => installDependencies(location));
   await ensureStep('CHANGE_TO_RELEASE_VERSION', releaseFile, async () => {
     {
@@ -406,13 +394,15 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   });
   // await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir, releaseFile));
   await buildVersion(to, location, releaseDir, releaseFile);
-  // await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
-  // await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
-  // await ensureStep('BUILD_TLS_TERMINATION', releaseFile, () => buildTlsTermination(location, to));
+  //await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
+  //await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
+  //await ensureStep('BUILD_TLS_TERMINATION', releaseFile, () => buildTlsTermination(location, to));
   if (!dryRun) {
+    // GitHub release creation and asset upload are handled by the workflow YAML (softprops/action-gh-release).
     // await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
     await ensureStep('PUBLISH_LIBRARIES_TO_CENTRAL', releaseFile, () => publishMavenCentral(location, to));
+    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `[release ${to}] Update version to ${next}`], location);
@@ -421,7 +411,6 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
       await runSystemCommand('git', ['push', '--tags'], location);
     });
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
-    await ensureStep('PUBLISH_HELM_CHART', releaseFile, () => publishHelmChart(location, to));
     console.log("Release done !");
     process.exit(0);
   }
@@ -469,4 +458,3 @@ if (!releaseLast) {
 printEnv();
 
 releaseOtoroshi(releaseFrom, releaseTo, releaseNext, releaseLast, location, dryRun);
-
