@@ -111,7 +111,7 @@ build_and_push_jar_templates () {
 
 setup_docker_builder () {
   # https://docs.docker.com/build/building/multi-platform/
-  docker buildx create --name multiarchbuilder --driver docker-container --bootstrap
+  docker buildx create --name multiarchbuilder --driver docker-container --bootstrap --use
   docker buildx use multiarchbuilder
   docker buildx inspect
   docker buildx ls

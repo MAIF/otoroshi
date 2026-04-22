@@ -70,6 +70,7 @@ jobs:
           npm install -g prettier yarn
           node changelog.js --version=${{ inputs.version_to }} --last=${{ inputs.version_last }} --milestone=${{ inputs.milestone }} --dir=${LOC}
           git commit -am '[release ${{ inputs.version_to }}] Update changelog'
+          docker buildx create --name multiarchbuilder --driver docker-container --bootstrap --use
           node github-action-release.js --from=${{ inputs.version_from }} --to=${{ inputs.version_to }} --next=${{ inputs.version_next }} --last=${{ inputs.version_last }} --location=${LOC}
           git commit -am 'Update helm chart' || true
           git push origin master
