@@ -12,7 +12,7 @@ class GenericOpenApiSpec extends OtoroshiSpec {
   val files = Seq(
     "./public/openapi.json",
     "./app/openapi/openapi.json",
-    "../manual/src/main/paradox/code/openapi.json"
+    "../manual/next/static/openapi.json"
   )
 
   s"OpenApi" should {
