@@ -1,0 +1,55 @@
+@(url: String, title: String = "Otoroshi — OpenAPI", lang: String = "en")
+@import play.api.libs.json._
+
+<!DOCTYPE html>
+<html lang="@lang">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <title>@title</title>
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link href="@routes.Assets.versioned("fonts/roboto/roboto.css")" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="@routes.Assets.versioned("swagger-ui/swagger-ui.css")">
+        <style>
+            body { margin: 0; }
+            .topbar { display: none; }
+        </style>
+    </head>
+    <body>
+        <div id="swagger-ui"></div>
+        <script type="application/json" id="swagger-config">{
+          "url": @Html(Json.stringify(JsString(url)))
+        }</script>
+        <script defer src="@routes.Assets.versioned("swagger-ui/swagger-ui-bundle.js")"></script>
+        <script defer src="@routes.Assets.versioned("swagger-ui/swagger-ui-standalone-preset.js")"></script>
+        <script defer>
+          window.addEventListener('DOMContentLoaded', () => {
+            const cfg = JSON.parse(document.getElementById('swagger-config').textContent);
+            window.ui = SwaggerUIBundle({
+              url: cfg.url,
+              dom_id: '#swagger-ui',
+              presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+              plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+              layout: "StandaloneLayout",
+              deepLinking: true,
+              filter: true,
+              persistAuthorization: true,
+              tryItOutEnabled: true,
+              displayOperationId: false,
+              displayRequestDuration: true,
+              docExpansion: 'none',
+              defaultModelRendering: 'model',
+              defaultModelsExpandDepth: -1,
+              showCommonExtensions: true,
+              operationsSorter: "alpha",
+              tagsSorter: "alpha",
+              requestSnippetsEnabled: true,
+              withCredentials: true,
+              validatorUrl: null,
+              syntaxHighlight: { activated: true, theme: "agate" }
+            });
+          });
+        </script>
+    </body>
+</html>
