@@ -55,10 +55,10 @@ class ApikeyBearer extends Component {
     if (!window.location.pathname.endsWith('/add')) {
       BackOfficeServices.getBearer(
         this.props.rawValue.clientId,
-        this.props.rawValue.clientSecret)
-        .then((r) => {
-          this.setState({ bearer: r.bearer_new });
-        });
+        this.props.rawValue.clientSecret
+      ).then((r) => {
+        this.setState({ bearer: r.bearer_new });
+      });
     }
   };
 
@@ -98,7 +98,11 @@ class ApikeyBearer extends Component {
             {this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="hide bearer"
                 onClick={this.toggle}
               >
@@ -108,7 +112,12 @@ class ApikeyBearer extends Component {
             {!this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)', text: 'var(--text)' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                  text: 'var(--text)',
+                }}
                 title="show bearer"
                 onClick={this.toggle}
               >
@@ -118,7 +127,12 @@ class ApikeyBearer extends Component {
             {navigator.clipboard && window.isSecureContext && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)', text: 'var(--text)' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                  text: 'var(--text)',
+                }}
                 title="copy bearer"
                 onClick={this.copy}
               >
@@ -186,7 +200,11 @@ class ApikeySecret extends Component {
             {this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="hide secret"
                 onClick={this.toggle}
               >
@@ -196,7 +214,11 @@ class ApikeySecret extends Component {
             {!this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="show secret"
                 onClick={this.toggle}
               >
@@ -206,7 +228,11 @@ class ApikeySecret extends Component {
             {navigator.clipboard && window.isSecureContext && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer', background: 'none', border: '1px solid var(--input-border)' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="copy secret"
                 onClick={this.copy}
               >
@@ -243,9 +269,11 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${rawValue.clientId
-            }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${rawValue.clientSecret
-            }' http://xxxxxx --include`}
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
+            rawValue.clientId
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
+            rawValue.clientSecret
+          }' http://xxxxxx --include`}
         />
       )}
     </div>
@@ -400,8 +428,12 @@ function BearerModal({ bearer, onClose }) {
       body={() => (
         <div className="d-flex flex-column gap-3 mt-3 pe-3">
           <ol className="mb-0 ps-3" style={{ lineHeight: '2rem', textAlign: 'start' }}>
-            <li>Copy the <strong>Bearer token</strong> below</li>
-            <li>Add it as an <strong>Authorization</strong> header in your request</li>
+            <li>
+              Copy the <strong>Bearer token</strong> below
+            </li>
+            <li>
+              Add it as an <strong>Authorization</strong> header in your request
+            </li>
           </ol>
           <div
             className="p-2 rounded"
@@ -410,15 +442,13 @@ function BearerModal({ bearer, onClose }) {
               background: 'var(--bg-color_level3)',
               whiteSpace: 'pre-wrap',
               overflowWrap: 'break-word',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
             }}
           >
             <span style={{ color: '#888' }}>curl</span>{' '}
             <span style={{ color: '#888' }}>https://your-api-host/...</span>{' '}
             <span style={{ color: '#f9b000' }}>-H</span>{' '}
-            <span style={{ color: '#a3e635' }}>
-              "Authorization: Bearer {bearer}"
-            </span>
+            <span style={{ color: '#a3e635' }}>"Authorization: Bearer {bearer}"</span>
           </div>
           <div className="d-flex align-items-center gap-2">
             <input
@@ -439,7 +469,8 @@ function BearerModal({ bearer, onClose }) {
           </div>
           <p className="mb-0" style={{ fontSize: 12, color: '#888' }}>
             <i className="fas fa-info-circle me-1" />
-            The header name <code>Authorization</code> may have been changed in the ApiKey extractor settings of the Apikeys plugin on the route or API endpoints.
+            The header name <code>Authorization</code> may have been changed in the ApiKey extractor
+            settings of the Apikeys plugin on the route or API endpoints.
           </p>
         </div>
       )}
@@ -458,200 +489,226 @@ function CopyFromLineItem({ item, rowDisplay, text }) {
     } else {
       setLoading(true);
       BackOfficeServices.getBearer(item.clientId, item.clientSecret)
-        .then(r => {
-          setBearers(prev => ({ ...prev, [item.clientId]: r.bearer_new }));
+        .then((r) => {
+          setBearers((prev) => ({ ...prev, [item.clientId]: r.bearer_new }));
           setShowModal(true);
         })
         .finally(() => setLoading(false));
     }
   };
 
-  const component = <>
-    <button
-      type="button"
-      className="btn btn-success btn-sm"
-      onClick={fetchAndShow}
-      disabled={loading}
-    >
-      {text ? text :
-        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-key'} />}
-    </button>
-    {showModal && bearers[item.clientId] && (
-      <BearerModal
-        bearer={bearers[item.clientId]}
-        onClose={() => setShowModal(false)}
-      />
-    )}
-  </>
+  const component = (
+    <>
+      <button
+        type="button"
+        className="btn btn-success btn-sm"
+        onClick={fetchAndShow}
+        disabled={loading}
+      >
+        {text ? text : <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-key'} />}
+      </button>
+      {showModal && bearers[item.clientId] && (
+        <BearerModal bearer={bearers[item.clientId]} onClose={() => setShowModal(false)} />
+      )}
+    </>
+  );
 
   if (rowDisplay)
-    return <div className='row mb-3'>
-      <label className='col-xs-12 col-sm-2 col-form-label'></label>
-      <div className='col-sm-10'>
-        {component}
+    return (
+      <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label"></label>
+        <div className="col-sm-10">{component}</div>
       </div>
-    </div>
+    );
 
-  return component
+  return component;
 }
 
 function LocalTokensBucketStrategyConfig({ value, onChange }) {
-  return <NgForm value={value}
-    onChange={onChange}
-    schema={{
-      capacity: {
-        type: 'number',
-        label: 'Bucket capacity',
-        props: {
-          defaultValue: 300
-        }
-      },
-      refillRequestIntervalMs: {
-        type: 'number',
-        label: 'Refill request interval (ms)',
-        props: {
-          defaultValue: 50
-        }
-      },
-      refillRequestedTokens: {
-        type: 'number',
-        label: 'Refill requested tokens',
-        props: {
-          defaultValue: 50
-        }
-      },
-      example: {
-        renderer: () => {
-          const { capacity = 300, refillRequestIntervalMs = 50, refillRequestedTokens = 50 } = value || {};
-          const refillsPerSecond = 1000 / refillRequestIntervalMs;
-          const tokensPerSecond = refillsPerSecond * refillRequestedTokens;
-          const timeToFillBucket = capacity / tokensPerSecond;
-          return (
-            <div className='row mb-3'>
-              <label className='col-xs-12 col-sm-2 col-form-label'>Example</label>
-              <div className='col-sm-10'>
-                <p className='m-1'>With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens every <b>{refillRequestIntervalMs}ms</b></p>
-                <p className='m-1'>which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.</p>
-                <p className='m-1'>Starting at full capacity, the bucket fills to capacity ({capacity}) in <b>{timeToFillBucket.toFixed(2)}s</b>.</p>
-              </div>
-            </div>
-          );
-        }
-      },
-      quota: {
-        type: 'form',
-        collapsable: false,
-        label: 'Allowed Quota',
-        schema: {
-          daily: {
-            type: 'number',
-            label: 'Daily Request Quota',
-            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        capacity: {
+          type: 'number',
+          label: 'Bucket capacity',
+          props: {
+            defaultValue: 300,
           },
-          monthly: {
-            type: 'number',
-            label: 'Monthly Request Quota',
-            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
-          }
         },
-        flow: ['daily', 'monthly']
-      }
-    }} />
+        refillRequestIntervalMs: {
+          type: 'number',
+          label: 'Refill request interval (ms)',
+          props: {
+            defaultValue: 50,
+          },
+        },
+        refillRequestedTokens: {
+          type: 'number',
+          label: 'Refill requested tokens',
+          props: {
+            defaultValue: 50,
+          },
+        },
+        example: {
+          renderer: () => {
+            const {
+              capacity = 300,
+              refillRequestIntervalMs = 50,
+              refillRequestedTokens = 50,
+            } = value || {};
+            const refillsPerSecond = 1000 / refillRequestIntervalMs;
+            const tokensPerSecond = refillsPerSecond * refillRequestedTokens;
+            const timeToFillBucket = capacity / tokensPerSecond;
+            return (
+              <div className="row mb-3">
+                <label className="col-xs-12 col-sm-2 col-form-label">Example</label>
+                <div className="col-sm-10">
+                  <p className="m-1">
+                    With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens
+                    every <b>{refillRequestIntervalMs}ms</b>
+                  </p>
+                  <p className="m-1">
+                    which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.
+                  </p>
+                  <p className="m-1">
+                    Starting at full capacity, the bucket fills to capacity ({capacity}) in{' '}
+                    <b>{timeToFillBucket.toFixed(2)}s</b>.
+                  </p>
+                </div>
+              </div>
+            );
+          },
+        },
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['daily', 'monthly'],
+        },
+      }}
+    />
+  );
 }
 function LegacyThrottlingStrategyConfig({ value, onChange }) {
-  return <NgForm value={value}
-    onChange={onChange}
-    schema={{
-      quota: {
-        type: 'form',
-        collapsable: false,
-        label: 'Allowed Quota',
-        schema: {
-          window: {
-            type: 'number',
-            label: 'Request Quota',
-            help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.'
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
           },
-          daily: {
-            type: 'number',
-            label: 'Daily Request Quota',
-            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
-          },
-          monthly: {
-            type: 'number',
-            label: 'Monthly Request Quota',
-            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
-          }
+          flow: ['window', 'daily', 'monthly'],
         },
-        flow: ['window', 'daily', 'monthly']
-      }
-    }} />
+      }}
+    />
+  );
 }
 
 function FixedWindowStrategyConfig({ value, onChange }) {
-  return <NgForm value={value}
-    onChange={onChange}
-    schema={{
-      windowDurationMs: {
-        type: 'number',
-        label: 'Window Duration (ms)',
-        help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.'
-      },
-      quota: {
-        type: 'form',
-        collapsable: false,
-        label: 'Allowed Quota',
-        schema: {
-          window: {
-            type: 'number',
-            label: 'Request Quota',
-            help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.'
-          },
-          daily: {
-            type: 'number',
-            label: 'Daily Request Quota',
-            help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.'
-          },
-          monthly: {
-            type: 'number',
-            label: 'Monthly Request Quota',
-            help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.'
-          }
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        windowDurationMs: {
+          type: 'number',
+          label: 'Window Duration (ms)',
+          help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.',
         },
-        flow: ['window', 'daily', 'monthly']
-      }
-    }} />
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['window', 'daily', 'monthly'],
+        },
+      }}
+    />
+  );
 }
 
 export function ThrottlingStrategy({ value, onChange }) {
   const strategies = {
     LegacyThrottlingStrategyConfig,
     LocalTokensBucketStrategyConfig,
-    FixedWindowStrategyConfig
+    FixedWindowStrategyConfig,
   };
 
-  const Component = strategies[value?.id]
+  const Component = strategies[value?.id];
 
-  return <>
-    <NgForm schema={{
-      id: {
-        type: 'select',
-        label: 'Strategy',
-        props: {
-          defaultValue: 'LegacyThrottlingStrategyConfig',
-          options: [
-            { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
-            { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
-            { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
-          ],
-        },
-      }
-    }}
-      value={value}
-      onChange={onChange} />
+  return (
+    <>
+      <NgForm
+        schema={{
+          id: {
+            type: 'select',
+            label: 'Strategy',
+            props: {
+              defaultValue: 'LegacyThrottlingStrategyConfig',
+              options: [
+                { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
+                { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+                { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
+              ],
+            },
+          },
+        }}
+        value={value}
+        onChange={onChange}
+      />
 
-    {Component && <Component value={value} onChange={onChange} />}
-  </>
+      {Component && <Component value={value} onChange={onChange} />}
+    </>
+  );
 }
 
 class DailyRemainingQuotas extends Component {
@@ -839,11 +896,8 @@ const ApiKeysConstants = {
       },
     },
     copyCredentials: {
-      type: props => {
-        return <CopyFromLineItem
-          item={props?.rawValue}
-          text="Copy credentials"
-          rowDisplay />
+      type: (props) => {
+        return <CopyFromLineItem item={props?.rawValue} text="Copy credentials" rowDisplay />;
       },
       props: {
         label: '',
@@ -1130,8 +1184,9 @@ const ApiKeysConstants = {
             if (window.location.pathname.indexOf('/bo/dashboard/routes') === 0) {
               window.location = `/bo/dashboard/lines/prod/services/${that.props.params.routeId}/apikeys/edit/${item.clientId}/stats`;
             } else {
-              window.location = `/bo/dashboard/lines/prod/services/${that.state.service ? that.state.service.id : '-'
-                }/apikeys/edit/${item.clientId}/stats`;
+              window.location = `/bo/dashboard/lines/prod/services/${
+                that.state.service ? that.state.service.id : '-'
+              }/apikeys/edit/${item.clientId}/stats`;
             }
           }}
         >
@@ -1225,8 +1280,8 @@ export class ServiceApiKeysPage extends Component {
       : this.onApis
         ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
         : nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+            .forEntityNext(nextClient.ENTITIES.SERVICES)
+            .findById(this.props.params.serviceId);
 
     fu.then((service) => {
       if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);
@@ -1292,7 +1347,7 @@ export class ServiceApiKeysPage extends Component {
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
-              `routes/${this.props.params.routeId}/apikeys`
+                `routes/${this.props.params.routeId}/apikeys`
               : this.onApis
                 ? `apis/${this.props.params.apiId}/apikeys`
                 : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
@@ -1309,12 +1364,12 @@ export class ServiceApiKeysPage extends Component {
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
                 authorizedEntities: this.onRoutes
                   ? [
-                    `route_${this.props.params.routeId}`, // just authorize the route
-                  ]
+                      `route_${this.props.params.routeId}`, // just authorize the route
+                    ]
                   : this.onApis
                     ? [
-                      `api_${this.props.params.apiId}`, // just authorize the api
-                    ]
+                        `api_${this.props.params.apiId}`, // just authorize the api
+                      ]
                     : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
               }))
           }

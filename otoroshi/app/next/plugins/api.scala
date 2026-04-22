@@ -19,7 +19,14 @@ import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  Message,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json._
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
@@ -404,7 +411,9 @@ trait NgCachedConfigContext {
     }
   }
 
-  def extractTypedBody(request: NgPluginHttpRequest)(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
+  def extractTypedBody(
+      request: NgPluginHttpRequest
+  )(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(request).map {
       case None                                              => (Json.obj(), None)
       case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
@@ -425,7 +434,9 @@ trait NgCachedConfigContext {
     }
   }
 
-  def extractTypedBody(response: NgPluginHttpResponse)(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
+  def extractTypedBody(
+      response: NgPluginHttpResponse
+  )(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(response).map {
       case None                                              => (Json.obj(), None)
       case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
@@ -642,21 +653,22 @@ case class NgTransformerRequestContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.requestBody(otoroshiRequest).map {
-      case (body, bodyBytesOut) =>
-        (json.asObject ++ Json.obj(
+    JsonHelpers.requestBody(otoroshiRequest).map { case (body, bodyBytesOut) =>
+      (
+        json.asObject ++ Json.obj(
           "route"              -> route.json,
           "request_body_bytes" -> body
-        ), bodyBytesOut)
+        ),
+        bodyBytesOut
+      )
     }
   }
   def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
-    extractTypedBody(otoroshiRequest).map {
-      case (obj, bodyBytesOpt) =>
-        (baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj)), bodyBytesOpt)
+    extractTypedBody(otoroshiRequest).map { case (obj, bodyBytesOpt) =>
+      (baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj)), bodyBytesOpt)
     }
   }
 }
@@ -694,12 +706,14 @@ case class NgTransformerResponseContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.responseBody(otoroshiResponse).map {
-      case (bodyOut, bodyBytesOpt) =>
-        (json.asObject ++ Json.obj(
+    JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
           "route"               -> route.json,
           "response_body_bytes" -> bodyOut
-        ), bodyBytesOpt)
+        ),
+        bodyBytesOpt
+      )
     }
   }
 
@@ -707,9 +721,11 @@ case class NgTransformerResponseContext(
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
-    extractTypedBody(otoroshiResponse).map {
-      case (obj, bodyBytesOut) =>
-        (baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj)), bodyBytesOut)
+    extractTypedBody(otoroshiResponse).map { case (obj, bodyBytesOut) =>
+      (
+        baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj)),
+        bodyBytesOut
+      )
     }
   }
 }
@@ -747,12 +763,14 @@ case class NgTransformerErrorContext(
   )
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.responseBody(otoroshiResponse).map {
-      case (bodyOut, bodyBytesOpt) =>
-        (json.asObject ++ Json.obj(
+    JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
           "route"               -> route.json,
           "response_body_bytes" -> bodyOut
-        ), bodyBytesOpt)
+        ),
+        bodyBytesOpt
+      )
     }
   }
 }
@@ -1004,22 +1022,27 @@ case class NgbBackendCallContext(
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat = env.otoroshiMaterializer
-    JsonHelpers.requestBody(request).map {
-      case (body, bodyBytesOpt) =>
-        (json.asObject ++ Json.obj(
+    JsonHelpers.requestBody(request).map { case (body, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
           "route"              -> route.json,
           "request_body_bytes" -> body,
           "request"            -> request.json
-        ), bodyBytesOpt)
+        ),
+        bodyBytesOpt
+      )
     }
   }
 
   def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     extractTypedBody(request).map { case (obj, bodyBytesOpt) =>
-      (json.asObject ++ Json.obj(
-        "route"   -> route.json,
-        "request" -> (request.json.asObject ++ obj)
-      ), bodyBytesOpt)
+      (
+        json.asObject ++ Json.obj(
+          "route"   -> route.json,
+          "request" -> (request.json.asObject ++ obj)
+        ),
+        bodyBytesOpt
+      )
     }
   }
 }
@@ -1699,16 +1722,16 @@ case class NgIncomingRequestValidatorContext(
 }
 
 case class NgPresetPluginContext(
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  route: NgRoute,
-  idx: Int = 0
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    route: NgRoute,
+    idx: Int = 0
 ) {
   def json: JsValue = Json.obj(
-    "request"       -> JsonHelpers.requestToJson(request, attrs),
-    "config"        -> config,
-    "attrs"         -> attrs.json
+    "request" -> JsonHelpers.requestToJson(request, attrs),
+    "config"  -> config,
+    "attrs"   -> attrs.json
   )
 }
 

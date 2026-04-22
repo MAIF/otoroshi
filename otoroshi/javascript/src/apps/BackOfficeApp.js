@@ -322,8 +322,8 @@ class BackOfficeAppContainer extends Component {
   };
 
   render() {
-    const isEdition = window.location.pathname.includes('/edit') ||
-      window.location.pathname.includes('/add')
+    const isEdition =
+      window.location.pathname.includes('/edit') || window.location.pathname.includes('/add');
     const classes = ['page-container', isEdition ? 'page-container--centered' : ''];
     if (
       this.props.children &&

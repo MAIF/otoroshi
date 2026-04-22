@@ -487,17 +487,13 @@ export function deleteApiKey(serviceId, routeId, apiId, ak) {
 }
 
 export function getBearer(clientId, clientSecret) {
-  return fetch(
-    `/bo/api/proxy/api/apikeys/${clientId}/bearer?newSecret=${clientSecret}`,
-    {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    }
-  )
-    .then(r => r.json())
+  return fetch(`/bo/api/proxy/api/apikeys/${clientId}/bearer?newSecret=${clientSecret}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function createApiKey(serviceId, routeId, apiId, ak) {
@@ -2133,8 +2129,7 @@ export const fetchWrapperNext = (url, method = 'GET', body, group = 'any') => {
     credentials: 'include',
     headers: headers,
     body: body ? JSON.stringify(body) : undefined,
-  })
-    .then((r) => r.json());
+  }).then((r) => r.json());
 };
 
 const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
@@ -2215,39 +2210,41 @@ export const findAllWithPagination = (
 };
 
 export const subscribeToPlan = (apiId, planId, version, body) => {
-  return fetchWrapperNext(`/apis/${apiId}/plans/${planId}/subscribe?version=${version}`,
+  return fetchWrapperNext(
+    `/apis/${apiId}/plans/${planId}/subscribe?version=${version}`,
     'POST',
     body,
-    'apis.otoroshi.io')
-}
+    'apis.otoroshi.io'
+  );
+};
 
 export const confirmSubscription = (apiId, subscriptionId, version) => {
-  const url = `/apis/${apiId}/subscriptions/${subscriptionId}/confirm?version=${version}`
+  const url = `/apis/${apiId}/subscriptions/${subscriptionId}/confirm?version=${version}`;
 
   return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1${url}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({})
-  })
-}
+    body: JSON.stringify({}),
+  });
+};
 
 export const listImpactedSubscriptions = (apiId, planId, version) => {
-  const url = `/apis/${apiId}/plans/${planId}/subscriptions/preview-update?version=${version}`
+  const url = `/apis/${apiId}/plans/${planId}/subscriptions/preview-update?version=${version}`;
 
   return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1${url}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({})
-  })
-}
+    body: JSON.stringify({}),
+  });
+};
 
 export const nextClient = {
   ENTITIES: {

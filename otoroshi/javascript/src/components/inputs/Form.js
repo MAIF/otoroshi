@@ -390,7 +390,10 @@ export class Form extends Component {
   render() {
     if (isFunction(this.props.flow)) {
       return (
-        <form className={`${this.props.styleName} form-horizontal`} style={{ maxWidth: 1000, ...this.props.style }}>
+        <form
+          className={`${this.props.styleName} form-horizontal`}
+          style={{ maxWidth: 1000, ...this.props.style }}
+        >
           {this.props
             .flow(this.props.value)
             .filter((v) => !!v)
@@ -400,7 +403,10 @@ export class Form extends Component {
       );
     } else {
       return (
-        <form className={`${this.props.styleName} form-horizontal`} style={{ maxWidth: 1000, ...this.props.style }}>
+        <form
+          className={`${this.props.styleName} form-horizontal`}
+          style={{ maxWidth: 1000, ...this.props.style }}
+        >
           {this.props.flow.filter((v) => !!v).map((step, idx) => this.generateStep(step, idx))}
           {this.generateLastStep()}
         </form>

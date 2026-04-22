@@ -30,6 +30,6 @@ case class PulsarStatefulClientConfig(config: PulsarConfig) extends StatefulClie
 
   override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case p: PulsarStatefulClientConfig => p.config == config
-    case _ => false
+    case _                             => false
   }
 }

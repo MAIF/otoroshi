@@ -130,22 +130,17 @@ export function NewBackend(props) {
   const saveBackend = () => {
     return updateItem({
       ...item,
-      backends: [
-        ...item.backends,
-        backend
-      ],
+      backends: [...item.backends, backend],
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/backends`));
   };
 
-  useQuery(['getTemplate'], nextClient
-    .forEntityNext(nextClient.ENTITIES.BACKENDS)
-    .template, {
+  useQuery(['getTemplate'], nextClient.forEntityNext(nextClient.ENTITIES.BACKENDS).template, {
     retry: 0,
     onSuccess: (data) =>
       setBackend({
         id: v4(),
         name: 'My new backend',
-        client: "default_backend_client",
+        client: 'default_backend_client',
         backend: {
           ...data.backend,
           targets: [
@@ -164,15 +159,17 @@ export function NewBackend(props) {
   if (!backend || !item) return <SimpleLoader />;
 
   return (
-    <div className='page'>
+    <div className="page">
       <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }} />
-      <div className='displayGroupBtn'>
+      <div className="displayGroupBtn">
         <FeedbackButton
           type="success"
           onPress={saveBackend}
-          text={<div className="d-flex align-items-center">
-            Create <VersionBadge size="xs" />
-          </div>}
+          text={
+            <div className="d-flex align-items-center">
+              Create <VersionBadge size="xs" />
+            </div>
+          }
         />
       </div>
       <BackendForm
@@ -256,17 +253,19 @@ export function EditBackend(props) {
   if (!item || !backend) return <SimpleLoader />;
 
   return (
-    <div className='page'>
+    <div className="page">
       <PageTitle title="Backend Settings" {...props} style={{ paddingBottom: 0 }} />
 
-      <div className='displayGroupBtn'>
+      <div className="displayGroupBtn">
         <DraftOnly>
           <FeedbackButton
             type="success"
             onPress={updateBackend}
-            text={<div className="d-flex align-items-center">
-              Save <VersionBadge size="xs" />
-            </div>}
+            text={
+              <div className="d-flex align-items-center">
+                Save <VersionBadge size="xs" />
+              </div>
+            }
           />
         </DraftOnly>
       </div>
@@ -311,11 +310,14 @@ export function EditBackend(props) {
                 flow: NgBackend.flow.filter((f) => f !== 'client'),
               },
             },
-            flow: [{
-              type: 'group',
-              fields: ['name', 'client'],
-              collapsable: false
-            }, 'backend'],
+            flow: [
+              {
+                type: 'group',
+                fields: ['name', 'client'],
+                collapsable: false,
+              },
+              'backend',
+            ],
             value: backend,
           },
         }}

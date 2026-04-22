@@ -30,6 +30,6 @@ case class KafkaStatefulClientConfig(config: KafkaConfig) extends StatefulClient
 
   override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case k: KafkaStatefulClientConfig => k.config == config
-    case _ => false
+    case _                            => false
   }
 }

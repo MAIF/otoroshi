@@ -17,7 +17,9 @@ import scala.util.{Failure, Success, Try}
 
 object JsonHelpers {
 
-  def requestBody(request: NgPluginHttpRequest)(implicit ec: ExecutionContext, mat: Materializer): Future[(JsValue, Option[ByteString])] = {
+  def requestBody(
+      request: NgPluginHttpRequest
+  )(implicit ec: ExecutionContext, mat: Materializer): Future[(JsValue, Option[ByteString])] = {
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
         val arr = b.toArray[Byte]

@@ -178,7 +178,7 @@ export function RouteTemplatesTable(props) {
               history={history}
               value={props.value}
               setValue={props.onChange}
-              setSaveButton={() => { }}
+              setSaveButton={() => {}}
             />
           </div>
         );

@@ -60,6 +60,6 @@ object Keys {
   val ForCurrentListenerOnlyKey         = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")
   val CurrentListenerKey                = TypedKey[String]("otoroshi.core.CurrentListener")
 
-  val PlanKey                           = TypedKey[ApiDocumentationPlan]("otoroshi.core.Plan")
-  val ApiKey                            = TypedKey[Api]("otoroshi.core.Api")
+  val PlanKey = TypedKey[ApiDocumentationPlan]("otoroshi.core.Plan")
+  val ApiKey  = TypedKey[Api]("otoroshi.core.Api")
 }

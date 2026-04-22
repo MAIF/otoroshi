@@ -13,10 +13,13 @@ export function PillButton({
   pillButtonStyle = {},
 }) {
   return (
-    <div className={`d-flex justify-content-center ${className}`} style={{
-      maxWidth: 1000,
-      ...containerStyle
-    }}>
+    <div
+      className={`d-flex justify-content-center ${className}`}
+      style={{
+        maxWidth: 1000,
+        ...containerStyle,
+      }}
+    >
       <div
         className="p-1"
         style={{

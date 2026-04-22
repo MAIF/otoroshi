@@ -31,10 +31,12 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       status: {
         renderer: (props) => {
           const STATUS_OPTIONS = ['disabled', 'pending', 'enabled', 'deprecated', 'custom'];
-          const isCustom = props.value !== undefined && !['disabled', 'pending', 'enabled', 'deprecated'].includes(props.value);
-          const dotValue = isCustom ? 'custom' : (props.value || 'disabled');
+          const isCustom =
+            props.value !== undefined &&
+            !['disabled', 'pending', 'enabled', 'deprecated'].includes(props.value);
+          const dotValue = isCustom ? 'custom' : props.value || 'disabled';
 
-          console.log(isCustom, dotValue)
+          console.log(isCustom, dotValue);
 
           return (
             <Row title="Status">
@@ -106,16 +108,16 @@ const SUBSCRIPTION_FORM_SETTINGS = {
           language: 'json',
           useInternalState: true,
           defaultValue: '{}',
-          height: 200
-        }
+          height: 200,
+        },
       },
       metadata: {
         type: 'object',
-        label: 'Metadata'
+        label: 'Metadata',
       },
       tags: {
         type: 'array',
-        label: 'Tags'
+        label: 'Tags',
       },
     };
   },
@@ -125,26 +127,26 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       type: 'group',
       name: 'Informations',
       collapsable: false,
-      fields: ['name', 'description', isEdition ? 'status' : undefined].filter(f => f),
+      fields: ['name', 'description', isEdition ? 'status' : undefined].filter((f) => f),
     },
     {
       type: 'group',
       name: 'Ownership',
       collapsable: false,
-      fields: ['owner_ref', 'plan_ref', isEdition ? 'token_refs' : undefined].filter(f => f),
+      fields: ['owner_ref', 'plan_ref', isEdition ? 'token_refs' : undefined].filter((f) => f),
     },
     {
       type: 'group',
       name: 'Payment',
       collapsable: false,
-      fields: ['payment_ref']
+      fields: ['payment_ref'],
     },
     {
       type: 'group',
       name: 'Misc.',
       collapsed: true,
       fields: ['metadata', 'tags'],
-    }
+    },
   ],
 };
 
@@ -167,21 +169,27 @@ export function Subscriptions(props) {
       notFilterable: true,
       content: (item) => item.content?.status,
       cell: (v, subscription, table) => {
-        const sub = (subscription.content ?? subscription) || {}
+        const sub = (subscription.content ?? subscription) || {};
         if (sub.status === 'pending') {
-          return <Button
-            type="success"
-            className='btn-sm'
-            onClick={() => {
-              BackOfficeServices.confirmSubscription(item.id, subscription.id, isDraft ? 'Draft' : 'Published')
-                .then(() => window.location.reload())
-            }}>Confirm</Button>
+          return (
+            <Button
+              type="success"
+              className="btn-sm"
+              onClick={() => {
+                BackOfficeServices.confirmSubscription(
+                  item.id,
+                  subscription.id,
+                  isDraft ? 'Draft' : 'Published'
+                ).then(() => window.location.reload());
+              }}
+            >
+              Confirm
+            </Button>
+          );
         }
 
-        return <span className="badge bg-success">
-          {sub.status}
-        </span>
-      }
+        return <span className="badge bg-success">{sub.status}</span>;
+      },
     },
   ];
 
@@ -215,8 +223,7 @@ export function Subscriptions(props) {
   const deleteItem = (item) => {
     if (isDraft) return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(item.id);
 
-    return client.delete(item)
-      .then(() => window.location.reload());
+    return client.delete(item).then(() => window.location.reload());
   };
 
   return (
@@ -284,39 +291,39 @@ export function SubscriptionDesigner(props) {
     if (isDraft)
       return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).update(draftSubscription);
 
-    return nextClient
-      .forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
-      .update(subscription)
+    return nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS).update(subscription);
   };
 
   if (!item || (isDraft ? !draftSubscription : !subscription)) return <SimpleLoader />;
 
   const sub = isDraft ? draftSubscription : subscription;
 
-  return <div className='page'>
-    <PageTitle title={sub.name} {...props} />
-    <div className='displayGroupBtn'>
-      <FeedbackButton
-        type="success"
-        onPress={updateSubscription}
-        text={
-          <div className="d-flex align-items-center">
-            Save <VersionBadge size="xs" />
-          </div>
+  return (
+    <div className="page">
+      <PageTitle title={sub.name} {...props} />
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={updateSubscription}
+          text={
+            <div className="d-flex align-items-center">
+              Save <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </div>
+      <NgForm
+        value={isDraft ? draftSubscription.content : subscription}
+        schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+        flow={SUBSCRIPTION_FORM_SETTINGS.flow(true)}
+        onChange={(res) =>
+          isDraft
+            ? setDraftSubscription({ ...draftSubscription, content: res })
+            : setSubscription(res)
         }
       />
     </div>
-    <NgForm
-      value={isDraft ? draftSubscription.content : subscription}
-      schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
-      flow={SUBSCRIPTION_FORM_SETTINGS.flow(true)}
-      onChange={(res) =>
-        isDraft
-          ? setDraftSubscription({ ...draftSubscription, content: res })
-          : setSubscription(res)
-      }
-    />
-  </div>
+  );
 }
 
 export function NewSubscription(props) {
@@ -325,7 +332,7 @@ export function NewSubscription(props) {
   const history = useHistory();
 
   const [subscription, setSubscription] = useState({
-    plan_ref: props.plan?.id
+    plan_ref: props.plan?.id,
   });
   const [error, setError] = useState();
 
@@ -353,53 +360,61 @@ export function NewSubscription(props) {
   if (!item || !subscription) return <SimpleLoader />;
 
   const updateSubscription = () => {
-    return BackOfficeServices.subscribeToPlan(params.apiId, props.plan.id, isDraft ? 'Draft' : 'Published', {
-      ...subscription,
-      api_ref: params.apiId,
-      draft: version === 'staging' || version === 'draft',
-    })
-      .then(() => {
-        historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
-      });
+    return BackOfficeServices.subscribeToPlan(
+      params.apiId,
+      props.plan.id,
+      isDraft ? 'Draft' : 'Published',
+      {
+        ...subscription,
+        api_ref: params.apiId,
+        draft: version === 'staging' || version === 'draft',
+      }
+    ).then(() => {
+      historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
+    });
   };
 
-  console.log(subscription)
+  console.log(subscription);
 
-  return <div className='page'>
-    <PageTitle title="Subscription Settings" {...props} />
+  return (
+    <div className="page">
+      <PageTitle title="Subscription Settings" {...props} />
 
-    <NgForm
-      value={subscription}
-      schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
-      flow={SUBSCRIPTION_FORM_SETTINGS.flow(false)}
-      onChange={(newSub) => {
-        setSubscription(newSub);
-        setError(undefined);
-      }}
-    />
-
-    {error && (
-      <div
-        className="mt-3 p-3"
-        style={{
-          borderLeft: '2px solid #D5443F',
-          background: '#D5443F',
-          color: 'var(--text)',
-          borderRadius: '.25rem',
+      <NgForm
+        value={subscription}
+        schema={SUBSCRIPTION_FORM_SETTINGS.schema(item)}
+        flow={SUBSCRIPTION_FORM_SETTINGS.flow(false)}
+        onChange={(newSub) => {
+          setSubscription(newSub);
+          setError(undefined);
         }}
-      >
-        {error}
-      </div>
-    )}
-
-    <div className='displayGroupBtn'>
-      <FeedbackButton
-        type="success"
-        onPress={updateSubscription}
-        text={<div className="d-flex align-items-center">
-          Create <VersionBadge size="xs" />
-        </div>}
       />
+
+      {error && (
+        <div
+          className="mt-3 p-3"
+          style={{
+            borderLeft: '2px solid #D5443F',
+            background: '#D5443F',
+            color: 'var(--text)',
+            borderRadius: '.25rem',
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={updateSubscription}
+          text={
+            <div className="d-flex align-items-center">
+              Create <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </div>
     </div>
-  </div>
+  );
 }

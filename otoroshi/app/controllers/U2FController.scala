@@ -341,7 +341,7 @@ class U2FController(
                   val credential     = Json.parse(jsonMapper.writeValueAsString(result))
 
                   env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
-                    case None                                                  => {
+                    case None                                                        => {
                       env.datastores.webAuthnAdminDataStore
                         .registerUser(
                           WebAuthnOtoroshiAdmin(
@@ -379,7 +379,7 @@ class U2FController(
                           Ok(Json.obj("username" -> username))
                         }
                     }
-                    case Some(user)                                            => Unauthorized(Json.obj("error" -> "bad credentials")).future
+                    case Some(user)                                                  => Unauthorized(Json.obj("error" -> "bad credentials")).future
                   }
                 }
               }

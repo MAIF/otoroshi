@@ -231,8 +231,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                          clientY: client.clientY - start.clientY,
+                        }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -250,7 +250,6 @@ export function DefaultSidebar(props) {
       </ul>
       {openedSidebar && !onRouteTab && (
         <ul className="nav flex-column nav-sidebar me-2">
-
           <li
             className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} mt-3`}
             style={{
@@ -338,20 +337,24 @@ function Block({
   return (
     <div
       key={title}
-      style={last ? {
-        border: '1px solid var(--input-border)',
-        borderBottomLeftRadius: 6,
-        borderBottomRightRadius: 6
-      } : {
-        border: '1px solid var(--input-border)',
-        borderBottom: 0,
-        borderTopLeftRadius: first ? 6 : 0,
-        borderTopRightRadius: first ? 6 : 0,
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
-        cursor: 'pointer',
-        opacity: hightlighted ? 1 : 0.5
-      }}
+      style={
+        last
+          ? {
+              border: '1px solid var(--input-border)',
+              borderBottomLeftRadius: 6,
+              borderBottomRightRadius: 6,
+            }
+          : {
+              border: '1px solid var(--input-border)',
+              borderBottom: 0,
+              borderTopLeftRadius: first ? 6 : 0,
+              borderTopRightRadius: first ? 6 : 0,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+              cursor: 'pointer',
+              opacity: hightlighted ? 1 : 0.5,
+            }
+      }
       className="py-2"
       onClick={() => {
         if (!open === false) {
@@ -529,8 +532,9 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
-        }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -623,8 +627,9 @@ function CoreSidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
-        }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       style={{
         border: openedSidebar ? '2px solid transparent' : 'none',
       }}

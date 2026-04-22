@@ -1206,7 +1206,7 @@ export class ServicePage extends Component {
       delete propsDisabled.disabled;
     }
     return (
-      <form className="form-horizontal" style={{ maxWidth: 1000}}>
+      <form className="form-horizontal" style={{ maxWidth: 1000 }}>
         <div className="displayGroupBtn">
           <button
             className="btn btn-primary"
@@ -1583,22 +1583,26 @@ export class ServicePage extends Component {
               {this.state.service.env === 'prod' &&
                 this.state.service.subdomain.trim().length === 0 && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.domain
-                      }${this.state.service.matchingRoot || ''}/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                      this.state.service.domain
+                    }${this.state.service.matchingRoot || ''}/`}
                   />
                 )}
               {this.state.service.env === 'prod' &&
                 this.state.service.subdomain.trim().length > 0 && (
                   <LinkDisplay
-                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                      this.state.service.subdomain
+                    }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
                   />
                 )}
               {this.state.service.env !== 'prod' && (
                 <LinkDisplay
-                  link={`${this.state.service.forceHttps ? 'https' : 'http'}://${this.state.service.subdomain
-                    }.${this.state.service.env}.${this.state.service.domain}${this.state.service.matchingRoot || ''
-                    }/`}
+                  link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                    this.state.service.subdomain
+                  }.${this.state.service.env}.${this.state.service.domain}${
+                    this.state.service.matchingRoot || ''
+                  }/`}
                 />
               )}
             </>
@@ -1699,9 +1703,7 @@ export class ServicePage extends Component {
         >
           <BooleanInput
             label="Redirection enabled"
-            value={
-              this.state.service.redirection ? this.state.service.redirection.enabled : false
-            }
+            value={this.state.service.redirection ? this.state.service.redirection.enabled : false}
             help="..."
             onChange={(v) => this.changeTheValue('redirection.enabled', v)}
           />
@@ -1917,9 +1919,7 @@ export class ServicePage extends Component {
           />
         </Collapse>
         <Collapse
-          notVisible={
-            this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
-          }
+          notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
           collapsed={this.state.allCollapsed}
           initCollapsed={true}
           label="Restrictions"
@@ -1930,9 +1930,7 @@ export class ServicePage extends Component {
           />
         </Collapse>
         <Collapse
-          notVisible={
-            this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
-          }
+          notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
           collapsed={this.state.allCollapsed}
           initCollapsed={true}
           label="Otoroshi exchange protocol"
@@ -2126,12 +2124,12 @@ export class ServicePage extends Component {
             <label className="col-xs-12 col-sm-2 col-form-label" />
             <div className="col-sm-10">
               <p className="sub-container sub-container__bg-color">
-                When an app. enforces user authentication (ex. privateApp), it can be nice to
-                allow logged users to access apps API without using an apikey (because the user is
-                logged in, the app is exposing UI and API and we don't want to leak apikeys). By
-                default Otoroshi allow this for historical reasons, but it means that you have
-                anticipate that sometimes your api will be called whitout an apikey. If you don't
-                want this behavior, juste enable the strict mode.
+                When an app. enforces user authentication (ex. privateApp), it can be nice to allow
+                logged users to access apps API without using an apikey (because the user is logged
+                in, the app is exposing UI and API and we don't want to leak apikeys). By default
+                Otoroshi allow this for historical reasons, but it means that you have anticipate
+                that sometimes your api will be called whitout an apikey. If you don't want this
+                behavior, juste enable the strict mode.
               </p>
             </div>
           </div>
@@ -2158,9 +2156,7 @@ export class ServicePage extends Component {
             label="From custom headers"
             value={this.state.service.apiKeyConstraints.customHeadersAuth.enabled}
             help="You can pass the api key using custom headers (ie. Otoroshi-Client-Id and Otoroshi-Client-Secret headers)"
-            onChange={(v) =>
-              this.changeTheValue('apiKeyConstraints.customHeadersAuth.enabled', v)
-            }
+            onChange={(v) => this.changeTheValue('apiKeyConstraints.customHeadersAuth.enabled', v)}
           />
           <BooleanInput
             label="From JWT token"
@@ -2243,9 +2239,7 @@ export class ServicePage extends Component {
             value={this.state.service.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs}
             help="The maximum number of second accepted as token lifespan"
             suffix="seconds"
-            onChange={(v) =>
-              this.changeTheValue('apiKeyConstraints.jwtAuth.maxJwtLifespanSecs', v)
-            }
+            onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.maxJwtLifespanSecs', v)}
           />
           <TextInput
             label="Custom header name"
@@ -2581,10 +2575,7 @@ export class ServicePage extends Component {
                 <label className="col-xs-12 col-sm-2 col-form-label" />
                 <div className="col-sm-10">
                   {this.state.service.jwtVerifier.ids.length === 0 && (
-                    <a
-                      href={`/bo/dashboard/jwt-verifiers/add`}
-                      className="btn btn-primary btn-sm"
-                    >
+                    <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary btn-sm">
                       <i className="fas fa-plus" /> Create a new Jwt Verifier config
                     </a>
                   )}
@@ -2610,9 +2601,7 @@ export class ServicePage extends Component {
           <Message
             message={
               <>
-                <span>
-                  Pre-routes will be deprecated soon, please use global plugins instead !
-                </span>
+                <span>Pre-routes will be deprecated soon, please use global plugins instead !</span>
                 <Migration
                   style={{ marginLeft: 10 }}
                   what="preroute"
@@ -2810,9 +2799,7 @@ export class ServicePage extends Component {
             </div>
           </Collapse>*/}
         <Collapse
-          notVisible={
-            this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
-          }
+          notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
           collapsed={this.state.allCollapsed}
           initCollapsed={true}
           label="Gzip support"
@@ -3001,9 +2988,7 @@ export class ServicePage extends Component {
           )}
         </Collapse>
         <Collapse
-          notVisible={
-            this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
-          }
+          notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
           collapsed={this.state.allCollapsed}
           initCollapsed={true}
           label="HTTP Headers"
@@ -3157,9 +3142,7 @@ export class ServicePage extends Component {
             <div className="col-sm-10">
               <button
                 type="button"
-                onClick={(e) =>
-                  this.addSecurityHeader('Permissions-Policy', 'interest-cohort=()')
-                }
+                onClick={(e) => this.addSecurityHeader('Permissions-Policy', 'interest-cohort=()')}
                 disabled={this.computeIfButtonDisabled('Permissions-Policy')}
                 className="btn btn-sm btn-success mb-2"
               >
@@ -3298,9 +3281,7 @@ export class ServicePage extends Component {
           </div>
         </Collapse>
         <Collapse
-          notVisible={
-            this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
-          }
+          notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
           collapsed={this.state.allCollapsed}
           initCollapsed={true}
           label="HealthCheck settings"
@@ -3319,9 +3300,7 @@ export class ServicePage extends Component {
           />
         </Collapse>
         <Collapse
-          notVisible={
-            this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling
-          }
+          notVisible={this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling}
           collapsed={this.state.allCollapsed}
           initCollapsed={true}
           label="Faults injection"
@@ -3358,8 +3337,8 @@ export class ServicePage extends Component {
               <label className="col-xs-12 col-sm-2 col-form-label" />
               <div className="col-sm-10">
                 <p className="sub-container sub-container__bg-color">
-                  Custom error templates are not available on a service descriptor that hasn't
-                  been created yet. Just save the service descriptor and it will be available.
+                  Custom error templates are not available on a service descriptor that hasn't been
+                  created yet. Just save the service descriptor and it will be available.
                 </p>
               </div>
             </div>
@@ -3380,8 +3359,7 @@ export class ServicePage extends Component {
             message={
               <>
                 <span>
-                  Request transformers will be deprecated soon, please use global plugins instead
-                  !
+                  Request transformers will be deprecated soon, please use global plugins instead !
                 </span>
                 <Migration
                   style={{ marginLeft: 10 }}
@@ -3591,10 +3569,11 @@ export class TemplateInput extends Component {
             </a>
         </div>
         <div class="jumbotron">
-            ${error
-        ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
-        : `<h2 style="color:white;">${title}</h2>`
-      }
+            ${
+              error
+                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
+                : `<h2 style="color:white;">${title}</h2>`
+            }
             <p class="lead">
               ${message}
             </p>

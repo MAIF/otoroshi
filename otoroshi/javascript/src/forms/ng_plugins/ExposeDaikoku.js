@@ -1,5 +1,5 @@
-import { findAuthConfigById } from "../../services/BackOfficeServices";
-import { SelectorWizardLauncher } from "../wizards/SelectorWizardLauncher";
+import { findAuthConfigById } from '../../services/BackOfficeServices';
+import { SelectorWizardLauncher } from '../wizards/SelectorWizardLauncher';
 
 export default {
   id: 'cp:otoroshi.next.plugins.ExposeDaikoku',
@@ -23,7 +23,7 @@ export default {
     },
     header_name: {
       label: 'Token header name',
-      type: 'string'
+      type: 'string',
     },
     add_fields: {
       type: 'object',
@@ -222,7 +222,7 @@ export default {
           KidAlgoSettings: ['type', 'onlyExposedCerts'],
         },
       },
-    }
+    },
   },
   config_flow: ['authentication_ref', 'exclude', 'header_name', 'add_fields', 'algo'],
 };

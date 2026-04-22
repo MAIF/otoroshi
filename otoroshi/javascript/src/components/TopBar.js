@@ -1142,7 +1142,7 @@ export class TopBar extends Component {
       ) {
         setTimeout(() => this.selector.focus());
       }
-    } catch (_err) { }
+    } catch (_err) {}
   };
 
   componentDidMount() {
@@ -1755,7 +1755,7 @@ export class TopBar extends Component {
         {({ openedSidebar }) => (
           <nav
             className="navbar navbar-expand-md fixed-top"
-          // style={{ zIndex: 100 }}
+            // style={{ zIndex: 100 }}
           >
             <div className="container-fluid d-flex justify-content-center justify-content-lg-between">
               <div className="d-flex flex-column flex-md-row top-md-0 w-100">
@@ -1902,9 +1902,7 @@ export class TopBar extends Component {
                                     alignItems: 'center',
                                     padding: '.5rem',
                                     borderBottom: '1px solid var(--input-border)',
-                                    background: props.isFocused
-                                      ? 'var(--bg-color_level3)'
-                                      : 'none',
+                                    background: props.isFocused ? 'var(--bg-color_level3)' : 'none',
                                   }}
                                   ref={props.innerRef}
                                   {...props.innerProps}
@@ -2116,8 +2114,9 @@ export class TopBar extends Component {
                     />
                     <ul
                       id="dropdown"
-                      className={`custom-dropdown ${this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
-                        } py-2 pb-4`}
+                      className={`custom-dropdown ${
+                        this.state.dropdownStatus === 'closed' ? 'closed-dropdown' : ''
+                      } py-2 pb-4`}
                       aria-labelledby="dropdownMenuParams"
                       onClick={(e) => {
                         this.setState({ dropdownStatus: 'closed' });

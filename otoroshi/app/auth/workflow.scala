@@ -183,7 +183,8 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
       "is_route"      -> isRoute
     )
     runWorkflowPhase("pa_login_page", input).map {
-      case Left(err)       => Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> err))
+      case Left(err)       =>
+        Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> err))
       case Right(response) => resultFromResponse(response)
     }
   }
@@ -248,7 +249,8 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
       "global_config" -> config.json
     )
     runWorkflowPhase("bo_login_page", input).map {
-      case Left(err)       => Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> err))
+      case Left(err)       =>
+        Results.InternalServerError(Json.obj("error" -> "internal_server_error", "error_description" -> err))
       case Right(response) => resultFromResponse(response)
     }
   }

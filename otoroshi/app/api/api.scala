@@ -15,7 +15,18 @@ import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models._
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
-import otoroshi.next.plugins.api.{NgAccessValidator, NgBackendCall, NgNamedPlugin, NgPluginVisibility, NgPreRouting, NgRequestSink, NgRequestTransformer, NgRouteMatcher, NgTunnelHandler, NgWebsocketPlugin}
+import otoroshi.next.plugins.api.{
+  NgAccessValidator,
+  NgBackendCall,
+  NgNamedPlugin,
+  NgPluginVisibility,
+  NgPreRouting,
+  NgRequestSink,
+  NgRequestTransformer,
+  NgRouteMatcher,
+  NgTunnelHandler,
+  NgWebsocketPlugin
+}
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
@@ -2570,17 +2581,29 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // Documentation resources
 
   def openapiJson() = DocAction { ctx =>
-    val body = otoroshi.api.OpenApi.generate(env, ctx.request.getQueryString("version"), ctx.request.getQueryString("extension_group"))
+    val body = otoroshi.api.OpenApi.generate(
+      env,
+      ctx.request.getQueryString("version"),
+      ctx.request.getQueryString("extension_group")
+    )
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
   def openapiYaml() = DocAction { ctx =>
-    val body = otoroshi.api.OpenApi.generate(env, ctx.request.getQueryString("version"), ctx.request.getQueryString("extension_group"))
+    val body = otoroshi.api.OpenApi.generate(
+      env,
+      ctx.request.getQueryString("version"),
+      ctx.request.getQueryString("extension_group")
+    )
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
   def openapi() = DocAction { ctx =>
-    val body     = otoroshi.api.OpenApi.generate(env, ctx.request.getQueryString("version"), ctx.request.getQueryString("extension_group"))
+    val body     = otoroshi.api.OpenApi.generate(
+      env,
+      ctx.request.getQueryString("version"),
+      ctx.request.getQueryString("extension_group")
+    )
     val accepted = ctx.request.acceptedTypes
       .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))
       .filter {
@@ -2738,7 +2761,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 case class DocActionCtx[A](request: Request[A], sec: String)
 
 class DocAction(val parser: BodyParser[AnyContent])(implicit env: Env)
-  extends ActionBuilder[DocActionCtx, AnyContent]
+    extends ActionBuilder[DocActionCtx, AnyContent]
     with ActionFunction[Request, DocActionCtx] {
 
   lazy val secretOpt = env.docResourcesSecret
@@ -2750,16 +2773,25 @@ class DocAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       block(DocActionCtx(request, ""))
     } else {
       secretOpt match {
-        case None => block(DocActionCtx(request, ""))
+        case None         => block(DocActionCtx(request, ""))
         case Some(secret) => {
           val basicAuthSecret = Base64.getEncoder.encodeToString(s"doc:${secret}".getBytes(StandardCharsets.UTF_8))
           request.headers.get("Authorization") match {
             case Some(auth) if auth.trim == s"Basic ${basicAuthSecret}" => block(DocActionCtx(request, basicAuthSecret))
-            case _ => request.getQueryString("doc_secret") match {
-              case Some(sec) if sec == basicAuthSecret => block(DocActionCtx(request, basicAuthSecret))
-              case Some(sec) if sec == secret => block(DocActionCtx(request, basicAuthSecret))
-              case _ => Results.Unauthorized(Json.obj("error" -> "unauthorized")).withHeaders("WWW-Authenticate" -> s"""Basic realm="otoroshi-doc-${env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).otoroshiId}"""").vfuture
-            }
+            case _                                                      =>
+              request.getQueryString("doc_secret") match {
+                case Some(sec) if sec == basicAuthSecret => block(DocActionCtx(request, basicAuthSecret))
+                case Some(sec) if sec == secret          => block(DocActionCtx(request, basicAuthSecret))
+                case _                                   =>
+                  Results
+                    .Unauthorized(Json.obj("error" -> "unauthorized"))
+                    .withHeaders(
+                      "WWW-Authenticate" -> s"""Basic realm="otoroshi-doc-${env.datastores.globalConfigDataStore
+                        .latest()(env.otoroshiExecutionContext, env)
+                        .otoroshiId}""""
+                    )
+                    .vfuture
+              }
           }
         }
       }

@@ -19,7 +19,7 @@ trait StatefulClientConfig[A] {
 }
 
 case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) {
-  def stopClient(): Unit = config.stop(client)
+  def stopClient(): Unit    = config.stop(client)
   def isClientOpen: Boolean = config.isOpen(client)
 }
 
@@ -29,9 +29,10 @@ case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) 
 // id of the client is supposed to be stable
 class StatefulClientsManager(env: Env) {
 
-  private val logger = Logger("otoroshi-stateful-clients-manager")
-  private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] = new TrieMap[String, StatefulClientWrapper[_]]()
-  private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private val logger                                                     = Logger("otoroshi-stateful-clients-manager")
+  private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] =
+    new TrieMap[String, StatefulClientWrapper[_]]()
+  private implicit val ec                                                = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
     statefulClients.get(id) match {
@@ -46,12 +47,12 @@ class StatefulClientsManager(env: Env) {
           Future {
             Try(typed.stopClient()) match {
               case Failure(e) => logger.error(s"Error while stopping client '${id}'", e)
-              case _ =>
+              case _          =>
             }
           }
           newClient
         }
-      case None =>
+      case None          =>
         logger.info(s"starting new stateful client '$id'")
         val newClient: T = config.start(env)
         statefulClients.put(id, StatefulClientWrapper[T](config, newClient))
@@ -83,23 +84,41 @@ class StatefulClientsManager(env: Env) {
   }
 
   private def getClientConfigsFromConfig(): List[(String, StatefulClientConfig[_])] = {
-    val staticConfigs = env.configurationJson.select("otoroshi").select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList
-    val staticJsonConfigs = env.configurationJson.select("otoroshi").select("stateful-clients-json").asOpt[String].flatMap(str => str.parseJson.asOpt[Seq[JsObject]]).getOrElse(Seq.empty).toList
-    val dynConfigs = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).plugins.config.select("stateful-clients").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toList
-    val configs = staticConfigs ++ staticJsonConfigs ++ dynConfigs
+    val staticConfigs     = env.configurationJson
+      .select("otoroshi")
+      .select("stateful-clients")
+      .asOpt[Seq[JsObject]]
+      .getOrElse(Seq.empty)
+      .toList
+    val staticJsonConfigs = env.configurationJson
+      .select("otoroshi")
+      .select("stateful-clients-json")
+      .asOpt[String]
+      .flatMap(str => str.parseJson.asOpt[Seq[JsObject]])
+      .getOrElse(Seq.empty)
+      .toList
+    val dynConfigs        = env.datastores.globalConfigDataStore
+      .latest()(env.otoroshiExecutionContext, env)
+      .plugins
+      .config
+      .select("stateful-clients")
+      .asOpt[Seq[JsObject]]
+      .getOrElse(Seq.empty)
+      .toList
+    val configs           = staticConfigs ++ staticJsonConfigs ++ dynConfigs
     configs.flatMap { config =>
-      val id = config.select("id").asString
-      val kind = config.select("kind").asString
+      val id       = config.select("id").asString
+      val kind     = config.select("kind").asString
       val nodeKind = config.select("node_kind").asOpt[String].getOrElse("all")
       if (nodeKind != "all" && nodeKind != env.clusterConfig.mode.name.toLowerCase) {
         Seq.empty
       } else {
         kind match {
-          case "redis" => Seq((id, LettuceStatefulClientConfig(config)))
-          case "pg" => Seq((id, PgStatefulClientConfig(config)))
-          case "kafka" => Seq((id, KafkaStatefulClientConfig(config)))
+          case "redis"  => Seq((id, LettuceStatefulClientConfig(config)))
+          case "pg"     => Seq((id, PgStatefulClientConfig(config)))
+          case "kafka"  => Seq((id, KafkaStatefulClientConfig(config)))
           case "pulsar" => Seq((id, PulsarStatefulClientConfig(config)))
-          case _ => Seq.empty
+          case _        => Seq.empty
         }
       }
     }

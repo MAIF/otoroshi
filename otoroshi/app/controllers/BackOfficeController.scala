@@ -2323,27 +2323,60 @@ class BackOfficeController(
 
   def getAuthorizedEntitiesForApikey(id: String) = BackOfficeActionAuth.async(parse.json) { ctx =>
     env.proxyState.apikey(id) match {
-      case None => Ok(Json.obj("error" -> "entity not found")).vfuture
+      case None                                     => Ok(Json.obj("error" -> "entity not found")).vfuture
       case Some(apikey) if !ctx.canUserRead(apikey) => Unauthorized(Json.obj("error" -> "entity available")).vfuture
-      case Some(apikey) => {
-        val authorizedEntities = ctx.request.body.select("authorized_entities").asOpt[Seq[JsValue]].getOrElse(apikey.authorizedEntities).flatMap {
-          case o @ JsObject(_) => EntityIdentifier.applyModern(o)
-          case JsString(str) => EntityIdentifier.apply(str)
-          case _ => None
-        }
+      case Some(apikey)                             => {
+        val authorizedEntities     = ctx.request.body
+          .select("authorized_entities")
+          .asOpt[Seq[JsValue]]
+          .getOrElse(apikey.authorizedEntities)
+          .flatMap {
+            case o @ JsObject(_) => EntityIdentifier.applyModern(o)
+            case JsString(str)   => EntityIdentifier.apply(str)
+            case _               => None
+          }
         val entities: Seq[JsValue] = ctx.request.getQueryString("kind") match {
-          case Some("route") => authorizedEntities.collect {
-            case RouteIdentifier(id) => Seq(Json.obj("kind" -> "route", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json))
-            case ServiceDescriptorIdentifier(id) => Seq(Json.obj("kind" -> "route", "value" -> id, "label" -> env.proxyState.service(id).map(_.name).getOrElse("--").json))
-            case ServiceGroupIdentifier(id) => env.proxyState.allRoutes().filter(r => r.groups.contains(id)).map(r => Json.obj("kind" -> "route", "value" -> r.id, "label" -> r.name))
-          }.flatten
-          case Some("api") => authorizedEntities.collect {
-            case ApiIdentifier(id) => Json.obj("kind" -> "api", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json)
-          }
-          case Some("group") => authorizedEntities.collect {
-            case ServiceGroupIdentifier(id) => Json.obj("kind" -> "group", "value" -> id, "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json)
-          }
-          case _ => Seq.empty
+          case Some("route") =>
+            authorizedEntities.collect {
+              case RouteIdentifier(id)             =>
+                Seq(
+                  Json.obj(
+                    "kind"  -> "route",
+                    "value" -> id,
+                    "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+                  )
+                )
+              case ServiceDescriptorIdentifier(id) =>
+                Seq(
+                  Json.obj(
+                    "kind"  -> "route",
+                    "value" -> id,
+                    "label" -> env.proxyState.service(id).map(_.name).getOrElse("--").json
+                  )
+                )
+              case ServiceGroupIdentifier(id)      =>
+                env.proxyState
+                  .allRoutes()
+                  .filter(r => r.groups.contains(id))
+                  .map(r => Json.obj("kind" -> "route", "value" -> r.id, "label" -> r.name))
+            }.flatten
+          case Some("api")   =>
+            authorizedEntities.collect { case ApiIdentifier(id) =>
+              Json.obj(
+                "kind"  -> "api",
+                "value" -> id,
+                "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+              )
+            }
+          case Some("group") =>
+            authorizedEntities.collect { case ServiceGroupIdentifier(id) =>
+              Json.obj(
+                "kind"  -> "group",
+                "value" -> id,
+                "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+              )
+            }
+          case _             => Seq.empty
         }
         Ok(JsArray(entities)).vfuture
       }

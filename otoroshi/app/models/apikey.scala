@@ -222,7 +222,7 @@ case class ApiKey(
   def theMetadata: Map[String, String] = metadata
   def theName: String                  = clientName
   def theTags: Seq[String]             = tags
-  def jsonWithBearer: JsValue         = {
+  def jsonWithBearer: JsValue = {
     var base = Json.obj("bearer" -> toBearer())
     if (rotation.enabled && rotation.nextSecret.isDefined) {
       base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> toNextBearer()))

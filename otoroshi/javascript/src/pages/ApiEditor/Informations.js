@@ -18,8 +18,8 @@ export function Informations(props) {
   const { item, setItem, updateItem, isDraft } = useDraftOfAPI();
 
   useEffect(() => {
-    props.setTitle(undefined)
-  }, [])
+    props.setTitle(undefined);
+  }, []);
 
   const schema = {
     location: {
@@ -212,7 +212,7 @@ export function Informations(props) {
       type: 'group',
       collapsed: true,
       name: 'Visibility & Hook Exposure',
-      fields: ['visibility', 'hooks']
+      fields: ['visibility', 'hooks'],
     },
     {
       type: 'group',
@@ -222,11 +222,11 @@ export function Informations(props) {
     },
     isDraft
       ? {
-        type: 'group',
-        name: 'Danger zone',
-        collapsed: true,
-        fields: ['danger_zone'],
-      }
+          type: 'group',
+          name: 'Danger zone',
+          collapsed: true,
+          fields: ['danger_zone'],
+        }
       : null,
   ].filter((f) => f);
 
@@ -236,26 +236,29 @@ export function Informations(props) {
 
   if (!item) return <SimpleLoader />;
 
-  return <div className='page'>
-    <PageTitle
-      style={{
-        paddingBottom: 0,
-      }}
-      title="Informations"
-      {...props}
-    />
-
-    <div className='displayGroupBtn'>
-      <FeedbackButton
-        type="success"
-        onPress={updateAPI}
-        text={<div className='d-flex align-items-center'>
-          Save <VersionBadge size="xs" className="ms-2" />
-        </div>}
+  return (
+    <div className="page">
+      <PageTitle
+        style={{
+          paddingBottom: 0,
+        }}
+        title="Informations"
+        {...props}
       />
+
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={updateAPI}
+          text={
+            <div className="d-flex align-items-center">
+              Save <VersionBadge size="xs" className="ms-2" />
+            </div>
+          }
+        />
+      </div>
+
+      <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
     </div>
-
-    <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
-
-  </div>
+  );
 }

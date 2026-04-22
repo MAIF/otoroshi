@@ -94,7 +94,9 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   }
 
   def updateExporters(): Future[Unit] = {
-    val fu = if (NgProxyStateLoaderJob.firstSync.get()) env.proxyState.allDataExporters().vfuture else env.datastores.dataExporterConfigDataStore.findAll()
+    val fu =
+      if (NgProxyStateLoaderJob.firstSync.get()) env.proxyState.allDataExporters().vfuture
+      else env.datastores.dataExporterConfigDataStore.findAll()
     fu.flatMap { exporters =>
       for {
         _ <- Future.sequence(dataExporters.map {
@@ -2209,8 +2211,8 @@ object Exporters {
 
     private def cleanupOldEvents(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
       if (settings.retentionDays > 0) {
-        val now = System.currentTimeMillis()
-        val last = lastCleanupRef.get()
+        val now           = System.currentTimeMillis()
+        val last          = lastCleanupRef.get()
         val oneHourMillis = 3600000L
         if (now - last > oneHourMillis && lastCleanupRef.compareAndSet(last, now)) {
           val cutoff = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).minusDays(settings.retentionDays.toLong)
@@ -2219,11 +2221,16 @@ object Exporters {
             .execute(tuple(cutoff))
             .scala
             .map { rs =>
-              logger.info(s"[postgres-exporter] Cleaned up ${rs.rowCount()} events older than $cutoff from '${settings.schema}.${settings.table}'")
+              logger.info(
+                s"[postgres-exporter] Cleaned up ${rs.rowCount()} events older than $cutoff from '${settings.schema}.${settings.table}'"
+              )
             }
             .recover { case e: Throwable =>
               lastCleanupRef.set(last)
-              logger.error(s"[postgres-exporter] Error while cleaning up old events from '${settings.schema}.${settings.table}'", e)
+              logger.error(
+                s"[postgres-exporter] Error while cleaning up old events from '${settings.schema}.${settings.table}'",
+                e
+              )
             }
         } else {
           FastFuture.successful(())

@@ -149,7 +149,7 @@ import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 import GrpcWebProxyPlugin from './GrpcWeb';
 import KubernetesNamespaceScanBackend from './KubernetesNamespaceScanBackend';
-import LocalTokenBucket from './LocalTokenBucket'
+import LocalTokenBucket from './LocalTokenBucket';
 import IzanamiV2Proxy from './IzanamiV2Proxy';
 
 import NgApiFrontend from './NgApiFrontend';

@@ -354,13 +354,16 @@ case class NgContextualPlugins(
   lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots)
     .map(inst => (inst, inst.getPlugin[NgPresetPlugin]))
     .flatMap {
-      case (slot, Some(preset)) if slot.enabled => preset.expand(NgPresetPluginContext(
-        request = request,
-        config = slot.config.raw,
-        attrs = attrs,
-        route = route,
-      ))
-      case (slot, _) => Seq(slot)
+      case (slot, Some(preset)) if slot.enabled =>
+        preset.expand(
+          NgPresetPluginContext(
+            request = request,
+            config = slot.config.raw,
+            attrs = attrs,
+            route = route
+          )
+        )
+      case (slot, _)                            => Seq(slot)
     }
     .zipWithIndex
     .map { case (plugin, idx) => plugin.copy(instanceId = idx) }

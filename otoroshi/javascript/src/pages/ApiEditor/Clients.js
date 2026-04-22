@@ -32,9 +32,11 @@ export function ClientForm({ client, onChange }) {
     },
   };
 
-  return <div style={{ border: '1px solid var(--input-border)', borderRadius: '1rem' }} className='p-3'>
-    <NgForm value={client} schema={schema} onChange={onChange} />
-  </div>
+  return (
+    <div style={{ border: '1px solid var(--input-border)', borderRadius: '1rem' }} className="p-3">
+      <NgForm value={client} schema={schema} onChange={onChange} />
+    </div>
+  );
 }
 
 export function Clients(props) {
@@ -125,10 +127,10 @@ export function ClientEditor(props) {
   const [client, setClient] = useState(
     isNew
       ? {
-        id: v4(),
-        name: 'New client',
-        description: 'New client description',
-      }
+          id: v4(),
+          name: 'New client',
+          description: 'New client description',
+        }
       : null
   );
 
@@ -158,9 +160,9 @@ export function ClientEditor(props) {
   };
 
   return (
-    <div className='actions-page'>
+    <div className="actions-page">
       <PageTitle title={isNew ? 'New client' : client.name} {...props} />
-      <div className='displayGroupBtn'>
+      <div className="displayGroupBtn">
         <FeedbackButton
           type="success"
           onPress={save}

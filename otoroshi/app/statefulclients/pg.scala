@@ -20,8 +20,8 @@ case class PgStatefulClientConfig(uri: String, poolSize: Int = 10) extends State
 
   override def start(env: otoroshi.env.Env): Pool = {
     val connectOptions = PgConnectOptions.fromUri(uri)
-    val poolOptions = new PoolOptions().setMaxSize(poolSize)
-    val pool = Pool.pool(connectOptions, poolOptions)
+    val poolOptions    = new PoolOptions().setMaxSize(poolSize)
+    val pool           = Pool.pool(connectOptions, poolOptions)
     open.set(true)
     pool
   }
@@ -35,6 +35,6 @@ case class PgStatefulClientConfig(uri: String, poolSize: Int = 10) extends State
 
   override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case p: PgStatefulClientConfig => p.uri == uri && p.poolSize == poolSize
-    case _ => false
+    case _                         => false
   }
 }

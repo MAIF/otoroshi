@@ -172,8 +172,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                           s"User updated an ApiKey",
                           "ApiKeyUpdatedAlert",
                           Json.obj(
-                            "desc"   -> desc.toJson,
-                            "apikey" -> newApiKey.toJson,
+                            "desc"            -> desc.toJson,
+                            "apikey"          -> newApiKey.toJson,
                             "previous_apikey" -> apiKey.toJson
                           ),
                           ctx
@@ -214,8 +214,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                     s"User updated an ApiKey",
                     "ApiKeyUpdatedAlert",
                     Json.obj(
-                      "desc"   -> desc.toJson,
-                      "apikey" -> newApiKey.toJson,
+                      "desc"            -> desc.toJson,
+                      "apikey"          -> newApiKey.toJson,
                       "previous_apikey" -> apiKey.toJson
                     ),
                     ctx
@@ -581,8 +581,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                         s"User updated an ApiKey",
                         "ApiKeyUpdatedAlert",
                         Json.obj(
-                          "group"  -> group.toJson,
-                          "apikey" -> newApiKey.toJson,
+                          "group"           -> group.toJson,
+                          "apikey"          -> newApiKey.toJson,
                           "previous_apikey" -> apiKey.toJson
                         ),
                         ctx
@@ -623,9 +623,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                     s"User updated an ApiKey",
                     "ApiKeyUpdatedAlert",
                     Json.obj(
-                      "group"  -> group.toJson,
-                      "apikey" -> newApiKey.toJson,
-                      "previous_apikey" -> apiKey.toJson,
+                      "group"           -> group.toJson,
+                      "apikey"          -> newApiKey.toJson,
+                      "previous_apikey" -> apiKey.toJson
                     ),
                     ctx
                   )

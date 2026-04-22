@@ -11,7 +11,8 @@ object LettuceStatefulClientConfig {
   def apply(obj: JsObject) = new LettuceStatefulClientConfig(obj.select("uri").asString)
 }
 
-case class LettuceStatefulClientConfig(uri: String) extends StatefulClientConfig[StatefulRedisConnection[String, ByteString]] {
+case class LettuceStatefulClientConfig(uri: String)
+    extends StatefulClientConfig[StatefulRedisConnection[String, ByteString]] {
 
   private var redisClient: RedisClient = _
 
@@ -29,6 +30,6 @@ case class LettuceStatefulClientConfig(uri: String) extends StatefulClientConfig
 
   override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case l: LettuceStatefulClientConfig => l.uri == uri
-    case _ => false
+    case _                              => false
   }
 }

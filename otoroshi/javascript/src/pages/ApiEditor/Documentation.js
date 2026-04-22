@@ -54,9 +54,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -93,9 +93,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -124,9 +124,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -161,9 +161,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -188,9 +188,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -334,7 +334,7 @@ export function Documentation(props) {
         </div>
 
         <DraftOnly>
-          <div className='displayGroupBtn'>
+          <div className="displayGroupBtn">
             <FeedbackButton
               type="success"
               onPress={updateDoc}
@@ -369,7 +369,7 @@ export function Documentation(props) {
             onChange={(newValue) => {
               try {
                 setNewItem(JSON.parse(newValue));
-              } catch (e) { }
+              } catch (e) {}
             }}
           />
         )}

@@ -717,7 +717,8 @@ case class NgRoute(
     }
   }
 
-  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, attrs: TypedMap, request: RequestHeader)(implicit
+  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, attrs: TypedMap, request: RequestHeader)(
+      implicit
       env: Env,
       ec: ExecutionContext
   ): NgContextualPlugins = {

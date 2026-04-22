@@ -226,31 +226,33 @@ export function RouteDesigner(props) {
 
   if (!route || !item || !schema) return <SimpleLoader />;
 
-  return <div className='page'>
-    <PageTitle title='Route settings' {...props} />
+  return (
+    <div className="page">
+      <PageTitle title="Route settings" {...props} />
 
-    <DraftOnly>
-      <div className='displayGroupBtn'>
-        <FeedbackButton
-          type="success"
-          onPress={updateRoute}
-          disabled={!route.flow_ref}
-          text={
-            <div className="d-flex align-items-center">
-              Save <VersionBadge size="xs" />
-            </div>
-          }
-        />
-      </div>
-    </DraftOnly>
+      <DraftOnly>
+        <div className="displayGroupBtn">
+          <FeedbackButton
+            type="success"
+            onPress={updateRoute}
+            disabled={!route.flow_ref}
+            text={
+              <div className="d-flex align-items-center">
+                Save <VersionBadge size="xs" />
+              </div>
+            }
+          />
+        </div>
+      </DraftOnly>
 
-    <NgForm
-      value={route}
-      flow={ROUTE_FORM_SETTINGS.flow}
-      schema={schema}
-      onChange={(newValue) => setRoute(newValue)}
-    />
-  </div>
+      <NgForm
+        value={route}
+        flow={ROUTE_FORM_SETTINGS.flow}
+        schema={schema}
+        onChange={(newValue) => setRoute(newValue)}
+      />
+    </div>
+  );
 }
 
 export function NewRoute(props) {
@@ -322,39 +324,41 @@ export function NewRoute(props) {
 
   if (!schema || !route) return <SimpleLoader />;
 
-  return <div className='page'>
-    <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
-    <InfoCollapse title="What is an Endpoint ?">
-      <ul>
-        <li>
-          <strong>Path & HTTP method</strong> — define the operation (e.g.{' '}
-          <code>GET /users</code>, <code>POST /orders</code>).
-        </li>
-        <li>
-          <strong>Plugin chains</strong> — apply a dedicated chain of plugins executed for this
-          endpoint (validation, transformation, rate limiting, custom logic, etc.)
-        </li>
-        <li>
-          <strong>Backend target</strong> — forward traffic to a specific backend service. The
-          endpoint ultimately routes the request to its configured backend after all plugins
-          have been executed.
-        </li>
-      </ul>
-    </InfoCollapse>
-    <NgForm flow={ROUTE_FORM_SETTINGS.flow} schema={schema} value={route} onChange={setRoute} />
-    <div className="displayGroupBtn">
-      <FeedbackButton
-        type="success"
-        onPress={saveRoute}
-        disabled={!route.flow_ref}
-        text={
-          <div className="d-flex align-items-center">
-            Create <VersionBadge size="xs" />
-          </div>
-        }
-      />
+  return (
+    <div className="page">
+      <PageTitle title="New Route" {...props} style={{ paddingBottom: 0 }} />
+      <InfoCollapse title="What is an Endpoint ?">
+        <ul>
+          <li>
+            <strong>Path & HTTP method</strong> — define the operation (e.g. <code>GET /users</code>
+            , <code>POST /orders</code>).
+          </li>
+          <li>
+            <strong>Plugin chains</strong> — apply a dedicated chain of plugins executed for this
+            endpoint (validation, transformation, rate limiting, custom logic, etc.)
+          </li>
+          <li>
+            <strong>Backend target</strong> — forward traffic to a specific backend service. The
+            endpoint ultimately routes the request to its configured backend after all plugins have
+            been executed.
+          </li>
+        </ul>
+      </InfoCollapse>
+      <NgForm flow={ROUTE_FORM_SETTINGS.flow} schema={schema} value={route} onChange={setRoute} />
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={saveRoute}
+          disabled={!route.flow_ref}
+          text={
+            <div className="d-flex align-items-center">
+              Create <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </div>
     </div>
-  </div>
+  );
 }
 
 export function Endpoints(props) {

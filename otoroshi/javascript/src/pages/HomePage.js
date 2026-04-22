@@ -18,9 +18,18 @@ function init(size) {
 function computeBytes(value) {
   let unit = 'Mb';
   let v = parseFloat(converterBase2(value, 'B', 'MB').toFixed(3));
-  if (v > 1024) { v = parseFloat(converterBase2(value, 'B', 'GB').toFixed(3)); unit = 'Gb'; }
-  if (v > 1024) { v = parseFloat(converterBase2(value, 'B', 'TB').toFixed(3)); unit = 'Tb'; }
-  if (v > 1024) { v = parseFloat(converterBase2(value, 'B', 'PB').toFixed(3)); unit = 'Pb'; }
+  if (v > 1024) {
+    v = parseFloat(converterBase2(value, 'B', 'GB').toFixed(3));
+    unit = 'Gb';
+  }
+  if (v > 1024) {
+    v = parseFloat(converterBase2(value, 'B', 'TB').toFixed(3));
+    unit = 'Tb';
+  }
+  if (v > 1024) {
+    v = parseFloat(converterBase2(value, 'B', 'PB').toFixed(3));
+    unit = 'Pb';
+  }
   return [v, unit];
 }
 
@@ -53,14 +62,70 @@ function EntitiesOverview() {
   const [counts, setCounts] = useState({});
 
   const ENTITIES = [
-    { key: 'apis', url: '/bo/api/proxy/apis/apis.otoroshi.io/v1/apis', label: 'APIs', icon: 'fas fa-brush', to: '/apis', color: 'hsla(210,70%,55%,.15)' },
-    { key: 'routes', url: '/bo/api/proxy/api/routes', label: 'HTTP Routes', icon: 'fas fa-road', to: '/routes', color: 'hsla(210,70%,55%,.15)' },
-    { key: 'apikeys', url: '/bo/api/proxy/api/apikeys', label: 'API Keys', icon: 'fas fa-key', to: '/apikeys', color: 'hsla(40,94%,58%,.15)' },
-    { key: 'certificates', url: '/bo/api/proxy/api/certificates', label: 'Certificates', icon: 'fas fa-certificate', to: '/certificates', color: 'hsla(150,52%,51%,.15)' },
-    { key: 'auths', url: '/bo/api/proxy/api/auths', label: 'Auth. modules', icon: 'fas fa-lock', to: '/auth-configs', color: 'hsla(280,60%,55%,.15)' },
-    { key: 'workflows', url: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows', label: 'Workflows', icon: 'fas fa-cubes', to: '/workflows', color: 'hsla(60,50%,45%,.15)' },
-    { key: 'WAF', url: '/bo/api/proxy/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs', label: 'WAF', icon: 'fas fa-cubes', to: '/extensions/coraza-waf/coraza-configs', color: 'hsla(60,50%,45%,.15)' },
-    { key: 'verifiers', url: '/bo/api/proxy/api/verifiers', label: 'JWT Verifiers', icon: 'fa fa-circle-check', to: '/jwt-verifiers', color: 'hsla(60,50%,45%,.15)' },
+    {
+      key: 'apis',
+      url: '/bo/api/proxy/apis/apis.otoroshi.io/v1/apis',
+      label: 'APIs',
+      icon: 'fas fa-brush',
+      to: '/apis',
+      color: 'hsla(210,70%,55%,.15)',
+    },
+    {
+      key: 'routes',
+      url: '/bo/api/proxy/api/routes',
+      label: 'HTTP Routes',
+      icon: 'fas fa-road',
+      to: '/routes',
+      color: 'hsla(210,70%,55%,.15)',
+    },
+    {
+      key: 'apikeys',
+      url: '/bo/api/proxy/api/apikeys',
+      label: 'API Keys',
+      icon: 'fas fa-key',
+      to: '/apikeys',
+      color: 'hsla(40,94%,58%,.15)',
+    },
+    {
+      key: 'certificates',
+      url: '/bo/api/proxy/api/certificates',
+      label: 'Certificates',
+      icon: 'fas fa-certificate',
+      to: '/certificates',
+      color: 'hsla(150,52%,51%,.15)',
+    },
+    {
+      key: 'auths',
+      url: '/bo/api/proxy/api/auths',
+      label: 'Auth. modules',
+      icon: 'fas fa-lock',
+      to: '/auth-configs',
+      color: 'hsla(280,60%,55%,.15)',
+    },
+    {
+      key: 'workflows',
+      url: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows',
+      label: 'Workflows',
+      icon: 'fas fa-cubes',
+      to: '/workflows',
+      color: 'hsla(60,50%,45%,.15)',
+    },
+    {
+      key: 'WAF',
+      url: '/bo/api/proxy/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs',
+      label: 'WAF',
+      icon: 'fas fa-cubes',
+      to: '/extensions/coraza-waf/coraza-configs',
+      color: 'hsla(60,50%,45%,.15)',
+    },
+    {
+      key: 'verifiers',
+      url: '/bo/api/proxy/api/verifiers',
+      label: 'JWT Verifiers',
+      icon: 'fa fa-circle-check',
+      to: '/jwt-verifiers',
+      color: 'hsla(60,50%,45%,.15)',
+    },
   ];
 
   useEffect(() => {
@@ -68,7 +133,7 @@ function EntitiesOverview() {
       fetch(url, { method: 'GET', credentials: 'include', headers: { Accept: 'application/json' } })
         .then((r) => r.json())
         .then((data) => {
-          const count = Array.isArray(data) ? data.length : data?.total ?? '?';
+          const count = Array.isArray(data) ? data.length : (data?.total ?? '?');
           setCounts((prev) => ({ ...prev, [key]: count }));
         })
         .catch(() => setCounts((prev) => ({ ...prev, [key]: '?' })));
@@ -81,17 +146,28 @@ function EntitiesOverview() {
       <div className="hp-entity-grid">
         <div className="otoroshi-tile">
           <img src="/assets/images/otoroshi-logo-color.png" width={64} />
-          <div className='otoroshi-tile-header'>
+          <div className="otoroshi-tile-header">
             {/* <h3>Otoroshi</h3> */}
 
-            <div>
-              The Cloud Native API & AI Gateway documentation
-            </div>
-            <a href="https://www.otoroshi.io/docs/"
-              className='btn btn-primary ms-auto d-flex'
-              target='_blank'>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" />
+            <div>The Cloud Native API & AI Gateway documentation</div>
+            <a
+              href="https://www.otoroshi.io/docs/"
+              className="btn btn-primary ms-auto d-flex"
+              target="_blank"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="size-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25"
+                />
               </svg>
             </a>
           </div>
@@ -141,7 +217,7 @@ function ApiStatesPieChart({ children }) {
         });
         setStateCounts(counts);
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   // if (!stateCounts) return null;
@@ -153,39 +229,39 @@ function ApiStatesPieChart({ children }) {
     .filter(([, v]) => v > 0)
     .map(([key, value]) => ({ name: API_STATE_LABELS[key], value, key }));
 
-  return <div className='d-flex mt-3' style={{ gap: '1rem' }}>
-    <div>
-      <div className="hp-section-title">APIs Status</div>
-      <div className="hp-api-states-card">
-        <div className="hp-api-states-chart">
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={35}
-                outerRadius={65}
-                paddingAngle={2}
-                strokeWidth={0}
-                labelLine={false}
-                label={({ name, value, percent }) =>
-                  `${name} (${Math.round(percent * 100)}%)`
-                }
-              >
-                {data.map((entry) => (
-                  <Cell key={entry.key} fill={API_STATE_COLORS[entry.key]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+  return (
+    <div className="d-flex mt-3" style={{ gap: '1rem' }}>
+      <div>
+        <div className="hp-section-title">APIs Status</div>
+        <div className="hp-api-states-card">
+          <div className="hp-api-states-chart">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={35}
+                  outerRadius={65}
+                  paddingAngle={2}
+                  strokeWidth={0}
+                  labelLine={false}
+                  label={({ name, value, percent }) => `${name} (${Math.round(percent * 100)}%)`}
+                >
+                  {data.map((entry) => (
+                    <Cell key={entry.key} fill={API_STATE_COLORS[entry.key]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
+      {children}
     </div>
-    {children}
-  </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -200,9 +276,15 @@ function MetricCard({ value, label, unit, tick }) {
   useEffect(() => {
     let num = value;
     if (typeof num === 'string') {
-      num = parseFloat(
-        num.replace(/ /g, '').replace('in', '').replace('out', '').replace('/sec', '').replace(/Mb|Gb|Tb|Pb|Kb/g, '')
-      ) || 0;
+      num =
+        parseFloat(
+          num
+            .replace(/ /g, '')
+            .replace('in', '')
+            .replace('out', '')
+            .replace('/sec', '')
+            .replace(/Mb|Gb|Tb|Pb|Kb/g, '')
+        ) || 0;
     }
     setHistory((prev) => {
       const next = [...prev, num];
@@ -238,11 +320,17 @@ function MetricCard({ value, label, unit, tick }) {
 
 class LiveMetrics extends Component {
   state = {
-    ok: false, tick: 0,
-    rate: 0, duration: 0, overhead: 0, requests: 0,
-    dataInRate: '', dataOutRate: '',
+    ok: false,
+    tick: 0,
+    rate: 0,
+    duration: 0,
+    overhead: 0,
+    requests: 0,
+    dataInRate: '',
+    dataOutRate: '',
     concurrentHandled: 0,
-    dataIn: '', dataOut: '',
+    dataIn: '',
+    dataOut: '',
   };
 
   componentDidMount() {
@@ -273,11 +361,19 @@ class LiveMetrics extends Component {
   }
 
   componentWillUnmount() {
-    if (this.sse) { this.sse.close(); delete this.sse; }
+    if (this.sse) {
+      this.sse.close();
+      delete this.sse;
+    }
   }
 
   render() {
-    if (!this.state.ok) return <div className="hp-loading"><i className="fas fa-spinner fa-spin" /></div>;
+    if (!this.state.ok)
+      return (
+        <div className="hp-loading">
+          <i className="fas fa-spinner fa-spin" />
+        </div>
+      );
 
     const t = this.state.tick;
     return (
@@ -291,7 +387,9 @@ class LiveMetrics extends Component {
           <MetricCard value={this.state.dataInRate} label="data in" tick={t} />
           <MetricCard value={this.state.dataOutRate} label="data out" tick={t} />
         </div>
-        <div className="hp-section-title" style={{ marginTop: '1rem' }}>Totals</div>
+        <div className="hp-section-title" style={{ marginTop: '1rem' }}>
+          Totals
+        </div>
         <div className="hp-metrics-grid">
           <MetricCard value={this.state.requests} label="requests served" tick={t} />
           <MetricCard value={this.state.dataIn} label="total in" tick={t} />
@@ -328,31 +426,43 @@ class ClusterMetrics extends Component {
   }
 
   componentWillUnmount() {
-    if (this.sse) { this.sse.close(); delete this.sse; }
+    if (this.sse) {
+      this.sse.close();
+      delete this.sse;
+    }
   }
 
   render() {
     if (this.props.env?.clusterRole !== 'Leader' || !this.state.ok) return null;
 
-    const healthColor = { green: '#4caf50', orange: '#ff9800', red: '#f44336', grey: '#9e9e9e' }[this.state.health] || '#9e9e9e';
+    const healthColor =
+      { green: '#4caf50', orange: '#ff9800', red: '#f44336', grey: '#9e9e9e' }[this.state.health] ||
+      '#9e9e9e';
 
-    return <div>
-      <div className="hp-section-title">Cluster</div>
-      <div className="hp-cluster-grid">
-        <Link to="/cluster" className="hp-cluster-tile">
-          <i className="fas fa-server hp-cluster-icon" />
-          <span className="hp-cluster-value">{this.state.workers}</span>
-        </Link>
-        <Link to="/cluster" className="hp-cluster-tile">
-          <i className="fas fa-exchange-alt hp-cluster-icon" />
-          <span className="hp-cluster-value">{this.state.payload}</span>
-        </Link>
-        <Link to="/cluster" className="hp-cluster-tile">
-          <i className="fas fa-heartbeat hp-cluster-icon" style={{ color: healthColor, fontSize: '1.8rem' }} />
-          <span className="hp-cluster-value" style={{ color: healthColor }}>{this.state.health}</span>
-        </Link>
+    return (
+      <div>
+        <div className="hp-section-title">Cluster</div>
+        <div className="hp-cluster-grid">
+          <Link to="/cluster" className="hp-cluster-tile">
+            <i className="fas fa-server hp-cluster-icon" />
+            <span className="hp-cluster-value">{this.state.workers}</span>
+          </Link>
+          <Link to="/cluster" className="hp-cluster-tile">
+            <i className="fas fa-exchange-alt hp-cluster-icon" />
+            <span className="hp-cluster-value">{this.state.payload}</span>
+          </Link>
+          <Link to="/cluster" className="hp-cluster-tile">
+            <i
+              className="fas fa-heartbeat hp-cluster-icon"
+              style={{ color: healthColor, fontSize: '1.8rem' }}
+            />
+            <span className="hp-cluster-value" style={{ color: healthColor }}>
+              {this.state.health}
+            </span>
+          </Link>
+        </div>
       </div>
-    </div>
+    );
   }
 }
 
@@ -381,7 +491,7 @@ export class HomePage extends Component {
           </div>
         )}
         <EntitiesOverview />
-        <ApiStatesPieChart >
+        <ApiStatesPieChart>
           <ClusterMetrics env={this.props.env} />
         </ApiStatesPieChart>
         <LiveMetrics />

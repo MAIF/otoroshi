@@ -38,11 +38,7 @@ function CopyableInput({ value, onRotate }) {
         <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
       </button>
       {onRotate && (
-        <button
-          className="btn btn-sm btn-secondary ms-1"
-          title="Rotate value"
-          onClick={onRotate}
-        >
+        <button className="btn btn-sm btn-secondary ms-1" title="Rotate value" onClick={onRotate}>
           <i className="fas fa-rotate" />
         </button>
       )}
@@ -59,14 +55,23 @@ function TestingConfiguration(props) {
       <Row title="">
         <div
           className="d-flex flex-column gap-3 p-3 rounded"
-          style={{ background: 'var(--bg-color_level2, #1a1a2e)', border: '1px solid var(--color-primary, #f9b000)', maxWidth: 700 }}
+          style={{
+            background: 'var(--bg-color_level2, #1a1a2e)',
+            border: '1px solid var(--color-primary, #f9b000)',
+            maxWidth: 700,
+          }}
         >
-          <div className="d-flex align-items-center gap-2" style={{ color: 'var(--color-primary, #f9b000)', fontWeight: 600 }}>
+          <div
+            className="d-flex align-items-center gap-2"
+            style={{ color: 'var(--color-primary, #f9b000)', fontWeight: 600 }}
+          >
             <i className="fas fa-flask me-1" />
             How to call your draft routes
           </div>
           <ol className="mb-0 ps-3" style={{ lineHeight: '2rem' }}>
-            <li>Make sure <strong>Testing is enabled</strong> above</li>
+            <li>
+              Make sure <strong>Testing is enabled</strong> above
+            </li>
             <li>
               Copy the <strong>header name</strong> below and add it to your request
             </li>
@@ -76,10 +81,14 @@ function TestingConfiguration(props) {
           </ol>
           <div
             className="p-2 rounded"
-            style={{ background: 'var(--bg-color_level3, #111)', fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}
+            style={{
+              background: 'var(--bg-color_level3, #111)',
+              fontFamily: 'monospace',
+              fontSize: 13,
+              wordBreak: 'break-all',
+            }}
           >
-            <span style={{ color: '#888' }}>curl</span>{' '}
-            <span style={{ color: '#f9b000' }}>-H</span>{' '}
+            <span style={{ color: '#888' }}>curl</span> <span style={{ color: '#f9b000' }}>-H</span>{' '}
             <span style={{ color: '#a3e635' }}>
               "{headerKey}: {headerValue}"
             </span>{' '}
@@ -112,39 +121,42 @@ export function Testing(props) {
     props.setTitle(undefined);
   }, []);
 
-  const schema = useMemo(() => ({
-    enabled: {
-      type: 'box-bool',
-      label: 'Enabled',
-      props: {
-        description:
-          'When enabled, this option allows draft routes to be exposed. These routes can be accessed using a specific header, ensuring they remain available only for testing purposes.',
+  const schema = useMemo(
+    () => ({
+      enabled: {
+        type: 'box-bool',
+        label: 'Enabled',
+        props: {
+          description:
+            'When enabled, this option allows draft routes to be exposed. These routes can be accessed using a specific header, ensuring they remain available only for testing purposes.',
+        },
       },
-    },
-    config: {
-      renderer: (props) => (
-        <TestingConfiguration
-          {...props}
-          item={item}
-          onSecretRotation={(testing) => {
-            updateItem({
-              ...item,
-              testing,
-            });
-          }}
-        />
-      ),
-    },
-    routes: {
-      renderer: () => (
-        <Row title="Endpoints">
-          <div className="relative">
-            <RoutesView api={item} isDraft={true} />
-          </div>
-        </Row>
-      ),
-    },
-  }), [item, updateItem]);
+      config: {
+        renderer: (props) => (
+          <TestingConfiguration
+            {...props}
+            item={item}
+            onSecretRotation={(testing) => {
+              updateItem({
+                ...item,
+                testing,
+              });
+            }}
+          />
+        ),
+      },
+      routes: {
+        renderer: () => (
+          <Row title="Endpoints">
+            <div className="relative">
+              <RoutesView api={item} isDraft={true} />
+            </div>
+          </Row>
+        ),
+      },
+    }),
+    [item, updateItem]
+  );
 
   const flow = useMemo(() => {
     const base = ['enabled'];
@@ -153,35 +165,39 @@ export function Testing(props) {
 
   if (!item) return <SimpleLoader />;
 
-  if (version === 'Published')
-    return <TestingProductionMode item={item} />
+  if (version === 'Published') return <TestingProductionMode item={item} />;
 
-  return <div className='page'>
-    <PageTitle title="Testing Mode" />
+  return (
+    <div className="page">
+      <PageTitle title="Testing Mode" />
 
-    <NgForm
-      value={item.testing}
-      onChange={(testing) => {
-        if (testing)
-          updateItem({
-            ...item,
-            testing,
-          });
-      }}
-      schema={schema}
-      flow={[{
-        type: 'group',
-        fields: flow,
-        collapsable: false
-      }]}
-    />
-  </div>
+      <NgForm
+        value={item.testing}
+        onChange={(testing) => {
+          if (testing)
+            updateItem({
+              ...item,
+              testing,
+            });
+        }}
+        schema={schema}
+        flow={[
+          {
+            type: 'group',
+            fields: flow,
+            collapsable: false,
+          },
+        ]}
+      />
+    </div>
+  );
 }
 
 function TestingProductionMode({ item }) {
-
-  return <div className='page'>
-    <PageTitle title="Testing" />
-    <RoutesView api={item} isDraft={false} />
-  </div>
+  return (
+    <div className="page">
+      <PageTitle title="Testing" />
+      <RoutesView api={item} isDraft={false} />
+    </div>
+  );
 }

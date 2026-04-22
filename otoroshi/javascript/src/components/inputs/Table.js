@@ -383,10 +383,10 @@ class TableComponent extends Component {
       this.state.showAddForm || this.state.showEditForm
         ? this.props.fetchItems()
         : this.props.fetchItems({
-          ...paginationState,
-          pageSize: this.state.rowsPerPage,
-          page: page + 1,
-        })
+            ...paginationState,
+            pageSize: this.state.rowsPerPage,
+            page: page + 1,
+          })
     ).then((rawItems) => {
       if (Array.isArray(rawItems)) {
         const sortedItems = [...rawItems];
@@ -823,20 +823,20 @@ class TableComponent extends Component {
               {(typeof this.props.hideEditButton === 'function'
                 ? !this.props.hideEditButton(item)
                 : !this.props.hideEditButton) && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-secondary me-2"
-                    {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                    onClick={(e) => {
-                      this.props.navigateOnEdit
-                        ? this.props.navigateOnEdit(item)
-                        : //: this.showEditForm(e, item);
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary me-2"
+                  {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
+                  onClick={(e) => {
+                    this.props.navigateOnEdit
+                      ? this.props.navigateOnEdit(item)
+                      : //: this.showEditForm(e, item);
                         this.gotoItem(e, item);
-                    }}
-                  >
-                    <i className="fas fa-pencil-alt" />
-                  </button>
-                )}
+                  }}
+                >
+                  <i className="fas fa-pencil-alt" />
+                </button>
+              )}
               {this.props.showLink && (
                 <a
                   className="btn btn-sm btn-primary me-2"
@@ -1120,7 +1120,9 @@ class TableComponent extends Component {
             <hr />
             {!this.props.hideAllActions && (
               <>
-                <div className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}>
+                <div
+                  className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}
+                >
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
@@ -1202,8 +1204,12 @@ class TableComponent extends Component {
             <hr />
             <div className="displayGroupBtn float-end">
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
-                <button type="button" className="btn btn-danger" title="Delete current item"
-                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  title="Delete current item"
+                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}
+                >
                   Delete {this.props.itemName}
                 </button>
               )}
@@ -1230,26 +1236,30 @@ class TableComponent extends Component {
                   <button
                     type="button"
                     className="btn btn-primary d-flex align-items-center gap-2 table-export"
-                    onClick={() => this.setState({
-                      exportDropdownOpen: !this.state.exportDropdownOpen
-                    })}
+                    onClick={() =>
+                      this.setState({
+                        exportDropdownOpen: !this.state.exportDropdownOpen,
+                      })
+                    }
                   >
                     <i className="fas fa-file-export" />
                     Export
                     <i className="fas fa-chevron-up" style={{ fontSize: 10, opacity: 0.7 }} />
                   </button>
                   {this.state.exportDropdownOpen && (
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 'calc(100% + 4px)',
-                      right: 0,
-                      minWidth: 140,
-                      background: 'var(--bg-color_level2)',
-                      border: '1px solid var(--input-border)',
-                      zIndex: 100,
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                    }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 'calc(100% + 4px)',
+                        right: 0,
+                        minWidth: 140,
+                        background: 'var(--bg-color_level2)',
+                        border: '1px solid var(--input-border)',
+                        zIndex: 100,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                      }}
+                    >
                       <button
                         type="button"
                         className="table-export-button"

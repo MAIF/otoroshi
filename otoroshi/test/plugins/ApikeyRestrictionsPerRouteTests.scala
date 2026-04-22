@@ -1,7 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
-import otoroshi.models.{ApiKey, Restrictions, RestrictionPath, RouteIdentifier}
+import otoroshi.models.{ApiKey, RestrictionPath, Restrictions, RouteIdentifier}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{ApikeyCalls, NgApikeyCallsConfig, OverrideHost}

@@ -257,20 +257,57 @@ const AccessModePluginConfigurationForm = {
 function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
   return (
     <Row title="Type">
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '8px',
-        margin: '8px',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '8px',
+          margin: '8px',
+        }}
+      >
         {[
-          { id: 'keyless', key: 'Keyless', icon: 'fa-lock-open', text: 'Open access without authentication. Clients call freely without credentials.' },
-          { id: 'public', key: 'Public', icon: 'fa-globe', text: 'Available to all developers. Subscribe directly from the portal without approval.' },
-          { id: 'apikey', key: 'API Key', icon: 'fa-key', text: 'Unique key in headers or query params. Enables rate limiting and usage tracking.' },
-          { id: 'jwt', key: 'JWT', icon: 'fa-id-badge', text: 'Signed JSON Web Token validated against a trusted issuer to verify identity.' },
-          { id: 'mtls', key: 'mTLS', icon: 'fa-certificate', text: 'Mutual TLS — both client and gateway verify each other\'s certificate.' },
-          { id: 'oauth2-local', key: 'OAuth2 Local', icon: 'fa-shield-halved', text: 'Client credentials flow with a local authorization server.' },
-          { id: 'oauth2-remote', key: 'OAuth2 Remote', icon: 'fa-shield', text: 'Client credentials flow with a remote external authorization server.' },
+          {
+            id: 'keyless',
+            key: 'Keyless',
+            icon: 'fa-lock-open',
+            text: 'Open access without authentication. Clients call freely without credentials.',
+          },
+          {
+            id: 'public',
+            key: 'Public',
+            icon: 'fa-globe',
+            text: 'Available to all developers. Subscribe directly from the portal without approval.',
+          },
+          {
+            id: 'apikey',
+            key: 'API Key',
+            icon: 'fa-key',
+            text: 'Unique key in headers or query params. Enables rate limiting and usage tracking.',
+          },
+          {
+            id: 'jwt',
+            key: 'JWT',
+            icon: 'fa-id-badge',
+            text: 'Signed JSON Web Token validated against a trusted issuer to verify identity.',
+          },
+          {
+            id: 'mtls',
+            key: 'mTLS',
+            icon: 'fa-certificate',
+            text: "Mutual TLS — both client and gateway verify each other's certificate.",
+          },
+          {
+            id: 'oauth2-local',
+            key: 'OAuth2 Local',
+            icon: 'fa-shield-halved',
+            text: 'Client credentials flow with a local authorization server.',
+          },
+          {
+            id: 'oauth2-remote',
+            key: 'OAuth2 Remote',
+            icon: 'fa-shield',
+            text: 'Client credentials flow with a remote external authorization server.',
+          },
         ].map(({ key, text, id, icon }) => {
           const selected = value === id;
           return (
@@ -289,28 +326,54 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
                 cursor: 'pointer',
                 transition: 'all 150ms ease',
               }}
-              onMouseEnter={e => { if (!selected) e.currentTarget.style.border = '1px solid var(--border-color-strong)'; }}
-              onMouseLeave={e => { if (!selected) e.currentTarget.style.border = '1px solid var(--border-color)'; }}
+              onMouseEnter={(e) => {
+                if (!selected)
+                  e.currentTarget.style.border = '1px solid var(--border-color-strong)';
+              }}
+              onMouseLeave={(e) => {
+                if (!selected) e.currentTarget.style.border = '1px solid var(--border-color)';
+              }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                <i className={`fas ${icon}`} style={{ color: selected ? 'var(--color-primary)' : 'var(--text-muted)', fontSize: '13px', width: '16px' }} />
-                <span style={{ fontWeight: 600, fontSize: '13px', color: selected ? 'var(--color-primary)' : 'var(--color_level1)' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}
+              >
+                <i
+                  className={`fas ${icon}`}
+                  style={{
+                    color: selected ? 'var(--color-primary)' : 'var(--text-muted)',
+                    fontSize: '13px',
+                    width: '16px',
+                  }}
+                />
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    color: selected ? 'var(--color-primary)' : 'var(--color_level1)',
+                  }}
+                >
                   {key}
                 </span>
-                {selected && <i className="fas fa-circle-check ms-auto" style={{ color: 'var(--color-primary)', fontSize: '12px' }} />}
+                {selected && (
+                  <i
+                    className="fas fa-circle-check ms-auto"
+                    style={{ color: 'var(--color-primary)', fontSize: '12px' }}
+                  />
+                )}
               </div>
-              <p style={{ margin: 0, fontSize: '12px', lineHeight: '1.4' }}>
-                {text}
-              </p>
+              <p style={{ margin: 0, fontSize: '12px', lineHeight: '1.4' }}>{text}</p>
 
-              {selected &&
-                !['keyless', 'public'].includes(id) &&
-                <button className='btn btn-success btn-sm ms-auto d-flex' onClick={e => {
-                  e.stopPropagation()
-                  onEdit()
-                }}>
+              {selected && !['keyless', 'public'].includes(id) && (
+                <button
+                  className="btn btn-success btn-sm ms-auto d-flex"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                >
                   Edit
-                </button>}
+                </button>
+              )}
             </button>
           );
         })}
@@ -378,21 +441,19 @@ function AccessModeConfiguration({ value, hide, onConfirm, accessModeType }) {
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
 
   if (
-    ['mtls', 'oauth2-local', 'oauth2-remote', 'jwt', 'public', 'keyless'].includes(
-      accessModeType
-    )
+    ['mtls', 'oauth2-local', 'oauth2-remote', 'jwt', 'public', 'keyless'].includes(accessModeType)
   )
-    return <AccessModeConfigurationExceptApikey
-      value={value}
-      hide={hide}
-      accessModeType={accessModeType}
-      onConfirm={onConfirm} />;
+    return (
+      <AccessModeConfigurationExceptApikey
+        value={value}
+        hide={hide}
+        accessModeType={accessModeType}
+        onConfirm={onConfirm}
+      />
+    );
 
   return (
-    <AccessModeLayout
-      hide={hide}
-      onConfirm={() => onConfirm(accessModeConfiguration)}
-    >
+    <AccessModeLayout hide={hide} onConfirm={() => onConfirm(accessModeConfiguration)}>
       <NgForm
         value={accessModeConfiguration}
         schema={ApiKeysConstants.schema}
@@ -417,10 +478,7 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm, accessMod
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
 
   return (
-    <AccessModeLayout
-      onConfirm={() => onConfirm(accessModeConfiguration)}
-      hide={hide}
-    >
+    <AccessModeLayout onConfirm={() => onConfirm(accessModeConfiguration)} hide={hide}>
       <NewAccessModeSettingsForm
         schema={AccessModePluginConfigurationForm[accessModeType].schema}
         flow={AccessModePluginConfigurationForm[accessModeType].flow}
@@ -434,196 +492,203 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm, accessMod
 function PlanForm({ plan, onChange }) {
   const [openAccessModeModal, setAccessModeModal] = useState(false);
 
-  const schema = useMemo(() => ({
-    name: { type: 'string', label: 'Name' },
-    description: { type: 'string', label: 'Description' },
-    status: {
-      type: 'dots',
-      label: 'Status',
-      props: {
-        defaultValue: 'staging',
-        options: ['staging', 'published', 'deprecated', 'closed'],
+  const schema = useMemo(
+    () => ({
+      name: { type: 'string', label: 'Name' },
+      description: { type: 'string', label: 'Description' },
+      status: {
+        type: 'dots',
+        label: 'Status',
+        props: {
+          defaultValue: 'staging',
+          options: ['staging', 'published', 'deprecated', 'closed'],
+        },
       },
-    },
-    statusDescription: {
-      renderer: ({ rootValue }) => {
-        const descriptions = {
-          staging:
-            "This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won't be visible or accessible to users",
-          published:
-            'When your plan is finalized, you can publish it to allow subscriptions through the APIM Portal. Once published, subscriptions can access the API via the plan. Published plans remain editable.',
-          deprecated:
-            'Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API subscriptions',
-          closed:
-            'Closing a plan terminates all associated subscriptions, and this action is irreversible. API subscriptions previously subscribed to the plan will no longer have access to the API',
-        };
-        return (
-          <div className="row mb-3" style={{ marginTop: '-1rem' }}>
-            <label className="col-xs-12 col-sm-2 col-form-label" />
-            <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
-              {descriptions[rootValue?.status]}
+      statusDescription: {
+        renderer: ({ rootValue }) => {
+          const descriptions = {
+            staging:
+              "This is the initial phase of a plan, where it exists in draft mode. You can configure the plan, but it won't be visible or accessible to users",
+            published:
+              'When your plan is finalized, you can publish it to allow subscriptions through the APIM Portal. Once published, subscriptions can access the API via the plan. Published plans remain editable.',
+            deprecated:
+              'Deprecating a plan makes it unavailable on the APIM Portal, preventing new subscriptions. However, existing subscriptions remain unaffected, ensuring no disruption to current API subscriptions',
+            closed:
+              'Closing a plan terminates all associated subscriptions, and this action is irreversible. API subscriptions previously subscribed to the plan will no longer have access to the API',
+          };
+          return (
+            <div className="row mb-3" style={{ marginTop: '-1rem' }}>
+              <label className="col-xs-12 col-sm-2 col-form-label" />
+              <div className="col-sm-10" style={{ fontStyle: 'italic' }}>
+                {descriptions[rootValue?.status]}
+              </div>
             </div>
-          </div>
-        );
-      },
-    },
-    access_mode_configuration_type: {
-      renderer: (props) => (
-        <AccessModeConfigurationTypeSelector
-          onChange={props.onChange}
-          value={props.value}
-          onEdit={() => setAccessModeModal(true)} />
-      ),
-    },
-    rateLimiting: {
-      type: 'form',
-      label: 'Rate Limiting & Quotas',
-      schema: {
-        strategy: {
-          renderer: props => {
-            return <ThrottlingStrategy value={props.value} onChange={props.onChange} />
-          }
-        },
-        perIp: {
-          type: 'bool',
-          label: 'Per IP',
-        },
-        customPattern: {
-          type: 'string',
-          label: 'Custom group via expression (header, JWT claim)',
+          );
         },
       },
-      flow: ['strategy', 'perIp', 'customPattern'],
-    },
-    pricing: {
-      type: 'form',
-      label: 'Pricing',
-      flow: ['enabled', 'name', 'price', 'currency', 'params'],
-      schema: {
-        enabled: {
-          type: 'bool',
-          label: 'Enabled',
-        },
-        name: {
-          visible: (props) => props?.enabled,
-          type: 'string',
-          label: 'Name',
-        },
-        price: {
-          visible: (props) => props?.enabled,
-          type: 'number',
-          label: 'Price',
-        },
-        currency: {
-          visible: (props) => props?.enabled,
-          type: 'select',
-          label: 'Currency',
-          props: {
-            options: CURRENCIES.map(({ code, name, symbol }) => ({
-              value: code,
-              label: `${name} - ${symbol}`,
-            })),
+      access_mode_configuration_type: {
+        renderer: (props) => (
+          <AccessModeConfigurationTypeSelector
+            onChange={props.onChange}
+            value={props.value}
+            onEdit={() => setAccessModeModal(true)}
+          />
+        ),
+      },
+      rateLimiting: {
+        type: 'form',
+        label: 'Rate Limiting & Quotas',
+        schema: {
+          strategy: {
+            renderer: (props) => {
+              return <ThrottlingStrategy value={props.value} onChange={props.onChange} />;
+            },
+          },
+          perIp: {
+            type: 'bool',
+            label: 'Per IP',
+          },
+          customPattern: {
+            type: 'string',
+            label: 'Custom group via expression (header, JWT claim)',
           },
         },
-        params: {
-          visible: (props) => props?.enabled,
-          type: 'code',
-          label: 'Extra parameters',
-          props: {
-            ngOptions: {
-              spread: true,
+        flow: ['strategy', 'perIp', 'customPattern'],
+      },
+      pricing: {
+        type: 'form',
+        label: 'Pricing',
+        flow: ['enabled', 'name', 'price', 'currency', 'params'],
+        schema: {
+          enabled: {
+            type: 'bool',
+            label: 'Enabled',
+          },
+          name: {
+            visible: (props) => props?.enabled,
+            type: 'string',
+            label: 'Name',
+          },
+          price: {
+            visible: (props) => props?.enabled,
+            type: 'number',
+            label: 'Price',
+          },
+          currency: {
+            visible: (props) => props?.enabled,
+            type: 'select',
+            label: 'Currency',
+            props: {
+              options: CURRENCIES.map(({ code, name, symbol }) => ({
+                value: code,
+                label: `${name} - ${symbol}`,
+              })),
+            },
+          },
+          params: {
+            visible: (props) => props?.enabled,
+            type: 'code',
+            label: 'Extra parameters',
+            props: {
+              ngOptions: {
+                spread: true,
+              },
             },
           },
         },
       },
-    },
-    tags: { type: 'array', label: 'Tags' },
-    metadata: { type: 'object', label: 'Metadata' },
-    validation: {
-      type: 'form',
-      label: 'Plan validation',
-      schema: {
-        kind: {
-          type: 'dots',
-          label: 'Kind',
-          props: {
-            defaultValue: 'auto',
-            options: [
-              { value: 'auto', label: 'Auto' },
-              { value: 'manual', label: 'Manual' },
-              { value: 'webhook', label: 'Webhook' },
-              { value: 'workflow', label: 'Workflow' },
-              { value: 'wasm', label: 'Wasm' },
-              { value: 'custom', label: 'Custom' },
-            ],
+      tags: { type: 'array', label: 'Tags' },
+      metadata: { type: 'object', label: 'Metadata' },
+      validation: {
+        type: 'form',
+        label: 'Plan validation',
+        schema: {
+          kind: {
+            type: 'dots',
+            label: 'Kind',
+            props: {
+              defaultValue: 'auto',
+              options: [
+                { value: 'auto', label: 'Auto' },
+                { value: 'manual', label: 'Manual' },
+                { value: 'webhook', label: 'Webhook' },
+                { value: 'workflow', label: 'Workflow' },
+                { value: 'wasm', label: 'Wasm' },
+                { value: 'custom', label: 'Custom' },
+              ],
+            },
+          },
+          config: {
+            type: 'json',
+            label: 'Validation config.',
+            props: {
+              defaultValue: '{}',
+              height: 100,
+            },
           },
         },
-        config: {
-          type: 'json',
-          label: 'Validation config.',
-          props: {
-            defaultValue: '{}',
-            height: 100,
-          },
-        },
+        flow: ['kind', 'config'],
       },
-      flow: ['kind', 'config'],
-    },
-    visibility: {
-      label: 'Visibility',
-      type: 'form',
-      schema: {
-        kind: {
-          label: 'Kind',
-          type: 'dots',
-          props: {
-            defaultValue: 'public',
-            options: [
-              { value: 'public', label: 'Public' },
-              { value: 'semi_public', label: 'Semi Public' },
-              { value: 'private', label: 'Private' },
-              { value: 'custom', label: 'Custom' },
-            ],
+      visibility: {
+        label: 'Visibility',
+        type: 'form',
+        schema: {
+          kind: {
+            label: 'Kind',
+            type: 'dots',
+            props: {
+              defaultValue: 'public',
+              options: [
+                { value: 'public', label: 'Public' },
+                { value: 'semi_public', label: 'Semi Public' },
+                { value: 'private', label: 'Private' },
+                { value: 'custom', label: 'Custom' },
+              ],
+            },
+          },
+          config: {
+            type: 'any',
+            label: 'Visibility config.',
+            props: {
+              mode: 'jsonOrPlaintext',
+              language: 'json',
+              useInternalState: true,
+              defaultValue: '{}',
+              height: 100,
+            },
           },
         },
-        config: {
-          type: 'any',
-          label: 'Visibility config.',
-          props: {
-            mode: 'jsonOrPlaintext',
-            language: 'json',
-            useInternalState: true,
-            defaultValue: '{}',
-            height: 100,
-          },
-        },
+        flow: ['kind', 'config'],
       },
-      flow: ['kind', 'config'],
-    },
-  }), [setAccessModeModal]);
+    }),
+    [setAccessModeModal]
+  );
 
-  const flow = useMemo(() => [
-    { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
-    {
-      type: 'group',
-      name: 'Lifecycle',
-      collapsable: false,
-      fields: ['status', 'statusDescription'],
-    },
-    'visibility',
-    {
-      type: 'group',
-      name: 'Access Mode',
-      collapsable: false,
-      fields: ['access_mode_configuration_type'],
-    },
-    'rateLimiting',
-    'pricing',
-    'validation',
-    { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
-  ], []);
+  const flow = useMemo(
+    () => [
+      { type: 'group', name: 'General', collapsable: false, fields: ['name', 'description'] },
+      {
+        type: 'group',
+        name: 'Lifecycle',
+        collapsable: false,
+        fields: ['status', 'statusDescription'],
+      },
+      'visibility',
+      {
+        type: 'group',
+        name: 'Access Mode',
+        collapsable: false,
+        fields: ['access_mode_configuration_type'],
+      },
+      'rateLimiting',
+      'pricing',
+      'validation',
+      { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
+    ],
+    []
+  );
 
-  console.log(plan)
+  console.log(plan);
 
   return (
     <>
@@ -641,11 +706,7 @@ function PlanForm({ plan, onChange }) {
           hide={() => setAccessModeModal(undefined)}
         />
       )}
-      <NgForm
-        value={plan}
-        schema={schema}
-        flow={flow}
-        onChange={onChange} />
+      <NgForm value={plan} schema={schema} flow={flow} onChange={onChange} />
     </>
   );
 }
@@ -726,7 +787,7 @@ export function Plans(props) {
 
   if (!item) return <SimpleLoader />;
 
-  const plans = item.plans || []
+  const plans = item.plans || [];
 
   const columns = [
     {
@@ -767,13 +828,16 @@ export function Plans(props) {
     {
       title: 'Subscribe',
       notFilterable: true,
-      cell: (_, plan) => (
-        item.state === 'deprecated' ? <span style={{ fontStyle: 'italic' }}>API is deprecated</span> :
-          plan.status !== 'published' ? <span style={{ fontStyle: 'italic' }}>Plan is not published</span> :
-            <Button type="success" className="btn-sm" onClick={() => setPlan(plan)}>
-              Subscribe
-            </Button>
-      ),
+      cell: (_, plan) =>
+        item.state === 'deprecated' ? (
+          <span style={{ fontStyle: 'italic' }}>API is deprecated</span>
+        ) : plan.status !== 'published' ? (
+          <span style={{ fontStyle: 'italic' }}>Plan is not published</span>
+        ) : (
+          <Button type="success" className="btn-sm" onClick={() => setPlan(plan)}>
+            Subscribe
+          </Button>
+        ),
     },
   ];
 
@@ -781,7 +845,7 @@ export function Plans(props) {
     return updateItem({
       ...item,
       plans: item.plans?.filter((c) => c.id !== plan.id),
-    })
+    });
   };
 
   if (plan) return <NewSubscription plan={plan} {...props} />;
@@ -859,14 +923,14 @@ export function PlanEditor(props) {
   const [plan, setPlan] = useState(
     isNew
       ? {
-        id: v4(),
-        name: 'New plan',
-        status: 'staging',
-        access_mode_configuration_type: 'apikey',
-        access_mode_configuration: {
-          enabled: true,
-        },
-      }
+          id: v4(),
+          name: 'New plan',
+          status: 'staging',
+          access_mode_configuration_type: 'apikey',
+          access_mode_configuration: {
+            enabled: true,
+          },
+        }
       : null
   );
 
@@ -906,46 +970,48 @@ export function PlanEditor(props) {
       });
   };
 
-  return <div className='page'>
-    {impactedSubscriptions && (
-      <ImpactedSubscriptionsModal
-        originalPlan={item.plans?.find((p) => p.id === params.planId)}
-        plan={plan}
-        subscriptions={impactedSubscriptions}
-        onConfirm={persist}
-        hide={() => setImpactedSubscriptions(null)}
-      />
-    )}
-    <PageTitle title={isNew ? 'New Plan' : plan.name} {...props} />
-    <div className='displayGroupBtn'>
-      <FeedbackButton
-        type="success"
-        onPress={save}
-        text={
-          <div className="d-flex align-items-center">
-            {isNew ? 'Create' : 'Save'} <VersionBadge size="xs" />
-          </div>
-        }
-      />
+  return (
+    <div className="page">
+      {impactedSubscriptions && (
+        <ImpactedSubscriptionsModal
+          originalPlan={item.plans?.find((p) => p.id === params.planId)}
+          plan={plan}
+          subscriptions={impactedSubscriptions}
+          onConfirm={persist}
+          hide={() => setImpactedSubscriptions(null)}
+        />
+      )}
+      <PageTitle title={isNew ? 'New Plan' : plan.name} {...props} />
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={save}
+          text={
+            <div className="d-flex align-items-center">
+              {isNew ? 'Create' : 'Save'} <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </div>
+      <PlanForm plan={plan} onChange={setPlan} />
     </div>
-    <PlanForm plan={plan} onChange={setPlan} />
-  </div>
+  );
 }
 
 function ImpactedSubscriptionsModal({ subscriptions, onConfirm, hide, originalPlan, plan }) {
-  const deletionInComing = originalPlan?.status !== 'closed' && plan?.status === 'closed'
+  const deletionInComing = originalPlan?.status !== 'closed' && plan?.status === 'closed';
 
   useEffect(() => {
     const onKeyDown = (e) => {
-      if (e.key === "Escape") {
-        hide()
+      if (e.key === 'Escape') {
+        hide();
       }
     };
 
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener('keydown', onKeyDown);
     };
   }, [hide]);
 
@@ -959,10 +1025,12 @@ function ImpactedSubscriptionsModal({ subscriptions, onConfirm, hide, originalPl
           />
           <p className="mt-2" style={{ fontStyle: 'italic' }}>
             Saving this plan will affect the following subscriptions. Review them before confirming.
-
-            {deletionInComing && <div className="alert alert-danger mt-3">
-              Be careful: this action will permanently remove all subscriptions linked to this plan.
-            </div>}
+            {deletionInComing && (
+              <div className="alert alert-danger mt-3">
+                Be careful: this action will permanently remove all subscriptions linked to this
+                plan.
+              </div>
+            )}
           </p>
           <div className="wizard-content mt-0" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
             {subscriptions.map((sub) => (
@@ -990,10 +1058,16 @@ function ImpactedSubscriptionsModal({ subscriptions, onConfirm, hide, originalPl
                   </div>
                 )}
                 <div className="mt-2 d-flex gap-3" style={{ fontSize: '12px' }}>
-                  <span><strong>Owner:</strong> {sub.owner_ref}</span>
-                  <span><strong>Tokens:</strong> {(sub.token_refs || []).length}</span>
+                  <span>
+                    <strong>Owner:</strong> {sub.owner_ref}
+                  </span>
+                  <span>
+                    <strong>Tokens:</strong> {(sub.token_refs || []).length}
+                  </span>
                   {sub.tags?.length > 0 && (
-                    <span><strong>Tags:</strong> {sub.tags.join(', ')}</span>
+                    <span>
+                      <strong>Tags:</strong> {sub.tags.join(', ')}
+                    </span>
                   )}
                 </div>
               </div>

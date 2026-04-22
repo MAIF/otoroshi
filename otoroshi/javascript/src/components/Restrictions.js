@@ -16,8 +16,7 @@ import { ReactSelectOverride } from './inputs/ReactSelectOverride';
 // import _ from 'lodash';
 
 export class RestrictionPath extends Component {
-
-  state = { values: [] }
+  state = { values: [] };
 
   componentDidMount() {
     const v = this.props.value[this.props.idx];
@@ -39,12 +38,17 @@ export class RestrictionPath extends Component {
       method: 'POST',
       credentials: 'include',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ authorized_entities: this.props.apikey.authorized_entities || this.props.apikey.authorizedEntities })
-    }).then(r => r.json()).then((values) => this.setState({ values }))
-  }
+      body: JSON.stringify({
+        authorized_entities:
+          this.props.apikey.authorized_entities || this.props.apikey.authorizedEntities,
+      }),
+    })
+      .then((r) => r.json())
+      .then((values) => this.setState({ values }));
+  };
 
   render() {
     return (
@@ -70,7 +74,7 @@ export class RestrictionPath extends Component {
           <ReactSelectOverride
             style={{ width: '20%' }}
             value={this.props.value[this.props.idx].authorized_entity?.kind}
-            onChange={e => {
+            onChange={(e) => {
               const arrayValue = [...this.props.value];
               const item = arrayValue[this.props.idx];
               if (e === 'any') {
@@ -84,17 +88,17 @@ export class RestrictionPath extends Component {
               this.props.onChange(arrayValue);
             }}
             options={[
-              { label: "Any", value: "any" },
-              { label: "Route", value: "route" },
-              { label: "API", value: "api" },
-              { label: "Service group", value: "group" },
+              { label: 'Any', value: 'any' },
+              { label: 'Route', value: 'route' },
+              { label: 'API', value: 'api' },
+              { label: 'Service group', value: 'group' },
             ]}
           />
           {this.props.value[this.props.idx].authorized_entity?.kind && (
             <div style={{ width: '30%' }}>
               <ReactSelectOverride
                 value={this.props.value[this.props.idx].authorized_entity?.id}
-                onChange={e => {
+                onChange={(e) => {
                   const arrayValue = [...this.props.value];
                   const item = arrayValue[this.props.idx];
                   item.authorized_entity = item.authorized_entity || {};

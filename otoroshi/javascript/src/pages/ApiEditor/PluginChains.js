@@ -66,8 +66,8 @@ export function EditPluginChains(props) {
   if (!item) return <SimpleLoader />;
 
   return (
-    <div className='page'>
-      <PageTitle title='Plugin chains Settings' />
+    <div className="page">
+      <PageTitle title="Plugin chains Settings" />
       <NgForm
         schema={FLOW_FORM_SETTINGS.schema(item)}
         flow={FLOW_FORM_SETTINGS.flow}
@@ -75,12 +75,9 @@ export function EditPluginChains(props) {
         onChange={setFlow}
       />
       <DraftOnly>
-        <div className='displayGroupBtn'>
-          <Button
-            type="success"
-            onClick={updateFlow}
-          >
-            <div className='d-flex align-items-center'>
+        <div className="displayGroupBtn">
+          <Button type="success" onClick={updateFlow}>
+            <div className="d-flex align-items-center">
               Save <VersionBadge size="xs" className="ms-2" />
             </div>
           </Button>
@@ -119,8 +116,8 @@ export function NewPluginChains(props) {
   if (!item) return <SimpleLoader />;
 
   return (
-    <div className='page'>
-      <PageTitle title='Plugin chains Settings' />
+    <div className="page">
+      <PageTitle title="Plugin chains Settings" />
       <NgForm
         schema={FLOW_FORM_SETTINGS.schema(item)}
         flow={FLOW_FORM_SETTINGS.flow}
@@ -128,12 +125,9 @@ export function NewPluginChains(props) {
         onChange={setFlow}
       />
       <DraftOnly>
-        <div className='displayGroupBtn'>
-          <Button
-            type="success"
-            onClick={createFlow}
-          >
-            <div className='d-flex align-items-center'>
+        <div className="displayGroupBtn">
+          <Button type="success" onClick={createFlow}>
+            <div className="d-flex align-items-center">
               Create <VersionBadge size="xs" className="ms-2" />
             </div>
           </Button>
@@ -212,7 +206,7 @@ export function PluginChainsDesigner(props) {
         history={history}
         value={flow}
         setValue={(value) => setFlow({ ...(value || {}) })}
-        setSaveButton={() => { }}
+        setSaveButton={() => {}}
       />
     </div>
   );

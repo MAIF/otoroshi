@@ -221,7 +221,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
               case _                                => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 1")))
             }
           }
-          case _                                                 => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 2")))
+          case _                                                       => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 2")))
         }
       }
     }

@@ -379,7 +379,6 @@ function RouteItem({ item, api, ports, isDraft }) {
 
   const version = useSignalValue(signalVersion);
 
-
   const routeEntries = (idx) => {
     const isSecured = api.flows.some((r) =>
       r.plugins.find((p) => p.plugin.includes('ForceHttpsTraffic'))
@@ -397,14 +396,14 @@ function RouteItem({ item, api, ports, isDraft }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -452,7 +451,7 @@ function RouteItem({ item, api, ports, isDraft }) {
             {end}
           </span>
           <div style={{ minWidth: 60 }}>{method}</div>
-          {isDraft && !api.testing.enabled &&
+          {isDraft && !api.testing.enabled && (
             <Button
               type="primaryColor"
               className="btn btn-sm"
@@ -460,27 +459,29 @@ function RouteItem({ item, api, ports, isDraft }) {
             >
               Enable API testing
             </Button>
-          }
-          {(!isDraft || api.testing.enabled) && <div className="d-flex align-items-center justify-content-start">
-            <Button
-              className="btn btn-sm"
-              type="primaryColor"
-              title="Copy URL"
-              onClick={() => copy(routeEntries(idx), rawMethods[i], setCopyIconName)}
-            >
-              <i className={copyIconName} />
-            </Button>
-            {rawMethods[i] === 'GET' && version === 'Published' && (
+          )}
+          {(!isDraft || api.testing.enabled) && (
+            <div className="d-flex align-items-center justify-content-start">
               <Button
-                className="btn btn-sm ms-1"
+                className="btn btn-sm"
                 type="primaryColor"
-                title={`Go to ${start}${domain}`}
-                onClick={() => goTo(idx)}
+                title="Copy URL"
+                onClick={() => copy(routeEntries(idx), rawMethods[i], setCopyIconName)}
               >
-                <i className="fas fa-external-link-alt" />
+                <i className={copyIconName} />
               </Button>
-            )}
-          </div>}
+              {rawMethods[i] === 'GET' && version === 'Published' && (
+                <Button
+                  className="btn btn-sm ms-1"
+                  type="primaryColor"
+                  title={`Go to ${start}${domain}`}
+                  onClick={() => goTo(idx)}
+                >
+                  <i className="fas fa-external-link-alt" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       );
     });
@@ -696,7 +697,6 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
   );
 }
 
-
 export function Dashboard(props) {
   const params = useParams();
   const history = useHistory();
@@ -720,57 +720,57 @@ export function Dashboard(props) {
   const steps = [
     {
       id: 1,
-      title: "Create an endpoint",
-      description: "Define how traffic reaches your API",
-      icon: "fas fa-road",
+      title: 'Create an endpoint',
+      description: 'Define how traffic reaches your API',
+      icon: 'fas fa-road',
       completed: item.routes.length > 0,
       to: `/apis/${params.apiId}/endpoints/new?version=${version}`,
     },
     {
       id: 2,
-      title: "Add a backend",
-      description: "Configure a backend target",
-      icon: "fas fa-microchip",
-      completed: item.backends.some(b => b.name !== "default_backend"),
+      title: 'Add a backend',
+      description: 'Configure a backend target',
+      icon: 'fas fa-microchip',
+      completed: item.backends.some((b) => b.name !== 'default_backend'),
       to: `/apis/${params.apiId}/backends/new?version=${version}`,
     },
     {
       id: 3,
-      title: "Create a plugin chain",
-      description: "Add plugin rules and transformations",
-      icon: "fas fa-project-diagram",
-      completed: item.flows.some(f => f.name !== "default_plugin_chain"),
+      title: 'Create a plugin chain',
+      description: 'Add plugin rules and transformations',
+      icon: 'fas fa-project-diagram',
+      completed: item.flows.some((f) => f.name !== 'default_plugin_chain'),
       to: `/apis/${params.apiId}/plugin-chains/new?version=${version}`,
       showOnlyIfPublished: true,
     },
     {
       id: 4,
-      title: "Configure the API Gateway",
-      description: "Set the domain and context path in the API Gateway tab",
-      icon: "fas fa-network-wired",
+      title: 'Configure the API Gateway',
+      description: 'Set the domain and context path in the API Gateway tab',
+      icon: 'fas fa-network-wired',
       completed: !!(item.domain && item.contextPath),
     },
     {
       id: 5,
-      title: "Enable testing",
-      description: "Set up API testing",
-      icon: "fas fa-vial",
+      title: 'Enable testing',
+      description: 'Set up API testing',
+      icon: 'fas fa-vial',
       completed: item.testing.enabled,
-      to: `/apis/${params.apiId}/testing?version=${version}`
+      to: `/apis/${params.apiId}/testing?version=${version}`,
     },
     {
       id: 6,
-      title: "Add a plan",
-      description: "Define your API plans",
-      icon: "fas fa-file-alt",
+      title: 'Add a plan',
+      description: 'Define your API plans',
+      icon: 'fas fa-file-alt',
       completed: item.plans?.length > 0,
-      to: `/apis/${params.apiId}/plans/new`
+      to: `/apis/${params.apiId}/plans/new`,
     },
     {
       id: 7,
-      title: "Deploy your API",
-      description: "Publish to production",
-      icon: "fas fa-rocket",
+      title: 'Deploy your API',
+      description: 'Publish to production',
+      icon: 'fas fa-rocket',
       completed: item.state === API_STATE.PUBLISHED,
       onClick: () => publishAPI(draft, item, history),
     },
@@ -789,11 +789,10 @@ export function Dashboard(props) {
   //   item.state !== API_STATE.DEPRECATED && currentStep < 7
 
   const nextStep = steps.find(
-    s => !s.completed && (!s.showOnlyIfPublished || item.state === API_STATE.PUBLISHED)
+    (s) => !s.completed && (!s.showOnlyIfPublished || item.state === API_STATE.PUBLISHED)
   );
 
-  const showGettingStarted =
-    isDraft && item.state !== API_STATE.DEPRECATED && nextStep;
+  const showGettingStarted = isDraft && item.state !== API_STATE.DEPRECATED && nextStep;
 
   // TODO
   const totalSubscriptions = 0; // item.consumers.flatMap((c) => c.subscriptions).length;

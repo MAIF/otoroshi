@@ -783,14 +783,14 @@ object PostgresExporterSettings {
     }
 
     override def writes(o: PostgresExporterSettings): JsValue = Json.obj(
-      "uri"       -> o.uri.map(v => JsString(v)).getOrElse(JsNull).asValue,
-      "host"      -> o.host,
-      "port"      -> o.port,
-      "database"  -> o.database,
-      "user"      -> o.user,
-      "password"  -> o.password,
-      "schema"    -> o.schema,
-      "table"     -> o.table,
+      "uri"            -> o.uri.map(v => JsString(v)).getOrElse(JsNull).asValue,
+      "host"           -> o.host,
+      "port"           -> o.port,
+      "database"       -> o.database,
+      "user"           -> o.user,
+      "password"       -> o.password,
+      "schema"         -> o.schema,
+      "table"          -> o.table,
       "pool_size"      -> o.poolSize,
       "ssl"            -> o.ssl,
       "retention_days" -> o.retentionDays

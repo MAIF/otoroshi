@@ -138,16 +138,18 @@ export function NewHttpClientSettings(props) {
   if (!client || !item) return <SimpleLoader />;
 
   return (
-    <div className='page'>
+    <div className="page">
       <PageTitle title="New HTTP client settings" {...props} style={{ paddingBottom: 0 }} />
 
-      <div className='displayGroupBtn'>
+      <div className="displayGroupBtn">
         <FeedbackButton
           type="success"
           onPress={saveBackend}
-          text={<div className="d-flex align-items-center">
-            Create <VersionBadge size="xs" />
-          </div>}
+          text={
+            <div className="d-flex align-items-center">
+              Create <VersionBadge size="xs" />
+            </div>
+          }
         />
       </div>
 
@@ -218,47 +220,51 @@ export function EditHttpClientSettings(props) {
 
   if (!item) return <SimpleLoader />;
 
-  return <div className='page'>
-    <PageTitle title="Http Client settings" {...props} style={{ paddingBottom: 0 }} />
-    <div className='displayGroupBtn'>
-      <FeedbackButton
-        type="success"
-        onPress={updateBackend}
-        text={<div className="d-flex align-items-center">
-          Save <VersionBadge size="xs" />
-        </div>}
+  return (
+    <div className="page">
+      <PageTitle title="Http Client settings" {...props} style={{ paddingBottom: 0 }} />
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={updateBackend}
+          text={
+            <div className="d-flex align-items-center">
+              Save <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </div>
+
+      <BackendForm
+        state={{
+          form: {
+            schema: {
+              name: {
+                label: 'Name',
+                type: 'string',
+                placeholder: 'New HTTP client settings',
+                disabled: client?.name === 'default_client',
+              },
+              client: {
+                ...NgBackend.schema.client,
+                collapsable: false,
+                collapsed: false,
+              },
+            },
+            flow: [
+              {
+                type: 'group',
+                name: 'Informations',
+                collapsable: false,
+                fields: ['name'],
+              },
+              'client',
+            ],
+            value: client,
+          },
+        }}
+        onChange={setClient}
       />
     </div>
-
-    <BackendForm
-      state={{
-        form: {
-          schema: {
-            name: {
-              label: 'Name',
-              type: 'string',
-              placeholder: 'New HTTP client settings',
-              disabled: client?.name === 'default_client',
-            },
-            client: {
-              ...NgBackend.schema.client,
-              collapsable: false,
-              collapsed: false,
-            },
-          },
-          flow: [
-            {
-              type: 'group',
-              name: 'Informations',
-              collapsable: false,
-              fields: ['name'],
-            },
-            'client',
-          ],
-          value: client,
-        },
-      }}
-      onChange={setClient}
-    />
-  </div>
+  );
 }

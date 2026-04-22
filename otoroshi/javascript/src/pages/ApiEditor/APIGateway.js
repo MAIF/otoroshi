@@ -85,11 +85,11 @@ export function APIGateway(props) {
   };
 
   return (
-    <div className='page'>
+    <div className="page">
       <PageTitle title="API Gateway" {...props} />
 
       <DraftOnly>
-        <div className='displayGroupBtn'>
+        <div className="displayGroupBtn">
           <FeedbackButton
             type="success"
             onPress={() =>
@@ -108,11 +108,19 @@ export function APIGateway(props) {
       </DraftOnly>
 
       <div className="actions-page mt-3">
-        <NgForm value={state} onChange={setState} schema={schema} flow={['explanation', {
-          type: 'group',
-          fields: ['domain', 'contextPath', 'merge'],
-          collapsable: false
-        }]} />
+        <NgForm
+          value={state}
+          onChange={setState}
+          schema={schema}
+          flow={[
+            'explanation',
+            {
+              type: 'group',
+              fields: ['domain', 'contextPath', 'merge'],
+              collapsable: false,
+            },
+          ]}
+        />
       </div>
     </div>
   );

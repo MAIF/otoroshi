@@ -1650,9 +1650,9 @@ object RestrictionPath {
   val format = new Format[RestrictionPath] {
     override def writes(o: RestrictionPath): JsValue             =
       Json.obj(
-        "method" -> o.method,
-        "path"   -> o.path,
-        "authorized_entity" -> o.authorizedEntity.map(_.modernJson).getOrElse(JsNull).as[JsValue],
+        "method"            -> o.method,
+        "path"              -> o.path,
+        "authorized_entity" -> o.authorizedEntity.map(_.modernJson).getOrElse(JsNull).as[JsValue]
       )
     override def reads(json: JsValue): JsResult[RestrictionPath] =
       Try {
@@ -1660,7 +1660,8 @@ object RestrictionPath {
           RestrictionPath(
             method = (json \ "method").as[String],
             path = (json \ "path").as[String],
-            authorizedEntity = (json \ "authorized_entity").asOpt[JsObject].flatMap(o => EntityIdentifier.applyModern(o))
+            authorizedEntity =
+              (json \ "authorized_entity").asOpt[JsObject].flatMap(o => EntityIdentifier.applyModern(o))
           )
         )
       } recover { case e =>
@@ -1711,7 +1712,14 @@ case class Restrictions(
     }
   }
 
-  private def matches(method: String, domain: String, path: String, paths: Seq[RestrictionPath], route: NgRoute, apikey: Option[ApiKey]): Boolean = {
+  private def matches(
+      method: String,
+      domain: String,
+      path: String,
+      paths: Seq[RestrictionPath],
+      route: NgRoute,
+      apikey: Option[ApiKey]
+  ): Boolean = {
     val cleanMethod = method.trim().toLowerCase()
     paths
       .map(p => p.copy(method = p.method.trim.toLowerCase()))
@@ -1724,12 +1732,13 @@ case class Restrictions(
         }
       }
       .exists {
-        case RestrictionPath(_, _, Some(ServiceGroupIdentifier(id))) => apikey.exists(_.authorizedOnGroup(id)) && route.groups.contains(id)
+        case RestrictionPath(_, _, Some(ServiceGroupIdentifier(id)))      =>
+          apikey.exists(_.authorizedOnGroup(id)) && route.groups.contains(id)
         case RestrictionPath(_, _, Some(ServiceDescriptorIdentifier(id))) => route.id == id
-        case RestrictionPath(_, _, Some(RouteIdentifier(id))) => route.id == id
-        case RestrictionPath(_, _, Some(ApiIdentifier(id))) => route.apiRef.contains(id)
-        case RestrictionPath(_, _, None) => true
-        case _ => false
+        case RestrictionPath(_, _, Some(RouteIdentifier(id)))             => route.id == id
+        case RestrictionPath(_, _, Some(ApiIdentifier(id)))               => route.apiRef.contains(id)
+        case RestrictionPath(_, _, None)                                  => true
+        case _                                                            => false
       }
   }
 

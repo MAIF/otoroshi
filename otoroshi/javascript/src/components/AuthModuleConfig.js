@@ -2182,9 +2182,9 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
         {settings.type === 'wasm' && <WasmAuthModuleConfig {...this.props} />}
         {settings.type === 'workflow' && <WorkflowAuthModuleConfig {...this.props} />}
-        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm', 'workflow'].includes(settings.type) && (
-          <CustomModuleConfig {...this.props} />
-        )}
+        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm', 'workflow'].includes(
+          settings.type
+        ) && <CustomModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"
@@ -2267,7 +2267,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     warning: {
-      type: ({ }) => {
+      type: ({}) => {
         if (this.props.value.warning) {
           const { warning } = this.props.value;
           return (
@@ -2357,7 +2357,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     credentials: {
-      type: ({ }) => {
+      type: ({}) => {
         const { signingKey, encryptionKey, signedDocuments, encryptedAssertions } =
           this.props.value.credentials;
 
@@ -2403,8 +2403,9 @@ export class SamlModuleConfig extends Component {
             config.show && (
               <div key={`config${i}`}>
                 <BooleanInput
-                  label={`${i === 0 ? 'Sign' : 'Validate'} ${config.element
-                    } with Otoroshi certificate`}
+                  label={`${i === 0 ? 'Sign' : 'Validate'} ${
+                    config.element
+                  } with Otoroshi certificate`}
                   value={config.switch.value}
                   onChange={() => config.switch.setValue(!config.switch.value)}
                 />
@@ -2478,7 +2479,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     usedNameIDAsEmail: {
-      type: ({ }) => {
+      type: ({}) => {
         const { emailAttributeName, usedNameIDAsEmail } = this.props.value;
         return (
           <div>
@@ -2527,7 +2528,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     adminEntityValidatorsOverride: {
-      type: ({ }) => (
+      type: ({}) => (
         <JsonObjectAsCodeInput
           label="Admin entity validators override"
           mode="json"
@@ -2553,7 +2554,7 @@ export class SamlModuleConfig extends Component {
       },
     },
     extraMetadata: {
-      type: ({ }) => (
+      type: ({}) => (
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
             label="Extra metadata"
@@ -2827,7 +2828,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     rightsOverride: {
-      type: ({ }) => (
+      type: ({}) => (
         <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
@@ -2848,7 +2849,7 @@ export class OAuth1ModuleConfig extends Component {
       },
     },
     adminEntityValidatorsOverride: {
-      type: ({ }) => (
+      type: ({}) => (
         <JsonObjectAsCodeInput
           label="Admin entity validators override"
           mode="json"

@@ -244,8 +244,7 @@ class WasmBackend extends NgBackendCall {
     //WasmUtils.debugLog.debug("callBackend")
 
     ctx.wasmJson
-      .flatMap {
-        case (input, inputBodyBytes) =>
+      .flatMap { case (input, inputBodyBytes) =>
         env.wasmIntegration.wasmVmFor(config).flatMap {
           case None                    =>
             Errors
@@ -494,7 +493,10 @@ class WasmRequestTransformer extends NgRequestTransformer {
                       headers =
                         (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
                       cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                      body = body.map(_.chunks(32 * 1024)).orElse(inputBodyBytesOpt.map(_.chunks(32 * 1024))).getOrElse(Source.empty),
+                      body = body
+                        .map(_.chunks(32 * 1024))
+                        .orElse(inputBodyBytesOpt.map(_.chunks(32 * 1024)))
+                        .getOrElse(Source.empty)
                     )
                   )
                 }
@@ -579,7 +581,10 @@ class WasmResponseTransformer extends NgRequestTransformer {
                         (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
                       status = (response \ "status").asOpt[Int].getOrElse(200),
                       cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                      body = body.map(_.chunks(32 * 1024)).orElse(inputBodyBytesOpt.map(_.chunks(32 * 1024))).getOrElse(Source.empty)
+                      body = body
+                        .map(_.chunks(32 * 1024))
+                        .orElse(inputBodyBytesOpt.map(_.chunks(32 * 1024)))
+                        .getOrElse(Source.empty)
                     )
                     .right
                 }

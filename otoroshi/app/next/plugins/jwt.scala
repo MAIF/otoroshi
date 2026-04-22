@@ -9,11 +9,29 @@ import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject, Payload}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
 import otoroshi.env.Env
-import otoroshi.models.{ApiKey, DefaultToken, InCookie, InHeader, InQueryParam, JwtTokenLocation, LocalJwtVerifier, OutputMode, PrivateAppsUser, RefJwtVerifier, ServiceDescriptor}
+import otoroshi.models.{
+  ApiKey,
+  DefaultToken,
+  InCookie,
+  InHeader,
+  InQueryParam,
+  JwtTokenLocation,
+  LocalJwtVerifier,
+  OutputMode,
+  PrivateAppsUser,
+  RefJwtVerifier,
+  ServiceDescriptor
+}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterMapOfStringAndB, BetterString, BetterSyntax}
+import otoroshi.utils.syntax.implicits.{
+  BetterJsReadable,
+  BetterJsValue,
+  BetterMapOfStringAndB,
+  BetterString,
+  BetterSyntax
+}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -1030,7 +1048,7 @@ case class OAuth2TokenExchangeConfig(
 
   def withExpressionLanguage(attrs: TypedMap)(implicit env: Env): OAuth2TokenExchangeConfig = {
     OAuth2TokenExchangeConfig.format.reads(json.stringify.evaluateEl(attrs).parseJson) match {
-      case JsError(errs) =>
+      case JsError(errs)     =>
         OAuth2TokenExchange.logger.error(s"error while applying EL on OAuth2TokenExchangeConfig: ${errs}")
         this
       case JsSuccess(cfg, _) => cfg
@@ -1247,8 +1265,7 @@ object OAuth2TokenExchangeConfig {
         callTimeoutMs = json.select("call_timeout_ms").asOpt[Long].getOrElse(10000L),
         customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
         customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
-        customResponseHeaders =
-          json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         customResponseBody =
           json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
       )
@@ -1272,7 +1289,7 @@ object OAuth2TokenExchangeConfig {
 }
 
 object OAuth2TokenExchange {
-  lazy val logger = play.api.Logger("otoroshi-plugin-oauth2-token-exchange")
+  lazy val logger   = play.api.Logger("otoroshi-plugin-oauth2-token-exchange")
   val exchangeCache = Scaffeine()
     .maximumSize(1000)
     .build[String, (String, Long)]()
@@ -1333,13 +1350,13 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                 sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
                   tuple
                 } match {
-                  case None  =>
+                  case None                  =>
                     NgAccess
                       .NgDenied(
                         customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
                       )
                       .vfuture
-                  case Some((source, token))     =>
+                  case Some((source, token)) =>
                     verifier
                       .copy(source = source)
                       .verifyGen[NgAccess](
@@ -1357,11 +1374,11 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                       }
                       .map {
                         case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
-                        case Right(r)                          => r
+                        case Right(r)     => r
                       }
                 }
               }
-              case _: OAuth2ModuleConfig => {
+              case _: OAuth2ModuleConfig                                              => {
                 // no jwtVerifier: treat token as opaque, skip local validation, go straight to exchange
                 val customResult = config.asResult
                 val sources      = config.source
@@ -1370,20 +1387,20 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
                 sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
                   tuple
                 } match {
-                  case None  =>
+                  case None             =>
                     NgAccess
                       .NgDenied(
                         customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
                       )
                       .vfuture
-                  case Some((_, token))          =>
+                  case Some((_, token)) =>
                     performTokenExchange(token, config, m.asInstanceOf[OAuth2ModuleConfig], ctx.attrs).map {
-                      case Left(result)  => NgAccess.NgDenied(customResult.getOrElse(result))
-                      case Right(_)                          => NgAccess.NgAllowed
+                      case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
+                      case Right(_)     => NgAccess.NgAllowed
                     }
                 }
               }
-              case _                     =>
+              case _                                                                  =>
                 NgAccess
                   .NgDenied(
                     Results.BadRequest(Json.obj("error" -> "auth. module is not an OAuth2/OIDC module"))
@@ -1400,7 +1417,8 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
       oidcModule: OAuth2ModuleConfig,
       attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
-    val cacheKey  = s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
+    val cacheKey  =
+      s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
     val cacheTtl  = config.cacheTtlMs
     val now       = System.currentTimeMillis()
     val fromCache = if (cacheTtl > 0) {
@@ -1417,38 +1435,41 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
         val clientId     = config.clientCredentialsOverride.map(_.clientId).getOrElse(oidcModule.clientId)
         val clientSecret = config.clientCredentialsOverride.map(_.clientSecret).getOrElse(oidcModule.clientSecret)
 
-        val params = Map(
-          "grant_type"         -> "urn:ietf:params:oauth:grant-type:token-exchange",
-          "subject_token"      -> subjectToken,
-          "subject_token_type" -> "urn:ietf:params:oauth:token-type:access_token",
-          "client_id"          -> clientId,
-          "client_secret"      -> clientSecret
+        val params  = Map(
+          "grant_type"                            -> "urn:ietf:params:oauth:grant-type:token-exchange",
+          "subject_token"                         -> subjectToken,
+          "subject_token_type"                    -> "urn:ietf:params:oauth:token-type:access_token",
+          "client_id"                             -> clientId,
+          "client_secret"                         -> clientSecret
         ) ++
-          config.exchange.audience.map("audience"             -> _) ++
-          config.exchange.resource.map("resource"             -> _) ++
-          config.exchange.scope.map("scope"                   -> _) ++
+          config.exchange.audience.map("audience" -> _) ++
+          config.exchange.resource.map("resource" -> _) ++
+          config.exchange.scope.map("scope" -> _) ++
           Some("requested_token_type" -> config.exchange.requestedTokenType) ++
           config.exchange.actorToken.map("actor_token" -> _) ++
           config.exchange.actorToken.map(_ => "actor_token_type" -> config.exchange.actorTokenType)
 
-        val timeout = scala.concurrent.duration.Duration(config.callTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val timeout =
+          scala.concurrent.duration.Duration(config.callTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
 
         val builder = env.MtlsWs
           .url(oidcModule.tokenUrl, oidcModule.mtlsConfig)
-          .withMaybeProxyServer(oidcModule.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.auth)))
+          .withMaybeProxyServer(
+            oidcModule.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.auth))
+          )
           .withRequestTimeout(timeout)
 
         builder
           .post(params)(writeableOf_urlEncodedSimpleForm)
           .map { response =>
             if (response.status == 200) {
-              val json          = response.json
+              val json           = response.json
               val exchangedToken = json
                 .select(oidcModule.accessTokenField)
                 .asOpt[String]
                 .getOrElse(json.select("access_token").as[String])
               if (cacheTtl > 0) {
-                val expiresIn = json.select("expires_in").asOpt[Long].map(_ * 1000).getOrElse(cacheTtl)
+                val expiresIn    = json.select("expires_in").asOpt[Long].map(_ * 1000).getOrElse(cacheTtl)
                 val effectiveTtl = Math.min(expiresIn, cacheTtl)
                 OAuth2TokenExchange.exchangeCache.put(cacheKey, (exchangedToken, now + effectiveTtl))
               }
@@ -1461,8 +1482,8 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
               Left(
                 Results.BadGateway(
                   Json.obj(
-                    "error"            -> "token exchange failed",
-                    "exchange_status"  -> response.status
+                    "error"           -> "token exchange failed",
+                    "exchange_status" -> response.status
                   )
                 )
               )
