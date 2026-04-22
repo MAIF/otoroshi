@@ -2661,7 +2661,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   def openapiUi = DocAction { ctx =>
     Ok(
-      otoroshi.views.html.oto.documentationframe(
+      otoroshi.views.html.oto.openapiFrame(
         s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json?doc_secret=${ctx.sec}"
       )
     )
