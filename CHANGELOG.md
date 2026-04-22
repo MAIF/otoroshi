@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.15.0] - 2026-04-22
+
+
+https://github.com/MAIF/otoroshi/milestone/137?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.14.0...v17.15.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.15.0
+
+
+### Added 
+
+- `APIs`: Support plan subscription directly on a plan (#2468 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Workflow auth. module (#2515 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin kind, `PluginPreset` (#2534 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL data exporter supports retention (#2535 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide reusable stateful clients internal API for plugin developpers (#2436 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `MandatoryConsumerPreset` preset plugin (#2536 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `OAuth2 token exchange` plugin using RFC 8693 for zero trust APIs communication (#2540 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Protect documentation resources behind an optional access secret (#2542 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OAuth2Caller plugin can use an auth_module for client_credentials flow (#2546 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Rework documentation (#2523 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Update otoroshi themes (#2525 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Replace ditaa schemas in doc by mermaid one (#2522 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- fix documentation sidebar on mobile browser (#2524 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- typing `/` in monaco trigger search (#2530 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Possible race condition in data exporters loading strategy (#2531 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fix some legacy api audit event layouts (#2543 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Data exporters : bug (#2513 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Avoid sending original body after consumption (#2544 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OAuth2Caller plugin password grant_type tries to pass client_secret (#2545 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- Rework documentation (#2523 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fix documentation sidebar on mobile browser (#2524 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Replace ditaa schemas in doc by mermaid one (#2522 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @Damien-Cadiou
+
 ## [17.14.0] - 2026-03-27
 
 
