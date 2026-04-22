@@ -9,6 +9,7 @@ import BuildMode from './BuildMode';
 import BasicAuthCaller from './BasicAuthCaller';
 import BrotliResponseCompressor from './BrotliResponseCompressor';
 import CanaryMode from './CanaryMode';
+import ExposeDaikoku from './ExposeDaikoku';
 import TimeControlledCanaryMode from './TimeControlledCanaryMode';
 import ContextValidation from './ContextValidation';
 import NgCorazaWAF from './NgCorazaWAF';
@@ -172,6 +173,7 @@ const pluginsArray = [
   BuildMode,
   BrotliResponseCompressor,
   CanaryMode,
+  ExposeDaikoku,
   TimeControlledCanaryMode,
   ContextValidation,
   NgCorazaWAF,

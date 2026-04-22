@@ -2,9 +2,9 @@ package next.models
 
 import akka.http.scaladsl.model.Uri
 import akka.util.ByteString
-import next.models.ApiKind.JWT
 import org.joda.time.DateTime
-import otoroshi.api.WriteAction
+import otoroshi.api.WriteAction.{Create, Update}
+import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
@@ -12,6 +12,7 @@ import otoroshi.models._
 import otoroshi.next.models._
 import otoroshi.next.plugins.{ApikeyQuotas, _}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
+import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
@@ -905,7 +906,82 @@ case class ApiSubscription(
 
 object ApiSubscription {
 
-  private def handleSubscriptionChanged(
+  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan)(implicit
+      env: Env
+  ) = {
+    val configPlan = plan.accessModeConfiguration
+      .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
+      .getOrElse(ApikeyAccessModeConfiguration())
+
+    val attrs = TypedMap(
+      otoroshi.plugins.Keys.PlanKey -> plan,
+      otoroshi.plugins.Keys.ApiKey  -> api
+    )
+
+    val defaultApikey = ApiKey(
+      clientId = IdGenerator.lowerCaseToken(16),
+      clientSecret = IdGenerator.lowerCaseToken(64),
+      clientName = configPlan.clientNamePattern
+        .map(_.evaluateEl(attrs)(env))
+        .getOrElse(IdGenerator.lowerCaseToken(22)),
+      authorizedEntities = Seq(ApiIdentifier(api.id)),
+      throttlingStrategy = plan.rateLimiting,
+      metadata = plan.metadata,
+      tags = plan.tags
+    )
+
+    defaultApikey
+  }
+
+  private def createNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+      env: Env
+  ) = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
+    val defaultApikey = generateNewApikeyFromPlan(api, plan)
+
+    defaultApikey.save().map {
+      case false => "failed to create the apikey".left
+      case true  =>
+        subscription
+          .copy(tokenRefs = subscription.tokenRefs :+ Json.obj("apikey" -> defaultApikey.clientId))
+          .right
+    }
+  }
+
+  private def updateApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+      env: Env
+  ): Future[Seq[Either[String, Boolean]]] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
+    val newApikey = generateNewApikeyFromPlan(api, plan)
+
+    val apikeys: Seq[String] = subscription.tokenRefs.collect {
+      case JsObject(values) if values.contains("apikey") => values("apikey").asString
+    }
+
+    Future.sequence(
+      apikeys.map(apikeyId =>
+        env.datastores.apiKeyDataStore
+          .findById(apikeyId)
+          .flatMap {
+            case Some(apikey) =>
+              newApikey
+                .copy(
+                  clientId = apikey.clientId,
+                  clientSecret = apikey.clientSecret,
+                  metadata = newApikey.metadata ++ apikey.metadata,
+                  tags = newApikey.tags ++ apikey.tags
+                )
+                .save()
+                .map(_.right)
+            case None         => s"apikey with $apikeyId not found".leftf
+          }
+      )
+    )
+  }
+
+  def handleSubscriptionChanged(
       api: Api,
       plan: ApiDocumentationPlan,
       subscription: ApiSubscription,
@@ -913,56 +989,26 @@ object ApiSubscription {
   )(implicit
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
+    implicit val ec = env.otoroshiExecutionContext
+
     if (action == WriteAction.Create) {
       subscription.subscriptionKind match {
-        case ApiKind.Apikey =>
-          implicit val ec = env.otoroshiExecutionContext
-
-          val configPlan = plan.accessModeConfiguration
-            .map(_.asInstanceOf[ApikeyAccessModeConfiguration])
-            .getOrElse(ApikeyAccessModeConfiguration())
-
-          val attrs = TypedMap(
-            otoroshi.plugins.Keys.PlanKey -> plan,
-            otoroshi.plugins.Keys.ApiKey  -> api
-          )
-
-          val defaultApikey = ApiKey(
-            clientId = IdGenerator.lowerCaseToken(16),
-            clientSecret = IdGenerator.lowerCaseToken(64),
-            clientName = configPlan.clientNamePattern
-              .map(_.evaluateEl(attrs)(env))
-              .getOrElse(IdGenerator.lowerCaseToken(22)),
-            authorizedEntities = Seq(ApiIdentifier(api.id)),
-            throttlingStrategy = plan.rateLimiting
-          )
-
-          defaultApikey.save().map {
-            case false => "failed to create the apikey".left
-            case true  =>
-              subscription
-                .copy(tokenRefs = subscription.tokenRefs :+ Json.obj("apikey" -> defaultApikey.clientId))
-                .right
-          }
+        case ApiKind.Apikey => createNewApikeyFromPlan(api, plan, subscription)
         case _              => subscription.rightf
       }
-    }
-//    else if (plan.status ) {
-//      val apikeys: Seq[String] = subscription.tokenRefs
-//        .foldLeft(Seq.empty[String]) { case (acc, item) =>
-//          item match {
-//            case obj @ JsObject(fields) if fields.size == 1 =>
-//              val (_, value) = fields.head
-//              acc :+ value.toString()
-//            case _                                          => acc
-//          }
-//        }
-//
-//
-//
-//      subscription.rightf
-//    }
-    else {
+    } else if (action == Update) {
+      subscription.subscriptionKind match {
+        case ApiKind.Apikey =>
+          updateApikeyFromPlan(api, plan, subscription)
+            .map(results =>
+              results.collectFirst { case Left(err) => err } match {
+                case Some(err) => Left(err)
+                case None      => subscription.right
+              }
+            )
+        case _              => subscription.rightf
+      }
+    } else {
       subscription.rightf
     }
   }
@@ -983,6 +1029,7 @@ object ApiSubscription {
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
     findApi(apiRef, isDraft)
       .flatMap {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
@@ -1023,6 +1070,20 @@ object ApiSubscription {
         case Left(error) => onError(error)
         case Right(r)    => Right(r)
       }
+  }
+
+  def deleteValidator(
+      subscription: ApiSubscription,
+      body: JsValue,
+      singularName: String,
+      id: String,
+      action: DeleteAction,
+      env: Env
+  ): Future[Either[JsValue, Unit]] = {
+//    implicit val ec = env.otoroshiExecutionContext
+//    implicit val e  = env
+
+    ().rightf
   }
 
   val format: Format[ApiSubscription] = new Format[ApiSubscription] {
@@ -1682,31 +1743,9 @@ object Api {
     implicit val ec = env.otoroshiExecutionContext
     implicit val e  = env
 
-    def onError(error: String): Either[JsValue, Api] = Json
-      .obj(
-        "error"            -> error,
-        "http_status_code" -> 400
-      )
-      .left
-
-    entity.rightf
-
-//    env.datastores.apiDataStore
-//      .findById(entity.id)
-//      .map {
-//        case Some(api) if api.state == ApiStaging || api.state == ApiPublished => entity.right
-//          api.documentation match {
-//            case Some(documentation) =>
-//              plans.find(_.id == entity.) match {
-//                case None                                                                                         => onError("plan not found")
-//                case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
-//                  entity.right
-//                case _                                                                                            => onError("wrong status plan")
-//              }
-//            case None                => onError("plan not found")
-//          }
-//        case _                                                                 => onError("wrong status api")
-//      }
+    oldEntity
+      .map(old => ApiConsistencyService.applyApiChanges(old._1, entity).flatMap(_.rightf))
+      .getOrElse(entity.rightf)
   }
 
   def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(
