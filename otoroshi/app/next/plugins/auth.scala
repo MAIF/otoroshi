@@ -5,8 +5,8 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
-import org.mindrot.jbcrypt.BCrypt
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}
+import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
@@ -715,7 +715,7 @@ class SimpleBasicAuth extends NgAccessValidator {
 
   private def safeCheckPassword(password: String, hashed: String): Boolean = {
     try {
-      BCrypt.checkpw(password, hashed)
+      BCryptHelper.checkpw(password, hashed)
     } catch {
       case _: IllegalArgumentException => false
     }
