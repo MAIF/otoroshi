@@ -4,7 +4,24 @@ import java.nio.charset.StandardCharsets
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import org.mindrot.jbcrypt.BCrypt
 import otoroshi.utils.syntax.implicits._
+
+object BCryptHelper {
+
+  // jBCrypt 0.4.3 only accepts the $2a$ revision. $2a$, $2b$ and $2y$ are
+  // algorithmically identical, so rewriting the prefix lets us verify hashes
+  // produced by modern generators (Bun, OpenBSD, PHP password_hash, ...).
+  def checkpw(candidate: String, hashed: String): Boolean = {
+    if (hashed == null || hashed.isEmpty) false
+    else BCrypt.checkpw(candidate, normalize(hashed))
+  }
+
+  private def normalize(hashed: String): String = {
+    if (hashed.startsWith("$2b$") || hashed.startsWith("$2y$")) "$2a$" + hashed.substring(4)
+    else hashed
+  }
+}
 
 object Signatures {
 

@@ -17,6 +17,7 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -260,7 +261,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     authConfig.users
       .find(u => u.email == username)
-      .filter(u => BCrypt.checkpw(password, u.password)) match {
+      .filter(u => BCryptHelper.checkpw(password, u.password)) match {
       case Some(user) =>
         PrivateAppsUser(
           randomId = IdGenerator.token(64),
@@ -289,7 +290,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.users
       .find(u => u.email == username)
-      .filter(u => BCrypt.checkpw(password, u.password)) match {
+      .filter(u => BCryptHelper.checkpw(password, u.password)) match {
       case Some(user) =>
         BackOfficeUser(
           randomId = IdGenerator.token(64),
@@ -436,7 +437,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 case true  =>
                   authConfig.users
                     .find(u => u.email == username)
-                    .filter(u => BCrypt.checkpw(password, u.password)) match {
+                    .filter(u => BCryptHelper.checkpw(password, u.password)) match {
                     case Some(user) =>
                       PrivateAppsUser(
                         randomId = IdGenerator.token(64),

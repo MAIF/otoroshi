@@ -9,6 +9,7 @@ import otoroshi.env.Env
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.utils.mailer.EmailLocation
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -182,7 +183,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       withShortSession(req) { case (bam, user, _) =>
         var newUser = user
         (req.body \ "password").asOpt[String] match {
-          case Some(pass) if BCrypt.checkpw(pass, user.password) => {
+          case Some(pass) if BCryptHelper.checkpw(pass, user.password) => {
             val name          = (req.body \ "name").asOpt[String].getOrElse(user.name)
             val newPassword   = (req.body \ "newPassword").asOpt[String]
             val reNewPassword = (req.body \ "reNewPassword").asOpt[String]
