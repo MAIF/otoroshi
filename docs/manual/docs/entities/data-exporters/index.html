@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-entities/data-exporters" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.9.2">
+<title data-rh="true">Data Exporters | Otoroshi</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://maif.github.io/otoroshi/manual/img/otoroshi-social-card.png"><meta data-rh="true" name="twitter:image" content="https://maif.github.io/otoroshi/manual/img/otoroshi-social-card.png"><meta data-rh="true" property="og:url" content="https://maif.github.io/otoroshi/manual/docs/entities/data-exporters"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Data Exporters | Otoroshi"><meta data-rh="true" name="description" content="Otoroshi is not a monitoring tool, but as a reverse proxy sitting in front of all your services it naturally observes everything:"><meta data-rh="true" property="og:description" content="Otoroshi is not a monitoring tool, but as a reverse proxy sitting in front of all your services it naturally observes everything:"><link data-rh="true" rel="icon" href="/otoroshi/manual/img/favicon.png"><link data-rh="true" rel="canonical" href="https://maif.github.io/otoroshi/manual/docs/entities/data-exporters"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/manual/docs/entities/data-exporters" hreflang="en"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/manual/docs/entities/data-exporters" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Main Entities","item":"https://maif.github.io/otoroshi/manual/docs/entities"},{"@type":"ListItem","position":2,"name":"Data Exporters","item":"https://maif.github.io/otoroshi/manual/docs/entities/data-exporters"}]}</script><link rel="alternate" type="application/rss+xml" href="/otoroshi/manual/blog/rss.xml" title="Otoroshi RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/otoroshi/manual/blog/atom.xml" title="Otoroshi Atom Feed"><link rel="stylesheet" href="/otoroshi/manual/assets/css/styles.3a48ec6c.css">
+<script src="/otoroshi/manual/assets/js/runtime~main.072f6cec.js" defer="defer"></script>
+<script src="/otoroshi/manual/assets/js/main.55c3692c.js" defer="defer"></script>
+</head>
+<body class="navigation-with-keyboard">
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const n=new URLSearchParams(window.location.search).entries();for(var[t,e]of n)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}(),document.documentElement.setAttribute("data-announcement-bar-initially-dismissed",function(){try{return"true"===localStorage.getItem("docusaurus.announcement.dismiss")}catch(t){}return!1}())</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><div class="theme-announcement-bar announcementBar_mb4j" style="background-color:#f9b000;color:#1b1b1d" role="banner"><div class="announcementBarPlaceholder_vyr4"></div><div class="content_knG7 announcementBarContent_xLdY">If you like Otoroshi, give it a <a target="_blank" rel="noopener noreferrer" href="https://github.com/MAIF/otoroshi">star on GitHub</a>!</div><button type="button" aria-label="Close" class="clean-btn close closeButton_CVFx announcementBarClose_gvF7"><svg viewBox="0 0 15 15" width="14" height="14"><g stroke="currentColor" stroke-width="3.1"><path d="M.75.75l13.5 13.5M14.25.75L.75 14.25"></path></g></svg></button></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/otoroshi/manual/"><div class="navbar__logo"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Otoroshi</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/otoroshi/manual/docs/">Documentation</a><a class="navbar__item navbar__link" href="/otoroshi/manual/api-reference">API Reference</a><a class="navbar__item navbar__link" href="/otoroshi/manual/blog">Blog</a><a class="navbar__item navbar__link" href="/otoroshi/manual/ecosystem">Ecosystem</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input searchInput_YFbd" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG menuWithAnnouncementBar_GW3s"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/"><span title="Overview" class="linkLabel_WmDU">Overview</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/about"><span title="About Otoroshi" class="linkLabel_WmDU">About Otoroshi</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/architecture"><span title="Architecture" class="linkLabel_WmDU">Architecture</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/features"><span title="Features" class="linkLabel_WmDU">Features</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/getting-started"><span title="Getting Started" class="linkLabel_WmDU">Getting Started</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/install"><span title="Installation" class="categoryLinkLabel_W154">Installation</span></a><button aria-label="Expand sidebar category &#x27;Installation&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--active" href="/otoroshi/manual/docs/entities"><span title="Main Entities" class="categoryLinkLabel_W154">Main Entities</span></a><button aria-label="Collapse sidebar category &#x27;Main Entities&#x27;" aria-expanded="true" type="button" class="clean-btn menu__caret"></button></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/routes"><span title="Routes" class="linkLabel_WmDU">Routes</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/apis"><span title="APIs" class="linkLabel_WmDU">APIs</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/backends"><span title="Backends" class="linkLabel_WmDU">Backends</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/apikeys"><span title="API Keys" class="linkLabel_WmDU">API Keys</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/organizations"><span title="Organizations" class="linkLabel_WmDU">Organizations</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/teams"><span title="Teams" class="linkLabel_WmDU">Teams</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/service-groups"><span title="Service groups" class="linkLabel_WmDU">Service groups</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/jwt-verifiers"><span title="JWT Verifiers" class="linkLabel_WmDU">JWT Verifiers</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/global-config"><span title="Global config" class="linkLabel_WmDU">Global config</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/tcp-services"><span title="TCP Services" class="linkLabel_WmDU">TCP Services</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/auth-modules"><span title="Authentication modules" class="linkLabel_WmDU">Authentication modules</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/certificates"><span title="Certificates" class="linkLabel_WmDU">Certificates</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/otoroshi/manual/docs/entities/data-exporters"><span title="Data Exporters" class="linkLabel_WmDU">Data Exporters</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/service-descriptors"><span title="Service descriptors" class="linkLabel_WmDU">Service descriptors</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/remote-catalogs"><span title="Remote Catalogs" class="linkLabel_WmDU">Remote Catalogs</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/http-listeners"><span title="HTTP Listeners" class="linkLabel_WmDU">HTTP Listeners</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/workflows"><span title="Workflows" class="linkLabel_WmDU">Workflows</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/wasm-plugins"><span title="WASM Plugins" class="linkLabel_WmDU">WASM Plugins</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/route-templates"><span title="Route Templates" class="linkLabel_WmDU">Route Templates</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/error-templates"><span title="Error Templates" class="linkLabel_WmDU">Error Templates</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/otoroshi/manual/docs/entities/otoroshi-admins"><span title="Otoroshi Admins" class="linkLabel_WmDU">Otoroshi Admins</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/topics"><span title="Detailed Topics" class="categoryLinkLabel_W154">Detailed Topics</span></a><button aria-label="Expand sidebar category &#x27;Detailed Topics&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/recipes"><span title="Recipes" class="categoryLinkLabel_W154">Recipes</span></a><button aria-label="Expand sidebar category &#x27;Recipes&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/tutorials"><span title="Tutorials" class="categoryLinkLabel_W154">Tutorials</span></a><button aria-label="Expand sidebar category &#x27;Tutorials&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/plugins"><span title="Plugins" class="categoryLinkLabel_W154">Plugins</span></a><button aria-label="Expand sidebar category &#x27;Plugins&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist" href="/otoroshi/manual/docs/deploy"><span title="Deploy to Production" class="categoryLinkLabel_W154">Deploy to Production</span></a><button aria-label="Expand sidebar category &#x27;Deploy to Production&#x27;" aria-expanded="false" type="button" class="clean-btn menu__caret"></button></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/api"><span title="Admin REST API" class="linkLabel_WmDU">Admin REST API</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/otoroshi/manual/docs/dev"><span title="Developing Otoroshi" class="linkLabel_WmDU">Developing Otoroshi</span></a></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/otoroshi/manual/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/otoroshi/manual/docs/entities"><span>Main Entities</span></a></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Data Exporters</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Data Exporters</h1></header>
+<p>Otoroshi is not a monitoring tool, but as a reverse proxy sitting in front of all your services it naturally observes everything:
+every HTTP request, every admin action, every backend health check, every security alert.
+Data exporters are the bridge between this rich stream of telemetry and your observability stack.
+They push events out of Otoroshi and into the external systems where you actually analyze, visualize,
+and alert on them -- Elasticsearch, Kafka, Datadog, Pulsar, and many others.</p>
+<p>Without data exporters, events live only in memory and are lost when Otoroshi restarts.
+In production, you almost always want at least one exporter configured so that you have persistent visibility into what is flowing through the gateway.</p>
+<p>Otoroshi supports a wide range of export destinations out of the box:</p>
+<ul>
+<li class=""><strong>Search and analytics</strong>: Elasticsearch, Splunk, Datadog, New Relic</li>
+<li class=""><strong>Streaming platforms</strong>: Kafka, Pulsar, JMS</li>
+<li class=""><strong>Observability protocols</strong>: OTLP Metrics, OTLP Logs, custom Prometheus metrics</li>
+<li class=""><strong>Storage</strong>: PostgreSQL, file, S3</li>
+<li class=""><strong>Network</strong>: webhook (HTTP), TCP, UDP, Syslog</li>
+<li class=""><strong>Traffic replay</strong>: GoReplay (file or S3)</li>
+<li class=""><strong>Notifications</strong>: email via Mailgun, Mailjet, Sendgrid, or generic HTTP mailer</li>
+<li class=""><strong>Programmable</strong>: WASM plugins, workflow processing, custom exporter plugins</li>
+<li class=""><strong>Development</strong>: console (stdout)</li>
+</ul>
+<p>Each exporter runs its own independent pipeline with configurable filtering (which events to keep), projection (which fields to include),
+and batching (how many events to group before sending). You can run as many exporters in parallel
+as you need, each with a different destination and different rules.</p>
+<p>To try them out, you can follow <a class="" href="/otoroshi/manual/docs/tutorials/export-alerts-using-mailgun">this tutorial</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="why-use-data-exporters">Why use data exporters?<a href="#why-use-data-exporters" class="hash-link" aria-label="Direct link to Why use data exporters?" title="Direct link to Why use data exporters?" translate="no">​</a></h2>
+<p>Otoroshi generates a continuous stream of events as it processes traffic: every proxied request, every admin action, every alert, every health check result.
+By default these events live only in memory and are lost when the instance restarts. Data exporters let you <strong>push those events to external systems</strong> so you can:</p>
+<ul>
+<li class=""><strong>Monitor traffic</strong> in real time (dashboards, alerting)</li>
+<li class=""><strong>Audit admin activity</strong> (who changed what, and when)</li>
+<li class=""><strong>Debug issues</strong> by replaying request/response flows</li>
+<li class=""><strong>Meet compliance requirements</strong> with long-term event archival</li>
+<li class=""><strong>Feed custom analytics pipelines</strong> (data lakes, ML, billing)</li>
+</ul>
+<p>You can create as many exporters as needed. Each exporter runs independently with its own destination, filtering rules, and batching settings.
+For example, you might send all traffic events to Elasticsearch for dashboards, alerts to a Slack webhook, and audit events to S3 for long-term storage, all at the same time.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="event-types">Event types<a href="#event-types" class="hash-link" aria-label="Direct link to Event types" title="Direct link to Event types" translate="no">​</a></h2>
+<p>Otoroshi produces several categories of events:</p>
+<table><thead><tr><th>Event type</th><th>Description</th></tr></thead><tbody><tr><td><strong>GatewayEvent</strong></td><td>Emitted for every proxied HTTP request. Contains full request/response metadata: status code, latency, headers, upstream target, etc. This is the highest-volume event type.</td></tr><tr><td><strong>AlertEvent</strong></td><td>Triggered when something notable happens: a circuit breaker opens, a quota is exceeded, an API key is about to rotate, a certificate is expiring, etc.</td></tr><tr><td><strong>AuditEvent</strong></td><td>Tracks admin operations: back-office logins, API key creation, route changes, and any admin API call.</td></tr><tr><td><strong>HealthCheckEvent</strong></td><td>Result of periodic backend health checks (up/down, response time).</td></tr><tr><td><strong>TrafficCaptureEvent</strong></td><td>Full request and response body capture (only when the <code>capture</code> flag is enabled on a route). Used with GoReplay exporters.</td></tr><tr><td><strong>TcpEvent</strong></td><td>Events from the TCP proxy (non-HTTP traffic).</td></tr><tr><td><strong>RequestBodyEvent / ResponseBodyEvent</strong></td><td>Request or response body content, captured by specific plugins.</td></tr><tr><td><strong>Other events from plugins or extensions</strong></td><td>for anything useful</td></tr></tbody></table>
+<p>Each event is enriched before export with additional context: geolocation data derived from client IP, parsed user-agent details, Otoroshi instance metadata (name, zone, region, datacenter), and cluster information.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="how-the-pipeline-works">How the pipeline works<a href="#how-the-pipeline-works" class="hash-link" aria-label="Direct link to How the pipeline works" title="Direct link to How the pipeline works" translate="no">​</a></h2>
+<p>Each data exporter runs an independent streaming pipeline built on top of Akka Streams:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">Events → Queue → JSON enrichment → Filtering → Projection → Batching → Send</span><br></span></code></pre></div></div>
+<ol>
+<li class=""><strong>Queue</strong>: every event produced by Otoroshi is published to all active exporters. Each exporter holds an in-memory bounded queue (<code>bufferSize</code>, default 5000). When the queue is full, the <strong>oldest events are dropped</strong> to keep the system responsive.</li>
+<li class=""><strong>JSON enrichment</strong>: events are converted to JSON and enriched with geolocation, user-agent parsing, and instance metadata. The <code>jsonWorkers</code> parameter controls the parallelism of this step.</li>
+<li class=""><strong>Filtering</strong>: include/exclude rules are applied (see <a href="#matching-and-projections" class="">Matching and projections</a>). Events that do not match are discarded.</li>
+<li class=""><strong>Projection</strong>: if a projection is defined, only the selected fields are kept in the JSON payload.</li>
+<li class=""><strong>Batching</strong>: events are grouped into batches by count (<code>groupSize</code>, default 100) or by time (<code>groupDuration</code>, default 30 seconds), whichever comes first. This reduces the number of network calls to the destination.</li>
+<li class=""><strong>Send</strong>: batches are sent to the configured destination. The <code>sendWorkers</code> parameter controls how many batches can be sent concurrently. If a send fails, the events are re-queued for retry.</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="tuning-tips">Tuning tips<a href="#tuning-tips" class="hash-link" aria-label="Direct link to Tuning tips" title="Direct link to Tuning tips" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>High-traffic environments</strong>: increase <code>bufferSize</code> to avoid dropping events, increase <code>jsonWorkers</code> and <code>sendWorkers</code> for more parallelism, and increase <code>groupSize</code> for fewer but larger network calls.</li>
+<li class=""><strong>Low-latency alerting</strong>: decrease <code>groupDuration</code> (e.g. 5000 ms) so batches are sent more frequently.</li>
+<li class=""><strong>Resource-constrained setups</strong>: keep worker counts low and use filtering aggressively to reduce the volume of events processed.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="lifecycle">Lifecycle<a href="#lifecycle" class="hash-link" aria-label="Direct link to Lifecycle" title="Direct link to Lifecycle" translate="no">​</a></h3>
+<p>Exporters are hot-configurable. When you create or update an exporter through the admin API or the UI, Otoroshi gracefully drains the old pipeline (letting in-flight batches complete) and starts a new one with the updated settings. No restart is required.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="ui-page">UI page<a href="#ui-page" class="hash-link" aria-label="Direct link to UI page" title="Direct link to UI page" translate="no">​</a></h2>
+<p>You can find all data exporters <a href="http://otoroshi.oto.tools:8080/bo/dashboard/exporters" target="_blank" rel="noopener noreferrer" class="">here</a></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="properties">Properties<a href="#properties" class="hash-link" aria-label="Direct link to Properties" title="Direct link to Properties" translate="no">​</a></h2>
+<table><thead><tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>id</code></td><td>string</td><td></td><td>Unique identifier</td></tr><tr><td><code>name</code></td><td>string</td><td></td><td>Display name</td></tr><tr><td><code>description</code></td><td>string</td><td></td><td>Description</td></tr><tr><td><code>enabled</code></td><td>boolean</td><td><code>true</code></td><td>Whether the exporter is active</td></tr><tr><td><code>typ</code></td><td>string</td><td></td><td>The type of exporter (see <a href="#exporter-types" class="">exporter types</a>)</td></tr><tr><td><code>tags</code></td><td>array of string</td><td><code>[]</code></td><td>Tags</td></tr><tr><td><code>metadata</code></td><td>object</td><td><code>{}</code></td><td>Key/value metadata</td></tr><tr><td><code>filtering</code></td><td>object</td><td></td><td>Event filtering configuration (see <a href="#matching-and-projections" class="">below</a>)</td></tr><tr><td><code>projection</code></td><td>object</td><td><code>{}</code></td><td>Projection to export only specific fields</td></tr><tr><td><code>bufferSize</code></td><td>number</td><td><code>5000</code></td><td>Number of events to keep in memory buffer</td></tr><tr><td><code>jsonWorkers</code></td><td>number</td><td><code>1</code></td><td>Number of workers for JSON serialization</td></tr><tr><td><code>sendWorkers</code></td><td>number</td><td><code>1</code></td><td>Number of workers for sending events</td></tr><tr><td><code>groupSize</code></td><td>number</td><td><code>100</code></td><td>Number of events to batch together</td></tr><tr><td><code>groupDuration</code></td><td>number</td><td><code>30000</code></td><td>Maximum wait time (ms) before sending a batch</td></tr><tr><td><code>config</code></td><td>object</td><td></td><td>Exporter-specific configuration</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="matching-and-projections">Matching and projections<a href="#matching-and-projections" class="hash-link" aria-label="Direct link to Matching and projections" title="Direct link to Matching and projections" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="filtering">Filtering<a href="#filtering" class="hash-link" aria-label="Direct link to Filtering" title="Direct link to Filtering" translate="no">​</a></h3>
+<p><strong>Filtering</strong> is used to <strong>include</strong> or <strong>exclude</strong> specific types of events and alerts. Each include/exclude entry is a key-value match.</p>
+<p>Example: only keep Otoroshi alerts:</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-json codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"> </span><span class="token property" style="color:#36acaa">&quot;include&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"> </span><span class="token property" style="color:#36acaa">&quot;@type&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;AlertEvent&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">}</span><span class="token punctuation" style="color:#393A34">]</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p>Otoroshi provides rules to filter events based on their content. Given this example event:</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-json codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;foo&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;bar&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;type&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;AlertEvent&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;alert&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;big-alert&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;status&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token number" style="color:#36acaa">200</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;codes&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">[</span><span class="token string" style="color:#e3116c">&quot;a&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;b&quot;</span><span class="token punctuation" style="color:#393A34">]</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;inner&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;foo&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;bar&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    </span><span class="token property" style="color:#36acaa">&quot;bar&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;foo&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token punctuation" style="color:#393A34">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<div class="de-filter-container"><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: &quot;&lt;value&gt;&quot;
+}</code></pre><span class="de-filter-desc">a field key with value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;foo&quot;: &quot;bar&quot;
+}</code></pre><span class="de-filter-example">Keep events with foo as key and bar as value</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$wildcard&quot;: &quot;&lt;value&gt;*&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field starting with value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;type&quot;: {
+    &quot;$wildcard&quot;: &quot;Alert*&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events with type field starting with Alert</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;&lt;key2&gt;&quot;: &quot;&lt;value&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a sub-field with value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;inner&quot;: {
+    &quot;foo&quot;: &quot;bar&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events with sub field foo at value bar</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: &quot;&lt;number&gt;&quot;
+}</code></pre><span class="de-filter-desc">a field with the specific value as number</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: 200
+}</code></pre><span class="de-filter-example">Keep events with status code at 200 (as number check)</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$gt&quot;: &quot;&lt;number&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field with number value greater than number</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: {
+    &quot;$gt&quot;: 100
+  }
+}</code></pre><span class="de-filter-example">Keep events with status code greater than 100</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$gte&quot;: &quot;&lt;number&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field with number value greater or equal to number</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: {
+    &quot;$gte&quot;: 100
+  }
+}</code></pre><span class="de-filter-example">Keep events with status code greater or equal to 100</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$lt&quot;: &quot;&lt;number&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field with number value lower than number</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: {
+    &quot;$lt&quot;: 100
+  }
+}</code></pre><span class="de-filter-example">Keep events with status code lower than 100</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$lte&quot;: &quot;&lt;number&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field with number value lower or equal to number</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: {
+    &quot;$lte&quot;: 100
+  }
+}</code></pre><span class="de-filter-example">Keep events with status code lower or equal to 100</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$between&quot;: {
+      &quot;min&quot;: &quot;&lt;number&gt;&quot;,
+      &quot;max&quot;: &quot;&lt;number&gt;&quot;
+    }
+  }
+}</code></pre><span class="de-filter-desc">a field with value between two values (exclusive)</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: {
+    &quot;$between&quot;: {
+      &quot;min&quot;: 100,
+      &quot;max&quot;: 200
+    }
+  }
+}</code></pre><span class="de-filter-example">Keep events with status code between 100 and 200 (100 and 200 won&#x27;t match)</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$between&quot;: {
+      &quot;min&quot;: &quot;&lt;number&gt;&quot;,
+      &quot;max&quot;: &quot;&lt;number&gt;&quot;
+    }
+  }
+}</code></pre><span class="de-filter-desc">a field with value between two values (inclusive)</span></div><div class="de-filter-right"><pre><code>{
+  &quot;status&quot;: {
+    &quot;$between&quot;: {
+      &quot;min&quot;: 100,
+      &quot;max&quot;: 200
+    }
+  }
+}</code></pre><span class="de-filter-example">Keep events with status code between 100 and 200 (100 and 200 will match)</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$and&quot;: [
+      {
+        &quot;&lt;key2&gt;&quot;: &quot;&lt;value&gt;&quot;
+      },
+      {
+        &quot;&lt;key3&gt;&quot;: &quot;&lt;value&gt;&quot;
+      }
+    ]
+  }
+}</code></pre><span class="de-filter-desc">an object with two fields with values</span></div><div class="de-filter-right"><pre><code>{
+  &quot;inner&quot;: {
+    &quot;$and&quot;: [
+      {
+        &quot;foo&quot;: &quot;bar&quot;
+      },
+      {
+        &quot;bar&quot;: &quot;foo&quot;
+      }
+    ]
+  }
+}</code></pre><span class="de-filter-example">Keep events matching the list of key-value</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;$or&quot;: [
+    {
+      &quot;&lt;key2&gt;&quot;: &quot;&lt;value&gt;&quot;
+    },
+    {
+      &quot;&lt;key3&gt;&quot;: &quot;&lt;value&gt;&quot;
+    }
+  ]
+}</code></pre><span class="de-filter-desc">an object matching at least one condition of the list</span></div><div class="de-filter-right"><pre><code>{
+  &quot;$or&quot;: [
+    {
+      &quot;method&quot;: &quot;DELETE&quot;
+    },
+    {
+      &quot;protocol&quot;: &quot;http&quot;
+    }
+  ]
+}</code></pre><span class="de-filter-example">Keep event whose method is http OR method is DELETE OR both</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;$nor&quot;: [
+    {
+      &quot;&lt;key2&gt;&quot;: &quot;&lt;value&gt;&quot;
+    },
+    {
+      &quot;&lt;key3&gt;&quot;: &quot;&lt;value&gt;&quot;
+    }
+  ]
+}</code></pre><span class="de-filter-desc">an object that matches no conditions of the list</span></div><div class="de-filter-right"><pre><code>{
+  &quot;$nor&quot;: [
+    {
+      &quot;method&quot;: &quot;DELETE&quot;
+    },
+    {
+      &quot;protocol&quot;: &quot;http&quot;
+    }
+  ]
+}</code></pre><span class="de-filter-example">Keep events whose method is not DELETE AND protocol is not http</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: [
+    &quot;&lt;value&gt;&quot;,
+    &quot;&lt;value2&gt;&quot;
+  ]
+}</code></pre><span class="de-filter-desc">an array field with values</span></div><div class="de-filter-right"><pre><code>{
+  &quot;codes&quot;: [
+    &quot;a&quot;,
+    &quot;b&quot;
+  ]
+}</code></pre><span class="de-filter-example">Keep events with an array codes which strictly containing values a and b</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$contains&quot;: &quot;&lt;value&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">an array field containing a specific value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;codes&quot;: {
+    &quot;$contains&quot;: &quot;a&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events with an array codes containing an a value</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$contains&quot;: {
+      &quot;key&quot;: &quot;&lt;subkey&gt;&quot;,
+      &quot;value&quot;: &quot;&lt;value&gt;&quot;
+    }
+  }
+}</code></pre><span class="de-filter-desc">an object containing a key subkey with given value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;target&quot;: {
+    &quot;$contains&quot;: {
+      &quot;key&quot;: &quot;scheme&quot;,
+      &quot;value&quot;: &quot;https&quot;
+    }
+  }
+}</code></pre><span class="de-filter-example">Keep events whose target contains a field &#x27;scheme&#x27; valued to &#x27;https&#x27;</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$all&quot;: [
+      &quot;&lt;value&gt;&quot;,
+      &quot;&lt;value&gt;&quot;
+    ]
+  }
+}</code></pre><span class="de-filter-desc">and array field containing all specific values</span></div><div class="de-filter-right"><pre><code>{
+  &quot;codes&quot;: {
+    &quot;$all&quot;: [
+      &quot;a&quot;,
+      &quot;b&quot;
+    ]
+  }
+}</code></pre><span class="de-filter-example">Keep events with an array codes containing at minima a and b values</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$regex&quot;: &quot;&lt;value&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a string field whose value match given regular expression</span></div><div class="de-filter-right"><pre><code>{
+  &quot;url&quot;: {
+    &quot;$regex&quot;: &quot;.*api.*&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events with url containing &#x27;api&#x27;</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$in&quot;: [
+      &quot;&lt;value&gt;&quot;,
+      &quot;&lt;value2&gt;&quot;
+    ]
+  }
+}</code></pre><span class="de-filter-desc">a field containing one of the given value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;method&quot;: {
+    &quot;$in&quot;: [
+      &quot;PUT&quot;,
+      &quot;POST&quot;
+    ]
+  }
+}</code></pre><span class="de-filter-example">Keep events whose method is PUT or POST</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$nin&quot;: [
+      &quot;&lt;value&gt;&quot;,
+      &quot;&lt;value2&gt;&quot;
+    ]
+  }
+}</code></pre><span class="de-filter-desc">a field containing none of the given value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;method&quot;: {
+    &quot;$nin&quot;: [
+      &quot;PUT&quot;,
+      &quot;POST&quot;
+    ]
+  }
+}</code></pre><span class="de-filter-example">Keep events whose method is neither PUT nor POST</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$size&quot;: &quot;&lt;number&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">an array field whose size is given value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;headers&quot;: {
+    &quot;$size&quot;: 12
+  }
+}</code></pre><span class="de-filter-example">Keep events with exactly 12 headers</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$not&quot;: &quot;&lt;condition&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">an object that does not satisfy condition</span></div><div class="de-filter-right"><pre><code>{
+  &quot;url&quot;: {
+    &quot;$not&quot;: {
+      &quot;$regex&quot;: &quot;.*api.*&quot;
+    }
+  }
+}</code></pre><span class="de-filter-example">Keep events whose url does not contain &#x27;api&#x27;</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$eq&quot;: &quot;&lt;value&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field key with value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;foo&quot;: {
+    &quot;$eq&quot;: &quot;bar&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events with foo as key and bar as value</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$ne&quot;: &quot;&lt;value&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">a field key whose value is not provided value</span></div><div class="de-filter-right"><pre><code>{
+  &quot;foo&quot;: {
+    &quot;$ne&quot;: &quot;bar&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events with foo field not equal to bar</span></div></div><div class="de-filter-row"><div class="de-filter-left"><pre><code>{
+  &quot;&lt;key&gt;&quot;: {
+    &quot;$exists&quot;: &quot;&lt;entry&gt;&quot;
+  }
+}</code></pre><span class="de-filter-desc">an object field containing given entry as key</span></div><div class="de-filter-right"><pre><code>{
+  &quot;target&quot;: {
+    &quot;$exists&quot;: &quot;scheme&quot;
+  }
+}</code></pre><span class="de-filter-example">Keep events whose target object contains a schema field</span></div></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="projection">Projection<a href="#projection" class="hash-link" aria-label="Direct link to Projection" title="Direct link to Projection" translate="no">​</a></h3>
+<p><strong>Projection</strong> is a list of fields to export. If empty, all fields are exported. If specified, <strong>only</strong> the listed fields will be included in exported events.</p>
+<div class="de-proj-container"><div class="de-proj-block"><h3>&quot;&lt;field&gt;&quot;: true</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;field&gt;&quot;: true
+}</code></pre><p>Include given field in result.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;foo&quot;: true
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: 1,
+      &quot;value&quot;: &quot;1&quot;
+    },
+    {
+      &quot;key&quot;: 2,
+      &quot;value&quot;: &quot;2&quot;
+    }
+  ],
+  &quot;foo&quot;: 1
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;foo&quot;: 1
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$date_from_unix_fmt</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;field&gt;&quot;: {
+    &quot;$date_from_unix_fmt&quot;: {
+      &quot;path&quot;: &quot;&lt;source&gt;&quot;,
+      &quot;pattern&quot;: &quot;&lt;pattern&gt;&quot;
+    }
+  }
+}</code></pre><p>Formats a unix timestamp into a stringified datetime</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;@timestamp&quot;: {
+    &quot;$date_from_unix_fmt&quot;: {
+      &quot;path&quot;: &quot;@timestamp&quot;,
+      &quot;pattern&quot;: &quot;yyyy-MM-dd&#x27;T&#x27;HH:mm:ss.SSSZ&quot;
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;@timestamp&quot;: 1764086514458
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;@timestamp&quot;: &quot;2025-11-25T17.00.00.000Z&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$at</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$at&quot;: &quot;&lt;location&gt;&quot;
+  }
+}</code></pre><p>Values &lt;target&gt; with value &lt;at&gt; location</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;h1&quot;: {
+    &quot;$at&quot;: &quot;headers.0.value&quot;
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: 1,
+      &quot;value&quot;: &quot;1&quot;
+    },
+    {
+      &quot;key&quot;: 2,
+      &quot;value&quot;: &quot;2&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;h1&quot;: &quot;1&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$at (with default)</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$at&quot;: {
+      &quot;path&quot;: &quot;&lt;location&gt;&quot;,
+      &quot;default&quot;: &quot;&lt;default_value&gt;&quot;
+    }
+  }
+}</code></pre><p>Values &lt;target&gt; with value &lt;at&gt; location</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;h1&quot;: {
+    &quot;$at&quot;: {
+      &quot;path&quot;: &quot;headers.3.value&quot;,
+      &quot;default&quot;: &quot;foo&quot;
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: 1,
+      &quot;value&quot;: &quot;1&quot;
+    },
+    {
+      &quot;key&quot;: 2,
+      &quot;value&quot;: &quot;2&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;h3&quot;: &quot;foo&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$atIf</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$atIf&quot;: {
+      &quot;path&quot;: &quot;&lt;path&gt;&quot;,
+      &quot;predicate&quot;: {
+        &quot;at&quot;: &quot;&lt;at&gt;&quot;,
+        &quot;value&quot;: &quot;&lt;value&gt;&quot;
+      },
+      &quot;default&quot;: &quot;&lt;default_value&gt;&quot;
+    }
+  }
+}</code></pre><p>Put &lt;path&gt; value in &lt;target&gt; if value at &lt;at&gt; match &lt;value&gt;</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;r&quot;: {
+    &quot;$atIf&quot;: {
+      &quot;path&quot;: &quot;hs.0.value&quot;,
+      &quot;predicate&quot;: {
+        &quot;at&quot;: &quot;scheme&quot;,
+        &quot;value&quot;: &quot;HTTPS&quot;
+      }
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;hs&quot;: [
+    {
+      &quot;key&quot;: 1,
+      &quot;value&quot;: &quot;1&quot;
+    },
+    {
+      &quot;key&quot;: 2,
+      &quot;value&quot;: &quot;2&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;r&quot;: &quot;1&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$pointer</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$pointer&quot;: &quot;&lt;jsonPointer&gt;&quot;
+  }
+}</code></pre><p>Allow to get a json value using JSON pointer spec. &quot;&lt;jsonPointer&gt;&quot; can be an object with &quot;path&quot; and &quot;default&quot;</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;h1&quot;: {
+    &quot;$pointer&quot;: &quot;/headers/0/value&quot;
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: 1,
+      &quot;value&quot;: &quot;1&quot;
+    },
+    {
+      &quot;key&quot;: 2,
+      &quot;value&quot;: &quot;2&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;h1&quot;: &quot;1&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$pointerIf</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$pointerIf&quot;: {
+      &quot;path&quot;: &quot;&lt;path&gt;&quot;,
+      &quot;predicate&quot;: {
+        &quot;pointer&quot;: &quot;&lt;pointer&gt;&quot;,
+        &quot;value&quot;: &quot;&lt;value&gt;&quot;
+      },
+      &quot;default&quot;: &quot;&lt;default_value&gt;&quot;
+    }
+  }
+}</code></pre><p>Put value at &lt;path&gt; in &lt;target&gt; field if and only if value at &lt;pointer&gt; equals &lt;value&gt;. &lt;path&gt; and &lt;pointer&gt; fields are resolved using json pointer spec.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;h1&quot;: {
+    &quot;$pointerIf&quot;: {
+      &quot;path&quot;: &quot;/headers/0/value&quot;,
+      &quot;predicate&quot;: {
+        &quot;pointer&quot;: &quot;/scheme&quot;,
+        &quot;value&quot;: &quot;HTTP&quot;
+      }
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: 1,
+      &quot;value&quot;: &quot;1&quot;
+    },
+    {
+      &quot;key&quot;: 2,
+      &quot;value&quot;: &quot;2&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTP&quot;
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;h1&quot;: &quot;1&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$path</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$path&quot;: &quot;&lt;jsonPath&gt;&quot;
+  }
+}</code></pre><p>Put value located at &lt;jsonPath&gt; in &lt;target&gt;. &lt;jsonPath&gt; is resolved using json path specification. &quot;&lt;jsonPath&gt;&quot; can be an object with &quot;path&quot; and &quot;default&quot;</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;hs&quot;: {
+    &quot;$path&quot;: &quot;$.headers[1:]&quot;
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;hs&quot;: [
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ]
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$pathIf</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$pathIf&quot;: {
+      &quot;path&quot;: &quot;&lt;jsonPath&gt;&quot;,
+      &quot;predicate&quot;: {
+        &quot;path&quot;: &quot;&lt;predicateJsonPath&gt;&quot;,
+        &quot;value&quot;: &quot;&lt;value&gt;&quot;
+      },
+      &quot;default&quot;: &quot;&lt;default_value&gt;&quot;
+    }
+  }
+}</code></pre><p>Put value located at &lt;jsonPath&gt; in &lt;target&gt;, if and only if value at &lt;predicateJsonPath&gt; equals &lt;value&gt;.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;test&quot;: {
+    &quot;$pathIf&quot;: {
+      &quot;path&quot;: &quot;$.headers[1:]&quot;,
+      &quot;predicate&quot;: {
+        &quot;path&quot;: &quot;$.scheme&quot;,
+        &quot;value&quot;: &quot;HTTPS&quot;
+      }
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;test&quot;: [
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ]
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$compose (array result)</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$compose&quot;: [
+      {
+        &quot;&lt;subtarget&gt;&quot;: {
+          &quot;$path&quot;: &quot;&lt;path&gt;&quot;
+        }
+      }
+    ]
+  }
+}</code></pre><p>Build an array in &lt;target&gt; field, by composing severals operators : $path, $at, $pointer.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;result&quot;: {
+    &quot;$compose&quot;: [
+      {
+        &quot;values&quot;: {
+          &quot;$path&quot;: &quot;$.headers[0:].value&quot;
+        }
+      },
+      {
+        &quot;keys&quot;: {
+          &quot;$path&quot;: &quot;$.headers[0:].key&quot;
+        }
+      }
+    ]
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;result&quot;: [
+    {
+      &quot;values&quot;: [
+        &quot;v1&quot;,
+        &quot;v2&quot;,
+        &quot;v3&quot;
+      ]
+    },
+    {
+      &quot;keys&quot;: [
+        &quot;k1&quot;,
+        &quot;k2&quot;,
+        &quot;k3&quot;
+      ]
+    }
+  ]
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$compose (object result)</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$compose&quot;: {
+      &quot;&lt;subtarget&gt;&quot;: {
+        &quot;$path&quot;: &quot;&lt;path&gt;&quot;
+      }
+    }
+  }
+}</code></pre><p>Build an object in &lt;target&gt; field, by composing severals operators : $path, $at, $pointer.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;result&quot;: {
+    &quot;$compose&quot;: {
+      &quot;values&quot;: {
+        &quot;$path&quot;: &quot;$.headers[0:].value&quot;
+      },
+      &quot;keys&quot;: {
+        &quot;$path&quot;: &quot;$.headers[0:].key&quot;
+      }
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;result&quot;: {
+    &quot;values&quot;: [
+      &quot;v1&quot;,
+      &quot;v2&quot;,
+      &quot;v3&quot;
+    ],
+    &quot;keys&quot;: [
+      &quot;k1&quot;,
+      &quot;k2&quot;,
+      &quot;k3&quot;
+    ]
+  }
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$value</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$value&quot;: &quot;&lt;value&gt;&quot;
+  }
+}</code></pre><p>Put &lt;value&gt; in &lt;target&gt; field. &lt;value&gt; can be either a primitive type, an object or an array.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;headers&quot;: {
+    &quot;$value&quot;: []
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k3&quot;,
+      &quot;value&quot;: &quot;v3&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;headers&quot;: []
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$spread</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;$spread&quot;: true
+}</code></pre><p>Include all properties of source object, this can be used as base for further transformation with below operators.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;$spread&quot;: true
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;,
+  &quot;foo&quot;: 1
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;,
+  &quot;foo&quot;: 1
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>&quot;&lt;field&gt;&quot;: false</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;&lt;field&gt;&quot;: false
+}</code></pre><p>Exclude &lt;field&gt; field from resulting object</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;foo&quot;: false
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;,
+  &quot;foo&quot;: 1
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$remove</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;&lt;field&gt;&quot;: {
+    &quot;$remove&quot;: true
+  }
+}</code></pre><p>Exclude &lt;field&gt; field from resulting object, like for {&quot;&lt;field&gt;&quot;: false}</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;foo&quot;: {
+    &quot;$remove&quot;: true
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;,
+  &quot;foo&quot;: 1
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    }
+  ],
+  &quot;scheme&quot;: &quot;HTTPS&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$header</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$header&quot;: {
+      &quot;path&quot;: &quot;&lt;path&gt;&quot;,
+      &quot;name&quot;: &quot;&lt;name&gt;&quot;,
+      &quot;default&quot;: &quot;&lt;default_value&gt;&quot;
+    }
+  }
+}</code></pre><p>Put specified header value in &lt;target&gt;. &lt;path&gt; indicate an array of key/value headers, &lt;name&gt; indicate the name of the header.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;hostValue&quot;: {
+    &quot;$header&quot;: {
+      &quot;path&quot;: &quot;headers&quot;,
+      &quot;name&quot;: &quot;Host&quot;
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;Host&quot;,
+      &quot;value&quot;: &quot;otoroshi.oto.tools:9999&quot;
+    },
+    {
+      &quot;key&quot;: &quot;Accept&quot;,
+      &quot;value&quot;: &quot;application/json&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;hostValue&quot;: &quot;otoroshi.oto.tools:9999&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$includeAllKeysMatching</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;&lt;subname&gt;&quot;: {
+    &quot;$includeAllKeysMatching&quot;: [
+      &quot;&lt;expression&gt;&quot;
+    ]
+  }
+}</code></pre><p>Filter an object entries based on StartsWith, Wildcard or Regex expression. A logical OR will be applied between filters.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;_&quot;: {
+    &quot;$includeAllKeysMatching&quot;: [
+      &quot;Wildcard(f*)&quot;,
+      &quot;StartsWith(fi)&quot;,
+      &quot;bar&quot;,
+      &quot;Regex(.*lo)&quot;
+    ]
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;foo&quot;: 1,
+  &quot;foobar&quot;: 2,
+  &quot;bar&quot;: 3,
+  &quot;baz&quot;: 4,
+  &quot;hello&quot;: &quot;world&quot;,
+  &quot;fifou&quot;: &quot;test&quot;
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;foo&quot;: 1,
+  &quot;foobar&quot;: 2,
+  &quot;bar&quot;: 3,
+  &quot;hello&quot;: &quot;world&quot;,
+  &quot;fifou&quot;: &quot;test&quot;
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$excludeAllKeysMatching</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;&lt;subname&gt;&quot;: {
+    &quot;$excludeAllKeysMatching&quot;: [
+      &quot;&lt;expression&gt;&quot;
+    ]
+  }
+}</code></pre><p>Filter an object entries, excluding them based on StartsWith, Wildcard or Regex expression. A logical OR will be applied between filters.</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;$spread&quot;: true,
+  &quot;_&quot;: {
+    &quot;$excludeAllKeysMatching&quot;: [
+      &quot;Wildcard(fo*)&quot;,
+      &quot;StartsWith(fi)&quot;,
+      &quot;bar&quot;,
+      &quot;Regex(.*lo)&quot;
+    ]
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;foo&quot;: 1,
+  &quot;foobar&quot;: 2,
+  &quot;bar&quot;: 3,
+  &quot;baz&quot;: 4,
+  &quot;hello&quot;: &quot;world&quot;,
+  &quot;fifou&quot;: &quot;test&quot;
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;baz&quot;: 4
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$jq</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$jq&quot;: &quot;&lt;jqExpression&gt;&quot;
+  }
+}</code></pre><p>Fill target field with provided JQ selector</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;headerKeys&quot;: {
+    &quot;$jq&quot;: &quot;[.headers[].key]&quot;
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    }
+  ]
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;headerKeys&quot;: [
+    &quot;k1&quot;,
+    &quot;k2&quot;
+  ]
+}</code></pre></div></div></div></div><div class="de-proj-block"><h3>$jqIf</h3><div class="de-proj-row"><div class="de-proj-left"><h4>Description</h4><pre><code>{
+  &quot;&lt;target&gt;&quot;: {
+    &quot;$jqIf&quot;: {
+      &quot;filter&quot;: &quot;&lt;jqExpression&gt;&quot;,
+      &quot;predicate&quot;: {
+        &quot;path&quot;: &quot;&lt;path&gt;&quot;,
+        &quot;value&quot;: &quot;&lt;value&gt;&quot;
+      }
+    }
+  }
+}</code></pre><p>Fill target field with provided JQ selector if and only if value located at &lt;path&gt; is equal to &lt;value&gt;</p></div><div class="de-proj-right"><div class="de-proj-expr-event"><div class="de-proj-half"><h4>Expression</h4><pre><code>{
+  &quot;headerKeys&quot;: {
+    &quot;$jqIf&quot;: {
+      &quot;filter&quot;: &quot;[.headers[].key]&quot;,
+      &quot;predicate&quot;: {
+        &quot;path&quot;: &quot;target.scheme&quot;,
+        &quot;value&quot;: &quot;https&quot;
+      }
+    }
+  }
+}</code></pre></div><div class="de-proj-half"><h4>Event</h4><pre><code>{
+  &quot;headers&quot;: [
+    {
+      &quot;key&quot;: &quot;k1&quot;,
+      &quot;value&quot;: &quot;v1&quot;
+    },
+    {
+      &quot;key&quot;: &quot;k2&quot;,
+      &quot;value&quot;: &quot;v2&quot;
+    }
+  ],
+  &quot;target&quot;: {
+    &quot;scheme&quot;: &quot;https&quot;
+  }
+}</code></pre></div></div><div class="de-proj-result"><h4>Result</h4><pre><code>{
+  &quot;headerKeys&quot;: [
+    &quot;k1&quot;,
+    &quot;k2&quot;
+  ]
+}</code></pre></div></div></div></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="exporter-types">Exporter types<a href="#exporter-types" class="hash-link" aria-label="Direct link to Exporter types" title="Direct link to Exporter types" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="elastic">Elastic<a href="#elastic" class="hash-link" aria-label="Direct link to Elastic" title="Direct link to Elastic" translate="no">​</a></h3>
+<p>Sends events in batch to an Elasticsearch cluster. Can be used with the <a class="" href="/otoroshi/manual/docs/entities/global-config#analytics-elastic-dashboard-datasource-read-">elastic analytics dashboard</a>.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>uris</code></td><td>array of string</td><td>Elasticsearch cluster URIs</td></tr><tr><td><code>index</code></td><td>string</td><td>Index name</td></tr><tr><td><code>type</code></td><td>string</td><td>Event type (not needed for ES 6.x+)</td></tr><tr><td><code>user</code></td><td>string</td><td>Username (optional)</td></tr><tr><td><code>password</code></td><td>string</td><td>Password (optional)</td></tr><tr><td><code>version</code></td><td>string</td><td>Elasticsearch version (auto-detected if not set)</td></tr><tr><td><code>applyTemplate</code></td><td>boolean</td><td>Automatically apply index template</td></tr><tr><td><code>indexSettings.clientSide</code></td><td>boolean</td><td>Otoroshi manages index creation over time</td></tr><tr><td><code>indexSettings.interval</code></td><td>string</td><td>Index rotation interval: <code>Day</code>, <code>Week</code>, <code>Month</code>, or <code>Year</code></td></tr><tr><td><code>indexSettings.numberOfShards</code></td><td>number</td><td>Number of shards</td></tr><tr><td><code>indexSettings.numberOfReplicas</code></td><td>number</td><td>Number of replicas</td></tr><tr><td><code>mtlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="webhook">Webhook<a href="#webhook" class="hash-link" aria-label="Direct link to Webhook" title="Direct link to Webhook" translate="no">​</a></h3>
+<p>Sends events in batch to an HTTP endpoint using POST with a JSON array body.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>url</code></td><td>string</td><td>URL to post events to</td></tr><tr><td><code>headers</code></td><td>object</td><td>HTTP headers to include</td></tr><tr><td><code>tlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="kafka">Kafka<a href="#kafka" class="hash-link" aria-label="Direct link to Kafka" title="Direct link to Kafka" translate="no">​</a></h3>
+<p>Sends events to an <a href="https://kafka.apache.org/" target="_blank" rel="noopener noreferrer" class="">Apache Kafka</a> topic. See <a class="" href="/otoroshi/manual/docs/tutorials/communicate-with-kafka">Kafka tutorials</a>.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>servers</code></td><td>array of string</td><td>Kafka broker addresses</td></tr><tr><td><code>topic</code></td><td>string</td><td>Kafka topic name</td></tr><tr><td><code>sasl</code></td><td>object</td><td>SASL authentication (username, password, mechanism: <code>PLAIN</code>/<code>SCRAM-SHA-256</code>/<code>SCRAM-SHA-512</code>)</td></tr><tr><td><code>keypass</code></td><td>string</td><td>Keystore password</td></tr><tr><td><code>keystore</code></td><td>string</td><td>Keystore path</td></tr><tr><td><code>truststore</code></td><td>string</td><td>Truststore path</td></tr><tr><td><code>tlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="pulsar">Pulsar<a href="#pulsar" class="hash-link" aria-label="Direct link to Pulsar" title="Direct link to Pulsar" translate="no">​</a></h3>
+<p>Sends events to an <a href="https://pulsar.apache.org/" target="_blank" rel="noopener noreferrer" class="">Apache Pulsar</a> topic.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>uri</code></td><td>string</td><td>Pulsar server URI</td></tr><tr><td><code>tenant</code></td><td>string</td><td>Pulsar tenant</td></tr><tr><td><code>namespace</code></td><td>string</td><td>Pulsar namespace</td></tr><tr><td><code>topic</code></td><td>string</td><td>Pulsar topic</td></tr><tr><td><code>tlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="splunk">Splunk<a href="#splunk" class="hash-link" aria-label="Direct link to Splunk" title="Direct link to Splunk" translate="no">​</a></h3>
+<p>Sends events to a Splunk HTTP Event Collector (HEC).</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>url</code></td><td>string</td><td>Splunk HEC URL</td></tr><tr><td><code>token</code></td><td>string</td><td>HEC token</td></tr><tr><td><code>index</code></td><td>string</td><td>Splunk index (optional)</td></tr><tr><td><code>type</code></td><td>string</td><td>Event source type (optional)</td></tr><tr><td><code>headers</code></td><td>object</td><td>Additional HTTP headers</td></tr><tr><td><code>tlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="datadog">Datadog<a href="#datadog" class="hash-link" aria-label="Direct link to Datadog" title="Direct link to Datadog" translate="no">​</a></h3>
+<p>Sends events to Datadog via the Datadog API.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>host</code></td><td>string</td><td>Datadog API host (e.g., <code>https://api.datadoghq.eu</code>)</td></tr><tr><td><code>apiKey</code></td><td>string</td><td>Datadog API key</td></tr><tr><td><code>applicationKey</code></td><td>string</td><td>Application key (optional)</td></tr><tr><td><code>headers</code></td><td>object</td><td>Additional HTTP headers</td></tr><tr><td><code>tlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="new-relic">New Relic<a href="#new-relic" class="hash-link" aria-label="Direct link to New Relic" title="Direct link to New Relic" translate="no">​</a></h3>
+<p>Sends events to New Relic via their API.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>url</code></td><td>string</td><td>New Relic API URL</td></tr><tr><td><code>licenseKey</code></td><td>string</td><td>New Relic license key</td></tr><tr><td><code>accountId</code></td><td>string</td><td>New Relic account ID</td></tr><tr><td><code>headers</code></td><td>object</td><td>Additional HTTP headers</td></tr><tr><td><code>tlsConfig</code></td><td>object</td><td>Custom TLS settings</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="file">File<a href="#file" class="hash-link" aria-label="Direct link to File" title="Direct link to File" translate="no">​</a></h3>
+<p>Writes events to local files.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>path</code></td><td>string</td><td>File path to write events</td></tr><tr><td><code>maxFileSize</code></td><td>number</td><td>Maximum file size in bytes. When reached, a new timestamped file is created</td></tr><tr><td><code>maxNumberOfFile</code></td><td>number</td><td>Maximum number of files to retain</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="s3">S3<a href="#s3" class="hash-link" aria-label="Direct link to S3" title="Direct link to S3" translate="no">​</a></h3>
+<p>Writes events to an S3-compatible object store.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>maxFileSize</code></td><td>number</td><td>Maximum size per file</td></tr><tr><td><code>maxNumberOfFile</code></td><td>number</td><td>Maximum number of files</td></tr><tr><td><code>config</code></td><td>object</td><td>S3 configuration (bucket, region, credentials, endpoint)</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="goreplay-file">GoReplay file<a href="#goreplay-file" class="hash-link" aria-label="Direct link to GoReplay file" title="Direct link to GoReplay file" translate="no">​</a></h3>
+<p>Writes events in <code>.gor</code> format compatible with <a href="https://goreplay.org/" target="_blank" rel="noopener noreferrer" class="">GoReplay</a>.</p>
+<div class="theme-admonition theme-admonition-warning admonition_xJq3 alert alert--warning"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_BuS1"><p>This exporter only catches <code>TrafficCaptureEvent</code>. These events are generated when a route has the <code>capture</code> flag enabled. See <a class="" href="/otoroshi/manual/docs/topics/engine">engine docs</a>.</p></div></div>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>path</code></td><td>string</td><td>File path</td></tr><tr><td><code>maxFileSize</code></td><td>number</td><td>Maximum file size</td></tr><tr><td><code>captureRequests</code></td><td>boolean</td><td>Capture HTTP requests</td></tr><tr><td><code>captureResponses</code></td><td>boolean</td><td>Capture HTTP responses</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="goreplay-s3">GoReplay S3<a href="#goreplay-s3" class="hash-link" aria-label="Direct link to GoReplay S3" title="Direct link to GoReplay S3" translate="no">​</a></h3>
+<p>Same as GoReplay file but writes to an S3-compatible store.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>s3</code></td><td>object</td><td>S3 configuration</td></tr><tr><td><code>maxFileSize</code></td><td>number</td><td>Maximum file size</td></tr><tr><td><code>captureRequests</code></td><td>boolean</td><td>Capture HTTP requests</td></tr><tr><td><code>captureResponses</code></td><td>boolean</td><td>Capture HTTP responses</td></tr><tr><td><code>preferBackendRequest</code></td><td>boolean</td><td>Prefer backend request over client request</td></tr><tr><td><code>preferBackendResponse</code></td><td>boolean</td><td>Prefer backend response over client response</td></tr><tr><td><code>methods</code></td><td>array of string</td><td>HTTP methods to capture</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="tcp">TCP<a href="#tcp" class="hash-link" aria-label="Direct link to TCP" title="Direct link to TCP" translate="no">​</a></h3>
+<p>Sends events over raw TCP connections.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>host</code></td><td>string</td><td>Target host</td></tr><tr><td><code>port</code></td><td>number</td><td>Target port</td></tr><tr><td><code>unixSocket</code></td><td>string</td><td>Unix socket path (alternative to host/port)</td></tr><tr><td><code>connectTimeout</code></td><td>number</td><td>Connection timeout (ms)</td></tr><tr><td><code>tls</code></td><td>object</td><td>TLS configuration</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="udp">UDP<a href="#udp" class="hash-link" aria-label="Direct link to UDP" title="Direct link to UDP" translate="no">​</a></h3>
+<p>Sends events over UDP.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>host</code></td><td>string</td><td>Target host</td></tr><tr><td><code>port</code></td><td>number</td><td>Target port</td></tr><tr><td><code>unixSocket</code></td><td>string</td><td>Unix socket path (alternative to host/port)</td></tr><tr><td><code>connectTimeout</code></td><td>number</td><td>Connection timeout (ms)</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="syslog">Syslog<a href="#syslog" class="hash-link" aria-label="Direct link to Syslog" title="Direct link to Syslog" translate="no">​</a></h3>
+<p>Sends events to a syslog server.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>host</code></td><td>string</td><td>Syslog server host</td></tr><tr><td><code>port</code></td><td>number</td><td>Syslog server port</td></tr><tr><td><code>protocol</code></td><td>string</td><td>Protocol: <code>tcp</code> or <code>udp</code></td></tr><tr><td><code>unixSocket</code></td><td>string</td><td>Unix socket path</td></tr><tr><td><code>connectTimeout</code></td><td>number</td><td>Connection timeout (ms)</td></tr><tr><td><code>tls</code></td><td>object</td><td>TLS configuration (for TCP)</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="jms">JMS<a href="#jms" class="hash-link" aria-label="Direct link to JMS" title="Direct link to JMS" translate="no">​</a></h3>
+<p>Sends events to a JMS (Java Message Service) queue or topic.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>url</code></td><td>string</td><td>JMS connection URL</td></tr><tr><td><code>name</code></td><td>string</td><td>Queue/topic name</td></tr><tr><td><code>topic</code></td><td>boolean</td><td>If <code>true</code>, sends to a topic; otherwise to a queue</td></tr><tr><td><code>username</code></td><td>string</td><td>JMS username</td></tr><tr><td><code>password</code></td><td>string</td><td>JMS password</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="postgresql">PostgreSQL<a href="#postgresql" class="hash-link" aria-label="Direct link to PostgreSQL" title="Direct link to PostgreSQL" translate="no">​</a></h3>
+<p>Writes events to a PostgreSQL database.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>uri</code></td><td>string</td><td>Full connection URI (alternative to individual fields)</td></tr><tr><td><code>host</code></td><td>string</td><td>Database host</td></tr><tr><td><code>port</code></td><td>number</td><td>Database port</td></tr><tr><td><code>database</code></td><td>string</td><td>Database name</td></tr><tr><td><code>user</code></td><td>string</td><td>Username</td></tr><tr><td><code>password</code></td><td>string</td><td>Password</td></tr><tr><td><code>schema</code></td><td>string</td><td>Schema name</td></tr><tr><td><code>table</code></td><td>string</td><td>Table name</td></tr><tr><td><code>poolSize</code></td><td>number</td><td>Connection pool size</td></tr><tr><td><code>ssl</code></td><td>boolean</td><td>Enable SSL</td></tr><tr><td><code>retentionDays</code></td><td>number</td><td>Number of days to keep events. If absent, 0 or negative, no cleanup is performed. When set, events older than the specified number of days are automatically deleted (checked at most once per hour).</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="workflow">Workflow<a href="#workflow" class="hash-link" aria-label="Direct link to Workflow" title="Direct link to Workflow" translate="no">​</a></h3>
+<p>Routes events to an Otoroshi <a class="" href="/otoroshi/manual/docs/entities/workflows">workflow</a> for custom processing.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>ref</code></td><td>string</td><td>Workflow ID to invoke</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="console">Console<a href="#console" class="hash-link" aria-label="Direct link to Console" title="Direct link to Console" translate="no">​</a></h3>
+<p>Writes events to the standard output. No additional configuration needed.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="wasm">WASM<a href="#wasm" class="hash-link" aria-label="Direct link to WASM" title="Direct link to WASM" translate="no">​</a></h3>
+<p>Processes events through a WebAssembly plugin.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>wasmRef</code></td><td>string</td><td>Reference to a <a class="" href="/otoroshi/manual/docs/entities/wasm-plugins">WASM plugin</a> entity</td></tr><tr><td><code>params</code></td><td>object</td><td>Additional parameters passed to the WASM function</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="otlp-metrics">OTLP Metrics<a href="#otlp-metrics" class="hash-link" aria-label="Direct link to OTLP Metrics" title="Direct link to OTLP Metrics" translate="no">​</a></h3>
+<p>Exports metrics using the OpenTelemetry Protocol (OTLP).</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>otlp</code></td><td>object</td><td>OTLP endpoint configuration (URL, headers, protocol)</td></tr><tr><td><code>tags</code></td><td>object</td><td>Custom metric tags/labels</td></tr><tr><td><code>metrics</code></td><td>array of object</td><td>Metric definitions to export</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="otlp-logs">OTLP Logs<a href="#otlp-logs" class="hash-link" aria-label="Direct link to OTLP Logs" title="Direct link to OTLP Logs" translate="no">​</a></h3>
+<p>Exports logs using the OpenTelemetry Protocol (OTLP).</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>otlp</code></td><td>object</td><td>OTLP endpoint configuration (URL, headers, protocol)</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="custom-metrics">Custom Metrics<a href="#custom-metrics" class="hash-link" aria-label="Direct link to Custom Metrics" title="Direct link to Custom Metrics" translate="no">​</a></h3>
+<p>Exposes custom metrics on the <code>/metrics</code> endpoint.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>tags</code></td><td>object</td><td>Custom metric labels</td></tr><tr><td><code>metrics</code></td><td>array of object</td><td>Metric definitions</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="metrics">Metrics<a href="#metrics" class="hash-link" aria-label="Direct link to Metrics" title="Direct link to Metrics" translate="no">​</a></h3>
+<p>Rewrites metric labels exposed on the <code>/metrics</code> endpoint.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>labels</code></td><td>object</td><td>Map of existing label names to new label names</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="mailer">Mailer<a href="#mailer" class="hash-link" aria-label="Direct link to Mailer" title="Direct link to Mailer" translate="no">​</a></h3>
+<p>Sends events as email using one of the following providers:</p>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="console-mailer">Console mailer<a href="#console-mailer" class="hash-link" aria-label="Direct link to Console mailer" title="Direct link to Console mailer" translate="no">​</a></h4>
+<p>Writes emails to the standard output (for testing).</p>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="generic-mailer">Generic mailer<a href="#generic-mailer" class="hash-link" aria-label="Direct link to Generic mailer" title="Direct link to Generic mailer" translate="no">​</a></h4>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>url</code></td><td>string</td><td>URL to push events</td></tr><tr><td><code>headers</code></td><td>object</td><td>HTTP headers</td></tr><tr><td><code>to</code></td><td>array of string</td><td>Recipient email addresses</td></tr></tbody></table>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="mailgun">Mailgun<a href="#mailgun" class="hash-link" aria-label="Direct link to Mailgun" title="Direct link to Mailgun" translate="no">​</a></h4>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>eu</code></td><td>boolean</td><td>Use EU server (<code>api.eu.mailgun.net</code>) instead of US</td></tr><tr><td><code>apiKey</code></td><td>string</td><td>Mailgun API key</td></tr><tr><td><code>domain</code></td><td>string</td><td>Mailgun domain</td></tr><tr><td><code>to</code></td><td>array of string</td><td>Recipient email addresses</td></tr></tbody></table>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="mailjet">Mailjet<a href="#mailjet" class="hash-link" aria-label="Direct link to Mailjet" title="Direct link to Mailjet" translate="no">​</a></h4>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>publicKey</code></td><td>string</td><td>Mailjet public API key</td></tr><tr><td><code>privateKey</code></td><td>string</td><td>Mailjet private API key</td></tr><tr><td><code>to</code></td><td>array of string</td><td>Recipient email addresses</td></tr></tbody></table>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="sendgrid">Sendgrid<a href="#sendgrid" class="hash-link" aria-label="Direct link to Sendgrid" title="Direct link to Sendgrid" translate="no">​</a></h4>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>apiKey</code></td><td>string</td><td>Sendgrid API key</td></tr><tr><td><code>to</code></td><td>array of string</td><td>Recipient email addresses</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="custom-exporter">Custom exporter<a href="#custom-exporter" class="hash-link" aria-label="Direct link to Custom exporter" title="Direct link to Custom exporter" translate="no">​</a></h3>
+<p>Allows using a custom exporter plugin. Create a plugin of type &quot;exporter&quot; on the plugins page, then select it here.</p>
+<table><thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code>ref</code></td><td>string</td><td>Reference to the custom exporter plugin</td></tr><tr><td><code>config</code></td><td>object</td><td>Exporter configuration</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="admin-api">Admin API<a href="#admin-api" class="hash-link" aria-label="Direct link to Admin API" title="Direct link to Admin API" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET    /api/data-exporter-configs           # List all data exporters</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">POST   /api/data-exporter-configs           # Create a data exporter</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">GET    /api/data-exporter-configs/:id       # Get a data exporter</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">PUT    /api/data-exporter-configs/:id       # Update a data exporter</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">DELETE /api/data-exporter-configs/:id       # Delete a data exporter</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">PATCH  /api/data-exporter-configs/:id       # Partially update a data exporter</span><br></span></code></pre></div></div></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/MAIF/otoroshi/tree/master/manual/next/docs/entities/data-exporters.mdx" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/otoroshi/manual/docs/entities/certificates"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Certificates</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/otoroshi/manual/docs/entities/service-descriptors"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Service descriptors</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#why-use-data-exporters" class="table-of-contents__link toc-highlight">Why use data exporters?</a></li><li><a href="#event-types" class="table-of-contents__link toc-highlight">Event types</a></li><li><a href="#how-the-pipeline-works" class="table-of-contents__link toc-highlight">How the pipeline works</a><ul><li><a href="#tuning-tips" class="table-of-contents__link toc-highlight">Tuning tips</a></li><li><a href="#lifecycle" class="table-of-contents__link toc-highlight">Lifecycle</a></li></ul></li><li><a href="#ui-page" class="table-of-contents__link toc-highlight">UI page</a></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a></li><li><a href="#matching-and-projections" class="table-of-contents__link toc-highlight">Matching and projections</a><ul><li><a href="#filtering" class="table-of-contents__link toc-highlight">Filtering</a></li><li><a href="#projection" class="table-of-contents__link toc-highlight">Projection</a></li></ul></li><li><a href="#exporter-types" class="table-of-contents__link toc-highlight">Exporter types</a><ul><li><a href="#elastic" class="table-of-contents__link toc-highlight">Elastic</a></li><li><a href="#webhook" class="table-of-contents__link toc-highlight">Webhook</a></li><li><a href="#kafka" class="table-of-contents__link toc-highlight">Kafka</a></li><li><a href="#pulsar" class="table-of-contents__link toc-highlight">Pulsar</a></li><li><a href="#splunk" class="table-of-contents__link toc-highlight">Splunk</a></li><li><a href="#datadog" class="table-of-contents__link toc-highlight">Datadog</a></li><li><a href="#new-relic" class="table-of-contents__link toc-highlight">New Relic</a></li><li><a href="#file" class="table-of-contents__link toc-highlight">File</a></li><li><a href="#s3" class="table-of-contents__link toc-highlight">S3</a></li><li><a href="#goreplay-file" class="table-of-contents__link toc-highlight">GoReplay file</a></li><li><a href="#goreplay-s3" class="table-of-contents__link toc-highlight">GoReplay S3</a></li><li><a href="#tcp" class="table-of-contents__link toc-highlight">TCP</a></li><li><a href="#udp" class="table-of-contents__link toc-highlight">UDP</a></li><li><a href="#syslog" class="table-of-contents__link toc-highlight">Syslog</a></li><li><a href="#jms" class="table-of-contents__link toc-highlight">JMS</a></li><li><a href="#postgresql" class="table-of-contents__link toc-highlight">PostgreSQL</a></li><li><a href="#workflow" class="table-of-contents__link toc-highlight">Workflow</a></li><li><a href="#console" class="table-of-contents__link toc-highlight">Console</a></li><li><a href="#wasm" class="table-of-contents__link toc-highlight">WASM</a></li><li><a href="#otlp-metrics" class="table-of-contents__link toc-highlight">OTLP Metrics</a></li><li><a href="#otlp-logs" class="table-of-contents__link toc-highlight">OTLP Logs</a></li><li><a href="#custom-metrics" class="table-of-contents__link toc-highlight">Custom Metrics</a></li><li><a href="#metrics" class="table-of-contents__link toc-highlight">Metrics</a></li><li><a href="#mailer" class="table-of-contents__link toc-highlight">Mailer</a></li><li><a href="#custom-exporter" class="table-of-contents__link toc-highlight">Custom exporter</a></li></ul></li><li><a href="#admin-api" class="table-of-contents__link toc-highlight">Admin API</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Documentation</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/getting-started">Getting Started</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/entities">Main Entities</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/topics">Detailed Topics</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/docs/tutorials">Tutorials</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/discussions" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub Discussions<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://stackoverflow.com/questions/tagged/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">Stack Overflow<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/releases" target="_blank" rel="noopener noreferrer" class="footer__link-item">Releases<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/orgs/MAIF/projects/20/views/1" target="_blank" rel="noopener noreferrer" class="footer__link-item">Roadmap<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://maif.github.io/" target="_blank" rel="noopener noreferrer" class="footer__link-item">MAIF Open Source<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Ecosystem</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/manual/ecosystem">Otoroshi&#x27;s Ecosystem</a></li><li class="footer__item"><a href="https://maif.github.io/daikoku/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Daikoku<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://www.otoroshi.io/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="50" height="50"><img src="/otoroshi/manual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="50" height="50"></a></div><div class="footer__copyright">Copyright © 2026 #OSSbyMAIF. Built with Docusaurus.</div></div></div></footer></div>
+</body>
+</html>
