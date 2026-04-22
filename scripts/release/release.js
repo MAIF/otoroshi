@@ -170,7 +170,7 @@ async function buildUi(version, where, releaseDir) {
   // build ui
   await runScript(`
     cd ${where}/otoroshi/javascript
-    yarn install
+    npm install
     cd ${where}
     sh ${where}/scripts/build.sh ui
   `, where);
