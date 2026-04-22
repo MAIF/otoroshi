@@ -373,8 +373,8 @@ async function uploadFilesToRelease(release, file) {
 }
 
 async function installDependencies(location) {
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
-  await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
+  //await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/loadbalancing'));
+  //await runSystemCommand('yarn', ['install'], path.resolve(location, './demos/snowmonkey'));
 }
 
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
