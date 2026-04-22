@@ -108,7 +108,15 @@ const SUBSCRIPTION_FORM_SETTINGS = {
           defaultValue: '{}',
           height: 200
         }
-      }
+      },
+      metadata: {
+        type: 'object',
+        label: 'Metadata'
+      },
+      tags: {
+        type: 'array',
+        label: 'Tags'
+      },
     };
   },
   flow: (isEdition) => [
@@ -130,6 +138,12 @@ const SUBSCRIPTION_FORM_SETTINGS = {
       name: 'Payment',
       collapsable: false,
       fields: ['payment_ref']
+    },
+    {
+      type: 'group',
+      name: 'Misc.',
+      collapsed: true,
+      fields: ['metadata', 'tags'],
     }
   ],
 };
@@ -238,8 +252,6 @@ export function Subscriptions(props) {
 
 export function SubscriptionDesigner(props) {
   const params = useParams();
-  const history = useHistory();
-  const location = useLocation();
 
   const [subscription, setSubscription] = useState();
   const [draftSubscription, setDraftSubscription] = useState();
@@ -267,9 +279,6 @@ export function SubscriptionDesigner(props) {
       },
     }
   );
-
-  const goToSubscriptions = () =>
-    historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
 
   const updateSubscription = () => {
     if (isDraft)
@@ -335,6 +344,7 @@ export function NewSubscription(props) {
         setSubscription({
           ...sub,
           plan_ref: props.plan?.id || sub.plan_ref,
+          subscription_kind: props.plan?.access_mode_configuration_type || sub.subscription_kind,
           consumer_ref: item.consumers?.length > 0 ? item.consumers[0]?.id : undefined,
         }),
     }
@@ -351,25 +361,9 @@ export function NewSubscription(props) {
       .then(() => {
         historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
       });
-
-    // return (
-    //   isDraft
-    //     ? nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS)
-    //     : nextClient.forEntityNext(nextClient.ENTITIES.API_SUBSCRIPTIONS)
-    // )
-    //   .create({
-    //     ...subscription,
-    //     api_ref: params.apiId,
-    //     draft: version === 'staging' || version === 'draft',
-    //   })
-    //   .then((res) => {
-    //     if (res && res.error) {
-    //       setError(res.error);
-    //     } else {
-    //       historyPush(history, location, `/apis/${params.apiId}/subscriptions`);
-    //     }
-    //   });
   };
+
+  console.log(subscription)
 
   return <div className='page'>
     <PageTitle title="Subscription Settings" {...props} />

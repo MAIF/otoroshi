@@ -2235,6 +2235,20 @@ export const confirmSubscription = (apiId, subscriptionId, version) => {
   })
 }
 
+export const listImpactedSubscriptions = (apiId, planId, version) => {
+  const url = `/apis/${apiId}/plans/${planId}/subscriptions/preview-update?version=${version}`
+
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1${url}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
+  })
+}
+
 export const nextClient = {
   ENTITIES: {
     ROUTES: 'routes',

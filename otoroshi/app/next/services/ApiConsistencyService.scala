@@ -3,22 +3,17 @@ package otoroshi.next.services
 import next.models.{Api, ApiDocumentationPlan, ApiSubscription}
 import otoroshi.api.WriteAction.Update
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits.BetterSyntax
+import otoroshi.models.Draft
+import otoroshi.storage.BasicStore
+import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 
-import scala.annotation.tailrec
-import scala.concurrent.Future
-
-trait PlanChangeStatus
-
-object PlanChangeStatus {
-  case object Create extends PlanChangeStatus
-  case object Update extends PlanChangeStatus
-  case object Delete extends PlanChangeStatus
-}
+import scala.concurrent.{ExecutionContext, Future}
 
 object ApiConsistencyService {
 
-  def applyApiChanges(oldApi: Api, newApi: Api)(implicit env: Env): Future[Api] = {
+  def applyApiChanges(oldApi: Api, newApi: Api, isDraft: Boolean)(implicit env: Env): Future[Api] = {
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+
     val oldPlans = oldApi.plans
     val newPlans = newApi.plans
 
@@ -26,6 +21,8 @@ object ApiConsistencyService {
     val newById = newPlans.map(p => p.id -> p).toMap
 
     val apiHasChanged = oldApi != newApi
+
+    println("api has changed", apiHasChanged)
 
     if (apiHasChanged) {
       val deletedPlans = oldById.keySet.diff(newById.keySet).map(oldById)
@@ -41,8 +38,8 @@ object ApiConsistencyService {
         }
 
       for {
-        _ <- deletedPlans.map(plan => deleteSubscriptionsByPlan(newApi, plan))
-        _ <- updatedPlans.map(plan => updateSubscriptionsByPlan(newApi, plan))
+        _ <- Future.sequence(deletedPlans.map(plan => deleteSubscriptionsByPlan(newApi, plan, isDraft)))
+        _ <- Future.sequence(updatedPlans.map(plan => updateSubscriptionsByPlan(newApi, plan, isDraft)))
       } yield ()
 
       newApi.vfuture
@@ -51,47 +48,44 @@ object ApiConsistencyService {
     }
   }
 
-  private def batchSubscriptionsDeletion(page: Int, plan: ApiDocumentationPlan)(implicit env: Env): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
+  def deleteSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Api] = {
+    println("delete plan", plan.name)
 
-    env.datastores.apiSubscriptionDataStore
-      .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(ec, env.otoroshiMaterializer, env)
-      .flatMap { subscriptions =>
-        if (subscriptions.isEmpty) {
-          Future.successful(())
-        } else {
-          for {
-            _ <- env.datastores.apiDataStore.deleteByIds(subscriptions.map(_.id))
-            _ <- if (subscriptions.size < 50) {
-                   Future.successful(())
-                 } else {
-                   batchSubscriptionsDeletion(page + 1, plan)
-                 }
-          } yield ()
-        }
-      }
-  }
-
-  def deleteSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan)(implicit env: Env): Future[Api] = {
-    implicit val ec = env.otoroshiExecutionContext
-
-    batchSubscriptionsDeletion(0, plan)
+    (if (isDraft)
+       batchSubscriptionsUpdates[Draft](
+         plan,
+         api,
+         Some(subs => env.datastores.draftsDataStore.deleteByIds(subs.map(_.id)))
+       )
+     else
+       batchSubscriptionsUpdates[ApiSubscription](
+         plan,
+         api,
+         fnDraft = None,
+         Some(subs => env.datastores.apiDataStore.deleteByIds(subs.map(_.id)))
+       ))
       .map(_ => api)
   }
 
-  private def batchSubscriptionsUpdates(
+  private def _batchSubscriptionsUpdates[A](
       page: Int,
       plan: ApiDocumentationPlan,
-      api: Api
-  )(implicit env: Env): Future[Unit] = {
-
-    implicit val ec = env.otoroshiExecutionContext
+      api: Api,
+      fn: Seq[A] => Future[Any],
+      store: BasicStore[A]
+  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
 
     val pageSize = 50
 
-    env.datastores.apiSubscriptionDataStore
+    store
       .streamedFindAndMat(
-        _.planRef == plan.id,
+        {
+          case draft: Draft         => draft.content.selectAsOptString("path_ref").getOrElse("") == plan.id
+          case sub: ApiSubscription => sub.planRef == plan.id
+        },
         fetchSize = pageSize,
         page = page
       )(ec, env.otoroshiMaterializer, env)
@@ -100,23 +94,70 @@ object ApiConsistencyService {
           Future.unit
         } else {
           for {
-            _ <- Future.traverse(subscriptions) { subscription =>
-                   ApiSubscription.handleSubscriptionChanged(api, plan, subscription, Update)
-                 }
+            _ <- fn(subscriptions)
             _ <- if (subscriptions.size < pageSize) {
                    Future.unit
                  } else {
-                   batchSubscriptionsUpdates(page + 1, plan, api)
+                   _batchSubscriptionsUpdates(page + 1, plan, api, fn, store)
                  }
           } yield ()
         }
       }
   }
 
-  def updateSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan)(implicit env: Env): Future[Api] = {
-    implicit val ec = env.otoroshiExecutionContext
+  private def batchSubscriptionsUpdates[A](
+      plan: ApiDocumentationPlan,
+      api: Api,
+      fnDraft: Option[Seq[Draft] => Future[Any]],
+      fnSub: Option[Seq[ApiSubscription] => Future[Any]] = None
+  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    fnDraft match {
+      case Some(fn) => _batchSubscriptionsUpdates[Draft](0, plan, api, fn, env.datastores.draftsDataStore)
+      case None     =>
+        _batchSubscriptionsUpdates[ApiSubscription](
+          0,
+          plan,
+          api,
+          fnSub.get,
+          env.datastores.apiSubscriptionDataStore
+        )
+    }
+  }
 
-    batchSubscriptionsUpdates(0, plan, api)
-      .map(_ => api)
+  def updateSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Api] = {
+    println("update plan", plan.name)
+
+    if (isDraft) {
+      batchSubscriptionsUpdates[Draft](
+        plan,
+        api,
+        Some(subscriptions =>
+          Future.traverse(subscriptions) { subscription =>
+            ApiSubscription.handleSubscriptionChanged(
+              api,
+              plan,
+              ApiSubscription.format.reads(subscription.content).get,
+              Update,
+              isDraft = true
+            )
+          }
+        )
+      )
+        .map(_ => api)
+    } else
+      batchSubscriptionsUpdates[ApiSubscription](
+        plan,
+        api,
+        None,
+        Some(subscriptions =>
+          Future.traverse(subscriptions) { subscription =>
+            ApiSubscription.handleSubscriptionChanged(api, plan, subscription, Update, isDraft = false)
+          }
+        )
+      )
+        .map(_ => api)
   }
 }

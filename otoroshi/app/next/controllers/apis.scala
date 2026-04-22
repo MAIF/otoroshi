@@ -23,6 +23,7 @@ import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, ApiDeploymentEvent, Audit}
 import otoroshi.models.Draft
 import otoroshi.next.models.{NgClientConfig, NgRoute}
+import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -317,6 +318,141 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
     ctx.request.body
       .asOpt(ApiSubscription.format)
       .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
+
+  def closePlan(apiId: String, planId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canWriteService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User closed API plan",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"  -> apiId,
+              "planId" -> planId
+            )
+          )
+        )
+
+        def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
+          env.proxyState
+            .allDrafts()
+            .find(_.id == id)
+            .flatMap(draft => fmt.reads(draft.content).asOpt)
+            .future
+
+        val isDraft = ctx.request.getQueryString("version").contains("Draft")
+
+        def findApi(): Future[Option[Api]] =
+          if (isDraft) findDraft(apiId, Api.format)
+          else env.datastores.apiDataStore.findById(apiId)
+
+        findApi().flatMap {
+          case None      => Results.NotFound.vfuture
+          case Some(api) =>
+            val result = for {
+              _ <- validateApi(api)
+              _ <- api.plans.find(_.id == planId) match {
+                     case None       => Left(BadRequest(Json.obj("error" -> "plan not found")))
+                     case Some(plan) => Right(plan)
+                   }
+            } yield ()
+
+            result match {
+              case Left(err) => err.vfuture
+              case Right(_)  =>
+                val oldApi = api
+                val newApi = api.copy(plans = api.plans.filter(_.id != planId))
+
+                ApiConsistencyService
+                  .applyApiChanges(oldApi, newApi, isDraft)
+                  .map(_ => Ok(Json.obj("done" -> true)))
+            }
+        }
+      }
+    }
+  }
+
+  def listImpactedSubscriptions(apiId: String, planId: String) = {
+    ApiAction.async(parse.json) { ctx =>
+      ctx.canWriteService(apiId) {
+        Audit.send(
+          AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "ACCESS_SERVICE_API",
+            "User checked the impact of the changes on the plan",
+            ctx.from,
+            ctx.ua,
+            Json.obj(
+              "apiId"  -> apiId,
+              "planId" -> planId
+            )
+          )
+        )
+
+        val isDraft = ctx.request.getQueryString("version").contains("Draft")
+
+        def getPlanDraftSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
+            env: Env
+        ): Future[Seq[JsValue]] = {
+          implicit val ec = env.otoroshiExecutionContext
+
+          env.datastores.draftsDataStore
+            .streamedFindAndMat(
+              _.content.selectAsOptString("plan_ref").getOrElse("") == plan.id,
+              fetchSize = 50,
+              page = page
+            )(ec, env.otoroshiMaterializer, env)
+            .flatMap { subscriptions =>
+              if (subscriptions.isEmpty || subscriptions.size < 50) {
+                subscriptions.map(_.content).vfuture
+              } else {
+                getPlanDraftSubscriptions(page + 1, plan)
+                  .map(subs => subscriptions.map(_.content) ++ subs)
+              }
+            }
+        }
+
+        def getPlanSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
+            env: Env
+        ): Future[Seq[ApiSubscription]] = {
+          implicit val ec = env.otoroshiExecutionContext
+
+          env.datastores.apiSubscriptionDataStore
+            .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(ec, env.otoroshiMaterializer, env)
+            .flatMap { subscriptions =>
+              if (subscriptions.isEmpty) {
+                subscriptions.vfuture
+              } else {
+                if (subscriptions.size < 50) {
+                  subscriptions.vfuture
+                } else {
+                  getPlanSubscriptions(page + 1, plan).map(subs => subscriptions ++ subs)
+                }
+              }
+            }
+        }
+
+        ctx.request.body
+          .asOpt[JsObject]
+          .map(ApiDocumentationPlan)
+          .toRight(BadRequest(Json.obj("error" -> "wrong plan format"))) match {
+          case Left(err)              => err.vfuture
+          case Right(plan) if isDraft =>
+            getPlanDraftSubscriptions(0, plan).map(subscriptions => Ok(JsArray(subscriptions)))
+          case Right(plan)            => getPlanSubscriptions(0, plan).map(subscriptions => Ok(JsArray(subscriptions.map(_.json))))
+        }
+      }
+    }
+  }
 
   def subscribe(apiId: String, planId: String) = {
     ApiAction.async(parse.json) { ctx =>

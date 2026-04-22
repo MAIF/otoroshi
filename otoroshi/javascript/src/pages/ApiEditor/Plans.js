@@ -11,7 +11,8 @@ import NgClientCredentialTokenEndpoint from '../../forms/ng_plugins/NgClientCred
 import NgHasClientCertMatchingValidator from '../../forms/ng_plugins/NgHasClientCertMatchingValidator';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
-import { DraftOnly, VersionBadge } from './DraftOnly';
+import { VersionBadge } from './DraftOnly';
+import { listImpactedSubscriptions } from '../../services/BackOfficeServices';
 import { v4 } from 'uuid';
 import ApikeyCalls from '../../forms/ng_plugins/ApikeyCalls';
 import { findAuthConfigById } from '../../services/BackOfficeServices';
@@ -302,12 +303,14 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
                 {text}
               </p>
 
-              {selected && <button className='btn btn-success btn-sm ms-auto d-flex' onClick={e => {
-                e.stopPropagation()
-                onEdit()
-              }}>
-                Edit
-              </button>}
+              {selected &&
+                !['keyless', 'public'].includes(id) &&
+                <button className='btn btn-success btn-sm ms-auto d-flex' onClick={e => {
+                  e.stopPropagation()
+                  onEdit()
+                }}>
+                  Edit
+                </button>}
             </button>
           );
         })}
@@ -371,17 +374,19 @@ function AccessModeLayout({ children, hide, onConfirm }) {
   );
 }
 
-function AccessModeConfiguration({ value, hide, onConfirm }) {
+function AccessModeConfiguration({ value, hide, onConfirm, accessModeType }) {
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
-
-  const accessModeConfigurationType = value.access_mode_configuration_type;
 
   if (
     ['mtls', 'oauth2-local', 'oauth2-remote', 'jwt', 'public', 'keyless'].includes(
-      accessModeConfigurationType
+      accessModeType
     )
   )
-    return <AccessModeConfigurationExceptApikey value={value} hide={hide} onConfirm={onConfirm} />;
+    return <AccessModeConfigurationExceptApikey
+      value={value}
+      hide={hide}
+      accessModeType={accessModeType}
+      onConfirm={onConfirm} />;
 
   return (
     <AccessModeLayout
@@ -408,9 +413,8 @@ function AccessModeConfiguration({ value, hide, onConfirm }) {
   );
 }
 
-function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
+function AccessModeConfigurationExceptApikey({ value, hide, onConfirm, accessModeType }) {
   const [accessModeConfiguration, setAccessModeConfiguration] = useState(() => value);
-  const accessModeConfigurationType = value.access_mode_configuration_type;
 
   return (
     <AccessModeLayout
@@ -418,8 +422,8 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm }) {
       hide={hide}
     >
       <NewAccessModeSettingsForm
-        schema={AccessModePluginConfigurationForm[accessModeConfigurationType].schema}
-        flow={AccessModePluginConfigurationForm[accessModeConfigurationType].flow}
+        schema={AccessModePluginConfigurationForm[accessModeType].schema}
+        flow={AccessModePluginConfigurationForm[accessModeType].flow}
         value={accessModeConfiguration}
         onChange={setAccessModeConfiguration}
       />
@@ -619,10 +623,13 @@ function PlanForm({ plan, onChange }) {
     { type: 'group', name: 'Metadata', collapsed: true, fields: ['tags', 'metadata'] },
   ], []);
 
+  console.log(plan)
+
   return (
     <>
       {openAccessModeModal && (
         <AccessModeConfiguration
+          accessModeType={plan.access_mode_configuration_type}
           value={plan.access_mode_configuration}
           onConfirm={(data) => {
             onChange({
@@ -761,9 +768,11 @@ export function Plans(props) {
       title: 'Subscribe',
       notFilterable: true,
       cell: (_, plan) => (
-        <Button type="success" className="btn-sm" onClick={() => setPlan(plan)}>
-          Subscribe
-        </Button>
+        item.state === 'deprecated' ? <span style={{ fontStyle: 'italic' }}>API is deprecated</span> :
+          plan.status !== 'published' ? <span style={{ fontStyle: 'italic' }}>Plan is not published</span> :
+            <Button type="success" className="btn-sm" onClick={() => setPlan(plan)}>
+              Subscribe
+            </Button>
       ),
     },
   ];
@@ -844,7 +853,7 @@ export function PlanEditor(props) {
   const history = useHistory();
   const location = useLocation();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, version } = useDraftOfAPI();
 
   const isNew = !params.planId;
   const [plan, setPlan] = useState(
@@ -861,6 +870,8 @@ export function PlanEditor(props) {
       : null
   );
 
+  const [impactedSubscriptions, setImpactedSubscriptions] = useState(null);
+
   useEffect(() => {
     if (!isNew && item && !plan) {
       const found = item.plans?.find((p) => p.id === params.planId);
@@ -876,15 +887,35 @@ export function PlanEditor(props) {
 
   const back = () => historyPush(history, location, `/apis/${params.apiId}/plans`);
 
-  const save = () => {
+  const persist = () => {
     const plans = isNew
       ? [...(item.plans || []), plan]
       : item.plans?.map((p) => (p.id === plan.id ? plan : p));
-    return updateItem({ ...item, plans })
-      .then(back);
+
+    return updateItem({ ...item, plans }).then(back);
+  };
+
+  const save = () => {
+    if (isNew) return persist();
+
+    return listImpactedSubscriptions(item.id, plan.id, version)
+      .then((r) => r.json())
+      .then((subs) => {
+        if (subs.length === 0) return persist();
+        setImpactedSubscriptions(subs);
+      });
   };
 
   return <div className='page'>
+    {impactedSubscriptions && (
+      <ImpactedSubscriptionsModal
+        originalPlan={item.plans?.find((p) => p.id === params.planId)}
+        plan={plan}
+        subscriptions={impactedSubscriptions}
+        onConfirm={persist}
+        hide={() => setImpactedSubscriptions(null)}
+      />
+    )}
     <PageTitle title={isNew ? 'New Plan' : plan.name} {...props} />
     <div className='displayGroupBtn'>
       <FeedbackButton
@@ -899,4 +930,93 @@ export function PlanEditor(props) {
     </div>
     <PlanForm plan={plan} onChange={setPlan} />
   </div>
+}
+
+function ImpactedSubscriptionsModal({ subscriptions, onConfirm, hide, originalPlan, plan }) {
+  const deletionInComing = originalPlan?.status !== 'closed' && plan?.status === 'closed'
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        hide()
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [hide]);
+
+  return (
+    <div className="wizard">
+      <div className="wizard-container" style={{ padding: '1.5rem', maxWidth: 820 }}>
+        <div className="d-flex" style={{ flexDirection: 'column', padding: '2.5rem', flex: 1 }}>
+          <Header
+            title={`${subscriptions.length} subscription${subscriptions.length > 1 ? 's' : ''} will be impacted`}
+            onClose={hide}
+          />
+          <p className="mt-2" style={{ fontStyle: 'italic' }}>
+            Saving this plan will affect the following subscriptions. Review them before confirming.
+
+            {deletionInComing && <div className="alert alert-danger mt-3">
+              Be careful: this action will permanently remove all subscriptions linked to this plan.
+            </div>}
+          </p>
+          <div className="wizard-content mt-0" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+            {subscriptions.map((sub) => (
+              <div
+                key={sub.id}
+                className="p-3 mb-2"
+                style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '0.5rem',
+                  background: 'var(--bg-color_level1)',
+                }}
+              >
+                <div className="">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fas fa-key" style={{ color: 'var(--text-muted)' }} />
+                    <strong>{sub.name}</strong>
+                    <span className="badge bg-secondary">{sub.status}</span>
+                    <span className="badge bg-info">{sub.subscription_kind}</span>
+                  </div>
+                  <code style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{sub.id}</code>
+                </div>
+                {sub.description && (
+                  <div className="mt-1" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {sub.description}
+                  </div>
+                )}
+                <div className="mt-2 d-flex gap-3" style={{ fontSize: '12px' }}>
+                  <span><strong>Owner:</strong> {sub.owner_ref}</span>
+                  <span><strong>Tokens:</strong> {(sub.token_refs || []).length}</span>
+                  {sub.tags?.length > 0 && (
+                    <span><strong>Tags:</strong> {sub.tags.join(', ')}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="d-flex mt-auto justify-content-between align-items-center gap-2 p-3">
+          <button type="button" className="btn btn-secondary" onClick={hide}>
+            Cancel
+          </button>
+          <FeedbackButton
+            style={{
+              backgroundColor: 'var(--color-primary)',
+              borderColor: 'var(--color-primary)',
+              padding: '12px 48px',
+            }}
+            onPress={onConfirm}
+            onSuccess={hide}
+            icon={() => <i className="fas fa-paper-plane" />}
+            text="Confirm and save"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

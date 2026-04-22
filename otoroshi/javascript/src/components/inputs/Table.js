@@ -740,7 +740,6 @@ class TableComponent extends Component {
   };
 
   render() {
-    console.log(this.props)
     if (this.state.hasError) {
       return <h3>Something went wrong !!!</h3>;
     }

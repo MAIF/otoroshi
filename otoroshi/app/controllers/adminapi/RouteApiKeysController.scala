@@ -278,8 +278,8 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                           s"User updated an ApiKey",
                           "ApiKeyUpdatedAlert",
                           Json.obj(
-                            "desc"   -> desc.toJson(),
-                            "apikey" -> newApiKey.toJson,
+                            "desc"            -> desc.toJson(),
+                            "apikey"          -> newApiKey.toJson,
                             "previous_apikey" -> apiKey.toJson
                           ),
                           ctx
@@ -336,9 +336,9 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                       s"User updated an ApiKey",
                       "ApiKeyUpdatedAlert",
                       Json.obj(
-                        "desc"   -> desc.toJson(),
-                        "apikey" -> newApiKey.toJson,
-                        "previous_apikey" -> apiKey.toJson,
+                        "desc"            -> desc.toJson(),
+                        "apikey"          -> newApiKey.toJson,
+                        "previous_apikey" -> apiKey.toJson
                       ),
                       ctx
                     )
@@ -394,18 +394,18 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
     }
 
   def apiKeysOfRoute(routeId: String) = {
-    ApiAction.async(parse.json) { ctx =>
+    ApiAction.async { ctx =>
       apiKeys(ctx, routeId, isRoute = true)
     }
   }
 
   def apiKeysOfApi(apiId: String) = {
-    ApiAction.async(parse.json) { ctx =>
+    ApiAction.async { ctx =>
       apiKeys(ctx, apiId, isRoute = false)
     }
   }
 
-  private def apiKeys(ctx: ApiActionContext[JsValue], id: String, isRoute: Boolean) = {
+  private def apiKeys(ctx: ApiActionContext[AnyContent], id: String, isRoute: Boolean) = {
     val paginationPage: Int      = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     val paginationPageSize: Int  =
       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)

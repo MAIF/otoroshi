@@ -13,6 +13,7 @@ import kaleidoscope._
 import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
+import otoroshi.security.IdGenerator
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.DN
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
@@ -611,6 +612,7 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(dv)
+            case "rand"                                                                          => IdGenerator.token(64)
             case "plan.id" if plan.isDefined                                                     => plan.get.id
             case "plan.name" if plan.isDefined                                                   => plan.get.name
             case "api.id" if api.isDefined                                                       => api.get.id

@@ -906,7 +906,14 @@ case class ApiSubscription(
 
 object ApiSubscription {
 
-  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan)(implicit
+  val PLAN_METADATA_KEY           = "plan_metadata"
+  val SUBSCRIPTION_METADATA_KEY   = "subscription_metadata"
+  val PLAN_TAGS_KEY               = "plan_tags"
+  val SUBSCRIPTION_TAGS_KEY       = "subscription_tags"
+  val METADATA_AND_TAGS_SEPARATOR = " | "
+  val CORE_METADATA               = Seq("updated_at")
+
+  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
       env: Env
   ) = {
     val configPlan = plan.accessModeConfiguration
@@ -919,18 +926,30 @@ object ApiSubscription {
     )
 
     val defaultApikey = ApiKey(
+      enabled = false,
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = configPlan.clientNamePattern
         .map(_.evaluateEl(attrs)(env))
         .getOrElse(IdGenerator.lowerCaseToken(22)),
+      description = configPlan.description.getOrElse(""),
+      validUntil = configPlan.validUntil,
+      readOnly = configPlan.readOnly,
+      constrainedServicesOnly = configPlan.constrainedServicesOnly,
+      restrictions = configPlan.restrictions,
+      rotation = configPlan.rotation,
       authorizedEntities = Seq(ApiIdentifier(api.id)),
       throttlingStrategy = plan.rateLimiting,
-      metadata = plan.metadata,
-      tags = plan.tags
+      metadata = configPlan.metadata ++ subscription.metadata +
+        (PLAN_METADATA_KEY         -> configPlan.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
+        (SUBSCRIPTION_METADATA_KEY -> subscription.metadata.keySet.mkString(METADATA_AND_TAGS_SEPARATOR)) +
+        (PLAN_TAGS_KEY             -> configPlan.tags.mkString(METADATA_AND_TAGS_SEPARATOR)) +
+        (SUBSCRIPTION_TAGS_KEY     -> subscription.tags.mkString(METADATA_AND_TAGS_SEPARATOR)),
+      tags = configPlan.tags ++ subscription.tags
     )
 
     defaultApikey
+      .copy(enabled = subscription.status != ApiSubscriptionDisabled)
   }
 
   private def createNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
@@ -938,7 +957,7 @@ object ApiSubscription {
   ) = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val defaultApikey = generateNewApikeyFromPlan(api, plan)
+    val defaultApikey = generateNewApikeyFromPlan(api, plan, subscription)
 
     defaultApikey.save().map {
       case false => "failed to create the apikey".left
@@ -949,12 +968,34 @@ object ApiSubscription {
     }
   }
 
+  private def removeManagedMetadata(currentApikeyMetadata: Map[String, String]): Map[String, String] = {
+    val managed_keys: Seq[String] =
+      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
+      currentApikeyMetadata
+        .get(SUBSCRIPTION_METADATA_KEY)
+        .map(_.split(SUBSCRIPTION_METADATA_KEY))
+        .getOrElse(Array.empty)
+
+    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key))
+  }
+
+  private def removeManagedTags(
+      currentApikeyMetadata: Map[String, String],
+      currentApikeyTags: Seq[String]
+  ): Seq[String] = {
+    val managed_keys: Seq[String] =
+      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
+      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty)
+
+    currentApikeyTags.filter(key => !managed_keys.contains(key))
+  }
+
   private def updateApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
       env: Env
   ): Future[Seq[Either[String, Boolean]]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val newApikey = generateNewApikeyFromPlan(api, plan)
+    val newApikey = generateNewApikeyFromPlan(api, plan, subscription)
 
     val apikeys: Seq[String] = subscription.tokenRefs.collect {
       case JsObject(values) if values.contains("apikey") => values("apikey").asString
@@ -968,10 +1009,11 @@ object ApiSubscription {
             case Some(apikey) =>
               newApikey
                 .copy(
+                  enabled = newApikey.enabled,
                   clientId = apikey.clientId,
                   clientSecret = apikey.clientSecret,
-                  metadata = newApikey.metadata ++ apikey.metadata,
-                  tags = newApikey.tags ++ apikey.tags
+                  metadata = newApikey.metadata ++ removeManagedMetadata(apikey.metadata),
+                  tags = newApikey.tags ++ removeManagedTags(apikey.metadata, apikey.tags)
                 )
                 .save()
                 .map(_.right)
@@ -985,11 +1027,12 @@ object ApiSubscription {
       api: Api,
       plan: ApiDocumentationPlan,
       subscription: ApiSubscription,
-      action: WriteAction
+      action: WriteAction,
+      isDraft: Boolean
   )(implicit
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     if (action == WriteAction.Create) {
       subscription.subscriptionKind match {
@@ -998,7 +1041,13 @@ object ApiSubscription {
       }
     } else if (action == Update) {
       subscription.subscriptionKind match {
-        case ApiKind.Apikey =>
+        case ApiKind.Apikey if plan.status == ApiPlanStatus.Closed =>
+          (if (isDraft)
+             env.datastores.draftsDataStore.delete(subscription.id)
+           else
+             env.datastores.apiSubscriptionDataStore.delete(subscription.id))
+            .map(_ => subscription.right)
+        case ApiKind.Apikey                                        =>
           updateApikeyFromPlan(api, plan, subscription)
             .map(results =>
               results.collectFirst { case Left(err) => err } match {
@@ -1006,7 +1055,7 @@ object ApiSubscription {
                 case None      => subscription.right
               }
             )
-        case _              => subscription.rightf
+        case _                                                     => subscription.rightf
       }
     } else {
       subscription.rightf
@@ -1037,7 +1086,7 @@ object ApiSubscription {
             case None                                                                                         =>
               "plan not found".leftf
             case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
-              handleSubscriptionChanged(api, plan, entity, action)
+              handleSubscriptionChanged(api, plan, entity, action, isDraft)
             case _                                                                                            =>
               "wrong status plan".leftf
           }
@@ -1595,6 +1644,7 @@ case class Api(
       .foldLeft(routeWithApi.route) { case (route, plan) =>
         applyPlan(route, plan)
       }
+    // TODO - replace chain of plugins by MandatoryConsumerPreset plugin
 
     if (
       plans
@@ -1744,7 +1794,7 @@ object Api {
     implicit val e  = env
 
     oldEntity
-      .map(old => ApiConsistencyService.applyApiChanges(old._1, entity).flatMap(_.rightf))
+      .map(old => ApiConsistencyService.applyApiChanges(old._1, entity, isDraft = false).flatMap(_.rightf))
       .getOrElse(entity.rightf)
   }
 

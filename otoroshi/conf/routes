@@ -637,6 +637,8 @@ GET     /apis/apis.otoroshi.io/v1/apis/:id/routes/:routeId     otoroshi.next.con
 POST    /apis/apis.otoroshi.io/v1/apis/_openapi                                           otoroshi.next.controllers.adminapi.ApisController.fromOpenapi()
 GET     /apis/apis.otoroshi.io/v1/apis/:apiId/http-client-settings/_template              otoroshi.next.controllers.adminapi.ApisController.getHttpClientSettings(apiId)
 POST    /apis/apis.otoroshi.io/v1/apis/:apiId/deployments                                 otoroshi.next.controllers.adminapi.ApisController.createNewVersion(apiId)
+POST    /apis/apis.otoroshi.io/v1/apis/:apiId/plans/:planId/subscriptions/preview-update  otoroshi.next.controllers.adminapi.ApisController.listImpactedSubscriptions(apiId, planId)
+POST    /apis/apis.otoroshi.io/v1/apis/:apiId/plans/:planId/close                         otoroshi.next.controllers.adminapi.ApisController.closePlan(apiId, planId)
 POST    /apis/apis.otoroshi.io/v1/apis/:apiId/plans/:planId/subscribe                     otoroshi.next.controllers.adminapi.ApisController.subscribe(apiId, planId)
 POST    /apis/apis.otoroshi.io/v1/apis/:apiId/subscriptions/:subId/confirm                otoroshi.next.controllers.adminapi.ApisController.confirmSubscription(apiId, subId)
 POST    /apis/apis.otoroshi.io/v1/apis/:apiId/duplicate                                   otoroshi.next.controllers.adminapi.ApisController.duplicate(apiId)
