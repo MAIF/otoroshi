@@ -62,7 +62,7 @@
     "set-value": "4.1.0",
     "showdown": "1.9.1",
     "signals-react-safe": "^1.1.2",
-    "uuid": "8.3.0",
+    "uuid": "14.0.0",
     "whatwg-fetch": "3.6.20",
     "yaml": "^2.2.2",
     "yup": "^0.32.11"
