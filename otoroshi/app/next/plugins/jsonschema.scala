@@ -153,10 +153,10 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
           case Right(_)     =>
             ctx.otoroshiRequest.copy(body = Source.single(rawBody)).right
           case Left(errors) =>
-            JsonSchemaValidator.logger.warn(
-              s"request body schema validation failed on route '${ctx.route.id}': ${errors.mkString(", ")}"
-            )
             if (config.failOnValidationError) {
+              JsonSchemaValidator.logger.warn(
+                s"request body schema validation failed on route '${ctx.route.id}': ${errors.mkString(", ")}"
+              )
               Results
                 .UnprocessableEntity(
                   Json.obj(
@@ -166,6 +166,9 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
                 )
                 .left
             } else {
+              JsonSchemaValidator.logger.warn(
+                s"request body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting request through: ${errors.mkString(", ")}"
+              )
               ctx.otoroshiRequest.copy(body = Source.single(rawBody)).right
             }
         }
@@ -212,10 +215,10 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
           case Right(_)     =>
             ctx.otoroshiResponse.copy(body = Source.single(rawBody)).right
           case Left(errors) =>
-            JsonSchemaValidator.logger.warn(
-              s"response body schema validation failed on route '${ctx.route.id}': ${errors.mkString(", ")}"
-            )
             if (config.failOnValidationError) {
+              JsonSchemaValidator.logger.warn(
+                s"response body schema validation failed on route '${ctx.route.id}': ${errors.mkString(", ")}"
+              )
               Results
                 .BadGateway(
                   Json.obj(
@@ -225,6 +228,9 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
                 )
                 .left
             } else {
+              JsonSchemaValidator.logger.warn(
+                s"response body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting response through: ${errors.mkString(", ")}"
+              )
               ctx.otoroshiResponse.copy(body = Source.single(rawBody)).right
             }
         }
