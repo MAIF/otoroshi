@@ -32,8 +32,9 @@ import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
 import otoroshi.models._
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
-import otoroshi.next.plugins.api.NgPluginCategory
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
 import otoroshi.next.proxy.NgProxyStateLoaderJob
+import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
 import otoroshi.script._
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
@@ -202,6 +203,25 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
   def stopExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit]
 }
 
+// Plugin trait used by DataExporter custom filter step
+trait CustomDataExporterFilter extends NgPlugin {
+  override def pluginType: PluginType                      = PluginType.DataExporterType
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterFilter)
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  def `match`(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+}
+
+trait CustomDataExporterTransformer extends NgPlugin {
+  override def pluginType: PluginType                      = PluginType.DataExporterType
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterTransform)
+  override def defaultConfigObject: Option[NgPluginConfig] = None
+  def project(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[JsValue]
+}
+
 object DataExporter {
 
   def acceptEvent(event: JsValue, configUnsafe: DataExporterConfig, logger: Logger): Boolean = {
@@ -253,7 +273,20 @@ object DataExporter {
         .filter(_ => configOpt.exists(_.enabled))
         .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson.map(js => (js, event)))
         .filter { case (event, _) => accept(event) }
+        .applyOnIf(configUnsafe.customFilter.isDefined) { s =>
+          s.mapAsync(1) { case (event, rawEvent) =>
+            customFilterAsync(event).map(r => (event, rawEvent, r))
+          }
+          .collect {
+            case (event, rawEvent, true) => (event, rawEvent)
+          }
+        }
         .map { case (event, rawEvent) => (project(event), rawEvent) }
+        .applyOnIf(configUnsafe.customTransform.isDefined) { s =>
+          s.mapAsync(1) { case (event, rawEvent) =>
+              customTransformAsync(event).map(e => (e, rawEvent))
+            }
+        }
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { items =>
@@ -352,6 +385,181 @@ object DataExporter {
           logger.error("error while projecting event", t)
           event
       }
+    }
+
+    def customFilterAsync(event: JsValue): Future[Boolean] = {
+      configUnsafe.customFilter match {
+        case None      => FastFuture.successful(true)
+        case Some(cfg) =>
+          cfg.kind.toLowerCase match {
+            case "wasm"     =>
+              env.proxyState.wasmPlugin(cfg.ref) match {
+                case None         =>
+                  logger.error(s"customFilter wasm plugin '${cfg.ref}' not found on exporter '${id}'")
+                  FastFuture.successful(false)
+                case Some(plugin) =>
+                  val input = Json.obj("event" -> event, "config" -> cfg.config)
+                  env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
+                    case None          =>
+                      logger.error(s"customFilter wasm vm not available for '${cfg.ref}' on exporter '${id}'")
+                      FastFuture.successful(false)
+                    case Some((vm, _)) =>
+                      vm.call(
+                        WasmFunctionParameters.ExtismFuntionCall("custom_filter", input.stringify),
+                        None
+                      ).map {
+                        case Left(err)  =>
+                          logger.error(s"customFilter wasm error on exporter '${id}': ${err.stringify}")
+                          false
+                        case Right(res) =>
+                          val parsed = res._1.parseJson
+                          parsed.select("error").asOpt[JsValue] match {
+                            case Some(e) =>
+                              logger.error(s"customFilter wasm returned error on exporter '${id}': ${e.stringify}")
+                              false
+                            case None    =>
+                              parsed
+                                .select("result")
+                                .asOpt[Boolean]
+                                .orElse(parsed.asOpt[Boolean])
+                                .getOrElse(false)
+                          }
+                      }.andThen { case _ => vm.release() }
+                  }
+              }
+            case "workflow" =>
+              env.adminExtensions.extension[WorkflowAdminExtension] match {
+                case None            =>
+                  logger.error(s"workflow extension not available for customFilter on exporter '${id}'")
+                  FastFuture.successful(false)
+                case Some(extension) =>
+                  extension.workflow(cfg.ref) match {
+                    case None           =>
+                      logger.error(s"customFilter workflow '${cfg.ref}' not found on exporter '${id}'")
+                      FastFuture.successful(false)
+                    case Some(workflow) =>
+                      extension.engine
+                        .run(
+                          cfg.ref,
+                          Node.from(workflow.config),
+                          Json.obj("event" -> event, "config" -> cfg.config),
+                          TypedMap.empty,
+                          workflow.functions
+                        )
+                        .map { result =>
+                          if (result.hasError) {
+                            logger.error(
+                              s"customFilter workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
+                            )
+                            false
+                          } else {
+                            result.returned
+                              .flatMap(r => r.asOpt[Boolean].orElse(r.select("result").asOpt[Boolean]))
+                              .getOrElse(false)
+                          }
+                        }
+                  }
+              }
+            case "plugin"   =>
+              env.scriptManager.getAnyScript[CustomDataExporterFilter](cfg.ref) match {
+                case Left(err) =>
+                  logger.error(s"customFilter plugin '${cfg.ref}' not found on exporter '${id}': ${err}")
+                  FastFuture.successful(false)
+                case Right(p)  => p.`match`(event)
+              }
+            case other      =>
+              logger.error(s"customFilter unknown kind '${other}' on exporter '${id}'")
+              FastFuture.successful(false)
+          }
+      }
+    }.recover { case t =>
+      logger.error(s"error while applying customFilter on exporter '${id}'", t)
+      false
+    }
+
+    def customTransformAsync(event: JsValue): Future[JsValue] = {
+      configUnsafe.customTransform match {
+        case None      => FastFuture.successful(event)
+        case Some(cfg) =>
+          cfg.kind.toLowerCase match {
+            case "wasm"     =>
+              env.proxyState.wasmPlugin(cfg.ref) match {
+                case None         =>
+                  logger.error(s"customTransform wasm plugin '${cfg.ref}' not found on exporter '${id}'")
+                  FastFuture.successful(event)
+                case Some(plugin) =>
+                  val input = Json.obj("event" -> event, "config" -> cfg.config)
+                  env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
+                    case None          =>
+                      logger.error(s"customTransform wasm vm not available for '${cfg.ref}' on exporter '${id}'")
+                      FastFuture.successful(event)
+                    case Some((vm, _)) =>
+                      vm.call(
+                        WasmFunctionParameters.ExtismFuntionCall("custom_project", input.stringify),
+                        None
+                      ).map {
+                        case Left(err)  =>
+                          logger.error(s"customTransform wasm error on exporter '${id}': ${err.stringify}")
+                          event
+                        case Right(res) =>
+                          val parsed = res._1.parseJson
+                          parsed.select("error").asOpt[JsValue] match {
+                            case Some(e) =>
+                              logger.error(s"customTransform wasm returned error on exporter '${id}': ${e.stringify}")
+                              event
+                            case None    => parsed.select("event").asOpt[JsValue].getOrElse(parsed)
+                          }
+                      }.andThen { case _ => vm.release() }
+                  }
+              }
+            case "workflow" =>
+              env.adminExtensions.extension[WorkflowAdminExtension] match {
+                case None            =>
+                  logger.error(s"workflow extension not available for customTransform on exporter '${id}'")
+                  FastFuture.successful(event)
+                case Some(extension) =>
+                  extension.workflow(cfg.ref) match {
+                    case None           =>
+                      logger.error(s"customTransform workflow '${cfg.ref}' not found on exporter '${id}'")
+                      FastFuture.successful(event)
+                    case Some(workflow) =>
+                      extension.engine
+                        .run(
+                          cfg.ref,
+                          Node.from(workflow.config),
+                          Json.obj("event" -> event, "config" -> cfg.config),
+                          TypedMap.empty,
+                          workflow.functions
+                        )
+                        .map { result =>
+                          if (result.hasError) {
+                            logger.error(
+                              s"customTransform workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
+                            )
+                            event
+                          } else {
+                            result.returned
+                              .map(r => r.select("event").asOpt[JsValue].getOrElse(r))
+                              .getOrElse(event)
+                          }
+                        }
+                  }
+              }
+            case "plugin"   =>
+              env.scriptManager.getAnyScript[CustomDataExporterTransformer](cfg.ref) match {
+                case Left(err) =>
+                  logger.error(s"customTransform plugin '${cfg.ref}' not found on exporter '${id}': ${err}")
+                  FastFuture.successful(event)
+                case Right(p)  => p.project(event)
+              }
+            case other      =>
+              logger.error(s"customTransform unknown kind '${other}' on exporter '${id}'")
+              FastFuture.successful(event)
+          }
+      }
+    }.recover { case t =>
+      logger.error(s"error while applying customTransform on exporter '${id}'", t)
+      event
     }
 
     def publish(event: OtoroshiEvent): Unit = {
