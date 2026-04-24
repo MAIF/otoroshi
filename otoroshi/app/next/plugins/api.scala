@@ -297,6 +297,8 @@ object NgStep       {
   case object HandlesRequest    extends NgStep { def name: String = "HandlesRequest"    }
   case object CallBackend       extends NgStep { def name: String = "CallBackend"       }
   case object Job               extends NgStep { def name: String = "Job"               }
+  case object DataExporterFilter extends NgStep { def name: String = "DataExporterFilter"               }
+  case object DataExporterTransform extends NgStep { def name: String = "DataExporterTransform"               }
 
   val all = Seq(
     Router,
@@ -323,6 +325,8 @@ object NgStep       {
     case "HandlesRequest"    => HandlesRequest.some
     case "CallBackend"       => CallBackend.some
     case "Job"               => Job.some
+    case "DataExporterFilter" => DataExporterFilter.some
+    case "DataExporterTransform" => DataExporterTransform.some
     case _                   => None
   }
 }
