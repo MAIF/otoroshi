@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import {
   Table,
@@ -40,6 +40,106 @@ function tryOrFalse(f) {
   } catch (e) {
     return false;
   }
+}
+
+function CustomDataExporterRefSection({ label, role, value, onChange }) {
+  const enabled = !!value;
+  const v = value || { kind: 'wasm', ref: '', config: {} };
+  const [pluginList, setPluginList] = useState(null);
+  const stepName = role === 'transform' ? 'DataExporterTransform' : 'DataExporterFilter';
+
+  useEffect(() => {
+    if (enabled && v.kind === 'plugin') {
+      fetch('/bo/api/proxy/api/plugins/all', {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      })
+        .then((r) => r.json())
+        .then((list) =>
+          (list || []).filter((p) => (p.plugin_steps || p.pluginSteps || []).includes(stepName))
+        )
+        .then((list) => setPluginList(list))
+        .catch(() => setPluginList([]));
+    } else {
+      setPluginList(null);
+    }
+  }, [enabled, v.kind, stepName]);
+
+  const pluginMeta =
+    v.kind === 'plugin' && pluginList ? pluginList.find((p) => p.id === v.ref) : null;
+  const hasFormSchema =
+    pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
+
+  const refSelectorByKind = {
+    wasm: {
+      label: 'WASM plugin',
+      valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins',
+      transformer: (i) => ({ value: i.id, label: i.name }),
+    },
+    workflow: {
+      label: 'Workflow',
+      valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows',
+      transformer: (i) => ({ value: i.id, label: i.name }),
+    },
+  };
+
+  return (
+    <div>
+      <BooleanInput
+        label={label}
+        value={enabled}
+        onChange={(b) => onChange(b ? { kind: 'wasm', ref: '', config: {} } : null)}
+      />
+      {enabled && (
+        <div style={{ paddingLeft: 20, borderLeft: '2px solid #eee' }}>
+          <SelectInput
+            label="Kind"
+            value={v.kind}
+            possibleValues={[
+              { value: 'wasm', label: 'WASM plugin' },
+              { value: 'workflow', label: 'Workflow' },
+              { value: 'plugin', label: 'Plugin class' },
+            ]}
+            onChange={(kind) => onChange({ ...v, kind, ref: '' })}
+          />
+          {v.kind === 'plugin' ? (
+            <SelectInput
+              label="Plugin"
+              value={v.ref}
+              possibleValues={(pluginList || []).map((p) => ({
+                value: p.id,
+                label: p.name || p.id,
+              }))}
+              onChange={(ref) => onChange({ ...v, ref, config: {} })}
+            />
+          ) : (
+            <SelectInput
+              label={refSelectorByKind[v.kind].label}
+              value={v.ref}
+              valuesFrom={refSelectorByKind[v.kind].valuesFrom}
+              transformer={refSelectorByKind[v.kind].transformer}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
+          {hasFormSchema ? (
+            <Form
+              value={v.config || {}}
+              onChange={(config) => onChange({ ...v, config })}
+              schema={pluginMeta.configSchema || pluginMeta.config_schema}
+              flow={pluginMeta.configFlow || pluginMeta.config_flow || []}
+            />
+          ) : (
+            <JsonObjectAsCodeInput
+              label="Config"
+              value={v.config || {}}
+              onChange={(config) => onChange({ ...v, config })}
+              height="150px"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 class CustomMetrics extends Component {
@@ -719,6 +819,20 @@ export class NewExporterForm extends Component {
                 </button>
               </div>
             </div>
+          </Collapse>
+          <Collapse initCollapsed={true} label="Custom filter & projection">
+            <CustomDataExporterRefSection
+              label="Enable custom filter"
+              role="filter"
+              value={this.data().customFilter}
+              onChange={(e) => this.dataChange({ customFilter: e })}
+            />
+            <CustomDataExporterRefSection
+              label="Enable custom projection"
+              role="transform"
+              value={this.data().customTransform}
+              onChange={(e) => this.dataChange({ customTransform: e })}
+            />
           </Collapse>
           <Collapse initCollapsed={true} label="Queue details">
             <NumberInput
