@@ -5,7 +5,7 @@
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Features | Otoroshi</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png"><meta data-rh="true" name="twitter:image" content="https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png"><meta data-rh="true" property="og:url" content="https://maif.github.io/otoroshi/devmanual/docs/features"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Features | Otoroshi"><meta data-rh="true" name="description" content="Traffic Management"><meta data-rh="true" property="og:description" content="Traffic Management"><link data-rh="true" rel="icon" href="/otoroshi/devmanual/img/favicon.png"><link data-rh="true" rel="canonical" href="https://maif.github.io/otoroshi/devmanual/docs/features"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/devmanual/docs/features" hreflang="en"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/devmanual/docs/features" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Features","item":"https://maif.github.io/otoroshi/devmanual/docs/features"}]}</script><link rel="alternate" type="application/rss+xml" href="/otoroshi/devmanual/blog/rss.xml" title="Otoroshi RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/otoroshi/devmanual/blog/atom.xml" title="Otoroshi Atom Feed"><link rel="stylesheet" href="/otoroshi/devmanual/assets/css/styles.3a48ec6c.css">
-<script src="/otoroshi/devmanual/assets/js/runtime~main.4786c18d.js" defer="defer"></script>
+<script src="/otoroshi/devmanual/assets/js/runtime~main.e1118ade.js" defer="defer"></script>
 <script src="/otoroshi/devmanual/assets/js/main.df599c2a.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -242,6 +242,34 @@
 <li class="">Serve static files from ZIP archives (<a class="" href="/otoroshi/devmanual/docs/tutorials/zip-backend-plugin">ZIP backend how-to</a>)</li>
 <li class="">Echo backend for debugging (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">Static response / mock backends (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
+</ul>
+<p><strong>AI / LLM Gateway</strong> (<a class="" href="/otoroshi/devmanual/docs/topics/ai-gateway">AI Gateway</a>)</p>
+<p>Available through the optional <a href="https://cloud-apim.github.io/otoroshi-llm-extension/" target="_blank" rel="noopener noreferrer" class="">Otoroshi LLM Extension</a> developed by <a href="https://www.cloud-apim.com/" target="_blank" rel="noopener noreferrer" class="">Cloud APIM</a>, Otoroshi can act as a full-featured AI Gateway in front of LLM providers.</p>
+<ul>
+<li class="">Unified, OpenAI-compatible API in front of 50+ LLM providers (OpenAI, Anthropic, Azure OpenAI, Mistral, Groq, Cohere, Google Gemini, Ollama, DeepSeek, X.ai, Hugging Face, Cloudflare Workers AI, Scaleway, OVH, etc.)</li>
+<li class="">Multi-modal endpoints: chat completions, embeddings, image generation, audio (TTS/STT), video generation, content moderation</li>
+<li class="">Anthropic Messages API compatibility for Claude clients</li>
+<li class="">Provider load balancing across multiple LLM backends (round robin, random, best response time, weighted)</li>
+<li class="">Automatic provider fallback on failure</li>
+<li class="">Cost tracking with a built-in pricing database covering 1000+ models</li>
+<li class="">Budgets per API key, user, or service (USD or token-based, with time windows and alert thresholds)</li>
+<li class="">Token-based rate limiting (per consumer, per provider, per model)</li>
+<li class="">Caching strategies: TTL-based simple cache and semantic cache using embeddings</li>
+<li class="">Persistent conversation memory with sliding window or full history, scoped by API key, user, header, etc.</li>
+<li class="">Guardrails on prompts and responses:
+<ul>
+<li class="">regex allow/deny lists</li>
+<li class="">LLM-based validation</li>
+<li class="">moderation API (OpenAI moderation and similar)</li>
+<li class="">webhook-based external validation</li>
+<li class="">WASM / QuickJS custom logic</li>
+<li class="">built-in detectors: prompt injection, PII, secrets leakage, toxic language, racial / gender bias, personal health information, gibberish, faithfulness</li>
+<li class="">text constraints: word / sentence / character counts, contains / semantic-contains</li>
+</ul>
+</li>
+<li class="">Reusable prompts, prompt contexts (system messages), and prompt templates with variable substitution</li>
+<li class="">Model Context Protocol (MCP) connectors (stdio, SSE, WebSocket, HTTP) for tool / function calling</li>
+<li class="">Full audit trail of every LLM call (consumer, provider, model, tokens, cost, cache status, guardrail results, latency) exported through Otoroshi&#x27;s standard data exporters</li>
 </ul>
 <p><strong>Administration UI</strong></p>
 <ul>
