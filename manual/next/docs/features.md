@@ -107,7 +107,6 @@ sidebar_position: 4
     * JWE (encrypted JWT) support
     * JWT signing
 * HMAC request signing and validation ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
-* Biscuit token extraction and validation (datalog-based authorization) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * OpenFGA fine-grained authorization ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Role-based access control (RBAC) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Context validation (JSON path-based claims validation) ([built-in plugins](./plugins/built-in-plugins.mdx))
@@ -213,32 +212,6 @@ sidebar_position: 4
 * Echo backend for debugging ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Static response / mock backends ([built-in plugins](./plugins/built-in-plugins.mdx))
 
-**AI / LLM Gateway** ([AI Gateway](./topics/ai-gateway.md))
-
-Available through the optional [Otoroshi LLM Extension](https://cloud-apim.github.io/otoroshi-llm-extension/) developed by [Cloud APIM](https://www.cloud-apim.com/), Otoroshi can act as a full-featured AI Gateway in front of LLM providers.
-
-* Unified, OpenAI-compatible API in front of 50+ LLM providers (OpenAI, Anthropic, Azure OpenAI, Mistral, Groq, Cohere, Google Gemini, Ollama, DeepSeek, X.ai, Hugging Face, Cloudflare Workers AI, Scaleway, OVH, etc.)
-* Multi-modal endpoints: chat completions, embeddings, image generation, audio (TTS/STT), video generation, content moderation
-* Anthropic Messages API compatibility for Claude clients
-* Provider load balancing across multiple LLM backends (round robin, random, best response time, weighted)
-* Automatic provider fallback on failure
-* Cost tracking with a built-in pricing database covering 1000+ models
-* Budgets per API key, user, or service (USD or token-based, with time windows and alert thresholds)
-* Token-based rate limiting (per consumer, per provider, per model)
-* Caching strategies: TTL-based simple cache and semantic cache using embeddings
-* Persistent conversation memory with sliding window or full history, scoped by API key, user, header, etc.
-* Guardrails on prompts and responses:
-    * regex allow/deny lists
-    * LLM-based validation
-    * moderation API (OpenAI moderation and similar)
-    * webhook-based external validation
-    * WASM / QuickJS custom logic
-    * built-in detectors: prompt injection, PII, secrets leakage, toxic language, racial / gender bias, personal health information, gibberish, faithfulness
-    * text constraints: word / sentence / character counts, contains / semantic-contains
-* Reusable prompts, prompt contexts (system messages), and prompt templates with variable substitution
-* Model Context Protocol (MCP) connectors (stdio, SSE, WebSocket, HTTP) for tool / function calling
-* Full audit trail of every LLM call (consumer, provider, model, tokens, cost, cache status, guardrail results, latency) exported through Otoroshi's standard data exporters
-
 **Administration UI**
 
 * Manage and organize all resources
@@ -309,3 +282,29 @@ Available through the optional [Otoroshi LLM Extension](https://cloud-apim.githu
 **Developers portal**
 
 * Using [Daikoku](https://maif.github.io/daikoku/manual/index.html) ([dev portal](./topics/dev-portal.mdx))
+
+**AI / LLM Gateway** ([AI Gateway](./topics/ai-gateway.md))
+
+Available through the optional [Otoroshi LLM Extension](https://cloud-apim.github.io/otoroshi-llm-extension/) developed by [Cloud APIM](https://www.cloud-apim.com/), Otoroshi can act as a full-featured AI Gateway in front of LLM providers.
+
+* Unified, OpenAI-compatible API in front of 50+ LLM providers (OpenAI, Anthropic, Azure OpenAI, Mistral, Groq, Cohere, Google Gemini, Ollama, DeepSeek, X.ai, Hugging Face, Cloudflare Workers AI, Scaleway, OVH, etc.)
+* Multi-modal endpoints: chat completions, embeddings, image generation, audio (TTS/STT), video generation, content moderation
+* Anthropic Messages API compatibility for Claude clients
+* Provider load balancing across multiple LLM backends (round robin, random, best response time, weighted)
+* Automatic provider fallback on failure
+* Cost tracking with a built-in pricing database covering 1000+ models
+* Budgets per API key, user, or service (USD or token-based, with time windows and alert thresholds)
+* Token-based rate limiting (per consumer, per provider, per model)
+* Caching strategies: TTL-based simple cache and semantic cache using embeddings
+* Persistent conversation memory with sliding window or full history, scoped by API key, user, header, etc.
+* Guardrails on prompts and responses:
+    * regex allow/deny lists
+    * LLM-based validation
+    * moderation API (OpenAI moderation and similar)
+    * webhook-based external validation
+    * WASM / QuickJS custom logic
+    * built-in detectors: prompt injection, PII, secrets leakage, toxic language, racial / gender bias, personal health information, gibberish, faithfulness
+    * text constraints: word / sentence / character counts, contains / semantic-contains
+* Reusable prompts, prompt contexts (system messages), and prompt templates with variable substitution
+* Model Context Protocol (MCP) connectors (stdio, SSE, WebSocket, HTTP) for tool / function calling
+* Full audit trail of every LLM call (consumer, provider, model, tokens, cost, cache status, guardrail results, latency) exported through Otoroshi's standard data exporters
