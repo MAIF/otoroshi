@@ -209,8 +209,7 @@ trait CustomDataExporterFilter extends NgPlugin {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterFilter)
-  override def defaultConfigObject: Option[NgPluginConfig] = None
-  def `match`(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def matchEvent(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
 trait CustomDataExporterTransformer extends NgPlugin {
@@ -218,7 +217,6 @@ trait CustomDataExporterTransformer extends NgPlugin {
   override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
   override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterTransform)
-  override def defaultConfigObject: Option[NgPluginConfig] = None
   def project(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[JsValue]
 }
 
@@ -428,44 +426,46 @@ object DataExporter {
                   }
               }
             case "workflow" =>
-              env.adminExtensions.extension[WorkflowAdminExtension] match {
-                case None            =>
-                  logger.error(s"workflow extension not available for customFilter on exporter '${id}'")
-                  FastFuture.successful(false)
-                case Some(extension) =>
-                  extension.workflow(cfg.ref) match {
-                    case None           =>
-                      logger.error(s"customFilter workflow '${cfg.ref}' not found on exporter '${id}'")
-                      FastFuture.successful(false)
-                    case Some(workflow) =>
-                      extension.engine
-                        .run(
-                          cfg.ref,
-                          Node.from(workflow.config),
-                          Json.obj("event" -> event, "config" -> cfg.config),
-                          TypedMap.empty,
-                          workflow.functions
-                        )
-                        .map { result =>
-                          if (result.hasError) {
-                            logger.error(
-                              s"customFilter workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
-                            )
-                            false
-                          } else {
-                            result.returned
-                              .flatMap(r => r.asOpt[Boolean].orElse(r.select("result").asOpt[Boolean]))
-                              .getOrElse(false)
+              env.metrics.withTimerAsync("run-wf-filter", display = false) {
+                env.adminExtensions.extension[WorkflowAdminExtension] match {
+                  case None =>
+                    logger.error(s"workflow extension not available for customFilter on exporter '${id}'")
+                    FastFuture.successful(false)
+                  case Some(extension) =>
+                    extension.workflow(cfg.ref) match {
+                      case None =>
+                        logger.error(s"customFilter workflow '${cfg.ref}' not found on exporter '${id}'")
+                        FastFuture.successful(false)
+                      case Some(workflow) =>
+                        extension.engine
+                          .run(
+                            cfg.ref,
+                            Node.from(workflow.config),
+                            Json.obj("event" -> event, "config" -> cfg.config),
+                            TypedMap.empty,
+                            workflow.functions
+                          )
+                          .map { result =>
+                            if (result.hasError) {
+                              logger.error(
+                                s"customFilter workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
+                              )
+                              false
+                            } else {
+                              result.returned
+                                .flatMap(r => r.asOpt[Boolean].orElse(r.select("result").asOpt[Boolean]))
+                                .getOrElse(false)
+                            }
                           }
-                        }
-                  }
+                    }
+                }
               }
             case "plugin"   =>
               env.scriptManager.getAnyScript[CustomDataExporterFilter](cfg.ref) match {
                 case Left(err) =>
                   logger.error(s"customFilter plugin '${cfg.ref}' not found on exporter '${id}': ${err}")
                   FastFuture.successful(false)
-                case Right(p)  => p.`match`(event)
+                case Right(p)  => p.matchEvent(event)
               }
             case other      =>
               logger.error(s"customFilter unknown kind '${other}' on exporter '${id}'")
@@ -513,37 +513,39 @@ object DataExporter {
                   }
               }
             case "workflow" =>
-              env.adminExtensions.extension[WorkflowAdminExtension] match {
-                case None            =>
-                  logger.error(s"workflow extension not available for customTransform on exporter '${id}'")
-                  FastFuture.successful(event)
-                case Some(extension) =>
-                  extension.workflow(cfg.ref) match {
-                    case None           =>
-                      logger.error(s"customTransform workflow '${cfg.ref}' not found on exporter '${id}'")
-                      FastFuture.successful(event)
-                    case Some(workflow) =>
-                      extension.engine
-                        .run(
-                          cfg.ref,
-                          Node.from(workflow.config),
-                          Json.obj("event" -> event, "config" -> cfg.config),
-                          TypedMap.empty,
-                          workflow.functions
-                        )
-                        .map { result =>
-                          if (result.hasError) {
-                            logger.error(
-                              s"customTransform workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
-                            )
-                            event
-                          } else {
-                            result.returned
-                              .map(r => r.select("event").asOpt[JsValue].getOrElse(r))
-                              .getOrElse(event)
+              env.metrics.withTimerAsync("run-wf-project", display = false) {
+                env.adminExtensions.extension[WorkflowAdminExtension] match {
+                  case None =>
+                    logger.error(s"workflow extension not available for customTransform on exporter '${id}'")
+                    FastFuture.successful(event)
+                  case Some(extension) =>
+                    extension.workflow(cfg.ref) match {
+                      case None =>
+                        logger.error(s"customTransform workflow '${cfg.ref}' not found on exporter '${id}'")
+                        FastFuture.successful(event)
+                      case Some(workflow) =>
+                        extension.engine
+                          .run(
+                            cfg.ref,
+                            Node.from(workflow.config),
+                            Json.obj("event" -> event, "config" -> cfg.config),
+                            TypedMap.empty,
+                            workflow.functions
+                          )
+                          .map { result =>
+                            if (result.hasError) {
+                              logger.error(
+                                s"customTransform workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
+                              )
+                              event
+                            } else {
+                              result.returned
+                                .map(r => r.select("event").asOpt[JsValue].getOrElse(r))
+                                .getOrElse(event)
+                            }
                           }
-                        }
-                  }
+                    }
+                }
               }
             case "plugin"   =>
               env.scriptManager.getAnyScript[CustomDataExporterTransformer](cfg.ref) match {
