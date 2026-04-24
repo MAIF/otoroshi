@@ -555,6 +555,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "JQ Transform response" in {
       new JQTransformResponseTests(this)
     }
+    "JsonSchemaRequestValidator - accepts valid body" in {
+      new JsonSchemaRequestValidatorTests(this).acceptsValidBody()
+    }
+    "JsonSchemaRequestValidator - rejects invalid body when failOn is true" in {
+      new JsonSchemaRequestValidatorTests(this).rejectsInvalidBodyWithFailOn()
+    }
+    "JsonSchemaRequestValidator - passes through when failOn is false" in {
+      new JsonSchemaRequestValidatorTests(this).passThroughWithFailOff()
+    }
+    "JsonSchemaRequestValidator - skips non-JSON content-type" in {
+      new JsonSchemaRequestValidatorTests(this).skipsNonJsonContentType()
+    }
+    "JsonSchemaResponseValidator - accepts valid response" in {
+      new JsonSchemaResponseValidatorTests(this).acceptsValidResponse()
+    }
+    "JsonSchemaResponseValidator - rejects invalid response when failOn is true" in {
+      new JsonSchemaResponseValidatorTests(this).rejectsInvalidResponseWithFailOn()
+    }
+    "JsonSchemaResponseValidator - passes through when failOn is false" in {
+      new JsonSchemaResponseValidatorTests(this).passThroughWithFailOff()
+    }
     "JQ" in {
       new JQTests(this)
     }
