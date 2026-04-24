@@ -55,12 +55,12 @@ object JsonSchemaValidatorConfig {
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "schema"                   -> Json.obj(
-        "type"  -> "code",
+        "type"  -> "any",
         "label" -> "JSON Schema",
         "help"  -> "The JSON Schema used to validate the body. If empty, validation is skipped.",
         "props" -> Json.obj(
           "editorOnly" -> true,
-          "mode"       -> "json",
+          "language"   -> "json",
           "height"     -> "300px"
         )
       ),
