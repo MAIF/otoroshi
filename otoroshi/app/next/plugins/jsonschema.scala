@@ -45,6 +45,46 @@ object JsonSchemaValidatorConfig {
       case Success(s) => JsSuccess(s)
     }
   }
+
+  val configFlow: Seq[String] = Seq(
+    "schema",
+    "specification",
+    "fail_on_validation_error"
+  )
+
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "schema"                   -> Json.obj(
+        "type"  -> "code",
+        "label" -> "JSON Schema",
+        "help"  -> "The JSON Schema used to validate the body. If empty, validation is skipped.",
+        "props" -> Json.obj(
+          "editorOnly" -> true,
+          "mode"       -> "json",
+          "height"     -> "300px"
+        )
+      ),
+      "specification"            -> Json.obj(
+        "type"  -> "select",
+        "label" -> "Specification",
+        "help"  -> "The JSON Schema draft version used to parse and validate.",
+        "props" -> Json.obj(
+          "options" -> Json.arr(
+            Json.obj("label" -> "Draft 2020-12", "value" -> VersionFlag.V202012.getId),
+            Json.obj("label" -> "Draft 2019-09", "value" -> VersionFlag.V201909.getId),
+            Json.obj("label" -> "Draft 07", "value"      -> VersionFlag.V7.getId),
+            Json.obj("label" -> "Draft 06", "value"      -> VersionFlag.V6.getId),
+            Json.obj("label" -> "Draft 04", "value"      -> VersionFlag.V4.getId)
+          )
+        )
+      ),
+      "fail_on_validation_error" -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Fail on validation error",
+        "help"  -> "When true, the plugin rejects non-conforming bodies. When false, errors are only logged and the body passes through."
+      )
+    )
+  )
 }
 
 object JsonSchemaValidator {
@@ -93,6 +133,10 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
 
   override def transformsResponse: Boolean = false
   override def transformsError: Boolean    = false
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = JsonSchemaValidatorConfig.configFlow
+  override def configSchema: Option[JsObject] = JsonSchemaValidatorConfig.configSchema
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
@@ -145,6 +189,10 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
 
   override def transformsRequest: Boolean = false
   override def transformsError: Boolean   = false
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = JsonSchemaValidatorConfig.configFlow
+  override def configSchema: Option[JsObject] = JsonSchemaValidatorConfig.configSchema
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
