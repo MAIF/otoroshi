@@ -81,7 +81,7 @@ object JsonSchemaValidator {
 class JsonSchemaRequestValidator extends NgRequestTransformer {
 
   override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = false
+  override def core: Boolean                               = true
   override def name: String                                = "Json schema request validator"
   override def description: Option[String]                 =
     "Validates the body of incoming HTTP requests against a JSON schema".some
@@ -133,7 +133,7 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
 class JsonSchemaResponseValidator extends NgRequestTransformer {
 
   override def multiInstance: Boolean                      = true
-  override def core: Boolean                               = false
+  override def core: Boolean                               = true
   override def name: String                                = "Json schema response validator"
   override def description: Option[String]                 =
     "Validates the body of outgoing HTTP responses against a JSON schema".some
