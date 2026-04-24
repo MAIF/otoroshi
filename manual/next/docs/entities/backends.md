@@ -107,14 +107,49 @@ When enabled, Otoroshi periodically calls the health check URL. Unhealthy target
 
 ## Load balancing
 
-| Type | Description |
-|------|-------------|
-| `RoundRobin` | Distributes requests evenly across all targets in order |
-| `Random` | Randomly selects a target for each request |
-| `Sticky` | Routes requests from the same client to the same target |
-| `IpAddressHash` | Selects target based on a hash of the client IP address |
-| `BestResponseTime` | Routes to the target with the lowest response time |
-| `WeightedBestResponseTime` | Combines weight and response time for target selection |
+The `load_balancing` object selects which target receives the next request when several are available. Every strategy is a JSON object with at least a `type` field; some strategies accept additional parameters.
+
+| Type | Extra parameters | Description |
+|------|------------------|-------------|
+| `RoundRobin` | -- | Distributes requests evenly across all targets, in declaration order. Default strategy. |
+| `Random` | -- | Picks a target uniformly at random for each request. |
+| `Sticky` | -- | Routes requests carrying the same Otoroshi tracking id to the same target, using consistent hashing. Requires the tracking cookie to be enabled (Otoroshi sets it automatically). |
+| `IpAddressHash` | -- | Picks the target by consistent hashing on the client IP address. Same client IP always lands on the same target as long as the target pool is unchanged. |
+| `CookieHash` | `cookie_name` (string, default `"session-id"`) | Picks the target by consistent hashing on the value of the named request cookie. Falls back to round-robin when the cookie is absent. |
+| `QueryHash` | `query_name` (string, default `"session-id"`) | Picks the target by consistent hashing on the value of the named query string parameter. Falls back to round-robin when the parameter is absent. |
+| `HeaderHash` | `header_name` (string, default `"session-id"`) | Picks the target by consistent hashing on the value of the named request header. Falls back to round-robin when the header is absent. |
+| `BestResponseTime` | -- | Routes to the target with the lowest observed average response time. Targets with no recorded samples are tried first so every target gets measured. |
+| `WeightedBestResponseTime` | `ratio` (number, default `0.5`, clamped to `[0.0, 0.99]`) | Mixes `BestResponseTime` with `Random`. The `ratio` controls how often the fastest target is preferred -- `0.0` is equivalent to `Random`, values close to `0.99` always pick the fastest target. |
+| `LeastConnections` | -- | Routes to the target with the fewest in-flight requests handled by this Otoroshi instance. Ties are broken in round-robin order. |
+| `PowerOfTwoRandomChoices` | -- | Picks two targets at random and forwards to the one with fewer in-flight requests. Cheap approximation of `LeastConnections` that scales well with large target pools. |
+
+:::note
+`Sticky`, `BestResponseTime`, `WeightedBestResponseTime`, `LeastConnections` and `PowerOfTwoRandomChoices` keep their state in memory on each Otoroshi instance. In a cluster, every worker maintains its own counters, so the distribution converges per-instance rather than globally.
+:::
+
+:::tip
+Targets flagged with `"backup": true` are excluded from load balancing as long as at least one non-backup target is available. They only enter the pool once all primary targets are marked unhealthy or removed.
+:::
+
+### Examples
+
+Round robin (default):
+
+```json
+{ "type": "RoundRobin" }
+```
+
+Hash on a header value:
+
+```json
+{ "type": "HeaderHash", "header_name": "x-tenant-id" }
+```
+
+Weighted best response time biased 80% toward the fastest target:
+
+```json
+{ "type": "WeightedBestResponseTime", "ratio": 0.8 }
+```
 
 ## Client settings
 
