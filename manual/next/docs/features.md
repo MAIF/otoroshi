@@ -54,6 +54,22 @@ sidebar_position: 4
 * Path stripping ([routes](./entities/routes.md))
 * Target predicates (route to specific backends based on geolocation, cloud region, datacenter, rack, etc) ([backends](./entities/backends.md))
 
+**API Management** ([APIs](./entities/apis.mdx), [tutorial](./tutorials/create-your-first-api.mdx))
+
+Beyond low-level routing, Otoroshi exposes an [API entity](./entities/apis.mdx) that covers the full API Management lifecycle -- design, secure, expose, monetize, document and govern an API as a single first-class object.
+
+* **Design** -- group all endpoints of an API (REST, GraphQL, gRPC, HTTP, WebSocket) under a shared domain and context path, with reusable backends, HTTP client settings and named plugin chains
+* **Lifecycle** -- staging / published / deprecated / removed states, multi-version support, drafts with a dedicated testing mode (test draft endpoints through a header without touching the published API), and immutable deployment snapshots for full publication traceability
+* **Secure** -- consumer plans with pluggable access modes: `keyless`, API key, JWT, mTLS, built-in OAuth2 `client_credentials` (local token endpoint) or remote OAuth2 introspection
+* **Quotas and rate limiting** -- per-plan throttling strategies applied automatically to every route of the API
+* **Monetize** -- attach pricing (price, currency, custom parameters) to plans
+* **Subscribe** -- self-service subscription flow that auto-generates the right credentials (API keys, certificates, JWTs) for the chosen plan and tracks the full subscription lifecycle (created / started / paused / ending / closed)
+* **Govern** -- owner and members per API, visibility modes (public, semi-public, private, custom), tags, metadata and groups for multi-team setups
+* **Document** -- built-in documentation entity (pages, sidebar navigation, search, logo, banner, footer, references, optional remote source) ready to power a developer portal
+* **Bootstrap from OpenAPI** -- generate a complete API entity from an OpenAPI specification (JSON or YAML)
+* **Observe** -- live stats, per-route stats, request capture, debug flows and reporting toggles per API
+* **Operate** -- dedicated API editor in the admin UI (dashboard, routes, backends, plans, subscriptions, clients, documentation, deployments, testing, version manager) and full admin API for everything above
+
 **Routes customization**
 
 * Over 200 built-in middlewares (plugins) covering: ([built-in plugins](./plugins/built-in-plugins.mdx))
