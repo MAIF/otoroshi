@@ -5,8 +5,8 @@
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Features | Otoroshi</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://www.otoroshi.io/img/otoroshi-social-card.png"><meta data-rh="true" name="twitter:image" content="https://www.otoroshi.io/img/otoroshi-social-card.png"><meta data-rh="true" property="og:url" content="https://www.otoroshi.io/docs/features"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Features | Otoroshi"><meta data-rh="true" name="description" content="Traffic Management"><meta data-rh="true" property="og:description" content="Traffic Management"><link data-rh="true" rel="icon" href="/img/favicon.png"><link data-rh="true" rel="canonical" href="https://www.otoroshi.io/docs/features"><link data-rh="true" rel="alternate" href="https://www.otoroshi.io/docs/features" hreflang="en"><link data-rh="true" rel="alternate" href="https://www.otoroshi.io/docs/features" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Features","item":"https://www.otoroshi.io/docs/features"}]}</script><link rel="alternate" type="application/rss+xml" href="/blog/rss.xml" title="Otoroshi RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/blog/atom.xml" title="Otoroshi Atom Feed"><link rel="stylesheet" href="/assets/css/styles.3a48ec6c.css">
-<script src="/assets/js/runtime~main.ca1522db.js" defer="defer"></script>
-<script src="/assets/js/main.cfacf2c6.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.8582da8b.js" defer="defer"></script>
+<script src="/assets/js/main.a56569c9.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg style="display: none;"><defs>
@@ -68,6 +68,21 @@
 <li class="">Full URL rewriting (<a class="" href="/docs/entities/backends">backends</a>)</li>
 <li class="">Path stripping (<a class="" href="/docs/entities/routes">routes</a>)</li>
 <li class="">Target predicates (route to specific backends based on geolocation, cloud region, datacenter, rack, etc) (<a class="" href="/docs/entities/backends">backends</a>)</li>
+</ul>
+<p><strong>API Management</strong> (<a class="" href="/docs/entities/apis">APIs</a>, <a class="" href="/docs/tutorials/create-your-first-api">tutorial</a>)</p>
+<p>Beyond low-level routing, Otoroshi exposes an <a class="" href="/docs/entities/apis">API entity</a> that covers the full API Management lifecycle -- design, secure, expose, monetize, document and govern an API as a single first-class object.</p>
+<ul>
+<li class=""><strong>Design</strong> -- group all endpoints of an API (REST, GraphQL, gRPC, HTTP, WebSocket) under a shared domain and context path, with reusable backends, HTTP client settings and named plugin chains</li>
+<li class=""><strong>Lifecycle</strong> -- staging / published / deprecated / removed states, multi-version support, drafts with a dedicated testing mode (test draft endpoints through a header without touching the published API), and immutable deployment snapshots for full publication traceability</li>
+<li class=""><strong>Secure</strong> -- consumer plans with pluggable access modes: <code>keyless</code>, API key, JWT, mTLS, built-in OAuth2 <code>client_credentials</code> (local token endpoint) or remote OAuth2 introspection</li>
+<li class=""><strong>Quotas and rate limiting</strong> -- per-plan throttling strategies applied automatically to every route of the API</li>
+<li class=""><strong>Monetize</strong> -- attach pricing (price, currency, custom parameters) to plans</li>
+<li class=""><strong>Subscribe</strong> -- self-service subscription flow that auto-generates the right credentials (API keys, certificates, JWTs) for the chosen plan and tracks the full subscription lifecycle (created / started / paused / ending / closed)</li>
+<li class=""><strong>Govern</strong> -- owner and members per API, visibility modes (public, semi-public, private, custom), tags, metadata and groups for multi-team setups</li>
+<li class=""><strong>Document</strong> -- built-in documentation entity (pages, sidebar navigation, search, logo, banner, footer, references, optional remote source) ready to power a developer portal</li>
+<li class=""><strong>Bootstrap from OpenAPI</strong> -- generate a complete API entity from an OpenAPI specification (JSON or YAML)</li>
+<li class=""><strong>Observe</strong> -- live stats, per-route stats, request capture, debug flows and reporting toggles per API</li>
+<li class=""><strong>Operate</strong> -- dedicated API editor in the admin UI (dashboard, routes, backends, plans, subscriptions, clients, documentation, deployments, testing, version manager) and full admin API for everything above</li>
 </ul>
 <p><strong>Routes customization</strong></p>
 <ul>
@@ -156,6 +171,7 @@
 <li class="">Webhook (HTTP)</li>
 <li class="">File</li>
 <li class="">S3</li>
+<li class="">PostgreSQL (with auto-created table, configurable schema/table, connection pool, SSL, and optional retention-based cleanup)</li>
 <li class="">Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) (<a class="" href="/docs/tutorials/export-alerts-using-mailgun">how-to</a>)</li>
 <li class="">Console / Logger</li>
 <li class="">Splunk</li>

@@ -2,11 +2,50 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://www.otoroshi.io/blog</id>
     <title>Otoroshi Blog</title>
-    <updated>2026-03-16T00:00:00.000Z</updated>
+    <updated>2026-04-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://www.otoroshi.io/blog"/>
     <subtitle>Otoroshi Blog</subtitle>
     <icon>https://www.otoroshi.io/img/favicon.png</icon>
+    <entry>
+        <title type="html"><![CDATA[A fresh coat of paint - new dark and light themes for the Otoroshi UI]]></title>
+        <id>https://www.otoroshi.io/blog/new-ui-themes</id>
+        <link href="https://www.otoroshi.io/blog/new-ui-themes"/>
+        <updated>2026-04-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[The Otoroshi backoffice has been with us for a long time, and over the years it grew organically -- screen by screen, feature by feature. The result was a UI that worked, but felt dated, a little inconsistent from one page to another, and frankly a bit harsh on the eyes (especially in light mode, where staring at a wall of pure white is no one's idea of fun).]]></summary>
+        <content type="html"><![CDATA[<p>The Otoroshi backoffice has been with us for a long time, and over the years it grew organically -- screen by screen, feature by feature. The result was a UI that worked, but felt dated, a little inconsistent from one page to another, and frankly a bit harsh on the eyes (especially in light mode, where staring at a wall of pure white is no one's idea of fun).</p>
+<p>We took the time to refresh both themes from the ground up, and we are pretty happy with the result.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-new-light-theme-that-doesnt-burn-your-retinas">A new light theme that doesn't burn your retinas<a href="https://www.otoroshi.io/blog/new-ui-themes#a-new-light-theme-that-doesnt-burn-your-retinas" class="hash-link" aria-label="Direct link to A new light theme that doesn't burn your retinas" title="Direct link to A new light theme that doesn't burn your retinas" translate="no">​</a></h2>
+<p>The light theme has been the most aggressive change. We moved away from the previous high-contrast white-on-white look toward a softer, more neutral palette: gentle off-whites for the background, light gray cards with subtle borders, and just enough contrast to make every block stand out without screaming for attention. Typography has been tightened, spacing rebalanced, and the iconic Otoroshi yellow now plays a clearer accent role instead of fighting with the rest of the page.</p>
+<p><img decoding="async" loading="lazy" alt="New light theme - home page" src="https://www.otoroshi.io/assets/images/capture-home-light-1d74f34447f3c4d898a0f4c442239fb0.png" width="1551" height="1177" class="img_ev3q"></p>
+<p>The result is a UI that you can comfortably look at for hours without feeling like you are staring into a lightbulb -- which, given how much time some of you spend in the dashboard, felt like the least we could do.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="a-dark-theme-worthy-of-the-name">A dark theme worthy of the name<a href="https://www.otoroshi.io/blog/new-ui-themes#a-dark-theme-worthy-of-the-name" class="hash-link" aria-label="Direct link to A dark theme worthy of the name" title="Direct link to A dark theme worthy of the name" translate="no">​</a></h2>
+<p>The dark theme also got a full makeover. The new palette is a proper deep dark instead of the old half-gray, the contrast on text and metrics is crisp, and the yellow accent really pops against the background. The whole UI feels more modern and more "product-grade".</p>
+<p><img decoding="async" loading="lazy" alt="New dark theme - home page" src="https://www.otoroshi.io/assets/images/capture-home-dark-54ba60c48d9d9eafbb32e87afd12803f.png" width="1552" height="1176" class="img_ev3q"></p>
+<p>It looks great on big monitors, on laptops in the dark, and -- most importantly -- it looks consistent with the light theme. They are now genuinely two facets of the same design system, not two unrelated stylesheets.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="consistent-layouts-across-screens">Consistent layouts across screens<a href="https://www.otoroshi.io/blog/new-ui-themes#consistent-layouts-across-screens" class="hash-link" aria-label="Direct link to Consistent layouts across screens" title="Direct link to Consistent layouts across screens" translate="no">​</a></h2>
+<p>Refreshing the colors was only half of the work. We have also started to rework individual screens so that the important controls live in predictable places. The general principles we have been moving toward are:</p>
+<ul>
+<li class="">a clear page header with the entity name and its primary status (state, version, etc.)</li>
+<li class="">the <strong>save / publish / primary action</strong> sits in a consistent area at the top</li>
+<li class="">a structured left sidebar dedicated to navigation inside the entity (dashboard, routes, backends, plans, ...)</li>
+<li class="">a <strong>contextual right panel</strong> when the screen has natural follow-up actions, instead of scattering buttons throughout the page</li>
+</ul>
+<p>You can see this on the new API editor, where the main panel keeps the live metrics and health summary, while the right rail surfaces the obvious next steps ("Build your API": plugin chains, backends, endpoints):</p>
+<p><img decoding="async" loading="lazy" alt="New API editor" src="https://www.otoroshi.io/assets/images/capture-api-0762b492180f162593082852d154b189.png" width="1548" height="1040" class="img_ev3q"></p>
+<p>The same logic applies to more complex screens like the workflow designer, where the canvas takes center stage and the controls (Save, run, debug, zoom) are anchored in stable positions you can build muscle memory around:</p>
+<p><img decoding="async" loading="lazy" alt="New workflow editor" src="https://www.otoroshi.io/assets/images/capture-workflows-b6e1949255b65c1309331e14efee8d4a.png" width="1550" height="1178" class="img_ev3q"></p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-next">What's next<a href="https://www.otoroshi.io/blog/new-ui-themes#whats-next" class="hash-link" aria-label="Direct link to What's next" title="Direct link to What's next" translate="no">​</a></h2>
+<p>This is an ongoing effort. Not every screen has been migrated yet, and we will keep rolling out the new look and the consistent layout pattern in upcoming releases. If you spot a screen that still feels off, or a button that lives in a surprising place, please open an issue or ping us on <a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="">Discord</a> -- this is exactly the kind of feedback we are looking for.</p>
+<p>We hope you enjoy the new themes as much as we enjoyed building them. Now go ahead and try them out -- your eyes will thank you.</p>]]></content>
+        <author>
+            <name>Otoroshi Team</name>
+            <uri>https://github.com/MAIF/otoroshi</uri>
+        </author>
+        <category label="otoroshi" term="otoroshi"/>
+        <category label="ui" term="ui"/>
+        <category label="design" term="design"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Welcome to the Otoroshi Blog]]></title>
         <id>https://www.otoroshi.io/blog/welcome</id>

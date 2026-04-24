@@ -1,1 +1,0 @@
-"use strict";(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[9441],{96681(o){o.exports=JSON.parse('{"tags":[{"label":"otoroshi","permalink":"/otoroshi/manual/blog/tags/otoroshi","count":1},{"label":"announcement","permalink":"/otoroshi/manual/blog/tags/announcement","count":1}]}')}}]);
