@@ -128,6 +128,7 @@ sidebar_position: 4
     * Webhook (HTTP)
     * File
     * S3
+    * PostgreSQL (with auto-created table, configurable schema/table, connection pool, SSL, and optional retention-based cleanup)
     * Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) ([how-to](./tutorials/export-alerts-using-mailgun.md))
     * Console / Logger
     * Splunk
