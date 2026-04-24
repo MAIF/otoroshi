@@ -82,6 +82,7 @@ sidebar_position: 4
 **Security**
 
 * Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./tutorials/instantiate-waf-coraza.mdx))
+    * For high-traffic deployments or configurations with many rules, Cloud APIM also publishes a [WAF extension](https://github.com/cloud-apim/otoroshi-waf-extension) -- a native JVM implementation of the ModSecurity SecLang DSL with embedded OWASP CRS, blocking / monitoring modes, JVM-native SQLi and XSS detection (libinjection), per-route configuration entities, and a lightweight incoming-request-only variant for the highest-throughput routes
 * IP address allow and block lists (with CIDR support) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Domain name allow and block lists ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Fail2Ban-style automatic IP banning ([built-in plugins](./plugins/built-in-plugins.mdx))
