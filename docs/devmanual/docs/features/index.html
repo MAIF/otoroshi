@@ -5,7 +5,7 @@
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Features | Otoroshi</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png"><meta data-rh="true" name="twitter:image" content="https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png"><meta data-rh="true" property="og:url" content="https://maif.github.io/otoroshi/devmanual/docs/features"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Features | Otoroshi"><meta data-rh="true" name="description" content="Traffic Management"><meta data-rh="true" property="og:description" content="Traffic Management"><link data-rh="true" rel="icon" href="/otoroshi/devmanual/img/favicon.png"><link data-rh="true" rel="canonical" href="https://maif.github.io/otoroshi/devmanual/docs/features"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/devmanual/docs/features" hreflang="en"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/devmanual/docs/features" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Features","item":"https://maif.github.io/otoroshi/devmanual/docs/features"}]}</script><link rel="alternate" type="application/rss+xml" href="/otoroshi/devmanual/blog/rss.xml" title="Otoroshi RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/otoroshi/devmanual/blog/atom.xml" title="Otoroshi Atom Feed"><link rel="stylesheet" href="/otoroshi/devmanual/assets/css/styles.3a48ec6c.css">
-<script src="/otoroshi/devmanual/assets/js/runtime~main.e1118ade.js" defer="defer"></script>
+<script src="/otoroshi/devmanual/assets/js/runtime~main.26bff4a3.js" defer="defer"></script>
 <script src="/otoroshi/devmanual/assets/js/main.df599c2a.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -102,7 +102,11 @@
 </ul>
 <p><strong>Security</strong></p>
 <ul>
-<li class="">Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support (<a class="" href="/otoroshi/devmanual/docs/tutorials/instantiate-waf-coraza">WAF how-to</a>)</li>
+<li class="">Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support (<a class="" href="/otoroshi/devmanual/docs/tutorials/instantiate-waf-coraza">WAF how-to</a>)
+<ul>
+<li class="">For high-traffic deployments or configurations with many rules, Cloud APIM also publishes a <a href="https://github.com/cloud-apim/otoroshi-waf-extension" target="_blank" rel="noopener noreferrer" class="">WAF extension</a> -- a native JVM implementation of the ModSecurity SecLang DSL with embedded OWASP CRS, blocking / monitoring modes, JVM-native SQLi and XSS detection (libinjection), per-route configuration entities, and a lightweight incoming-request-only variant for the highest-throughput routes</li>
+</ul>
+</li>
 <li class="">IP address allow and block lists (with CIDR support) (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">Domain name allow and block lists (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">Fail2Ban-style automatic IP banning (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
@@ -131,7 +135,6 @@
 </ul>
 </li>
 <li class="">HMAC request signing and validation (<a class="" href="/otoroshi/devmanual/docs/topics/otoroshi-protocol">Otoroshi protocol</a>)</li>
-<li class="">Biscuit token extraction and validation (datalog-based authorization) (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">OpenFGA fine-grained authorization (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">Role-based access control (RBAC) (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">Context validation (JSON path-based claims validation) (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
@@ -243,34 +246,6 @@
 <li class="">Echo backend for debugging (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 <li class="">Static response / mock backends (<a class="" href="/otoroshi/devmanual/docs/plugins/built-in-plugins">built-in plugins</a>)</li>
 </ul>
-<p><strong>AI / LLM Gateway</strong> (<a class="" href="/otoroshi/devmanual/docs/topics/ai-gateway">AI Gateway</a>)</p>
-<p>Available through the optional <a href="https://cloud-apim.github.io/otoroshi-llm-extension/" target="_blank" rel="noopener noreferrer" class="">Otoroshi LLM Extension</a> developed by <a href="https://www.cloud-apim.com/" target="_blank" rel="noopener noreferrer" class="">Cloud APIM</a>, Otoroshi can act as a full-featured AI Gateway in front of LLM providers.</p>
-<ul>
-<li class="">Unified, OpenAI-compatible API in front of 50+ LLM providers (OpenAI, Anthropic, Azure OpenAI, Mistral, Groq, Cohere, Google Gemini, Ollama, DeepSeek, X.ai, Hugging Face, Cloudflare Workers AI, Scaleway, OVH, etc.)</li>
-<li class="">Multi-modal endpoints: chat completions, embeddings, image generation, audio (TTS/STT), video generation, content moderation</li>
-<li class="">Anthropic Messages API compatibility for Claude clients</li>
-<li class="">Provider load balancing across multiple LLM backends (round robin, random, best response time, weighted)</li>
-<li class="">Automatic provider fallback on failure</li>
-<li class="">Cost tracking with a built-in pricing database covering 1000+ models</li>
-<li class="">Budgets per API key, user, or service (USD or token-based, with time windows and alert thresholds)</li>
-<li class="">Token-based rate limiting (per consumer, per provider, per model)</li>
-<li class="">Caching strategies: TTL-based simple cache and semantic cache using embeddings</li>
-<li class="">Persistent conversation memory with sliding window or full history, scoped by API key, user, header, etc.</li>
-<li class="">Guardrails on prompts and responses:
-<ul>
-<li class="">regex allow/deny lists</li>
-<li class="">LLM-based validation</li>
-<li class="">moderation API (OpenAI moderation and similar)</li>
-<li class="">webhook-based external validation</li>
-<li class="">WASM / QuickJS custom logic</li>
-<li class="">built-in detectors: prompt injection, PII, secrets leakage, toxic language, racial / gender bias, personal health information, gibberish, faithfulness</li>
-<li class="">text constraints: word / sentence / character counts, contains / semantic-contains</li>
-</ul>
-</li>
-<li class="">Reusable prompts, prompt contexts (system messages), and prompt templates with variable substitution</li>
-<li class="">Model Context Protocol (MCP) connectors (stdio, SSE, WebSocket, HTTP) for tool / function calling</li>
-<li class="">Full audit trail of every LLM call (consumer, provider, model, tokens, cost, cache status, guardrail results, latency) exported through Otoroshi&#x27;s standard data exporters</li>
-</ul>
 <p><strong>Administration UI</strong></p>
 <ul>
 <li class="">Manage and organize all resources</li>
@@ -356,6 +331,61 @@
 <p><strong>Developers portal</strong></p>
 <ul>
 <li class="">Using <a href="https://maif.github.io/daikoku/manual/index.html" target="_blank" rel="noopener noreferrer" class="">Daikoku</a> (<a class="" href="/otoroshi/devmanual/docs/topics/dev-portal">dev portal</a>)</li>
+</ul>
+<p><strong>AI / LLM Gateway</strong> (<a class="" href="/otoroshi/devmanual/docs/topics/ai-gateway">AI Gateway</a>)</p>
+<p>Available through the optional <a href="https://cloud-apim.github.io/otoroshi-llm-extension/" target="_blank" rel="noopener noreferrer" class="">Otoroshi LLM Extension</a> developed by <a href="https://www.cloud-apim.com/" target="_blank" rel="noopener noreferrer" class="">Cloud APIM</a>, Otoroshi can act as a full-featured AI Gateway in front of LLM providers.</p>
+<ul>
+<li class="">Unified, OpenAI-compatible API in front of 50+ LLM providers (OpenAI, Anthropic, Azure OpenAI, Mistral, Groq, Cohere, Google Gemini, Ollama, DeepSeek, X.ai, Hugging Face, Cloudflare Workers AI, Scaleway, OVH, etc.)</li>
+<li class="">Multi-modal endpoints: chat completions, embeddings, image generation, audio (TTS/STT), video generation, content moderation</li>
+<li class="">Anthropic Messages API compatibility for Claude clients</li>
+<li class="">Provider load balancing across multiple LLM backends (round robin, random, best response time, weighted)</li>
+<li class="">Automatic provider fallback on failure</li>
+<li class="">Cost tracking with a built-in pricing database covering 1000+ models</li>
+<li class="">Budgets per API key, user, or service (USD or token-based, with time windows and alert thresholds)</li>
+<li class="">Token-based rate limiting (per consumer, per provider, per model)</li>
+<li class="">Caching strategies: TTL-based simple cache and semantic cache using embeddings</li>
+<li class="">Persistent conversation memory with sliding window or full history, scoped by API key, user, header, etc.</li>
+<li class="">Guardrails on prompts and responses:
+<ul>
+<li class="">regex allow/deny lists</li>
+<li class="">LLM-based validation</li>
+<li class="">moderation API (OpenAI moderation and similar)</li>
+<li class="">webhook-based external validation</li>
+<li class="">WASM / QuickJS custom logic</li>
+<li class="">built-in detectors: prompt injection, PII, secrets leakage, toxic language, racial / gender bias, personal health information, gibberish, faithfulness</li>
+<li class="">text constraints: word / sentence / character counts, contains / semantic-contains</li>
+</ul>
+</li>
+<li class="">Reusable prompts, prompt contexts (system messages), and prompt templates with variable substitution</li>
+<li class="">Model Context Protocol (MCP) connectors (stdio, SSE, WebSocket, HTTP) for tool / function calling</li>
+<li class="">Full audit trail of every LLM call (consumer, provider, model, tokens, cost, cache status, guardrail results, latency) exported through Otoroshi&#x27;s standard data exporters</li>
+</ul>
+<p><strong>Biscuit Studio</strong></p>
+<p>Available through the optional <a href="https://cloud-apim.github.io/otoroshi-biscuit-studio/" target="_blank" rel="noopener noreferrer" class="">Otoroshi Biscuit Studio</a> extension developed by <a href="https://www.cloud-apim.com/" target="_blank" rel="noopener noreferrer" class="">Cloud APIM</a> (<a href="https://github.com/cloud-apim/otoroshi-biscuit-studio" target="_blank" rel="noopener noreferrer" class="">source</a>), Otoroshi gains full <a href="https://www.biscuitsec.org/" target="_blank" rel="noopener noreferrer" class="">Biscuit token</a> lifecycle management with first-class entities and plugins.</p>
+<ul>
+<li class="">Entities for the complete Biscuit lifecycle:
+<ul>
+<li class=""><strong>Key Pairs</strong> -- create and manage Ed25519 key pairs used to sign, attenuate and verify tokens</li>
+<li class=""><strong>Forges</strong> -- declarative token templates with facts, rules and checks for issuing tokens</li>
+<li class=""><strong>Verifiers</strong> -- reusable authorizer policies (facts, rules, checks, allow / deny policies) applied to incoming tokens</li>
+<li class=""><strong>Attenuators</strong> -- declarative attenuation blocks to reduce a token&#x27;s capabilities at the gateway</li>
+<li class=""><strong>RBAC Policies</strong> -- role-based access control expressed as Biscuit datalog and applied per route</li>
+<li class=""><strong>Remote Facts Loaders</strong> -- pull additional authorization facts from external HTTP sources to enrich verifier context</li>
+</ul>
+</li>
+<li class="">Route plugins:
+<ul>
+<li class=""><strong>Biscuit Verifier</strong> -- validate incoming Biscuit tokens against a verifier entity</li>
+<li class=""><strong>Biscuit Attenuator</strong> -- attenuate the incoming token before forwarding to the backend</li>
+<li class=""><strong>Client Credentials</strong> -- OAuth2 <code>client_credentials</code> flow that issues Biscuit tokens as access tokens</li>
+<li class=""><strong>Biscuit to User</strong> -- extract the user identity from a Biscuit token and forward it downstream</li>
+<li class=""><strong>User to Biscuit</strong> -- mint a Biscuit token from the authenticated Otoroshi user / API key and inject it downstream</li>
+<li class=""><strong>ApiKey Bridge</strong> -- bridge between Otoroshi API keys and Biscuit tokens</li>
+<li class=""><strong>Public Keys Exposition</strong> -- expose verifier public keys through a <code>.well-known/biscuit-web-keys</code> endpoint for external verifiers</li>
+</ul>
+</li>
+<li class="">Centralized administration of all Biscuit material from the Otoroshi UI and admin API</li>
+<li class="">Integrates with Otoroshi&#x27;s <a class="" href="/otoroshi/devmanual/docs/topics/secrets">secret vaults</a> for secure key material storage</li>
 </ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/MAIF/otoroshi/tree/master/manual/next/docs/features.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/otoroshi/devmanual/docs/architecture"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Architecture</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/otoroshi/devmanual/docs/getting-started"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Getting Started</div></a></nav></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Documentation</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/getting-started">Getting Started</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/entities">Main Entities</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/topics">Detailed Topics</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/tutorials">Tutorials</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/discussions" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub Discussions<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://stackoverflow.com/questions/tagged/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">Stack Overflow<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/releases" target="_blank" rel="noopener noreferrer" class="footer__link-item">Releases<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/orgs/MAIF/projects/20/views/1" target="_blank" rel="noopener noreferrer" class="footer__link-item">Roadmap<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://maif.github.io/" target="_blank" rel="noopener noreferrer" class="footer__link-item">MAIF Open Source<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Ecosystem</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/ecosystem">Otoroshi&#x27;s Ecosystem</a></li><li class="footer__item"><a href="https://maif.github.io/daikoku/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Daikoku<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://www.otoroshi.io/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/otoroshi/devmanual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="50" height="50"><img src="/otoroshi/devmanual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="50" height="50"></a></div><div class="footer__copyright">Copyright © 2026 #OSSbyMAIF. Built with Docusaurus.</div></div></div></footer></div>
 </body>
 </html>
