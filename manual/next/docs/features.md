@@ -312,22 +312,11 @@ Available through the optional [Otoroshi LLM Extension](https://cloud-apim.githu
 
 **Biscuit Studio**
 
-Available through the optional [Otoroshi Biscuit Studio](https://cloud-apim.github.io/otoroshi-biscuit-studio/) extension developed by [Cloud APIM](https://www.cloud-apim.com/) ([source](https://github.com/cloud-apim/otoroshi-biscuit-studio)), Otoroshi gains full [Biscuit token](https://www.biscuitsec.org/) lifecycle management with first-class entities and plugins.
+Available through the optional [Otoroshi Biscuit Studio](https://cloud-apim.github.io/otoroshi-biscuit-studio/) extension developed by [Cloud APIM](https://www.cloud-apim.com/) ([source](https://github.com/cloud-apim/otoroshi-biscuit-studio)), Otoroshi gains full [Eclipse Biscuit token](https://www.biscuitsec.org/) lifecycle management with first-class entities and plugins.
 
-* Entities for the complete Biscuit lifecycle:
-    * **Key Pairs** -- create and manage Ed25519 key pairs used to sign, attenuate and verify tokens
-    * **Forges** -- declarative token templates with facts, rules and checks for issuing tokens
-    * **Verifiers** -- reusable authorizer policies (facts, rules, checks, allow / deny policies) applied to incoming tokens
-    * **Attenuators** -- declarative attenuation blocks to reduce a token's capabilities at the gateway
-    * **RBAC Policies** -- role-based access control expressed as Biscuit datalog and applied per route
-    * **Remote Facts Loaders** -- pull additional authorization facts from external HTTP sources to enrich verifier context
-* Route plugins:
-    * **Biscuit Verifier** -- validate incoming Biscuit tokens against a verifier entity
-    * **Biscuit Attenuator** -- attenuate the incoming token before forwarding to the backend
-    * **Client Credentials** -- OAuth2 `client_credentials` flow that issues Biscuit tokens as access tokens
-    * **Biscuit to User** -- extract the user identity from a Biscuit token and forward it downstream
-    * **User to Biscuit** -- mint a Biscuit token from the authenticated Otoroshi user / API key and inject it downstream
-    * **ApiKey Bridge** -- bridge between Otoroshi API keys and Biscuit tokens
-    * **Public Keys Exposition** -- expose verifier public keys through a `.well-known/biscuit-web-keys` endpoint for external verifiers
+* Entities to support the complete Biscuit lifecycle
 * Centralized administration of all Biscuit material from the Otoroshi UI and admin API
 * Integrates with Otoroshi's [secret vaults](./topics/secrets.md) for secure key material storage
+* Verious plugins to enforce biscuit authorizations and attenuate biscuit tokens on the fly, etc
+* Bridge with apikeys
+* Bridge with auth. modules
