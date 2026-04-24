@@ -35,6 +35,30 @@ object Exporter {}
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
+case class CustomDataExporterRefConfig(kind: String, ref: String, config: JsObject = Json.obj()) {
+  def json: JsValue = CustomDataExporterRefConfig.format.writes(this)
+}
+
+object CustomDataExporterRefConfig {
+  val format: Format[CustomDataExporterRefConfig] = new Format[CustomDataExporterRefConfig] {
+    override def reads(json: JsValue): JsResult[CustomDataExporterRefConfig] = Try {
+      CustomDataExporterRefConfig(
+        kind = json.select("kind").asOptString.map(_.toLowerCase).getOrElse("plugin"),
+        ref = json.select("ref").asOptString.getOrElse(""),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(v) => JsSuccess(v)
+    }
+    override def writes(o: CustomDataExporterRefConfig): JsValue = Json.obj(
+      "kind"   -> o.kind,
+      "ref"    -> o.ref,
+      "config" -> o.config
+    )
+  }
+}
+
 case class FileSettings(path: String, maxNumberOfFile: Option[Int], maxFileSize: Long = 10L * 1024L * 1024L)
     extends Exporter {
   override def toJson: JsValue =
@@ -834,6 +858,8 @@ object DataExporterConfig {
           "include" -> JsArray(o.filtering.include),
           "exclude" -> JsArray(o.filtering.exclude)
         ),
+        "customFilter"    -> o.customFilter.map(_.json).getOrElse(JsNull).asValue,
+        "customTransform" -> o.customTransform.map(_.json).getOrElse(JsNull).asValue,
         "config"        -> o.config.toJson
       )
     }
@@ -859,6 +885,14 @@ object DataExporterConfig {
             include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
             exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           ),
+          customFilter = (json \ "customFilter")
+            .asOpt[JsObject]
+            .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
+            .filter(_.ref.trim.nonEmpty),
+          customTransform = (json \ "customTransform")
+            .asOpt[JsObject]
+            .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
+            .filter(_.ref.trim.nonEmpty),
           config = expType match {
             case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
@@ -1116,6 +1150,8 @@ case class DataExporterConfig(
     groupDuration: FiniteDuration = 30.seconds,
     filtering: DataExporterConfigFiltering,
     projection: JsObject,
+    customFilter: Option[CustomDataExporterRefConfig] = None,
+    customTransform: Option[CustomDataExporterRefConfig] = None,
     config: Exporter
 ) extends EntityLocationSupport {
 
