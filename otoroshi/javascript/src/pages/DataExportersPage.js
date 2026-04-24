@@ -102,25 +102,29 @@ function CustomDataExporterRefSection({ label, role, value, onChange }) {
             ]}
             onChange={(kind) => onChange({ ...v, kind, ref: '' })}
           />
-          {v.kind === 'plugin' ? (
-            <SelectInput
-              label="Plugin"
-              value={v.ref}
-              possibleValues={(pluginList || []).map((p) => ({
-                value: p.id,
-                label: p.name || p.id,
-              }))}
-              onChange={(ref) => onChange({ ...v, ref, config: {} })}
-            />
-          ) : (
-            <SelectInput
-              label={refSelectorByKind[v.kind].label}
-              value={v.ref}
-              valuesFrom={refSelectorByKind[v.kind].valuesFrom}
-              transformer={refSelectorByKind[v.kind].transformer}
-              onChange={(ref) => onChange({ ...v, ref })}
-            />
-          )}
+          {v.kind === 'plugin' &&  <SelectInput
+            label="Plugin"
+            value={v.ref}
+            possibleValues={(pluginList || []).map((p) => ({
+              value: p.id,
+              label: p.name || p.id,
+            }))}
+            onChange={(ref) => onChange({ ...v, ref, config: {} })}
+          />}
+          {v.kind === 'workflow' && <SelectInput
+            label="Workflow"
+            value={v.ref}
+            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
+            transformer={(i) => ({ value: i.id, label: i.name })}
+            onChange={(ref) => onChange({ ...v, ref })}
+          />}
+          {v.kind === 'wasm' && <SelectInput
+            label="WASM plugin"
+            value={v.ref}
+            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+            transformer={(i) => ({ value: i.id, label: i.name })}
+            onChange={(ref) => onChange({ ...v, ref })}
+          />}
           {hasFormSchema ? (
             <Form
               value={v.config || {}}
