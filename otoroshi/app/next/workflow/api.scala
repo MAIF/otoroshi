@@ -26,7 +26,8 @@ class WorkflowEngine(env: Env) {
       node: Node,
       input: JsObject,
       attrs: TypedMap,
-      functions: Map[String, JsObject] = Map.empty
+      functions: Map[String, JsObject] = Map.empty,
+      noRunEvent: Boolean = false,
   ): Future[WorkflowResult] = {
     val wfRun = WorkflowRun(
       ULID.random(),
@@ -90,11 +91,11 @@ class WorkflowEngine(env: Env) {
         }
       }
       .andThen { case Success(value) =>
-        WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
+        if (!noRunEvent) WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
       }
   }
 
-  def resume(node: Node, wfr: WorkflowRun, from: Seq[Int], attrs: TypedMap): Future[WorkflowResult] = {
+  def resume(node: Node, wfr: WorkflowRun, from: Seq[Int], attrs: TypedMap, noRunEvent: Boolean = false): Future[WorkflowResult] = {
     val wfRun = wfr.copy(attrs = attrs)
     val input = wfr.memory.get("workflow_input").map(_.asObject).getOrElse(Json.obj())
     node
@@ -134,7 +135,7 @@ class WorkflowEngine(env: Env) {
         )
       }
       .andThen { case Success(value) =>
-        WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
+        if (!noRunEvent) WorkflowRunEvent(node, input, value, env).toAnalytics()(env)
       }
   }
 }
