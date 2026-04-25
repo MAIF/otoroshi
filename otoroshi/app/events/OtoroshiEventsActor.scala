@@ -282,8 +282,8 @@ object DataExporter {
         .map { case (event, rawEvent) => (project(event), rawEvent) }
         .applyOnIf(configUnsafe.customTransform.isDefined) { s =>
           s.mapAsync(1) { case (event, rawEvent) =>
-              customTransformAsync(event).map(e => (e, rawEvent))
-            }
+            customTransformAsync(event).map(e => (e, rawEvent))
+          }
         }
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
@@ -443,7 +443,8 @@ object DataExporter {
                             Node.from(workflow.config),
                             Json.obj("event" -> event, "config" -> cfg.config),
                             TypedMap.empty,
-                            workflow.functions
+                            workflow.functions,
+                            noRunEvent = true,
                           )
                           .map { result =>
                             if (result.hasError) {
@@ -530,7 +531,8 @@ object DataExporter {
                             Node.from(workflow.config),
                             Json.obj("event" -> event, "config" -> cfg.config),
                             TypedMap.empty,
-                            workflow.functions
+                            workflow.functions,
+                            noRunEvent = true,
                           )
                           .map { result =>
                             if (result.hasError) {
