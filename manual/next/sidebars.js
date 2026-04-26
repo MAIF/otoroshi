@@ -11,7 +11,7 @@ const sidebars = {
     'about',
     'architecture',
     'features',
-    'otoroshi-faq',
+    'faq',
     'getting-started',
     {
       type: 'category',
