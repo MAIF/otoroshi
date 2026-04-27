@@ -173,33 +173,37 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   // ----- POST /api/analytics/_migrate ----------------------------------------
 
   def migrateLegacy: Action[JsValue] = ApiAction.async(parse.json) { ctx =>
-    requireSuperAdmin(ctx) {
-      requireLeader {
-        val body       = ctx.request.body
-        val sourceJson = (body \ "source").asOpt[JsValue].getOrElse(Json.obj())
-        val batchSize  = (body \ "batchSize").asOpt[Int].getOrElse(5000).max(100).min(50000)
-        val dryRun     = (body \ "dryRun").asOpt[Boolean].getOrElse(false)
-        otoroshi.next.analytics.migration.LegacyPgMigrator.parseSourceFromJson(sourceJson) match {
-          case Left(err)     => BadRequest(Json.obj("error" -> err)).future
-          case Right(source) =>
-            otoroshi.next.analytics.migration.LegacyPgMigrator
-              .migrate(source, batchSize, dryRun)
-              .map {
-                case Left(err)     =>
-                  err match {
-                    case e if e.contains("no active") =>
-                      PreconditionFailed(Json.obj("error" -> e))
-                    case e                            =>
-                      InternalServerError(Json.obj("error" -> e))
-                  }
-                case Right(result) => Ok(result.toJson)
-              }
-              .recover { case e: Throwable =>
-                logger.error("[user-analytics-api] migration failed", e)
-                InternalServerError(Json.obj("error" -> e.getMessage))
-              }
+    if (env.isDev) {
+      requireSuperAdmin(ctx) {
+        requireLeader {
+          val body = ctx.request.body
+          val sourceJson = (body \ "source").asOpt[JsValue].getOrElse(Json.obj())
+          val batchSize = (body \ "batchSize").asOpt[Int].getOrElse(5000).max(100).min(50000)
+          val dryRun = (body \ "dryRun").asOpt[Boolean].getOrElse(false)
+          otoroshi.next.analytics.migration.LegacyPgMigrator.parseSourceFromJson(sourceJson) match {
+            case Left(err) => BadRequest(Json.obj("error" -> err)).future
+            case Right(source) =>
+              otoroshi.next.analytics.migration.LegacyPgMigrator
+                .migrate(source, batchSize, dryRun)
+                .map {
+                  case Left(err) =>
+                    err match {
+                      case e if e.contains("no active") =>
+                        PreconditionFailed(Json.obj("error" -> e))
+                      case e =>
+                        InternalServerError(Json.obj("error" -> e))
+                    }
+                  case Right(result) => Ok(result.toJson)
+                }
+                .recover { case e: Throwable =>
+                  logger.error("[user-analytics-api] migration failed", e)
+                  InternalServerError(Json.obj("error" -> e.getMessage))
+                }
+          }
         }
       }
+    } else {
+      Forbidden(Json.obj("error" -> "forbidden")).future
     }
   }
 }
