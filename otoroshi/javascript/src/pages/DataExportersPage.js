@@ -496,6 +496,33 @@ export class DataExportersPage extends Component {
     this.props.setTitle(`Data exporters`);
   }
 
+  /**
+   * Build the initial value for a brand-new exporter, taking optional query
+   * params into account. Supported params on `/bo/dashboard/exporters/add`:
+   *
+   *   - `type=mailer|webhook|user-analytics|...` : pre-select the exporter type
+   *   - `name=Some+name` : pre-fill the name
+   *   - `kind=alert-channel` : add a filter that only keeps user-analytics alerts
+   *     (`{ alert: "UserAnalyticsAlert" }` in `filtering.include`)
+   */
+  buildDefaultValue = () => {
+    const q = (this.props.location && this.props.location.query) || {};
+    const type = q.type || 'file';
+    return BackOfficeServices.createNewDataExporterConfig(type).then((cfg) => {
+      let next = { ...cfg };
+      if (q.name) next.name = q.name;
+      if (q.kind === 'alert-channel') {
+        const include = (next.filtering && next.filtering.include) || [];
+        next.filtering = {
+          ...(next.filtering || {}),
+          include: [...include, { alert: 'UserAnalyticsAlert' }],
+        };
+        if (!q.name) next.name = 'User analytics alert channel';
+      }
+      return next;
+    });
+  };
+
   nothing() {
     return null;
   }
@@ -586,7 +613,7 @@ export class DataExportersPage extends Component {
           parentProps={this.props}
           selfUrl="exporters"
           defaultTitle="Data exporters"
-          defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
+          defaultValue={this.buildDefaultValue}
           itemName="Data exporter"
           columns={this.columns}
           fetchItems={(paginationState) =>
