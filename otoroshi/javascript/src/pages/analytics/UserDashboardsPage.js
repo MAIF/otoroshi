@@ -1,64 +1,132 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
+import { Table } from '../../components/inputs';
 import { dashboards, restoreDefaults } from './service';
 
 export class UserDashboardsPage extends Component {
   state = {
-    items: [],
-    loading: true,
-    error: null,
-    exporters: [],
     activeExporterId: null,
+    exporters: [],
+    loading: true,
     restoreInProgress: false,
-    restoreResult: null,
   };
+
+  columns = [
+    {
+      title: 'Name',
+      filterId: 'name',
+      content: (item) => item.name,
+      cell: (v, item) => <Link to={`/user-dashboards/${item.id}`}>{v || item.id}</Link>,
+    },
+    {
+      title: 'Description',
+      filterId: 'description',
+      content: (item) => item.description || '',
+    },
+    {
+      title: 'Widgets',
+      filterId: 'widgets',
+      style: { textAlign: 'center', width: 90 },
+      content: (item) => (item.widgets || []).length,
+    },
+    {
+      title: 'Default',
+      filterId: 'default',
+      style: { width: 220 },
+      content: (item) => (item.metadata && item.metadata['otoroshi-default-id']) || '',
+      cell: (v) =>
+        v ? <span className="badge bg-info">{v}</span> : <span style={{ color: '#666' }}>—</span>,
+    },
+    {
+      title: 'View',
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+      content: (item) => item.id,
+      cell: (_v, item) => (
+        <Link to={`/user-dashboards/${item.id}`} className="btn btn-sm btn-success">
+          <i className="fas fa-chart-line" />
+        </Link>
+      ),
+    },
+  ];
 
   componentDidMount() {
     this.props.setTitle('User analytics dashboards');
     this.props.setSidebarContent(null);
-    this.refresh();
+    this.checkExporter();
   }
 
-  refresh = () => {
-    this.setState({ loading: true });
-    Promise.all([
-      dashboards.findAll().catch(() => []),
-      BackOfficeServices.findAllDataExporterConfigs({ page: 1, pageSize: 1000 }).catch(() => null),
-    ]).then(([items, exportersResp]) => {
-      const exporters = Array.isArray(exportersResp)
-        ? exportersResp
-        : (exportersResp && exportersResp.data) || [];
-      const analyticsExporters = exporters.filter((e) => e.type === 'user-analytics');
-      const active = analyticsExporters.find(
-        (e) => e.metadata && e.metadata['otoroshi:user-analytics:active'] === 'true'
-      );
-      this.setState({
-        items: Array.isArray(items) ? items : [],
-        exporters: analyticsExporters,
-        activeExporterId: active ? active.id : null,
-        loading: false,
-        error: null,
+  checkExporter = () => {
+    BackOfficeServices.findAllDataExporterConfigs({ page: 1, pageSize: 1000 })
+      .catch(() => null)
+      .then((resp) => {
+        const exporters = Array.isArray(resp) ? resp : (resp && resp.data) || [];
+        const analyticsExporters = exporters.filter((e) => e.type === 'user-analytics');
+        const active = analyticsExporters.find(
+          (e) => e.metadata && e.metadata['otoroshi:user-analytics:active'] === 'true'
+        );
+        this.setState({
+          exporters: analyticsExporters,
+          activeExporterId: active ? active.id : null,
+          loading: false,
+        });
       });
-    });
+  };
+
+  fetchItems = () => dashboards.findAll().then((items) => (Array.isArray(items) ? items : []));
+
+  deleteItem = (item) => dashboards.delete(item).then(() => ({}));
+
+  gotoEdit = (item) => {
+    this.props.history.push(`/user-dashboards/edit/${item.id}`);
   };
 
   doRestoreDefaults = () => {
     if (this.state.restoreInProgress) return;
     if (!window.confirm('Recreate any missing default dashboards?')) return;
-    this.setState({ restoreInProgress: true, restoreResult: null });
+    this.setState({ restoreInProgress: true });
     restoreDefaults()
       .then((res) => {
-        this.setState({ restoreInProgress: false, restoreResult: res });
-        this.refresh();
+        this.setState({ restoreInProgress: false });
+        if (res && res.created && res.created.length > 0) {
+          window.newAlert(`Restored ${res.count} dashboard(s): ${res.created.join(', ')}`, 'Success');
+        } else {
+          window.newAlert('No missing default dashboards to restore.', 'Info');
+        }
+        if (this.table) this.table.update();
       })
-      .catch((e) => this.setState({ restoreInProgress: false, restoreResult: { error: e.message } }));
+      .catch((e) => {
+        this.setState({ restoreInProgress: false });
+        window.newAlert(`Restore failed: ${e.message}`, 'Error');
+      });
   };
 
-  doDelete = (item) => {
-    if (!window.confirm(`Delete dashboard "${item.name}"?`)) return;
-    dashboards.delete(item).then(() => this.refresh());
-  };
+  injectTopBar = () => (
+    <div className="btn-group input-group-btn">
+      <Link className="btn btn-primary btn-sm btn-cta" to="/user-dashboards/add">
+        <i className="fas fa-plus-circle" /> New dashboard
+      </Link>
+      <button
+        type="button"
+        className="btn btn-secondary btn-sm btn-cta"
+        onClick={this.doRestoreDefaults}
+        disabled={this.state.restoreInProgress}
+        title="Recreate any missing default dashboards"
+        style={{ marginLeft: 5 }}
+      >
+        {this.state.restoreInProgress ? (
+          <>
+            <i className="fas fa-spinner fa-spin" /> Restoring…
+          </>
+        ) : (
+          <>
+            <i className="fas fa-undo" /> Restore defaults
+          </>
+        )}
+      </button>
+    </div>
+  );
 
   renderOnboarding() {
     const { exporters } = this.state;
@@ -74,7 +142,8 @@ export class UserDashboardsPage extends Component {
         {hasExporters ? (
           <div className="alert alert-info" style={{ textAlign: 'left' }}>
             Go to <Link to="/exporters">Data Exporters</Link>, open one of the{' '}
-            <code>user-analytics</code> exporters, and click <strong>Set as active analytics exporter</strong>.
+            <code>user-analytics</code> exporters, and click{' '}
+            <strong>Set as active analytics exporter</strong>.
           </div>
         ) : (
           <Link to="/exporters/add" className="btn btn-primary btn-lg">
@@ -86,7 +155,9 @@ export class UserDashboardsPage extends Component {
   }
 
   render() {
-    const { items, loading, error, activeExporterId, restoreInProgress, restoreResult } = this.state;
+    if (!window.__user.superAdmin) return null;
+
+    const { loading, activeExporterId } = this.state;
 
     if (loading) {
       return (
@@ -96,112 +167,31 @@ export class UserDashboardsPage extends Component {
       );
     }
 
-    if (!activeExporterId) {
-      return this.renderOnboarding();
-    }
+    if (!activeExporterId) return this.renderOnboarding();
 
     return (
-      <div style={{ padding: '0 8px' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
-        >
-          <div>
-            <h3 style={{ marginBottom: 0 }}>User analytics dashboards</h3>
-            <small style={{ color: '#888' }}>
-              Active analytics exporter: <code>{activeExporterId}</code>
-            </small>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={this.doRestoreDefaults}
-              disabled={restoreInProgress}
-            >
-              {restoreInProgress ? (
-                <><i className="fas fa-spinner fa-spin" /> Restoring…</>
-              ) : (
-                <><i className="fas fa-undo" /> Restore default dashboards</>
-              )}
-            </button>
-            <Link to="/user-dashboards/add" className="btn btn-primary">
-              <i className="fas fa-plus" /> New dashboard
-            </Link>
-          </div>
-        </div>
-
-        {restoreResult && restoreResult.created && restoreResult.created.length > 0 && (
-          <div className="alert alert-success">
-            Restored {restoreResult.count} default dashboard(s): {restoreResult.created.join(', ')}
-          </div>
-        )}
-        {restoreResult && restoreResult.error && (
-          <div className="alert alert-danger">Restore failed: {restoreResult.error}</div>
-        )}
-        {error && <div className="alert alert-danger">{error}</div>}
-
-        <table className="table table-sm" style={{ color: '#ddd' }}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Widgets</th>
-              <th>Default?</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'center', color: '#666', padding: 24 }}>
-                  No dashboards yet.{' '}
-                  <button
-                    type="button"
-                    className="btn btn-link p-0"
-                    onClick={this.doRestoreDefaults}
-                  >
-                    Restore default dashboards
-                  </button>
-                </td>
-              </tr>
-            )}
-            {items.map((d) => {
-              const isDefault = d.metadata && d.metadata['otoroshi-default-id'];
-              return (
-                <tr key={d.id}>
-                  <td>
-                    <Link to={`/user-dashboards/${d.id}`}>{d.name || d.id}</Link>
-                  </td>
-                  <td style={{ color: '#888' }}>{d.description || ''}</td>
-                  <td>{(d.widgets || []).length}</td>
-                  <td>
-                    {isDefault ? <span className="badge badge-info">{isDefault}</span> : ''}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <Link to={`/user-dashboards/${d.id}`} className="btn btn-sm btn-secondary mr-1">
-                      <i className="fas fa-chart-line" /> View
-                    </Link>
-                    <Link to={`/user-dashboards/edit/${d.id}`} className="btn btn-sm btn-secondary mr-1">
-                      <i className="fas fa-edit" /> Edit
-                    </Link>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-danger"
-                      onClick={() => this.doDelete(d)}
-                    >
-                      <i className="fas fa-trash" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div>
+        <Table
+          parentProps={this.props}
+          selfUrl="user-dashboards"
+          defaultTitle="User analytics dashboards"
+          defaultValue={() => ({})}
+          itemName="Dashboard"
+          formSchema={null}
+          formFlow={null}
+          columns={this.columns}
+          fetchItems={this.fetchItems}
+          deleteItem={this.deleteItem}
+          showActions={true}
+          showLink={false}
+          hideAddItemAction={true}
+          navigateOnEdit={this.gotoEdit}
+          injectTable={(table) => (this.table = table)}
+          injectTopBar={this.injectTopBar}
+          extractKey={(item) => item.id}
+          rowNavigation={true}
+          itemUrl={(item) => `/bo/dashboard/user-dashboards/${item.id}`}
+        />
       </div>
     );
   }
