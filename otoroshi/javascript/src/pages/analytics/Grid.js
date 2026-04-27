@@ -1,0 +1,211 @@
+import React, { Component } from 'react';
+import { renderWidget } from './widgets';
+import { runQuery, buildFiltersPayload } from './service';
+
+// ============================================================================
+// WidgetWrapper — handles fetch lifecycle + states
+// ============================================================================
+
+export class WidgetWrapper extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { status: 'idle', data: null, compare: null, error: null, executionMs: null };
+    this.abortRef = null;
+    this.refreshTimer = null;
+  }
+
+  componentDidMount() {
+    this.fetchData();
+    this.setupAutoRefresh();
+  }
+
+  componentDidUpdate(prevProps) {
+    const filtersChanged = JSON.stringify(prevProps.filters) !== JSON.stringify(this.props.filters);
+    const compareChanged = prevProps.compare !== this.props.compare;
+    const widgetChanged = JSON.stringify(prevProps.widget) !== JSON.stringify(this.props.widget);
+    if (filtersChanged || compareChanged || widgetChanged) {
+      this.fetchData();
+    }
+    if (prevProps.refreshInterval !== this.props.refreshInterval) {
+      this.setupAutoRefresh();
+    }
+  }
+
+  componentWillUnmount() {
+    this.abort();
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+  }
+
+  abort() {
+    if (this.abortRef) {
+      try {
+        this.abortRef.abort();
+      } catch (_) {}
+      this.abortRef = null;
+    }
+  }
+
+  setupAutoRefresh = () => {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    const ms = (this.props.refreshInterval || 0) * 1000;
+    if (ms > 0) {
+      this.refreshTimer = setInterval(() => {
+        if (document.visibilityState !== 'hidden') this.fetchData();
+      }, ms);
+    }
+  };
+
+  fetchData = () => {
+    const { widget, filters, compare } = this.props;
+    if (!widget || !widget.query) return;
+    this.abort();
+    const ctl = new AbortController();
+    this.abortRef = ctl;
+    this.setState({ status: 'loading', error: null });
+    const payload = {
+      query: widget.query,
+      params: widget.params || {},
+      filters: buildFiltersPayload(filters),
+      compare: !!compare,
+      bucket: filters.bucket || null,
+    };
+    runQuery(payload, ctl.signal)
+      .then((res) => {
+        if (ctl.signal.aborted) return;
+        if (!res.ok) {
+          this.setState({
+            status: 'error',
+            error: (res.body && res.body.error) || `HTTP ${res.status}`,
+          });
+        } else if (!res.body || !res.body.data) {
+          this.setState({ status: 'empty' });
+        } else {
+          this.setState({
+            status: 'ok',
+            data: res.body.data,
+            compare: res.body.compare || null,
+            executionMs: res.body.meta && res.body.meta.execution_ms,
+          });
+        }
+      })
+      .catch((e) => {
+        if (e.name === 'AbortError') return;
+        this.setState({ status: 'error', error: e.message });
+      });
+  };
+
+  render() {
+    const { widget } = this.props;
+    const { status, data, compare, error, executionMs } = this.state;
+
+    return (
+      <div
+        className="user-analytics-widget"
+        style={{
+          background: '#1c1c1c',
+          border: '1px solid #333',
+          borderRadius: 4,
+          padding: 8,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: (widget.height || 2) * 110,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingBottom: 6,
+            borderBottom: '1px solid #2a2a2a',
+            marginBottom: 6,
+          }}
+        >
+          <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 600 }}>
+            {widget.title || widget.query}
+          </div>
+          <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#666' }}>
+            {executionMs != null && status === 'ok' && <span>{executionMs} ms</span>}
+            <button
+              type="button"
+              className="btn btn-sm"
+              style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+              title="Refresh"
+              onClick={this.fetchData}
+            >
+              <i className="fas fa-sync" />
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, position: 'relative' }}>
+          {status === 'loading' && (
+            <div style={{ color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <i className="fas fa-spinner fa-spin" />
+            </div>
+          )}
+          {status === 'empty' && (
+            <div style={{ color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              No data for this range
+            </div>
+          )}
+          {status === 'error' && (
+            <div style={{ color: '#f44336', padding: 8 }}>
+              <div>{error}</div>
+              <button type="button" className="btn btn-sm btn-secondary" onClick={this.fetchData}>
+                Retry
+              </button>
+            </div>
+          )}
+          {status === 'ok' &&
+            renderWidget(widget.type || 'line', {
+              data,
+              compare: compare ? { data: compare.data } : null,
+              options: widget.options || {},
+              height: '100%',
+            })}
+        </div>
+      </div>
+    );
+  }
+}
+
+// ============================================================================
+// Grid — 4-column auto-flow layout
+// ============================================================================
+
+export class Grid extends Component {
+  render() {
+    const { widgets = [], filters, compare, refreshInterval } = this.props;
+    return (
+      <div
+        className="user-analytics-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridAutoRows: '110px',
+          gap: 12,
+          marginTop: 8,
+        }}
+      >
+        {widgets.map((w) => (
+          <div
+            key={w.id}
+            style={{
+              gridColumn: `span ${Math.max(1, Math.min(4, w.width || 4))}`,
+              gridRow: `span ${Math.max(1, w.height || 2)}`,
+              minHeight: 0,
+            }}
+          >
+            <WidgetWrapper
+              widget={w}
+              filters={filters}
+              compare={compare}
+              refreshInterval={refreshInterval}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+}

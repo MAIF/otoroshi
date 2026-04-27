@@ -241,6 +241,14 @@ export const graph = (env) => {
           icon: () => 'fa-signal',
         },
         {
+          title: 'User Analytics',
+          description: 'Custom dashboards backed by a dedicated PostgreSQL exporter',
+          img: 'analytics',
+          display: () => env.userAdmin,
+          link: '/user-dashboards',
+          icon: () => 'fa-chart-line',
+        },
+        {
           title: 'Global Status',
           description: 'Availability of your services over time',
           img: 'global-status',

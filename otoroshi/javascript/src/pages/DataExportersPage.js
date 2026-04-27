@@ -897,8 +897,94 @@ export class NewExporterForm extends Component {
             </Collapse>
           )}
           {this.data().type === 'kafka' && <KafkaExporterTryIt exporter={this.props.value} />}
+          {this.data().type === 'user-analytics' && (
+            <UserAnalyticsActivationBlock exporter={this.data()} />
+          )}
         </form>
       </>
+    );
+  }
+}
+
+class UserAnalyticsActivationBlock extends Component {
+  state = { busy: false, message: null, error: null };
+
+  isActive() {
+    const md = (this.props.exporter && this.props.exporter.metadata) || {};
+    return md['otoroshi:user-analytics:active'] === 'true';
+  }
+
+  promote = () => {
+    const id = this.props.exporter && this.props.exporter.id;
+    if (!id) {
+      this.setState({ error: 'Save the exporter first' });
+      return;
+    }
+    this.setState({ busy: true, message: null, error: null });
+    fetch(`/bo/api/proxy/api/analytics/_set-active-exporter/${id}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.error) {
+          this.setState({ busy: false, error: res.error });
+        } else {
+          const seeded = (res && res.seeded_default) || [];
+          this.setState({
+            busy: false,
+            message:
+              seeded.length > 0
+                ? `Exporter is now active. Seeded default dashboards: ${seeded.join(', ')}`
+                : 'Exporter is now active.',
+          });
+          window.setTimeout(() => window.location.reload(), 800);
+        }
+      })
+      .catch((e) => this.setState({ busy: false, error: e.message }));
+  };
+
+  render() {
+    const active = this.isActive();
+    return (
+      <Collapse initCollapsed={false} label="User analytics activation">
+        <div style={{ padding: 12 }}>
+          <p style={{ color: '#aaa', marginBottom: 12 }}>
+            Only one user-analytics exporter can be active at a time. The active exporter is the one
+            queried by dashboards. Promoting an exporter automatically demotes any other
+            user-analytics exporter and seeds the default dashboards if missing.
+          </p>
+          {active ? (
+            <span className="badge badge-success" style={{ fontSize: 14, padding: 6 }}>
+              <i className="fas fa-check" /> This exporter is currently active
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={this.promote}
+              disabled={this.state.busy}
+            >
+              {this.state.busy ? (
+                <><i className="fas fa-spinner fa-spin" /> Promoting…</>
+              ) : (
+                <><i className="fas fa-star" /> Set as active analytics exporter</>
+              )}
+            </button>
+          )}
+          {this.state.message && (
+            <div className="alert alert-success" style={{ marginTop: 12 }}>
+              {this.state.message}
+            </div>
+          )}
+          {this.state.error && (
+            <div className="alert alert-danger" style={{ marginTop: 12 }}>
+              {this.state.error}
+            </div>
+          )}
+        </div>
+      </Collapse>
     );
   }
 }
@@ -2698,6 +2784,58 @@ const possibleExporterConfigFormValues = {
       topic: {
         type: 'bool',
         props: { label: 'Destination is a topic' },
+      },
+    },
+  },
+  'user-analytics': {
+    label: 'User Analytics (PostgreSQL)',
+    flow: [
+      'uri',
+      'host',
+      'port',
+      'database',
+      'user',
+      'password',
+      'schema',
+      'table',
+      'pool_size',
+      'ssl',
+      'retention_days',
+      'statement_timeout_ms',
+      'rollup_enabled',
+    ],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Connection URI',
+          placeholder:
+            'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+        },
+      },
+      host: { type: 'string', props: { label: 'Host', placeholder: 'localhost' } },
+      port: { type: 'number', props: { label: 'Port' } },
+      database: { type: 'string', props: { label: 'Database' } },
+      user: { type: 'string', props: { label: 'User' } },
+      password: { type: 'password', props: { label: 'Password' } },
+      schema: { type: 'string', props: { label: 'Schema', placeholder: 'public' } },
+      table: {
+        type: 'string',
+        props: { label: 'Table', placeholder: 'otoroshi_analytics_events' },
+      },
+      pool_size: { type: 'number', props: { label: 'Pool size' } },
+      ssl: { type: 'bool', props: { label: 'SSL (REQUIRE mode)' } },
+      retention_days: {
+        type: 'number',
+        props: { label: 'Retention (days)', placeholder: '30' },
+      },
+      statement_timeout_ms: {
+        type: 'number',
+        props: { label: 'Statement timeout (ms)', placeholder: '30000' },
+      },
+      rollup_enabled: {
+        type: 'bool',
+        props: { label: 'Rollup tables (phase 2 — keep disabled)' },
       },
     },
   },
