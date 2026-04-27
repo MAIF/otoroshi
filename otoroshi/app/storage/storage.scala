@@ -12,7 +12,7 @@ import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
 import otoroshi.models._
-import otoroshi.next.analytics.models.UserDashboardDataStore
+import otoroshi.next.analytics.models.{UserAlertDataStore, UserDashboardDataStore}
 import otoroshi.next.models.{NgRouteCompositionDataStore, NgRouteDataStore, StoredNgBackendDataStore}
 import otoroshi.script.{NamedPlugin, PluginType, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
@@ -88,6 +88,7 @@ trait DataStores {
   def apiSubscriptionDataStore: ApiSubscriptionDataStore
   def routeTemplateDataStore: RouteTemplateDataStore
   def userDashboardDataStore: UserDashboardDataStore
+  def userAlertDataStore: UserAlertDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
   def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]
