@@ -47,6 +47,31 @@ export const dashboards = apisClient('analytics.otoroshi.io', 'v1', 'user-dashbo
 // CRUD alerts goes through the generic Resource router as well.
 export const alerts = apisClient('analytics.otoroshi.io', 'v1', 'user-alerts');
 
+// Fired alert events (alert log) — custom endpoints
+export const alertEvents = {
+  list: (alertId, { limit = 200, offset = 0, seen } = {}) => {
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    if (seen != null) params.set('seen', String(seen));
+    return fetchJson(`${analyticsBase}/alerts/${alertId}/events?${params.toString()}`).then((r) =>
+      r.json()
+    );
+  },
+  markSeen: (alertId, eventId) =>
+    fetchJson(`${analyticsBase}/alerts/${alertId}/events/${eventId}/seen`, { method: 'POST' }).then(
+      (r) => r.json()
+    ),
+  markUnseen: (alertId, eventId) =>
+    fetchJson(`${analyticsBase}/alerts/${alertId}/events/${eventId}/unseen`, {
+      method: 'POST',
+    }).then((r) => r.json()),
+  markAllSeen: (alertId) =>
+    fetchJson(`${analyticsBase}/alerts/${alertId}/events/_seen-all`, { method: 'POST' }).then((r) =>
+      r.json()
+    ),
+};
+
 // ============================================================================
 // Time range parsing (`now`, `now-1h`, ISO 8601)
 // ============================================================================
