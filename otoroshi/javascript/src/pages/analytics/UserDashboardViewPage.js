@@ -192,6 +192,28 @@ export class UserDashboardViewPage extends Component {
       });
   };
 
+  reorderWidgets = (srcId, dstId) => {
+    const { dashboard } = this.state;
+    if (!dashboard || srcId === dstId) return;
+    const widgets = [...(dashboard.widgets || [])];
+    const srcIdx = widgets.findIndex((w) => w.id === srcId);
+    const dstIdx = widgets.findIndex((w) => w.id === dstId);
+    if (srcIdx < 0 || dstIdx < 0) return;
+    const [moved] = widgets.splice(srcIdx, 1);
+    widgets.splice(dstIdx, 0, moved);
+    const updated = { ...dashboard, widgets };
+    // Optimistic UI update
+    this.setState({ dashboard: updated });
+    dashboards
+      .update(updated)
+      .then((res) => {
+        if (res && res.error) {
+          window.newAlert(`Failed to reorder widget: ${res.error}`, 'Error');
+        }
+      })
+      .catch((e) => window.newAlert(`Failed to reorder widget: ${e.message}`, 'Error'));
+  };
+
   moveWidget = (widgetId, direction) => {
     const { dashboard } = this.state;
     if (!dashboard) return;
@@ -366,6 +388,7 @@ export class UserDashboardViewPage extends Component {
           onRemoveWidget={editMode ? this.removeWidget : undefined}
           onEditWidget={editMode ? this.editWidget : undefined}
           onMoveWidget={editMode ? this.moveWidget : undefined}
+          onReorderWidget={editMode ? this.reorderWidgets : undefined}
           onDrillDown={this.drillDown}
         />
       </div>

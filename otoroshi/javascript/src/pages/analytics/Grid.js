@@ -127,7 +127,24 @@ export class WidgetWrapper extends Component {
             marginBottom: 6,
           }}
         >
-          <div style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>
+          <div
+            style={{
+              color: 'var(--text)',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {this.props.draggable && (
+              <span
+                title="Drag to reorder"
+                style={{ cursor: 'grab', color: 'var(--text-muted)', fontSize: 12 }}
+              >
+                <i className="fas fa-arrows-alt" />
+              </span>
+            )}
             {widget.title || widget.query}
           </div>
           <div style={{ display: 'flex', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
@@ -229,6 +246,39 @@ export class WidgetWrapper extends Component {
 // ============================================================================
 
 export class Grid extends Component {
+  state = { draggedId: null, hoverId: null };
+
+  onDragStart = (id) => (e) => {
+    try {
+      e.dataTransfer.setData('text/plain', id);
+      e.dataTransfer.effectAllowed = 'move';
+    } catch (_) {}
+    this.setState({ draggedId: id });
+  };
+
+  onDragOver = (id) => (e) => {
+    if (!this.state.draggedId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (this.state.hoverId !== id) this.setState({ hoverId: id });
+  };
+
+  onDragLeave = () => {
+    this.setState({ hoverId: null });
+  };
+
+  onDrop = (id) => (e) => {
+    e.preventDefault();
+    const src = this.state.draggedId || e.dataTransfer.getData('text/plain');
+    this.setState({ draggedId: null, hoverId: null });
+    if (!src || !id || src === id) return;
+    if (this.props.onReorderWidget) this.props.onReorderWidget(src, id);
+  };
+
+  onDragEnd = () => {
+    this.setState({ draggedId: null, hoverId: null });
+  };
+
   render() {
     const {
       widgets = [],
@@ -239,8 +289,11 @@ export class Grid extends Component {
       onRemoveWidget,
       onEditWidget,
       onMoveWidget,
+      onReorderWidget,
       onDrillDown,
     } = this.props;
+    const dndEnabled = !!onReorderWidget;
+    const { draggedId, hoverId } = this.state;
     return (
       <div
         className="user-analytics-grid"
@@ -252,30 +305,45 @@ export class Grid extends Component {
           marginTop: 8,
         }}
       >
-        {widgets.map((w, i) => (
-          <div
-            key={w.id}
-            style={{
-              gridColumn: `span ${Math.max(1, Math.min(4, w.width || 4))}`,
-              gridRow: `span ${Math.max(1, w.height || 2)}`,
-              minHeight: 0,
-            }}
-          >
-            <WidgetWrapper
-              widget={w}
-              filters={filters}
-              compare={compare}
-              refreshKey={refreshKey}
-              onFetched={onFetched}
-              onRemove={onRemoveWidget}
-              onEdit={onEditWidget}
-              onMove={onMoveWidget}
-              onDrillDown={onDrillDown}
-              isFirst={i === 0}
-              isLast={i === widgets.length - 1}
-            />
-          </div>
-        ))}
+        {widgets.map((w, i) => {
+          const isDragged = draggedId === w.id;
+          const isHovered = hoverId === w.id && draggedId && draggedId !== w.id;
+          return (
+            <div
+              key={w.id}
+              draggable={dndEnabled}
+              onDragStart={dndEnabled ? this.onDragStart(w.id) : undefined}
+              onDragOver={dndEnabled ? this.onDragOver(w.id) : undefined}
+              onDragLeave={dndEnabled ? this.onDragLeave : undefined}
+              onDrop={dndEnabled ? this.onDrop(w.id) : undefined}
+              onDragEnd={dndEnabled ? this.onDragEnd : undefined}
+              style={{
+                gridColumn: `span ${Math.max(1, Math.min(4, w.width || 4))}`,
+                gridRow: `span ${Math.max(1, w.height || 2)}`,
+                minHeight: 0,
+                opacity: isDragged ? 0.4 : 1,
+                outline: isHovered ? '2px dashed var(--color-primary)' : 'none',
+                outlineOffset: -4,
+                transition: 'outline 0.1s, opacity 0.1s',
+              }}
+            >
+              <WidgetWrapper
+                widget={w}
+                filters={filters}
+                compare={compare}
+                refreshKey={refreshKey}
+                onFetched={onFetched}
+                onRemove={onRemoveWidget}
+                onEdit={onEditWidget}
+                onMove={onMoveWidget}
+                onDrillDown={onDrillDown}
+                draggable={dndEnabled}
+                isFirst={i === 0}
+                isLast={i === widgets.length - 1}
+              />
+            </div>
+          );
+        })}
       </div>
     );
   }
