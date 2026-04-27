@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
 import { alerts } from './service';
+import { AlertConditionsEditor } from './AlertConditionsEditor';
 
 const NEW_ALERT_TEMPLATE = () => ({
   _loc: { tenant: 'default', teams: ['default'] },
@@ -103,15 +104,8 @@ export class UserAlertsPage extends Component {
       },
     },
     conditions: {
-      type: 'monaco-json',
-      props: {
-        label: 'Conditions',
-        height: '400px',
-        help:
-          'JSON array. Each condition: { query, params, filters, reducer, operator, threshold }. ' +
-          'reducer: avg|max|min|sum|last. operator: >|>=|<|<=|==|!=. ' +
-          'filters: { route_id, api_id, apikey_id, group_id, err }.',
-      },
+      type: AlertConditionsEditor,
+      props: {},
     },
     tags: { type: 'array', props: { label: 'Tags' } },
     metadata: { type: 'object', props: { label: 'Metadata' } },
