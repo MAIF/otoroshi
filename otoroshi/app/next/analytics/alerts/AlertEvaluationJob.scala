@@ -88,7 +88,6 @@ class AlertEvaluationJob extends Job {
             Try(Alerts.send(ev)(env)).recover { case e: Throwable =>
               logger.error(s"failed to send alert '${alert.id}'", e)
             }
-            println("send alert event", ev)
             saveState(alert.id, AlertState(lastEvaluatedAt = now, lastFiredAt = now)).map(_ => ())
           } else {
             saveState(alert.id, st.copy(lastEvaluatedAt = now)).map(_ => ())

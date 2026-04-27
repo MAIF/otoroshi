@@ -435,7 +435,7 @@ object FiredAlertDenormalizer {
     val message    = event.select("message").asOptString
     val combineOp  = event.select("combine").asOptString
     val windowSec  = event.select("windowSeconds").asOpt[Int]
-    val conditions = event.select("conditions").asOpt[JsArray].map(a => Json.stringify(a)).getOrElse("[]")
+    val conditionsJson = Json.stringify(event.select("conditions").asOpt[JsArray].getOrElse(JsArray()))
     VertxTuple.from(
       Array[AnyRef](
         id,
@@ -447,8 +447,10 @@ object FiredAlertDenormalizer {
         message.orNull,
         combineOp.orNull,
         windowSec.map(java.lang.Integer.valueOf).orNull,
-        new JsonObject(conditions),
-        new JsonObject(Json.stringify(event))
+        // conditions is a JSON array; pass the string and let `::jsonb` cast handle it
+        conditionsJson,
+        // raw is a JSON object — same idea
+        Json.stringify(event)
       )
     )
   }
@@ -531,7 +533,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
     FastFuture.successful(())
   }
 
-  override def send(events: Seq[JsValue]): Future[ExportResult] = {
+  override def send(events: Seq[JsValue]): Future[ExportResult] = Try {
     Option(poolRef.get()) match {
       case None       => FastFuture.successful(ExportResult.ExportResultFailure("user-analytics pool not initialized"))
       case Some(pool) =>
@@ -553,6 +555,11 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
               }
         }
     }
+  } match {
+    case Failure(e) =>
+      e.printStackTrace()
+      FastFuture.failed(e)
+    case Success(s) => s
   }
 
   private def sendGatewayEvents(

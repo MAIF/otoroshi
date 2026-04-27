@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { Table } from '../../components/inputs';
 import { alerts as alertsClient, alertEvents } from './service';
 
 const SEVERITY_BADGE = {
@@ -17,72 +18,292 @@ function formatTs(ms) {
 export class UserAlertEventsPage extends Component {
   state = {
     alert: null,
-    items: [],
     loading: true,
-    error: null,
     filter: 'all', // all | unseen | seen
   };
-
-  componentDidMount() {
-    this.props.setTitle('Alert events');
-    this.props.setSidebarContent(null);
-    this.refresh();
-  }
-
-  componentDidUpdate(prev) {
-    if (prev.params.titem !== this.props.params.titem) this.refresh();
-  }
 
   alertId() {
     return this.props.params.titem;
   }
 
-  refresh = () => {
+  componentDidMount() {
+    this.props.setTitle('Alert events');
+    this.props.setSidebarContent(null);
+    this.loadAlert();
+  }
+
+  componentDidUpdate(prev) {
+    if (prev.params.titem !== this.props.params.titem) this.loadAlert();
+  }
+
+  loadAlert = () => {
     const id = this.alertId();
     if (!id) return;
-    this.setState({ loading: true });
-    Promise.all([
-      alertsClient.findById(id).catch(() => null),
-      this.fetchEvents(id, this.state.filter),
-    ]).then(([alert, events]) => {
-      const items = (events && events.items) || [];
-      this.setState({
-        alert,
-        items,
-        loading: false,
-        error: events && events.error ? events.error : null,
+    alertsClient
+      .findById(id)
+      .catch(() => null)
+      .then((alert) => {
+        if (alert && alert.name) this.props.setTitle(`Alert events — ${alert.name}`);
+        this.setState({ alert, loading: false });
       });
-      if (alert && alert.name) this.props.setTitle(`Alert events — ${alert.name}`);
-    });
   };
 
-  fetchEvents = (id, filter) => {
+  fetchItems = () => {
+    const id = this.alertId();
+    if (!id) return Promise.resolve([]);
     const opts = { limit: 500 };
-    if (filter === 'seen') opts.seen = true;
-    if (filter === 'unseen') opts.seen = false;
-    return alertEvents.list(id, opts);
+    if (this.state.filter === 'seen') opts.seen = true;
+    if (this.state.filter === 'unseen') opts.seen = false;
+    return alertEvents.list(id, opts).then((r) => (r && r.items) || []);
   };
 
   changeFilter = (filter) => {
-    this.setState({ filter, loading: true }, this.refresh);
+    this.setState({ filter }, () => {
+      if (this.table) this.table.update();
+    });
   };
 
   toggleSeen = (event) => {
     const id = this.alertId();
     const op = event.seen_at ? alertEvents.markUnseen : alertEvents.markSeen;
-    op(id, event.id).then(() => this.refresh());
+    op(id, event.id).then(() => {
+      if (this.table) this.table.update();
+    });
+  };
+
+  showEventDetails = (item) => {
+    const matched = (item.conditions || []).filter((c) => c.matched).length;
+    const total = (item.conditions || []).length;
+    const cfg = SEVERITY_BADGE[item.severity] || { label: item.severity || '—', color: '#888' };
+    const body = (
+      <div style={{ color: 'var(--text)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <span
+            className="badge"
+            style={{ background: cfg.color, color: '#fff', padding: '4px 8px' }}
+          >
+            {cfg.label}
+          </span>
+          <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+            {formatTs(item.ts)}
+          </span>
+        </div>
+
+        {item.message && (
+          <div style={{ marginBottom: 12 }}>
+            <strong>Message:</strong> {item.message}
+          </div>
+        )}
+
+        <div style={{ marginBottom: 12 }}>
+          <strong>
+            {matched}/{total} matched ({(item.combine || 'AND').toUpperCase()})
+          </strong>
+        </div>
+
+        <table className="table table-sm" style={{ color: 'var(--text)' }}>
+          <thead>
+            <tr>
+              <th>Query</th>
+              <th>Reducer</th>
+              <th>Value</th>
+              <th>Op</th>
+              <th>Threshold</th>
+              <th>Matched</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(item.conditions || []).map((c, i) => (
+              <tr key={i}>
+                <td>
+                  <code>{c.query}</code>
+                </td>
+                <td>{c.reducer}</td>
+                <td style={{ fontFamily: 'monospace' }}>
+                  {c.value != null ? c.value : <em>—</em>}
+                </td>
+                <td>{c.operator}</td>
+                <td style={{ fontFamily: 'monospace' }}>{c.threshold}</td>
+                <td style={{ textAlign: 'center' }}>
+                  {c.error ? (
+                    <span style={{ color: 'var(--color-red)' }} title={c.error}>
+                      <i className="fas fa-exclamation-triangle" /> err
+                    </span>
+                  ) : c.matched ? (
+                    <span className="badge bg-danger">yes</span>
+                  ) : (
+                    <span className="badge bg-secondary">no</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {item.conditions &&
+          item.conditions.some((c) => c.error) && (
+            <div className="alert alert-warning" style={{ marginTop: 8 }}>
+              <strong>Errors:</strong>
+              <ul style={{ marginTop: 4, marginBottom: 0 }}>
+                {item.conditions
+                  .filter((c) => c.error)
+                  .map((c, i) => (
+                    <li key={i}>
+                      <code>{c.query}</code>: {c.error}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+      </div>
+    );
+    window.newAlert(
+      body,
+      `Alert event — ${item.alert_name || item.alert_id}`,
+      undefined,
+      { maxWidth: '90vw', width: 1100 }
+    );
   };
 
   markAllSeen = () => {
     const id = this.alertId();
     if (!window.confirm('Mark every event of this alert as seen?')) return;
-    alertEvents.markAllSeen(id).then(() => this.refresh());
+    alertEvents.markAllSeen(id).then(() => {
+      if (this.table) this.table.update();
+    });
   };
+
+  columns = [
+    {
+      title: 'Date',
+      filterId: 'ts',
+      style: { width: 200 },
+      content: (item) => item.ts,
+      cell: (v) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{formatTs(v)}</span>,
+    },
+    {
+      title: 'Severity',
+      filterId: 'severity',
+      style: { width: 110, textAlign: 'center' },
+      content: (item) => item.severity || '',
+      cell: (v) => {
+        const cfg = SEVERITY_BADGE[v] || { label: v || '—', color: '#888' };
+        return (
+          <span
+            className="badge"
+            style={{ background: cfg.color, color: '#fff', padding: '3px 8px' }}
+          >
+            {cfg.label}
+          </span>
+        );
+      },
+    },
+    {
+      title: 'Message',
+      filterId: 'message',
+      content: (item) => item.message || '',
+    },
+    {
+      title: 'Conditions',
+      style: { width: 200, textAlign: 'center' },
+      notFilterable: true,
+      content: (item) => item.id,
+      cell: (_v, item) => {
+        const matched = (item.conditions || []).filter((c) => c.matched).length;
+        const total = (item.conditions || []).length;
+        return (
+          <button
+            type="button"
+            className="btn btn-sm btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              this.showEventDetails(item);
+            }}
+            title="Show condition details"
+          >
+            <i className="fas fa-search" /> {matched}/{total} matched (
+            {(item.combine || 'AND').toUpperCase()})
+          </button>
+        );
+      },
+    },
+    {
+      title: 'Seen',
+      filterId: 'seen_at',
+      style: { width: 160 },
+      content: (item) => (item.seen_at ? formatTs(item.seen_at) : ''),
+      cell: (_v, item) => {
+        if (!item.seen_at) {
+          return (
+            <span
+              title="Unseen"
+              style={{
+                display: 'inline-block',
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: 'var(--color-red)',
+              }}
+            />
+          );
+        }
+        return (
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            <div>{formatTs(item.seen_at)}</div>
+            {item.seen_by && <div>by {item.seen_by}</div>}
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Action',
+      style: { width: 80, textAlign: 'right' },
+      notFilterable: true,
+      content: (item) => item.id,
+      cell: (_v, item) => (
+        <button
+          type="button"
+          className={`btn btn-sm ${item.seen_at ? 'btn-outline-secondary' : 'btn-success'}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            this.toggleSeen(item);
+          }}
+          title={item.seen_at ? 'Mark as unseen' : 'Mark as seen'}
+        >
+          <i className={`fas ${item.seen_at ? 'fa-eye-slash' : 'fa-check'}`} />
+        </button>
+      ),
+    },
+  ];
+
+  injectTopBar = () => (
+    <div className="btn-group input-group-btn">
+      {['all', 'unseen', 'seen'].map((f) => (
+        <button
+          key={f}
+          type="button"
+          className={`btn btn-sm btn-cta ${this.state.filter === f ? 'btn-primary' : 'btn-outline-secondary'}`}
+          onClick={() => this.changeFilter(f)}
+        >
+          {f}
+        </button>
+      ))}
+      <button
+        type="button"
+        className="btn btn-sm btn-cta btn-success"
+        style={{ marginLeft: 5 }}
+        onClick={this.markAllSeen}
+        title="Mark every event of this alert as seen"
+      >
+        <i className="fas fa-check-double" /> Mark all seen
+      </button>
+    </div>
+  );
 
   render() {
     const u = window.__user || {};
     if (!u.superAdmin && !u.tenantAdmin) return null;
-    const { alert, items, loading, error, filter } = this.state;
+    const { alert, loading } = this.state;
 
     return (
       <div style={{ padding: '0 8px' }}>
@@ -128,150 +349,34 @@ export class UserAlertEventsPage extends Component {
                 <i className="fas fa-edit" /> Edit alert
               </Link>
             )}
-            <button
-              type="button"
-              className="btn btn-sm btn-primary"
-              onClick={this.refresh}
-              title="Reload"
-            >
-              <i className="fas fa-sync" />
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-success"
-              onClick={this.markAllSeen}
-              disabled={items.length === 0}
-              title="Mark every event of this alert as seen"
-            >
-              <i className="fas fa-check-double" /> Mark all seen
-            </button>
           </div>
         </div>
 
-        <div className="btn-group btn-group-sm" role="group" style={{ marginBottom: 12 }}>
-          {['all', 'unseen', 'seen'].map((f) => (
-            <button
-              key={f}
-              type="button"
-              className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline-secondary'}`}
-              onClick={() => this.changeFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {loading && (
+        {loading ? (
           <div style={{ color: 'var(--text-muted)', padding: 16 }}>
             <i className="fas fa-spinner fa-spin" /> Loading…
           </div>
-        )}
-
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && items.length === 0 && (
-          <div
-            style={{
-              color: 'var(--text-muted)',
-              padding: 24,
-              textAlign: 'center',
-              border: '1px dashed var(--border-color)',
-              borderRadius: 4,
-            }}
-          >
-            No events yet.
-          </div>
-        )}
-
-        {!loading && items.length > 0 && (
-          <table className="table table-sm" style={{ color: 'var(--text)' }}>
-            <thead>
-              <tr>
-                <th style={{ width: 30 }}></th>
-                <th>Date</th>
-                <th>Severity</th>
-                <th>Message</th>
-                <th>Conditions</th>
-                <th style={{ width: 130 }}>Seen</th>
-                <th style={{ width: 100, textAlign: 'right' }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((ev) => {
-                const cfg = SEVERITY_BADGE[ev.severity] || { label: ev.severity, color: '#888' };
-                const matched = (ev.conditions || []).filter((c) => c.matched).length;
-                const total = (ev.conditions || []).length;
-                return (
-                  <tr key={ev.id} style={{ opacity: ev.seen_at ? 0.6 : 1 }}>
-                    <td style={{ textAlign: 'center' }}>
-                      {!ev.seen_at && (
-                        <span
-                          title="Unseen"
-                          style={{
-                            display: 'inline-block',
-                            width: 10,
-                            height: 10,
-                            background: cfg.color,
-                            borderRadius: '50%',
-                          }}
-                        />
-                      )}
-                    </td>
-                    <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{formatTs(ev.ts)}</td>
-                    <td>
-                      <span
-                        className="badge"
-                        style={{ background: cfg.color, color: '#fff', padding: '3px 8px' }}
-                      >
-                        {ev.severity || '—'}
-                      </span>
-                    </td>
-                    <td>{ev.message || ''}</td>
-                    <td style={{ fontSize: 12 }}>
-                      <details>
-                        <summary>
-                          {matched}/{total} matched ({(ev.combine || 'AND').toUpperCase()})
-                        </summary>
-                        <ul style={{ marginTop: 4, paddingLeft: 18 }}>
-                          {(ev.conditions || []).map((c, i) => (
-                            <li key={i} style={{ color: c.matched ? 'var(--color-red)' : 'var(--text-muted)' }}>
-                              <code>{c.query}</code>: {c.reducer}({(c.value != null ? c.value : '?')}) {c.operator}{' '}
-                              {c.threshold}
-                              {c.error ? <em style={{ color: 'var(--color-red)' }}> — {c.error}</em> : null}
-                            </li>
-                          ))}
-                        </ul>
-                      </details>
-                    </td>
-                    <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {ev.seen_at ? (
-                        <>
-                          <div>{formatTs(ev.seen_at)}</div>
-                          {ev.seen_by && <div>by {ev.seen_by}</div>}
-                        </>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${ev.seen_at ? 'btn-outline-secondary' : 'btn-success'}`}
-                        onClick={() => this.toggleSeen(ev)}
-                        title={ev.seen_at ? 'Mark as unseen' : 'Mark as seen'}
-                      >
-                        <i className={`fas ${ev.seen_at ? 'fa-eye-slash' : 'fa-check'}`} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        ) : (
+          <Table
+            parentProps={this.props}
+            selfUrl={`user-alert-events/${this.alertId()}`}
+            defaultTitle={`Alert events`}
+            defaultValue={() => ({})}
+            defaultSort="Date"
+            defaultSortDesc={true}
+            itemName="Alert Event"
+            formSchema={null}
+            formFlow={null}
+            columns={this.columns}
+            fetchItems={this.fetchItems}
+            updateItem={() => Promise.resolve({})}
+            deleteItem={() => Promise.resolve({})}
+            showActions={false}
+            showLink={false}
+            injectTable={(table) => (this.table = table)}
+            injectTopBar={this.injectTopBar}
+            extractKey={(item) => item.id}
+          />
         )}
       </div>
     );

@@ -29,6 +29,21 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
 
   private val logger = Logger("otoroshi-user-analytics-alert-events-api")
 
+  /** Read a JSONB array column. Vert.x may return either a `JsonArray`,
+   *  a `String` (PG bytea/jsonb representation), or a wrapped `Buffer` —
+   *  fall back to Play JSON parsing in any case.
+   */
+  private def readJsonbArray(row: io.vertx.sqlclient.Row, name: String): JsValue = {
+    val v = row.getValue(name)
+    if (v == null) JsArray()
+    else
+      v match {
+        case s: String                       => scala.util.Try(Json.parse(s)).getOrElse(JsArray())
+        case ja: io.vertx.core.json.JsonArray => scala.util.Try(Json.parse(ja.encode())).getOrElse(JsArray())
+        case other                            => scala.util.Try(Json.parse(other.toString)).getOrElse(JsArray())
+      }
+  }
+
   private def requireTenantAccess(
       ctx: ApiActionContext[_]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
@@ -80,7 +95,7 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
                   "message"        -> Option(row.getString("message")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue],
                   "combine"        -> Option(row.getString("combine_op")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue],
                   "windowSeconds"  -> Option(row.getValue("window_seconds")).map(v => JsNumber(BigDecimal(v.toString))).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "conditions"     -> (Option(row.getJsonArray("conditions")).map(a => Json.parse(a.encode())).getOrElse(JsArray()): JsValue),
+                  "conditions"     -> readJsonbArray(row, "conditions"),
                   "seen_at"        -> Option(row.getOffsetDateTime("seen_at")).map(_.toInstant.toEpochMilli).map(JsNumber(_)).getOrElse(JsNull).asInstanceOf[JsValue],
                   "seen_by"        -> Option(row.getString("seen_by")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue]
                 )
