@@ -145,7 +145,8 @@ object DefaultDashboards {
       DefaultVersionMetaKey -> DefaultVersion
     ),
     enabled = true,
-    widgets = spec.widgets
+    widgets = spec.widgets,
+    defaults = Json.obj()
   )
 
   /**

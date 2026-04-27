@@ -60,7 +60,8 @@ case class UserDashboard(
     tags: Seq[String],
     metadata: Map[String, String],
     enabled: Boolean,
-    widgets: Seq[Widget]
+    widgets: Seq[Widget],
+    defaults: JsObject
 ) extends EntityLocationSupport {
   override def internalId: String          = id
   override def theDescription: String      = description
@@ -81,7 +82,8 @@ object UserDashboard {
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
-        widgets = (json \ "widgets").asOpt[Seq[JsValue]].getOrElse(Seq.empty).flatMap(j => Widget.format.reads(j).asOpt)
+        widgets = (json \ "widgets").asOpt[Seq[JsValue]].getOrElse(Seq.empty).flatMap(j => Widget.format.reads(j).asOpt),
+        defaults = (json \ "defaults").asOpt[JsObject].getOrElse(Json.obj())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -94,7 +96,8 @@ object UserDashboard {
       "tags"        -> JsArray(o.tags.map(JsString.apply)),
       "metadata"    -> Json.toJson(o.metadata),
       "enabled"     -> o.enabled,
-      "widgets"     -> JsArray(o.widgets.map(_.json))
+      "widgets"     -> JsArray(o.widgets.map(_.json)),
+      "defaults"    -> o.defaults
     )
   }
   def defaultUserDashboardTemplate(implicit env: Env): UserDashboard = UserDashboard(
@@ -105,7 +108,8 @@ object UserDashboard {
     metadata = Map.empty,
     tags = Seq.empty,
     enabled = true,
-    widgets = Seq.empty
+    widgets = Seq.empty,
+    defaults = Json.obj()
   )
 }
 

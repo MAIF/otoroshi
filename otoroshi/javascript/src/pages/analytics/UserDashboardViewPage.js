@@ -71,10 +71,63 @@ export class UserDashboardViewPage extends Component {
           this.setState({ error: (d && d.error) || 'not found', loading: false });
         } else {
           this.props.setTitle(`Analytics — ${d.name || id}`);
-          this.setState({ dashboard: d, loading: false, error: null });
+          // Apply dashboard defaults only if the URL has no filter params yet.
+          // URL > defaults > in-code fallback. This keeps deep links intact.
+          const urlHasFilters = this.urlHasFilterParams();
+          const defaults = d.defaults || {};
+          const nextFilters =
+            !urlHasFilters && Object.keys(defaults).length > 0
+              ? queryToFilters(defaults)
+              : this.state.filters;
+          this.setState(
+            { dashboard: d, loading: false, error: null, filters: nextFilters },
+            () => this.setupAutoRefresh()
+          );
         }
       })
       .catch((e) => this.setState({ error: e.message, loading: false }));
+  };
+
+  urlHasFilterParams = () => {
+    const q = this.props.location.query || {};
+    return ['from', 'to', 'route', 'api', 'apikey', 'group', 'refresh', 'compare'].some(
+      (k) => q[k] != null && q[k] !== ''
+    );
+  };
+
+  saveAsDefault = () => {
+    const { dashboard, filters } = this.state;
+    if (!dashboard) return;
+    const defaults = filtersToQuery(filters);
+    const updated = { ...dashboard, defaults };
+    dashboards
+      .update(updated)
+      .then((res) => {
+        if (res && res.error) {
+          window.newAlert(`Failed to save defaults: ${res.error}`, 'Error');
+          return;
+        }
+        this.setState({ dashboard: updated });
+        window.newAlert('Default view saved.', 'Success');
+      })
+      .catch((e) => window.newAlert(`Failed to save defaults: ${e.message}`, 'Error'));
+  };
+
+  clearDefaults = () => {
+    const { dashboard } = this.state;
+    if (!dashboard) return;
+    if (!window.confirm('Clear the saved default view of this dashboard?')) return;
+    const updated = { ...dashboard, defaults: {} };
+    dashboards
+      .update(updated)
+      .then((res) => {
+        if (res && res.error) {
+          window.newAlert(`Failed to clear defaults: ${res.error}`, 'Error');
+          return;
+        }
+        this.setState({ dashboard: updated });
+      })
+      .catch((e) => window.newAlert(`Failed to clear defaults: ${e.message}`, 'Error'));
   };
 
   openAddWidget = () => {
@@ -253,6 +306,28 @@ export class UserDashboardViewPage extends Component {
                 onClick={this.openAddWidget}
               >
                 <i className="fas fa-plus-circle" /> Add widget
+              </button>
+            )}
+            {editMode && (
+              <button
+                type="button"
+                className="btn btn-sm btn-secondary"
+                style={{ marginLeft: 5 }}
+                onClick={this.saveAsDefault}
+                title="Save current filters/range/refresh as the dashboard default view"
+              >
+                <i className="fas fa-bookmark" /> Save view as default
+              </button>
+            )}
+            {editMode && dashboard.defaults && Object.keys(dashboard.defaults).length > 0 && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                style={{ marginLeft: 5 }}
+                onClick={this.clearDefaults}
+                title="Clear the saved default view"
+              >
+                <i className="fas fa-eraser" />
               </button>
             )}
             {editMode && (
