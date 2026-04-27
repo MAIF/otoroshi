@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { ReactSelectOverride } from '../../components/inputs/ReactSelectOverride';
 import { fetchSchema } from './service';
 
@@ -40,8 +41,8 @@ function inferDefaultFormat(queryId) {
   return 'count';
 }
 
-function uid(prefix = 'w') {
-  return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
+function uid(prefix = 'widget') {
+  return `${prefix}_${uuidv4()}`;
 }
 
 export class WidgetWizard extends Component {
