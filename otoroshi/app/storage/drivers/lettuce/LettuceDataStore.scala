@@ -13,20 +13,14 @@ import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaC
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources, MappingSocketAddressResolver}
 import io.lettuce.core.{AbstractRedisClient, ClientOptions, ReadFrom, RedisClient, RedisURI}
 import io.netty.resolver.DefaultAddressResolverGroup
-import next.models.{
-  ApiDataStore,
-  ApiSubscriptionDataStore,
-  KvApiDataStore,
-  KvApiSubscriptionDataStore,
-  KvRouteTemplateDataStore,
-  RouteTemplateDataStore
-}
+import next.models.{ApiDataStore, ApiSubscriptionDataStore, KvApiDataStore, KvApiSubscriptionDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
+import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
 import otoroshi.next.models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
@@ -299,6 +293,9 @@ class LettuceDataStores(
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
+
+  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

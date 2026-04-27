@@ -16,14 +16,7 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{
-  ApiDataStore,
-  ApiSubscriptionDataStore,
-  KvApiDataStore,
-  KvApiSubscriptionDataStore,
-  KvRouteTemplateDataStore,
-  RouteTemplateDataStore
-}
+import next.models.{ApiDataStore, ApiSubscriptionDataStore, KvApiDataStore, KvApiSubscriptionDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
@@ -35,6 +28,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import otoroshi.jobs.updates.Version
 import otoroshi.models._
+import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
 import otoroshi.next.models._
 import otoroshi.next.plugins.{NgCustomQuotas, NgCustomThrottling}
 import otoroshi.next.workflow.PausedWorkflowSession
@@ -3098,6 +3092,9 @@ class SwappableInMemoryDataStores(
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
+
+  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

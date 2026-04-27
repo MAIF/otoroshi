@@ -14,19 +14,9 @@ import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models._
+import otoroshi.next.analytics.models.UserDashboard
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
-import otoroshi.next.plugins.api.{
-  NgAccessValidator,
-  NgBackendCall,
-  NgNamedPlugin,
-  NgPluginVisibility,
-  NgPreRouting,
-  NgRequestSink,
-  NgRequestTransformer,
-  NgRouteMatcher,
-  NgTunnelHandler,
-  NgWebsocketPlugin
-}
+import otoroshi.next.plugins.api.{NgAccessValidator, NgBackendCall, NgNamedPlugin, NgPluginVisibility, NgPreRouting, NgRequestSink, NgRequestTransformer, NgRouteMatcher, NgTunnelHandler, NgWebsocketPlugin}
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
@@ -1097,6 +1087,25 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allRouteTemplates(),
         stateOne = id => env.proxyState.routeTemplate(id),
         stateUpdate = seq => env.proxyState.updateRouteTemplates(seq)
+      )
+    ),
+    Resource(
+      "UserDashboard",
+      "user-dashboards",
+      "user-dashboards",
+      "analytics.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[UserDashboard](
+        UserDashboard.format,
+        classOf[UserDashboard],
+        env.datastores.userDashboardDataStore.key,
+        env.datastores.userDashboardDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.userDashboardDataStore.template(env).json,
+        stateAll = () => env.proxyState.allUserDashboards(),
+        stateOne = id => env.proxyState.userDashboard(id),
+        stateUpdate = seq => env.proxyState.updateUserDashboards(seq)
       )
     )
   ) ++ env.adminExtensions.resources()

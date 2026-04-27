@@ -544,7 +544,8 @@ case class DefaultTemplates(
     tenant: Option[JsObject] = Json.obj().some,          // Option[Tenant],
     team: Option[JsObject] = Json.obj().some,            // Option[Team],
     apiSubscription: Option[JsObject] = Json.obj().some, // Option[ApiSubscription],
-    routeTemplate: Option[JsObject] = Json.obj().some    // Option[RouteTemplate],
+    routeTemplate: Option[JsObject] = Json.obj().some,    // Option[RouteTemplate],
+    userDashboardTemplate: Option[JsObject] = Json.obj().some,    // Option[UserDashboard],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }

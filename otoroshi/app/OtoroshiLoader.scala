@@ -150,6 +150,8 @@ package object modules {
     lazy val infosApiController            = wire[InfosApiController]
     lazy val apisController                = wire[ApisController]
     lazy val workflowsController           = wire[WorkflowsController]
+    lazy val userAnalyticsController       = wire[otoroshi.next.analytics.controllers.AnalyticsController]
+    lazy val userDashboardController       = wire[otoroshi.next.analytics.controllers.UserDashboardController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
