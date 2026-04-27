@@ -314,6 +314,7 @@ function Selector({ label, value, options, onChange, idKey = 'id', labelKey = 'n
     <Field label={label}>
       <div style={{ width: 220 }}>
         <ReactSelectOverride
+          clearable
           isClearable
           placeholder="— any —"
           value={value || ''}

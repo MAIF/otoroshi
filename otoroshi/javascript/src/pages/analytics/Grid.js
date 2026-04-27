@@ -2,6 +2,14 @@ import React, { Component } from 'react';
 import { renderWidget } from './widgets';
 import { runQuery, buildFiltersPayload } from './service';
 
+// Maps each drillable query to the filter key it sets when clicked.
+const QUERY_TO_FILTER = {
+  requests_by_route: 'route',
+  top_error_routes: 'route',
+  requests_by_api: 'api',
+  requests_by_apikey: 'apikey',
+};
+
 // ============================================================================
 // WidgetWrapper — handles fetch lifecycle + states
 // ============================================================================
@@ -40,6 +48,15 @@ export class WidgetWrapper extends Component {
       this.abortRef = null;
     }
   }
+
+  handleItemClick = (item) => {
+    if (!item || !this.props.onDrillDown) return;
+    const filterKey = QUERY_TO_FILTER[this.props.widget && this.props.widget.query];
+    if (!filterKey) return;
+    const value = item.key != null ? item.key : item.value;
+    if (value == null) return;
+    this.props.onDrillDown(filterKey, String(value));
+  };
 
   fetchData = () => {
     const { widget, filters, compare } = this.props;
@@ -195,9 +212,10 @@ export class WidgetWrapper extends Component {
           {status === 'ok' &&
             renderWidget(widget.type || 'line', {
               data,
-              compare: compare ? { data: compare.data } : null,
+              compare: this.state.compare ? { data: this.state.compare.data } : null,
               options: widget.options || {},
               height: '100%',
+              onItemClick: this.handleItemClick,
             })}
         </div>
       </div>
@@ -220,6 +238,7 @@ export class Grid extends Component {
       onRemoveWidget,
       onEditWidget,
       onMoveWidget,
+      onDrillDown,
     } = this.props;
     return (
       <div
@@ -250,6 +269,7 @@ export class Grid extends Component {
               onRemove={onRemoveWidget}
               onEdit={onEditWidget}
               onMove={onMoveWidget}
+              onDrillDown={onDrillDown}
               isFirst={i === 0}
               isLast={i === widgets.length - 1}
             />

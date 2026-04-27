@@ -170,12 +170,25 @@ export function AreaWidget(props) {
 // Bar (TopN horizontal-ish)
 // ============================================================================
 
-export function BarWidget({ data, options = {}, height }) {
+export function BarWidget({ data, options = {}, height, onItemClick }) {
   const items = (data && data.items) || [];
   const fmt = formatValue(options.format || 'count', options.decimals);
+  const onClick = onItemClick
+    ? (e) => {
+        if (e && e.activePayload && e.activePayload[0]) {
+          onItemClick(e.activePayload[0].payload);
+        }
+      }
+    : undefined;
   return (
     <ResponsiveContainer width="100%" height={height || 220}>
-      <BarChart data={items} layout="vertical" margin={{ left: 60 }}>
+      <BarChart
+        data={items}
+        layout="vertical"
+        margin={{ left: 60 }}
+        onClick={onClick}
+        style={onItemClick ? { cursor: 'pointer' } : undefined}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="#444" />
         <XAxis type="number" tickFormatter={fmt} stroke="#aaa" />
         <YAxis
@@ -203,12 +216,12 @@ export function BarWidget({ data, options = {}, height }) {
 // Pie / Donut
 // ============================================================================
 
-function PieBase({ data, options = {}, height, innerRadius }) {
+function PieBase({ data, options = {}, height, innerRadius, onItemClick }) {
   const items = (data && data.items) || [];
   const fmt = formatValue(options.format || 'count', options.decimals);
   return (
     <ResponsiveContainer width="100%" height={height || 220}>
-      <PieChart>
+      <PieChart style={onItemClick ? { cursor: 'pointer' } : undefined}>
         <Pie
           data={items}
           dataKey="value"
@@ -217,6 +230,7 @@ function PieBase({ data, options = {}, height, innerRadius }) {
           innerRadius={innerRadius || 0}
           isAnimationActive={false}
           label={(e) => e.key}
+          onClick={onItemClick ? (payload) => onItemClick(payload) : undefined}
         >
           {items.map((_, i) => (
             <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
@@ -310,7 +324,7 @@ function pickThresholdColor(value, thresholds) {
 // Table
 // ============================================================================
 
-export function TableWidget({ data, options = {}, height }) {
+export function TableWidget({ data, options = {}, height, onItemClick }) {
   const items = (data && (data.items || data.rows)) || [];
   const fmt = formatValue(options.format || 'count', options.decimals);
   const cols = items.length > 0 ? Object.keys(items[0]).filter((k) => k !== 'key') : [];
@@ -326,7 +340,11 @@ export function TableWidget({ data, options = {}, height }) {
         </thead>
         <tbody>
           {items.map((row, i) => (
-            <tr key={i}>
+            <tr
+              key={i}
+              onClick={onItemClick ? () => onItemClick(row) : undefined}
+              style={onItemClick ? { cursor: 'pointer' } : undefined}
+            >
               {cols.map((c) => (
                 <td key={c}>{c === 'value' ? fmt(row[c]) : String(row[c])}</td>
               ))}

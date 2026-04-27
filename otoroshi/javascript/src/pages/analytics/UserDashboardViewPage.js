@@ -180,6 +180,11 @@ export class UserDashboardViewPage extends Component {
       .catch((e) => window.newAlert(`Failed to remove widget: ${e.message}`, 'Error'));
   };
 
+  drillDown = (filterKey, value) => {
+    if (!filterKey || !value) return;
+    this.onFiltersChange({ ...this.state.filters, [filterKey]: value });
+  };
+
   onFiltersChange = (filters) => {
     this.setState({ filters });
     const q = filtersToQuery(filters);
@@ -267,6 +272,7 @@ export class UserDashboardViewPage extends Component {
           onRemoveWidget={this.removeWidget}
           onEditWidget={this.editWidget}
           onMoveWidget={this.moveWidget}
+          onDrillDown={this.drillDown}
         />
       </div>
     );
