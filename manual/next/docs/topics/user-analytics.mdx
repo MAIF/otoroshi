@@ -257,6 +257,97 @@ Access is **tenant-scoped**:
 - The "Restore defaults" button on the dashboards list is hidden for non-super-admins.
 - The "Set as active analytics exporter" button on the Data Exporter edit page stays super-admin only (data exporters are global).
 
+## Alerts
+
+User analytics ships with threshold-based alerts that evaluate against the same query catalogue as dashboards. An alert is a regular Otoroshi entity (`analytics.otoroshi.io/v1/user-alerts`), tenant-scoped via `EntityLocation`.
+
+### Model
+
+A `UserAlert` carries:
+
+| Field | Description |
+|---|---|
+| `severity` | `info` &#124; `warning` &#124; `critical` |
+| `message` | Free-form text included in the emitted event |
+| `windowSeconds` | How far back to look when evaluating (e.g. `300` = last 5 min) |
+| `evaluationIntervalSeconds` | Min time between two evaluations |
+| `cooldownSeconds` | Min time between two consecutive firings (anti-spam) |
+| `combine` | `AND` (all conditions match) or `OR` (any condition matches) |
+| `conditions` | Array of conditions, see below |
+
+Each condition:
+
+```json
+{
+  "query":     "duration_avg_ts",
+  "params":    {},
+  "filters":   { "route_id": "route_xxx" },
+  "reducer":   "max",
+  "operator":  ">",
+  "threshold": 500
+}
+```
+
+| Field | Description |
+|---|---|
+| `query` | A query id from the catalogue (`/api/analytics/_schema`) |
+| `params` | Query-specific params (e.g. `top_n`) |
+| `filters` | Per-condition entity filters: `route_id`, `api_id`, `apikey_id`, `group_id`, `err` |
+| `reducer` | How to reduce the query result to a scalar: `avg` &#124; `max` &#124; `min` &#124; `sum` &#124; `last` |
+| `operator` | `>` &#124; `>=` &#124; `<` &#124; `<=` &#124; `==` &#124; `!=` |
+| `threshold` | Value the reduced result is compared to |
+
+### Evaluation flow
+
+1. `AlertEvaluationJob` runs every 60 s on the leader.
+2. It loads every enabled alert from `proxyState`.
+3. For each alert: if `now - lastEvaluatedAt >= evaluationIntervalSeconds`, evaluate.
+4. The evaluator runs each condition (calling the same engine as dashboards) over the configured window, applies the reducer to a scalar, compares to the threshold.
+5. The boolean results are combined with `AND`/`OR`.
+6. If the alert is firing **and** `now - lastFiredAt >= cooldownSeconds`, a `UserAnalyticsAlertEvent` is emitted via `Alerts.send` (the standard Otoroshi alert pipeline). State (`lastEvaluatedAt`, `lastFiredAt`) is persisted per alert in `${storageRoot}:analytics:alert-state:${alertId}`.
+
+### Emitted event
+
+```json
+{
+  "@type":           "AlertEvent",
+  "alert":           "UserAnalyticsAlert",
+  "alertSubcategory": "user-analytics",
+  "alertId":         "alert_xxx",
+  "alertName":       "High latency on checkout",
+  "severity":        "critical",
+  "message":         "Latency over budget",
+  "tenant":          "default",
+  "teams":           ["default"],
+  "windowSeconds":   300,
+  "combine":         "AND",
+  "conditions": [
+    {
+      "query":     "duration_avg_ts",
+      "reducer":   "max",
+      "operator":  ">",
+      "threshold": 500,
+      "value":     742.3,
+      "matched":   true
+    }
+  ]
+}
+```
+
+### Delivery: data exporter enrollment
+
+Otoroshi does not ship a built-in alert delivery channel. Alerts go through the same pipeline as any `AlertEvent`, so to receive them by email / webhook / Slack / Kafka / ..., create a **Data Exporter** of any notifying type and add a filter on:
+
+```json
+{ "alert": "UserAnalyticsAlert" }
+```
+
+(or, more granular, on `severity` or `tenant`). The User Alerts page shows a non-blocking banner reminding to set up at least one exporter; alerts are still created and evaluated, just without a notification destination.
+
+### RBAC
+
+Tenant-scoped, like dashboards: a tenant-admin sees and manages alerts for their own tenant only. The injected `tenant` filter on `AlertEvaluator` ensures one tenant's alert never reads another tenant's events.
+
 ## Storage layout
 
 Single denormalized table:
