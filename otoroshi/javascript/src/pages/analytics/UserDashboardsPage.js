@@ -233,7 +233,10 @@ export class UserDashboardsPage extends Component {
             <strong>Set as active analytics exporter</strong>.
           </div>
         ) : (
-          <Link to="/exporters/add" className="btn btn-primary btn-lg">
+          <Link
+            to="/exporters/add?type=user-analytics&name=User%20analytics%20exporter"
+            className="btn btn-primary btn-lg"
+          >
             <i className="fas fa-plus" /> Create a user-analytics exporter
           </Link>
         )}
