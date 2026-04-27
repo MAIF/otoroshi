@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
 import { dashboards, restoreDefaults } from './service';
 
 const NEW_DASHBOARD_TEMPLATE = () => ({
   _loc: { tenant: 'default', teams: ['default'] },
-  id: '',
+  id: `user-dashboard_${uuidv4()}`,
   name: 'New dashboard',
   description: '',
   enabled: true,
