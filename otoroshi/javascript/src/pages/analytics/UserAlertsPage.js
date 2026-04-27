@@ -254,7 +254,7 @@ export class UserAlertsPage extends Component {
             <code>{`{"alert": "UserAnalyticsAlert"}`}</code>.
           </div>
         </div>
-        <Link to="/exporters/add" className="btn btn-sm btn-primary">
+        <Link to="/exporters/add" className="btn btn-sm btn-success">
           <i className="fas fa-plus" /> New data exporter
         </Link>
       </div>
