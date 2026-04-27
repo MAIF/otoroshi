@@ -944,6 +944,10 @@ object DataExporterConfig {
             case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "jms"           => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "postgresql"    => PostgresExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "user-analytics" =>
+              otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings.format
+                .reads((json \ "config").as[JsObject])
+                .get
             case v               => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )
@@ -1070,6 +1074,10 @@ case object DataExporterConfigTypePostgres extends DataExporterConfigType {
   def name: String = "postgresql"
 }
 
+case object DataExporterConfigTypeUserAnalytics extends DataExporterConfigType {
+  def name: String = "user-analytics"
+}
+
 object DataExporterConfigType {
 
   val Kafka         = DataExporterConfigTypeKafka
@@ -1099,6 +1107,7 @@ object DataExporterConfigType {
   val Syslog        = DataExporterConfigTypeSyslog
   val JMS           = DataExporterConfigTypeJMS
   val Postgres      = DataExporterConfigTypePostgres
+  val UserAnalytics = DataExporterConfigTypeUserAnalytics
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
@@ -1129,6 +1138,7 @@ object DataExporterConfigType {
       case "syslog"        => Syslog
       case "jms"           => JMS
       case "postgresql"    => Postgres
+      case "user-analytics" => UserAnalytics
       case _               => None
     }
   }
@@ -1200,6 +1210,8 @@ case class DataExporterConfig(
       case c: SyslogExporterSettings      => new SyslogExporter(this)
       case c: JMSExporterSettings         => new JMSExporter(this)
       case c: PostgresExporterSettings    => new PostgresExporter(this)
+      case c: otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings =>
+        new otoroshi.next.analytics.exporter.UserAnalyticsExporter(this)
       case _                              => throw new RuntimeException("unsupported exporter type")
     }
   }
