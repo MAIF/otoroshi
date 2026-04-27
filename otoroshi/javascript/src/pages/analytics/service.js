@@ -44,6 +44,9 @@ export const restoreDefaults = () =>
 // CRUD dashboards goes through the generic Resource router.
 export const dashboards = apisClient('analytics.otoroshi.io', 'v1', 'user-dashboards');
 
+// CRUD alerts goes through the generic Resource router as well.
+export const alerts = apisClient('analytics.otoroshi.io', 'v1', 'user-alerts');
+
 // ============================================================================
 // Time range parsing (`now`, `now-1h`, ISO 8601)
 // ============================================================================
