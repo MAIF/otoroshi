@@ -249,6 +249,14 @@ export const graph = (env) => {
           icon: () => 'fa-chart-line',
         },
         {
+          title: 'User Alerts',
+          description: 'Threshold-based alerts on user-analytics queries',
+          img: 'alerts',
+          display: () => env.userAdmin || env.tenantAdmin,
+          link: '/user-alerts',
+          icon: () => 'fa-bell',
+        },
+        {
           title: 'Global Status',
           description: 'Availability of your services over time',
           img: 'global-status',
