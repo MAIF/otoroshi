@@ -6,7 +6,6 @@ import { ServicePage } from '../pages/ServicePage';
 import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
 import { UserDashboardsPage } from '../pages/analytics/UserDashboardsPage';
 import { UserDashboardViewPage } from '../pages/analytics/UserDashboardViewPage';
-import { UserDashboardEditPage } from '../pages/analytics/UserDashboardEditPage';
 import { DocumentationPage } from '../pages/DocumentationPage';
 import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
 import { ServiceHealthPage } from '../pages/ServiceHealthPage';
@@ -864,16 +863,16 @@ class BackOfficeAppContainer extends Component {
                         component={(props) => this.decorate(GlobalStatusPage, props)}
                       />
                       <Route
-                        path="/user-dashboards/edit/:titem"
-                        component={(props) => this.decorate(UserDashboardEditPage, props)}
-                      />
-                      <Route
-                        path="/user-dashboards/add"
-                        component={(props) => this.decorate(UserDashboardEditPage, props)}
-                      />
-                      <Route
-                        path="/user-dashboards/:titem"
+                        path="/user-dashboards/show/:titem"
                         component={(props) => this.decorate(UserDashboardViewPage, props)}
+                      />
+                      <Route
+                        path="/user-dashboards/:taction/:titem"
+                        component={(props) => this.decorate(UserDashboardsPage, props)}
+                      />
+                      <Route
+                        path="/user-dashboards/:taction"
+                        component={(props) => this.decorate(UserDashboardsPage, props)}
                       />
                       <Route
                         path="/user-dashboards"

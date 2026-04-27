@@ -263,6 +263,20 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
+        } else if (type === 'monaco-json') {
+          component = (
+            <MonacoInput
+              disabled={disabled}
+              key={name}
+              {...props}
+              value={JSON.stringify(this.getValue(name, '{}'), null, 2)}
+              onChange={(v) => {
+                try {
+                  this.changeValue(name, JSON.parse(v))
+                } catch (e) {}
+              }}
+            />
+          );
         } else if (type === 'code') {
           component = (
             <Suspense fallback={<div>loading ...</div>}>

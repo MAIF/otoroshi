@@ -4,6 +4,41 @@ import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
 import { dashboards, restoreDefaults } from './service';
 
+const NEW_DASHBOARD_TEMPLATE = () => ({
+  _loc: { tenant: 'default', teams: ['default'] },
+  id: '',
+  name: 'New dashboard',
+  description: '',
+  enabled: true,
+  tags: [],
+  metadata: {},
+  widgets: [
+    {
+      id: 'w1',
+      title: 'Requests per second',
+      query: 'requests_per_second',
+      type: 'line',
+      width: 4,
+      height: 2,
+      params: {},
+      options: { format: 'rps' },
+    },
+  ],
+});
+
+function View({ rawValue }) {
+  return (
+    <div className="row mb-3">
+      <label className="col-xs-12 col-sm-2 col-form-label"></label>
+      <div className="col-sm-10">
+        <Link className="btn btn-secondary btn-sm" href={`/user-dashboards/show/${rawValue.id}`}>
+          <i className="fas fa-chart-line"></i> view dashboard
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export class UserDashboardsPage extends Component {
   state = {
     activeExporterId: null,
@@ -12,12 +47,51 @@ export class UserDashboardsPage extends Component {
     restoreInProgress: false,
   };
 
+  formSchema = {
+    _loc: { type: 'location', props: {} },
+    id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    name: {
+      type: 'string',
+      props: { label: 'Name', placeholder: 'My dashboard' },
+    },
+    description: {
+      type: 'string',
+      props: { label: 'Description', placeholder: 'What this dashboard is about' },
+    },
+    enabled: {
+      type: 'bool',
+      props: { label: 'Enabled' },
+    },
+    tags: {
+      type: 'array',
+      props: { label: 'Tags' },
+    },
+    metadata: {
+      type: 'object',
+      props: { label: 'Metadata' },
+    },
+    widgets: {
+      type: 'monaco-json',
+      props: {
+        label: 'Widgets',
+        height: '500px',
+        help:
+          'JSON array of widgets. Each widget needs: id, title, query, type (line/area/bar/pie/donut/scalar/metric/table/heatmap), width (1-4), height (rows). See /api/analytics/_schema for available queries.',
+      },
+    },
+    view: {
+      type: View,
+
+    }
+  };
+
+  formFlow = ['_loc', 'id', 'name', 'description', '<<< Widgets', 'enabled', 'widgets', 'view', '>>> Tags & Metadata','tags', 'metadata', ];
+
   columns = [
     {
       title: 'Name',
       filterId: 'name',
       content: (item) => item.name,
-      cell: (v, item) => <Link to={`/user-dashboards/${item.id}`}>{v || item.id}</Link>,
     },
     {
       title: 'Description',
@@ -44,9 +118,17 @@ export class UserDashboardsPage extends Component {
       notFilterable: true,
       content: (item) => item.id,
       cell: (_v, item) => (
-        <Link to={`/user-dashboards/${item.id}`} className="btn btn-sm btn-success">
+        <button
+          type="button"
+          className="btn btn-sm btn-success"
+          onClick={(e) => {
+            e.stopPropagation();
+            this.props.history.push(`/user-dashboards/show/${item.id}`);
+          }}
+          title="Open dashboard view"
+        >
           <i className="fas fa-chart-line" />
-        </Link>
+        </button>
       ),
     },
   ];
@@ -74,13 +156,12 @@ export class UserDashboardsPage extends Component {
       });
   };
 
-  fetchItems = () => dashboards.findAll().then((items) => (Array.isArray(items) ? items : []));
+  fetchItems = () =>
+    dashboards.findAll().then((items) => (Array.isArray(items) ? items : []));
 
-  deleteItem = (item) => dashboards.delete(item).then(() => ({}));
-
-  gotoEdit = (item) => {
-    this.props.history.push(`/user-dashboards/edit/${item.id}`);
-  };
+  createItem = (item) => dashboards.create(item);
+  updateItem = (item) => dashboards.update(item);
+  deleteItem = (item) => dashboards.delete(item);
 
   doRestoreDefaults = () => {
     if (this.state.restoreInProgress) return;
@@ -90,7 +171,10 @@ export class UserDashboardsPage extends Component {
       .then((res) => {
         this.setState({ restoreInProgress: false });
         if (res && res.created && res.created.length > 0) {
-          window.newAlert(`Restored ${res.count} dashboard(s): ${res.created.join(', ')}`, 'Success');
+          window.newAlert(
+            `Restored ${res.count} dashboard(s): ${res.created.join(', ')}`,
+            'Success'
+          );
         } else {
           window.newAlert('No missing default dashboards to restore.', 'Info');
         }
@@ -104,16 +188,12 @@ export class UserDashboardsPage extends Component {
 
   injectTopBar = () => (
     <div className="btn-group input-group-btn">
-      <Link className="btn btn-primary btn-sm btn-cta" to="/user-dashboards/add">
-        <i className="fas fa-plus-circle" /> New dashboard
-      </Link>
       <button
         type="button"
         className="btn btn-secondary btn-sm btn-cta"
         onClick={this.doRestoreDefaults}
         disabled={this.state.restoreInProgress}
         title="Recreate any missing default dashboards"
-        style={{ marginLeft: 5 }}
       >
         {this.state.restoreInProgress ? (
           <>
@@ -170,29 +250,33 @@ export class UserDashboardsPage extends Component {
     if (!activeExporterId) return this.renderOnboarding();
 
     return (
-      <div>
-        <Table
-          parentProps={this.props}
-          selfUrl="user-dashboards"
-          defaultTitle="User analytics dashboards"
-          defaultValue={() => ({})}
-          itemName="Dashboard"
-          formSchema={null}
-          formFlow={null}
-          columns={this.columns}
-          fetchItems={this.fetchItems}
-          deleteItem={this.deleteItem}
-          showActions={true}
-          showLink={false}
-          hideAddItemAction={true}
-          navigateOnEdit={this.gotoEdit}
-          injectTable={(table) => (this.table = table)}
-          injectTopBar={this.injectTopBar}
-          extractKey={(item) => item.id}
-          rowNavigation={true}
-          itemUrl={(item) => `/bo/dashboard/user-dashboards/${item.id}`}
-        />
-      </div>
+      <Table
+        parentProps={this.props}
+        selfUrl="user-dashboards"
+        defaultTitle="User analytics dashboards"
+        defaultValue={NEW_DASHBOARD_TEMPLATE}
+        itemName="Dashboard"
+        formSchema={this.formSchema}
+        formFlow={this.formFlow}
+        columns={this.columns}
+        stayAfterSave={true}
+        fetchItems={this.fetchItems}
+        updateItem={this.updateItem}
+        deleteItem={this.deleteItem}
+        createItem={this.createItem}
+        injectTable={(table) => (this.table = table)}
+        injectTopBar={this.injectTopBar}
+        showActions={true}
+        showLink={false}
+        rowNavigation={true}
+        navigateTo={(item) => {
+          window.location = `/bo/dashboard/user-dashboards/edit/${item.id}`;
+        }}
+        itemUrl={(item) => `/bo/dashboard/user-dashboards/edit/${item.id}`}
+        export
+        kubernetesKind="analytics.otoroshi.io/UserDashboard"
+        extractKey={(item) => item.id}
+      />
     );
   }
 }
