@@ -34,6 +34,23 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     else Forbidden(Json.obj("error" -> "super admin only")).future
   }
 
+  /** Allow access if the caller is a super-admin OR has read access on the
+   *  current tenant (resolved from the `Otoroshi-Tenant` header). The current
+   *  tenant value is also returned so the caller can inject it into the
+   *  query filters.
+   */
+  private def requireTenantAccess(
+      ctx: ApiActionContext[_]
+  )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
+    val tenant = ctx.currentTenant
+    val canAccess =
+      env.bypassUserRightsCheck ||
+        ctx.userIsSuperAdmin ||
+        ctx.backOfficeUser.toOption.flatten.exists(_.rights.canReadTenant(tenant))
+    if (canAccess) f(tenant.value)
+    else Forbidden(Json.obj("error" -> s"no access to tenant '${tenant.value}'")).future
+  }
+
   private def requireLeader(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     if (env.clusterConfig.mode.isOff || env.clusterConfig.mode.isLeader) f
     else NotFound(Json.obj("error" -> "leader-only endpoint")).future
@@ -42,12 +59,16 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   // ----- POST /api/analytics/_query -----------------------------------------
 
   def runQuery: Action[JsValue] = ApiAction.async(parse.json) { ctx =>
-    requireSuperAdmin(ctx) {
+    requireTenantAccess(ctx) { tenant =>
       requireLeader {
         val body            = ctx.request.body
         val queryId         = (body \ "query").asOpt[String].getOrElse("")
         val params          = (body \ "params").asOpt[JsObject].getOrElse(Json.obj())
-        val rawFilters      = Filters.fromJson((body \ "filters").asOpt[JsValue].getOrElse(Json.obj()))
+        // Always inject the resolved tenant into the SQL WHERE clause.
+        // The `Otoroshi-Tenant` header drives which tenant's data is shown.
+        val rawFilters      = Filters
+          .fromJson((body \ "filters").asOpt[JsValue].getOrElse(Json.obj()))
+          .copy(tenant = Some(tenant))
         val requestedBucket = (body \ "bucket").asOpt[String]
         val compare         = (body \ "compare").asOpt[Boolean].getOrElse(false)
         val nocache         = (body \ "nocache").asOpt[Boolean].getOrElse(false)
@@ -78,7 +99,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   // ----- GET /api/analytics/_schema ------------------------------------------
 
   def schema: Action[AnyContent] = ApiAction.async { ctx =>
-    requireSuperAdmin(ctx) {
+    requireTenantAccess(ctx) { _ =>
       AnalyticsRuntime.registry match {
         case None      =>
           InternalServerError(Json.obj("error" -> "analytics runtime not initialized")).future

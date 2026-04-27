@@ -189,27 +189,31 @@ export class UserDashboardsPage extends Component {
       });
   };
 
-  injectTopBar = () => (
-    <div className="btn-group input-group-btn">
-      <button
-        type="button"
-        className="btn btn-secondary btn-sm btn-cta"
-        onClick={this.doRestoreDefaults}
-        disabled={this.state.restoreInProgress}
-        title="Recreate any missing default dashboards"
-      >
-        {this.state.restoreInProgress ? (
-          <>
-            <i className="fas fa-spinner fa-spin" /> Restoring…
-          </>
-        ) : (
-          <>
-            <i className="fas fa-undo" /> Restore defaults
-          </>
-        )}
-      </button>
-    </div>
-  );
+  injectTopBar = () => {
+    const u = window.__user || {};
+    if (!u.superAdmin) return null;
+    return (
+      <div className="btn-group input-group-btn">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm btn-cta"
+          onClick={this.doRestoreDefaults}
+          disabled={this.state.restoreInProgress}
+          title="Recreate any missing default dashboards"
+        >
+          {this.state.restoreInProgress ? (
+            <>
+              <i className="fas fa-spinner fa-spin" /> Restoring…
+            </>
+          ) : (
+            <>
+              <i className="fas fa-undo" /> Restore defaults
+            </>
+          )}
+        </button>
+      </div>
+    );
+  };
 
   renderOnboarding() {
     const { exporters } = this.state;
@@ -238,7 +242,9 @@ export class UserDashboardsPage extends Component {
   }
 
   render() {
-    if (!window.__user.superAdmin) return null;
+    const u = window.__user || {};
+    const canAccess = u.superAdmin || u.tenantAdmin;
+    if (!canAccess) return null;
 
     const { loading, activeExporterId } = this.state;
 

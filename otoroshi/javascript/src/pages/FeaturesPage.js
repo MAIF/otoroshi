@@ -244,7 +244,7 @@ export const graph = (env) => {
           title: 'User Analytics',
           description: 'Custom dashboards backed by a dedicated PostgreSQL exporter',
           img: 'analytics',
-          display: () => env.userAdmin,
+          display: () => env.userAdmin || env.tenantAdmin,
           link: '/user-dashboards',
           icon: () => 'fa-chart-line',
         },

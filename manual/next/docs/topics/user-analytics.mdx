@@ -244,7 +244,18 @@ By convention, prefix the query id with the extension's namespace (e.g. `waf.`, 
 
 ## RBAC
 
-Phase 1 is **super-admin only** for both the API and the UI. The query layer already injects a `tenant` filter hook (`Filters.tenant`) so multi-tenant scoping can be added later without touching the SQL or the catalogue.
+Access is **tenant-scoped**:
+
+- `POST /api/analytics/_query` and `GET /api/analytics/_schema` are open to any caller with read access on the **current tenant** (resolved from the `Otoroshi-Tenant` request header). This includes tenant-admins on their own tenants and super-admins on any tenant.
+- The `_query` endpoint **always injects** the current tenant value into the SQL `WHERE` clause, so a tenant-admin only ever sees rows whose `tenant` column matches. Super-admins see the data of whichever tenant the UI is currently scoped to (via the tenant dropdown).
+- The dashboard CRUD (`/apis/analytics.otoroshi.io/v1/user-dashboards`) goes through the standard generic Resource router and is filtered by the dashboard's `EntityLocation` (tenant + teams).
+- Admin-only operations stay **super-admin only**: `POST /api/analytics/_test-connection`, `POST /api/analytics/_set-active-exporter/:id`, `POST /api/analytics/_migrate`, `POST /api/analytics/dashboards/_restore-defaults` (because defaults live in the `default` tenant).
+
+**UI:**
+
+- The User Analytics menu entry shows for super-admins and tenant-admins.
+- The "Restore defaults" button on the dashboards list is hidden for non-super-admins.
+- The "Set as active analytics exporter" button on the Data Exporter edit page stays super-admin only (data exporters are global).
 
 ## Storage layout
 
