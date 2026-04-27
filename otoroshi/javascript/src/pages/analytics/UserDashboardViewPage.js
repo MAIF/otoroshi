@@ -13,6 +13,7 @@ export class UserDashboardViewPage extends Component {
     filters: queryToFilters(this.props.location.query || {}),
     refreshKey: 0,
     lastRefreshAt: null,
+    editMode: false,
   };
 
   componentDidMount() {
@@ -199,8 +200,12 @@ export class UserDashboardViewPage extends Component {
     });
   };
 
+  toggleEditMode = () => {
+    this.setState((s) => ({ editMode: !s.editMode }));
+  };
+
   render() {
-    const { dashboard, loading, error, filters, refreshKey, lastRefreshAt } = this.state;
+    const { dashboard, loading, error, filters, refreshKey, lastRefreshAt, editMode } = this.state;
     if (loading) {
       return (
         <div style={{ padding: 16, color: 'var(--text-muted)' }}>
@@ -240,21 +245,35 @@ export class UserDashboardViewPage extends Component {
             <Link to="/user-dashboards" className="btn btn-sm btn-secondary">
               <i className="fas fa-th-list" /> All dashboards
             </Link>
+            {editMode && (
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                style={{ marginLeft: 5 }}
+                onClick={this.openAddWidget}
+              >
+                <i className="fas fa-plus-circle" /> Add widget
+              </button>
+            )}
+            {editMode && (
+              <Link
+                to={`/user-dashboards/edit/${dashboard.id}`}
+                className="btn btn-sm btn-secondary"
+                style={{ marginLeft: 5 }}
+              >
+                <i className="fas fa-edit" /> Edit JSON
+              </Link>
+            )}
             <button
               type="button"
-              className="btn btn-sm btn-success"
+              className={`btn btn-sm ${editMode ? 'btn-warning' : 'btn-secondary'}`}
               style={{ marginLeft: 5 }}
-              onClick={this.openAddWidget}
+              onClick={this.toggleEditMode}
+              title={editMode ? 'Exit edit mode' : 'Enter edit mode'}
             >
-              <i className="fas fa-plus-circle" /> Add widget
+              <i className={`fas ${editMode ? 'fa-lock-open' : 'fa-lock'}`} />{' '}
+              {editMode ? 'Done editing' : 'Edit mode'}
             </button>
-            <Link
-              to={`/user-dashboards/edit/${dashboard.id}`}
-              className="btn btn-sm btn-secondary"
-              style={{ marginLeft: 5 }}
-            >
-              <i className="fas fa-edit" /> Edit
-            </Link>
           </div>
         </div>
         <Filters
@@ -269,9 +288,9 @@ export class UserDashboardViewPage extends Component {
           compare={!!filters.compare}
           refreshKey={refreshKey}
           onFetched={this.onWidgetFetched}
-          onRemoveWidget={this.removeWidget}
-          onEditWidget={this.editWidget}
-          onMoveWidget={this.moveWidget}
+          onRemoveWidget={editMode ? this.removeWidget : undefined}
+          onEditWidget={editMode ? this.editWidget : undefined}
+          onMoveWidget={editMode ? this.moveWidget : undefined}
           onDrillDown={this.drillDown}
         />
       </div>
