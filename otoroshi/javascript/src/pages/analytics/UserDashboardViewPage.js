@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { Filters } from './Filters';
 import { Grid } from './Grid';
+import { WidgetWizard } from './WidgetWizard';
 import { dashboards, queryToFilters, filtersToQuery } from './service';
 
 export class UserDashboardViewPage extends Component {
@@ -75,6 +76,56 @@ export class UserDashboardViewPage extends Component {
       .catch((e) => this.setState({ error: e.message, loading: false }));
   };
 
+  openAddWidget = () => {
+    const { dashboard } = this.state;
+    if (!dashboard) return;
+    window
+      .wizard(
+        'Add a widget',
+        (ok, cancel, state, setState) => (
+          <WidgetWizard onChange={(widget) => setState(widget)} />
+        ),
+        { additionalClass: 'modal-lg', okLabel: 'Add widget' }
+      )
+      .then((widget) => {
+        if (!widget || !widget.query) return;
+        const updated = {
+          ...dashboard,
+          widgets: [...(dashboard.widgets || []), widget],
+        };
+        dashboards
+          .update(updated)
+          .then((res) => {
+            if (res && res.error) {
+              window.newAlert(`Failed to add widget: ${res.error}`, 'Error');
+              return;
+            }
+            this.setState({ dashboard: updated });
+          })
+          .catch((e) => window.newAlert(`Failed to add widget: ${e.message}`, 'Error'));
+      });
+  };
+
+  removeWidget = (widgetId) => {
+    const { dashboard } = this.state;
+    if (!dashboard) return;
+    if (!window.confirm('Remove this widget from the dashboard?')) return;
+    const updated = {
+      ...dashboard,
+      widgets: (dashboard.widgets || []).filter((w) => w.id !== widgetId),
+    };
+    dashboards
+      .update(updated)
+      .then((res) => {
+        if (res && res.error) {
+          window.newAlert(`Failed to remove widget: ${res.error}`, 'Error');
+          return;
+        }
+        this.setState({ dashboard: updated });
+      })
+      .catch((e) => window.newAlert(`Failed to remove widget: ${e.message}`, 'Error'));
+  };
+
   onFiltersChange = (filters) => {
     this.setState({ filters });
     const q = filtersToQuery(filters);
@@ -130,6 +181,14 @@ export class UserDashboardViewPage extends Component {
             <Link to="/user-dashboards" className="btn btn-sm btn-secondary">
               <i className="fas fa-th-list" /> All dashboards
             </Link>
+            <button
+              type="button"
+              className="btn btn-sm btn-success"
+              style={{ marginLeft: 5 }}
+              onClick={this.openAddWidget}
+            >
+              <i className="fas fa-plus-circle" /> Add widget
+            </button>
             <Link
               to={`/user-dashboards/edit/${dashboard.id}`}
               className="btn btn-sm btn-secondary"
@@ -151,6 +210,7 @@ export class UserDashboardViewPage extends Component {
           compare={!!filters.compare}
           refreshKey={refreshKey}
           onFetched={this.onWidgetFetched}
+          onRemoveWidget={this.removeWidget}
         />
       </div>
     );

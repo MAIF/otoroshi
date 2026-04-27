@@ -123,6 +123,17 @@ export class WidgetWrapper extends Component {
             >
               <i className="fas fa-sync" />
             </button>
+            {this.props.onRemove && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                title="Remove widget"
+                onClick={() => this.props.onRemove(widget.id)}
+              >
+                <i className="fas fa-trash" />
+              </button>
+            )}
           </div>
         </div>
         <div style={{ flex: 1, position: 'relative' }}>
@@ -163,7 +174,7 @@ export class WidgetWrapper extends Component {
 
 export class Grid extends Component {
   render() {
-    const { widgets = [], filters, compare, refreshKey, onFetched } = this.props;
+    const { widgets = [], filters, compare, refreshKey, onFetched, onRemoveWidget } = this.props;
     return (
       <div
         className="user-analytics-grid"
@@ -190,6 +201,7 @@ export class Grid extends Component {
               compare={compare}
               refreshKey={refreshKey}
               onFetched={onFetched}
+              onRemove={onRemoveWidget}
             />
           </div>
         ))}

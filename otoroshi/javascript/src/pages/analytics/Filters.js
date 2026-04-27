@@ -318,7 +318,7 @@ function Selector({ label, value, options, onChange, idKey = 'id', labelKey = 'n
           placeholder="— any —"
           value={value || ''}
           options={opts}
-          onChange={(opt) => onChange(opt ? opt.value : '')}
+          onChange={(val) => onChange(val || '')}
         />
       </div>
     </Field>
