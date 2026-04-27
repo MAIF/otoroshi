@@ -61,6 +61,7 @@ class NgProxyState(env: Env) {
   private val apiSubscriptions    = new UnboundedTrieMap[String, ApiSubscription]()
   private val routeTemplates      = new UnboundedTrieMap[String, RouteTemplate]()
   private val userDashboards      = new UnboundedTrieMap[String, UserDashboard]()
+  private val userAlerts          = new UnboundedTrieMap[String, otoroshi.next.analytics.models.UserAlert]()
   private val tryItEnabledReports = Scaffeine()
     .expireAfterWrite(5.minutes)
     .maximumSize(100)
@@ -118,6 +119,7 @@ class NgProxyState(env: Env) {
   def apiSubscription(id: String): Option[ApiSubscription]          = apiSubscriptions.get(id)
   def routeTemplate(id: String): Option[RouteTemplate]              = routeTemplates.get(id)
   def userDashboard(id: String): Option[UserDashboard]              = userDashboards.get(id)
+  def userAlert(id: String): Option[otoroshi.next.analytics.models.UserAlert] = userAlerts.get(id)
   def api(id: String): Option[Api]                                  = apis.get(id)
   def script(id: String): Option[Script]                            = scripts.get(id)
   def backend(id: String): Option[NgBackend]                        = backends.get(id)
@@ -146,6 +148,7 @@ class NgProxyState(env: Env) {
   def allApiSubscriptions(): Seq[ApiSubscription]     = apiSubscriptions.values.toSeq
   def allRouteTemplates(): Seq[RouteTemplate]         = routeTemplates.values.toSeq
   def allUserDashboards(): Seq[UserDashboard]         = userDashboards.values.toSeq
+  def allUserAlerts(): Seq[otoroshi.next.analytics.models.UserAlert] = userAlerts.values.toSeq
   def allApis(): Seq[Api]                             = apis.values.toSeq
   def allScripts(): Seq[Script]                       = scripts.values.toSeq
   def allRawRoutes(): Seq[NgRoute]                    = raw_routes.values.toSeq
@@ -230,6 +233,12 @@ class NgProxyState(env: Env) {
     userDashboards
       .addAll(values.map(v => (v.id, v)))
       .remAll(userDashboards.keySet.toSeq.diff(values.map(_.id)))
+  }
+
+  def updateUserAlerts(values: Seq[otoroshi.next.analytics.models.UserAlert]): Unit = {
+    userAlerts
+      .addAll(values.map(v => (v.id, v)))
+      .remAll(userAlerts.keySet.toSeq.diff(values.map(_.id)))
   }
 
   def updateApis(values: Seq[Api]): Unit = {
@@ -630,6 +639,7 @@ class NgProxyState(env: Env) {
       apiSubscriptions    <- env.datastores.apiSubscriptionDataStore.findAll()
       routeTemplates      <- env.datastores.routeTemplateDataStore.findAll()
       userDashboards      <- env.datastores.userDashboardDataStore.findAll()
+      userAlerts          <- env.datastores.userAlertDataStore.findAll()
       apis                <- env.datastores.apiDataStore.findAll()
       croutes             <- if (dev) {
                                NgRouteComposition
@@ -692,6 +702,7 @@ class NgProxyState(env: Env) {
       env.proxyState.updateApiSubscriptions(apiSubscriptions)
       env.proxyState.updateRouteTemplates(routeTemplates)
       env.proxyState.updateUserDashboards(userDashboards)
+      env.proxyState.updateUserAlerts(userAlerts)
       env.proxyState.updateApis(apis)
       env.proxyState.updateNgBackends(backends)
       env.proxyState.updateNgSRouteCompositions(routescomp)
