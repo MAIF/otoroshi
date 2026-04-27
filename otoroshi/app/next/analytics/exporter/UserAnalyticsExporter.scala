@@ -321,6 +321,58 @@ object EventDenormalizer {
       raw = stripped
     )
   }
+
+  /** Converts a denormalized row to a Vert.x tuple ready to bind to the
+   *  `insertSql` 26 parameter slots in the right order.
+   */
+  def toTuple(r: Row): VertxTuple = VertxTuple.from(
+    Array[AnyRef](
+      r.id,
+      r.ts,
+      r.env,
+      r.tenant,
+      r.teams,
+      r.routeId.orNull,
+      r.routeName.orNull,
+      r.apiId.orNull,
+      r.groupIds,
+      r.apikeyId.orNull,
+      r.userEmail.orNull,
+      r.identityType.orNull,
+      r.domain.orNull,
+      r.method.orNull,
+      r.status.map(java.lang.Short.valueOf).orNull,
+      java.lang.Boolean.valueOf(r.err),
+      r.durationMs.map(java.lang.Integer.valueOf).orNull,
+      r.overheadMs.map(java.lang.Integer.valueOf).orNull,
+      r.backendMs.map(java.lang.Integer.valueOf).orNull,
+      r.dataIn.map(java.lang.Long.valueOf).orNull,
+      r.dataOut.map(java.lang.Long.valueOf).orNull,
+      r.fromIp.orNull,
+      r.country.orNull,
+      r.userAgent.orNull,
+      r.protocol.orNull,
+      new JsonObject(Json.stringify(r.raw))
+    )
+  )
+
+  /** SQL `INSERT ... ON CONFLICT DO NOTHING` matching the 26-column layout
+   *  produced by `extractColumns`/`toTuple`.
+   */
+  def insertSql(s: UserAnalyticsExporterSettings): String = {
+    val t = AnalyticsSchema.fullTable(s)
+    s"""INSERT INTO $t (
+       |  id, ts, env, tenant, teams, route_id, route_name, api_id, group_ids,
+       |  apikey_id, user_email, identity_type, domain, method, status, err,
+       |  duration_ms, overhead_ms, backend_ms, data_in, data_out, from_ip,
+       |  country, user_agent, protocol, raw
+       |) VALUES (
+       |  $$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9,
+       |  $$10, $$11, $$12, $$13, $$14, $$15, $$16,
+       |  $$17, $$18, $$19, $$20, $$21, $$22,
+       |  $$23, $$24, $$25, $$26::jsonb
+       |) ON CONFLICT (id) DO NOTHING;""".stripMargin
+  }
 }
 
 class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
@@ -355,9 +407,21 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
         val newPool = PgPool.pool(buildConnectOptions(s), new PoolOptions().setMaxSize(s.poolSize))
         poolRef.set(newPool)
         UserAnalyticsExporterRegistry.register(config.id, this)
-        if (env.clusterConfig.mode.isLeader) {
+        if (env.clusterConfig.mode.isOff || env.clusterConfig.mode.isLeader) {
           AnalyticsSchema
             .migrate(newPool, s)
+            .flatMap { _ =>
+              val isActive =
+                config.metadata.get(UserAnalyticsExporterSettings.ActiveMetadataKey).contains("true")
+              if (isActive) {
+                otoroshi.next.analytics.defaults.DefaultDashboards
+                  .seedIfMissing()(env, ec)
+                  .map(_ => ())
+                  .recover { case e: Throwable =>
+                    logger.error(s"[user-analytics-exporter] error while seeding default dashboards", e)
+                  }
+              } else FastFuture.successful(())
+            }
             .recover { case e: Throwable =>
               logger.error(s"[user-analytics-exporter] error while migrating schema for ${s.schema}.${s.table}", e)
             }
@@ -383,39 +447,10 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
             val rows: java.util.List[VertxTuple] = events.map { event =>
               val stripped = EventStripper.stripGatewayEvent(event)
               val r        = EventDenormalizer.extractColumns(stripped)
-              VertxTuple.from(
-                Array[AnyRef](
-                  r.id,
-                  r.ts,
-                  r.env,
-                  r.tenant,
-                  r.teams,
-                  r.routeId.orNull,
-                  r.routeName.orNull,
-                  r.apiId.orNull,
-                  r.groupIds,
-                  r.apikeyId.orNull,
-                  r.userEmail.orNull,
-                  r.identityType.orNull,
-                  r.domain.orNull,
-                  r.method.orNull,
-                  r.status.map(java.lang.Short.valueOf).orNull,
-                  java.lang.Boolean.valueOf(r.err),
-                  r.durationMs.map(java.lang.Integer.valueOf).orNull,
-                  r.overheadMs.map(java.lang.Integer.valueOf).orNull,
-                  r.backendMs.map(java.lang.Integer.valueOf).orNull,
-                  r.dataIn.map(java.lang.Long.valueOf).orNull,
-                  r.dataOut.map(java.lang.Long.valueOf).orNull,
-                  r.fromIp.orNull,
-                  r.country.orNull,
-                  r.userAgent.orNull,
-                  r.protocol.orNull,
-                  new JsonObject(Json.stringify(r.raw))
-                )
-              )
+              EventDenormalizer.toTuple(r)
             }.asJava
             pool
-              .preparedQuery(insertSql(s))
+              .preparedQuery(EventDenormalizer.insertSql(s))
               .executeBatch(rows)
               .scala
               .map(_ => ExportResult.ExportResultSuccess: ExportResult)
@@ -425,20 +460,5 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
               }
         }
     }
-  }
-
-  private def insertSql(s: UserAnalyticsExporterSettings): String = {
-    val t = AnalyticsSchema.fullTable(s)
-    s"""INSERT INTO $t (
-       |  id, ts, env, tenant, teams, route_id, route_name, api_id, group_ids,
-       |  apikey_id, user_email, identity_type, domain, method, status, err,
-       |  duration_ms, overhead_ms, backend_ms, data_in, data_out, from_ip,
-       |  country, user_agent, protocol, raw
-       |) VALUES (
-       |  $$1, $$2, $$3, $$4, $$5, $$6, $$7, $$8, $$9,
-       |  $$10, $$11, $$12, $$13, $$14, $$15, $$16,
-       |  $$17, $$18, $$19, $$20, $$21, $$22,
-       |  $$23, $$24, $$25, $$26::jsonb
-       |) ON CONFLICT (id) DO NOTHING;""".stripMargin
   }
 }

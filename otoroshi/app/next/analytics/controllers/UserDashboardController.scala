@@ -21,11 +21,19 @@ class UserDashboardController(ApiAction: ApiAction, cc: ControllerComponents)(im
     else Forbidden(Json.obj("error" -> "super admin only")).future
   }
 
-  // ----- POST /api/analytics/dashboards/_restore-defaults (deferred to E) ---
+  // ----- POST /api/analytics/dashboards/_restore-defaults --------------------
 
   def restoreDefaults: Action[AnyContent] = ApiAction.async { ctx =>
     requireSuperAdmin(ctx) {
-      NotImplemented(Json.obj("error" -> "default dashboards not yet implemented")).future
+      otoroshi.next.analytics.defaults.DefaultDashboards
+        .restoreAll()
+        .map { created =>
+          Ok(Json.obj("created" -> JsArray(created.map(JsString.apply)), "count" -> created.size))
+        }
+        .recover { case e: Throwable =>
+          logger.error("[user-dashboard-api] error while restoring default dashboards", e)
+          InternalServerError(Json.obj("error" -> e.getMessage))
+        }
     }
   }
 }

@@ -149,26 +149,56 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             }
             Future
               .sequence(updates.map(_.save()))
-              .map { _ =>
-                Ok(
-                  Json.obj(
-                    "ok"            -> true,
-                    "active"        -> id,
-                    "demoted_count" -> toUnflag
-                  )
-                )
+              .flatMap { _ =>
+                // Seed default dashboards now that an analytics exporter is active.
+                otoroshi.next.analytics.defaults.DefaultDashboards
+                  .seedIfMissing()
+                  .recover { case _ => Seq.empty[String] }
+                  .map { seeded =>
+                    Ok(
+                      Json.obj(
+                        "ok"             -> true,
+                        "active"         -> id,
+                        "demoted_count"  -> toUnflag,
+                        "seeded_default" -> JsArray(seeded.map(JsString.apply))
+                      )
+                    )
+                  }
               }
         }
       }
     }
   }
 
-  // ----- POST /api/analytics/_migrate (deferred to Phase F) -------------------
+  // ----- POST /api/analytics/_migrate ----------------------------------------
 
   def migrateLegacy: Action[JsValue] = ApiAction.async(parse.json) { ctx =>
     requireSuperAdmin(ctx) {
       requireLeader {
-        NotImplemented(Json.obj("error" -> "migration script not yet implemented")).future
+        val body       = ctx.request.body
+        val sourceJson = (body \ "source").asOpt[JsValue].getOrElse(Json.obj())
+        val batchSize  = (body \ "batchSize").asOpt[Int].getOrElse(5000).max(100).min(50000)
+        val dryRun     = (body \ "dryRun").asOpt[Boolean].getOrElse(false)
+        otoroshi.next.analytics.migration.LegacyPgMigrator.parseSourceFromJson(sourceJson) match {
+          case Left(err)     => BadRequest(Json.obj("error" -> err)).future
+          case Right(source) =>
+            otoroshi.next.analytics.migration.LegacyPgMigrator
+              .migrate(source, batchSize, dryRun)
+              .map {
+                case Left(err)     =>
+                  err match {
+                    case e if e.contains("no active") =>
+                      PreconditionFailed(Json.obj("error" -> e))
+                    case e                            =>
+                      InternalServerError(Json.obj("error" -> e))
+                  }
+                case Right(result) => Ok(result.toJson)
+              }
+              .recover { case e: Throwable =>
+                logger.error("[user-analytics-api] migration failed", e)
+                InternalServerError(Json.obj("error" -> e.getMessage))
+              }
+        }
       }
     }
   }
