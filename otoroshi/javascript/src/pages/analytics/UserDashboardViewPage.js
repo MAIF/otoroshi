@@ -10,20 +10,50 @@ export class UserDashboardViewPage extends Component {
     loading: true,
     error: null,
     filters: queryToFilters(this.props.location.query || {}),
+    refreshKey: 0,
+    lastRefreshAt: null,
   };
 
   componentDidMount() {
     this.props.setTitle('User analytics');
     this.props.setSidebarContent(null);
     this.loadDashboard();
+    this.setupAutoRefresh();
   }
 
-  componentDidUpdate(prev) {
+  componentDidUpdate(prev, prevState) {
     if (prev.params.titem !== this.props.params.titem) this.loadDashboard();
     if (prev.location.search !== this.props.location.search) {
       this.setState({ filters: queryToFilters(this.props.location.query || {}) });
     }
+    const prevInterval = (prevState.filters || {}).refresh || 0;
+    const currInterval = (this.state.filters || {}).refresh || 0;
+    if (prevInterval !== currInterval) {
+      this.setupAutoRefresh();
+    }
   }
+
+  componentWillUnmount() {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+  }
+
+  setupAutoRefresh = () => {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    const ms = (this.state.filters.refresh || 0) * 1000;
+    if (ms > 0) {
+      this.refreshTimer = setInterval(() => {
+        if (document.visibilityState !== 'hidden') this.bumpRefresh();
+      }, ms);
+    }
+  };
+
+  bumpRefresh = () => {
+    this.setState((s) => ({ refreshKey: s.refreshKey + 1 }));
+  };
+
+  onWidgetFetched = () => {
+    this.setState({ lastRefreshAt: Date.now() });
+  };
 
   loadDashboard = () => {
     const id = this.props.params.titem;
@@ -60,7 +90,7 @@ export class UserDashboardViewPage extends Component {
   };
 
   render() {
-    const { dashboard, loading, error, filters } = this.state;
+    const { dashboard, loading, error, filters, refreshKey, lastRefreshAt } = this.state;
     if (loading) {
       return (
         <div style={{ padding: 16, color: '#888' }}>
@@ -82,9 +112,16 @@ export class UserDashboardViewPage extends Component {
     }
     return (
       <div className="user-analytics-view" style={{ padding: '0 8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}
+        >
           <div>
-            <h3 style={{ marginBottom: 0 }}>{dashboard.name}</h3>
+            <h3 style={{ marginBottom: 0, display: 'none' }}>{dashboard.name}</h3>
             {dashboard.description && (
               <small style={{ color: '#888' }}>{dashboard.description}</small>
             )}
@@ -98,12 +135,18 @@ export class UserDashboardViewPage extends Component {
             </Link>
           </div>
         </div>
-        <Filters value={filters} onChange={this.onFiltersChange} />
+        <Filters
+          value={filters}
+          onChange={this.onFiltersChange}
+          onRefresh={this.bumpRefresh}
+          lastRefreshAt={lastRefreshAt}
+        />
         <Grid
           widgets={dashboard.widgets || []}
           filters={filters}
           compare={!!filters.compare}
-          refreshInterval={filters.refresh || 0}
+          refreshKey={refreshKey}
+          onFetched={this.onWidgetFetched}
         />
       </div>
     );

@@ -16,24 +16,20 @@ export class WidgetWrapper extends Component {
 
   componentDidMount() {
     this.fetchData();
-    this.setupAutoRefresh();
   }
 
   componentDidUpdate(prevProps) {
     const filtersChanged = JSON.stringify(prevProps.filters) !== JSON.stringify(this.props.filters);
     const compareChanged = prevProps.compare !== this.props.compare;
     const widgetChanged = JSON.stringify(prevProps.widget) !== JSON.stringify(this.props.widget);
-    if (filtersChanged || compareChanged || widgetChanged) {
+    const refreshKeyChanged = prevProps.refreshKey !== this.props.refreshKey;
+    if (filtersChanged || compareChanged || widgetChanged || refreshKeyChanged) {
       this.fetchData();
-    }
-    if (prevProps.refreshInterval !== this.props.refreshInterval) {
-      this.setupAutoRefresh();
     }
   }
 
   componentWillUnmount() {
     this.abort();
-    if (this.refreshTimer) clearInterval(this.refreshTimer);
   }
 
   abort() {
@@ -44,16 +40,6 @@ export class WidgetWrapper extends Component {
       this.abortRef = null;
     }
   }
-
-  setupAutoRefresh = () => {
-    if (this.refreshTimer) clearInterval(this.refreshTimer);
-    const ms = (this.props.refreshInterval || 0) * 1000;
-    if (ms > 0) {
-      this.refreshTimer = setInterval(() => {
-        if (document.visibilityState !== 'hidden') this.fetchData();
-      }, ms);
-    }
-  };
 
   fetchData = () => {
     const { widget, filters, compare } = this.props;
@@ -86,6 +72,7 @@ export class WidgetWrapper extends Component {
             compare: res.body.compare || null,
             executionMs: res.body.meta && res.body.meta.execution_ms,
           });
+          if (this.props.onFetched) this.props.onFetched();
         }
       })
       .catch((e) => {
@@ -109,7 +96,7 @@ export class WidgetWrapper extends Component {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          minHeight: (widget.height || 2) * 110,
+          minHeight: (widget.height || 2) * 130,
         }}
       >
         <div
@@ -176,14 +163,14 @@ export class WidgetWrapper extends Component {
 
 export class Grid extends Component {
   render() {
-    const { widgets = [], filters, compare, refreshInterval } = this.props;
+    const { widgets = [], filters, compare, refreshKey, onFetched } = this.props;
     return (
       <div
         className="user-analytics-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
-          gridAutoRows: '110px',
+          gridAutoRows: '130px',
           gap: 12,
           marginTop: 8,
         }}
@@ -201,7 +188,8 @@ export class Grid extends Component {
               widget={w}
               filters={filters}
               compare={compare}
-              refreshInterval={refreshInterval}
+              refreshKey={refreshKey}
+              onFetched={onFetched}
             />
           </div>
         ))}

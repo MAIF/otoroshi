@@ -288,7 +288,7 @@ export function MetricWidget({ data, options = {}, height }) {
         padding: 16,
       }}
     >
-      <div style={{ fontSize: '0.85rem', color: '#aaa' }}>{label}</div>
+      <div style={{ fontSize: '0.85rem', color: '#aaa', display: 'none' }}>{label}</div>
       <div style={{ fontSize: '2rem', color: color || '#fff', fontWeight: 600 }}>
         {value == null ? '-' : fmt(value)}
       </div>
