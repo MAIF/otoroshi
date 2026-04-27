@@ -7,6 +7,7 @@ import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
 import { UserDashboardsPage } from '../pages/analytics/UserDashboardsPage';
 import { UserDashboardViewPage } from '../pages/analytics/UserDashboardViewPage';
 import { UserAlertsPage } from '../pages/analytics/UserAlertsPage';
+import { UserAlertEventsPage } from '../pages/analytics/UserAlertEventsPage';
 import { DocumentationPage } from '../pages/DocumentationPage';
 import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
 import { ServiceHealthPage } from '../pages/ServiceHealthPage';
@@ -878,6 +879,10 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path="/user-dashboards"
                         component={(props) => this.decorate(UserDashboardsPage, props)}
+                      />
+                      <Route
+                        path="/user-alert-events/:titem"
+                        component={(props) => this.decorate(UserAlertEventsPage, props)}
                       />
                       <Route
                         path="/user-alerts/:taction/:titem"
