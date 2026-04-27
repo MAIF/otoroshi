@@ -105,7 +105,7 @@ object UserAlert {
     override def reads(json: JsValue): JsResult[UserAlert] = Try {
       UserAlert(
         location = EntityLocation.readFromKey(json),
-        id = (json \ "id").asOpt[String].getOrElse(IdGenerator.namedId("alert", IdGenerator.uuid)),
+        id = (json \ "id").asOpt[String].filterNot(_.isEmpty).getOrElse(IdGenerator.namedId("alert", IdGenerator.uuid)),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
