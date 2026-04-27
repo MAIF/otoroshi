@@ -203,7 +203,7 @@ export class UserDashboardViewPage extends Component {
     const { dashboard, loading, error, filters, refreshKey, lastRefreshAt } = this.state;
     if (loading) {
       return (
-        <div style={{ padding: 16, color: '#888' }}>
+        <div style={{ padding: 16, color: 'var(--text-muted)' }}>
           <i className="fas fa-spinner fa-spin" /> Loading dashboard…
         </div>
       );
@@ -233,7 +233,7 @@ export class UserDashboardViewPage extends Component {
           <div>
             <h3 style={{ marginBottom: 0, display: 'none' }}>{dashboard.name}</h3>
             {dashboard.description && (
-              <small style={{ color: '#888' }}>{dashboard.description}</small>
+              <small style={{ color: 'var(--text-muted)' }}>{dashboard.description}</small>
             )}
           </div>
           <div>

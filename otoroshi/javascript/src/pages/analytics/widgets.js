@@ -121,13 +121,26 @@ function TimeseriesChart({ data, compare, options = {}, height, ChartCmp, AreaOr
   return (
     <ResponsiveContainer width="100%" height={height || 220}>
       <ChartCmp data={flat}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-        <XAxis dataKey="ts" tickFormatter={formatTsShort} stroke="#aaa" />
-        <YAxis tickFormatter={fmt} stroke="#aaa" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(127,127,127,0.25)" />
+        <XAxis
+          dataKey="ts"
+          tickFormatter={formatTsShort}
+          stroke="currentColor"
+          tick={{ fill: 'currentColor', opacity: 0.7 }}
+        />
+        <YAxis
+          tickFormatter={fmt}
+          stroke="currentColor"
+          tick={{ fill: 'currentColor', opacity: 0.7 }}
+        />
         <Tooltip
           labelFormatter={formatTs}
           formatter={(v) => fmt(v)}
-          contentStyle={{ background: '#222', border: '1px solid #444' }}
+          contentStyle={{
+            background: 'var(--bg-color_level3)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text)',
+          }}
         />
         {options.legend !== false && <Legend />}
         {series.map((s, i) => (
@@ -189,18 +202,27 @@ export function BarWidget({ data, options = {}, height, onItemClick }) {
         onClick={onClick}
         style={onItemClick ? { cursor: 'pointer' } : undefined}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-        <XAxis type="number" tickFormatter={fmt} stroke="#aaa" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(127,127,127,0.25)" />
+        <XAxis
+          type="number"
+          tickFormatter={fmt}
+          stroke="currentColor"
+          tick={{ fill: 'currentColor', opacity: 0.7 }}
+        />
         <YAxis
           type="category"
           dataKey="label"
           width={150}
-          stroke="#aaa"
-          tick={{ fontSize: 11 }}
+          stroke="currentColor"
+          tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.7 }}
         />
         <Tooltip
           formatter={(v) => fmt(v)}
-          contentStyle={{ background: '#222', border: '1px solid #444' }}
+          contentStyle={{
+            background: 'var(--bg-color_level3)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text)',
+          }}
         />
         <Bar dataKey="value" fill={PALETTE[0]} isAnimationActive={false}>
           {items.map((_, i) => (
@@ -238,7 +260,11 @@ function PieBase({ data, options = {}, height, innerRadius, onItemClick }) {
         </Pie>
         <Tooltip
           formatter={(v) => fmt(v)}
-          contentStyle={{ background: '#222', border: '1px solid #444' }}
+          contentStyle={{
+            background: 'var(--bg-color_level3)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text)',
+          }}
         />
         {options.legend !== false && <Legend />}
       </PieChart>
@@ -273,11 +299,13 @@ export function ScalarWidget({ data, options = {}, height }) {
         padding: 12,
       }}
     >
-      <div style={{ fontSize: '2.5rem', color: color || '#fff', fontWeight: 600 }}>
+      <div style={{ fontSize: '2.5rem', color: color || 'var(--text)', fontWeight: 600 }}>
         {fmt(value)}
       </div>
       {data && data.label && (
-        <div style={{ fontSize: '0.85rem', color: '#aaa', marginTop: 4 }}>{data.label}</div>
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+          {data.label}
+        </div>
       )}
     </div>
   );
@@ -302,8 +330,8 @@ export function MetricWidget({ data, options = {}, height }) {
         padding: 16,
       }}
     >
-      <div style={{ fontSize: '0.85rem', color: '#aaa', display: 'none' }}>{label}</div>
-      <div style={{ fontSize: '2rem', color: color || '#fff', fontWeight: 600 }}>
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'none' }}>{label}</div>
+      <div style={{ fontSize: '2rem', color: color || 'var(--text)', fontWeight: 600 }}>
         {value == null ? '-' : fmt(value)}
       </div>
     </div>
@@ -330,7 +358,7 @@ export function TableWidget({ data, options = {}, height, onItemClick }) {
   const cols = items.length > 0 ? Object.keys(items[0]).filter((k) => k !== 'key') : [];
   return (
     <div style={{ height: height || 220, overflow: 'auto' }}>
-      <table className="table table-sm" style={{ color: '#ddd' }}>
+      <table className="table table-sm" style={{ color: 'var(--text)' }}>
         <thead>
           <tr>
             {cols.map((c) => (
@@ -369,7 +397,7 @@ export function HeatmapWidget({ data, options = {}, height }) {
   const rows = yBuckets.length;
   const cols = xBuckets.length;
   if (!rows || !cols) {
-    return <div style={{ color: '#999', padding: 16 }}>No data</div>;
+    return <div style={{ color: 'var(--text-muted)', padding: 16 }}>No data</div>;
   }
 
   // Find max for color scaling
@@ -379,12 +407,12 @@ export function HeatmapWidget({ data, options = {}, height }) {
   const cellH = Math.max(8, Math.floor((h - 30) / rows));
   return (
     <div style={{ height: h, overflow: 'auto', padding: 8 }}>
-      <table style={{ borderCollapse: 'collapse', fontSize: 11, color: '#ddd' }}>
+      <table style={{ borderCollapse: 'collapse', fontSize: 11, color: 'var(--text)' }}>
         <thead>
           <tr>
             <th style={{ padding: 2 }}></th>
             {xBuckets.map((ts, i) => (
-              <th key={i} style={{ padding: 2, fontWeight: 'normal', color: '#888' }}>
+              <th key={i} style={{ padding: 2, fontWeight: 'normal', color: 'var(--text-muted)' }}>
                 {i % Math.ceil(cols / 8) === 0 ? formatTsShort(ts) : ''}
               </th>
             ))}
@@ -393,7 +421,9 @@ export function HeatmapWidget({ data, options = {}, height }) {
         <tbody>
           {yBuckets.map((label, y) => (
             <tr key={y}>
-              <td style={{ padding: 2, color: '#aaa', whiteSpace: 'nowrap' }}>{label}</td>
+              <td style={{ padding: 2, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                {label}
+              </td>
               {xBuckets.map((_, x) => {
                 const v = (values[y] && values[y][x]) || 0;
                 const intensity = max > 0 ? v / max : 0;
@@ -406,7 +436,7 @@ export function HeatmapWidget({ data, options = {}, height }) {
                       width: 12,
                       height: cellH,
                       background: bg,
-                      border: '1px solid #1a1a1a',
+                      border: '1px solid var(--bg-color_level1)',
                     }}
                   />
                 );

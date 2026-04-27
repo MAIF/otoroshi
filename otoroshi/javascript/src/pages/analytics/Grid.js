@@ -106,8 +106,9 @@ export class WidgetWrapper extends Component {
       <div
         className="user-analytics-widget"
         style={{
-          background: '#1c1c1c',
-          border: '1px solid #333',
+          background: 'var(--bg-color_level2)',
+          border: '1px solid var(--border-color)',
+          color: 'var(--text)',
           borderRadius: 4,
           padding: 8,
           height: '100%',
@@ -122,14 +123,14 @@ export class WidgetWrapper extends Component {
             justifyContent: 'space-between',
             alignItems: 'center',
             paddingBottom: 6,
-            borderBottom: '1px solid #2a2a2a',
+            borderBottom: '1px solid var(--border-color)',
             marginBottom: 6,
           }}
         >
-          <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 600 }}>
+          <div style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>
             {widget.title || widget.query}
           </div>
-          <div style={{ display: 'flex', gap: 4, fontSize: 11, color: '#666' }}>
+          <div style={{ display: 'flex', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
             {executionMs != null && status === 'ok' && (
               <span style={{ marginRight: 4 }}>{executionMs} ms</span>
             )}
@@ -137,7 +138,7 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
                 title="Move up"
                 disabled={this.props.isFirst}
                 onClick={() => this.props.onMove(widget.id, 'up')}
@@ -149,7 +150,7 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
                 title="Move down"
                 disabled={this.props.isLast}
                 onClick={() => this.props.onMove(widget.id, 'down')}
@@ -160,7 +161,7 @@ export class WidgetWrapper extends Component {
             <button
               type="button"
               className="btn btn-sm"
-              style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+              style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
               title="Refresh"
               onClick={this.fetchData}
             >
@@ -170,7 +171,7 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
                 title="Edit widget"
                 onClick={() => this.props.onEdit(widget.id)}
               >
@@ -181,7 +182,7 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
                 title="Remove widget"
                 onClick={() => this.props.onRemove(widget.id)}
               >
@@ -192,17 +193,17 @@ export class WidgetWrapper extends Component {
         </div>
         <div style={{ flex: 1, position: 'relative' }}>
           {status === 'loading' && (
-            <div style={{ color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               <i className="fas fa-spinner fa-spin" />
             </div>
           )}
           {status === 'empty' && (
-            <div style={{ color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               No data for this range
             </div>
           )}
           {status === 'error' && (
-            <div style={{ color: '#f44336', padding: 8 }}>
+            <div style={{ color: 'var(--color-red)', padding: 8 }}>
               <div>{error}</div>
               <button type="button" className="btn btn-sm btn-secondary" onClick={this.fetchData}>
                 Retry

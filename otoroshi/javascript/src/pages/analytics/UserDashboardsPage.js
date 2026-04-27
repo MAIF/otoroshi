@@ -113,7 +113,7 @@ export class UserDashboardsPage extends Component {
       style: { width: 220 },
       content: (item) => (item.metadata && item.metadata['otoroshi-default-id']) || '',
       cell: (v) =>
-        v ? <span className="badge bg-info">{v}</span> : <span style={{ color: '#666' }}>—</span>,
+        v ? <span className="badge bg-info">{v}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>,
     },
     {
       title: 'View',
@@ -217,7 +217,7 @@ export class UserDashboardsPage extends Component {
     return (
       <div style={{ padding: 24, textAlign: 'center', maxWidth: 720, margin: '40px auto' }}>
         <h3>Configure user analytics</h3>
-        <p style={{ color: '#aaa', marginBottom: 24 }}>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
           {hasExporters
             ? 'A user-analytics exporter is configured but none is marked active. Pick one to start collecting analytics.'
             : 'No user-analytics PostgreSQL exporter is configured yet. Create one to start collecting analytics.'}
@@ -244,7 +244,7 @@ export class UserDashboardsPage extends Component {
 
     if (loading) {
       return (
-        <div style={{ padding: 16, color: '#888' }}>
+        <div style={{ padding: 16, color: 'var(--text-muted)' }}>
           <i className="fas fa-spinner fa-spin" /> Loading…
         </div>
       );

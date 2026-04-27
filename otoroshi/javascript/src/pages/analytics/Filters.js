@@ -130,8 +130,9 @@ export class Filters extends Component {
           flexDirection: 'column',
           gap: 8,
           padding: 8,
-          background: '#1a1a1a',
-          border: '1px solid #2a2a2a',
+          background: 'var(--bg-color_level2)',
+          border: '1px solid var(--border-color)',
+          color: 'var(--text)',
           borderRadius: 4,
         }}
       >
@@ -189,7 +190,7 @@ export class Filters extends Component {
               })}
             </div>
 
-            <span style={{ color: '#888', fontSize: 12, fontFamily: 'monospace', minWidth: 160 }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'monospace', minWidth: 160 }}>
               {this.props.lastRefreshAt ? this.formatRelative(this.props.lastRefreshAt) : '—'}
             </span>
 
@@ -207,7 +208,7 @@ export class Filters extends Component {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
-                color: '#ddd',
+                color: 'var(--text)',
                 fontSize: 12,
                 marginBottom: 0,
                 cursor: 'pointer',
@@ -298,7 +299,7 @@ export class Filters extends Component {
 
 function Field({ label, children }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', fontSize: 11, color: '#aaa' }}>
+    <label style={{ display: 'flex', flexDirection: 'column', fontSize: 11, color: 'var(--text-muted)' }}>
       <span style={{ marginBottom: 2 }}>{label}</span>
       {children}
     </label>

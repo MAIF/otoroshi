@@ -128,7 +128,7 @@ export class WidgetWizard extends Component {
     const { schema, loading, title, queryId, type, width, height, format, paramValues } = this.state;
     if (loading) {
       return (
-        <div style={{ padding: 24, color: '#888' }}>
+        <div style={{ padding: 24, color: 'var(--text-muted)' }}>
           <i className="fas fa-spinner fa-spin" /> Loading query catalogue…
         </div>
       );
@@ -162,7 +162,7 @@ export class WidgetWizard extends Component {
             onChange={(val) => this.selectQuery(val || '')}
           />
           {selectedQuery && selectedQuery.description && (
-            <small style={{ color: '#888', display: 'block', marginTop: 4 }}>
+            <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
               {selectedQuery.description}
             </small>
           )}
@@ -251,11 +251,11 @@ export class WidgetWizard extends Component {
 function Field({ label, hint, children }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <label style={{ display: 'block', color: '#ddd', fontSize: 13, marginBottom: 4 }}>
+      <label style={{ display: 'block', color: 'var(--text)', fontSize: 13, marginBottom: 4 }}>
         {label}
       </label>
       {children}
-      {hint && <small style={{ color: '#888', display: 'block', marginTop: 2 }}>{hint}</small>}
+      {hint && <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>{hint}</small>}
     </div>
   );
 }
