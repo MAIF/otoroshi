@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 import * as BackOfficeServices from '../../services/BackOfficeServices';
 import { Table } from '../../components/inputs';
 import { alerts } from './service';
@@ -7,7 +8,7 @@ import { AlertConditionsEditor } from './AlertConditionsEditor';
 
 const NEW_ALERT_TEMPLATE = () => ({
   _loc: { tenant: 'default', teams: ['default'] },
-  id: '',
+  id: `user-alert_${uuidv4()}`,
   name: 'New alert',
   description: '',
   enabled: true,
@@ -176,6 +177,22 @@ export class UserAlertsPage extends Component {
           <span className="badge bg-secondary">off</span>
         ),
     },
+    {
+      title: 'Events',
+      style: { width: 80, textAlign: 'center' },
+      notFilterable: true,
+      content: (item) => item.id,
+      cell: (_v, item) => (
+        <Link
+          to={`/user-alert-events/${item.id}`}
+          className="btn btn-sm btn-success"
+          title="View fired events"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <i className="fas fa-bell" />
+        </Link>
+      ),
+    },
   ];
 
   componentDidMount() {
@@ -313,6 +330,12 @@ export class UserAlertsPage extends Component {
           showActions={true}
           showLink={false}
           rowNavigation={true}
+          navigateTo={(item) => {
+            window.location = `/bo/dashboard/user-alerts/edit/${item.id}`;
+          }}
+          itemUrl={(item) => `/bo/dashboard/user-alerts/edit/${item.id}`}
+          export
+          kubernetesKind="analytics.otoroshi.io/UserAlert"
           extractKey={(item) => item.id}
         />
       </div>
