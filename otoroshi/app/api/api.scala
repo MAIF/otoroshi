@@ -14,7 +14,7 @@ import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models._
-import otoroshi.next.analytics.models.UserDashboard
+import otoroshi.next.analytics.models.{UserAlert, UserDashboard}
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.next.plugins.api.{NgAccessValidator, NgBackendCall, NgNamedPlugin, NgPluginVisibility, NgPreRouting, NgRequestSink, NgRequestTransformer, NgRouteMatcher, NgTunnelHandler, NgWebsocketPlugin}
 import otoroshi.script.Script
@@ -1106,6 +1106,25 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allUserDashboards(),
         stateOne = id => env.proxyState.userDashboard(id),
         stateUpdate = seq => env.proxyState.updateUserDashboards(seq)
+      )
+    ),
+    Resource(
+      "UserAlert",
+      "user-alerts",
+      "user-alert",
+      "analytics.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[UserAlert](
+        UserAlert.format,
+        classOf[UserAlert],
+        env.datastores.userAlertDataStore.key,
+        env.datastores.userAlertDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.userAlertDataStore.template(env).json,
+        stateAll = () => env.proxyState.allUserAlerts(),
+        stateOne = id => env.proxyState.userAlert(id),
+        stateUpdate = seq => env.proxyState.updateUserAlerts(seq)
       )
     )
   ) ++ env.adminExtensions.resources()
