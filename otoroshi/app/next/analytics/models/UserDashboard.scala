@@ -26,7 +26,7 @@ object Widget {
   val format: Format[Widget] = new Format[Widget] {
     override def reads(json: JsValue): JsResult[Widget] = Try {
       Widget(
-        id = (json \ "id").asOpt[String].getOrElse(IdGenerator.uuid),
+        id = (json \ "id").asOpt[String].filterNot(_.isEmpty).getOrElse(IdGenerator.uuid),
         title = (json \ "title").asOpt[String].getOrElse(""),
         query = (json \ "query").as[String],
         params = (json \ "params").asOpt[JsObject].getOrElse(Json.obj()),
@@ -75,7 +75,7 @@ object UserDashboard {
     override def reads(json: JsValue): JsResult[UserDashboard] = Try {
       UserDashboard(
         location = EntityLocation.readFromKey(json),
-        id = (json \ "id").asOpt[String].getOrElse(IdGenerator.namedId("dashboard", IdGenerator.uuid)),
+        id = (json \ "id").asOpt[String].filterNot(_.isEmpty).getOrElse(IdGenerator.namedId("dashboard", IdGenerator.uuid)),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
