@@ -204,10 +204,53 @@ object AnalyticsSchema {
     )
   }
 
+  /** Companion table that stores fired alert events ("alert log"). Lives in
+   *  the same PG and lifecycle as the events table.
+   */
+  def firedAlertsTable(settings: UserAnalyticsExporterSettings): String =
+    s"${settings.schema}.${settings.table}_fired_alerts"
+
+  def createFiredAlertsTableSql(settings: UserAnalyticsExporterSettings): String = {
+    val t = firedAlertsTable(settings)
+    s"""
+       |CREATE TABLE IF NOT EXISTS $t (
+       |  id              TEXT        PRIMARY KEY,
+       |  ts              TIMESTAMPTZ NOT NULL,
+       |  tenant          TEXT        NOT NULL DEFAULT 'default',
+       |  alert_id        TEXT        NOT NULL,
+       |  alert_name      TEXT,
+       |  severity        TEXT,
+       |  message         TEXT,
+       |  combine_op      TEXT,
+       |  window_seconds  INTEGER,
+       |  conditions      JSONB,
+       |  raw             JSONB       NOT NULL DEFAULT '{}'::jsonb,
+       |  seen_at         TIMESTAMPTZ,
+       |  seen_by         TEXT
+       |);
+       |""".stripMargin
+  }
+
+  def firedAlertsIndexStatements(settings: UserAnalyticsExporterSettings): Seq[String] = {
+    val t      = firedAlertsTable(settings)
+    val prefix = s"${settings.table}_fa"
+    Seq(
+      s"CREATE INDEX IF NOT EXISTS idx_${prefix}_alert_ts  ON $t (alert_id, ts DESC);",
+      s"CREATE INDEX IF NOT EXISTS idx_${prefix}_tenant_ts ON $t (tenant, ts DESC);",
+      s"CREATE INDEX IF NOT EXISTS idx_${prefix}_unseen    ON $t (alert_id, ts DESC) WHERE seen_at IS NULL;"
+    )
+  }
+
   def migrate(pool: PgPool, settings: UserAnalyticsExporterSettings)(implicit ec: ExecutionContext): Future[Unit] = {
-    val createSchema = pool.query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};").executeAsync()
-    val createTable  = createSchema.flatMap(_ => pool.query(createTableSql(settings)).executeAsync())
-    indexStatements(settings).foldLeft(createTable.map(_ => ())) { (acc, ddl) =>
+    val createSchema      = pool.query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};").executeAsync()
+    val createTable       = createSchema.flatMap(_ => pool.query(createTableSql(settings)).executeAsync())
+    val withEventsIndexes = indexStatements(settings).foldLeft(createTable.map(_ => ())) { (acc, ddl) =>
+      acc.flatMap(_ => pool.query(ddl).executeAsync().map(_ => ()))
+    }
+    val withAlertsTable   = withEventsIndexes.flatMap(_ =>
+      pool.query(createFiredAlertsTableSql(settings)).executeAsync().map(_ => ())
+    )
+    firedAlertsIndexStatements(settings).foldLeft(withAlertsTable) { (acc, ddl) =>
       acc.flatMap(_ => pool.query(ddl).executeAsync().map(_ => ()))
     }
   }
@@ -375,6 +418,53 @@ object EventDenormalizer {
   }
 }
 
+object FiredAlertDenormalizer {
+
+  def toTuple(event: JsValue): VertxTuple = {
+    val now = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
+    val id  = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
+    val ts  = event
+      .select("@timestamp")
+      .asOpt[Long]
+      .map(ms => java.time.Instant.ofEpochMilli(ms).atOffset(java.time.ZoneOffset.UTC))
+      .getOrElse(now)
+    val tenant     = event.select("tenant").asOptString.getOrElse("default")
+    val alertId    = event.select("alertId").asOptString.getOrElse("")
+    val alertName  = event.select("alertName").asOptString
+    val severity   = event.select("severity").asOptString
+    val message    = event.select("message").asOptString
+    val combineOp  = event.select("combine").asOptString
+    val windowSec  = event.select("windowSeconds").asOpt[Int]
+    val conditions = event.select("conditions").asOpt[JsArray].map(a => Json.stringify(a)).getOrElse("[]")
+    VertxTuple.from(
+      Array[AnyRef](
+        id,
+        ts,
+        tenant,
+        alertId,
+        alertName.orNull,
+        severity.orNull,
+        message.orNull,
+        combineOp.orNull,
+        windowSec.map(java.lang.Integer.valueOf).orNull,
+        new JsonObject(conditions),
+        new JsonObject(Json.stringify(event))
+      )
+    )
+  }
+
+  def insertSql(s: UserAnalyticsExporterSettings): String = {
+    val t = AnalyticsSchema.firedAlertsTable(s)
+    s"""INSERT INTO $t (
+       |  id, ts, tenant, alert_id, alert_name, severity, message,
+       |  combine_op, window_seconds, conditions, raw
+       |) VALUES (
+       |  $$1, $$2, $$3, $$4, $$5, $$6, $$7,
+       |  $$8, $$9, $$10::jsonb, $$11::jsonb
+       |) ON CONFLICT (id) DO NOTHING;""".stripMargin
+  }
+}
+
 class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
     extends DefaultDataExporter(config)(ec, env) {
 
@@ -397,7 +487,11 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
   }
 
   override def accept(event: JsValue): Boolean = {
-    super.accept(event) && event.select("@type").asOptString.contains("GatewayEvent")
+    if (!super.accept(event)) return false
+    val typ = event.select("@type").asOptString
+    typ.contains("GatewayEvent") ||
+    (typ.contains("AlertEvent") &&
+      event.select("alertSubcategory").asOptString.contains("user-analytics"))
   }
 
   override def start(): Future[Unit] = {
@@ -444,21 +538,61 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
         exporter[UserAnalyticsExporterSettings] match {
           case None    => FastFuture.successful(ExportResult.ExportResultFailure("bad config type"))
           case Some(s) =>
-            val rows: java.util.List[VertxTuple] = events.map { event =>
-              val stripped = EventStripper.stripGatewayEvent(event)
-              val r        = EventDenormalizer.extractColumns(stripped)
-              EventDenormalizer.toTuple(r)
-            }.asJava
-            pool
-              .preparedQuery(EventDenormalizer.insertSql(s))
-              .executeBatch(rows)
-              .scala
+            // Partition by event type and route to the appropriate table.
+            val (gatewayEvents, alertEvents) = events.partition { e =>
+              e.select("@type").asOptString.contains("GatewayEvent")
+            }
+            val gatewayFu = if (gatewayEvents.isEmpty) FastFuture.successful(()) else sendGatewayEvents(pool, s, gatewayEvents)
+            val alertsFu  = if (alertEvents.isEmpty) FastFuture.successful(()) else sendAlertEvents(pool, s, alertEvents)
+            gatewayFu
+              .flatMap(_ => alertsFu)
               .map(_ => ExportResult.ExportResultSuccess: ExportResult)
               .recover { case e: Throwable =>
-                logger.error(s"[user-analytics-exporter] error while inserting events into ${s.schema}.${s.table}", e)
+                logger.error(s"[user-analytics-exporter] send failed", e)
                 ExportResult.ExportResultFailure(e.getMessage)
               }
         }
     }
+  }
+
+  private def sendGatewayEvents(
+      pool: PgPool,
+      s: UserAnalyticsExporterSettings,
+      events: Seq[JsValue]
+  ): Future[Unit] = {
+    val rows: java.util.List[VertxTuple] = events.map { event =>
+      val stripped = EventStripper.stripGatewayEvent(event)
+      val r        = EventDenormalizer.extractColumns(stripped)
+      EventDenormalizer.toTuple(r)
+    }.asJava
+    pool
+      .preparedQuery(EventDenormalizer.insertSql(s))
+      .executeBatch(rows)
+      .scala
+      .map(_ => ())
+      .recover { case e: Throwable =>
+        logger.error(s"[user-analytics-exporter] error inserting gateway events into ${s.schema}.${s.table}", e)
+        ()
+      }
+  }
+
+  private def sendAlertEvents(
+      pool: PgPool,
+      s: UserAnalyticsExporterSettings,
+      events: Seq[JsValue]
+  ): Future[Unit] = {
+    val rows: java.util.List[VertxTuple] = events.map(FiredAlertDenormalizer.toTuple).asJava
+    pool
+      .preparedQuery(FiredAlertDenormalizer.insertSql(s))
+      .executeBatch(rows)
+      .scala
+      .map(_ => ())
+      .recover { case e: Throwable =>
+        logger.error(
+          s"[user-analytics-exporter] error inserting fired alerts into ${AnalyticsSchema.firedAlertsTable(s)}",
+          e
+        )
+        ()
+      }
   }
 }
