@@ -574,7 +574,8 @@ object DefaultTemplates {
           tenant = json.select("tenant").asOpt[JsObject],
           team = json.select("team").asOpt[JsObject],
           apiSubscription = json.select("apiSubscription").asOpt[JsObject],
-          routeTemplate = json.select("routeTemplate").asOpt[JsObject]
+          routeTemplate = json.select("routeTemplate").asOpt[JsObject],
+          userDashboardTemplate = json.select("userDashboardTemplate").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -600,8 +601,9 @@ object DefaultTemplates {
       "dataExporter"    -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"          -> o.tenant.getOrElse(JsNull).asValue,
       "team"            -> o.team.getOrElse(JsNull).asValue,
-      "apiSubscription" -> o.apiSubscription.getOrElse(JsNull).asValue,
-      "routeTemplate"   -> o.routeTemplate.getOrElse(JsNull).asValue
+      "apiSubscription"       -> o.apiSubscription.getOrElse(JsNull).asValue,
+      "routeTemplate"         -> o.routeTemplate.getOrElse(JsNull).asValue,
+      "userDashboardTemplate" -> o.userDashboardTemplate.getOrElse(JsNull).asValue
     )
   }
 }

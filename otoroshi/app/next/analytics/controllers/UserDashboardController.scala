@@ -2,8 +2,6 @@ package otoroshi.next.analytics.controllers
 
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
-import otoroshi.next.analytics.models.{UserDashboard, UserDashboardDataStore}
-import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._

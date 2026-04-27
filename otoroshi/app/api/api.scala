@@ -1092,7 +1092,7 @@ class OtoroshiResources(env: Env) {
     Resource(
       "UserDashboard",
       "user-dashboards",
-      "user-dashboards",
+      "user-dashboard",
       "analytics.otoroshi.io",
       ResourceVersion("v1", true, false, true),
       GenericResourceAccessApiWithState[UserDashboard](

@@ -1,16 +1,12 @@
 package otoroshi.next.analytics.models
 
-import akka.util.ByteString
-import next.models.RouteTemplate
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
-import otoroshi.next.models.NgRoute
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class Widget(
@@ -101,7 +97,7 @@ object UserDashboard {
       "widgets"     -> JsArray(o.widgets.map(_.json))
     )
   }
-  def defaultUserDashboardTemplate()(implicit env: Env) = UserDashboard(
+  def defaultUserDashboardTemplate(implicit env: Env): UserDashboard = UserDashboard(
     location = EntityLocation.default,
     id = IdGenerator.namedId("user-dashboard", env),
     name = "New user dashboard",
@@ -109,7 +105,7 @@ object UserDashboard {
     metadata = Map.empty,
     tags = Seq.empty,
     enabled = true,
-    widgets = Seq.empty,
+    widgets = Seq.empty
   )
 }
 
