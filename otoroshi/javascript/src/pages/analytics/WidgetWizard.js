@@ -45,17 +45,22 @@ function uid(prefix = 'w') {
 }
 
 export class WidgetWizard extends Component {
-  state = {
-    schema: null,
-    loading: true,
-    title: '',
-    queryId: '',
-    type: 'line',
-    width: 4,
-    height: 2,
-    format: 'count',
-    paramValues: {},
-  };
+  constructor(props) {
+    super(props);
+    const init = props.initial || {};
+    this.state = {
+      schema: null,
+      loading: true,
+      widgetId: init.id || null,
+      title: init.title || '',
+      queryId: init.query || '',
+      type: init.type || 'line',
+      width: init.width || 4,
+      height: init.height || 2,
+      format: (init.options && init.options.format) || 'count',
+      paramValues: { ...(init.params || {}) },
+    };
+  }
 
   componentDidMount() {
     fetchSchema()
@@ -71,7 +76,7 @@ export class WidgetWizard extends Component {
   bubble = (s = this.state) => {
     if (!this.props.onChange) return;
     const widget = {
-      id: uid(),
+      id: s.widgetId || uid(),
       title: s.title || '',
       query: s.queryId || '',
       type: s.type || 'line',
@@ -91,6 +96,7 @@ export class WidgetWizard extends Component {
   };
 
   selectQuery = (queryId) => {
+    if (queryId === this.state.queryId) return;
     const q = this.findQuery(queryId);
     if (!q) {
       this.set({ queryId });

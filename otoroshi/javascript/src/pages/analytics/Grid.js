@@ -112,8 +112,34 @@ export class WidgetWrapper extends Component {
           <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 600 }}>
             {widget.title || widget.query}
           </div>
-          <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#666' }}>
-            {executionMs != null && status === 'ok' && <span>{executionMs} ms</span>}
+          <div style={{ display: 'flex', gap: 4, fontSize: 11, color: '#666' }}>
+            {executionMs != null && status === 'ok' && (
+              <span style={{ marginRight: 4 }}>{executionMs} ms</span>
+            )}
+            {this.props.onMove && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                title="Move up"
+                disabled={this.props.isFirst}
+                onClick={() => this.props.onMove(widget.id, 'up')}
+              >
+                <i className="fas fa-arrow-up" />
+              </button>
+            )}
+            {this.props.onMove && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                title="Move down"
+                disabled={this.props.isLast}
+                onClick={() => this.props.onMove(widget.id, 'down')}
+              >
+                <i className="fas fa-arrow-down" />
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-sm"
@@ -123,6 +149,17 @@ export class WidgetWrapper extends Component {
             >
               <i className="fas fa-sync" />
             </button>
+            {this.props.onEdit && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                style={{ padding: '0 4px', color: '#888', background: 'transparent', border: 'none' }}
+                title="Edit widget"
+                onClick={() => this.props.onEdit(widget.id)}
+              >
+                <i className="fas fa-edit" />
+              </button>
+            )}
             {this.props.onRemove && (
               <button
                 type="button"
@@ -174,7 +211,16 @@ export class WidgetWrapper extends Component {
 
 export class Grid extends Component {
   render() {
-    const { widgets = [], filters, compare, refreshKey, onFetched, onRemoveWidget } = this.props;
+    const {
+      widgets = [],
+      filters,
+      compare,
+      refreshKey,
+      onFetched,
+      onRemoveWidget,
+      onEditWidget,
+      onMoveWidget,
+    } = this.props;
     return (
       <div
         className="user-analytics-grid"
@@ -186,7 +232,7 @@ export class Grid extends Component {
           marginTop: 8,
         }}
       >
-        {widgets.map((w) => (
+        {widgets.map((w, i) => (
           <div
             key={w.id}
             style={{
@@ -202,6 +248,10 @@ export class Grid extends Component {
               refreshKey={refreshKey}
               onFetched={onFetched}
               onRemove={onRemoveWidget}
+              onEdit={onEditWidget}
+              onMove={onMoveWidget}
+              isFirst={i === 0}
+              isLast={i === widgets.length - 1}
             />
           </div>
         ))}

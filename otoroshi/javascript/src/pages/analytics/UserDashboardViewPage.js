@@ -106,6 +106,60 @@ export class UserDashboardViewPage extends Component {
       });
   };
 
+  editWidget = (widgetId) => {
+    const { dashboard } = this.state;
+    if (!dashboard) return;
+    const existing = (dashboard.widgets || []).find((w) => w.id === widgetId);
+    if (!existing) return;
+    window
+      .wizard(
+        'Edit widget',
+        (ok, cancel, state, setState) => (
+          <WidgetWizard initial={existing} onChange={(widget) => setState(widget)} />
+        ),
+        { additionalClass: 'modal-lg', okLabel: 'Save' }
+      )
+      .then((widget) => {
+        if (!widget || !widget.query) return;
+        const updated = {
+          ...dashboard,
+          widgets: (dashboard.widgets || []).map((w) => (w.id === widgetId ? widget : w)),
+        };
+        dashboards
+          .update(updated)
+          .then((res) => {
+            if (res && res.error) {
+              window.newAlert(`Failed to save widget: ${res.error}`, 'Error');
+              return;
+            }
+            this.setState({ dashboard: updated });
+          })
+          .catch((e) => window.newAlert(`Failed to save widget: ${e.message}`, 'Error'));
+      });
+  };
+
+  moveWidget = (widgetId, direction) => {
+    const { dashboard } = this.state;
+    if (!dashboard) return;
+    const widgets = [...(dashboard.widgets || [])];
+    const idx = widgets.findIndex((w) => w.id === widgetId);
+    if (idx < 0) return;
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= widgets.length) return;
+    [widgets[idx], widgets[newIdx]] = [widgets[newIdx], widgets[idx]];
+    const updated = { ...dashboard, widgets };
+    dashboards
+      .update(updated)
+      .then((res) => {
+        if (res && res.error) {
+          window.newAlert(`Failed to move widget: ${res.error}`, 'Error');
+          return;
+        }
+        this.setState({ dashboard: updated });
+      })
+      .catch((e) => window.newAlert(`Failed to move widget: ${e.message}`, 'Error'));
+  };
+
   removeWidget = (widgetId) => {
     const { dashboard } = this.state;
     if (!dashboard) return;
@@ -211,6 +265,8 @@ export class UserDashboardViewPage extends Component {
           refreshKey={refreshKey}
           onFetched={this.onWidgetFetched}
           onRemoveWidget={this.removeWidget}
+          onEditWidget={this.editWidget}
+          onMoveWidget={this.moveWidget}
         />
       </div>
     );
