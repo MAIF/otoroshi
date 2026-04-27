@@ -103,7 +103,7 @@ export class UserAlertsPage extends Component {
       },
     },
     conditions: {
-      type: 'jsonobjectcode',
+      type: 'monaco-json',
       props: {
         label: 'Conditions',
         height: '400px',
