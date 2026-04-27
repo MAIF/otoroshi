@@ -31,8 +31,11 @@ function View({ rawValue }) {
     <div className="row mb-3">
       <label className="col-xs-12 col-sm-2 col-form-label"></label>
       <div className="col-sm-10">
-        <Link className="btn btn-secondary btn-sm" href={`/user-dashboards/show/${rawValue.id}`}>
-          <i className="fas fa-chart-line"></i> view dashboard
+        <Link className="btn btn-secondary btn-sm" to={`/user-dashboards/show/${rawValue.id}`}>
+          <i className="fas fa-chart-line"></i> View dashboard
+        </Link>
+        <Link className="btn btn-secondary btn-sm" to={`/user-dashboards`} style={{ marginLeft: 5 }}>
+          <i className="fas fa-th-list" /> All dashboards
         </Link>
       </div>
     </div>

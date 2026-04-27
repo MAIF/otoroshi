@@ -127,11 +127,15 @@ export class UserDashboardViewPage extends Component {
             )}
           </div>
           <div>
-            <Link to={`/user-dashboards/edit/${dashboard.id}`} className="btn btn-sm btn-secondary">
-              <i className="fas fa-edit" /> Edit
+            <Link to="/user-dashboards" className="btn btn-sm btn-secondary">
+              <i className="fas fa-th-list" /> All dashboards
             </Link>
-            <Link to="/user-dashboards" className="btn btn-sm btn-secondary" style={{ marginLeft: 5 }}>
-              All dashboards
+            <Link
+              to={`/user-dashboards/edit/${dashboard.id}`}
+              className="btn btn-sm btn-secondary"
+              style={{ marginLeft: 5 }}
+            >
+              <i className="fas fa-edit" /> Edit
             </Link>
           </div>
         </div>

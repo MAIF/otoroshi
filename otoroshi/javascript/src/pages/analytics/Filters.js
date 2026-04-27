@@ -268,14 +268,14 @@ export class Filters extends Component {
             onChange={(val) => this.update({ group: val })}
           />
 
-          {false && <Field label="Compare">
+          <Field label="Compare">
             <input
               type="checkbox"
               checked={!!v.compare}
               onChange={(e) => this.update({ compare: e.target.checked })}
               style={{ marginTop: 6 }}
             />
-          </Field>}
+          </Field>
 
           <button
             type="button"
