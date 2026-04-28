@@ -5,382 +5,168 @@ sidebar_position: 11
 
 # User Analytics
 
-Otoroshi ships a native, customizable analytics module backed by a dedicated PostgreSQL exporter. Each user can build dashboards from a catalogue of pre-defined SQL queries, render them with multiple widget types, and share live or absolute time-range deep links.
+Build live dashboards on your gateway traffic, share them across teams, and get notified the moment something is off — all natively inside Otoroshi.
 
-This feature is **independent of the legacy Elasticsearch-based analytics**. The two coexist in the UI:
+User Analytics ships with a dedicated PostgreSQL store, a curated catalogue of queries, a grid of beautiful charts, and a threshold-based alert engine. No external observability stack to plug, no extra UI to learn — it lives where your routes, APIs and apikeys already do.
 
-- *Analytics* (`/bo/dashboard/stats`) — the classic Elasticsearch-backed views
-- **User Analytics** (`/bo/dashboard/user-dashboards`) — the new PostgreSQL-backed dashboards
+## What you get
 
-## At a glance
+- **Custom dashboards** built from a rich grid of widgets — line, area, bar, pie, donut, big numbers, tables, heatmaps
+- **A point-and-click widget editor** — pick a query, set a threshold, drop it on the grid
+- **Drag & drop reordering** so dashboards stay tidy as they grow
+- **Adaptive time ranges** — pick a preset (1h / 6h / 24h / 7d / 30d / 90d) or any datetime window
+- **Auto-refresh** at the cadence you want, paused automatically when the tab is hidden
+- **Drill-down on click** — clicking a route in a top-N chart filters the whole dashboard on it
+- **Deep links** — every filter and time range lives in the URL, paste anywhere and the view comes back to life
+- **Per-dashboard saved views** — set defaults so a teammate opening the dashboard sees what you intended
+- **Threshold alerts** with conditions, AND/OR logic, severities, cooldown, and a full event log
+- **Tenant-scoped** — each team sees only its own traffic, end to end
 
-- A new data exporter type, `user-analytics`, dedicated to dashboards
-- Events are filtered to gateway events only, **stripped** (headers, plugin chain, target list, ...) and **denormalized** into 26 indexed columns
-- A single REST endpoint runs named queries from a registry (built-in + extensions)
-- A grid-based UI with 9 widget types (line, area, bar, pie, donut, scalar, metric, table, heatmap)
-- Adaptive bucketing, in-memory LRU cache, and a per-query JSON catalogue exposed via `/api/analytics/_schema`
+## Get going in three minutes
 
-## Setup
+### 1. Plug a PostgreSQL store
 
-### 1. Create a `user-analytics` data exporter
+Go to **Data Exporters → Add → User Analytics (PostgreSQL)**, fill in your PG connection (host, db, user, password — or a connection URI), set a retention window, save. Otoroshi creates the schema, the indexes and the alert log table automatically.
 
-Go to **Data Exporters** → **+ Add item** → choose **User Analytics (PostgreSQL)**.
+### 2. Mark it as the active store
 
-Required PostgreSQL configuration:
+On the exporter page, click **Set as active analytics exporter**. From now on, every gateway event Otoroshi processes flows into your store. Five default dashboards are seeded for you to start exploring immediately.
 
-| Field | Description |
+### 3. Open the dashboards
+
+**Features → Analytics → User Analytics** (or `/bo/dashboard/user-dashboards`). Pick **Global Overview** to see the firehose, then drill into the others:
+
+- **Performance** — latency percentiles, overhead, response-time heatmap
+- **Errors** — error rate, top failing routes, status classes over time
+- **APIs & Routes** — top consumers, traffic per API, domain breakdown
+- **Consumers** — top API keys, top users, top countries
+
+That's it. You're live.
+
+## Building a dashboard your way
+
+Click **Edit mode** on any dashboard to unlock the editing toolbar. From here you can:
+
+- **Add a widget** — pick a query from the catalogue, choose the visual style, set a width and height. Format hints (count / req/s / ms / bytes / percent) are auto-suggested but always overridable.
+- **Drag & drop** widgets to rearrange them — the grid auto-reflows around their size.
+- **Edit a widget** to tweak its title, query parameters, threshold colors, axis options, anything.
+- **Save view as default** — capture the current time range, filters and refresh interval as the dashboard's opening view. Anyone clicking the dashboard from the menu lands on that exact configuration.
+- **Edit JSON** for power users who want to copy-paste a dashboard to another instance or tweak fine-grained options not exposed in the form.
+
+When you're done, click **Done editing** to lock the dashboard back. No risk of an accidental click during a demo.
+
+## The widget palette
+
+Every widget renders independently with its own data fetch, loading state, error handling, and refresh button.
+
+| Type | When to use |
 |---|---|
-| `host` / `port` / `database` / `user` / `password` | PG connection |
-| `uri` | Optional, takes precedence over the fields above |
-| `schema` | PG schema, defaults to `public` |
-| `table` | Defaults to `otoroshi_analytics_events` |
-| `pool_size` | Defaults to 10 |
-| `ssl` | Enables `REQUIRE` SSL mode |
-| `retention_days` | Used by the hourly retention job (set to 0 to disable cleanup) |
-| `statement_timeout_ms` | Per-query timeout (defaults to 30s) |
+| **Line / Area** | Trends over time — RPS, latency, error rate |
+| **Bar** | Top routes / APIs / consumers — sortable horizontally |
+| **Pie / Donut** | Categorical distribution — status codes, methods |
+| **Big number** | Headline KPIs — total requests, total errors |
+| **Metric** | Labelled value with optional thresholds |
+| **Table** | Inline list of top-N items |
+| **Heatmap** | Latency × time density grid |
 
-Save. Otoroshi will lazily create the table and 9 indexes the first time it writes to it (on the leader).
+All widgets adapt to the active theme (light/dark), respect tenant scoping, and inherit your global filters.
 
-### 2. Promote it as the active analytics exporter
+## Filters that follow you everywhere
 
-The `user-analytics` exporter type can have **several configured instances**, but only one is queried by dashboards at a time. The active one is identified by the metadata flag `otoroshi:user-analytics:active = true`.
+Every dashboard has a control bar with:
 
-On the exporter edit page, in the **User analytics activation** block, click **Set as active analytics exporter**. This:
+- **From / To datetime pickers** for absolute ranges
+- **Preset buttons** — `1h`, `6h`, `24h`, `7d`, `30d`, `90d` for quick relative windows that stay alive in shared links
+- **Last refresh indicator** — `12s ago (14:35:50)` so you always know how fresh the data is
+- **Manual refresh** plus an **Auto** toggle (10s / 30s / 1m / 5m)
+- **Entity filters** — search any route, API, API key or service group with autocomplete
+- **Compare** toggle to overlay the previous period on every time series
 
-- sets the metadata flag on the chosen exporter
-- removes the flag from any other `user-analytics` exporter (mutex)
-- seeds the **5 default dashboards** if missing
+Click any bar in a "Top routes / APIs / API keys" chart and the whole dashboard reroutes onto that entity. Keep diving.
 
-This is also useful for zero-downtime data store migrations: configure a second exporter pointing to a new PG instance, let both run in parallel until the new one is caught up, then flip the flag.
+## Sharing and bookmarking
 
-### 3. Open `/bo/dashboard/user-dashboards`
+The full state of what you're looking at lives in the URL. Hit **Copy link**, paste it in chat, in an incident ticket, in your runbook. Anyone with access to your tenant lands on the exact same view, including the relative time range — `now-1h` stays alive on tomorrow's reload.
 
-You should see the 5 default dashboards. Click any of them to open the chart view.
+You can also link directly **from a route, API or API key detail page** into a pre-filtered analytics view, by using query params. Power users build deep links from anywhere.
 
-If no exporter is active, the page displays an onboarding message with a direct link to the Data Exporters configuration.
+## Alerts
 
-## Default dashboards
+Threshold alerts ride on the same query catalogue as your dashboards.
 
-| Default | Content |
-|---|---|
-| **Global Overview** | Total requests, total errors, RPS, average response time, status pie, status classes over time |
-| **Performance** | Latency percentiles (p50/p75/p95/p99), average overhead, average response time, latency × time heatmap |
-| **Errors** | Error rate over time, total errors, top error routes, status classes over time |
-| **APIs & Routes** | Top routes, top APIs, top domains, traffic in/out over time |
-| **Consumers** | Top API keys, top users, top countries, requests by method |
+### Define an alert
 
-Defaults are stored as regular `UserDashboard` entities marked with `metadata.otoroshi-default-id`. They can be edited or deleted freely. Use **Restore defaults** on the dashboards page to recreate the missing ones — your customised dashboards are never overwritten.
+**User Alerts → New Alert.** Give it a name, a severity (`info` / `warning` / `critical`), a time window (e.g. last 5 minutes), and one or more conditions. Each condition is a one-liner:
 
-## Browsing a dashboard
+> *Take query `error_rate_ts`, reduce with `max`, and fire if the result is `>` 0.05*
 
-Each dashboard has a top bar with two rows:
+You can scope a condition to a specific route, API, API key or group. Combine multiple conditions with **AND** or **OR**.
 
-**Row 1** (time range and refresh)
+The visual conditions editor lets you build it without writing a line of JSON. Power users can flip to JSON view at any time.
 
-- `From` / `To` datetime pickers (absolute mode)
-- Preset buttons: `1h`, `6h`, `24h`, `7d`, `30d`, `90d` (relative mode, picks `now-Xh` / `now`)
-- Last refresh indicator (`Xs ago (HH:MM:SS)`)
-- Manual refresh button
-- `Auto` toggle and refresh interval (10s / 30s / 1m / 5m); auto-refresh pauses automatically when the tab is hidden
+### Tune the noise
 
-**Row 2** (entity filters)
+- **Evaluation interval** — how often we re-check (e.g. every 60s)
+- **Cooldown** — minimum time between two consecutive firings (don't spam your inbox)
+- **Window** — how far back the condition looks
 
-- Route / API / API key / Group selectors (single-select with search, populated via the regular admin APIs)
-- Copy link button (copies the current URL to clipboard)
+### Where alerts land
 
-All filter state lives in the URL query string — including the relative time range — so links stay alive when shared. Example:
+Alerts emit standard Otoroshi `AlertEvent`s with a recognizable signature (`alert: "UserAnalyticsAlert"`). Configure a **Data Exporter** of any type — mailer, webhook, Slack via webhook, Kafka, anything Otoroshi already speaks — and filter on that signature. The User Alerts page reminds you to do it the first time you create one and offers a one-click shortcut that pre-fills the filter.
 
-```
-/bo/dashboard/user-dashboards/show/dashboard_xxx?from=now-7d&to=now&route=route_yyy&refresh=30
-```
+### The alert log
 
-Each widget renders independently with its own `AbortController` so changing filters cancels in-flight queries cleanly.
+Every firing is also persisted, so you have a permanent searchable log per alert. Click **🔔** next to an alert to open it:
 
-## Editing a dashboard
+- See every firing with its severity, message, and a snapshot of the matched conditions (with the actual value vs the threshold)
+- Filter by `unseen` / `seen` / `all`
+- Mark an event as seen — or **Mark all seen** to wipe the inbox in one click
 
-The dashboards list (`/bo/dashboard/user-dashboards`) uses Otoroshi's standard table form. Click a row to edit, or use **+ Add Dashboard** to create a new one.
+## Tenant-aware by design
 
-Fields:
+A tenant-admin sees only the traffic, dashboards, alerts and events of their own tenant. The injected SQL filter ensures one tenant's data never leaks to another. Super-admins switch tenants from the standard Otoroshi tenant dropdown — the analytics views follow.
 
-| Field | Type |
-|---|---|
-| `_loc` | Tenant + teams |
-| `id` | Read-only |
-| `name`, `description`, `enabled`, `tags`, `metadata` | Standard |
-| `widgets` | A JSON array (Monaco / CodeMirror editor) |
+Dashboards and alerts are normal Otoroshi entities, so they participate in your usual export / import / GitOps workflows.
 
-A widget JSON object looks like:
+## Power-user features
 
-```json
-{
-  "id": "rps",
-  "title": "Requests per second",
-  "query": "requests_per_second",
-  "type": "line",
-  "width": 4,
-  "height": 2,
-  "params": {},
-  "options": { "format": "rps" }
-}
-```
+### A query catalogue you can extend
 
-| Field | Description |
-|---|---|
-| `id` | Stable id within the dashboard |
-| `title` | Header label |
-| `query` | Id of a query from the catalogue (see `/api/analytics/_schema`) |
-| `type` | `line` &#124; `area` &#124; `bar` &#124; `pie` &#124; `donut` &#124; `scalar` &#124; `metric` &#124; `table` &#124; `heatmap` |
-| `width` | Column span in a 4-column grid (1 to 4) |
-| `height` | Row span (1 row = 110px) |
-| `params` | Query-specific parameters (e.g. `{ "top_n": 20 }`) |
-| `options` | Display options (see below) |
-
-Common widget options:
-
-| Option | Effect |
-|---|---|
-| `format` | `count` &#124; `rps` &#124; `ms` &#124; `bytes` &#124; `percent` |
-| `decimals` | Number of decimals for formatted values |
-| `legend` | Show / hide the legend (default `true`) |
-| `stacked` | Stack series in area charts |
-| `thresholds` | `[{ value, color }]` — colors `scalar` / `metric` widgets above thresholds |
-
-The dashboard JSON also gets saved against the `analytics.otoroshi.io/v1/user-dashboards` resource, so it's manageable through the same admin API as any other Otoroshi entity.
-
-## Query catalogue
-
-The catalogue is exposed as JSON at:
+Every query the dashboards and alerts can reference is exposed at:
 
 ```
 GET /api/analytics/_schema
 ```
 
-Returns:
+This returns a typed catalogue of queries — id, human name, expected shape, default widget, parameters, whether it supports a "compare period" overlay.
 
-```json
-{
-  "queries":     [{ "id": "...", "name": "...", "shape": "...", "default_widget": "...", "params": [...], "supports_compare": true }],
-  "widget_types": ["line", "area", "bar", "pie", "donut", "scalar", "metric", "table", "heatmap"]
-}
-```
+### Add your own queries from an admin extension
 
-The 18 built-in queries:
-
-| Id | Shape | Default widget |
-|---|---|---|
-| `requests_total` | scalar | metric |
-| `requests_per_second` | timeseries | line |
-| `requests_by_status` | pie | pie |
-| `requests_by_status_class_ts` | timeseries | area |
-| `requests_by_method` | pie | pie |
-| `requests_by_route` | topN | bar |
-| `requests_by_api` | topN | bar |
-| `requests_by_apikey` | topN | bar |
-| `requests_by_user` | topN | bar |
-| `requests_by_domain` | topN | bar |
-| `requests_by_country` | topN | bar |
-| `error_rate_ts` | timeseries | line |
-| `errors_total` | scalar | metric |
-| `top_error_routes` | topN | bar |
-| `duration_avg_ts` | timeseries | line |
-| `duration_percentiles_ts` | timeseries (p50/p75/p95/p99) | line |
-| `overhead_avg_ts` | timeseries | line |
-| `traffic_in_out_ts` | timeseries (in / out) | area |
-| `response_time_heatmap` | heatmap | heatmap |
-
-Bucketing is adaptive: ≤ 1h → 1m, ≤ 24h → 1h, ≤ 7d → 6h, otherwise 1d. You can override it with `"bucket": "1m"` in the request body. Empty buckets are filled with zeros via `generate_series`.
-
-## Adding queries from an admin extension
-
-The trait `AdminExtension` exposes a hook:
+If you ship a custom Otoroshi extension (WAF, MCP, billing, anything), you can register your own analytics queries that show up in the dashboard widget picker AND can be referenced by alerts:
 
 ```scala
-trait AdminExtension {
-  def analyticsQueries(): Seq[otoroshi.next.analytics.queries.AnalyticsQuery] = Seq.empty
-}
+override def analyticsQueries(): Seq[AnalyticsQuery] = Seq(
+  MyExtensionQuery1,
+  MyExtensionQuery2
+)
 ```
 
-A custom query is implemented by extending `AnalyticsQuery`:
+Prefix the query id with your extension namespace (`waf.blocked_per_route`, `billing.cost_per_apikey`) — they're fully integrated everywhere queries appear in the UI.
 
-```scala
-import otoroshi.next.analytics.queries._
-import otoroshi.next.analytics.exporter._
-import io.vertx.pgclient.PgPool
-import play.api.libs.json._
-import scala.concurrent.{ExecutionContext, Future}
+### Bring your own delivery
 
-object MyWafBlocksByRoute extends AnalyticsQuery {
-  val id            = "waf.blocked_per_route"
-  val name          = "WAF — top blocked routes"
-  val description   = "Top routes blocked by the WAF over the period."
-  val shape         = AnalyticsShape.TopN
-  val defaultWidget = "bar"
-  override val params = Seq(QueryParam("top_n", "int", JsNumber(10)))
+Alerts go through the standard Otoroshi alert pipeline, so any data exporter type can deliver them: webhooks for PagerDuty / Opsgenie / generic services, mailer for email, Kafka for downstream pipelines, a custom WASM exporter for anything bespoke.
 
-  def execute(filters: Filters, params: JsObject, bucket: Bucket,
-              settings: UserAnalyticsExporterSettings, pool: PgPool)
-             (implicit ec: ExecutionContext, env: otoroshi.env.Env): Future[QueryResult] = {
-    // Build SQL using FilterSql.whereClause(filters), execute via pool.preparedQuery,
-    // and return a QueryResult with the appropriate shape.
-    ???
-  }
-}
-```
+## Tips for healthy dashboards
 
-Then register it from your extension:
+- **Keep dashboards focused.** A dashboard with one clear purpose ("checkout traffic", "platform errors") beats a 20-widget kitchen sink.
+- **Use the saved-view defaults.** If your team always opens a dashboard on a 24h window, save it. Less ceremony, more signal.
+- **Drill, don't filter.** It's faster to click a bar than to hunt the right entity in a dropdown.
+- **Set up alerts for the obvious.** 5xx rate over a few percent, p95 over your SLO, daily request count dropping unexpectedly — three alerts cover a surprising amount of ground.
+- **Pair alerts with a runbook link** in the alert message. Future you will thank present you.
 
-```scala
-override def analyticsQueries(): Seq[AnalyticsQuery] = Seq(MyWafBlocksByRoute)
-```
+## Where to next
 
-By convention, prefix the query id with the extension's namespace (e.g. `waf.`, `mcp.`) to avoid collisions with the core catalogue.
-
-## Cluster behavior
-
-- **Writes** — every node (leader + workers) writes events to the active exporter's PG, like any other data exporter.
-- **Reads** — the `/api/analytics/_query` endpoint and the dashboard UI are leader-only. Workers respond with `404` to query calls.
-- **Schema migration** — the table and indexes are created by the leader on exporter start.
-- **Retention job** — `AnalyticsRetentionJob` runs hourly, leader-only, deleting events older than `retention_days`.
-
-## RBAC
-
-Access is **tenant-scoped**:
-
-- `POST /api/analytics/_query` and `GET /api/analytics/_schema` are open to any caller with read access on the **current tenant** (resolved from the `Otoroshi-Tenant` request header). This includes tenant-admins on their own tenants and super-admins on any tenant.
-- The `_query` endpoint **always injects** the current tenant value into the SQL `WHERE` clause, so a tenant-admin only ever sees rows whose `tenant` column matches. Super-admins see the data of whichever tenant the UI is currently scoped to (via the tenant dropdown).
-- The dashboard CRUD (`/apis/analytics.otoroshi.io/v1/user-dashboards`) goes through the standard generic Resource router and is filtered by the dashboard's `EntityLocation` (tenant + teams).
-- Admin-only operations stay **super-admin only**: `POST /api/analytics/_test-connection`, `POST /api/analytics/_set-active-exporter/:id`, `POST /api/analytics/_migrate`, `POST /api/analytics/dashboards/_restore-defaults` (because defaults live in the `default` tenant).
-
-**UI:**
-
-- The User Analytics menu entry shows for super-admins and tenant-admins.
-- The "Restore defaults" button on the dashboards list is hidden for non-super-admins.
-- The "Set as active analytics exporter" button on the Data Exporter edit page stays super-admin only (data exporters are global).
-
-## Alerts
-
-User analytics ships with threshold-based alerts that evaluate against the same query catalogue as dashboards. An alert is a regular Otoroshi entity (`analytics.otoroshi.io/v1/user-alerts`), tenant-scoped via `EntityLocation`.
-
-### Model
-
-A `UserAlert` carries:
-
-| Field | Description |
-|---|---|
-| `severity` | `info` &#124; `warning` &#124; `critical` |
-| `message` | Free-form text included in the emitted event |
-| `windowSeconds` | How far back to look when evaluating (e.g. `300` = last 5 min) |
-| `evaluationIntervalSeconds` | Min time between two evaluations |
-| `cooldownSeconds` | Min time between two consecutive firings (anti-spam) |
-| `combine` | `AND` (all conditions match) or `OR` (any condition matches) |
-| `conditions` | Array of conditions, see below |
-
-Each condition:
-
-```json
-{
-  "query":     "duration_avg_ts",
-  "params":    {},
-  "filters":   { "route_id": "route_xxx" },
-  "reducer":   "max",
-  "operator":  ">",
-  "threshold": 500
-}
-```
-
-| Field | Description |
-|---|---|
-| `query` | A query id from the catalogue (`/api/analytics/_schema`) |
-| `params` | Query-specific params (e.g. `top_n`) |
-| `filters` | Per-condition entity filters: `route_id`, `api_id`, `apikey_id`, `group_id`, `err` |
-| `reducer` | How to reduce the query result to a scalar: `avg` &#124; `max` &#124; `min` &#124; `sum` &#124; `last` |
-| `operator` | `>` &#124; `>=` &#124; `<` &#124; `<=` &#124; `==` &#124; `!=` |
-| `threshold` | Value the reduced result is compared to |
-
-### Evaluation flow
-
-1. `AlertEvaluationJob` runs every 60 s on the leader.
-2. It loads every enabled alert from `proxyState`.
-3. For each alert: if `now - lastEvaluatedAt >= evaluationIntervalSeconds`, evaluate.
-4. The evaluator runs each condition (calling the same engine as dashboards) over the configured window, applies the reducer to a scalar, compares to the threshold.
-5. The boolean results are combined with `AND`/`OR`.
-6. If the alert is firing **and** `now - lastFiredAt >= cooldownSeconds`, a `UserAnalyticsAlertEvent` is emitted via `Alerts.send` (the standard Otoroshi alert pipeline). State (`lastEvaluatedAt`, `lastFiredAt`) is persisted per alert in `${storageRoot}:analytics:alert-state:${alertId}`.
-
-### Emitted event
-
-```json
-{
-  "@type":           "AlertEvent",
-  "alert":           "UserAnalyticsAlert",
-  "alertSubcategory": "user-analytics",
-  "alertId":         "alert_xxx",
-  "alertName":       "High latency on checkout",
-  "severity":        "critical",
-  "message":         "Latency over budget",
-  "tenant":          "default",
-  "teams":           ["default"],
-  "windowSeconds":   300,
-  "combine":         "AND",
-  "conditions": [
-    {
-      "query":     "duration_avg_ts",
-      "reducer":   "max",
-      "operator":  ">",
-      "threshold": 500,
-      "value":     742.3,
-      "matched":   true
-    }
-  ]
-}
-```
-
-### Delivery: data exporter enrollment
-
-Otoroshi does not ship a built-in alert delivery channel. Alerts go through the same pipeline as any `AlertEvent`, so to receive them by email / webhook / Slack / Kafka / ..., create a **Data Exporter** of any notifying type and add a filter on:
-
-```json
-{ "alert": "UserAnalyticsAlert" }
-```
-
-(or, more granular, on `severity` or `tenant`). The User Alerts page shows a non-blocking banner reminding to set up at least one exporter; alerts are still created and evaluated, just without a notification destination.
-
-### RBAC
-
-Tenant-scoped, like dashboards: a tenant-admin sees and manages alerts for their own tenant only. The injected `tenant` filter on `AlertEvaluator` ensures one tenant's alert never reads another tenant's events.
-
-## Storage layout
-
-Single denormalized table:
-
-```sql
-CREATE TABLE otoroshi_analytics_events (
-  id              TEXT        PRIMARY KEY,
-  ts              TIMESTAMPTZ NOT NULL,
-  env             TEXT,
-  tenant          TEXT        NOT NULL DEFAULT 'default',
-  teams           TEXT[]      NOT NULL DEFAULT '{}',
-  route_id        TEXT,
-  route_name      TEXT,
-  api_id          TEXT,                   -- read from route.metadata['Otoroshi-Api-Ref']
-  group_ids       TEXT[]      NOT NULL DEFAULT '{}',
-  apikey_id       TEXT,
-  user_email      TEXT,
-  identity_type   TEXT,                   -- APIKEY | PRIVATEAPP | null
-  domain          TEXT,
-  method          TEXT,
-  status          SMALLINT,
-  err             BOOLEAN     NOT NULL DEFAULT false,
-  duration_ms     INTEGER,
-  overhead_ms     INTEGER,
-  backend_ms      INTEGER,
-  data_in         BIGINT,
-  data_out        BIGINT,
-  from_ip         TEXT,
-  country         TEXT,
-  user_agent      TEXT,
-  protocol        TEXT,
-  raw             JSONB       NOT NULL    -- stripped event JSON
-);
-```
-
-Indexes (all `IF NOT EXISTS`): `(ts)`, `(route_id, ts)`, `(api_id, ts)` partial, `(apikey_id, ts)` partial, `(tenant, ts)`, `(status, ts)`, partial `(ts) WHERE err`, GIN on `group_ids`, GIN on `teams`.
+- Install your first dashboard now: head to **Features → Analytics → User Analytics**.
+- Plug your first delivery channel: **Data Exporters → Add → Mailer / Webhook / Slack** with a filter on `{ "alert": "UserAnalyticsAlert" }`.
+- Tune the defaults of a dashboard you use daily — your team will notice.
