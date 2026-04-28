@@ -59,7 +59,7 @@ export class Filters extends Component {
         .findAll()
         .catch(() => []),
       nextClient.forEntity(nextClient.ENTITIES.APIKEYS).findAll().catch(() => []),
-      nextClient.forEntity(nextClient.ENTITIES.GROUPS).findAll().catch(() => []),
+      nextClient.forEntityNext(nextClient.ENTITIES.GROUPS).findAll().catch(() => []),
     ]).then(([routes, apis, apikeys, groups]) => {
       this.setState({
         routes: Array.isArray(routes) ? routes : [],

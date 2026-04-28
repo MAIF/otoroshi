@@ -2254,7 +2254,7 @@ export const nextClient = {
     APIKEYS: 'apikeys',
     DRAFTS: 'drafts',
     APIS: 'apis',
-    GROUPS: 'groups',
+    GROUPS: 'service-groups',
     API_SUBSCRIPTIONS: 'apisubscriptions',
     ROUTE_TEMPLATES: 'route-templates',
   },

@@ -198,7 +198,8 @@ Kubernetes probes.
 Yes. Official **Helm chart**, **Kustomize overlays**, and CRDs. Reference
 deployments are provided for AWS, Azure, GCP, Kubernetes, Docker, Clever
 Cloud and bare-metal. `otoroshictl` can fully bootstrap an empty instance
-from a Git repository.
+from a Git repository. Remote catalog can help you deploy manifests from various
+locations.
 
 ### What does an upgrade look like?
 
@@ -214,7 +215,7 @@ are handled automatically; breaking changes are called out in release notes.
 ### Is there an SLA?
 
 The OSS distribution carries **no contractual SLA** — it is free software.
-SLAs (e.g. 99.5 % availability, 1 h response time, 4 h recovery time) are
+SLAs (e.g. 99.5 % availability, 2 h response time, 4 h recovery time) are
 part of a **Cloud APIM support subscription**, where Cloud APIM engineers
 provide incident response and security patches with guaranteed reaction
 and repair times.
@@ -317,10 +318,11 @@ Three ready-to-use layers:
 
 - **Query-string / header / cookie** — built-in validators (exact, regex,
   wildcard, required, JSON-Path).
-- **Body** — JSON-Path context validator, JQ body-filter plugin, Coraza
+- **Body** — JSON-Path context validator, JQ body-filter plugin, JSON Schema body validators, Coraza
   WAF parsing bodies against OWASP CRS.
 - **WASM validators** — drop in a JSON Schema, protobuf or custom-format
-  validator compiled to WebAssembly.
+  validator compiled to WebAssembly. Or whatever you want to do compiled in webassembly
+- **Workflow validators** - just do whatever you want :)
 
 ### What policies and security headers ship out of the box?
 
