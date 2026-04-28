@@ -83,13 +83,22 @@ export class UserDashboardsPage extends Component {
           'JSON array of widgets. Each widget needs: id, title, query, type (line/area/bar/pie/donut/scalar/metric/table/heatmap), width (1-4), height (rows). See /api/analytics/_schema for available queries.',
       },
     },
+    defaults: {
+      type: 'monaco-json',
+      props: {
+        label: 'Defauls',
+        height: '250px',
+        help:
+          'JSON free object to store dashboard input like auto refresh, time range, etc',
+      },
+    },
     view: {
       type: View,
 
     }
   };
 
-  formFlow = ['_loc', 'id', 'name', 'description', '<<< Widgets', 'enabled', 'widgets', 'view', '>>> Tags & Metadata','tags', 'metadata', ];
+  formFlow = ['_loc', 'id', 'name', 'description', '<<< Dashboard', 'enabled', 'widgets', 'defaults', 'view', '>>> Tags & Metadata','tags', 'metadata', ];
 
   columns = [
     {
