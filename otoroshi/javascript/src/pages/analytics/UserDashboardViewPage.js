@@ -80,7 +80,7 @@ export class UserDashboardViewPage extends Component {
               ? queryToFilters(defaults)
               : this.state.filters;
           this.setState(
-            { dashboard: d, loading: false, error: null, filters: nextFilters },
+            { dashboard: d, loading: false, editMode: d.widgets.length === 0, error: null, filters: nextFilters },
             () => this.setupAutoRefresh()
           );
         }
