@@ -75,6 +75,30 @@ export class UserAlertEventsPage extends Component {
     const matched = (item.conditions || []).filter((c) => c.matched).length;
     const total = (item.conditions || []).length;
     const cfg = SEVERITY_BADGE[item.severity] || { label: item.severity || '—', color: '#888' };
+
+    const codeStyle = {
+      fontFamily: 'monospace',
+      fontSize: '0.85rem',
+      padding: '1px 6px',
+      borderRadius: 3,
+      background: 'var(--bg-color_level3)',
+      border: '1px solid var(--border-color)',
+      color: 'var(--text)',
+    };
+    const cellStyle = {
+      padding: '6px 8px',
+      borderTop: '1px solid var(--border-color)',
+      verticalAlign: 'middle',
+    };
+    const headStyle = {
+      ...cellStyle,
+      borderBottom: '2px solid var(--border-color)',
+      borderTop: 'none',
+      color: 'var(--text-muted)',
+      fontWeight: 600,
+      textAlign: 'left',
+    };
+
     const body = (
       <div style={{ color: 'var(--text)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -101,60 +125,106 @@ export class UserAlertEventsPage extends Component {
           </strong>
         </div>
 
-        <table className="table table-sm" style={{ color: 'var(--text)' }}>
-          <thead>
-            <tr>
-              <th>Query</th>
-              <th>Reducer</th>
-              <th>Value</th>
-              <th>Op</th>
-              <th>Threshold</th>
-              <th>Matched</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(item.conditions || []).map((c, i) => (
-              <tr key={i}>
-                <td>
-                  <code>{c.query}</code>
-                </td>
-                <td>{c.reducer}</td>
-                <td style={{ fontFamily: 'monospace' }}>
-                  {c.value != null ? c.value : <em>—</em>}
-                </td>
-                <td>{c.operator}</td>
-                <td style={{ fontFamily: 'monospace' }}>{c.threshold}</td>
-                <td style={{ textAlign: 'center' }}>
-                  {c.error ? (
-                    <span style={{ color: 'var(--color-red)' }} title={c.error}>
-                      <i className="fas fa-exclamation-triangle" /> err
-                    </span>
-                  ) : c.matched ? (
-                    <span className="badge bg-danger">yes</span>
-                  ) : (
-                    <span className="badge bg-secondary">no</span>
-                  )}
-                </td>
+        <div
+          style={{
+            border: '1px solid var(--border-color)',
+            borderRadius: 4,
+            background: 'var(--bg-color_level2)',
+            overflow: 'hidden',
+          }}
+        >
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              color: 'var(--text)',
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={headStyle}>Query</th>
+                <th style={headStyle}>Reducer</th>
+                <th style={headStyle}>Value</th>
+                <th style={headStyle}>Op</th>
+                <th style={headStyle}>Threshold</th>
+                <th style={{ ...headStyle, textAlign: 'center' }}>Matched</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(item.conditions || []).map((c, i) => (
+                <tr key={i}>
+                  <td style={cellStyle}>
+                    <span style={codeStyle}>{c.query}</span>
+                  </td>
+                  <td style={cellStyle}>{c.reducer}</td>
+                  <td style={{ ...cellStyle, fontFamily: 'monospace' }}>
+                    {c.value != null ? c.value : <em style={{ color: 'var(--text-muted)' }}>—</em>}
+                  </td>
+                  <td style={cellStyle}>{c.operator}</td>
+                  <td style={{ ...cellStyle, fontFamily: 'monospace' }}>{c.threshold}</td>
+                  <td style={{ ...cellStyle, textAlign: 'center' }}>
+                    {c.error ? (
+                      <span style={{ color: 'var(--color-red)' }} title={c.error}>
+                        <i className="fas fa-exclamation-triangle" /> err
+                      </span>
+                    ) : c.matched ? (
+                      <span
+                        style={{
+                          background: 'var(--color-red)',
+                          color: '#fff',
+                          padding: '2px 8px',
+                          borderRadius: 3,
+                          fontSize: '0.8rem',
+                        }}
+                      >
+                        yes
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          background: 'var(--bg-color_level3)',
+                          color: 'var(--text-muted)',
+                          padding: '2px 8px',
+                          borderRadius: 3,
+                          fontSize: '0.8rem',
+                          border: '1px solid var(--border-color)',
+                        }}
+                      >
+                        no
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {item.conditions &&
-          item.conditions.some((c) => c.error) && (
-            <div className="alert alert-warning" style={{ marginTop: 8 }}>
-              <strong>Errors:</strong>
-              <ul style={{ marginTop: 4, marginBottom: 0 }}>
-                {item.conditions
-                  .filter((c) => c.error)
-                  .map((c, i) => (
-                    <li key={i}>
-                      <code>{c.query}</code>: {c.error}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
+        {item.conditions && item.conditions.some((c) => c.error) && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 10,
+              borderRadius: 4,
+              background: 'var(--bg-color_level3)',
+              border: '1px solid var(--color-red)',
+              color: 'var(--text)',
+            }}
+          >
+            <strong style={{ color: 'var(--color-red)' }}>
+              <i className="fas fa-exclamation-triangle" /> Errors:
+            </strong>
+            <ul style={{ marginTop: 4, marginBottom: 0, paddingLeft: 20 }}>
+              {item.conditions
+                .filter((c) => c.error)
+                .map((c, i) => (
+                  <li key={i}>
+                    <span style={codeStyle}>{c.query}</span>: {c.error}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
     window.newAlert(
