@@ -15,7 +15,7 @@ to what matters to you.
 
 > **TL;DR** — Otoroshi is an Apache-2.0 API gateway and API Management
 > platform built by [MAIF](https://www.ossbymaif.fr/) since 2017. It runs in
-> production at MAIF, Clever Cloud and many other organizations, and powers
+> production at MAIF, [Clever Cloud](https://www.clever.cloud/) and many other organizations, and powers
 > the commercial [Cloud APIM](https://www.cloud-apim.com/) offer (SaaS or
 > on-prem with [Clever Cloud](https://www.clever.cloud/)) which adds hosted
 > operations, premium support and enterprise extensions on top of the
@@ -216,7 +216,7 @@ are handled automatically; breaking changes are called out in release notes.
 
 The OSS distribution carries **no contractual SLA** — it is free software.
 SLAs (e.g. 99.5 % availability, 2 h response time, 4 h recovery time) are
-part of a **Cloud APIM support subscription**, where Cloud APIM engineers
+part of a **[Cloud APIM](https://www.cloud-apim.com/) support subscription**, where [Cloud APIM](https://www.cloud-apim.com/) engineers
 provide incident response and security patches with guaranteed reaction
 and repair times.
 
@@ -246,13 +246,13 @@ Two levels:
 
 - **Direct** — an operator creates the API key from the admin UI or API
   and hands it to the consumer.
-- **Self-service via Daikoku** — MAIF's companion developer portal: API
+- **Self-service via [Daikoku](https://maif.github.io/daikoku/)** — MAIF's companion developer portal: API
   marketplace, search, documentation, plans with pricing and contracts,
   subscription requests, approval workflows, team billing and consumer
   analytics. Bidirectional API key sync with Otoroshi.
 
 Otoroshi also ships its own developer-portal pages bound to the API entity
-(logo, banners, docs, nav) for lighter use cases that do not require Daikoku.
+(logo, banners, docs, nav) for lighter use cases that do not require [Daikoku](https://maif.github.io/daikoku/).
 
 ### Can consumers see their own stats?
 
@@ -260,7 +260,7 @@ Yes. Per-API-key analytics are tracked and exposed:
 
 - In the admin UI, filtered to their keys.
 - Via the analytics API (restricted by access rights).
-- Via Daikoku, with a per-plan and per-key dashboard over the configured
+- Via [Daikoku](https://maif.github.io/daikoku/), with a per-plan and per-key dashboard over the configured
   retention window (typically 1 month in hot storage, up to 1 year or more
   with an external Elasticsearch / Kafka pipeline).
 
@@ -332,6 +332,7 @@ Three ready-to-use layers:
 - **WAF** — Coraza with OWASP Core Rule Set.
 - **Payload size limits**, both upload and download.
 - **Bandwidth throttling** on request and response.
+- **Fail2Ban** to ban clients that trigger multiple error responses.
 - URL allow / deny lists, URL rewriting, path stripping, redirections.
 
 ---
@@ -387,7 +388,7 @@ Otoroshi self-registration protocol, Tailscale.
 |---|---|---|
 | HTTP/1.1 | yes | yes |
 | HTTP/2 (incl. H2C) | yes | yes |
-| HTTP/3 (QUIC) | yes | yes |
+| HTTP/3 (QUIC) | yes (via Netty listener) | yes |
 | WebSocket (with message validation, transformation, mirroring) | yes | yes |
 | SSE (Server-Sent Events) | yes | yes |
 | gRPC & gRPC-Web | yes (via Netty listener) | yes |
@@ -399,7 +400,7 @@ Otoroshi self-registration protocol, Tailscale.
 
 ### What about event-driven protocols (Kafka, MQTT, etc.)?
 
-Cloud APIM ships an **event-native extension** that translates event-bus
+[Cloud APIM](https://www.cloud-apim.com/) ships an **event-native extension** that translates event-bus
 protocols (Kafka, Pulsar, RabbitMQ, MQTT, NATS) to HTTP and back. You can
 expose Kafka topics as HTTP endpoints, send requests to RabbitMQ queues, or
 bridge MQTT to your REST catalog — with the same plugin chain (auth,
@@ -426,7 +427,7 @@ Notable points:
   WASM, remote JWKS fetches on first hit, external remote-call plugins.
   All are individually measurable in the built-in analytics.
 
-Official benchmarks and profiling guidance are part of the Cloud APIM
+Official benchmarks and profiling guidance are part of the [Cloud APIM](https://www.cloud-apim.com/)
 support offer.
 
 ---
@@ -472,7 +473,7 @@ debugging without leaking to central logs.
 
 Built-in detectors for Log4Shell and React2Shell, Fail2Ban-style
 auto-banning, anomaly events on auth failures, rate-limit hits and quota
-breaches, certificate expiration alerts, 90-day route state history,
+breaches, certificate expiration alerts, n-day route state history,
 security.txt (RFC 9116) and robots.txt support.
 
 ---
@@ -501,7 +502,7 @@ security.txt (RFC 9116) and robots.txt support.
 - A **built-in developer portal** bound to the API entity — pages,
   navigation, logos, banners, plans, subscriptions, auto-generated
   credentials.
-- An integration with **Daikoku** (MAIF, Apache 2.0) for the full
+- An integration with **[Daikoku](https://maif.github.io/daikoku/)** (MAIF, Apache 2.0) for the full
   marketplace experience: catalogs, categories, search, SLA & pricing
   (metered or flat), self-service subscription workflows, email
   notifications, team billing, consumer analytics, internal /
@@ -523,10 +524,10 @@ definition.
 - **AWS** — ECS, EKS, EC2 with reference templates.
 - **Azure** — AKS, App Service.
 - **GCP** — GKE, Cloud Run.
-- **Clever Cloud** — first-class PaaS deployment.
+- **[Clever Cloud](https://www.clever.cloud/)** — first-class PaaS deployment.
 - **Docker** / **bare-metal** / **on-premises** — official images and
   systemd-ready packaging.
-- **SaaS** — **Cloud APIM** offers a managed Otoroshi with the same
+- **SaaS** — **[Cloud APIM](https://www.cloud-apim.com/)** offers a managed Otoroshi with the same
   features plus premium extensions.
 
 ### Which storage backends are supported?
@@ -549,7 +550,7 @@ Redis, PostgreSQL, Cassandra, in-memory (with file persistence), S3, HTTP.
   performance.
 - **Workflows** — visual flow engine with a step-by-step debugger for
   no-code processing pipelines.
-- **Admin extensions** — add your own entities, admin API endpoints and
+- **Admin extensions (scala)** — add your own entities, admin API endpoints and
   admin-UI pages alongside built-in ones.
 - **Open Policy Agent** — evaluate OPA policies inside the gateway via
   WASM.
@@ -563,13 +564,13 @@ Redis, PostgreSQL, Cassandra, in-memory (with file persistence), S3, HTTP.
 It has been in production at MAIF (a top-10 French insurance company)
 since 2017, with internal security reviews, pen-tests and public,
 transparent CVE responses on GitHub. Formal third-party audits and
-**bug-bounty programs** are part of the Cloud APIM commercial offer.
+**bug-bounty programs** are part of the [Cloud APIM](https://www.cloud-apim.com/) commercial offer.
 
 ### How are vulnerabilities handled?
 
 - Disclosures go through GitHub security advisories (private disclosure,
   coordinated fix, public CVE).
-- Cloud APIM subscribers get proactive notifications, pre-release patches
+- [Cloud APIM](https://www.cloud-apim.com/) subscribers get proactive notifications, pre-release patches
   when possible, and severity-based remediation windows:
   - **Critical** — patch within 24–72 h.
   - **High** — patch within 1 week.
@@ -581,29 +582,29 @@ transparent CVE responses on GitHub. Formal third-party audits and
 
 **Apache 2.0**. MAIF is committed to keeping Otoroshi open-source. There is
 no dual-license or BSL trap: contributions are accepted under Apache 2.0
-CLA, development happens in the open on GitHub. Cloud APIM adds commercial
+CLA, development happens in the open on GitHub. [Cloud APIM](https://www.cloud-apim.com/) adds commercial
 extensions and support on top of the unmodified open-source core.
 
 ### What does commercial support cover?
 
-Cloud APIM contracts include tiered SLAs on availability (99.5 % and up),
-response time (GTI, down to 1 h), recovery time (GTR, down to 4 h), and
+[Cloud APIM](https://www.cloud-apim.com/) contracts include tiered SLAs on availability (99.5 % and up),
+response time (GTI, down to 2 h), recovery time (GTR, down to 4 h), and
 engineering access for roadmap influence and architecture reviews. Support
 covers the OSS distribution even when self-hosted.
 
 ### What is the release cadence?
 
-- Minor releases every 4 to 8 weeks (features, fixes, security patches).
+- One releases every 4 to 8 weeks (features, fixes, security patches).
 - On-demand patch releases for critical issues.
-- **LTS tracks** maintained 12–24 months are part of the Cloud APIM offer
+- **LTS tracks** maintained 6 months are part of the [Cloud APIM](https://www.cloud-apim.com/) offer
   — production teams that do not want to track `master` can stay on an LTS
   branch and apply backported patches only.
 
 ### Who uses Otoroshi?
 
-Public adopters include MAIF, SNCF Connect & Tech, French public-sector
+Public adopters include [MAIF](https://maif.github.io/), [Clever Cloud](https://www.clever.cloud/), [Serli](https://www.serli.com/), [Cloud APIM](https://www.cloud-apim.com/), French and European public-sector
 entities, and many more. Community channels: GitHub, Discord. Reference
-calls with existing users can be arranged by Cloud APIM on request.
+calls with existing users can be arranged by [Cloud APIM](https://www.cloud-apim.com/) on request.
 
 ---
 
@@ -612,7 +613,7 @@ calls with existing users can be arranged by Cloud APIM on request.
 ### What is the cheapest path to production?
 
 Self-host the OSS distribution on a small Kubernetes cluster (or 3 VMs)
-with PostgreSQL, one leader and two workers. This is a valid production
+with Redis, one leader and two workers. This is a valid production
 setup for low-to-medium traffic, costing only the infrastructure you
 provide.
 
@@ -621,7 +622,7 @@ provide.
 - You need a contractual SLA and 24/7 incident response.
 - You want premium extensions: event gateway (Kafka, Pulsar, RabbitMQ,
   MQTT → HTTP), AI gateway, etc.
-- You want Clever Cloud engineers to run the platform for you (SaaS).
+- You want [Clever Cloud](https://www.clever.cloud/) engineers to run the platform for you (SaaS).
 - You want long-term LTS branches with guaranteed backport windows.
 
 ### What skills do I need to operate Otoroshi?
@@ -630,7 +631,7 @@ Standard SRE / platform-engineering skills: Kubernetes (or VM) operations,
 PostgreSQL or Redis administration, Prometheus / Grafana / OTEL monitoring,
 basic JVM tuning. **No Scala knowledge required** — UI, API, CLI and CRDs
 cover everything. Custom plugins require either WASM (any language) or
-Scala (native plugins).
+Scala (native plugins, admin. extensions).
 
 ---
 
@@ -639,8 +640,8 @@ Scala (native plugins).
 | Profile | Primary tools |
 |---|---|
 | Developer (API producer) | API entity UI, `otoroshictl`, K8s CRDs, admin API, dev portal |
-| Developer (API consumer) | Daikoku / developer portal, consumer analytics, sandbox APIs |
-| API product owner | Daikoku / developer portal, subscription workflows, stats |
+| Developer (API consumer) | [Daikoku](https://maif.github.io/daikoku/) / developer portal, consumer analytics, sandbox APIs |
+| API product owner | [Daikoku](https://maif.github.io/daikoku/) / developer portal, subscription workflows, stats |
 | Platform / ops admin | Admin UI, admin API, OTEL / Prometheus / Grafana, cluster view |
 | Security officer | Read-only admin, Coraza WAF, audit events, advisories feed |
-| Finance / billing | Daikoku billing, per-plan metering |
+| Finance / billing | [Daikoku](https://maif.github.io/daikoku/) billing, per-plan metering |
