@@ -116,25 +116,25 @@ export class UserDashboardsPage extends Component {
       cell: (v) =>
         v ? <span className="badge bg-info">{v}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>,
     },
-    {
-      title: 'View',
-      style: { textAlign: 'center', width: 70 },
-      notFilterable: true,
-      content: (item) => item.id,
-      cell: (_v, item) => (
-        <button
-          type="button"
-          className="btn btn-sm btn-success"
-          onClick={(e) => {
-            e.stopPropagation();
-            this.props.history.push(`/user-dashboards/show/${item.id}`);
-          }}
-          title="Open dashboard view"
-        >
-          <i className="fas fa-chart-line" />
-        </button>
-      ),
-    },
+    // {
+    //   title: 'View',
+    //   style: { textAlign: 'center', width: 70 },
+    //   notFilterable: true,
+    //   content: (item) => item.id,
+    //   cell: (_v, item) => (
+    //     <button
+    //       type="button"
+    //       className="btn btn-sm btn-success"
+    //       onClick={(e) => {
+    //         e.stopPropagation();
+    //         this.props.history.push(`/user-dashboards/show/${item.id}`);
+    //       }}
+    //       title="Open dashboard view"
+    //     >
+    //       <i className="fas fa-chart-line" />
+    //     </button>
+    //   ),
+    // },
   ];
 
   componentDidMount() {
@@ -282,10 +282,11 @@ export class UserDashboardsPage extends Component {
         showActions={true}
         showLink={false}
         rowNavigation={true}
+        _hideEditButton
         navigateTo={(item) => {
-          window.location = `/bo/dashboard/user-dashboards/edit/${item.id}`;
+          window.location = `/bo/dashboard/user-dashboards/show/${item.id}`;
         }}
-        itemUrl={(item) => `/bo/dashboard/user-dashboards/edit/${item.id}`}
+        itemUrl={(item) => `/bo/dashboard/user-dashboards/show/${item.id}`}
         export
         kubernetesKind="analytics.otoroshi.io/UserDashboard"
         extractKey={(item) => item.id}

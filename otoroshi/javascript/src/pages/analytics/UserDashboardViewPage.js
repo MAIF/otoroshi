@@ -352,18 +352,16 @@ export class UserDashboardViewPage extends Component {
                 <i className="fas fa-eraser" />
               </button>
             )}
-            {editMode && (
-              <Link
-                to={`/user-dashboards/edit/${dashboard.id}`}
-                className="btn btn-sm btn-secondary"
-                style={{ marginLeft: 5 }}
-              >
-                <i className="fas fa-edit" /> Edit JSON
-              </Link>
-            )}
+            <Link
+              to={`/user-dashboards/edit/${dashboard.id}`}
+              className="btn btn-sm btn-secondary"
+              style={{ marginLeft: 5 }}
+            >
+              <i className="fas fa-edit" /> Edit entity
+            </Link>
             <button
               type="button"
-              className={`btn btn-sm ${editMode ? 'btn-warning' : 'btn-secondary'}`}
+              className={`btn btn-sm ${editMode ? 'btn-success' : 'btn-secondary'}`}
               style={{ marginLeft: 5 }}
               onClick={this.toggleEditMode}
               title={editMode ? 'Exit edit mode' : 'Enter edit mode'}
