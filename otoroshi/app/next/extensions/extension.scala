@@ -182,6 +182,7 @@ trait AdminExtension {
   def wellKnownOverridesRoutes(): Seq[AdminExtensionWellKnownRoute]               = Seq.empty
   def vaults(): Seq[AdminExtensionVault]                                          = Seq.empty
   def publicKeys(): Future[Seq[PublicKeyJwk]]                                     = Seq.empty.vfuture
+  def analyticsQueries(): Seq[otoroshi.next.analytics.queries.AnalyticsQuery]     = Seq.empty
   def configuration: Configuration                                                = env.configuration
     .getOptional[Configuration](s"otoroshi.admin-extensions.configurations.${id.cleanup}")
     .getOrElse(Configuration.empty)
@@ -287,6 +288,10 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
     new AdminExtensionRouter[AdminExtensionWellKnownRoute](wellKnownOverridesRoutes)
   // ----------------------------------------------------------------------------------------------------------------
   private val vaults: Seq[AdminExtensionVault]                                          = extensions.flatMap(_.vaults())
+  // ----------------------------------------------------------------------------------------------------------------
+  private val _analyticsQueries: Seq[otoroshi.next.analytics.queries.AnalyticsQuery]    =
+    extensions.flatMap(_.analyticsQueries())
+  def analyticsQueries(): Seq[otoroshi.next.analytics.queries.AnalyticsQuery]           = _analyticsQueries
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   private val extCache = new UnboundedTrieMap[Class[_], Any]

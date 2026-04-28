@@ -7,20 +7,14 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import next.models.{
-  ApiDataStore,
-  ApiSubscriptionDataStore,
-  KvApiDataStore,
-  KvApiSubscriptionDataStore,
-  KvRouteTemplateDataStore,
-  RouteTemplateDataStore
-}
+import next.models.{ApiDataStore, ApiSubscriptionDataStore, KvApiDataStore, KvApiSubscriptionDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import otoroshi.models._
+import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
 import otoroshi.next.models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
@@ -485,6 +479,13 @@ abstract class AbstractRedisDataStores(
 
   private lazy val _routeTemplateDataStore                      = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: KvRouteTemplateDataStore = _routeTemplateDataStore
+
+  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
+
+  private lazy val _userAlertDataStore                                                =
+    new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
+  override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

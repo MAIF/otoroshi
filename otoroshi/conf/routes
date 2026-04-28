@@ -584,6 +584,18 @@ GET     /api/events                                           otoroshi.controlle
 GET     /api/events/_template                                 otoroshi.controllers.adminapi.TemplatesController.templateSpec(eventType: String)
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
+###  User analytics (PostgreSQL-backed dashboards)  ###
+POST    /api/analytics/_query                                 otoroshi.next.analytics.controllers.AnalyticsController.runQuery
+GET     /api/analytics/_schema                                otoroshi.next.analytics.controllers.AnalyticsController.schema
+POST    /api/analytics/_test-connection                       otoroshi.next.analytics.controllers.AnalyticsController.testConnection
+POST    /api/analytics/_set-active-exporter/:id               otoroshi.next.analytics.controllers.AnalyticsController.setActiveExporter(id)
+POST    /api/analytics/_migrate                               otoroshi.next.analytics.controllers.AnalyticsController.migrateLegacy
+POST    /api/analytics/dashboards/_restore-defaults           otoroshi.next.analytics.controllers.UserDashboardController.restoreDefaults
+GET     /api/analytics/alerts/:alertId/events                 otoroshi.next.analytics.controllers.AlertEventsController.listEvents(alertId)
+POST    /api/analytics/alerts/:alertId/events/_seen-all       otoroshi.next.analytics.controllers.AlertEventsController.markAllSeen(alertId)
+POST    /api/analytics/alerts/:alertId/events/:eventId/seen   otoroshi.next.analytics.controllers.AlertEventsController.markSeen(alertId, eventId)
+POST    /api/analytics/alerts/:alertId/events/:eventId/unseen otoroshi.next.analytics.controllers.AlertEventsController.markUnseen(alertId, eventId)
+
 GET     /api/experimental/certificates/_by_domain             otoroshi.next.controllers.adminapi.NgRoutesController.domainsAndCertificates()
 GET     /api/entities/:entity/:id                             otoroshi.next.controllers.adminapi.EntitiesController.getEntityGraph(entity: String, id: String)
 

@@ -544,7 +544,9 @@ case class DefaultTemplates(
     tenant: Option[JsObject] = Json.obj().some,          // Option[Tenant],
     team: Option[JsObject] = Json.obj().some,            // Option[Team],
     apiSubscription: Option[JsObject] = Json.obj().some, // Option[ApiSubscription],
-    routeTemplate: Option[JsObject] = Json.obj().some    // Option[RouteTemplate],
+    routeTemplate: Option[JsObject] = Json.obj().some,    // Option[RouteTemplate],
+    userDashboardTemplate: Option[JsObject] = Json.obj().some,    // Option[UserDashboard],
+    userAlertTemplate: Option[JsObject] = Json.obj().some,        // Option[UserAlert],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -573,7 +575,9 @@ object DefaultTemplates {
           tenant = json.select("tenant").asOpt[JsObject],
           team = json.select("team").asOpt[JsObject],
           apiSubscription = json.select("apiSubscription").asOpt[JsObject],
-          routeTemplate = json.select("routeTemplate").asOpt[JsObject]
+          routeTemplate = json.select("routeTemplate").asOpt[JsObject],
+          userDashboardTemplate = json.select("userDashboardTemplate").asOpt[JsObject],
+          userAlertTemplate = json.select("userAlertTemplate").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -599,8 +603,10 @@ object DefaultTemplates {
       "dataExporter"    -> o.dataExporter.getOrElse(JsNull).asValue,
       "tenant"          -> o.tenant.getOrElse(JsNull).asValue,
       "team"            -> o.team.getOrElse(JsNull).asValue,
-      "apiSubscription" -> o.apiSubscription.getOrElse(JsNull).asValue,
-      "routeTemplate"   -> o.routeTemplate.getOrElse(JsNull).asValue
+      "apiSubscription"       -> o.apiSubscription.getOrElse(JsNull).asValue,
+      "routeTemplate"         -> o.routeTemplate.getOrElse(JsNull).asValue,
+      "userDashboardTemplate" -> o.userDashboardTemplate.getOrElse(JsNull).asValue,
+      "userAlertTemplate"     -> o.userAlertTemplate.getOrElse(JsNull).asValue
     )
   }
 }

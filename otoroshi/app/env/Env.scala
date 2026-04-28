@@ -1665,6 +1665,10 @@ class Env(
     jobManager.start()
     statefulClientsManager.start()
     otoroshiEventsActor ! StartExporters
+    // Initialize the analytics runtime once Env is available.
+    otoroshi.next.analytics.queries.AnalyticsRuntime.init(
+      otoroshi.next.analytics.queries.CoreQueries.all
+    )(this)
   }(otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {
