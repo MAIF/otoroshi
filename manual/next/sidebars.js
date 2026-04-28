@@ -72,6 +72,7 @@ const sidebars = {
         'topics/tls',
         'topics/user-rights',
         'topics/events-and-analytics',
+        'topics/user-analytics',
         'topics/monitoring',
         'topics/sessions-mgmt',
         'topics/wasm-usage',

@@ -3,9 +3,13 @@ title: User Analytics
 sidebar_position: 11
 ---
 
+import { Image } from '@site/src/components/Image';
+
 # User Analytics
 
 Build live dashboards on your gateway traffic, share them across teams, and get notified the moment something is off — all natively inside Otoroshi.
+
+<Image src="/img/docs/user-dashboards/user-dashboard-view.png" />
 
 User Analytics ships with a dedicated PostgreSQL store, a curated catalogue of queries, a grid of beautiful charts, and a threshold-based alert engine. No external observability stack to plug, no extra UI to learn — it lives where your routes, APIs and apikeys already do.
 
@@ -41,6 +45,8 @@ On the exporter page, click **Set as active analytics exporter**. From now on, e
 - **APIs & Routes** — top consumers, traffic per API, domain breakdown
 - **Consumers** — top API keys, top users, top countries
 
+<Image src="/img/docs/user-dashboards/user-dashboards-home.png" />
+
 That's it. You're live.
 
 ## Building a dashboard your way
@@ -54,6 +60,8 @@ Click **Edit mode** on any dashboard to unlock the editing toolbar. From here yo
 - **Edit JSON** for power users who want to copy-paste a dashboard to another instance or tweak fine-grained options not exposed in the form.
 
 When you're done, click **Done editing** to lock the dashboard back. No risk of an accidental click during a demo.
+
+<Image src="/img/docs/user-dashboards/user-dashboard-edit.png" />
 
 ## The widget palette
 
@@ -71,6 +79,53 @@ Every widget renders independently with its own data fetch, loading state, error
 
 All widgets adapt to the active theme (light/dark), respect tenant scoping, and inherit your global filters.
 
+## What you can measure
+
+The query catalogue ships with everything most teams need, day one. Each one can be plotted in a widget AND used as the condition of an alert.
+
+### Volume
+
+| Query | What it tells you |
+|---|---|
+| `requests_total` | Total number of requests over the time window |
+| `requests_per_second` | Request rate over time |
+| `requests_by_status` | Distribution of HTTP status codes |
+| `requests_by_status_class_ts` | 2xx / 3xx / 4xx / 5xx counts over time, stacked |
+| `requests_by_method` | Distribution of HTTP methods |
+| `traffic_in_out_ts` | Bytes in and out over time |
+
+### Performance
+
+| Query | What it tells you |
+|---|---|
+| `duration_avg_ts` | Average response time over time |
+| `duration_percentiles_ts` | p50 / p75 / p95 / p99 latency over time |
+| `overhead_avg_ts` | Average Otoroshi overhead over time |
+| `response_time_heatmap` | Density of latency buckets over time (heatmap) |
+
+### Errors
+
+| Query | What it tells you |
+|---|---|
+| `errors_total` | Total errored requests over the window |
+| `error_rate_ts` | Fraction of errored requests over time |
+| `top_error_routes` | Top routes by errored request count |
+
+### Top consumers and entities
+
+| Query | What it tells you |
+|---|---|
+| `requests_by_route` | Top routes by request count |
+| `requests_by_api` | Top APIs by request count |
+| `requests_by_apikey` | Top API keys (most active integrators / customers) |
+| `requests_by_user` | Top end-users (when authenticated via private apps) |
+| `requests_by_domain` | Top hostnames hitting your gateway |
+| `requests_by_country` | Geographic breakdown |
+
+Every query supports the same filters — route, API, API key, group, time window — so you can scope any of them to a specific slice of your traffic. Most timeseries queries also support the **Compare period** overlay for week-over-week or day-over-day visual checks.
+
+Need something the catalogue doesn't have? Any Otoroshi extension can register additional queries — they show up in the dashboard widget picker and the alert conditions editor with no further work.
+
 ## Filters that follow you everywhere
 
 Every dashboard has a control bar with:
@@ -81,6 +136,8 @@ Every dashboard has a control bar with:
 - **Manual refresh** plus an **Auto** toggle (10s / 30s / 1m / 5m)
 - **Entity filters** — search any route, API, API key or service group with autocomplete
 - **Compare** toggle to overlay the previous period on every time series
+
+<Image src="/img/docs/user-dashboards/user-dashboard-inputs.png" />
 
 Click any bar in a "Top routes / APIs / API keys" chart and the whole dashboard reroutes onto that entity. Keep diving.
 
@@ -94,6 +151,8 @@ You can also link directly **from a route, API or API key detail page** into a p
 
 Threshold alerts ride on the same query catalogue as your dashboards.
 
+<Image src="/img/docs/user-dashboards/user-alerts-home.png" />
+
 ### Define an alert
 
 **User Alerts → New Alert.** Give it a name, a severity (`info` / `warning` / `critical`), a time window (e.g. last 5 minutes), and one or more conditions. Each condition is a one-liner:
@@ -103,6 +162,8 @@ Threshold alerts ride on the same query catalogue as your dashboards.
 You can scope a condition to a specific route, API, API key or group. Combine multiple conditions with **AND** or **OR**.
 
 The visual conditions editor lets you build it without writing a line of JSON. Power users can flip to JSON view at any time.
+
+<Image src="/img/docs/user-dashboards/user-alert-edit.png" />
 
 ### Tune the noise
 
@@ -121,6 +182,12 @@ Every firing is also persisted, so you have a permanent searchable log per alert
 - See every firing with its severity, message, and a snapshot of the matched conditions (with the actual value vs the threshold)
 - Filter by `unseen` / `seen` / `all`
 - Mark an event as seen — or **Mark all seen** to wipe the inbox in one click
+
+<Image src="/img/docs/user-dashboards/user-alert-trail.png" />
+
+Click any firing to open a detailed breakdown of the conditions that fired it, with the observed value next to the configured threshold:
+
+<Image src="/img/docs/user-dashboards/user-alert-trail-details.png" />
 
 ## Tenant-aware by design
 
