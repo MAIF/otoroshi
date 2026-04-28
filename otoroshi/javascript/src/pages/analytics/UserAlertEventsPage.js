@@ -282,6 +282,7 @@ export class UserAlertEventsPage extends Component {
         <button
           key={f}
           type="button"
+          style={{ marginRight: 5 }}
           className={`btn btn-sm btn-cta ${this.state.filter === f ? 'btn-primary' : 'btn-outline-secondary'}`}
           onClick={() => this.changeFilter(f)}
         >

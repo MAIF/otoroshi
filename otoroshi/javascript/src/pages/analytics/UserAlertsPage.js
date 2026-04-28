@@ -32,6 +32,29 @@ const NEW_ALERT_TEMPLATE = () => ({
   ],
 });
 
+function AlertNav({ rawValue }) {
+  return (
+    <div className="row mb-3">
+      <label className="col-xs-12 col-sm-2 col-form-label"></label>
+      <div className="col-sm-10">
+        <Link
+          to={`/user-alert-events/${rawValue.id}`}
+          className="btn btn-secondary btn-sm"
+        >
+          <i className="fas fa-bell" /> View fired events
+        </Link>
+        <Link
+          to="/user-alerts"
+          className="btn btn-secondary btn-sm"
+          style={{ marginLeft: 5 }}
+        >
+          <i className="fas fa-th-list" /> All alerts
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 const SEVERITY_BADGE = {
   info: { label: 'info', color: '#2196f3' },
   warning: { label: 'warning', color: '#ff9800' },
@@ -110,6 +133,7 @@ export class UserAlertsPage extends Component {
     },
     tags: { type: 'array', props: { label: 'Tags' } },
     metadata: { type: 'object', props: { label: 'Metadata' } },
+    nav: { type: AlertNav },
   };
 
   formFlow = [
@@ -118,6 +142,7 @@ export class UserAlertsPage extends Component {
     'name',
     'description',
     'enabled',
+    'nav',
     '<<< Trigger',
     'severity',
     'message',
