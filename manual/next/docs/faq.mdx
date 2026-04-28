@@ -88,7 +88,7 @@ Typical promotion patterns:
 ### Is there a CI/CD path for APIs?
 
 Yes. The whole gateway is API-first and declarative, so the standard pattern
-is **Git PR → CI (`otoroshictl diff`) → automated apply** to the target
+is **Git PR → CI (`otoroshictl apply`) → automated apply** to the target
 environment. The same pipeline handles plugins, certificates, auth modules,
 JWT verifiers and data exporters.
 
