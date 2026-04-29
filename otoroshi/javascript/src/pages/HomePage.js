@@ -58,7 +58,7 @@ function EntityTile({ icon, label, count, to, color }) {
   );
 }
 
-function EntitiesOverview() {
+function EntitiesOverview({ env }) {
   const [counts, setCounts] = useState({});
 
   const ENTITIES = [
@@ -145,7 +145,8 @@ function EntitiesOverview() {
       <div className="hp-section-title">Entities</div>
       <div className="hp-entity-grid">
         <div className="otoroshi-tile">
-          <img src="/assets/images/otoroshi-logo-color.png" width={64} />
+          {/*<img src="/assets/images/otoroshi-logo-color.png" width={64} />*/}
+          {env && <img src={env.otoroshiLogo} className="logoOtoroshi" width={64} />}
           <div className="otoroshi-tile-header">
             {/* <h3>Otoroshi</h3> */}
 
@@ -490,7 +491,7 @@ export class HomePage extends Component {
             </a>
           </div>
         )}
-        <EntitiesOverview />
+        <EntitiesOverview env={this.props.env} />
         <ApiStatesPieChart>
           <ClusterMetrics env={this.props.env} />
         </ApiStatesPieChart>
