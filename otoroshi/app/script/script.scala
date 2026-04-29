@@ -1038,7 +1038,7 @@ class ScriptManager(env: Env) {
 
   private val printPlugins =
     env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)
-  logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
+  logger.info(s"Found ${ngNames.distinct.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
   if (printPlugins) logger.info("\n\n" + allPlugins.map(s => s" - $s").mkString("\n") + "\n")
   if (printPlugins && blackListedPlugins.nonEmpty) logger.info("Blacklisted plugins")
   if (printPlugins && blackListedPlugins.nonEmpty)
