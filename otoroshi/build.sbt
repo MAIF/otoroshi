@@ -187,10 +187,24 @@ libraryDependencies ++= Seq(
   //   ExclusionRule("ch.qos.logback"),
   //   ExclusionRule("org.slf4j"),
   // ),
-  "org.reflections"                  % "reflections"                          % "0.10.2",
-  "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
-  "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
-  "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
+  // "org.reflections"                  % "reflections"                          % "0.10.2",
+  // "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
+  // "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
+  // "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
+  "io.swagger.core.v3"               % "swagger-core-jakarta"          % "2.2.49" excludeAll (
+    ExclusionRule("org.slf4j"),
+    ExclusionRule(organization = "com.fasterxml.jackson.core"),
+    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
+    ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
+    ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
+  ),
+  "com.github.swagger-akka-http"     %% "swagger-scala-module" % "2.15.0" excludeAll (
+    ExclusionRule("org.slf4j"),
+    ExclusionRule(organization = "com.fasterxml.jackson.core"),
+    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
+    ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
+    ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
+  ),
   // using a custom one right now as current build is broken
   //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
   if (scalaLangVersion.startsWith("2.12")) {
@@ -301,6 +315,7 @@ assembly / assemblyMergeStrategy := { e =>
     case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
     case PathList("com", "sun", "xml", xs @ _*)                         => MergeStrategy.first
     case PathList("com", "sun", "istack", xs @ _*)                      => MergeStrategy.first
+    case PathList("com", "sun", "activation", xs @ _*)                  => MergeStrategy.first
     case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
     case PathList(ps @ _*) if ps.contains("field_mask.proto")           => MergeStrategy.first // ???
@@ -308,6 +323,7 @@ assembly / assemblyMergeStrategy := { e =>
       MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
     case PathList(ps @ _*) if ps.contains("descriptor.proto")           =>
       MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
+    case PathList(ps @ _*) if ps.contains("mailcap.default")            => MergeStrategy.first // ???
     case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
     case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
     case PathList(ps @ _*) if ps.contains("GuardedBy.class")            => MergeStrategy.first // ???
