@@ -84,13 +84,18 @@ case class ResourceVersion(
 
   def finalSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = {
     schema.getOrElse {
-      Try(
-        Json.parse(
-          org.json4s.jackson.JsonMethods.pretty(
-            fi.oph.scalaschema.SchemaFactory.default.createSchema(clazz).toJson
-          )
-        )
-      ) match {
+      Try {
+        env.metrics.withTimer("generate json schema") {
+          if (env.logger.isDebugEnabled) env.logger.debug("gen schema for: " + kind + " " + clazz.getName)
+          val res = io.swagger.v3.core.converter.ModelConverters.getInstance().readAllAsResolvedSchema(clazz)
+          Json.parse(io.swagger.v3.core.util.Json.mapper().writeValueAsString(res))
+        }
+        //Json.parse(
+        //  org.json4s.jackson.JsonMethods.pretty(
+        //    fi.oph.scalaschema.SchemaFactory.default.createSchema(clazz).toJson
+        //  )
+        //)
+      } match {
         case Failure(e) => {
           env.logger.error(s"failing reflection on '${kind}'", e)
           Json.obj("type" -> "object", "description" -> s"A resource of kind ${kind}")
@@ -814,44 +819,7 @@ class OtoroshiResources(env: Env) {
         true,
         false,
         true,
-        Some(
-          Json.obj(
-            "type"        -> "object",
-            "description" -> "The otoroshi model for a group of services",
-            "properties"  -> Json.obj(
-              "id"          -> Json.obj(
-                "type"        -> "string",
-                "description" -> "A unique random string to identify your service"
-              ),
-              "_loc"        -> Json.obj(
-                "$ref"        -> "#/components/schemas/otoroshi.models.EntityLocation",
-                "description" -> "Entity location"
-              ),
-              "name"        -> Json.obj(
-                "type"        -> "string",
-                "description" -> "The name of your service. Only for debug and human readability purposes"
-              ),
-              "metadata"    -> Json.obj(
-                "type"                 -> "object",
-                "additionalProperties" -> Json.obj(
-                  "type" -> "string"
-                ),
-                "description"          -> "Just a bunch of random properties"
-              ),
-              "description" -> Json.obj(
-                "type"        -> "string",
-                "description" -> "Entity description"
-              ),
-              "tags"        -> Json.obj(
-                "type"        -> "array",
-                "items"       -> Json.obj(
-                  "type" -> "string"
-                ),
-                "description" -> "Entity tags"
-              )
-            )
-          )
-        )
+        None
       ),
       GenericResourceAccessApiWithState[ServiceGroup](
         ServiceGroup._fmt,
