@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-topics/generic-resource-api" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.9.2">
+<title data-rh="true">Generic Admin API (/apis/...) | Otoroshi</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png"><meta data-rh="true" name="twitter:image" content="https://maif.github.io/otoroshi/devmanual/img/otoroshi-social-card.png"><meta data-rh="true" property="og:url" content="https://maif.github.io/otoroshi/devmanual/docs/topics/generic-resource-api"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Generic Admin API (/apis/...) | Otoroshi"><meta data-rh="true" name="description" content="Most entities managed by Otoroshi (routes, API keys, certificates, auth modules, JWT verifiers, data exporters, custom extension entities, …) are exposed through a single, uniform, resource-oriented HTTP API rooted at /apis/. The dashboard itself is a regular consumer of that API."><meta data-rh="true" property="og:description" content="Most entities managed by Otoroshi (routes, API keys, certificates, auth modules, JWT verifiers, data exporters, custom extension entities, …) are exposed through a single, uniform, resource-oriented HTTP API rooted at /apis/. The dashboard itself is a regular consumer of that API."><link data-rh="true" rel="icon" href="/otoroshi/devmanual/img/favicon.png"><link data-rh="true" rel="canonical" href="https://maif.github.io/otoroshi/devmanual/docs/topics/generic-resource-api"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/devmanual/docs/topics/generic-resource-api" hreflang="en"><link data-rh="true" rel="alternate" href="https://maif.github.io/otoroshi/devmanual/docs/topics/generic-resource-api" hreflang="x-default"><link rel="alternate" type="application/rss+xml" href="/otoroshi/devmanual/blog/rss.xml" title="Otoroshi RSS Feed">
+<link rel="alternate" type="application/atom+xml" href="/otoroshi/devmanual/blog/atom.xml" title="Otoroshi Atom Feed"><link rel="stylesheet" href="/otoroshi/devmanual/assets/css/styles.3a48ec6c.css">
+<script src="/otoroshi/devmanual/assets/js/runtime~main.7d72e5e2.js" defer="defer"></script>
+<script src="/otoroshi/devmanual/assets/js/main.1e465176.js" defer="defer"></script>
+</head>
+<body class="navigation-with-keyboard">
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const n=new URLSearchParams(window.location.search).entries();for(var[t,e]of n)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}(),document.documentElement.setAttribute("data-announcement-bar-initially-dismissed",function(){try{return"true"===localStorage.getItem("docusaurus.announcement.dismiss")}catch(t){}return!1}())</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><div class="theme-announcement-bar announcementBar_mb4j" style="background-color:#f9b000;color:#1b1b1d" role="banner"><div class="announcementBarPlaceholder_vyr4"></div><div class="content_knG7 announcementBarContent_xLdY">If you like Otoroshi, give it a <a target="_blank" rel="noopener noreferrer" href="https://github.com/MAIF/otoroshi">star on GitHub</a>!</div><button type="button" aria-label="Close" class="clean-btn close closeButton_CVFx announcementBarClose_gvF7"><svg viewBox="0 0 15 15" width="14" height="14"><g stroke="currentColor" stroke-width="3.1"><path d="M.75.75l13.5 13.5M14.25.75L.75 14.25"></path></g></svg></button></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/otoroshi/devmanual/"><div class="navbar__logo"><img src="/otoroshi/devmanual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/otoroshi/devmanual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Otoroshi</b></a><a class="navbar__item navbar__link" href="/otoroshi/devmanual/docs/">Documentation</a><a class="navbar__item navbar__link" href="/otoroshi/devmanual/api-reference">API Reference</a><a class="navbar__item navbar__link" href="/otoroshi/devmanual/blog">Blog</a><a class="navbar__item navbar__link" href="/otoroshi/devmanual/ecosystem">Ecosystem</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input searchInput_YFbd" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><main class="docMainContainer_TBSr docMainContainerEnhanced_lQrH"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Generic Admin API (<code>/apis/...</code>)</h1></header>
+<p>Most entities managed by Otoroshi (routes, API keys, certificates, auth modules, JWT verifiers, data exporters, custom extension entities, …) are exposed through a single, uniform, resource-oriented HTTP API rooted at <code>/apis/</code>. The dashboard itself is a regular consumer of that API.</p>
+<p>This page documents that API surface in depth: URL layout, supported features and the query string options that work uniformly across all resources.</p>
+<p>If you are looking for the high-level overview of the admin API or for the OpenAPI descriptor, see <a class="" href="/otoroshi/devmanual/docs/api">Admin REST API</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="resource-model">Resource model<a href="#resource-model" class="hash-link" aria-label="Direct link to Resource model" title="Direct link to Resource model" translate="no">​</a></h2>
+<p>Every entity managed by Otoroshi is exposed as a <strong>resource</strong> identified by:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Description</th><th>Example</th></tr></thead><tbody><tr><td><code>group</code></td><td>API group, similar to a Kubernetes API group</td><td><code>proxy.otoroshi.io</code></td></tr><tr><td><code>version</code></td><td>API version (<code>v1</code>, <code>v2</code>, …). A version may be <code>served</code>, <code>deprecated</code> and/or be the storage version</td><td><code>v1</code></td></tr><tr><td><code>kind</code></td><td>Resource kind (singular, PascalCase)</td><td><code>Route</code>, <code>ApiKey</code></td></tr><tr><td><code>pluralName</code></td><td>Plural form used in URLs</td><td><code>routes</code>, <code>apikeys</code></td></tr><tr><td><code>singularName</code></td><td>Singular form used in URLs and audit messages</td><td><code>route</code>, <code>apikey</code></td></tr></tbody></table>
+<p>Resources are auto-registered: built-in entities are exposed by default and any <a class="" href="/otoroshi/devmanual/docs/topics/admin-extensions">admin extension</a> can register additional resources that immediately get the same admin API surface.</p>
+<p>You can list all resources currently served by an instance — including their JSON schema — at:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/entities</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/entities?schema=false   # without JSON Schemas (lighter response)</span><br></span></code></pre></div></div>
+<p>The response contains the Otoroshi version and an array of resource descriptors (group, version, kind, plural / singular name, schema).</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="url-conventions">URL conventions<a href="#url-conventions" class="hash-link" aria-label="Direct link to URL conventions" title="Direct link to URL conventions" translate="no">​</a></h2>
+<p>All generic endpoints live under <code>/apis/{group}/{version}/{pluralName}</code> and follow this layout:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>URL</th><th>Purpose</th></tr></thead><tbody><tr><td><code>GET</code></td><td><code>/apis/{group}/{version}/{entity}</code></td><td>List all resources of this kind</td></tr><tr><td><code>POST</code></td><td><code>/apis/{group}/{version}/{entity}</code></td><td>Create a new resource</td></tr><tr><td><code>DELETE</code></td><td><code>/apis/{group}/{version}/{entity}</code></td><td>Delete all resources matching the caller&#x27;s permissions</td></tr><tr><td><code>GET</code></td><td><code>/apis/{group}/{version}/{entity}/{id}</code></td><td>Read a single resource</td></tr><tr><td><code>POST</code></td><td><code>/apis/{group}/{version}/{entity}/{id}</code></td><td>Upsert (create if missing, update otherwise)</td></tr><tr><td><code>PUT</code></td><td><code>/apis/{group}/{version}/{entity}/{id}</code></td><td>Full update (resource must exist)</td></tr><tr><td><code>PATCH</code></td><td><code>/apis/{group}/{version}/{entity}/{id}</code></td><td>Partial update (see <a href="#patch-formats" class="">Patch formats</a>)</td></tr><tr><td><code>DELETE</code></td><td><code>/apis/{group}/{version}/{entity}/{id}</code></td><td>Delete a single resource</td></tr><tr><td><code>GET</code></td><td><code>/apis/{group}/{version}/{entity}/_count</code></td><td>Count visible resources</td></tr><tr><td><code>GET</code></td><td><code>/apis/{group}/{version}/{entity}/_template</code></td><td>Default template for a new resource</td></tr><tr><td><code>GET</code></td><td><code>/apis/{group}/{version}/{entity}/_schema</code></td><td>JSON Schema for the resource</td></tr><tr><td><code>POST</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td>Bulk create (NDJSON)</td></tr><tr><td><code>PUT</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td>Bulk update (NDJSON)</td></tr><tr><td><code>PATCH</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td>Bulk patch (NDJSON)</td></tr><tr><td><code>DELETE</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td>Bulk delete (NDJSON)</td></tr></tbody></table>
+<p><code>{entity}</code> accepts both the resource <code>pluralName</code> and its <code>kind</code> (e.g. <code>routes</code> or <code>Route</code>). <code>{group}</code> and <code>{version}</code> accept the literal value <code>any</code> (or <code>all</code>) as a wildcard, useful for tooling that doesn&#x27;t care about a specific version.</p>
+<p>Each operation goes through:</p>
+<ol>
+<li class=""><strong>Authentication</strong> — admin API key (<code>Authorization: Basic</code>) or backoffice session.</li>
+<li class=""><strong>Per-operation authorization</strong> — a resource exposes flags <code>canRead</code>, <code>canCreate</code>, <code>canUpdate</code>, <code>canDelete</code>, <code>canBulk</code>. Disallowed operations return <code>401 Unauthorized</code>.</li>
+<li class=""><strong>Multi-tenancy / RBAC</strong> — the response is filtered to the resources the caller is allowed to read; write operations are refused if the caller cannot write the targeted entity.</li>
+<li class=""><strong>Validation</strong> — for write operations, the body is validated against the resource JSON Schema (auto-generated by reflection) and any custom write validation hook.</li>
+<li class=""><strong>Audit</strong> — every mutation produces an <code>AdminApiEvent</code> and most produce a typed <code>Alert</code> (e.g. <code>RouteCreated</code>, <code>ApiKeyDeleted</code>).</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="authentication">Authentication<a href="#authentication" class="hash-link" aria-label="Direct link to Authentication" title="Direct link to Authentication" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Authorization: Basic &lt;base64(client_id:client_secret)&gt;</span><br></span></code></pre></div></div>
+<p>Credentials are a backoffice admin API key (managed in the dashboard or via the API itself). When called from the dashboard, a session cookie is used instead.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="content-negotiation">Content negotiation<a href="#content-negotiation" class="hash-link" aria-label="Direct link to Content negotiation" title="Direct link to Content negotiation" translate="no">​</a></h2>
+<p>The admin API negotiates request and response formats using the standard <code>Content-Type</code> and <code>Accept</code> headers.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="request-bodies">Request bodies<a href="#request-bodies" class="hash-link" aria-label="Direct link to Request bodies" title="Direct link to Request bodies" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><code>Content-Type</code></th><th>Behaviour</th></tr></thead><tbody><tr><td><code>application/json</code></td><td>Standard JSON body</td></tr><tr><td><code>application/yaml</code></td><td>YAML body. If the body looks Kubernetes-armored (<code>apiVersion</code> + <code>spec</code>), the <code>spec</code> is unwrapped automatically and <code>metadata.name</code> / <code>spec.name</code> is used as the entity name</td></tr><tr><td><code>application/json+oto-patch</code></td><td>Compact &quot;dot-path&quot; patch — see <a href="#patch-formats" class="">Patch formats</a></td></tr><tr><td><code>application/x-www-form-urlencoded</code></td><td>Form-encoded body using dot-paths (<code>a.b.c=value</code>)</td></tr><tr><td><code>application/x-ndjson</code></td><td>Required for <code>_bulk</code> endpoints — one JSON object per line</td></tr></tbody></table>
+<p>Any other content type returns <code>400 bad_content_type</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="response-formats">Response formats<a href="#response-formats" class="hash-link" aria-label="Direct link to Response formats" title="Direct link to Response formats" translate="no">​</a></h3>
+<p>The response format is selected from the <code>Accept</code> header (the first acceptable type wins):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><code>Accept</code></th><th>Response</th></tr></thead><tbody><tr><td><code>application/json</code> (default)</td><td>Standard JSON</td></tr><tr><td><code>application/yaml</code> / <code>application/yml</code></td><td>YAML representation of the entity (with a <code>kind</code> field added)</td></tr><tr><td><code>application/yaml+k8s</code> / <code>application/yml+k8s</code></td><td>Kubernetes-style envelope: <code>apiVersion</code>, <code>kind</code>, <code>metadata.name</code>, <code>spec</code></td></tr><tr><td><code>application/x-ndjson</code></td><td>One JSON object per line — only applicable when listing</td></tr></tbody></table>
+<p>Responses are gzipped automatically (except <code>x-ndjson</code>). YAML + Kubernetes-style is convenient when piping responses into <code>kubectl apply -f -</code> against a cluster running the Otoroshi CRDs.</p>
+<p>When negotiating JSON, two query parameters tweak the output:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Query string</th><th>Default</th><th>Effect</th></tr></thead><tbody><tr><td><code>pretty</code></td><td><code>true</code></td><td><code>pretty=true</code> forces pretty-printing, <code>pretty=false</code> returns compact JSON. Default is controlled by <code>otoroshi.options.defaultPrettyAdminApi</code></td></tr><tr><td><code>envelope</code></td><td><code>false</code></td><td><code>envelope=true</code> wraps the payload in <code>{ &quot;data&quot;: ... }</code></td></tr></tbody></table>
+<p>A <code>kind</code> field is added to every JSON / YAML entity in the response, in the form <code>pluralName.group/version</code> (e.g. <code>routes.proxy.otoroshi.io/v1</code>). This makes individual responses self-describing.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="listing--filtering-sorting-pagination-projection">Listing — filtering, sorting, pagination, projection<a href="#listing--filtering-sorting-pagination-projection" class="hash-link" aria-label="Direct link to Listing — filtering, sorting, pagination, projection" title="Direct link to Listing — filtering, sorting, pagination, projection" translate="no">​</a></h2>
+<p><code>GET /apis/{group}/{version}/{entity}</code> accepts a rich set of query parameters that are evaluated <strong>server-side</strong> in the following order: <strong>filter → sort → paginate → project</strong>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="filtering">Filtering<a href="#filtering" class="hash-link" aria-label="Direct link to Filtering" title="Direct link to Filtering" translate="no">​</a></h3>
+<p>There are two filtering modes that can be combined.</p>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="filterfieldvalue--exact-match"><code>filter.&lt;field&gt;=&lt;value&gt;</code> — exact match<a href="#filterfieldvalue--exact-match" class="hash-link" aria-label="Direct link to filterfieldvalue--exact-match" title="Direct link to filterfieldvalue--exact-match" translate="no">​</a></h4>
+<p><code>filter.&lt;path&gt;=&lt;value&gt;</code> keeps entities whose value at <code>path</code> matches exactly. The <code>path</code> syntax determines how the value is looked up:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Syntax</th><th>Lookup</th></tr></thead><tbody><tr><td><code>filter.name=foo</code></td><td>Top-level field</td></tr><tr><td><code>filter.metadata.team=payments</code></td><td>Dotted path (<code>a.b.c</code>)</td></tr><tr><td><code>filter./spec/enabled=true</code></td><td>JSON Pointer (RFC 6901) when the path contains <code>/</code></td></tr><tr><td><code>filter.$.path.to.field=value</code></td><td>JSONPath when the key starts with <code>$</code> and contains a dot</td></tr></tbody></table>
+<p>Filters apply to the following JSON types:</p>
+<ul>
+<li class="">strings (exact equality)</li>
+<li class="">booleans (<code>true</code> / <code>false</code>)</li>
+<li class="">numbers</li>
+<li class="">arrays (matches if any element equals or contains the value)</li>
+</ul>
+<p>All <code>filter.*</code> parameters are AND-ed.</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?filter.enabled=true&amp;filter.metadata.team=payments</span><br></span></code></pre></div></div>
+<h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="filteredfieldvalue--substring-search"><code>filtered=&lt;field&gt;:&lt;value&gt;,...</code> — substring search<a href="#filteredfieldvalue--substring-search" class="hash-link" aria-label="Direct link to filteredfieldvalue--substring-search" title="Direct link to filteredfieldvalue--substring-search" translate="no">​</a></h4>
+<p>The <code>filtered</code> parameter applies a <strong>case-insensitive substring search</strong> over one or more fields. Multiple criteria are comma-separated, multiple alternatives for the same field are pipe-separated:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain"># routes whose name contains &quot;user&quot; AND whose description contains &quot;internal&quot;</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?filtered=name:user,description:internal</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"># routes whose name contains &quot;user&quot; OR &quot;admin&quot;</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?filtered=name:user|admin</span><br></span></code></pre></div></div>
+<p>This is the mode used by the dashboard&#x27;s search boxes.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="sorting">Sorting<a href="#sorting" class="hash-link" aria-label="Direct link to Sorting" title="Direct link to Sorting" translate="no">​</a></h3>
+<p><code>sorted=&lt;field&gt;:&lt;reverse&gt;,...</code>, where <code>&lt;reverse&gt;</code> is a boolean (<code>true</code> to reverse, <code>false</code> for natural order). Multiple sort fields are applied in order. Numbers are sorted numerically, everything else lexicographically (case-insensitive).</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?sorted=name:false</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?sorted=metadata.priority:true,name:false</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="pagination">Pagination<a href="#pagination" class="hash-link" aria-label="Direct link to Pagination" title="Direct link to Pagination" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Query string</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>page</code></td><td><code>1</code></td><td>1-based page index</td></tr><tr><td><code>pageSize</code></td><td>unlimited</td><td>Page size (number of items per page)</td></tr></tbody></table>
+<p>The response includes an <code>X-Pages</code> header with the total number of pages so clients can build pagination UIs without an extra count call.</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?page=2&amp;pageSize=50</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="projection--fields">Projection — <code>fields</code><a href="#projection--fields" class="hash-link" aria-label="Direct link to projection--fields" title="Direct link to projection--fields" translate="no">​</a></h3>
+<p><code>fields=&lt;f1&gt;,&lt;f2&gt;,...</code> returns only the requested fields, reducing payload size. Nested fields are supported using the same path syntax as filters.</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes?fields=id,name,frontend.domains</span><br></span></code></pre></div></div>
+<p>When listing, projection is applied to each item; on a single-resource response, projection is applied to the object.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="combined-example">Combined example<a href="#combined-example" class="hash-link" aria-label="Direct link to Combined example" title="Direct link to Combined example" translate="no">​</a></h3>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    ?filter.enabled=true</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;filtered=name:public</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;sorted=name:false</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;page=1</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;pageSize=20</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;fields=id,name,frontend.domains</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;envelope=true</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">    &amp;pretty=false</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="in_mem-shortcut"><code>in_mem</code> shortcut<a href="#in_mem-shortcut" class="hash-link" aria-label="Direct link to in_mem-shortcut" title="Direct link to in_mem-shortcut" translate="no">​</a></h3>
+<p><code>in_mem=true</code> reads entities from the local in-memory state instead of the datastore. This is significantly faster when the dataset is large but only sees the local node&#x27;s view; for cluster-wide reads, leave it off.</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">GET /apis/proxy.otoroshi.io/v1/routes/_count?in_mem=true</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="patch-formats">Patch formats<a href="#patch-formats" class="hash-link" aria-label="Direct link to Patch formats" title="Direct link to Patch formats" translate="no">​</a></h2>
+<p><code>PATCH</code> accepts three different body formats, distinguished by <code>Content-Type</code>:</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="applicationjson--json-patch-rfc-6902"><code>application/json</code> — JSON Patch (RFC 6902)<a href="#applicationjson--json-patch-rfc-6902" class="hash-link" aria-label="Direct link to applicationjson--json-patch-rfc-6902" title="Direct link to applicationjson--json-patch-rfc-6902" translate="no">​</a></h3>
+<p>Standard JSON Patch — an array of <code>{op, path, value}</code> operations.</p>
+<div class="language-http codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-http codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">PATCH /apis/proxy.otoroshi.io/v1/routes/route_xxx</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Content-Type: application/json</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">[</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  { &quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/enabled&quot;, &quot;value&quot;: false },</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  { &quot;op&quot;: &quot;add&quot;, &quot;path&quot;: &quot;/metadata/owner&quot;, &quot;value&quot;: &quot;team-payments&quot; }</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">]</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="applicationjsonoto-patch--dot-path-patch"><code>application/json+oto-patch</code> — dot-path patch<a href="#applicationjsonoto-patch--dot-path-patch" class="hash-link" aria-label="Direct link to applicationjsonoto-patch--dot-path-patch" title="Direct link to applicationjsonoto-patch--dot-path-patch" translate="no">​</a></h3>
+<p>A compact format Otoroshi understands: an array of <code>{path, value}</code> objects where <code>path</code> uses dot notation. The current resource is used as the default base, allowing very small patches:</p>
+<div class="language-http codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-http codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">PATCH /apis/proxy.otoroshi.io/v1/routes/route_xxx</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Content-Type: application/json+oto-patch</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">[</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  { &quot;path&quot;: &quot;enabled&quot;, &quot;value&quot;: &quot;false&quot; },</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  { &quot;path&quot;: &quot;metadata.owner&quot;, &quot;value&quot;: &quot;team-payments&quot; }</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">]</span><br></span></code></pre></div></div>
+<p>String values are auto-coerced (<code>&quot;true&quot;</code> / <code>&quot;false&quot;</code> → boolean, numeric strings → number, <code>{...}</code> / <code>[...]</code> → object/array, <code>&quot;null&quot;</code> → null).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="applicationx-www-form-urlencoded--form-encoded-patch"><code>application/x-www-form-urlencoded</code> — form-encoded patch<a href="#applicationx-www-form-urlencoded--form-encoded-patch" class="hash-link" aria-label="Direct link to applicationx-www-form-urlencoded--form-encoded-patch" title="Direct link to applicationx-www-form-urlencoded--form-encoded-patch" translate="no">​</a></h3>
+<p>Same dot-path semantics but expressed as a form body, useful for HTML forms:</p>
+<div class="language-http codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-http codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">PATCH /apis/proxy.otoroshi.io/v1/routes/route_xxx</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Content-Type: application/x-www-form-urlencoded</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">enabled=false&amp;metadata.owner=team-payments</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="bulk-operations">Bulk operations<a href="#bulk-operations" class="hash-link" aria-label="Direct link to Bulk operations" title="Direct link to Bulk operations" translate="no">​</a></h2>
+<p>Bulk endpoints stream <strong>NDJSON</strong> (newline-delimited JSON) in both directions, allowing very large operations without loading everything in memory.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Method</th><th>URL</th><th>Body line</th><th>Output line</th></tr></thead><tbody><tr><td><code>POST</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td>A full entity</td><td><code>{status, created, id, id_field}</code> or <code>{status, error, error_description, entity}</code></td></tr><tr><td><code>PUT</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td>A full entity (must exist)</td><td><code>{status, updated, id, id_field}</code> or error line</td></tr><tr><td><code>PATCH</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td><code>{ id: &quot;...&quot;, patch: [ ...JSON Patch ops... ] }</code></td><td><code>{status, updated, id, id_field}</code> or error line</td></tr><tr><td><code>DELETE</code></td><td><code>/apis/{group}/{version}/{entity}/_bulk</code></td><td><code>{ id: &quot;...&quot; }</code></td><td><code>{status, deleted, id, id_field}</code> or error line</td></tr></tbody></table>
+<p>All bulk endpoints require <code>Content-Type: application/x-ndjson</code>.</p>
+<p>The query parameter <code>_group=&lt;n&gt;</code> (1-9) controls how many entries are processed concurrently. Default is <code>1</code> (sequential).</p>
+<div class="language-http codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-http codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">POST /apis/proxy.otoroshi.io/v1/routes/_bulk</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">Content-Type: application/x-ndjson</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">{&quot;id&quot;:&quot;route_a&quot;,&quot;name&quot;:&quot;a&quot;,&quot;frontend&quot;:{...},&quot;backend&quot;:{...}}</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">{&quot;id&quot;:&quot;route_b&quot;,&quot;name&quot;:&quot;b&quot;,&quot;frontend&quot;:{...},&quot;backend&quot;:{...}}</span><br></span></code></pre></div></div>
+<p>Response (also NDJSON):</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">{&quot;status&quot;:201,&quot;created&quot;:true,&quot;id&quot;:&quot;route_a&quot;,&quot;id_field&quot;:&quot;id&quot;}</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">{&quot;status&quot;:400,&quot;error&quot;:&quot;bad_entity&quot;,&quot;error_description&quot;:&quot;entity already exists&quot;,&quot;entity&quot;:{...}}</span><br></span></code></pre></div></div>
+<p>A bulk endpoint never returns a single <code>4xx</code> for the whole stream — each line carries its own status, so partial successes are normal.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="templates-and-schemas">Templates and schemas<a href="#templates-and-schemas" class="hash-link" aria-label="Direct link to Templates and schemas" title="Direct link to Templates and schemas" translate="no">​</a></h2>
+<p>Two helpers are available to build clients, forms or generators:</p>
+<ul>
+<li class=""><code>GET /apis/{group}/{version}/{entity}/_template</code> returns a sensible default JSON for the resource. Query parameters are forwarded to the template builder, allowing customisation (e.g. <code>?domain=api.example.com</code>).</li>
+<li class=""><code>GET /apis/{group}/{version}/{entity}/_schema</code> returns the JSON Schema for the resource (auto-generated by reflection unless overridden).</li>
+<li class=""><code>GET /apis/entities</code> returns the full catalog of resources with their schemas.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="response-headers">Response headers<a href="#response-headers" class="hash-link" aria-label="Direct link to Response headers" title="Direct link to Response headers" translate="no">​</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Header</th><th>Where</th><th>Meaning</th></tr></thead><tbody><tr><td><code>X-Pages</code></td><td>List endpoints</td><td>Total number of pages, given the current <code>pageSize</code>. <code>-1</code> for non-paginated</td></tr><tr><td><code>Otoroshi-Api-Deprecated</code></td><td>Any</td><td><code>yes</code> if the requested resource version is marked deprecated. Plan your migration</td></tr><tr><td><code>Otoroshi-Entity-Updated</code></td><td><code>POST /:id</code></td><td><code>true</code> / <code>false</code> — whether the upsert actually changed the stored entity</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="status-codes">Status codes<a href="#status-codes" class="hash-link" aria-label="Direct link to Status codes" title="Direct link to Status codes" translate="no">​</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Code</th><th>When</th></tr></thead><tbody><tr><td>200</td><td>Successful read, update, delete</td></tr><tr><td>201</td><td>Successful create (<code>POST /apis/{group}/{version}/{entity}</code>)</td></tr><tr><td>204</td><td><code>DELETE /apis/{group}/{version}/{entity}</code> (delete all)</td></tr><tr><td>400</td><td>Validation error, unsupported content type, bad request body</td></tr><tr><td>401</td><td>Authentication missing / invalid, or operation forbidden by RBAC or resource flags</td></tr><tr><td>404</td><td>Resource (kind or <code>id</code>) not found</td></tr><tr><td>5xx</td><td>Storage / unexpected internal errors</td></tr></tbody></table>
+<p>Errors are always JSON objects of the form:</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-json codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token punctuation" style="color:#393A34">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;error&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;bad_request&quot;</span><span class="token punctuation" style="color:#393A34">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token property" style="color:#36acaa">&quot;error_description&quot;</span><span class="token operator" style="color:#393A34">:</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;&lt;details&gt;&quot;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain"></span><span class="token punctuation" style="color:#393A34">}</span><br></span></code></pre></div></div>
+<p>Validation errors include the list of failed validators in <code>error_description</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="examples">Examples<a href="#examples" class="hash-link" aria-label="Direct link to Examples" title="Direct link to Examples" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="list-with-pagination-and-filtering">List with pagination and filtering<a href="#list-with-pagination-and-filtering" class="hash-link" aria-label="Direct link to List with pagination and filtering" title="Direct link to List with pagination and filtering" translate="no">​</a></h3>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token function" style="color:#d73a49">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-u</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;</span><span class="token string variable" style="color:#36acaa">$ID</span><span class="token string" style="color:#e3116c">:</span><span class="token string variable" style="color:#36acaa">$SECRET</span><span class="token string" style="color:#e3116c">&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token string" style="color:#e3116c">&quot;http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes\</span><br></span><span class="token-line" style="color:#393A34"><span class="token string" style="color:#e3116c">?filter.enabled=true\</span><br></span><span class="token-line" style="color:#393A34"><span class="token string" style="color:#e3116c">&amp;filtered=name:public\</span><br></span><span class="token-line" style="color:#393A34"><span class="token string" style="color:#e3116c">&amp;sorted=name:false\</span><br></span><span class="token-line" style="color:#393A34"><span class="token string" style="color:#e3116c">&amp;page=1&amp;pageSize=20\</span><br></span><span class="token-line" style="color:#393A34"><span class="token string" style="color:#e3116c">&amp;fields=id,name,frontend.domains&quot;</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="create-from-yaml">Create from YAML<a href="#create-from-yaml" class="hash-link" aria-label="Direct link to Create from YAML" title="Direct link to Create from YAML" translate="no">​</a></h3>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token function" style="color:#d73a49">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-u</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;</span><span class="token string variable" style="color:#36acaa">$ID</span><span class="token string" style="color:#e3116c">:</span><span class="token string variable" style="color:#36acaa">$SECRET</span><span class="token string" style="color:#e3116c">&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token parameter variable" style="color:#36acaa">-H</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Content-Type: application/yaml&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  --data-binary @route.yaml </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="patch-a-single-field">Patch a single field<a href="#patch-a-single-field" class="hash-link" aria-label="Direct link to Patch a single field" title="Direct link to Patch a single field" translate="no">​</a></h3>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token function" style="color:#d73a49">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-u</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;</span><span class="token string variable" style="color:#36acaa">$ID</span><span class="token string" style="color:#e3116c">:</span><span class="token string variable" style="color:#36acaa">$SECRET</span><span class="token string" style="color:#e3116c">&quot;</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-X</span><span class="token plain"> PATCH </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token parameter variable" style="color:#36acaa">-H</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Content-Type: application/json+oto-patch&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token parameter variable" style="color:#36acaa">-d</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&#x27;[{&quot;path&quot;:&quot;enabled&quot;,&quot;value&quot;:&quot;false&quot;}]&#x27;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes/route_xxx</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="bulk-create-from-a-file">Bulk create from a file<a href="#bulk-create-from-a-file" class="hash-link" aria-label="Direct link to Bulk create from a file" title="Direct link to Bulk create from a file" translate="no">​</a></h3>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token function" style="color:#d73a49">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-u</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;</span><span class="token string variable" style="color:#36acaa">$ID</span><span class="token string" style="color:#e3116c">:</span><span class="token string variable" style="color:#36acaa">$SECRET</span><span class="token string" style="color:#e3116c">&quot;</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-X</span><span class="token plain"> POST </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token parameter variable" style="color:#36acaa">-H</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Content-Type: application/x-ndjson&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  --data-binary @routes.ndjson </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token string" style="color:#e3116c">&quot;http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes/_bulk?_group=4&quot;</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="export-to-kubernetes-yaml">Export to Kubernetes YAML<a href="#export-to-kubernetes-yaml" class="hash-link" aria-label="Direct link to Export to Kubernetes YAML" title="Direct link to Export to Kubernetes YAML" translate="no">​</a></h3>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token function" style="color:#d73a49">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#36acaa">-u</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;</span><span class="token string variable" style="color:#36acaa">$ID</span><span class="token string" style="color:#e3116c">:</span><span class="token string variable" style="color:#36acaa">$SECRET</span><span class="token string" style="color:#e3116c">&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  </span><span class="token parameter variable" style="color:#36acaa">-H</span><span class="token plain"> </span><span class="token string" style="color:#e3116c">&quot;Accept: application/yaml+k8s&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:#393A34">\</span><span class="token plain"></span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">  http://otoroshi-api.oto.tools:8080/apis/proxy.otoroshi.io/v1/routes/route_xxx</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="other-top-level-apis-endpoints">Other top-level <code>/apis/</code> endpoints<a href="#other-top-level-apis-endpoints" class="hash-link" aria-label="Direct link to other-top-level-apis-endpoints" title="Direct link to other-top-level-apis-endpoints" translate="no">​</a></h2>
+<p>A few non-resource endpoints complete the <code>/apis/</code> surface:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Endpoint</th><th>Description</th></tr></thead><tbody><tr><td><code>GET /apis/health</code></td><td>Health probe — <code>200</code> when healthy, <code>503</code> otherwise</td></tr><tr><td><code>GET /apis/metrics?format=&amp;filter=</code></td><td>Metrics — JSON or Prometheus depending on <code>Accept</code> (<code>application/prometheus</code>) or <code>format</code></td></tr><tr><td><code>GET /apis/cluster</code></td><td>Cluster topology and members</td></tr><tr><td><code>GET /apis/cluster/node/{infos,version,health,metrics}</code></td><td>Per-node introspection endpoints</td></tr><tr><td><code>GET /apis/entities</code></td><td>Catalog of registered resources (with optional JSON Schemas)</td></tr></tbody></table>
+<p>For the OpenAPI descriptor and the <code>/apis/openapi*</code>, <code>/apis/workflows/doc*</code>, <code>/apis/plugins.*</code> documentation endpoints (and how to protect them with a shared secret), see <a class="" href="/otoroshi/devmanual/docs/api">Admin REST API</a>.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"><a href="https://github.com/MAIF/otoroshi/tree/master/manual/next/docs/topics/generic-resource-api.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_Z9Sw" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_JAkA"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#resource-model" class="table-of-contents__link toc-highlight">Resource model</a></li><li><a href="#url-conventions" class="table-of-contents__link toc-highlight">URL conventions</a></li><li><a href="#authentication" class="table-of-contents__link toc-highlight">Authentication</a></li><li><a href="#content-negotiation" class="table-of-contents__link toc-highlight">Content negotiation</a><ul><li><a href="#request-bodies" class="table-of-contents__link toc-highlight">Request bodies</a></li><li><a href="#response-formats" class="table-of-contents__link toc-highlight">Response formats</a></li></ul></li><li><a href="#listing--filtering-sorting-pagination-projection" class="table-of-contents__link toc-highlight">Listing — filtering, sorting, pagination, projection</a><ul><li><a href="#filtering" class="table-of-contents__link toc-highlight">Filtering</a></li><li><a href="#sorting" class="table-of-contents__link toc-highlight">Sorting</a></li><li><a href="#pagination" class="table-of-contents__link toc-highlight">Pagination</a></li><li><a href="#projection--fields" class="table-of-contents__link toc-highlight">Projection — <code>fields</code></a></li><li><a href="#combined-example" class="table-of-contents__link toc-highlight">Combined example</a></li><li><a href="#in_mem-shortcut" class="table-of-contents__link toc-highlight"><code>in_mem</code> shortcut</a></li></ul></li><li><a href="#patch-formats" class="table-of-contents__link toc-highlight">Patch formats</a><ul><li><a href="#applicationjson--json-patch-rfc-6902" class="table-of-contents__link toc-highlight"><code>application/json</code> — JSON Patch (RFC 6902)</a></li><li><a href="#applicationjsonoto-patch--dot-path-patch" class="table-of-contents__link toc-highlight"><code>application/json+oto-patch</code> — dot-path patch</a></li><li><a href="#applicationx-www-form-urlencoded--form-encoded-patch" class="table-of-contents__link toc-highlight"><code>application/x-www-form-urlencoded</code> — form-encoded patch</a></li></ul></li><li><a href="#bulk-operations" class="table-of-contents__link toc-highlight">Bulk operations</a></li><li><a href="#templates-and-schemas" class="table-of-contents__link toc-highlight">Templates and schemas</a></li><li><a href="#response-headers" class="table-of-contents__link toc-highlight">Response headers</a></li><li><a href="#status-codes" class="table-of-contents__link toc-highlight">Status codes</a></li><li><a href="#examples" class="table-of-contents__link toc-highlight">Examples</a><ul><li><a href="#list-with-pagination-and-filtering" class="table-of-contents__link toc-highlight">List with pagination and filtering</a></li><li><a href="#create-from-yaml" class="table-of-contents__link toc-highlight">Create from YAML</a></li><li><a href="#patch-a-single-field" class="table-of-contents__link toc-highlight">Patch a single field</a></li><li><a href="#bulk-create-from-a-file" class="table-of-contents__link toc-highlight">Bulk create from a file</a></li><li><a href="#export-to-kubernetes-yaml" class="table-of-contents__link toc-highlight">Export to Kubernetes YAML</a></li></ul></li><li><a href="#other-top-level-apis-endpoints" class="table-of-contents__link toc-highlight">Other top-level <code>/apis/</code> endpoints</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Documentation</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/getting-started">Getting Started</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/entities">Main Entities</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/topics">Detailed Topics</a></li><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/docs/tutorials">Tutorials</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Community</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://discord.gg/dmbwZrfpcQ" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/discussions" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub Discussions<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://stackoverflow.com/questions/tagged/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">Stack Overflow<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/MAIF/otoroshi" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/MAIF/otoroshi/releases" target="_blank" rel="noopener noreferrer" class="footer__link-item">Releases<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://github.com/orgs/MAIF/projects/20/views/1" target="_blank" rel="noopener noreferrer" class="footer__link-item">Roadmap<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li><li class="footer__item"><a href="https://maif.github.io/" target="_blank" rel="noopener noreferrer" class="footer__link-item">MAIF Open Source<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Ecosystem</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/otoroshi/devmanual/ecosystem">Otoroshi&#x27;s Ecosystem</a></li><li class="footer__item"><a href="https://maif.github.io/daikoku/" target="_blank" rel="noopener noreferrer" class="footer__link-item">Daikoku<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="margin-bottom--sm"><a href="https://www.otoroshi.io/" rel="noopener noreferrer" class="footerLogoLink_BH7S"><img src="/otoroshi/devmanual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--light_NVdE" width="50" height="50"><img src="/otoroshi/devmanual/img/otoroshi-logo.png" alt="Otoroshi Logo" class="footer__logo themedComponent_mlkZ themedComponent--dark_xIcU" width="50" height="50"></a></div><div class="footer__copyright">Copyright © 2026 #OSSbyMAIF. Built with Docusaurus.</div></div></div></footer></div>
+</body>
+</html>
