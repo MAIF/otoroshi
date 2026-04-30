@@ -1445,6 +1445,9 @@ class Env(
         }
       }
 
+    io.swagger.v3.core.converter.ModelConverters.getInstance()
+      .addConverter(new com.github.swagger.scala.converter.SwaggerScalaModelConverter())
+
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
