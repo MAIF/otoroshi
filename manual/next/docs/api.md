@@ -9,6 +9,8 @@ Otoroshi provides a fully featured REST admin API to perform almost every operat
 
 Using the admin API, you can do whatever you want and enhance your Otoroshi instances with a lot of features that will feet your needs.
 
+For an in-depth reference of the resource-oriented API surface (URL layout, content negotiation, filtering, sorting, pagination, projection, bulk operations, patch formats, etc.), see [Generic resource API (`/apis/...`)](./topics/generic-resource-api.md).
+
 ## OpenAPI descriptor
 
 The Otoroshi admin API is described using OpenAPI format and is available at :
