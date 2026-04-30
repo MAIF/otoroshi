@@ -9,6 +9,7 @@ slug: /topics
 In this sections, you will find informations about various Otoroshi topics  
 
 * [Proxy engine](./engine.mdx)
+* [Generic resource API (`/apis/...`)](./generic-resource-api.md)
 * [WASM support](./wasm-usage.mdx)
 * [Chaos engineering](./chaos-engineering.mdx)
 * [TLS](./tls.md)
@@ -40,7 +41,6 @@ In this sections, you will find informations about various Otoroshi topics
 * [Admin Extensions](./admin-extensions.md)
 * [Managing Otoroshi with otoroshictl](./otoroshictl.md)
 * [AI Gateway](./ai-gateway.md)
-* [Generic resource API (`/apis/...`)](./generic-resource-api.md)
 
 
 
