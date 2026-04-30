@@ -40,6 +40,7 @@ In this sections, you will find informations about various Otoroshi topics
 * [Admin Extensions](./admin-extensions.md)
 * [Managing Otoroshi with otoroshictl](./otoroshictl.md)
 * [AI Gateway](./ai-gateway.md)
+* [Generic resource API (`/apis/...`)](./generic-resource-api.md)
 
 
 
