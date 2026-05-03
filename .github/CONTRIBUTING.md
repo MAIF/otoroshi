@@ -14,6 +14,62 @@ We encourage changes that make it easier to achieve our goals in an efficient wa
 * [resources](https://github.com/MAIF/otoroshi/tree/master/resources): various static resources
 * [scripts](https://github.com/MAIF/otoroshi/tree/master/scripts): various scripts used by github actions and devs
 
+## Local development setup
+
+Otoroshi uses [mise](https://mise.jdx.dev/) to manage development tools (Java, sbt, Node.js) and to expose a unified set of tasks for building, running, testing, formatting and packaging the project. Using `mise` is the recommended way to contribute as it guarantees that you use the same tool versions as the CI and the rest of the team.
+
+### Install mise
+
+Follow the instructions on the [mise website](https://mise.jdx.dev/getting-started.html). On macOS / Linux a typical install is:
+
+```sh
+curl https://mise.run | sh
+```
+
+Then activate the shell hook (see the mise documentation for your shell, e.g. `eval "$(mise activate zsh)"` in `~/.zshrc`).
+
+### Bootstrap the project
+
+From the root of the repository:
+
+```sh
+# Install the tool versions declared in mise.toml (Java 17, sbt 1.7.2, Node 22)
+mise install
+
+# Install JS dependencies (frontend admin UI + Docusaurus documentation)
+mise run install-js-deps
+```
+
+### Common tasks
+
+All tasks are declared in [`mise.toml`](https://github.com/MAIF/otoroshi/blob/master/mise.toml). The most useful ones are:
+
+| Task | Description |
+|------|-------------|
+| `mise run dev` | Start the backend (sbt `~reStart`, hot reload) and the frontend webpack dev server |
+| `mise run dev-w-doc` | Same as `dev` plus the Docusaurus dev server for the documentation |
+| `mise run dev-backend` | Run only the backend in dev mode |
+| `mise run dev-frontend` | Run only the admin UI dev server (port 3040) |
+| `mise run dev-doc` | Run only the documentation dev server |
+| `mise run compile` | Compile the Scala backend |
+| `mise run build` | Build the production frontend bundle and assemble the backend jar |
+| `mise run build-w-doc` | Same as `build` plus the static documentation site |
+| `mise run jar` | Run the assembled `otoroshi.jar` locally with sane defaults |
+| `mise run test` | Run the main backend test suite (`OtoroshiTests`) |
+| `mise run test-plugins` | Run the plugins test suite |
+| `mise run test-all` | Run both the main and plugins test suites |
+| `mise run test-e2e` | Run the Playwright end-to-end tests (requires a running otoroshi) |
+| `mise run fmt` | Format Scala (scalafmt) and JS (prettier) code |
+| `mise run clean` | Remove build artifacts |
+
+To list every available task at any time:
+
+```sh
+mise tasks
+```
+
+> Note: the legacy shell scripts under `scripts/` are still available and used by some Github Actions workflows, but for day-to-day development you should rely on `mise` tasks.
+
 ## Workflow
 
 The steps below describe how to get a patch into a main development branch (e.g. `master`). 
@@ -73,12 +129,36 @@ if you add features to Otoroshi, don't forget to modify the user manual, the ope
 to build the documentation, run the following command at the root of the repository
 
 ```sh
-sh ./scripts/doc.sh
+mise run build-doc
+```
+
+To preview the documentation locally with hot reload:
+
+```sh
+mise run dev-doc
 ```
 
 ## Tests
 
-Every new feature should provide corresponding tests to ensure everything is working and will still working in future releases. To run the tests, see [dedicated documentation](https://www.otoroshi.io/docs/dev#testing).
+Every new feature should provide corresponding tests to ensure everything is working and will still working in future releases.
+
+The simplest way to run the tests locally is via mise:
+
+```sh
+# Main backend test suite
+mise run test
+
+# Plugins test suite
+mise run test-plugins
+
+# Both
+mise run test-all
+
+# End-to-end Playwright tests (requires a running otoroshi instance)
+mise run test-e2e
+```
+
+For more advanced scenarios (specific test, specific store backend, etc.), see the [dedicated documentation](https://www.otoroshi.io/docs/dev#testing).
 
 ## Source style
 
@@ -88,7 +168,13 @@ The whole code of Otoroshi is automatically formatted using
 * rust_fmt
 * scalafmt
 
-before pushing your code, don't forget to format it using command described in [dedicated documentation](https://www.otoroshi.io/docs/dev#formatting-code).
+Before pushing your code, don't forget to format it. The easiest way is:
+
+```sh
+mise run fmt
+```
+
+You can also run the formatters individually with `mise run fmt-backend` (scalafmt) and `mise run fmt-frontend` (prettier). For more details, see the [dedicated documentation](https://www.otoroshi.io/docs/dev#formatting-code).
 
 ## Continuous integration
 
