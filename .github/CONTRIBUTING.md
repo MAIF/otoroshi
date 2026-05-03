@@ -7,12 +7,12 @@ We encourage changes that make it easier to achieve our goals in an efficient wa
 
 ## Codebase
 
-* [docker](https://github.com/MAIF/otoroshi/docker): contains various Dockerfiles
-* [docs](https://github.com/MAIF/otoroshi/docs): contains the Otoroshi website, avoid modification as its generated
-* [manual](https://github.com/MAIF/otoroshi/manual): the otoroshi user manual that will be generated with [Paradox](https://github.com/lightbend/paradox)
-* [otoroshi](https://github.com/MAIF/otoroshi/otoroshi): the otoroshi server app
-* [resources](https://github.com/MAIF/otoroshi/resources): various static resources
-* [scripts](https://github.com/MAIF/otoroshi/scripts): various scripts used by Travis and devs
+* [docker](https://github.com/MAIF/otoroshi/tree/master/docker): contains various Dockerfiles
+* [docs](https://github.com/MAIF/otoroshi/tree/master/docs): contains the Otoroshi website, avoid modification as its generated
+* [manual](https://github.com/MAIF/otoroshi/tree/master/manual): the otoroshi user manual that will be generated with [Docusaurus](https://docusaurus.io/)
+* [otoroshi](https://github.com/MAIF/otoroshi/tree/master/otoroshi): the otoroshi server app
+* [resources](https://github.com/MAIF/otoroshi/tree/master/resources): various static resources
+* [scripts](https://github.com/MAIF/otoroshi/tree/master/scripts): various scripts used by github actions and devs
 
 ## Workflow
 
@@ -65,10 +65,10 @@ You must add the dependency and its licence in https://github.com/MAIF/otoroshi/
 
 ## Documentation
 
-if you add features to Otoroshi, don't forget to modify the user manual, the swagger file
+if you add features to Otoroshi, don't forget to modify the user manual, the openapi file
 
-* https://github.com/MAIF/otoroshi/tree/master/manual/src/main/paradox
-* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/controllers/SwaggerController.scala
+* https://github.com/MAIF/otoroshi/tree/master/manual/
+* https://github.com/ptitFicus/otoroshi/blob/master/otoroshi/conf/schemas/openapi.json
 
 to build the documentation, run the following command at the root of the repository
 
@@ -78,26 +78,7 @@ sh ./scripts/doc.sh
 
 ## Tests
 
-Every new feature should provide corresponding tests to ensure everything is working and will still working in future releases. To run the tests, just run
-
-```sh
-sbt test
-```
-
-you can also run the tests using other datastores
-
-```sh
-TEST_STORE=inmemory sbt test
-TEST_STORE=redis sbt test
-TEST_STORE=cassandra sbt test
-```
-
-cassandra and redis tests will try to connect to local instance of cassandra and redis running on standard ports.
-
-```sh
-docker run -d -p 9042:9042 -p 7000:7000 --env CASSANDRA_LISTEN_ADDRESS=127.0.0.1 cassandra:3.11
-docker run -d -p 6379:6379 redis:4.0.8 redis-server --appendonly yes
-```
+Every new feature should provide corresponding tests to ensure everything is working and will still working in future releases. To run the tests, see [dedicated documentation](https://www.otoroshi.io/docs/dev#testing).
 
 ## Source style
 
@@ -107,12 +88,8 @@ The whole code of Otoroshi is automatically formatted using
 * rust_fmt
 * scalafmt
 
-before pushing your code, don't forget to run the following command at the root of the repository
-
-```sh
-sh ./scripts/fmt.sh
-```
+before pushing your code, don't forget to format it using command described in [dedicated documentation](https://www.otoroshi.io/docs/dev#formatting-code).
 
 ## Continuous integration
 
-Every commit and PR to Otoroshi is built by [Travis](https://travis-ci.org/MAIF/otoroshi). Travis will also check your pull request to prevent merging code that does not build.
+Every commit and PR to Otoroshi is built by [Github actions](https://github.com/MAIF/otoroshi/actions/workflows/server_build_and_test.yaml). Github will also check your pull request to prevent merging code that does not build.
