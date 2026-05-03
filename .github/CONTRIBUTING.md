@@ -33,7 +33,7 @@ Then activate the shell hook (see the mise documentation for your shell, e.g. `e
 From the root of the repository:
 
 ```sh
-# Install the tool versions declared in mise.toml (Java 17, sbt 1.7.2, Node 22)
+# Install the tool versions declared in mise.toml
 mise install
 
 # Install JS dependencies (frontend admin UI + Docusaurus documentation)
@@ -123,7 +123,7 @@ You must add the dependency and its licence in https://github.com/MAIF/otoroshi/
 
 if you add features to Otoroshi, don't forget to modify the user manual, the openapi file
 
-* https://github.com/MAIF/otoroshi/tree/master/manual/
+* https://github.com/MAIF/otoroshi/tree/master/manual/next/
 * https://github.com/ptitFicus/otoroshi/blob/master/otoroshi/conf/schemas/openapi.json
 
 to build the documentation, run the following command at the root of the repository
