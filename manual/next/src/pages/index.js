@@ -149,7 +149,7 @@ function HeroBanner() {
             </div>
           </div>
           <div className={styles.heroImage}>
-            <img src={logoUrl} alt="Otoroshi" width="300" />
+            <img src={logoUrl} alt="Otoroshi" width="300" title="I am the gate !" />
           </div>
         </div>
       </div>
