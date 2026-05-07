@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicReference
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.sys.env
 import scala.util.{Failure, Success, Try}
 
 case class RateLimiterDistributedRedisSettings(enabled: Boolean, uris: Seq[String])
