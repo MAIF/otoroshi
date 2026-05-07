@@ -155,6 +155,8 @@ import IzanamiV2Proxy from './IzanamiV2Proxy';
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
 import FixedWindow from './FixedWindow';
+import DistributedRedisThrottling from './DistributedRedisThrottling';
+import LuaDistributedRedisThrottling from './LuaDistributedRedisThrottling';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -179,6 +181,7 @@ const pluginsArray = [
   NgCorazaWAF,
   Cors,
   DisableHttp10,
+  DistributedRedisThrottling,
   EndlessHttpResponse,
   EurekaServerSink,
   EurekaTarget,
@@ -214,6 +217,7 @@ const pluginsArray = [
   JwtVerificationOnly,
   KubernetesNamespaceScanBackend,
   LocalTokenBucket,
+  LuaDistributedRedisThrottling,
   MaintenanceMode,
   MissingHeadersIn,
   MissingHeadersOut,
