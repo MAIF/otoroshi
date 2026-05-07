@@ -109,7 +109,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -195,7 +195,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
@@ -228,6 +228,43 @@ case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingSt
     s"${env.storageRoot}:apikey:quotas:monthly:$name"
   override def throttlingKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:second:$name"
 }
+
+case class DistributedRedisThrottlingStrategyConfig(
+    bucketKey: Option[String] = None,
+    quota: AllowedQuota = AllowedQuota()
+) extends ThrottlingStrategyConfig
+    with NgPluginConfig {
+  def id = "DistributedRedisThrottlingStrategyConfig"
+
+  override def json: JsValue =
+    Json.obj("id" -> id, "quota" -> quota.json, "bucketKey" -> bucketKey)
+
+  override def fmt: Format[ThrottlingStrategyConfig] =
+    DistributedRedisThrottlingStrategyConfig.format.asInstanceOf[Format[ThrottlingStrategyConfig]]
+}
+
+object DistributedRedisThrottlingStrategyConfig {
+  val format = new Format[DistributedRedisThrottlingStrategyConfig] {
+    override def reads(json: JsValue): JsResult[DistributedRedisThrottlingStrategyConfig] = Try {
+      DistributedRedisThrottlingStrategyConfig(
+        bucketKey = json.selectAsOptString("bucketKey"),
+        quota = json.select("quota").as(AllowedQuota.fmt)
+      )
+    } match {
+      case Failure(exception) => JsError(exception.getMessage)
+      case Success(value)     => JsSuccess(value)
+    }
+    override def writes(o: DistributedRedisThrottlingStrategyConfig): JsValue            = o.json
+  }
+}
+
+// Throttling strategy backed by a dedicated Redis shared by all otoroshi nodes (leader and workers),
+// plugged via env.statefulClientsManager. Algorithm is the canonical Redis rate-limiter pattern
+// (atomic INCR + EXPIRE-if-fresh) inherited from the ThrottlingStrategy trait, but runs on a Redis
+// pool that is independent from the otoroshi storage backend, so distribution is guaranteed even
+// when the storage is in-memory, postgres, cassandra, etc.
+case class DistributedRedisThrottlingStrategy(bucketId: String, config: DistributedRedisThrottlingStrategyConfig)
+    extends ThrottlingStrategy
 
 case class FixedWindowStrategyConfig(
     bucketKey: Option[String] = None,
@@ -275,7 +312,7 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -516,6 +553,62 @@ class FixedWindow extends NgAccessValidator {
   }
 }
 
+class DistributedRedisThrottling extends NgAccessValidator {
+
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+
+  override def multiInstance: Boolean      = true
+  override def core: Boolean               = true
+  override def name: String                = "Distributed Redis Throttling"
+  override def description: Option[String] =
+    "Throttling backed by a dedicated Redis shared by all otoroshi nodes (leader and workers). Requires otoroshi.rate-limiter.distributed-redis.enabled = true.".some
+
+  override def defaultConfigObject: Option[NgPluginConfig] = DistributedRedisThrottlingStrategyConfig().some
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(DistributedRedisThrottlingStrategyConfig.format)
+      .getOrElse(DistributedRedisThrottlingStrategyConfig())
+
+    val key = config.bucketKey.getOrElse("").evaluateEl(ctx.attrs)
+
+    val strategy = env.rateLimiter.getOrCreate(
+      key,
+      attrs = ctx.attrs,
+      throttlingStrategy = config.some
+    )
+
+    strategy
+      .checkAndIncrement(
+        key,
+        1,
+        config.quota,
+        expirationSeconds = env.throttlingWindow
+      )
+      .flatMap { throttlingResult =>
+        if (!throttlingResult.allowed)
+          Errors
+            .craftResponseResult(
+              "Too much requests",
+              TooManyRequests,
+              ctx.request,
+              None,
+              None,
+              duration = ctx.report.getDurationNow(),
+              overhead = ctx.report.getOverheadInNow(),
+              attrs = ctx.attrs,
+              maybeRoute = ctx.route.some
+            )
+            .map(e => NgAccess.NgDenied(e))
+        else {
+          NgAccess.NgAllowed.vfuture
+        }
+      }
+  }
+}
+
 case class ThrottlingResult(
     allowed: Boolean,
     quotas: QuotaState
@@ -536,10 +629,12 @@ object ThrottlingStrategyConfig {
         case JsNull => JsError("null value")
         case value  =>
           value.selectAsOptString("id") match {
-            case Some("LocalTokensBucketStrategyConfig") => LocalTokensBucketStrategyConfig.format.reads(value)
-            case Some("LegacyThrottlingStrategyConfig")  => LegacyThrottlingStrategyConfig.format.reads(value)
-            case Some("FixedWindowStrategyConfig")       => FixedWindowStrategyConfig.format.reads(value)
-            case None                                    => JsError("unknown type")
+            case Some("LocalTokensBucketStrategyConfig")        => LocalTokensBucketStrategyConfig.format.reads(value)
+            case Some("LegacyThrottlingStrategyConfig")         => LegacyThrottlingStrategyConfig.format.reads(value)
+            case Some("FixedWindowStrategyConfig")              => FixedWindowStrategyConfig.format.reads(value)
+            case Some("DistributedRedisThrottlingStrategyConfig") =>
+              DistributedRedisThrottlingStrategyConfig.format.reads(value)
+            case _                                              => JsError("unknown type")
           }
       }
     }
@@ -628,7 +723,7 @@ trait ThrottlingStrategy {
       env: Env,
       ec: ExecutionContext
   ): Future[(Long, Long)] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
@@ -658,7 +753,7 @@ trait ThrottlingStrategy {
       allowedQuotas: AllowedQuota,
       expirationSeconds: Int
   )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     // Calculate reset timestamps
     val now      = System.currentTimeMillis()
@@ -705,7 +800,7 @@ trait ThrottlingStrategy {
   }
 
   def quotas(key: String, expirationSeconds: Int)(implicit ec: ExecutionContext, env: Env): Future[QuotaState] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -745,7 +840,7 @@ trait ThrottlingStrategy {
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     // Calculate reset timestamps
     val now      = System.currentTimeMillis()
@@ -784,7 +879,7 @@ trait ThrottlingStrategy {
   }
 
   def reset(key: String, expirationSeconds: Int)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
-    val redisCli = env.datastores.redis
+    val redisCli = env.rateLimiterRedis
 
     val now        = System.currentTimeMillis()
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
@@ -846,14 +941,27 @@ object ThrottlingStrategy {
             .reads(conf)
             .getOrElse(LegacyThrottlingStrategyConfig())
         )
+      case "DistributedRedisThrottlingStrategyConfig" =>
+        DistributedRedisThrottlingStrategy(
+          key,
+          DistributedRedisThrottlingStrategyConfig.format
+            .reads(conf)
+            .getOrElse(DistributedRedisThrottlingStrategyConfig())
+        )
     }
   }
 
-  def default(clientId: String) = LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig())
+  def default(clientId: String)(implicit env: Env): ThrottlingStrategy =
+    if (env.rateLimiterDistributedRedisSettings.enabled) {
+      DistributedRedisThrottlingStrategy(clientId, DistributedRedisThrottlingStrategyConfig())
+    } else {
+      LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig())
+    }
 }
 
-class RateLimiter(env: Env) {
-  implicit val ec: ExecutionContext = env.otoroshiExecutionContext
+class RateLimiter(_env: Env) {
+  private implicit val env: Env     = _env
+  implicit val ec: ExecutionContext = _env.otoroshiExecutionContext
 
   val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
 
