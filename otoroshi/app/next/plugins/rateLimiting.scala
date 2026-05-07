@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.sys.env
 import scala.util.{Failure, Success, Try}
 
-case class RateLimiterDistributedRedisSettings(enabled: Boolean, uri: Option[String])
+case class RateLimiterDistributedRedisSettings(enabled: Boolean, uris: Seq[String])
 
 case class LocalBucket(var tokens: Double = 0, var lastRefillMs: Long)
 
@@ -983,23 +983,36 @@ class RateLimiter(_env: Env) {
     enabled = _env.configuration
       .getOptionalWithFileSupport[Boolean]("otoroshi.rate-limiter.distributed-redis.enabled")
       .getOrElse(false),
-    uri = _env.configuration
-      .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.uri")
+    uris = (_env.configuration
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.rate-limiter.distributed-redis.uris").getOrElse(Seq.empty) ++
+        _env.configuration
+          .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.urisStr")
+          .map(_.split(";").map(_.trim).toSeq)
+          .getOrElse(Seq.empty)
+      )
   )
 
-  def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uri match {
-    case Some(uri) =>_env.statefulClientsManager.client(
+  def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uris match {
+    case uris if uris.nonEmpty && uris.length == 1 =>_env.statefulClientsManager.client(
       "otoroshi-rate-limiter-distributed-redis",
-      otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uri)
+      otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
     )
-    case None => _env.datastores.redis
+    case uris if uris.nonEmpty && uris.length > 1 =>_env.statefulClientsManager.client(
+      "otoroshi-rate-limiter-distributed-redis",
+      otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
+    )
+    case uris if uris.isEmpty => _env.datastores.redis
   }
 
   def globalRateLimiterRedis: otoroshi.storage.RedisLike = {
-    distributedRedisSettings.uri match {
-      case Some(uri) if distributedRedisSettings.enabled => _env.statefulClientsManager.client(
+    distributedRedisSettings.uris match {
+      case uris if uris.nonEmpty && uris.length == 1 && distributedRedisSettings.enabled => _env.statefulClientsManager.client(
         "otoroshi-rate-limiter-distributed-redis",
-        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uri)
+        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
+      )
+      case uris if uris.nonEmpty && uris.length > 1 && distributedRedisSettings.enabled => _env.statefulClientsManager.client(
+        "otoroshi-rate-limiter-distributed-redis",
+        otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
       )
       case _ => _env.datastores.redis
     }
