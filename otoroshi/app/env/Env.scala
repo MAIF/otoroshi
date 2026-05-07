@@ -122,6 +122,8 @@ case class SidecarConfig(
 
 case class ElSettings(allowEnvAccess: Boolean, allowConfigAccess: Boolean)
 
+case class RateLimiterDistributedRedisSettings(enabled: Boolean, uri: String)
+
 class Env(
     val _configuration: Configuration,
     val environment: Environment,
@@ -1201,6 +1203,25 @@ class Env(
   lazy val rateLimiter = new RateLimiter(this)
 
   lazy val statefulClientsManager = new StatefulClientsManager(this)
+
+  lazy val rateLimiterDistributedRedisSettings: RateLimiterDistributedRedisSettings = RateLimiterDistributedRedisSettings(
+    enabled = configuration
+      .getOptionalWithFileSupport[Boolean]("otoroshi.rate-limiter.distributed-redis.enabled")
+      .getOrElse(false),
+    uri = configuration
+      .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.uri")
+      .getOrElse("redis://localhost:6379")
+  )
+
+  def rateLimiterRedis: otoroshi.storage.RedisLike =
+    if (rateLimiterDistributedRedisSettings.enabled) {
+      statefulClientsManager.client(
+        "otoroshi-rate-limiter-distributed-redis",
+        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(rateLimiterDistributedRedisSettings.uri)
+      )
+    } else {
+      datastores.redis
+    }
 
   lazy val http2ClientProxyEnabled = configuration
     .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
