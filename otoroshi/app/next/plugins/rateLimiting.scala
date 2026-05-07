@@ -1001,7 +1001,7 @@ class RateLimiter(_env: Env) {
       "otoroshi-rate-limiter-distributed-redis",
       otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
     )
-    case uris if uris.isEmpty => _env.datastores.redis
+    case _ => _env.datastores.redis
   }
 
   def globalRateLimiterRedis: otoroshi.storage.RedisLike = {
