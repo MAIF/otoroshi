@@ -1199,7 +1199,8 @@ class RateLimiter(_env: Env) {
   private implicit val env: Env     = _env
   implicit val ec: ExecutionContext = _env.otoroshiExecutionContext
 
-  val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
+  private val distributedRedisId = "otoroshi-rate-limiter-distributed-redis"
+  private val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
 
   lazy val distributedRedisSettings: RateLimiterDistributedRedisSettings = RateLimiterDistributedRedisSettings(
     enabled = _env.configuration
@@ -1216,11 +1217,11 @@ class RateLimiter(_env: Env) {
 
   def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uris match {
     case uris if uris.nonEmpty && uris.length == 1 =>_env.statefulClientsManager.client(
-      "otoroshi-rate-limiter-distributed-redis",
+      distributedRedisId,
       otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
     )
     case uris if uris.nonEmpty && uris.length > 1 =>_env.statefulClientsManager.client(
-      "otoroshi-rate-limiter-distributed-redis",
+      distributedRedisId,
       otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
     )
     case _ => _env.datastores.redis
@@ -1229,11 +1230,11 @@ class RateLimiter(_env: Env) {
   def globalRateLimiterRedis: otoroshi.storage.RedisLike = {
     distributedRedisSettings.uris match {
       case uris if uris.nonEmpty && uris.length == 1 && distributedRedisSettings.enabled => _env.statefulClientsManager.client(
-        "otoroshi-rate-limiter-distributed-redis",
+        distributedRedisId,
         otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
       )
       case uris if uris.nonEmpty && uris.length > 1 && distributedRedisSettings.enabled => _env.statefulClientsManager.client(
-        "otoroshi-rate-limiter-distributed-redis",
+        distributedRedisId,
         otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
       )
       case _ => _env.datastores.redis
