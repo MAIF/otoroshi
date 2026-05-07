@@ -122,8 +122,6 @@ case class SidecarConfig(
 
 case class ElSettings(allowEnvAccess: Boolean, allowConfigAccess: Boolean)
 
-case class RateLimiterDistributedRedisSettings(enabled: Boolean, uri: String)
-
 class Env(
     val _configuration: Configuration,
     val environment: Environment,

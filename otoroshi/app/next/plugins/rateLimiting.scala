@@ -3,23 +3,23 @@ package otoroshi.next.plugins
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import org.joda.time.DateTime
-import otoroshi.el.GlobalExpressionLanguage
-import otoroshi.env.{Env, RateLimiterDistributedRedisSettings}
+import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, PrivateAppsUser, RemainingQuotas}
-import otoroshi.next.models.NgRoute
+import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api._
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.mvc.RequestHeader
 import play.api.mvc.Results.TooManyRequests
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
+import scala.sys.env
 import scala.util.{Failure, Success, Try}
+
+case class RateLimiterDistributedRedisSettings(enabled: Boolean, uri: Option[String])
 
 case class LocalBucket(var tokens: Double = 0, var lastRefillMs: Long)
 
@@ -67,7 +67,7 @@ object LocalTokensBucketStrategyConfig {
   }
 }
 
-case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucketStrategyConfig)(implicit env: Env)
+case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucketStrategyConfig, env: Env)
     extends ThrottlingStrategy {
   implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
@@ -75,6 +75,8 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
   private val bucketRef               = new AtomicReference[LocalBucket](
     LocalBucket(tokens = config.capacity.toDouble, lastRefillMs = System.currentTimeMillis())
   )
+
+  def client(): otoroshi.storage.RedisLike = env.datastores.redis
 
   private def askForRefill(): Future[Unit] = {
     val currentTimeMs = System.currentTimeMillis()
@@ -109,7 +111,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -195,7 +197,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
@@ -219,8 +221,10 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
   }
 }
 
-case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingStrategyConfig)
+case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingStrategyConfig, env: Env)
     extends ThrottlingStrategy {
+
+  def client(): otoroshi.storage.RedisLike = env.datastores.redis
 
   override def totalCallsKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:global:$name"
   override def dailyQuotaKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:daily:$name"
@@ -263,8 +267,10 @@ object DistributedRedisThrottlingStrategyConfig {
 // (atomic INCR + EXPIRE-if-fresh) inherited from the ThrottlingStrategy trait, but runs on a Redis
 // pool that is independent from the otoroshi storage backend, so distribution is guaranteed even
 // when the storage is in-memory, postgres, cassandra, etc.
-case class DistributedRedisThrottlingStrategy(bucketId: String, config: DistributedRedisThrottlingStrategyConfig)
-    extends ThrottlingStrategy
+case class DistributedRedisThrottlingStrategy(bucketId: String, config: DistributedRedisThrottlingStrategyConfig, clientF: Function0[otoroshi.storage.RedisLike])
+    extends ThrottlingStrategy {
+  def client(): otoroshi.storage.RedisLike = clientF()
+}
 
 case class FixedWindowStrategyConfig(
     bucketKey: Option[String] = None,
@@ -297,7 +303,9 @@ object FixedWindowStrategyConfig {
   }
 }
 
-case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConfig) extends ThrottlingStrategy {
+case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConfig, env: Env) extends ThrottlingStrategy {
+
+  def client(): otoroshi.storage.RedisLike = env.datastores.redis
 
   private case class FixedWindowBucket(
       windowStart: Long,
@@ -312,7 +320,7 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -719,11 +727,13 @@ trait ThrottlingStrategy {
   def totalCallsKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:global:$name"
 
+  def client(): otoroshi.storage.RedisLike
+
   def incrementDailyAndMonthly(key: String, increment: Long)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[(Long, Long)] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
@@ -753,7 +763,7 @@ trait ThrottlingStrategy {
       allowedQuotas: AllowedQuota,
       expirationSeconds: Int
   )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     // Calculate reset timestamps
     val now      = System.currentTimeMillis()
@@ -800,7 +810,7 @@ trait ThrottlingStrategy {
   }
 
   def quotas(key: String, expirationSeconds: Int)(implicit ec: ExecutionContext, env: Env): Future[QuotaState] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
     val monthEnd = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
@@ -840,7 +850,7 @@ trait ThrottlingStrategy {
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     // Calculate reset timestamps
     val now      = System.currentTimeMillis()
@@ -879,7 +889,7 @@ trait ThrottlingStrategy {
   }
 
   def reset(key: String, expirationSeconds: Int)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
-    val redisCli = env.rateLimiter.redis
+    val redisCli = client()
 
     val now        = System.currentTimeMillis()
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
@@ -916,7 +926,7 @@ trait ThrottlingStrategy {
 }
 
 object ThrottlingStrategy {
-  def apply(config: ThrottlingStrategyConfig, key: String)(implicit env: Env) = {
+  def apply(config: ThrottlingStrategyConfig, key: String)(implicit env: Env): ThrottlingStrategy = {
     val conf = config.json
 
     config.id match {
@@ -925,37 +935,41 @@ object ThrottlingStrategy {
           key,
           LocalTokensBucketStrategyConfig.format
             .reads(conf)
-            .getOrElse(LocalTokensBucketStrategyConfig())
+            .getOrElse(LocalTokensBucketStrategyConfig()),
+          env
         )
       case "FixedWindowStrategyConfig"       =>
         FixedWindowStrategy(
           key,
           FixedWindowStrategyConfig.format
             .reads(conf)
-            .getOrElse(FixedWindowStrategyConfig())
+            .getOrElse(FixedWindowStrategyConfig()),
+          env
         )
       case "LegacyThrottlingStrategyConfig"  =>
         LegacyThrottlingStrategy(
           key,
           LegacyThrottlingStrategyConfig.format
             .reads(conf)
-            .getOrElse(LegacyThrottlingStrategyConfig())
+            .getOrElse(LegacyThrottlingStrategyConfig()),
+          env
         )
       case "DistributedRedisThrottlingStrategyConfig" =>
         DistributedRedisThrottlingStrategy(
           key,
           DistributedRedisThrottlingStrategyConfig.format
             .reads(conf)
-            .getOrElse(DistributedRedisThrottlingStrategyConfig())
+            .getOrElse(DistributedRedisThrottlingStrategyConfig()),
+          () => env.rateLimiter.adhocRateLimiterRedis
         )
     }
   }
 
   def default(clientId: String)(implicit env: Env): ThrottlingStrategy =
-    if (env.rateLimiter.rateLimiterDistributedRedisSettings.enabled) {
-      DistributedRedisThrottlingStrategy(clientId, DistributedRedisThrottlingStrategyConfig())
+    if (env.rateLimiter.distributedRedisSettings.enabled) {
+      DistributedRedisThrottlingStrategy(clientId, DistributedRedisThrottlingStrategyConfig(), () => env.rateLimiter.globalRateLimiterRedis)
     } else {
-      LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig())
+      LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig(), env)
     }
 }
 
@@ -971,18 +985,25 @@ class RateLimiter(_env: Env) {
       .getOrElse(false),
     uri = _env.configuration
       .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.uri")
-      .getOrElse("redis://localhost:6379")
   )
 
-  def redis: otoroshi.storage.RedisLike =
-    if (distributedRedisSettings.enabled) {
-      _env.statefulClientsManager.client(
+  def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uri match {
+    case Some(uri) =>_env.statefulClientsManager.client(
+      "otoroshi-rate-limiter-distributed-redis",
+      otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uri)
+    )
+    case None => _env.datastores.redis
+  }
+
+  def globalRateLimiterRedis: otoroshi.storage.RedisLike = {
+    distributedRedisSettings.uri match {
+      case Some(uri) if distributedRedisSettings.enabled => _env.statefulClientsManager.client(
         "otoroshi-rate-limiter-distributed-redis",
-        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(distributedRedisSettings.uri)
+        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uri)
       )
-    } else {
-      _env.datastores.redis
+      case _ => _env.datastores.redis
     }
+  }
 
   def getOrCreate(
       value: String,
@@ -990,7 +1011,6 @@ class RateLimiter(_env: Env) {
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
     val key = value.evaluateEl(attrs)(env)
-
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)
       case None         => strategies.getOrElse(key, ThrottlingStrategy.default(key))
