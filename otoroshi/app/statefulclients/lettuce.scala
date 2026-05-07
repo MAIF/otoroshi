@@ -64,10 +64,10 @@ case class DistributedRateLimiterLettuceStatefulClientConfig(uri: String) extend
   }
 }
 
-object LettuceClusterStatefulClientConfig {
-  def apply(obj: JsObject) =
-    new LettuceClusterStatefulClientConfig(obj.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty))
-}
+// object LettuceClusterStatefulClientConfig {
+//   def apply(obj: JsObject) =
+//     new LettuceClusterStatefulClientConfig(obj.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty))
+// }
 
 case class LettuceClusterStatefulClientConfig(uris: Seq[String])
     extends StatefulClientConfig[StatefulRedisClusterConnection[String, ByteString]] {
