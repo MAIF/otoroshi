@@ -3,7 +3,7 @@ package otoroshi.statefulclients
 import akka.util.ByteString
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
-import otoroshi.storage.drivers.lettuce.ByteStringRedisCodec
+import otoroshi.storage.drivers.lettuce.{ByteStringRedisCodec, LettuceRedis, LettuceRedisStandaloneAndSentinels}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.JsObject
 
@@ -31,5 +31,31 @@ case class LettuceStatefulClientConfig(uri: String)
   override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case l: LettuceStatefulClientConfig => l.uri == uri
     case _                              => false
+  }
+}
+
+// Dedicated stateful client for the distributed rate-limiter Redis. Returns a RedisLike (LettuceRedis)
+// so it can be used in place of env.datastores.redis. Lifecycle of the underlying RedisClient is managed
+// here: stop() shuts down the Lettuce client locally — we never call the wrapper's stop() because that
+// would emit a SHUTDOWN command to the Redis server.
+case class DistributedRateLimiterLettuceStatefulClientConfig(uri: String) extends StatefulClientConfig[LettuceRedis] {
+
+  private var redisClient: RedisClient = _
+
+  override def isOpen(client: LettuceRedis): Boolean = Option(redisClient).exists(_ != null)
+
+  override def start(env: otoroshi.env.Env): LettuceRedis = {
+    val client = RedisClient.create(uri)
+    redisClient = client
+    new LettuceRedisStandaloneAndSentinels(env.otoroshiActorSystem, client, env)
+  }
+
+  override def stop(client: LettuceRedis): Unit = {
+    Option(redisClient).foreach(_.shutdown())
+  }
+
+  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+    case l: DistributedRateLimiterLettuceStatefulClientConfig => l.uri == uri
+    case _                                                    => false
   }
 }
