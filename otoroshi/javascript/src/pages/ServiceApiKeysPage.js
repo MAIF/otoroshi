@@ -669,6 +669,39 @@ function DistributedRedisThrottlingStrategyConfig({ value, onChange }) {
     />
   );
 }
+function LuaDistributedRedisThrottlingStrategyConfig({ value, onChange }) {
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['window', 'daily', 'monthly'],
+        },
+      }}
+    />
+  );
+}
 function FixedWindowStrategyConfig({ value, onChange }) {
   return (
     <NgForm
@@ -712,6 +745,7 @@ export function ThrottlingStrategy({ value, onChange }) {
   const strategies = {
     LegacyThrottlingStrategyConfig,
     DistributedRedisThrottlingStrategyConfig,
+    LuaDistributedRedisThrottlingStrategyConfig,
     LocalTokensBucketStrategyConfig,
     FixedWindowStrategyConfig,
   };
@@ -731,6 +765,7 @@ export function ThrottlingStrategy({ value, onChange }) {
                 { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
                 { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
                 { value: 'DistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy' },
+                { value: 'LuaDistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy (using Lua scripts)' },
                 { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
               ],
             },
