@@ -1,11 +1,15 @@
 package otoroshi.statefulclients
 
 import akka.util.ByteString
-import io.lettuce.core.RedisClient
+import io.lettuce.core.{RedisClient, RedisURI}
 import io.lettuce.core.api.StatefulRedisConnection
-import otoroshi.storage.drivers.lettuce.{ByteStringRedisCodec, LettuceRedis, LettuceRedisStandaloneAndSentinels}
+import io.lettuce.core.cluster.RedisClusterClient
+import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
+import otoroshi.storage.drivers.lettuce.{ByteStringRedisCodec, LettuceRedis, LettuceRedisCluster, LettuceRedisStandaloneAndSentinels}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.JsObject
+
+import scala.collection.JavaConverters._
 
 object LettuceStatefulClientConfig {
   def apply(obj: JsObject) = new LettuceStatefulClientConfig(obj.select("uri").asString)
@@ -57,5 +61,61 @@ case class DistributedRateLimiterLettuceStatefulClientConfig(uri: String) extend
   override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
     case l: DistributedRateLimiterLettuceStatefulClientConfig => l.uri == uri
     case _                                                    => false
+  }
+}
+
+object LettuceClusterStatefulClientConfig {
+  def apply(obj: JsObject) =
+    new LettuceClusterStatefulClientConfig(obj.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty))
+}
+
+case class LettuceClusterStatefulClientConfig(uris: Seq[String])
+    extends StatefulClientConfig[StatefulRedisClusterConnection[String, ByteString]] {
+
+  private var redisClient: RedisClusterClient = _
+
+  override def isOpen(client: StatefulRedisClusterConnection[String, ByteString]): Boolean = client.isOpen
+
+  override def start(env: otoroshi.env.Env): StatefulRedisClusterConnection[String, ByteString] = {
+    val nodes = uris.map(RedisURI.create).asJava
+    redisClient = RedisClusterClient.create(nodes)
+    redisClient.connect(new ByteStringRedisCodec())
+  }
+
+  override def stop(client: StatefulRedisClusterConnection[String, ByteString]): Unit = {
+    client.close()
+    Option(redisClient).foreach(_.shutdown())
+  }
+
+  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+    case l: LettuceClusterStatefulClientConfig => l.uris == uris
+    case _                                     => false
+  }
+}
+
+// Cluster variant of the dedicated rate-limiter stateful client. Returns a RedisLike (LettuceRedis)
+// backed by a RedisClusterClient so it can be used in place of env.datastores.redis when the dedicated
+// rate-limiter redis is itself a Redis Cluster.
+case class DistributedRateLimiterLettuceClusterStatefulClientConfig(uris: Seq[String])
+    extends StatefulClientConfig[LettuceRedis] {
+
+  private var redisClient: RedisClusterClient = _
+
+  override def isOpen(client: LettuceRedis): Boolean = Option(redisClient).exists(_ != null)
+
+  override def start(env: otoroshi.env.Env): LettuceRedis = {
+    val nodes  = uris.map(RedisURI.create).asJava
+    val client = RedisClusterClient.create(nodes)
+    redisClient = client
+    new LettuceRedisCluster(env.otoroshiActorSystem, client)
+  }
+
+  override def stop(client: LettuceRedis): Unit = {
+    Option(redisClient).foreach(_.shutdown())
+  }
+
+  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+    case l: DistributedRateLimiterLettuceClusterStatefulClientConfig => l.uris == uris
+    case _                                                           => false
   }
 }
