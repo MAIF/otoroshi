@@ -1,11 +1,11 @@
 package otoroshi.statefulclients
 
 import akka.util.ByteString
-import io.lettuce.core.{RedisClient, RedisURI}
+import io.lettuce.core._
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
-import otoroshi.storage.drivers.lettuce.{ByteStringRedisCodec, LettuceRedis, LettuceRedisCluster, LettuceRedisStandaloneAndSentinels}
+import otoroshi.storage.drivers.lettuce._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.JsObject
 
