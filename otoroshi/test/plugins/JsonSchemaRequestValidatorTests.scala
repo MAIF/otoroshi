@@ -2,14 +2,15 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 
 class JsonSchemaRequestValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.{*, given}
 
   private val schema =
     """{

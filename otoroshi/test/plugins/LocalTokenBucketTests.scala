@@ -5,12 +5,12 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{LocalTokenBucket, LocalTokensBucketStrategyConfig, OverrideHost}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.Future
 
 class LocalTokenBucketTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{*, given}
 
   def run() = Future {
     val route = createRouteWithExternalTarget(

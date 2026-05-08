@@ -12,7 +12,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.{*, given}
 
   def tokenExchangeBasic() = {
 
@@ -22,7 +22,6 @@ class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
     val fakeIdp = new TargetService(
       TargetService.freePort,
       None,
-      "/token",
       "application/json",
       _ =>
         (
@@ -115,7 +114,6 @@ class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
     val fakeIdp = new TargetService(
       TargetService.freePort,
       None,
-      "/token",
       "application/json",
       _ =>
         (
@@ -195,7 +193,6 @@ class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
     val fakeIdp = new TargetService(
       TargetService.freePort,
       None,
-      "/token",
       "application/json",
       _ =>
         (
