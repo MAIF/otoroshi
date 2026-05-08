@@ -10,6 +10,8 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.models.{
+  ApiIdentifier,
+  ApiKey,
   ApiKeyRotation,
   EntityIdentifier,
   EntityLocation,
@@ -941,7 +943,7 @@ object ApiSubscription {
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = configPlan.clientNamePattern
-        .map(_.evaluateEl(attrs)(env))
+        .map(_.evaluateEl(attrs)(using env))
         .getOrElse(IdGenerator.lowerCaseToken(22)),
       description = configPlan.description.getOrElse(""),
       validUntil = configPlan.validUntil,
@@ -981,13 +983,13 @@ object ApiSubscription {
 
   private def removeManagedMetadata(currentApikeyMetadata: Map[String, String]): Map[String, String] = {
     val managed_keys: Seq[String] =
-      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
+      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR).toSeq).getOrElse(Seq.empty) ++
       currentApikeyMetadata
         .get(SUBSCRIPTION_METADATA_KEY)
-        .map(_.split(SUBSCRIPTION_METADATA_KEY))
-        .getOrElse(Array.empty)
+        .map(_.split(SUBSCRIPTION_METADATA_KEY).toSeq)
+        .getOrElse(Seq.empty)
 
-    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key))
+    currentApikeyMetadata.view.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key)).toMap
   }
 
   private def removeManagedTags(
@@ -995,8 +997,8 @@ object ApiSubscription {
       currentApikeyTags: Seq[String]
   ): Seq[String] = {
     val managed_keys: Seq[String] =
-      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
-      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty)
+      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR).toSeq).getOrElse(Seq.empty) ++
+      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY).toSeq).getOrElse(Seq.empty)
 
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }

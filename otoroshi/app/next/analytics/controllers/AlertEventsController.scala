@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.controllers
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.sqlclient.{Tuple => VertxTuple}
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
@@ -25,7 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-user-analytics-alert-events-api")
 

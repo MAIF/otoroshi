@@ -22,7 +22,7 @@ object QueryHelpers {
       .preparedQuery(sql)
       .execute(tupleOf(values))
       .scala
-      .map { rs: RowSet[Row] => rs.iterator().asScala.toList }
+      .map { (rs: RowSet[Row]) => rs.iterator().asScala.toList }
   }
 
   def jsTs(odt: java.time.OffsetDateTime): JsValue =

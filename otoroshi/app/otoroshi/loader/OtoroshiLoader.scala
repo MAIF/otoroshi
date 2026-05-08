@@ -4,7 +4,7 @@ import com.softwaremill.macwire.*
 import controllers.{Assets, AssetsComponents}
 import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
+import otoroshi.api.{DocAction, GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
 import otoroshi.controllers.*
 import otoroshi.controllers.adminapi.*
 import otoroshi.env.Env
@@ -143,10 +143,17 @@ package object modules {
     lazy val tunnelController: TunnelController                           = wire[TunnelController]
     lazy val entitiesController: EntitiesController                       = wire[EntitiesController]
     lazy val errorTemplatesController: ErrorTemplatesController           = wire[ErrorTemplatesController]
+    lazy val docAction: DocAction                                         = wire[DocAction]
     lazy val genericApiController: GenericApiController                   = wire[GenericApiController]
     lazy val infosApiController: InfosApiController                       = wire[InfosApiController]
     lazy val apisController: ApisController                               = wire[ApisController]
     lazy val workflowsController: WorkflowsController                     = wire[WorkflowsController]
+    lazy val nextAnalyticsController: otoroshi.next.analytics.controllers.AnalyticsController =
+      wire[otoroshi.next.analytics.controllers.AnalyticsController]
+    lazy val userDashboardController: otoroshi.next.analytics.controllers.UserDashboardController =
+      wire[otoroshi.next.analytics.controllers.UserDashboardController]
+    lazy val alertEventsController: otoroshi.next.analytics.controllers.AlertEventsController =
+      wire[otoroshi.next.analytics.controllers.AlertEventsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

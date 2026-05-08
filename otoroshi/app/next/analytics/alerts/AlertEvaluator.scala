@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.alerts
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.UserAnalyticsExporterRegistry
 import otoroshi.next.analytics.models.{AlertCondition, UserAlert}

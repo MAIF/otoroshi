@@ -1,6 +1,6 @@
 package otoroshi.statefulclients
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -32,7 +32,7 @@ class StatefulClientsManager(env: Env) {
   private val logger                                                     = Logger("otoroshi-stateful-clients-manager")
   private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] =
     new TrieMap[String, StatefulClientWrapper[_]]()
-  private implicit val ec                                                = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private implicit val ec: ExecutionContext                              = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
     statefulClients.get(id) match {
@@ -49,7 +49,7 @@ class StatefulClientsManager(env: Env) {
               case Failure(e) => logger.error(s"Error while stopping client '${id}'", e)
               case _          =>
             }
-          }
+          }(using ec)
           newClient
         }
       case None          =>
@@ -98,7 +98,7 @@ class StatefulClientsManager(env: Env) {
       .getOrElse(Seq.empty)
       .toList
     val dynConfigs        = env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .plugins
       .config
       .select("stateful-clients")

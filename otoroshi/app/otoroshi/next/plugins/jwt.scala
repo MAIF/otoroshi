@@ -1439,7 +1439,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
           .withRequestTimeout(timeout)
 
         builder
-          .post(params)(writeableOf_urlEncodedSimpleForm)
+          .post(params)(using writeableOf_urlEncodedSimpleForm)
           .map { response =>
             if (response.status == 200) {
               val json           = response.json

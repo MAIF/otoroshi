@@ -173,7 +173,7 @@ trait UserAlertDataStore extends BasicStore[UserAlert] {
   def template(env: Env): UserAlert = {
     implicit val e = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .userAlertTemplate
       .map { template =>

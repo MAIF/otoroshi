@@ -398,7 +398,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
               _.content.selectAsOptString("plan_ref").getOrElse("") == plan.id,
               fetchSize = 50,
               page = page
-            )(ec, env.otoroshiMaterializer, env)
+            )(using ec, env.otoroshiMaterializer, env)
             .flatMap { subscriptions =>
               if (subscriptions.isEmpty || subscriptions.size < 50) {
                 subscriptions.map(_.content).vfuture
@@ -415,7 +415,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           implicit val ec = env.otoroshiExecutionContext
 
           env.datastores.apiSubscriptionDataStore
-            .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(ec, env.otoroshiMaterializer, env)
+            .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(using ec, env.otoroshiMaterializer, env)
             .flatMap { subscriptions =>
               if (subscriptions.isEmpty) {
                 subscriptions.vfuture

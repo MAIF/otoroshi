@@ -1,6 +1,6 @@
 package otoroshi.statefulclients
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import io.lettuce.core._
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.cluster.RedisClusterClient

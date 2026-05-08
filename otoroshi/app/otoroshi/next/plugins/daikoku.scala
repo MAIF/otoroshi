@@ -49,7 +49,7 @@ object ExposeDaikokuPresetConfig {
       "authentication_ref" -> o.authenticationRef,
       "exclude"            -> o.exclude,
       "header_name"        -> o.headerName,
-      "add_fields"         -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))),
+      "add_fields"         -> o.addFields.map(v => JsObject(v.fields.view.mapValues(JsString.apply).toMap)),
       "algo"               -> o.algo.asJson
     )
   }

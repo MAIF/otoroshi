@@ -1,7 +1,7 @@
 package otoroshi.next.analytics.alerts
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.Alerts
 import otoroshi.next.analytics.models.UserAlert
@@ -85,7 +85,7 @@ class AlertEvaluationJob extends Job {
               evaluations = evals,
               `@id` = env.snowflakeGenerator.nextIdStr()
             )(env)
-            Try(Alerts.send(ev)(env)).recover { case e: Throwable =>
+            Try(Alerts.send(ev)(using env)).recover { case e: Throwable =>
               logger.error(s"failed to send alert '${alert.id}'", e)
             }
             saveState(alert.id, AlertState(lastEvaluatedAt = now, lastFiredAt = now)).map(_ => ())

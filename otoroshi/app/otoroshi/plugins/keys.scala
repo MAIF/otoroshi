@@ -3,6 +3,7 @@ package otoroshi.plugins
 import org.apache.pekko.Done
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
+import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.gateway.GwError
 import otoroshi.models.*
 import otoroshi.next.models.NgTarget
@@ -58,4 +59,6 @@ object Keys {
   val ResponseEndPromiseKey: TypedKey[Promise[Done]]         = TypedKey[Promise[Done]]("otoroshi.core.ResponseEndPromise")
   val ForCurrentListenerOnlyKey: TypedKey[Boolean]           = TypedKey[Boolean]("otoroshi.core.ForCurrentListenerOnly")
   val CurrentListenerKey: TypedKey[String]                   = TypedKey[String]("otoroshi.core.CurrentListener")
+  val PlanKey: TypedKey[ApiDocumentationPlan]                = TypedKey[ApiDocumentationPlan]("otoroshi.core.Plan")
+  val ApiKey: TypedKey[Api]                                  = TypedKey[Api]("otoroshi.core.Api")
 }

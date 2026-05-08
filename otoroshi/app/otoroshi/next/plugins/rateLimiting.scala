@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.EnhancedFuture
+import org.apache.pekko.util.ByteString
 import io.lettuce.core.ScriptOutputType
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -1246,7 +1246,7 @@ class RateLimiter(_env: Env) {
       attrs: TypedMap,
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
-    val key = value.evaluateEl(attrs)(env)
+    val key = value.evaluateEl(attrs)(using env)
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)
       case None         => strategies.getOrElse(key, ThrottlingStrategy.default(key))

@@ -118,7 +118,7 @@ trait UserDashboardDataStore extends BasicStore[UserDashboard] {
   def template(env: Env): UserDashboard = {
     implicit val e = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .userDashboardTemplate
       .map { template =>

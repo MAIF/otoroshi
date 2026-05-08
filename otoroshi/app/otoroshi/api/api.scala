@@ -557,10 +557,17 @@ class ProgrammaticOtoroshiComponents(_serverConfig: ServerConfig, _configuration
   lazy val tunnelController: TunnelController                           = wire[TunnelController]
   lazy val entitiesController: EntitiesController                       = wire[EntitiesController]
   lazy val errorTemplatesController: ErrorTemplatesController           = wire[ErrorTemplatesController]
+  lazy val docAction: DocAction                                         = wire[DocAction]
   lazy val genericApiController: GenericApiController                   = wire[GenericApiController]
   lazy val infosApiController: InfosApiController                       = wire[InfosApiController]
   lazy val apisController: ApisController                               = wire[ApisController]
   lazy val workflowsController: WorkflowsController                     = wire[WorkflowsController]
+  lazy val nextAnalyticsController: otoroshi.next.analytics.controllers.AnalyticsController =
+    wire[otoroshi.next.analytics.controllers.AnalyticsController]
+  lazy val userDashboardController: otoroshi.next.analytics.controllers.UserDashboardController =
+    wire[otoroshi.next.analytics.controllers.UserDashboardController]
+  lazy val alertEventsController: otoroshi.next.analytics.controllers.AlertEventsController =
+    wire[otoroshi.next.analytics.controllers.AlertEventsController]
 
   override lazy val assets: Assets = wire[Assets]
 
@@ -3176,7 +3183,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // Documentation resources
 
-  def openapiJson() = DocAction { ctx =>
+  def openapiJson(): Action[AnyContent] = DocAction { (ctx: DocActionCtx[AnyContent]) =>
     val body = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
@@ -3185,7 +3192,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapiYaml() = DocAction { ctx =>
+  def openapiYaml(): Action[AnyContent] = DocAction { (ctx: DocActionCtx[AnyContent]) =>
     val body = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
@@ -3194,7 +3201,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapi() = DocAction { ctx =>
+  def openapi(): Action[AnyContent] = DocAction { (ctx: DocActionCtx[AnyContent]) =>
     val body     = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
@@ -3220,22 +3227,22 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     }
   }
 
-  def workflowDescriptorJson() = DocAction {
+  def workflowDescriptorJson(): Action[AnyContent] = DocAction { (_: DocActionCtx[AnyContent]) =>
     val body = otoroshi.next.workflow.WorkflowGenerators.generateJsonDescriptor().prettify
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorYaml() = DocAction {
+  def workflowDescriptorYaml(): Action[AnyContent] = DocAction { (_: DocActionCtx[AnyContent]) =>
     val body = otoroshi.next.workflow.WorkflowGenerators.generateJsonDescriptor()
     Ok(Yaml.write(body)).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorMarkdown() = DocAction {
+  def workflowDescriptorMarkdown(): Action[AnyContent] = DocAction { (_: DocActionCtx[AnyContent]) =>
     val body = otoroshi.next.workflow.WorkflowGenerators.generateMarkdownDescriptor()
     Ok(body).as("text/plain").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorWeb() = DocAction {
+  def workflowDescriptorWeb(): Action[AnyContent] = DocAction { (_: DocActionCtx[AnyContent]) =>
     val body =
       s"""<html>
          |  <head>
@@ -3278,7 +3285,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Ok(body).as("text/html")
   }
 
-  def openapiUi = DocAction { ctx =>
+  def openapiUi: Action[AnyContent] = DocAction { (ctx: DocActionCtx[AnyContent]) =>
     Ok(
       otoroshi.views.html.oto.openapiFrame(
         s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json?doc_secret=${ctx.sec}"
@@ -3345,11 +3352,11 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     })
   }
 
-  def pluginsJson = DocAction { ctx =>
+  def pluginsJson: Action[AnyContent] = DocAction { (_: DocActionCtx[AnyContent]) =>
     Ok(pluginsRaw()).withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def pluginsYaml = DocAction { ctx =>
+  def pluginsYaml: Action[AnyContent] = DocAction { (_: DocActionCtx[AnyContent]) =>
     Ok(Yaml.write(pluginsRaw())).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 }
@@ -3383,7 +3390,7 @@ class DocAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                     .Unauthorized(Json.obj("error" -> "unauthorized"))
                     .withHeaders(
                       "WWW-Authenticate" -> s"""Basic realm="otoroshi-doc-${env.datastores.globalConfigDataStore
-                        .latest()(env.otoroshiExecutionContext, env)
+                        .latest()(using env.otoroshiExecutionContext, env)
                         .otoroshiId}""""
                     )
                     .vfuture

@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.exporter
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.core.json.JsonObject
 import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
@@ -468,7 +468,7 @@ object FiredAlertDenormalizer {
 }
 
 class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+    extends DefaultDataExporter(config)(using ec, env) {
 
   private val poolRef = new AtomicReference[PgPool](null)
 
