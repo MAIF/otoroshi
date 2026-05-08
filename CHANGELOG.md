@@ -6,6 +6,143 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.15.1] - 2026-04-22
+
+
+https://github.com/MAIF/otoroshi/milestone/137?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.15.0...v17.15.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.15.1
+
+
+### Added 
+
+- `APIs`: Support plan subscription directly on a plan (#2468 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Workflow auth. module (#2515 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin kind, `PluginPreset` (#2534 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL data exporter supports retention (#2535 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide reusable stateful clients internal API for plugin developpers (#2436 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `MandatoryConsumerPreset` preset plugin (#2536 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `OAuth2 token exchange` plugin using RFC 8693 for zero trust APIs communication (#2540 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Protect documentation resources behind an optional access secret (#2542 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OAuth2Caller plugin can use an auth_module for client_credentials flow (#2546 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Rework documentation (#2523 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Update otoroshi themes (#2525 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Replace ditaa schemas in doc by mermaid one (#2522 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- fix documentation sidebar on mobile browser (#2524 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- typing `/` in monaco trigger search (#2530 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Possible race condition in data exporters loading strategy (#2531 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fix some legacy api audit event layouts (#2543 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Data exporters : bug (#2513 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Avoid sending original body after consumption (#2544 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OAuth2Caller plugin password grant_type tries to pass client_secret (#2545 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- Rework documentation (#2523 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fix documentation sidebar on mobile browser (#2524 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Replace ditaa schemas in doc by mermaid one (#2522 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @Damien-Cadiou
+
+## [17.15.0] - 2026-04-22
+
+
+https://github.com/MAIF/otoroshi/milestone/137?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.14.0...v17.15.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.15.0
+
+
+### Added 
+
+- `APIs`: Support plan subscription directly on a plan (#2468 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Workflow auth. module (#2515 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- New plugin kind, `PluginPreset` (#2534 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- PostgreSQL data exporter supports retention (#2535 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide reusable stateful clients internal API for plugin developpers (#2436 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `MandatoryConsumerPreset` preset plugin (#2536 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `OAuth2 token exchange` plugin using RFC 8693 for zero trust APIs communication (#2540 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Protect documentation resources behind an optional access secret (#2542 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OAuth2Caller plugin can use an auth_module for client_credentials flow (#2546 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- Rework documentation (#2523 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Update otoroshi themes (#2525 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Replace ditaa schemas in doc by mermaid one (#2522 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- fix documentation sidebar on mobile browser (#2524 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- typing `/` in monaco trigger search (#2530 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Possible race condition in data exporters loading strategy (#2531 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fix some legacy api audit event layouts (#2543 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Data exporters : bug (#2513 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Avoid sending original body after consumption (#2544 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OAuth2Caller plugin password grant_type tries to pass client_secret (#2545 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Documentation 
+
+- Rework documentation (#2523 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fix documentation sidebar on mobile browser (#2524 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Replace ditaa schemas in doc by mermaid one (#2522 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+* @Damien-Cadiou
+
+## [17.14.0] - 2026-03-27
+
+
+https://github.com/MAIF/otoroshi/milestone/136?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.13.0...v17.14.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.14.0
+
+
+### Added 
+
+- Update remote catalog to scan organizations (#2449 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Provide more GitHub alternatives in remote catalogs providers (#2450 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support patterns in remote catalog descriptor files (#2452 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- support `yaml` format for remote catalog descriptor files (#2453 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add mandatory flags on client certificate plugins (#2448 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `APIs`: Add mandatory flag on `OIDC JWT verification` (#2447 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support kubernetes like manifests in remote catalogs (#2454 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support PostgreSQL as a possible data exporter (#2459 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support path based read in expression language for deep structures like user profile (#2487 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Redis integration: add support for Sentinel passwords with the Lettuce driver (#2486 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- Stringify complex structures in expression language path based read (#2491 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- rebuild documentation using docusaurus (#2495 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- tunnel handler plugins are not visible in the route designer (#2451 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Disable host validation for kafka data exporter when using Otoroshi mTLS settings (#2461 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Keep current scheme and port in the `Override Location header` plugin (#2488 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Cleanup path in the `Override Location header` plugin (#2489 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Mandatory flag broken in OIDCJwtVerifier plugin (#2506 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Mandatory flag broken in Apikeys plugin (#2507 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.13.0] - 2026-02-23
 
 

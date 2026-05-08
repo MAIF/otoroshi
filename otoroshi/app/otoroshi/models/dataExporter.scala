@@ -38,6 +38,30 @@ object Exporter {}
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
+case class CustomDataExporterRefConfig(kind: String, ref: String, config: JsObject = Json.obj()) {
+  def json: JsValue = CustomDataExporterRefConfig.format.writes(this)
+}
+
+object CustomDataExporterRefConfig {
+  val format: Format[CustomDataExporterRefConfig] = new Format[CustomDataExporterRefConfig] {
+    override def reads(json: JsValue): JsResult[CustomDataExporterRefConfig] = Try {
+      CustomDataExporterRefConfig(
+        kind = json.select("kind").asOptString.map(_.toLowerCase).getOrElse("plugin"),
+        ref = json.select("ref").asOptString.getOrElse(""),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(v) => JsSuccess(v)
+    }
+    override def writes(o: CustomDataExporterRefConfig): JsValue = Json.obj(
+      "kind"   -> o.kind,
+      "ref"    -> o.ref,
+      "config" -> o.config
+    )
+  }
+}
+
 case class FileSettings(path: String, maxNumberOfFile: Option[Int], maxFileSize: Long = 10L * 1024L * 1024L)
     extends Exporter {
   override def toJson: JsValue =
@@ -757,7 +781,8 @@ case class PostgresExporterSettings(
     schema: String = "otoroshi",
     table: String = "otoroshi_events",
     poolSize: Int = 5,
-    ssl: Boolean = false
+    ssl: Boolean = false,
+    retentionDays: Int = 0
 ) extends Exporter {
   override def toJson: JsValue = PostgresExporterSettings.format.writes(this)
 }
@@ -766,16 +791,17 @@ object PostgresExporterSettings {
   val format = new Format[PostgresExporterSettings] {
     override def reads(json: JsValue): JsResult[PostgresExporterSettings] = Try {
       PostgresExporterSettings(
-        uri      = json.select("uri").asOptString.filterNot(_.isEmpty),
-        host     = json.select("host").asOptString.getOrElse("localhost"),
-        port     = json.select("port").asOptInt.getOrElse(5432),
+        uri = json.select("uri").asOptString.filterNot(_.isEmpty),
+        host = json.select("host").asOptString.getOrElse("localhost"),
+        port = json.select("port").asOptInt.getOrElse(5432),
         database = json.select("database").asOptString.getOrElse("otoroshi"),
-        user     = json.select("user").asOptString.getOrElse("otoroshi"),
+        user = json.select("user").asOptString.getOrElse("otoroshi"),
         password = json.select("password").asOptString.getOrElse("otoroshi"),
-        schema   = json.select("schema").asOptString.getOrElse("otoroshi"),
-        table    = json.select("table").asOptString.getOrElse("otoroshi_events"),
+        schema = json.select("schema").asOptString.getOrElse("otoroshi"),
+        table = json.select("table").asOptString.getOrElse("otoroshi_events"),
         poolSize = json.select("pool_size").asOptInt.getOrElse(5),
-        ssl      = json.select("ssl").asOptBoolean.getOrElse(false)
+        ssl = json.select("ssl").asOptBoolean.getOrElse(false),
+        retentionDays = json.select("retention_days").asOptInt.getOrElse(0)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -783,16 +809,17 @@ object PostgresExporterSettings {
     }
 
     override def writes(o: PostgresExporterSettings): JsValue = Json.obj(
-      "uri"       -> o.uri.map(v => JsString(v)).getOrElse(JsNull).asValue,
-      "host"      -> o.host,
-      "port"      -> o.port,
-      "database"  -> o.database,
-      "user"      -> o.user,
-      "password"  -> o.password,
-      "schema"    -> o.schema,
-      "table"     -> o.table,
-      "pool_size" -> o.poolSize,
-      "ssl"       -> o.ssl
+      "uri"            -> o.uri.map(v => JsString(v)).getOrElse(JsNull).asValue,
+      "host"           -> o.host,
+      "port"           -> o.port,
+      "database"       -> o.database,
+      "user"           -> o.user,
+      "password"       -> o.password,
+      "schema"         -> o.schema,
+      "table"          -> o.table,
+      "pool_size"      -> o.poolSize,
+      "ssl"            -> o.ssl,
+      "retention_days" -> o.retentionDays
     )
   }
 }
@@ -832,6 +859,8 @@ object DataExporterConfig {
           "include" -> JsArray(o.filtering.include),
           "exclude" -> JsArray(o.filtering.exclude)
         ),
+        "customFilter"    -> o.customFilter.map(_.json).getOrElse(JsNull).asValue,
+        "customTransform" -> o.customTransform.map(_.json).getOrElse(JsNull).asValue,
         "config"        -> o.config.toJson
       )
     }
@@ -857,6 +886,14 @@ object DataExporterConfig {
             include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
             exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           ),
+          customFilter = (json \ "customFilter")
+            .asOpt[JsObject]
+            .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
+            .filter(_.ref.trim.nonEmpty),
+          customTransform = (json \ "customTransform")
+            .asOpt[JsObject]
+            .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
+            .filter(_.ref.trim.nonEmpty),
           config = expType match {
             case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
             case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
@@ -908,6 +945,10 @@ object DataExporterConfig {
             case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "jms"           => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "postgresql"    => PostgresExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "user-analytics" =>
+              otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings.format
+                .reads((json \ "config").as[JsObject])
+                .get
             case v               => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )
@@ -1034,6 +1075,10 @@ case object DataExporterConfigTypePostgres extends DataExporterConfigType {
   def name: String = "postgresql"
 }
 
+case object DataExporterConfigTypeUserAnalytics extends DataExporterConfigType {
+  def name: String = "user-analytics"
+}
+
 object DataExporterConfigType {
 
   val Kafka         = DataExporterConfigTypeKafka
@@ -1063,6 +1108,7 @@ object DataExporterConfigType {
   val Syslog        = DataExporterConfigTypeSyslog
   val JMS           = DataExporterConfigTypeJMS
   val Postgres      = DataExporterConfigTypePostgres
+  val UserAnalytics = DataExporterConfigTypeUserAnalytics
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
@@ -1093,6 +1139,7 @@ object DataExporterConfigType {
       case "syslog"        => Syslog
       case "jms"           => JMS
       case "postgresql"    => Postgres
+      case "user-analytics" => UserAnalytics
       case _               => None
     }
   }
@@ -1114,6 +1161,8 @@ case class DataExporterConfig(
     groupDuration: FiniteDuration = 30.seconds,
     filtering: DataExporterConfigFiltering,
     projection: JsObject,
+    customFilter: Option[CustomDataExporterRefConfig] = None,
+    customTransform: Option[CustomDataExporterRefConfig] = None,
     config: Exporter
 ) extends EntityLocationSupport {
 
@@ -1162,6 +1211,8 @@ case class DataExporterConfig(
       case c: SyslogExporterSettings      => new SyslogExporter(this)
       case c: JMSExporterSettings         => new JMSExporter(this)
       case c: PostgresExporterSettings    => new PostgresExporter(this)
+      case c: otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings =>
+        new otoroshi.next.analytics.exporter.UserAnalyticsExporter(this)
       case _                              => throw new RuntimeException("unsupported exporter type")
     }
   }

@@ -6,7 +6,7 @@ import PageTitle from '../../components/PageTitle';
 import { Table } from '../../components/inputs';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
-import { DraftOnly, VersionBadge } from './DraftOnly';
+import { VersionBadge } from './DraftOnly';
 import { v4 } from 'uuid';
 
 export function ClientForm({ client, onChange }) {
@@ -29,13 +29,14 @@ export function ClientForm({ client, onChange }) {
         placeholder: 'admin',
         help: 'The tags assigned to this apikey',
       },
-    }
-  }
+    },
+  };
 
-  return <NgForm
-    value={client}
-    schema={schema}
-    onChange={onChange} />
+  return (
+    <div style={{ border: '1px solid var(--input-border)', borderRadius: '1rem' }} className="p-3">
+      <NgForm value={client} schema={schema} onChange={onChange} />
+    </div>
+  );
 }
 
 export function Clients(props) {
@@ -65,22 +66,26 @@ export function Clients(props) {
       title: 'Description',
       filterId: 'description',
       content: (item) => item.description,
-    }
-  ]
+    },
+  ];
 
-  const deleteItem = client => {
+  const deleteItem = (client) => {
     return updateItem({
       ...item,
-      clients: item.clients.filter(c => c.id !== client.id)
-    })
-  }
+      clients: item.clients.filter((c) => c.id !== client.id),
+    });
+  };
 
   return (
     <>
       <Table
         parentProps={{ params }}
-        navigateTo={client => history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)}
-        navigateOnEdit={client => history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)}
+        navigateTo={(client) =>
+          history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)
+        }
+        navigateOnEdit={(client) =>
+          history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)
+        }
         selfUrl="clients"
         defaultTitle="Clients"
         itemName="Client"
@@ -101,7 +106,7 @@ export function Clients(props) {
         rawEditUrl={true}
         injectTopBar={() => (
           <div className="btn-group input-group-btn">
-            <Link className="btn btn-primary btn-sm" to={`clients/new?version=${version}`}>
+            <Link className="btn btn-success btn-sm" to={`clients/new?version=${version}`}>
               <i className="fas fa-plus-circle" /> Create new client
             </Link>
           </div>
@@ -119,15 +124,19 @@ export function ClientEditor(props) {
   const { item, updateItem } = useDraftOfAPI();
 
   const isNew = !params.clientId;
-  const [client, setClient] = useState(isNew ? {
-    id: v4(),
-    name: 'New client',
-    description: 'New client description'
-  } : null);
+  const [client, setClient] = useState(
+    isNew
+      ? {
+          id: v4(),
+          name: 'New client',
+          description: 'New client description',
+        }
+      : null
+  );
 
   useEffect(() => {
     if (!isNew && item && !client) {
-      const found = (item.clients || []).find((p) => p.id === params.clientId);
+      const found = (item.clients_backend_config || []).find((p) => p.id === params.clientId);
       if (found) {
         setClient(found);
       }
@@ -147,23 +156,24 @@ export function ClientEditor(props) {
       ? [...(item.clients || []), client]
       : item.clients.map((p) => (p.id === client.id ? client : p));
 
-    return updateItem({ ...item, clients })
-      .then(back);
+    return updateItem({ ...item, clients }).then(back);
   };
 
-  return <div>
-    <PageTitle title={isNew ? 'New client' : client.name} {...props}>
-      <FeedbackButton
-        type="success"
-        className="d-flex ms-2"
-        onPress={save}
-        text={
-          <div className="d-flex align-items-center">
-            {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
-          </div>
-        }
-      />
-    </PageTitle>
-    <ClientForm client={client} onChange={setClient} />
-  </div>
+  return (
+    <div className="actions-page">
+      <PageTitle title={isNew ? 'New client' : client.name} {...props} />
+      <div className="displayGroupBtn">
+        <FeedbackButton
+          type="success"
+          onPress={save}
+          text={
+            <div className="d-flex align-items-center">
+              {isNew ? 'Create' : 'Update'} <VersionBadge size="xs" />
+            </div>
+          }
+        />
+      </div>
+      <ClientForm client={client} onChange={setClient} />
+    </div>
+  );
 }

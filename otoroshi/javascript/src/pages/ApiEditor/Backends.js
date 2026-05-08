@@ -13,7 +13,6 @@ import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
-import { MAX_WIDTH } from './constants';
 
 export function Backends(props) {
   const history = useHistory();
@@ -99,7 +98,7 @@ export function Backends(props) {
         <DraftOnly>
           <div className="btn-group input-group-btn">
             <Link
-              className="btn btn-primary btn-sm"
+              className="btn btn-success btn-sm"
               to={{
                 pathname: 'backends/new',
                 search: location.search,
@@ -131,13 +130,7 @@ export function NewBackend(props) {
   const saveBackend = () => {
     return updateItem({
       ...item,
-      backends: [
-        ...item.backends,
-        {
-          ...backend,
-          ...backend.backend,
-        },
-      ],
+      backends: [...item.backends, backend],
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/backends`));
   };
 
@@ -147,97 +140,87 @@ export function NewBackend(props) {
       setBackend({
         id: v4(),
         name: 'My new backend',
+        client: 'default_backend_client',
         backend: {
           ...data.backend,
           targets: [
             {
-              id: "target_1",
-              hostname: "request.otoroshi.io",
+              id: 'target_1',
+              hostname: 'request.otoroshi.io',
               port: 443,
               tls: true,
-              weight: 1
-            }
-          ]
+              weight: 1,
+            },
+          ],
         },
       }),
   });
 
   if (!backend || !item) return <SimpleLoader />;
 
-  console.log(backend)
-
   return (
-    <>
-      <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }}>
+    <div className="page">
+      <PageTitle title="New Backend" {...props} style={{ paddingBottom: 0 }} />
+      <div className="displayGroupBtn">
         <FeedbackButton
           type="success"
-          className="ms-2 mb-1 d-flex align-items-center"
           onPress={saveBackend}
           text={
-            <>
+            <div className="d-flex align-items-center">
               Create <VersionBadge size="xs" />
-            </>
+            </div>
           }
         />
-      </PageTitle>
-
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
-        <BackendForm
-          state={{
-            form: {
-              schema: {
-                name: {
-                  label: 'Name',
-                  type: 'string',
-                  placeholder: 'New backend',
-                  disabled: backend?.name === 'default_backend',
-                },
-                client: {
-                  renderer: (props) => (
-                    <Row title="HTTP client">
-                      <NgSelectRenderer
-                        id="client_select"
-                        value={props.rootValue.client}
-                        placeholder="Select an existing http client"
-                        label={' '}
-                        ngOptions={{ spread: true }}
-                        isClearable
-                        onChange={(client) => {
-                          props.rootOnChange({
-                            ...props.rootValue,
-                            client,
-                          });
-                        }}
-                        options={item.clients}
-                        optionsTransformer={(arr) =>
-                          arr.map((item) => ({ label: item.name, value: item.id }))
-                        }
-                      />
-                    </Row>
-                  ),
-                },
-                backend: {
-                  type: 'form',
-                  schema: {
-                    ...NgBackend.schema,
-
-                  },
-                  flow: NgBackend.flow.filter((f) => f !== 'client'),
-                },
-              },
-              flow: ['name', 'client', 'backend'],
-              value: backend,
-            },
-          }}
-          onChange={setBackend}
-        />
       </div>
-    </>
+      <BackendForm
+        state={{
+          form: {
+            schema: {
+              name: {
+                label: 'Name',
+                type: 'string',
+                placeholder: 'New backend',
+                disabled: backend?.name === 'default_backend',
+              },
+              client: {
+                renderer: (props) => (
+                  <Row title="HTTP client">
+                    <NgSelectRenderer
+                      id="client_select"
+                      value={props.rootValue.client}
+                      placeholder="Select an existing http client"
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      isClearable
+                      onChange={(client) => {
+                        props.rootOnChange({
+                          ...props.rootValue,
+                          client,
+                        });
+                      }}
+                      options={item.clients_backend_config}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({ label: item.name, value: item.id }))
+                      }
+                    />
+                  </Row>
+                ),
+              },
+              backend: {
+                type: 'form',
+                schema: {
+                  ...NgBackend.schema,
+                },
+                flow: NgBackend.flow.filter((f) => f !== 'client'),
+              },
+            },
+            flow: ['name', 'client', 'backend'],
+            value: backend,
+          },
+        }}
+        onChange={setBackend}
+      />
+    </div>
   );
 }
 
@@ -270,74 +253,76 @@ export function EditBackend(props) {
   if (!item || !backend) return <SimpleLoader />;
 
   return (
-    <>
-      <PageTitle title="Update Backend" {...props} style={{ paddingBottom: 0 }}>
+    <div className="page">
+      <PageTitle title="Backend Settings" {...props} style={{ paddingBottom: 0 }} />
+
+      <div className="displayGroupBtn">
         <DraftOnly>
           <FeedbackButton
             type="success"
-            className="ms-2 mb-1 d-flex align-items-center"
             onPress={updateBackend}
             text={
-              <>
-                Update <VersionBadge size="xs" />
-              </>
+              <div className="d-flex align-items-center">
+                Save <VersionBadge size="xs" />
+              </div>
             }
           />
         </DraftOnly>
-      </PageTitle>
-
-      <div
-        style={{
-          maxWidth: MAX_WIDTH,
-          margin: 'auto',
-        }}
-      >
-        <BackendForm
-          state={{
-            form: {
-              schema: {
-                name: {
-                  label: 'Name',
-                  type: 'string',
-                  placeholder: 'New backend',
-                },
-                client: {
-                  renderer: (props) => (
-                    <Row title="HTTP client">
-                      <NgSelectRenderer
-                        id="client_select"
-                        value={props.rootValue.client}
-                        placeholder="Select an existing http client"
-                        label={' '}
-                        ngOptions={{ spread: true }}
-                        isClearable
-                        onChange={(client) => {
-                          props.rootOnChange({
-                            ...props.rootValue,
-                            client,
-                          });
-                        }}
-                        options={item.clients}
-                        optionsTransformer={(arr) =>
-                          arr.map((item) => ({ label: item.name, value: item.id }))
-                        }
-                      />
-                    </Row>
-                  ),
-                },
-                backend: {
-                  type: 'form',
-                  schema: NgBackend.schema,
-                  flow: NgBackend.flow.filter((f) => f !== 'client'),
-                },
-              },
-              flow: ['name', 'client', 'backend'],
-              value: backend,
-            },
-          }}
-          onChange={setBackend}
-        />
       </div>
-    </>
+
+      <BackendForm
+        state={{
+          form: {
+            schema: {
+              name: {
+                label: 'Name',
+                type: 'string',
+                placeholder: 'New backend',
+              },
+              client: {
+                renderer: (props) => (
+                  <Row title="HTTP client">
+                    <NgSelectRenderer
+                      id="client_select"
+                      value={props.rootValue.client}
+                      placeholder="Select an existing http client"
+                      label={' '}
+                      ngOptions={{ spread: true }}
+                      isClearable
+                      onChange={(client) => {
+                        props.rootOnChange({
+                          ...props.rootValue,
+                          client,
+                        });
+                      }}
+                      options={item.clients_backend_config}
+                      optionsTransformer={(arr) =>
+                        arr.map((item) => ({ label: item.name, value: item.id }))
+                      }
+                    />
+                  </Row>
+                ),
+              },
+              backend: {
+                type: 'form',
+                label: 'Configuration',
+                schema: NgBackend.schema,
+                flow: NgBackend.flow.filter((f) => f !== 'client'),
+              },
+            },
+            flow: [
+              {
+                type: 'group',
+                fields: ['name', 'client'],
+                collapsable: false,
+              },
+              'backend',
+            ],
+            value: backend,
+          },
+        }}
+        onChange={setBackend}
+      />
+    </div>
   );
 }

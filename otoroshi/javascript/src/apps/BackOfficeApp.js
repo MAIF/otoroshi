@@ -4,6 +4,10 @@ import queryString from 'query-string';
 
 import { ServicePage } from '../pages/ServicePage';
 import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
+import { UserDashboardsPage } from '../pages/analytics/UserDashboardsPage';
+import { UserDashboardViewPage } from '../pages/analytics/UserDashboardViewPage';
+import { UserAlertsPage } from '../pages/analytics/UserAlertsPage';
+import { UserAlertEventsPage } from '../pages/analytics/UserAlertEventsPage';
 import { DocumentationPage } from '../pages/DocumentationPage';
 import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
 import { ServiceHealthPage } from '../pages/ServiceHealthPage';
@@ -86,8 +90,9 @@ class ServiceDescriptorsMigrationPopup extends Component {
             The next major version of Otoroshi (
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>v18.0.0</span>) will{' '}
             <span style={{ fontWeight: 'bold', color: 'var(--color-red)' }}>remove support</span>{' '}
-            for Service Descriptors (probably in 2026). Once this version will be deployed, all your remaning Service
-            Descriptors will be automatically migrated and deleted without further notice.
+            for Service Descriptors (probably in 2026). Once this version will be deployed, all your
+            remaning Service Descriptors will be automatically migrated and deleted without further
+            notice.
           </p>
           <p style={{ textAlign: 'justify' }}>
             We count{' '}
@@ -295,11 +300,10 @@ class BackOfficeAppContainer extends Component {
         // Pass env to the child to avoid to fetch it again
         env={this.state.env}
         reloadEnv={this.reloadEnv}
-        // setTitle={(t) => DynamicTitle.setContent(t)}
-        // getTitle={() => DynamicTitle.getContent()}
         setTitle={(t) => (dynamicTitleContent.value = t)}
         getTitle={() => dynamicTitleContent.value}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+        openedSidebar={this.state.openedSidebar}
         {...newProps}
       />
     );
@@ -322,7 +326,9 @@ class BackOfficeAppContainer extends Component {
   };
 
   render() {
-    const classes = ['page-container'];
+    const isEdition =
+      window.location.pathname.includes('/edit') || window.location.pathname.includes('/add');
+    const classes = ['page-container', isEdition ? 'page-container--centered' : ''];
     if (
       this.props.children &&
       this.props.children.type &&
@@ -359,8 +365,6 @@ class BackOfficeAppContainer extends Component {
                 reloadEnv={this.reloadEnv}
                 shortMenu={this.state.shortMenu}
                 setSidebarContent={(c) => DynamicSidebar.setContent(c)}
-                // setTitle={(t) => DynamicTitle.setContent(t)}
-                // getTitle={() => DynamicTitle.getContent()}
                 setTitle={(t) => (dynamicTitleContent.value = t)}
                 getTitle={() => dynamicTitleContent.value}
                 {...this.props}
@@ -369,10 +373,9 @@ class BackOfficeAppContainer extends Component {
               />
             </>
           )}
-          {/* <div className='container-fluid'> */}
           <div
-            style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}
             id="otoroshi-container"
+            style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}
           >
             <div className="d-flex" style={{ position: 'relative' }}>
               <div
@@ -402,34 +405,6 @@ class BackOfficeAppContainer extends Component {
                       toggleSidebar={(value) => this.setState({ openedSidebar: value })}
                     />
                   )}
-                  {/* <ul className="nav flex-column nav-sidebar mt-3">
-                    <li
-                      className={`nav-item mt-0 ${
-                        this.state.openedSidebar ? 'nav-item--open' : ''
-                      }`}
-                    >
-                      <Link
-                        to="/"
-                        className={`nav-link ${
-                          window.location.pathname === '/bo/dashboard/' ? 'active' : ''
-                        }`}
-                        {...createTooltip('Home dashboard of Otoroshi displaying global metrics')}
-                        onClick={() => {
-                          DynamicTitle.setContent(null);
-                          DynamicSidebar.setContent(null);
-                        }}
-                      >
-                        <i
-                          className={`fab fa-fort-awesome ${
-                            this.state.openedSidebar ? 'me-3' : ''
-                          }`}
-                        />
-                        <span style={{ marginTop: '6px' }}>
-                          {this.state.openedSidebar ? 'Dashboard' : ''}
-                        </span>
-                      </Link>
-                    </li>
-                  </ul> */}
                   <DynamicSidebar />
                   <DefaultSidebar
                     lines={this.state.lines}
@@ -437,7 +412,6 @@ class BackOfficeAppContainer extends Component {
                     env={this.state.env}
                   />
                   <div className="bottom-sidebar">
-                    {/*<img src='/assets/images/otoroshi-logo-inverse.png' width='16' /> version {window.__currentVersion}*/}
                     {this.state.env && (
                       <span onClick={(e) => (window.location = '/bo/dashboard/snowmonkey')}>
                         {this.state.env.snowMonkeyRunning &&
@@ -544,11 +518,10 @@ class BackOfficeAppContainer extends Component {
                           <RouteDesignerPage
                             globalEnv={this.state.env}
                             reloadEnv={this.reloadEnv}
-                            // setTitle={(t) => DynamicTitle.setContent(t)}
-                            // getTitle={() => DynamicTitle.getContent()}
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+                            openedSidebar={this.state.openedSidebar}
                             {...props}
                           />
                         )}
@@ -562,6 +535,7 @@ class BackOfficeAppContainer extends Component {
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
+                            openedSidebar={this.state.openedSidebar}
                             {...props}
                           />
                         )}
@@ -571,8 +545,6 @@ class BackOfficeAppContainer extends Component {
                         component={(props) => (
                           <NgFormPlayground
                             globalEnv={this.state.env}
-                            // setTitle={(t) => DynamicTitle.setContent(t)}
-                            // getTitle={() => DynamicTitle.getContent()}
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             {...props}
@@ -584,8 +556,6 @@ class BackOfficeAppContainer extends Component {
                         component={(props) => (
                           <MetricsPage
                             globalEnv={this.state.env}
-                            // setTitle={(t) => DynamicTitle.setContent(t)}
-                            // getTitle={() => DynamicTitle.getContent()}
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             {...props}
@@ -893,6 +863,38 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path="/status"
                         component={(props) => this.decorate(GlobalStatusPage, props)}
+                      />
+                      <Route
+                        path="/user-dashboards/show/:titem"
+                        component={(props) => this.decorate(UserDashboardViewPage, props)}
+                      />
+                      <Route
+                        path="/user-dashboards/:taction/:titem"
+                        component={(props) => this.decorate(UserDashboardsPage, props)}
+                      />
+                      <Route
+                        path="/user-dashboards/:taction"
+                        component={(props) => this.decorate(UserDashboardsPage, props)}
+                      />
+                      <Route
+                        path="/user-dashboards"
+                        component={(props) => this.decorate(UserDashboardsPage, props)}
+                      />
+                      <Route
+                        path="/user-alert-events/:titem"
+                        component={(props) => this.decorate(UserAlertEventsPage, props)}
+                      />
+                      <Route
+                        path="/user-alerts/:taction/:titem"
+                        component={(props) => this.decorate(UserAlertsPage, props)}
+                      />
+                      <Route
+                        path="/user-alerts/:taction"
+                        component={(props) => this.decorate(UserAlertsPage, props)}
+                      />
+                      <Route
+                        path="/user-alerts"
+                        component={(props) => this.decorate(UserAlertsPage, props)}
                       />
                       <Route
                         path="/events"

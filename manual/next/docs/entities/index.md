@@ -20,18 +20,18 @@ Any entity has the following properties
 
 - **[Routes](./routes.md)**: Proxy your applications with routes
 
-- **[APIs](./apis.md)**: Proxy your applications with apis
+- **[APIs](./apis.mdx)**: Proxy your applications with apis
 
 - **[Backends](./backends.md)**: Reuse route targets
 
-- **[Apikeys](./apikeys.md)**: Add security to your services using apikeys
+- **[Apikeys](./apikeys.mdx)**: Add security to your services using apikeys
 
 
-- **[Organizations](./organizations.md)**: This the most high level for grouping resources.
+- **[Organizations](./organizations.mdx)**: This the most high level for grouping resources.
 
-- **[Teams](./teams.md)**: Organize your resources by teams
+- **[Teams](./teams.mdx)**: Organize your resources by teams
 
-- **[Service groups](./service-groups.md)**: Group your services
+- **[Service groups](./service-groups.mdx)**: Group your services
 
 - **[JWT verifiers](./jwt-verifiers.md)**: Verify and forge token by services.
 
@@ -45,7 +45,7 @@ Any entity has the following properties
 
 - **[Data exporters](./data-exporters.mdx)**: Export alerts, events ands logs
 
-- **[Service descriptors](./service-descriptors.md)**: Proxy your applications with service descriptors
+- **[Service descriptors](./service-descriptors.mdx)**: Proxy your applications with service descriptors
 
 - **[Remote Catalogs](./remote-catalogs.md)**: Sync entities from remote sources
 

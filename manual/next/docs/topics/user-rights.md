@@ -80,3 +80,17 @@ The list of possible rights for an organization or a team is:
 The list of possible tenant and teams are your created tenants and teams, and the wildcard to define rights to all resources once.
 
 The user rights is defined by the [authentication modules](../entities/auth-modules.md).
+
+## Otoroshi Admin. API apikey rights
+
+If you want to restrict the scope of an Otoroshi Admin. API apikey, you can add a metadata named `otoroshi-access-rights` on it  containing an array of user rights like
+
+```json
+{
+  ...
+  "metadata": {
+    ...
+    "otoroshi-access-rights": "[{\"tenant\":\"orga-2:rw\",\"teams\":[\"team-4:rw\"]}]"
+  }
+}
+```

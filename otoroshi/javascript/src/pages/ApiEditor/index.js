@@ -10,19 +10,40 @@ import { SidebarComponent } from './SidebarComponent';
 import { Actions } from './Actions';
 import { APIGateway } from './APIGateway';
 import { Endpoints, NewRoute, RouteDesigner } from './Routes';
-import { Subscriptions, NewSubscription, SubscriptionDesigner } from './Subscriptions';
-import { PluginChains, NewPluginChains, PluginChainsDesigner, EditPluginChains } from './PluginChains';
+import { Subscriptions, SubscriptionDesigner } from './Subscriptions';
+import {
+  PluginChains,
+  NewPluginChains,
+  PluginChainsDesigner,
+  EditPluginChains,
+} from './PluginChains';
 import { Backends, NewBackend, EditBackend } from './Backends';
-import { HttpClientSettings, NewHttpClientSettings, EditHttpClientSettings } from './HttpClientSettings';
+import {
+  HttpClientSettings,
+  NewHttpClientSettings,
+  EditHttpClientSettings,
+} from './HttpClientSettings';
 import { Deployments } from './Deployments';
 import { Testing } from './Testing';
 import { NewAPI, Apis } from './Apis';
 import { Informations } from './Informations';
 import { Dashboard } from './Dashboard';
 import { ClientEditor, Clients } from './Clients';
+import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 
-const RouteWithProps = ({ component: Component, ...rest }) => (
-  <Route {...rest} component={(routeProps) => <Component {...routeProps} {...rest.props} />} />
+const RouteWithProps = ({ component: Component, props: extraProps, ...rest }) => (
+  <Route
+    path={rest.path}
+    exact={rest.exact}
+    render={(routeProps) => (
+      <Component
+        {...routeProps}
+        {...extraProps}
+        {...rest}
+        params={{ ...(routeProps.match.params || {}), ...(rest.params || {}) }}
+      />
+    )}
+  />
 );
 
 export default function ApiEditor(props) {
@@ -36,13 +57,45 @@ export default function ApiEditor(props) {
         <SidebarComponent {...props} />
 
         <Switch>
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/apikeys/:taction/:titem"
+            component={ServiceApiKeysPage}
+            props={props}
+          />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/apikeys"
+            component={ServiceApiKeysPage}
+            props={props}
+          />
           <RouteWithProps exact path="/apis/:apiId/actions" component={Actions} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/api-gateway" component={APIGateway} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/api-gateway"
+            component={APIGateway}
+            props={props}
+          />
           <RouteWithProps exact path="/apis/:apiId/plans" component={Plans} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/plans/new" component={PlanEditor} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/plans/:planId/:action" component={PlanEditor} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/plans/new"
+            component={PlanEditor}
+            props={props}
+          />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/plans/:planId/:action"
+            component={PlanEditor}
+            props={props}
+          />
           <RouteWithProps exact path="/apis/:apiId/endpoints" component={Endpoints} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/endpoints/new" component={NewRoute} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/endpoints/new"
+            component={NewRoute}
+            props={props}
+          />
           <RouteWithProps
             exact
             path="/apis/:apiId/endpoints/:routeId/:action"
@@ -50,18 +103,22 @@ export default function ApiEditor(props) {
             props={props}
           />
           <RouteWithProps exact path="/apis/:apiId/clients" component={Clients} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/clients/new" component={ClientEditor} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/clients/:planId/:action" component={ClientEditor} props={props} />
           <RouteWithProps
             exact
-            path="/apis/:apiId/subscriptions"
-            component={Subscriptions}
+            path="/apis/:apiId/clients/new"
+            component={ClientEditor}
             props={props}
           />
           <RouteWithProps
             exact
-            path="/apis/:apiId/subscriptions/new"
-            component={NewSubscription}
+            path="/apis/:apiId/clients/:clientId/:action"
+            component={ClientEditor}
+            props={props}
+          />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/subscriptions"
+            component={Subscriptions}
             props={props}
           />
           <RouteWithProps
@@ -71,8 +128,18 @@ export default function ApiEditor(props) {
             props={props}
           />
 
-          <RouteWithProps exact path="/apis/:apiId/plugin-chains" component={PluginChains} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/plugin-chains/new" component={NewPluginChains} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/plugin-chains"
+            component={PluginChains}
+            props={props}
+          />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/plugin-chains/new"
+            component={NewPluginChains}
+            props={props}
+          />
           <RouteWithProps
             exact
             path="/apis/:apiId/plugin-chains/:flowId/designer"
@@ -132,7 +199,12 @@ export default function ApiEditor(props) {
           />
           <RouteWithProps exact path="/apis/:apiId/testing" component={Testing} props={props} />
           <RouteWithProps exact path="/apis/:apiId/new" component={NewAPI} props={props} />
-          <RouteWithProps exact path="/apis/:apiId/informations" component={Informations} props={props} />
+          <RouteWithProps
+            exact
+            path="/apis/:apiId/informations"
+            component={Informations}
+            props={props}
+          />
           <RouteWithProps exact path="/apis" component={Apis} props={props} />
           <RouteWithProps exact path="/apis/:apiId" component={Dashboard} props={props} />
         </Switch>

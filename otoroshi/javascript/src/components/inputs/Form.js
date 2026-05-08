@@ -263,6 +263,20 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
+        } else if (type === 'monaco-json') {
+          component = (
+            <MonacoInput
+              disabled={disabled}
+              key={name}
+              {...props}
+              value={JSON.stringify(this.getValue(name, '{}'), null, 2)}
+              onChange={(v) => {
+                try {
+                  this.changeValue(name, JSON.parse(v))
+                } catch (e) {}
+              }}
+            />
+          );
         } else if (type === 'code') {
           component = (
             <Suspense fallback={<div>loading ...</div>}>
@@ -390,7 +404,10 @@ export class Form extends Component {
   render() {
     if (isFunction(this.props.flow)) {
       return (
-        <form className={`${this.props.styleName} form-horizontal`} style={this.props.style}>
+        <form
+          className={`${this.props.styleName} form-horizontal`}
+          style={{ maxWidth: 1000, ...this.props.style }}
+        >
           {this.props
             .flow(this.props.value)
             .filter((v) => !!v)
@@ -400,7 +417,10 @@ export class Form extends Component {
       );
     } else {
       return (
-        <form className={`${this.props.styleName} form-horizontal`} style={this.props.style}>
+        <form
+          className={`${this.props.styleName} form-horizontal`}
+          style={{ maxWidth: 1000, ...this.props.style }}
+        >
           {this.props.flow.filter((v) => !!v).map((step, idx) => this.generateStep(step, idx))}
           {this.generateLastStep()}
         </form>

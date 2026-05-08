@@ -85,6 +85,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikeys - respectNoneMetaKeysIn" in {
       new ApikeysTests(this).respectNoneMetaKeysIn()
     }
+    "Apikeys - route specific notFound restriction" in {
+      new ApikeyRestrictionsPerRouteTests(this).routeSpecificNotFoundRestriction()
+    }
     "Additional headers in" in {
       new AdditionalHeadersInTests(this)
     }
@@ -556,6 +559,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "JQ Transform response" in {
       new JQTransformResponseTests(this)
     }
+    "JsonSchemaRequestValidator - accepts valid body" in {
+      new JsonSchemaRequestValidatorTests(this).acceptsValidBody()
+    }
+    "JsonSchemaRequestValidator - rejects invalid body when failOn is true" in {
+      new JsonSchemaRequestValidatorTests(this).rejectsInvalidBodyWithFailOn()
+    }
+    "JsonSchemaRequestValidator - passes through when failOn is false" in {
+      new JsonSchemaRequestValidatorTests(this).passThroughWithFailOff()
+    }
+    "JsonSchemaRequestValidator - skips non-JSON content-type" in {
+      new JsonSchemaRequestValidatorTests(this).skipsNonJsonContentType()
+    }
+    "JsonSchemaResponseValidator - accepts valid response" in {
+      new JsonSchemaResponseValidatorTests(this).acceptsValidResponse()
+    }
+    "JsonSchemaResponseValidator - rejects invalid response when failOn is true" in {
+      new JsonSchemaResponseValidatorTests(this).rejectsInvalidResponseWithFailOn()
+    }
+    "JsonSchemaResponseValidator - passes through when failOn is false" in {
+      new JsonSchemaResponseValidatorTests(this).passThroughWithFailOff()
+    }
     "JQ" in {
       new JQTests(this)
     }
@@ -708,6 +732,11 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
         .authorizationRules()
         .futureValue
     }
+    "Local token bucket" in {
+      new LocalTokenBucketTests(this)
+        .run()
+        .futureValue
+    }
     "izanami v2 proxy - should call izanami correctly" in {
       new IzanamiV2ProxyTests(this).izanamiCallShouldBeCorrect()
     }
@@ -716,6 +745,15 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     }
     "OIDCJwtVerifier" in {
       new OIDCJwtVerifierTests(this).verifyOIDC()
+    }
+    "OAuth2TokenExchange - basic exchange" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeBasic()
+    }
+    "OAuth2TokenExchange - opaque token (no jwt verifier)" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeNoJwtVerifier()
+    }
+    "OAuth2TokenExchange - IdP failure" in {
+      new OAuth2TokenExchangeTests(this).tokenExchangeIdpFailure()
     }
     "Remote Catalogs - deploy with admin API" in {
       new RemoteCatalogsTests(this).deployWithAdminApi()

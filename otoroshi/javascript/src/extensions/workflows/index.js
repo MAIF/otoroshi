@@ -309,7 +309,6 @@ export function setupWorkflowsExtension(registerExtension) {
 
       componentDidMount() {
         this.props.setSidebarContent(<WorkflowSidebar {...this.props} />);
-
         this.props.setTitle('Workflows');
       }
 

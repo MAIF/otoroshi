@@ -585,6 +585,7 @@ export class NgForm extends Component {
       const FormRenderer = config.components.FormRenderer;
       return (
         <FormRenderer
+          style={this.props.style}
           embedded={true}
           breadcrumb={config.breadcrumb}
           setBreadcrumb={

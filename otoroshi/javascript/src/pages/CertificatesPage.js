@@ -248,7 +248,7 @@ class Commands extends Component {
             <button
               style={{ marginRight: 0 }}
               type="button"
-              className="btn btn-sm btn-success"
+              className="btn btn-sm btn-primary"
               onClick={(e) => {
                 BackOfficeServices.renewCert(this.props.rawValue.id).then((cert) => {
                   this.props.rawOnChange(cert);
@@ -280,7 +280,7 @@ class Commands extends Component {
             style={{ marginRight: 0 }}
             href={this.state.certUrl}
             download={`${this.props.rawValue.domain}.cer`}
-            className="btn btn-sm btn-success"
+            className="btn btn-sm btn-primary"
           >
             <i className="fas fa-download" /> Certificate Only
           </a>
@@ -288,7 +288,7 @@ class Commands extends Component {
             style={{ marginRight: 0 }}
             href={this.state.fullChainUrl}
             download={`${this.props.rawValue.domain}.fullchain.cer`}
-            className="btn btn-sm btn-success"
+            className="btn btn-sm btn-primary"
           >
             <i className="fas fa-download" /> Full Chain
           </a>
@@ -296,7 +296,7 @@ class Commands extends Component {
             style={{ marginRight: 0 }}
             href={this.state.privateKeyUrl}
             download={`${this.props.rawValue.domain}.key`}
-            className="btn btn-sm btn-success"
+            className="btn btn-sm btn-primary"
           >
             <i className="fas fa-download" /> Private Key
           </a>
@@ -304,7 +304,7 @@ class Commands extends Component {
             style={{ marginRight: 0 }}
             href={this.state.fullPkUrl}
             download={`${this.props.rawValue.domain}.pem`}
-            className="btn btn-sm btn-success"
+            className="btn btn-sm btn-primary"
           >
             <i className="fas fa-download" /> Full Chain + Private Key
           </a>

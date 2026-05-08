@@ -4,9 +4,25 @@ sidebar_position: 5
 ---
 # Backends
 
-A backend represents a list of target servers to forward requests to, along with its client settings, load balancing, and health check configuration.
+In Otoroshi, every [route](./routes.md) is built from three building blocks: a **frontend** (what to match), a **backend** (where to forward), and a **plugin chain** (what processing to apply). The backend is the part that answers the question: *"once a request has been matched, where should it go?"*
 
-Backends can be defined inline on a route or on their dedicated page to be reusable across multiple routes and APIs.
+A backend encapsulates the full downstream configuration: the list of target servers, how to distribute traffic across them, how to connect to them, and how to react when they fail. By grouping all of this into a single entity, Otoroshi cleanly separates routing decisions from forwarding decisions -- you can change your target servers, adjust timeouts, or switch load balancing strategies without touching any routing rule.
+
+### Inline vs stored backends
+
+Backends can be used in two ways:
+
+- **Inline** -- the backend configuration is embedded directly inside a route definition. This is the simplest approach when a backend is used by a single route.
+- **Stored (global)** -- the backend is saved as a standalone entity with its own identifier. Multiple routes and [APIs](./apis.mdx) can then reference the same backend via `backend_ref`. When you update the stored backend, every route that references it picks up the change automatically. This is the recommended approach when several routes share the same set of targets.
+
+### Key capabilities
+
+- **Multiple targets with weights** -- define several downstream servers and assign each a weight to control how traffic is distributed. Mark targets as `backup` so they only receive traffic when all primary targets are down.
+- **Load balancing strategies** -- choose from RoundRobin, Random, Sticky, IpAddressHash, BestResponseTime, WeightedBestResponseTime, LeastConnections, PowerOfTwoRandomChoices, Failover, or hash-based strategies on cookies, headers, and query parameters.
+- **Health checks** -- periodically probe your targets so that unhealthy servers are automatically removed from the load balancing pool.
+- **TLS and mTLS to backends** -- call targets over HTTPS, present client certificates, pin trusted CA certificates, or trust all certificates for development environments.
+- **Path rewriting** -- prepend a root path to every forwarded request, or completely rewrite the request path using named path parameters and the [expression language](../topics/expression-language.mdx).
+- **Client configuration** -- fine-tune how Otoroshi connects to your targets with retries (with exponential backoff), connection/idle/call timeouts, circuit breaker thresholds, connection pooling, path-specific timeout overrides, and HTTP proxy support.
 
 ## UI page
 
@@ -91,14 +107,49 @@ When enabled, Otoroshi periodically calls the health check URL. Unhealthy target
 
 ## Load balancing
 
-| Type | Description |
-|------|-------------|
-| `RoundRobin` | Distributes requests evenly across all targets in order |
-| `Random` | Randomly selects a target for each request |
-| `Sticky` | Routes requests from the same client to the same target |
-| `IpAddressHash` | Selects target based on a hash of the client IP address |
-| `BestResponseTime` | Routes to the target with the lowest response time |
-| `WeightedBestResponseTime` | Combines weight and response time for target selection |
+The `load_balancing` object selects which target receives the next request when several are available. Every strategy is a JSON object with at least a `type` field; some strategies accept additional parameters.
+
+| Type | Extra parameters | Description |
+|------|------------------|-------------|
+| `RoundRobin` | -- | Distributes requests evenly across all targets, in declaration order. Default strategy. |
+| `Random` | -- | Picks a target uniformly at random for each request. |
+| `Sticky` | -- | Routes requests carrying the same Otoroshi tracking id to the same target, using consistent hashing. Requires the tracking cookie to be enabled (Otoroshi sets it automatically). |
+| `IpAddressHash` | -- | Picks the target by consistent hashing on the client IP address. Same client IP always lands on the same target as long as the target pool is unchanged. |
+| `CookieHash` | `cookie_name` (string, default `"session-id"`) | Picks the target by consistent hashing on the value of the named request cookie. Falls back to round-robin when the cookie is absent. |
+| `QueryHash` | `query_name` (string, default `"session-id"`) | Picks the target by consistent hashing on the value of the named query string parameter. Falls back to round-robin when the parameter is absent. |
+| `HeaderHash` | `header_name` (string, default `"session-id"`) | Picks the target by consistent hashing on the value of the named request header. Falls back to round-robin when the header is absent. |
+| `BestResponseTime` | -- | Routes to the target with the lowest observed average response time. Targets with no recorded samples are tried first so every target gets measured. |
+| `WeightedBestResponseTime` | `ratio` (number, default `0.5`, clamped to `[0.0, 0.99]`) | Mixes `BestResponseTime` with `Random`. The `ratio` controls how often the fastest target is preferred -- `0.0` is equivalent to `Random`, values close to `0.99` always pick the fastest target. |
+| `LeastConnections` | -- | Routes to the target with the fewest in-flight requests handled by this Otoroshi instance. Ties are broken in round-robin order. |
+| `PowerOfTwoRandomChoices` | -- | Picks two targets at random and forwards to the one with fewer in-flight requests. Cheap approximation of `LeastConnections` that scales well with large target pools. |
+
+:::note
+`Sticky`, `BestResponseTime`, `WeightedBestResponseTime`, `LeastConnections` and `PowerOfTwoRandomChoices` keep their state in memory on each Otoroshi instance. In a cluster, every worker maintains its own counters, so the distribution converges per-instance rather than globally.
+:::
+
+:::tip
+Targets flagged with `"backup": true` are excluded from load balancing as long as at least one non-backup target is available. They only enter the pool once all primary targets are marked unhealthy or removed.
+:::
+
+### Examples
+
+Round robin (default):
+
+```json
+{ "type": "RoundRobin" }
+```
+
+Hash on a header value:
+
+```json
+{ "type": "HeaderHash", "header_name": "x-tenant-id" }
+```
+
+Weighted best response time biased 80% toward the fastest target:
+
+```json
+{ "type": "WeightedBestResponseTime", "ratio": 0.8 }
+```
 
 ## Client settings
 
@@ -217,4 +268,4 @@ PATCH  /api/backends/:id       # Partially update a stored backend
 ## Related entities
 
 * [Routes](./routes.md) - Routes reference backends inline or via `backend_ref`
-* [APIs](./apis.md) - APIs define backends that are shared across API routes
+* [APIs](./apis.mdx) - APIs define backends that are shared across API routes

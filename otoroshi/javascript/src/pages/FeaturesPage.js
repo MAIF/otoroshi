@@ -219,7 +219,7 @@ export const graph = (env) => {
           img: 'routes',
           icon: () => 'fa-brush',
           link: '/apis',
-          tag: <span className="badge bg-xs bg-warning">ALPHA</span>
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
       ],
     },
@@ -239,6 +239,22 @@ export const graph = (env) => {
           display: () => env.userAdmin || env.tenantAdmin,
           link: '/stats',
           icon: () => 'fa-signal',
+        },
+        {
+          title: 'User Analytics',
+          description: 'Custom dashboards backed by a dedicated PostgreSQL exporter',
+          img: 'analytics',
+          display: () => env.userAdmin || env.tenantAdmin,
+          link: '/user-dashboards',
+          icon: () => 'fa-chart-line',
+        },
+        {
+          title: 'User Alerts',
+          description: 'Threshold-based alerts on user-analytics queries',
+          img: 'alerts',
+          display: () => env.userAdmin || env.tenantAdmin,
+          link: '/user-alerts',
+          icon: () => 'fa-bell',
         },
         {
           title: 'Global Status',

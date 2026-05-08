@@ -1,11 +1,11 @@
 .cards {
   background-color: var(--bg-color_level2);
-  border: 2px solid var(--bg-color_level3) !important;
+  border: 1px solid var(--border-color) !important;
   margin: 5px 0px;
   flex: 1;
   border-radius: 12px;
   max-width: 300px;
-  // min-width: 300px;
+  min-width: 300px;
   // max-height: 300px;
   min-height: 300px;
   padding: 0;
@@ -46,4 +46,8 @@
     margin-bottom: 10px;
     color: var(--color_level3);
   }
+}
+
+.cards-body {
+  background: none;
 }

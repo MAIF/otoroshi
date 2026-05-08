@@ -4,7 +4,20 @@ sidebar_position: 8
 ---
 # Error Templates
 
-Error Templates allow you to customize the error pages returned by Otoroshi when something goes wrong (4xx errors, 5xx errors, maintenance mode, build mode, etc.). Each error template is associated with a route or service and provides HTML templates with placeholder variables that are replaced at runtime.
+When Otoroshi sits in front of your APIs, it becomes the face your consumers see -- including when things go wrong. By default, Otoroshi returns its own generic error pages for situations like an unauthorized request, a missing route, a backend that is down, or a service placed in maintenance mode. These generic pages get the job done, but they look nothing like the rest of your application, which can be jarring for end users and inconsistent with your brand.
+
+Error Templates solve this problem by letting you replace Otoroshi's built-in error pages with your own custom HTML. Each error template is associated with a specific route or service, so different APIs can present different error experiences. The templates cover every category of error that Otoroshi may return on behalf of your backend:
+
+- **4xx client errors** -- unauthorized access (401), forbidden requests (403), routes not found (404), and other client-side issues.
+- **5xx server errors** -- bad gateway (502), service unavailable (503), proxy errors, and other backend failures.
+- **Maintenance mode** -- a dedicated page displayed when you explicitly put a service into maintenance.
+- **Build mode** -- a dedicated page displayed when a service is flagged as under construction.
+
+Templates are standard HTML that can include placeholder variables such as `${status}`, `${message}`, `${cause}`, and `${errorId}`. At runtime, Otoroshi replaces these placeholders with the actual error details before sending the response to the client. This means you can design a fully branded error page once, and Otoroshi will fill in the specifics for each error occurrence automatically.
+
+For API consumers that expect JSON rather than HTML (based on the `Accept` header), Otoroshi returns a structured JSON error response instead of rendering the HTML template, ensuring that both browser-based users and programmatic clients receive appropriate error formats.
+
+Beyond the four broad template categories, you can also define cause-specific templates (via `genericTemplates`) and custom messages (via `messages`) for fine-grained control -- for example, showing a different page for "service not found" versus "service not secured", or overriding the default error message for a specific HTTP status code.
 
 ## UI page
 

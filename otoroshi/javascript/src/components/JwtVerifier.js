@@ -156,7 +156,7 @@ export class JwtVerifier extends Component {
 
   render() {
     const { isConfigView, verifier } = this.state;
-    const isLegacyView = this.props.showAdvancedForm;
+    const isLegacyView = true; // this.props.showAdvancedForm;
 
     const restrictedStrategy = this.props.allowedNewStrategy || this.props.strategy;
 
@@ -714,7 +714,7 @@ export class LegacyJwtVerifier extends Component {
     const path = this.props.path || '';
     const changeTheValue = this.changeTheValue;
     return (
-      <div>
+      <div style={{ maxWidth: 1000 }}>
         {verifier.type === 'global' && (
           <>
             <Collapse initCollapsed={false} label="Location" lineEnd={true}>

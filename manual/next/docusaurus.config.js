@@ -14,7 +14,7 @@ const config = {
   },
 
   url: 'https://maif.github.io',
-  baseUrl: '/otoroshi/next/',
+  baseUrl: '/otoroshi/manual/', 
 
   organizationName: 'MAIF',
   projectName: 'otoroshi',
@@ -23,6 +23,7 @@ const config = {
 
   markdown: {
     format: 'detect',
+    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'warn',
       onBrokenMarkdownImages: 'warn',
@@ -35,6 +36,7 @@ const config = {
   },
 
   themes: [
+    '@docusaurus/theme-mermaid',
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
@@ -67,6 +69,17 @@ const config = {
         },
         theme: {
           customCss: './src/css/custom.css',
+        },
+        sitemap: {
+          lastmod: 'date',
+          changefreq: 'weekly',
+          priority: 0.5,
+          filename: 'sitemap.xml',
+          createSitemapItems: async (params) => {
+            const {defaultCreateSitemapItems, ...rest} = params;
+            const items = await defaultCreateSitemapItems(rest);
+            return items.filter((item) => !item.url.includes('/page/'));
+          },
         },
       }),
     ],
@@ -147,8 +160,8 @@ const config = {
                 to: '/docs/topics',
               },
               {
-                label: 'How-to Guides',
-                to: '/docs/how-to-s',
+                label: 'Tutorials',
+                to: '/docs/tutorials',
               },
             ],
           },
@@ -194,7 +207,7 @@ const config = {
             title: 'Ecosystem',
             items: [
               {
-                label: 'Ecosystem page',
+                label: 'Otoroshi\'s Ecosystem',
                 href: '/ecosystem',
               },
               {
@@ -205,13 +218,13 @@ const config = {
           },
         ],
         logo: {
-          alt: 'MAIF OSS Logo',
+          alt: 'Otoroshi Logo',
           src: 'img/otoroshi-logo.png',
-          href: 'https://maif.github.io/',
+          href: 'https://www.otoroshi.io/',
           width: 50,
           height: 50,
         },
-        copyright: `Copyright © ${new Date().getFullYear()} MAIF — Open Source. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} #OSSbyMAIF. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

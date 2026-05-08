@@ -44,11 +44,7 @@ export function Deployments(props) {
   if (!item) return <SimpleLoader />;
 
   if (version !== 'Published')
-    return (
-      <div className="alert alert-warning">
-        Deployments are only available in production.
-      </div>
-    );
+    return <div className="alert alert-warning">Deployments are only available in production.</div>;
 
   return (
     <Table

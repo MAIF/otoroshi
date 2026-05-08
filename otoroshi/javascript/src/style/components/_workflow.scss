@@ -73,7 +73,7 @@
   .workflow-navbar {
     width: 100%;
     background-color: var(--bg-color_level2);
-    border: 1px solid var(--bg-color_level3);
+    border: 1px solid var(--border-color);
     border-left: 0;
     border-right: 0;
     z-index: 1;
@@ -444,7 +444,7 @@
     height: 100%;
     z-index: 1000;
     background: var(--bg-color_level1);
-    border: 1px solid var(--bg-color_level2);
+    border: 1px solid var(--border-color);
     transition: width 0.15s;
     padding-bottom: 4rem;
 
@@ -614,7 +614,7 @@
   .terminal-log-header {
     display: grid;
     grid-template-columns: 70px 70px 79px 1fr;
-    border: 1px solid var(--bg-color_level3);
+    border: 1px solid var(--border-color);
     font-weight: lighter;
     cursor: pointer;
   }

@@ -45,6 +45,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - ""
     resources:
       - secrets
@@ -104,6 +112,7 @@ rules:
       - green-scores
       - coraza-configs
       - http-listeners
+      - plugins
     verbs:
       - get
       - list

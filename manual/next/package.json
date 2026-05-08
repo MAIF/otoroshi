@@ -1,12 +1,13 @@
 {
   "name": "otoroshi-documentation",
-  "version": "17.13.0",
+  "version": "17.16.0-dev",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
     "build-root": "docusaurus build --config docusaurus-root.config.js --out-dir build-root",
+    "build-dev": "docusaurus build --config docusaurus-dev.config.js --out-dir build-dev",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -18,12 +19,13 @@
   "dependencies": {
     "@docusaurus/core": "3.9.2",
     "@docusaurus/preset-classic": "3.9.2",
-    "@easyops-cn/docusaurus-search-local": "^0.46.1",
-    "@mdx-js/react": "^3.0.0",
-    "clsx": "^2.0.0",
-    "prism-react-renderer": "^2.3.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@docusaurus/theme-mermaid": "3.9.2",
+    "@easyops-cn/docusaurus-search-local": "0.55.1",
+    "@mdx-js/react": "3.0.0",
+    "clsx": "2.0.0",
+    "prism-react-renderer": "2.3.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",
@@ -42,6 +44,6 @@
     ]
   },
   "engines": {
-    "node": ">=20.0"
+    "node": ">=18.0"
   }
 }

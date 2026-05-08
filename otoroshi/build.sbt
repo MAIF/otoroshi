@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype.*
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "17.14.0-dev"
+version := "17.16.0-dev"
 scalaVersion := scalaLangVersion
 
 ThisBuild / evictionErrorLevel := Level.Warn
@@ -334,6 +334,7 @@ assembly / assemblyMergeStrategy := {
     case PathList("io", "sundr", xs @ _*) => MergeStrategy.first
     case PathList("com", "sun", "xml", xs @ _*) => MergeStrategy.first
     case PathList("com", "sun", "istack", xs @ _*) => MergeStrategy.first
+    case PathList("com", "sun", "activation", xs @ _*) => MergeStrategy.first
     case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("reference-overrides.conf") => MergeStrategy.concat
     case PathList(ps @ _*) if ps.contains("field_mask.proto") => MergeStrategy.first

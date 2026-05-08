@@ -98,7 +98,7 @@ export function useDraftOfAPI() {
     updateItem: isDraft ? updateDraft : updateAPI,
     updateDraft,
     updateAPI,
-    isDraft
+    isDraft,
   };
 }
 

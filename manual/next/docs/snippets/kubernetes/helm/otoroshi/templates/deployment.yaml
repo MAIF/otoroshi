@@ -8,7 +8,6 @@ metadata:
     helm.sh/chart: {{ template "otoroshi.chart" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: "Helm"
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
     meta.helm.sh/release-name: {{ .Release.Name }}
   annotations:

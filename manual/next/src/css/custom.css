@@ -35,6 +35,10 @@
   backdrop-filter: blur(10px);
 }
 
+.navbar.navbar-sidebar--show {
+  backdrop-filter: none;
+}
+
 .navbar__title {
   font-weight: 700;
 }

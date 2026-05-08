@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
 import io.otoroshi.wasm4s.scaladsl.*
+import next.models.Api
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.util.FastFuture.*
@@ -68,6 +69,7 @@ object ServiceLike {
   def fromService(service: ServiceDescriptor): ServiceLike           = ServiceLike(service, service.groups)
   def fromRoute(service: NgRoute): ServiceLike                       = ServiceLike(service, service.groups)
   def fromRouteComposition(service: NgRouteComposition): ServiceLike = ServiceLike(service, service.groups)
+  def fromApi(service: Api): ServiceLike                             = ServiceLike(service, service.groups)
 }
 
 case class BackofficeFlags(
@@ -1804,9 +1806,13 @@ class BackOfficeController(
         env.datastores.routeDataStore.findById(serviceId) flatMap {
           case Some(service) => ServiceLike.fromRoute(service).some.vfuture
           case None          =>
-            env.datastores.routeCompositionDataStore.findById(serviceId) map {
-              case Some(service) => ServiceLike.fromRouteComposition(service).some
-              case None          => None
+            env.datastores.apiDataStore.findById(serviceId) flatMap {
+              case Some(service) => ServiceLike.fromApi(service).some.vfuture
+              case None          =>
+                env.datastores.routeCompositionDataStore.findById(serviceId) map {
+                  case Some(service) => ServiceLike.fromRouteComposition(service).some
+                  case None          => None
+                }
             }
         }
     }
@@ -2290,6 +2296,68 @@ class BackOfficeController(
   def clearUserPreference(id: String): Action[AnyContent] = BackOfficeActionAuth.async { ctx =>
     env.datastores.adminPreferencesDatastore.deletePreference(ctx.user.email, id).map { _ =>
       Ok(Json.obj("done" -> true))
+    }
+  }
+
+  def getAuthorizedEntitiesForApikey(id: String) = BackOfficeActionAuth.async(parse.json) { ctx =>
+    env.proxyState.apikey(id) match {
+      case None                                     => Ok(Json.obj("error" -> "entity not found")).vfuture
+      case Some(apikey) if !ctx.canUserRead(apikey) => Unauthorized(Json.obj("error" -> "entity available")).vfuture
+      case Some(apikey)                             => {
+        val authorizedEntities     = ctx.request.body
+          .select("authorized_entities")
+          .asOpt[Seq[JsValue]]
+          .getOrElse(apikey.authorizedEntities)
+          .flatMap {
+            case o @ JsObject(_) => EntityIdentifier.applyModern(o)
+            case JsString(str)   => EntityIdentifier.apply(str)
+            case _               => None
+          }
+        val entities: Seq[JsValue] = ctx.request.getQueryString("kind") match {
+          case Some("route") =>
+            authorizedEntities.collect {
+              case RouteIdentifier(id)             =>
+                Seq(
+                  Json.obj(
+                    "kind"  -> "route",
+                    "value" -> id,
+                    "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+                  )
+                )
+              case ServiceDescriptorIdentifier(id) =>
+                Seq(
+                  Json.obj(
+                    "kind"  -> "route",
+                    "value" -> id,
+                    "label" -> env.proxyState.service(id).map(_.name).getOrElse("--").json
+                  )
+                )
+              case ServiceGroupIdentifier(id)      =>
+                env.proxyState
+                  .allRoutes()
+                  .filter(r => r.groups.contains(id))
+                  .map(r => Json.obj("kind" -> "route", "value" -> r.id, "label" -> r.name))
+            }.flatten
+          case Some("api")   =>
+            authorizedEntities.collect { case ApiIdentifier(id) =>
+              Json.obj(
+                "kind"  -> "api",
+                "value" -> id,
+                "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+              )
+            }
+          case Some("group") =>
+            authorizedEntities.collect { case ServiceGroupIdentifier(id) =>
+              Json.obj(
+                "kind"  -> "group",
+                "value" -> id,
+                "label" -> env.proxyState.api(id).map(_.name).getOrElse("--").json
+              )
+            }
+          case _             => Seq.empty
+        }
+        Ok(JsArray(entities)).vfuture
+      }
     }
   }
 }

@@ -215,6 +215,7 @@ case class NgRoute(
     }
   }
 
+  lazy val apiRef: Option[String]               = metadata.get("Otoroshi-Api-Ref")
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAhcClient: Boolean                = !useAkkaHttpClient && !useNettyClient
   lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-pekko-http-client").contains("true")
@@ -717,11 +718,11 @@ case class NgRoute(
     }
   }
 
-  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, request: RequestHeader)(using
+  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, attrs: TypedMap, request: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): NgContextualPlugins = {
-    NgContextualPlugins(plugins, global_plugins, request, nextPluginsMerge, env, ec)
+    NgContextualPlugins(this, plugins, global_plugins, request, nextPluginsMerge, attrs, env, ec)
   }
 }
 

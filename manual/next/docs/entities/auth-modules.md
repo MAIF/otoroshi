@@ -4,17 +4,37 @@ sidebar_position: 4
 ---
 # Authentication modules
 
-The authentication modules manage the access to Otoroshi UI and can protect a route.
+## Overview
 
-A `private Otoroshi app` is an Otoroshi route with the Authentication plugin enabled.
+Authentication modules allow Otoroshi to centralize user authentication in a single place, so that your backend services do not have to implement login flows themselves. Otoroshi acts as an **authentication proxy**: it intercepts incoming requests, verifies user identity through a configured identity provider, and forwards authenticated requests to your services. This offloads the entire login complexity -- session management, token exchange, protocol handling -- from your applications.
 
-The list of supported authentication are :
+## Two authentication contexts
 
-* `OAuth 2.0/2.1` : an authorization standard that allows a user to grant limited access to their resources on one site to another site, without having to expose their credentials
-* `OAuth 1.0a` : the original standard for access delegation
-* `In memory` : create users directly in Otoroshi with rights and metadata
-* `LDAP : Lightweight Directory Access Protocol` : connect users using a set of LDAP servers
-* `SAML V2 - Security Assertion Markup Language` : an open-standard, XML-based data format that allows businesses to communicate user authentication and authorization information to partner companies and enterprise applications their employees may use.
+Authentication modules serve two distinct purposes in Otoroshi:
+
+- **Back-office authentication**: Controls who can access the Otoroshi admin UI. A global setting defines which auth module administrators must use to log in. This secures the management console where routes, API keys, certificates, and all other entities are configured.
+
+- **Private apps authentication**: Protects user-facing routes. When a route has the `Authentication` plugin enabled, it becomes a **private app** -- any unauthenticated user hitting that route is automatically redirected to a login page. After successful authentication, the user is redirected back to the original URL with a valid session. This lets you add authentication to any HTTP service without modifying its code.
+
+## How auth modules connect to other entities
+
+- **Routes**: A route becomes a private app by adding the `Authentication` plugin (or `MultiAuthModule` for multiple providers) to its plugin chain. The plugin references an auth module by its ID.
+- **Global config**: The back-office auth module is configured globally, determining which identity provider administrators must use.
+- **User sessions**: Once a user authenticates, Otoroshi creates a session (stored as a cookie) and can pass user identity information downstream to your services through the Otoroshi claim token.
+- **User validators**: After successful login, validators can further restrict access based on the user's profile content (email, groups, custom attributes), enabling fine-grained authorization on top of authentication.
+
+## Supported authentication protocols
+
+Otoroshi supports several authentication protocols. The choice depends on your identity infrastructure:
+
+* **OAuth 2.0/2.1 (OIDC)**: The recommended choice for modern single sign-on (SSO). Use it to integrate with providers like Keycloak, Auth0, Azure AD, Google, or any OpenID Connect-compliant identity provider. Supports PKCE, token refresh, and token introspection.
+* **OAuth 1.0a**: The original OAuth standard for access delegation. Use it when integrating with services that have not migrated to OAuth 2.0 (e.g., some legacy Twitter/X APIs).
+* **LDAP**: Connect to enterprise directory servers (Active Directory, OpenLDAP) to authenticate users against their corporate credentials. Ideal when your organization manages identities in an LDAP directory and you want direct integration without an intermediary identity provider.
+* **SAML v2**: An XML-based federation standard commonly used in enterprise environments. Use it when integrating with identity providers that only support SAML (e.g., legacy enterprise SSO systems, ADFS, or Shibboleth).
+* **In-memory**: Define users directly within Otoroshi with passwords, rights, and metadata. Useful for development, testing, or small deployments where an external identity provider is not needed. Also supports WebAuthn login.
+* **WASM**: Delegate the entire authentication logic to a WebAssembly plugin for fully custom authentication flows.
+
+## Common configuration fields
 
 All authentication modules have a unique `id`, a `name` and a `description`.
 
@@ -96,7 +116,7 @@ for instance to check if the current user has the right `two`, you can write the
 
 ## OAuth 2.0 / OIDC provider
 
-If you want to secure an app or your Otoroshi UI with this provider, you can check these tutorials : [Secure an app with keycloak](../how-to-s/secure-app-with-keycloak.mdx) or [Secure an app with auth0](../how-to-s/secure-app-with-auth0.mdx)
+If you want to secure an app or your Otoroshi UI with this provider, you can check these tutorials : [Secure an app with keycloak](../tutorials/secure-app-with-keycloak.mdx) or [Secure an app with auth0](../tutorials/secure-app-with-auth0.mdx)
 
 * `Use cookie`: If your OAuth2 provider does not support query param in redirect uri, you can use cookies instead
 * `Use json payloads`: the access token, sended to retrieve the user info, will be pass in body as JSON. If disabled, it will sended as Map.
@@ -143,7 +163,7 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 
 ## OAuth 1.0a provider
 
-If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with OAuth 1.0a](../how-to-s/secure-with-oauth1-client.mdx)
+If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with OAuth 1.0a](../tutorials/secure-with-oauth1-client.mdx)
 
 * `Http Method`: method used to get request token and the access token 
 * `Consumer key`: the identifier portion of the client credentials (equivalent to a username)
@@ -157,7 +177,7 @@ If you want to secure an app or your Otoroshi UI with this provider, you can che
 
 ## LDAP Authentication provider
 
-If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with LDAP](../how-to-s/secure-app-with-ldap.mdx)
+If you want to secure an app or your Otoroshi UI with this provider, you can check this tutorial : [Secure an app with LDAP](../tutorials/secure-app-with-ldap.mdx)
 
 * `Basic auth.`: if enabled, user and password will be extract from the `Authorization` header as a Basic authentication. It will skipped the login Otoroshi page 
 * `Allow empty password`: LDAP servers configured by default with the possibility to connect without password can be secured by this module to ensure that user provides a password
@@ -232,7 +252,7 @@ PATCH  /api/auths/:id       # Partially update an auth module
 
 ## Related pages
 
-* [Secure an app with auth0](../how-to-s/secure-app-with-auth0.mdx)
-* [Secure an app with keycloak](../how-to-s/secure-app-with-keycloak.mdx)
-* [Secure an app with LDAP](../how-to-s/secure-app-with-ldap.mdx)
-* [Secure an app with OAuth 1.0a](../how-to-s/secure-with-oauth1-client.mdx)
+* [Secure an app with auth0](../tutorials/secure-app-with-auth0.mdx)
+* [Secure an app with keycloak](../tutorials/secure-app-with-keycloak.mdx)
+* [Secure an app with LDAP](../tutorials/secure-app-with-ldap.mdx)
+* [Secure an app with OAuth 1.0a](../tutorials/secure-with-oauth1-client.mdx)

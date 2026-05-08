@@ -75,7 +75,7 @@ class RemoteCatalogDeploySingle extends NgBackendCall {
           .NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "catalog not found")))
           .leftf
       case Some((extension, catalog)) =>
-        ctx.jsonWithTypedBody.flatMap { input =>
+        ctx.jsonWithTypedBody.flatMap { case (input, _) =>
           extension.engine.deploy(catalog, input.asOpt[JsObject].getOrElse(Json.obj())).map {
             case Left(err)     =>
               BackendCallResponse(
@@ -155,7 +155,7 @@ class RemoteCatalogDeployMany extends NgBackendCall {
           .NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "extension not found")))
           .leftf
       case Some(ext) =>
-        ctx.jsonWithTypedBody.flatMap { input =>
+        ctx.jsonWithTypedBody.flatMap { case (input, _) =>
           val items = input.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
           items
             .filter(item => config.catalogRefs.contains(item.select("id").asOpt[String].getOrElse("")))
@@ -208,12 +208,12 @@ object RemoteCatalogDeployWebhookConfig {
         "label" -> "Source type",
         "props" -> Json.obj(
           "options" -> Json.arr(
-            Json.obj("label" -> "GitHub", "value" -> "github"),
-            Json.obj("label" -> "GitLab", "value" -> "gitlab"),
+            Json.obj("label" -> "GitHub", "value"    -> "github"),
+            Json.obj("label" -> "GitLab", "value"    -> "gitlab"),
             Json.obj("label" -> "Bitbucket", "value" -> "bitbucket"),
-            Json.obj("label" -> "Gitea", "value" -> "gitea"),
-            Json.obj("label" -> "Forgejo", "value" -> "forgejo"),
-            Json.obj("label" -> "Codeberg", "value" -> "codeberg")
+            Json.obj("label" -> "Gitea", "value"     -> "gitea"),
+            Json.obj("label" -> "Forgejo", "value"   -> "forgejo"),
+            Json.obj("label" -> "Codeberg", "value"  -> "codeberg")
           )
         )
       )
@@ -261,7 +261,7 @@ class RemoteCatalogDeployWebhook extends NgBackendCall {
           .NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "extension not found")))
           .leftf
       case Some(ext) =>
-        ctx.jsonWithTypedBody.flatMap { payload =>
+        ctx.jsonWithTypedBody.flatMap { case (payload, _) =>
           CatalogSources.source(config.sourceType) match {
             case None                                    =>
               BackendCallResponse(

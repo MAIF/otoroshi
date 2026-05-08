@@ -22,13 +22,27 @@ import otoroshi.controllers.adminapi.*
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.gateway.*
+import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.metrics.Metrics
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.models.*
 import otoroshi.netty.ReactorNettyServer
+import otoroshi.next.analytics.models.{UserAlert, UserDashboard}
 import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
+import otoroshi.next.plugins.api.{
+  NgAccessValidator,
+  NgBackendCall,
+  NgNamedPlugin,
+  NgPluginVisibility,
+  NgPreRouting,
+  NgRequestSink,
+  NgRequestTransformer,
+  NgRouteMatcher,
+  NgTunnelHandler,
+  NgWebsocketPlugin
+}
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
@@ -58,6 +72,8 @@ import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -1232,11 +1248,12 @@ class OtoroshiResources(env: Env) {
             ApiKey._fmt.reads(json)
           }
           override def writes(o: ApiKey): JsValue = {
-            var base = Json.obj("bearer" -> o.toBearer())
-            if (o.rotation.enabled && o.rotation.nextSecret.isDefined) {
-              base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> o.toNextBearer()))
-            }
-            ApiKey._fmt.writes(o).asObject.deepMerge(base)
+            // var base = Json.obj("bearer" -> o.toBearer())
+            // if (o.rotation.enabled && o.rotation.nextSecret.isDefined) {
+            //   base = base ++ Json.obj("rotation" -> Json.obj("bearer" -> o.toNextBearer()))
+            // }
+            // ApiKey._fmt.writes(o).asObject.deepMerge(base)
+            o.jsonWithBearer
           }
         },
         classOf[ApiKey],
@@ -1600,7 +1617,8 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _ctx) => env.datastores.draftsDataStore.template(env).json,
         stateAll = () => env.proxyState.allDrafts(),
         stateOne = id => env.proxyState.draft(id),
-        stateUpdate = seq => env.proxyState.updateDrafts(seq)
+        stateUpdate = seq => env.proxyState.updateDrafts(seq),
+        writeValidator = Draft.writeValidator
       )
     ),
     //////
@@ -1620,7 +1638,8 @@ class OtoroshiResources(env: Env) {
         (_v, _p, _a) => env.datastores.apiDataStore.template(env).json,
         stateAll = () => env.proxyState.allApis(),
         stateOne = id => env.proxyState.api(id),
-        stateUpdate = seq => env.proxyState.updateApis(seq)
+        stateUpdate = seq => env.proxyState.updateApis(seq),
+        writeValidator = Api.writeValidator
       )
     ),
     //////
@@ -1641,7 +1660,8 @@ class OtoroshiResources(env: Env) {
         stateAll = () => env.proxyState.allApiSubscriptions(),
         stateOne = id => env.proxyState.apiSubscription(id),
         stateUpdate = seq => env.proxyState.updateApiSubscriptions(seq),
-        writeValidator = ApiSubscription.writeValidator
+        writeValidator = ApiSubscription.writeValidator,
+        deleteValidator = ApiSubscription.deleteValidator
       )
     ),
     //////
@@ -1663,12 +1683,50 @@ class OtoroshiResources(env: Env) {
         stateOne = id => env.proxyState.routeTemplate(id),
         stateUpdate = seq => env.proxyState.updateRouteTemplates(seq)
       )
+    ),
+    Resource(
+      "UserDashboard",
+      "user-dashboards",
+      "user-dashboard",
+      "analytics.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[UserDashboard](
+        UserDashboard.format,
+        classOf[UserDashboard],
+        env.datastores.userDashboardDataStore.key,
+        env.datastores.userDashboardDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.userDashboardDataStore.template(env).json,
+        stateAll = () => env.proxyState.allUserDashboards(),
+        stateOne = id => env.proxyState.userDashboard(id),
+        stateUpdate = seq => env.proxyState.updateUserDashboards(seq)
+      )
+    ),
+    Resource(
+      "UserAlert",
+      "user-alerts",
+      "user-alert",
+      "analytics.otoroshi.io",
+      ResourceVersion("v1", true, false, true),
+      GenericResourceAccessApiWithState[UserAlert](
+        UserAlert.format,
+        classOf[UserAlert],
+        env.datastores.userAlertDataStore.key,
+        env.datastores.userAlertDataStore.extractId,
+        json => json.select("id").asString,
+        () => "id",
+        (v, p, ctx) => env.datastores.userAlertDataStore.template(env).json,
+        stateAll = () => env.proxyState.allUserAlerts(),
+        stateOne = id => env.proxyState.userAlert(id),
+        stateUpdate = seq => env.proxyState.updateUserAlerts(seq)
+      )
     )
   ) ++ env.adminExtensions.resources()
 
 }
 
-class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
+class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   private val sourceBodyParser = BodyParser("GenericApiController BodyParser") { _ =>
@@ -3116,19 +3174,33 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
       }
     }
 
-  def openapiJson(): Action[AnyContent] = Action { req =>
-    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
+  // Documentation resources
+
+  def openapiJson() = DocAction { ctx =>
+    val body = otoroshi.api.OpenApi.generate(
+      env,
+      ctx.request.getQueryString("version"),
+      ctx.request.getQueryString("extension_group")
+    )
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapiYaml(): Action[AnyContent] = Action { req =>
-    val body = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
+  def openapiYaml() = DocAction { ctx =>
+    val body = otoroshi.api.OpenApi.generate(
+      env,
+      ctx.request.getQueryString("version"),
+      ctx.request.getQueryString("extension_group")
+    )
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapi(): Action[AnyContent] = Action { req =>
-    val body     = otoroshi.api.OpenApi.generate(env, req.getQueryString("version"), req.getQueryString("extension_group"))
-    val accepted = req.acceptedTypes
+  def openapi() = DocAction { ctx =>
+    val body     = otoroshi.api.OpenApi.generate(
+      env,
+      ctx.request.getQueryString("version"),
+      ctx.request.getQueryString("extension_group")
+    )
+    val accepted = ctx.request.acceptedTypes
       .map(v => (s"${v.mediaType}/${v.mediaSubType}", v.qValue.getOrElse(BigDecimal(1.0))))
       .filter {
         case ("application/json", _) => true
@@ -3148,17 +3220,22 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
     }
   }
 
-  def workflowDescriptorJson(): Action[AnyContent] = Action {
+  def workflowDescriptorJson() = DocAction {
     val body = otoroshi.next.workflow.WorkflowGenerators.generateJsonDescriptor().prettify
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorMarkdown(): Action[AnyContent] = Action {
+  def workflowDescriptorYaml() = DocAction {
+    val body = otoroshi.next.workflow.WorkflowGenerators.generateJsonDescriptor()
+    Ok(Yaml.write(body)).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+
+  def workflowDescriptorMarkdown() = DocAction {
     val body = otoroshi.next.workflow.WorkflowGenerators.generateMarkdownDescriptor()
     Ok(body).as("text/plain").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def workflowDescriptorWeb(): Action[AnyContent] = Action {
+  def workflowDescriptorWeb() = DocAction {
     val body =
       s"""<html>
          |  <head>
@@ -3198,6 +3275,122 @@ class GenericApiController(ApiAction: ApiAction, cc: ControllerComponents)(using
          |</html>
          |""".stripMargin
 
-    Ok(body).as("text/html").withHeaders("Access-Control-Allow-Origin" -> "*")
+    Ok(body).as("text/html")
+  }
+
+  def openapiUi = DocAction { ctx =>
+    Ok(
+      otoroshi.views.html.oto.openapiFrame(
+        s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json?doc_secret=${ctx.sec}"
+      )
+    )
+  }
+
+  def pluginsRaw(): JsValue = {
+    val plugins = env.scriptManager.ngNames.distinct
+      .filterNot(_.contains(".NgMerged"))
+      .flatMap(name => env.scriptManager.getAnyScript[NgNamedPlugin](s"cp:$name").toOption.map(o => (name, o)))
+    JsArray(plugins.filter(_._2.visibility == NgPluginVisibility.NgUserLand).map { case (name, plugin) =>
+      val onRequest  = plugin match {
+        case a: NgRequestTransformer => a.transformsRequest
+        case _: NgPreRouting         => true
+        case _: NgTunnelHandler      => true
+        case _: NgAccessValidator    => true
+        case _: NgRequestSink        => true
+        case _: NgRouteMatcher       => true
+        case p: NgWebsocketPlugin    => p.onRequestFlow
+        case _                       => false
+      }
+      val onResponse = plugin match {
+        case a: NgRequestTransformer => a.transformsResponse || a.transformsError
+        case p: NgWebsocketPlugin    => p.onResponseFlow
+        case _: NgPreRouting         => false
+        case _: NgTunnelHandler      => false
+        case _: NgAccessValidator    => false
+        case _: NgRequestSink        => false
+        case _: NgRouteMatcher       => false
+        case _                       => true
+      }
+
+      val form                      = env.openApiSchema.asForms.get(name)
+      val pluginSchema: JsObject    = form.map(_.schema).getOrElse(Json.obj())
+      val overridedSchema: JsObject = plugin.configSchema.getOrElse(Json.obj()).as[JsObject]
+
+      Json.obj(
+        "id"                            -> s"cp:$name",
+        "name"                          -> plugin.name,
+        "description"                   -> plugin.description
+          .map(_.trim)
+          .filter(_.nonEmpty)
+          .map(JsString.apply)
+          .getOrElse(JsNull)
+          .as[JsValue],
+        "default_config"                -> plugin.defaultConfig.getOrElse(JsNull).as[JsValue],
+        "config_schema"                 -> pluginSchema.deepMerge(overridedSchema),
+        "config_flow"                   -> JsArray((plugin.configFlow ++ form.map(_.flow).getOrElse(Set.empty)).map(JsString.apply)),
+        "no_js_form"                    -> plugin.noJsForm,
+        "plugin_type"                   -> "ng",
+        "plugin_visibility"             -> plugin.visibility.json,
+        "plugin_categories"             -> JsArray(plugin.categories.map(_.json)),
+        "plugin_steps"                  -> JsArray(plugin.steps.map(_.json)),
+        "plugin_tags"                   -> JsArray(plugin.tags.map(JsString.apply)),
+        "plugin_multi_inst"             -> plugin.multiInstance,
+        "plugin_backend_call_delegates" -> (plugin match {
+          case call: NgBackendCall => call.useDelegates
+          case _                   => false
+        }),
+        "on_request"                    -> onRequest,
+        "on_response"                   -> onResponse
+      )
+    })
+  }
+
+  def pluginsJson = DocAction { ctx =>
+    Ok(pluginsRaw()).withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+
+  def pluginsYaml = DocAction { ctx =>
+    Ok(Yaml.write(pluginsRaw())).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
+  }
+}
+
+case class DocActionCtx[A](request: Request[A], sec: String)
+
+class DocAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+    extends ActionBuilder[DocActionCtx, AnyContent]
+    with ActionFunction[Request, DocActionCtx] {
+
+  lazy val secretOpt = env.docResourcesSecret
+
+  override protected def executionContext: ExecutionContext = env.otoroshiExecutionContext
+
+  override def invokeBlock[A](request: Request[A], block: DocActionCtx[A] => Future[Result]): Future[Result] = {
+    if (env.isDev) {
+      block(DocActionCtx(request, ""))
+    } else {
+      secretOpt match {
+        case None         => block(DocActionCtx(request, ""))
+        case Some(secret) => {
+          val basicAuthSecret = Base64.getEncoder.encodeToString(s"doc:${secret}".getBytes(StandardCharsets.UTF_8))
+          request.headers.get("Authorization") match {
+            case Some(auth) if auth.trim == s"Basic ${basicAuthSecret}" => block(DocActionCtx(request, basicAuthSecret))
+            case _                                                      =>
+              request.getQueryString("doc_secret") match {
+                case Some(sec) if sec == basicAuthSecret => block(DocActionCtx(request, basicAuthSecret))
+                case Some(sec) if sec == secret          => block(DocActionCtx(request, basicAuthSecret))
+                case _                                   =>
+                  Results
+                    .Unauthorized(Json.obj("error" -> "unauthorized"))
+                    .withHeaders(
+                      "WWW-Authenticate" -> s"""Basic realm="otoroshi-doc-${env.datastores.globalConfigDataStore
+                        .latest()(env.otoroshiExecutionContext, env)
+                        .otoroshiId}""""
+                    )
+                    .vfuture
+              }
+          }
+        }
+      }
+    }
   }
 }

@@ -5,8 +5,10 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import MonacoEditor from '@monaco-editor/react';
 import { Form } from '../../components/inputs/Form';
 
-import { useDraftOfAPI, VersionBadge } from './index';
 import { PillButton } from '../../components/PillButton';
+import { MAX_WIDTH } from './constants';
+import { DraftOnly, VersionBadge } from './DraftOnly';
+import { useDraftOfAPI } from './hooks';
 
 function ApiDocumentationResource(props) {
   const flow = [
@@ -52,9 +54,9 @@ function ApiDocumentationResource(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -91,9 +93,9 @@ function ApiDocumentationResourceRef(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -122,9 +124,9 @@ function ApiDocumentationRedirection(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -159,9 +161,9 @@ function ApiDocumentationSidebarItem(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -186,9 +188,9 @@ function ApiDocumentationSidebar(props) {
         onChange={
           props.itemValue
             ? (v) => {
-              props.value[props.idx] = v;
-              props.onChange(props.value);
-            }
+                props.value[props.idx] = v;
+                props.onChange(props.value);
+              }
             : props.onChange
         }
       />
@@ -309,12 +311,12 @@ export function Documentation(props) {
     banner: {
       type: ApiDocumentationResource,
       props: { label: 'Banner' },
-    }
+    },
   };
 
   if (!item) return <SimpleLoader />;
   return (
-    <>
+    <div>
       <PageTitle title="Documentation" {...props}>
         <div className="btn-group" style={{ marginRight: 10 }}>
           <PillButton
@@ -331,44 +333,50 @@ export function Documentation(props) {
           />
         </div>
 
-        {isDraft ? <FeedbackButton
-          type="success"
-          className="d-flex ms-auto"
-          onPress={updateDoc}
-          text={
-            <div className="d-flex align-items-center">
-              Update <VersionBadge size="xs" />
-            </div>
-          }
-        /> : null}
+        <DraftOnly>
+          <div className="displayGroupBtn">
+            <FeedbackButton
+              type="success"
+              onPress={updateDoc}
+              text={
+                <div className="d-flex align-items-center">
+                  Save <VersionBadge size="xs" />
+                </div>
+              }
+            />
+          </div>
+        </DraftOnly>
       </PageTitle>
-      {showJson && (
-        <MonacoEditor
-          height={window.innerHeight - 140}
-          width="100%"
-          theme="vs-dark"
-          defaultLanguage="json"
-          value={code}
-          options={{
-            automaticLayout: true,
-            selectOnLineNumbers: true,
-            minimap: { enabled: true },
-            lineNumbers: true,
-            glyphMargin: false,
-            folding: true,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 0,
-          }}
-          onChange={(newValue) => {
-            try {
-              setNewItem(JSON.parse(newValue));
-            } catch (e) { }
-          }}
-        />
-      )}
-      {!showJson && (
-        <Form flow={flow} schema={schema} value={newItem || {}} onChange={(e) => setNewItem(e)} />
-      )}
-    </>
+
+      <div style={{ maxWidth: MAX_WIDTH }}>
+        {showJson && (
+          <MonacoEditor
+            height={window.innerHeight - 140}
+            width="100%"
+            theme="vs-dark"
+            defaultLanguage="json"
+            value={code}
+            options={{
+              automaticLayout: true,
+              selectOnLineNumbers: true,
+              minimap: { enabled: true },
+              lineNumbers: true,
+              glyphMargin: false,
+              folding: true,
+              lineDecorationsWidth: 0,
+              lineNumbersMinChars: 0,
+            }}
+            onChange={(newValue) => {
+              try {
+                setNewItem(JSON.parse(newValue));
+              } catch (e) {}
+            }}
+          />
+        )}
+        {!showJson && (
+          <Form flow={flow} schema={schema} value={newItem || {}} onChange={(e) => setNewItem(e)} />
+        )}
+      </div>
+    </div>
   );
 }

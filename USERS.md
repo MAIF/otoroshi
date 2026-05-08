@@ -8,6 +8,7 @@ If you're using Otoroshi and would like to be added to this list, please open a 
 | Name | Website | Usage |
 | --- | --- | --- |
 | Cloud APIM | [https://www.cloud-apim.com/](https://www.cloud-apim.com/) | API Gateway for internal services, Managed Instances, gateway based products |
+| Hexafret | [https://hexafret.com/fr](https://hexafret.com/fr) | Secure API gateway for internal services and managed instances, supporting gateway-based business products |
 | Serli | [https://www.serli.com/](https://www.serli.com/) | API Gateway & Reverse proxy |
 | Clever Cloud | [https://www.clever.cloud/](https://www.clever.cloud/) | Managed Instances, AI Gateway product |
 | MAIF | https://www.maif.fr/ | Mutuelle d'assurance automobile des instituteurs de France |

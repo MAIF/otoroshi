@@ -9,6 +9,7 @@ import BuildMode from './BuildMode';
 import BasicAuthCaller from './BasicAuthCaller';
 import BrotliResponseCompressor from './BrotliResponseCompressor';
 import CanaryMode from './CanaryMode';
+import ExposeDaikoku from './ExposeDaikoku';
 import TimeControlledCanaryMode from './TimeControlledCanaryMode';
 import ContextValidation from './ContextValidation';
 import NgCorazaWAF from './NgCorazaWAF';
@@ -148,10 +149,14 @@ import JqWebsocketMessageTransformer from './JqWebsocketMessageTransformer';
 import ZipFileBackend from './ZipFileBackend';
 import GrpcWebProxyPlugin from './GrpcWeb';
 import KubernetesNamespaceScanBackend from './KubernetesNamespaceScanBackend';
+import LocalTokenBucket from './LocalTokenBucket';
 import IzanamiV2Proxy from './IzanamiV2Proxy';
 
 import NgApiFrontend from './NgApiFrontend';
 import NgApiBackend from './NgApiBackend';
+import FixedWindow from './FixedWindow';
+import DistributedRedisThrottling from './DistributedRedisThrottling';
+import LuaDistributedRedisThrottling from './LuaDistributedRedisThrottling';
 
 export const Backend = NgBackend;
 export const Frontend = NgFrontend;
@@ -170,15 +175,18 @@ const pluginsArray = [
   BuildMode,
   BrotliResponseCompressor,
   CanaryMode,
+  ExposeDaikoku,
   TimeControlledCanaryMode,
   ContextValidation,
   NgCorazaWAF,
   Cors,
   DisableHttp10,
+  DistributedRedisThrottling,
   EndlessHttpResponse,
   EurekaServerSink,
   EurekaTarget,
   ExternalEurekaTarget,
+  FixedWindow,
   ForceHttpsTraffic,
   ForwardedHeader,
   GlobalMaintenanceMode,
@@ -208,6 +216,8 @@ const pluginsArray = [
   JwtVerification,
   JwtVerificationOnly,
   KubernetesNamespaceScanBackend,
+  LocalTokenBucket,
+  LuaDistributedRedisThrottling,
   MaintenanceMode,
   MissingHeadersIn,
   MissingHeadersOut,

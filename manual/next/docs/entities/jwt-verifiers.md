@@ -4,7 +4,60 @@ sidebar_position: 11
 ---
 # JWT Verifiers
 
-JWT verifiers allow you to validate, sign, and transform JWT tokens on incoming requests. A verifier can be defined globally and referenced by multiple routes, or configured locally on a specific route.
+## Overview
+
+JWT verifiers provide centralized JSON Web Token validation, signing, and transformation at the gateway level. Instead of requiring each backend service to implement its own JWT verification logic -- parsing tokens, fetching public keys, validating signatures, checking claims -- Otoroshi handles all of this in a single, reusable configuration object. Backends receive requests that have already been authenticated and can trust the tokens (or enriched headers) they see.
+
+### The problem JWT verifiers solve
+
+In a microservices architecture, incoming requests typically carry a JWT issued by an external identity provider (Auth0, Keycloak, Azure AD, a custom OAuth2 server, etc.). Every service behind the gateway would need to:
+
+- Fetch and cache the provider's public keys (JWKS)
+- Validate token signatures with the correct algorithm
+- Check that claims like `iss`, `aud`, and `exp` match expected values
+- Optionally re-sign or enrich the token before passing it to internal services
+
+Otoroshi JWT verifiers move all of this into the gateway, so backends can focus on business logic.
+
+### Verification strategies
+
+A JWT verifier is configured in three steps: **where** to find the token, **how** to validate its signature, and **what to do** with it after validation.
+
+The "what to do" part is the **strategy**, and Otoroshi supports four:
+
+- **Default token** -- If no token is present on the request, inject one with preconfigured claims. Useful for providing a baseline identity to backends.
+- **Pass-through (verify only)** -- Validate the token signature and check specific claim values, but forward it to the backend unchanged. This is the most common strategy for requests carrying tokens from an external identity provider.
+- **Verify and re-sign** -- Validate the incoming token, then re-sign it with a different algorithm or key before forwarding. Useful when the external provider and the internal backends use different signing keys.
+- **Verify, transform, and re-sign** -- Validate, then rewrite the token: rename claims, add new fields (using the Otoroshi [expression language](../topics/expression-language.mdx)), remove sensitive claims, and place the result in a different location (header, cookie, or query parameter).
+
+### Token validation algorithms
+
+Otoroshi supports a wide range of signature algorithms for both verification and signing:
+
+- **HMAC** (HS256, HS384, HS512) -- Symmetric shared secret
+- **RSA** (RS256, RS384, RS512) -- Asymmetric key pair, with raw PEM keys or referencing a certificate registered in Otoroshi
+- **ECDSA** (ES256, ES384, ES512) -- Elliptic curve key pair, with raw PEM keys or referencing a certificate
+- **JWKS** -- Fetch public keys dynamically from a remote JWKS endpoint (typically `/.well-known/jwks.json`), with caching and mTLS support. This is the standard approach for validating tokens from OAuth2/OIDC providers.
+- **Kid-based lookup** -- Automatically select the correct Otoroshi key pair by matching the `kid` header in the incoming token
+
+### How JWT verifiers fit in the Otoroshi ecosystem
+
+JWT verifiers are **global, reusable entities**. Once defined, they can be referenced from multiple places:
+
+- **Routes** -- Attach one or more JWT verifiers to a route via the `JwtVerification` plugin. The plugin runs during the access validation phase and, if the strategy modifies the token, also during request transformation.
+- **Auth modules** -- OAuth2 and OIDC authentication modules can use JWT verifiers to validate the tokens returned by identity providers.
+
+Because verifiers are defined independently from routes, a single verifier (for example, one pointing at your Auth0 JWKS endpoint) can protect dozens of routes without duplicating configuration.
+
+### When to use JWT verifiers vs other security mechanisms
+
+| Mechanism | Best for |
+|-----------|----------|
+| **JWT verifiers** | Validating bearer tokens issued by an external identity provider, signing tokens for backends, transforming claims between trust boundaries |
+| **API keys** | Machine-to-machine authentication with quotas, rate limiting, and usage tracking -- when there is no external identity provider involved |
+| **mTLS** | Transport-level mutual authentication between services, often combined with JWT verifiers for defense in depth |
+
+These mechanisms are not mutually exclusive. A route can require both an API key and a valid JWT, or enforce mTLS at the transport layer while validating JWT claims at the application layer.
 
 ## UI page
 

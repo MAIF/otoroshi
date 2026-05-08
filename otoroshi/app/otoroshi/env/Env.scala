@@ -21,6 +21,7 @@ import otoroshi.metrics.{HasMetrics, Metrics}
 import otoroshi.models.*
 import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
+import otoroshi.next.plugins.RateLimiter
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
 import otoroshi.next.utils.Vaults
@@ -30,6 +31,7 @@ import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptMa
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
+import otoroshi.statefulclients.StatefulClientsManager
 import otoroshi.storage.drivers.cassandra.*
 import otoroshi.storage.drivers.inmemory.*
 import otoroshi.storage.drivers.lettuce.*
@@ -376,6 +378,9 @@ class Env(
 
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
+
+  lazy val docResourcesSecret: Option[String] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.doc-resources.accessKey")
 
   lazy val trailingSlashMeansExactSegments: Boolean =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.router.trailingSlashMeansExactSegments").getOrElse(true)
@@ -1101,6 +1106,7 @@ class Env(
     Option(ahcStats.get()).foreach(_.cancel())
     Option(internalAhcStats.get()).foreach(_.cancel())
     jobManager.stop()
+    statefulClientsManager.stop()
     scriptManager.stop()
     clusterAgent.stop()
     clusterLeaderAgent.stop()
@@ -1194,6 +1200,10 @@ class Env(
   }
 
   lazy val proxyState = new NgProxyState(this)
+
+  lazy val rateLimiter = new RateLimiter(this)
+
+  lazy val statefulClientsManager = new StatefulClientsManager(this)
 
   lazy val http2ClientProxyEnabled: Boolean = configuration
     .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
@@ -1299,7 +1309,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.14.0-dev"
+  lazy val otoroshiVersion    = "17.16.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1431,6 +1441,9 @@ class Env(
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
         }
       }
+
+    io.swagger.v3.core.converter.ModelConverters.getInstance()
+      .addConverter(new com.github.swagger.scala.converter.SwaggerScalaModelConverter())
 
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
@@ -1640,7 +1653,11 @@ class Env(
 
   timeout(1000.millis).andThen { case _ =>
     jobManager.start()
+    statefulClientsManager.start()
     otoroshiEventsActor ! StartExporters
+    otoroshi.next.analytics.queries.AnalyticsRuntime.init(
+      otoroshi.next.analytics.queries.CoreQueries.all
+    )(using this)
   }(using otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {

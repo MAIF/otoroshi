@@ -1639,7 +1639,7 @@ object SecComHeaders {
   }
 }
 
-case class RestrictionPath(method: String, path: String) {
+case class RestrictionPath(method: String, path: String, authorizedEntity: Option[EntityIdentifier] = None) {
   def json: JsValue = RestrictionPath.format.writes(this)
 }
 
@@ -1647,15 +1647,18 @@ object RestrictionPath {
   val format: Format[RestrictionPath] = new Format[RestrictionPath] {
     override def writes(o: RestrictionPath): JsValue             =
       Json.obj(
-        "method" -> o.method,
-        "path"   -> o.path
+        "method"            -> o.method,
+        "path"              -> o.path,
+        "authorized_entity" -> o.authorizedEntity.map(_.modernJson).getOrElse(JsNull).as[JsValue]
       )
     override def reads(json: JsValue): JsResult[RestrictionPath] =
       Try {
         JsSuccess(
           RestrictionPath(
             method = (json \ "method").as[String],
-            path = (json \ "path").as[String]
+            path = (json \ "path").as[String],
+            authorizedEntity =
+              (json \ "authorized_entity").asOpt[JsObject].flatMap(o => EntityIdentifier.applyModern(o))
           )
         )
       } recover { case e =>
@@ -1674,49 +1677,65 @@ case class Restrictions(
 
   def json: JsValue = Restrictions.format.writes(this)
 
-  def isAllowed(method: String, domain: String, path: String): Boolean = {
+  def isAllowed(method: String, domain: String, path: String, route: NgRoute, apikey: Option[ApiKey]): Boolean = {
     if (enabled) {
-      matches(method, domain, path, allowed)
+      matches(method, domain, path, allowed, route, apikey)
     } else {
       false
     }
   }
 
-  def isNotAllowed(method: String, domain: String, path: String): Boolean = {
+  def isNotAllowed(method: String, domain: String, path: String, route: NgRoute, apikey: Option[ApiKey]): Boolean = {
     if (enabled) {
-      !matches(method, domain, path, allowed)
+      !matches(method, domain, path, allowed, route, apikey)
     } else {
       false
     }
   }
 
-  def isNotFound(method: String, domain: String, path: String): Boolean = {
+  def isNotFound(method: String, domain: String, path: String, route: NgRoute, apikey: Option[ApiKey]): Boolean = {
     if (enabled) {
-      matches(method, domain, path, notFound)
+      matches(method, domain, path, notFound, route, apikey)
     } else {
       false
     }
   }
 
-  def isForbidden(method: String, domain: String, path: String): Boolean = {
+  def isForbidden(method: String, domain: String, path: String, route: NgRoute, apikey: Option[ApiKey]): Boolean = {
     if (enabled) {
-      matches(method, domain, path, forbidden)
+      matches(method, domain, path, forbidden, route, apikey)
     } else {
       false
     }
   }
 
-  private def matches(method: String, domain: String, path: String, paths: Seq[RestrictionPath]): Boolean = {
+  private def matches(
+      method: String,
+      domain: String,
+      path: String,
+      paths: Seq[RestrictionPath],
+      route: NgRoute,
+      apikey: Option[ApiKey]
+  ): Boolean = {
     val cleanMethod = method.trim().toLowerCase()
     paths
       .map(p => p.copy(method = p.method.trim.toLowerCase()))
       .filter(p => p.method == "*" || p.method == cleanMethod)
-      .exists { p =>
+      .filter { p =>
         if (p.path.startsWith("/")) {
           RegexPool.regex(p.path).matches(path)
         } else {
           RegexPool.regex(p.path).matches(domain + path)
         }
+      }
+      .exists {
+        case RestrictionPath(_, _, Some(ServiceGroupIdentifier(id)))      =>
+          apikey.exists(_.authorizedOnGroup(id)) && route.groups.contains(id)
+        case RestrictionPath(_, _, Some(ServiceDescriptorIdentifier(id))) => route.id == id
+        case RestrictionPath(_, _, Some(RouteIdentifier(id)))             => route.id == id
+        case RestrictionPath(_, _, Some(ApiIdentifier(id)))               => route.apiRef.contains(id)
+        case RestrictionPath(_, _, None)                                  => true
+        case _                                                            => false
       }
   }
 
@@ -1741,12 +1760,14 @@ case class Restrictions(
       val method = req.method
       val domain = req.theDomain
       val path   = req.thePath
-      val key    = s"$id:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
+      val rteId  = route.map(_.id).orElse(descriptor.map(_.id)).getOrElse("none")
+      val key    = s"$id:${apk.map(_.clientId).getOrElse("none")}:$rteId:$method:$domain:$path"
       cache.get(
         key,
         _ => {
+          val rte = route.orElse(descriptor.map(s => NgRoute.fromServiceDescriptor(s, debug = false))).get // SAFE
           if (allowLast) {
-            if (isNotFound(method, domain, path)) {
+            if (isNotFound(method, domain, path, rte, apk)) {
               (
                 true,
                 Errors.craftResponseResult(
@@ -1760,7 +1781,7 @@ case class Restrictions(
                   maybeRoute = route
                 )
               )
-            } else if (isForbidden(method, domain, path)) {
+            } else if (isForbidden(method, domain, path, rte, apk)) {
               (
                 true,
                 Errors.craftResponseResult(
@@ -1778,8 +1799,8 @@ case class Restrictions(
               Restrictions.failedFutureResp
             }
           } else {
-            val allowed = isAllowed(method, domain, path)
-            if (!allowed && isNotFound(method, domain, path)) {
+            val allowed = isAllowed(method, domain, path, rte, apk)
+            if (!allowed && isNotFound(method, domain, path, rte, apk)) {
               (
                 true,
                 Errors.craftResponseResult(
@@ -1793,7 +1814,7 @@ case class Restrictions(
                   maybeRoute = route
                 )
               )
-            } else if (!allowed && isForbidden(method, domain, path)) {
+            } else if (!allowed && isForbidden(method, domain, path, rte, apk)) {
               (
                 true,
                 Errors.craftResponseResult(
@@ -1807,7 +1828,7 @@ case class Restrictions(
                   maybeRoute = route
                 )
               )
-            } else if (isNotAllowed(method, domain, path)) {
+            } else if (isNotAllowed(method, domain, path, rte, apk)) {
               (
                 true,
                 Errors.craftResponseResult(

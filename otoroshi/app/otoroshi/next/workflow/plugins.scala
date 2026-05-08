@@ -2,6 +2,7 @@ package otoroshi.next.workflow
 
 import com.auth0.jwt.JWT
 import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -94,7 +95,7 @@ class WorkflowBackend extends NgBackendCall {
             val f = extension.engine.run(
               config.ref,
               Node.from(workflow.config),
-              input.asObject,
+              input._1.asObject,
               ctx.attrs,
               workflow.functions
             )
@@ -192,7 +193,7 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
           .map(r => r.left)
       case Some((extension, workflow)) =>
         ctx.jsonWithTypedBody
-          .flatMap { input =>
+          .flatMap { case (input, inputBodyOpt) =>
             extension.engine
               .run(config.ref, Node.from(workflow.config), input.asObject, ctx.attrs, workflow.functions)
               .map { res =>
@@ -208,7 +209,10 @@ class WorkflowRequestTransformer extends NgRequestTransformer {
                       headers =
                         (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiRequest.headers),
                       cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiRequest.cookies),
-                      body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiRequest.body)
+                      body = body
+                        .map(_.chunks(32 * 1024))
+                        .orElse(inputBodyOpt.map(_.chunks(32 * 1024)))
+                        .getOrElse(Source.empty)
                     )
                   )
                 }
@@ -263,7 +267,7 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
           .map(r => r.left)
       case Some((extension, workflow)) =>
         ctx.jsonWithTypedBody
-          .flatMap { input =>
+          .flatMap { case (input, inputBodyOpt) =>
             extension.engine
               .run(config.ref, Node.from(workflow.config), input.asObject, ctx.attrs, workflow.functions)
               .map { res =>
@@ -278,7 +282,10 @@ class WorkflowResponseTransformer extends NgRequestTransformer {
                       headers =
                         (response \ "headers").asOpt[Map[String, String]].getOrElse(ctx.otoroshiResponse.headers),
                       cookies = WasmUtils.convertJsonCookies(response).getOrElse(ctx.otoroshiResponse.cookies),
-                      body = body.map(_.chunks(16 * 1024)).getOrElse(ctx.otoroshiResponse.body)
+                      body = body
+                        .map(_.chunks(32 * 1024))
+                        .orElse(inputBodyOpt.map(_.chunks(32 * 1024)))
+                        .getOrElse(Source.empty)
                     )
                   )
                 }

@@ -4,7 +4,26 @@ sidebar_position: 15
 ---
 # Route Templates
 
-Route templates allow you to define reusable, preconfigured route blueprints that can be used as a starting point when creating new routes. Instead of configuring every route from scratch, you can create templates with predefined frontends, backends, plugins, and settings, then instantiate them to quickly spin up new routes.
+## What are route templates?
+
+In a typical Otoroshi deployment, many routes share the same foundational configuration: the same authentication plugin, the same rate-limiting policy, the same CORS headers, the same logging setup. Without a mechanism to capture those shared defaults, every new route must be configured from scratch, which is both tedious and error-prone. Route templates solve this problem by letting you define **reusable, preconfigured route blueprints** that serve as starting points when creating new routes.
+
+A route template is essentially a **pre-filled route configuration**. It contains a complete route definition -- frontend, backend, plugins, and all associated settings -- but it is **not a live route**. A template does not match any domain, does not serve traffic, and does not appear in the proxy engine's routing table. Think of it as a blueprint: when you create a new route from a template, Otoroshi copies the template's configuration into a real route that you can then customize for the specific service you are exposing.
+
+### The philosophy: convention over configuration
+
+Route templates embody the principle of **convention over configuration**. Instead of requiring every team to remember (and correctly apply) the full set of organizational standards each time they create a route, you define those standards once inside a template. Teams then only need to override what is specific to their service -- typically the target hostname and the frontend domain -- while everything else is inherited from the template.
+
+This approach has several practical benefits:
+
+- **Enforcing organizational standards** -- Every new route automatically starts with the plugins and policies your platform team has approved (rate limiting, logging, authentication, CORS, and so on). There is no risk of forgetting a critical security plugin.
+- **Speeding up service onboarding** -- New teams or new microservices can go from zero to a fully configured, production-ready route in seconds rather than minutes.
+- **Reducing configuration drift** -- Because all routes originate from a known-good template, the overall configuration across your fleet stays consistent and auditable.
+- **Supporting environment-specific defaults** -- You can maintain separate templates for development, staging, and production, each with the appropriate backend targets, timeout values, and observability settings.
+
+### How templates differ from routes
+
+It is important to understand that a template and a route are distinct entities, even though a template contains a full route definition internally. A route is an active proxy rule that Otoroshi evaluates on every incoming request. A template is an inert configuration object stored alongside your other entities. Creating, updating, or deleting a template has no effect on live traffic. The template only comes into play at route-creation time, when its embedded route definition is used to pre-populate the new route's fields.
 
 ## UI page
 

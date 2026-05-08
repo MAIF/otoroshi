@@ -6,6 +6,9 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.auth.*
+import otoroshi.auth.implicits.ResultWithPrivateAppSession
+import otoroshi.controllers.routes
+import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
@@ -706,7 +709,7 @@ class SimpleBasicAuth extends NgAccessValidator {
 
   private def safeCheckPassword(password: String, hashed: String): Boolean = {
     try {
-      BCrypt.checkpw(password, hashed)
+      BCryptHelper.checkpw(password, hashed)
     } catch {
       case _: IllegalArgumentException => false
     }

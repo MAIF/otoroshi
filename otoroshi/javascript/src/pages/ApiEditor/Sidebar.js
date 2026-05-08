@@ -4,7 +4,7 @@ import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 import { signalVersion } from './VersionSignal';
 import { useSignalValue } from 'signals-react-safe';
-import { VersionToggle } from '.';
+import { VersionToggle } from './DraftOnly';
 
 const LINK_GROUPS = (id) => [
   {
@@ -23,6 +23,14 @@ const LINK_GROUPS = (id) => [
         title: 'Informations',
         tab: 'informations',
         tooltip: { ...createTooltip(`Show informations tab`) },
+      },
+      {
+        to: `/apis/${id}/actions`,
+        icon: 'fa-bolt',
+        title: 'Actions',
+        tab: 'actions',
+        tooltip: { ...createTooltip(`Show actions tab`) },
+        isProd: true,
       },
     ],
   },
@@ -82,7 +90,6 @@ const LINK_GROUPS = (id) => [
         title: 'Clients',
         tab: 'Clients',
         tooltip: { ...createTooltip(`Show clients tab`) },
-        isProd: true
       },
       {
         to: `/apis/${id}/subscriptions`,
@@ -90,7 +97,13 @@ const LINK_GROUPS = (id) => [
         title: 'Subscriptions',
         tab: 'Subscriptions',
         tooltip: { ...createTooltip(`Show subscriptions tab`) },
-        isProd: true
+      },
+      {
+        to: `/apis/${id}/apikeys`,
+        icon: 'fa-key',
+        title: 'API Keys',
+        tab: 'apikeys',
+        tooltip: { ...createTooltip(`Manage all API keys that can access`) },
       },
       {
         to: `/apis/${id}/documentation`,
@@ -105,14 +118,6 @@ const LINK_GROUPS = (id) => [
     label: 'Operations',
     links: [
       {
-        to: `/apis/${id}/actions`,
-        icon: 'fa-bolt',
-        title: 'Actions',
-        tab: 'actions',
-        tooltip: { ...createTooltip(`Show actions tab`) },
-        isProd: true
-      },
-      {
         to: `/apis/${id}/deployments`,
         icon: 'fa-server',
         title: 'Deployments',
@@ -121,7 +126,7 @@ const LINK_GROUPS = (id) => [
       },
       {
         to: `/apis/${id}/testing`,
-        icon: 'fa-play',
+        icon: 'fa-flask',
         title: 'Testing',
         tab: 'testing',
         tooltip: { ...createTooltip(`Show testing tab`) },
@@ -139,7 +144,9 @@ export default (props) => {
   const params = props.params;
 
   const currentTab = location.pathname.split('/')[3];
-  const noneTabIsActive = !ALL_LINKS().find((r) => r.tab?.toLowerCase() === currentTab?.toLowerCase());
+  const noneTabIsActive = !ALL_LINKS().find(
+    (r) => r.tab?.toLowerCase() === currentTab?.toLowerCase()
+  );
 
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
@@ -157,7 +164,7 @@ export default (props) => {
         padding: openedSidebar ? 'inherit' : '12px 0 6px',
       }}
     >
-      {openedSidebar && <p className="sidebar-title">Shortcuts</p>}
+      {openedSidebar && <p className="sidebar-title mt-0">Shortcuts</p>}
       <ul className="nav flex-column nav-sidebar">
         <li className={`nav-item mb-3 ${openedSidebar ? 'nav-item--open' : ''}`} key="APIs">
           <Link
@@ -177,9 +184,11 @@ export default (props) => {
         </li>
         {!isOnApisHome && (
           <>
-            {openedSidebar && version && version !== 'staging' && <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
-              <VersionToggle isDraft={version === 'Draft'} />
-            </div>}
+            {openedSidebar && version && version !== 'staging' && (
+              <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
+                <VersionToggle isDraft={version === 'Draft'} />
+              </div>
+            )}
             {LINK_GROUPS(params.apiId).map((group) => (
               <React.Fragment key={group.label}>
                 {openedSidebar && (
@@ -199,19 +208,25 @@ export default (props) => {
                         search: location.search,
                       }}
                       {...(tooltip || {})}
-                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${openedSidebar ? 'ms-1' : ''
-                        } m-0 ${isActive(tab)}`}
+                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                        openedSidebar ? 'ms-1' : ''
+                      } m-0 ${isActive(tab)}`}
                     >
                       <div style={{ width: '20px' }} className="d-flex justify-content-center">
                         <i className={`fas ${icon}`} />
                       </div>
                       <div className="title"> {openedSidebar ? title : ''}</div>
 
-                      {isProd && openedSidebar && <span className='dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto' style={{
-                        color: 'var(--text) !important'
-                      }}>
-                        PROD
-                      </span>}
+                      {isProd && openedSidebar && (
+                        <span
+                          className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
+                          style={{
+                            color: '#fff',
+                          }}
+                        >
+                          PROD
+                        </span>
+                      )}
                     </Link>
                   </li>
                 ))}

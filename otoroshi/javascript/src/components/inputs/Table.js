@@ -82,7 +82,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
             maxWidth: '50vw',
             minWidth: '360px',
             zIndex: 1000,
-            border: 'var(--bg-color_level2) solid 1px',
+            border: 'var(--border-color) solid 1px',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -128,7 +128,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
 
                   <div
                     style={{
-                      border: 'var(--bg-color_level2) solid 1px',
+                      border: 'var(--border-color) solid 1px',
                       borderRadius: '4px',
                     }}
                     className="p-2 mb-2"
@@ -150,7 +150,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                   </div>
                   <div
                     style={{
-                      border: 'var(--bg-color_level2) solid 1px',
+                      border: 'var(--border-color) solid 1px',
                       borderRadius: '4px',
                     }}
                     className="p-2"
@@ -196,7 +196,7 @@ function ColumnsSelector({ fields, onChange, fetchTemplate, addField, removeFiel
                         <div
                           className="mb-1 p-1 px-3 d-flex"
                           style={{
-                            border: 'var(--bg-color_level2) solid 1px',
+                            border: 'var(--border-color) solid 1px',
                             width: '100%',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -285,6 +285,7 @@ class TableComponent extends Component {
     hasError: false,
     rowsPerPage: this.props.pageSize || 15,
     page: 0,
+    exportDropdownOpen: false,
   };
 
   tableRef = React.createRef();
@@ -824,7 +825,7 @@ class TableComponent extends Component {
                 : !this.props.hideEditButton) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-success me-2"
+                  className="btn btn-sm btn-secondary me-2"
                   {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
                   onClick={(e) => {
                     this.props.navigateOnEdit
@@ -891,6 +892,7 @@ class TableComponent extends Component {
         {this.state.currentItem && !this.state.showAddForm && (
           <>
             <DraftEditorContainer
+              containerStyle={this.props.formStyle}
               className="mb-3"
               entityId={this.props.extractKey(this.state.currentItem)}
               value={this.state.currentItem}
@@ -910,7 +912,7 @@ class TableComponent extends Component {
           <div>
             <div className="row">
               <div
-                className=""
+                className="d-flex"
                 style={{
                   position: 'absolute',
                   right: 0,
@@ -930,7 +932,7 @@ class TableComponent extends Component {
                 {this.props.showActions && !this.props.hideAddItemAction && (
                   <button
                     type="button"
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-success btn-sm"
                     style={{ marginLeft: 10 }}
                     onClick={this.showAddForm}
                     {...createTooltip(`Create a new ${this.props.itemName}`)}
@@ -1097,6 +1099,7 @@ class TableComponent extends Component {
               !this.props.formFunction &&
               (this.actualFlow().find((item) => this.isAnObject(item)) ? (
                 <NgForm
+                  style={this.props.formStyle}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
@@ -1104,6 +1107,7 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  style={this.props.formStyle}
                   create={this.state.showAddForm}
                   update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
@@ -1116,10 +1120,9 @@ class TableComponent extends Component {
             <hr />
             {!this.props.hideAllActions && (
               <>
-                <div className="displayGroupBtn float-end">
-                  <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
-                    <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
-                  </button>
+                <div
+                  className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}
+                >
                   {this.props.stayAfterSave && (
                     <button
                       type="button"
@@ -1145,7 +1148,7 @@ class TableComponent extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={{ paddingTop: '30px', ...this.props.style }}>
+              <form className="form-horizontal" style={{ ...this.props.style }}>
                 {React.createElement(this.props.formComponent, {
                   onStateChange: this.props.onStateChange,
                   onChange: (currentItem) => {
@@ -1180,6 +1183,7 @@ class TableComponent extends Component {
               !this.props.formFunction &&
               (this.actualFlow().find((item) => this.isAnObject(item)) ? (
                 <NgForm
+                  style={this.props.formStyle}
                   value={this.state.currentItem}
                   onChange={(currentItem) => this.setState({ currentItem })}
                   flow={this.props.formFlow}
@@ -1187,6 +1191,7 @@ class TableComponent extends Component {
                 />
               ) : (
                 <Form
+                  style={this.props.formStyle}
                   create={this.state.showAddForm}
                   update={this.state.showEditForm}
                   onStateChange={this.props.onStateChange}
@@ -1199,8 +1204,13 @@ class TableComponent extends Component {
             <hr />
             <div className="displayGroupBtn float-end">
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
-                <button type="button" className="btn btn-danger" title="Delete current item">
-                  <i className="fas fa-trash" /> Delete
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  title="Delete current item"
+                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}
+                >
+                  Delete {this.props.itemName}
                 </button>
               )}
               {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
@@ -1211,29 +1221,69 @@ class TableComponent extends Component {
                   title="Delete current item"
                   onClick={(e) => this.deleteItem(e, this.state.currentItem)}
                 >
-                  <i className="fas fa-trash" /> Delete
+                  Delete {this.props.itemName}
                 </button>
               )}
               {this.props.export && (
-                <div className="btn-group">
+                <div
+                  className="btn-group"
+                  style={{ position: 'relative' }}
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget))
+                      this.setState({ exportDropdownOpen: false });
+                  }}
+                >
                   <button
-                    onClick={this.exportJson}
                     type="button"
-                    className="btn btn-primary"
-                    title="Export as json"
+                    className="btn btn-primary d-flex align-items-center gap-2 table-export"
+                    onClick={() =>
+                      this.setState({
+                        exportDropdownOpen: !this.state.exportDropdownOpen,
+                      })
+                    }
                   >
-                    <i className="fas fa-file-export me-2" />
-                    Export JSON
+                    <i className="fas fa-file-export" />
+                    Export
+                    <i className="fas fa-chevron-up" style={{ fontSize: 10, opacity: 0.7 }} />
                   </button>
-                  <button
-                    onClick={this.exportYaml}
-                    type="button"
-                    className="btn btn-primary"
-                    title="Export as yaml"
-                  >
-                    <i className="fas fa-file-export me-2" />
-                    Export YAML
-                  </button>
+                  {this.state.exportDropdownOpen && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 'calc(100% + 4px)',
+                        right: 0,
+                        minWidth: 140,
+                        background: 'var(--bg-color_level2)',
+                        border: '1px solid var(--input-border)',
+                        zIndex: 100,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="table-export-button"
+                        onClick={() => {
+                          this.exportJson();
+                          this.setState({ exportDropdownOpen: false });
+                        }}
+                      >
+                        <i className="fas fa-file-code me-2" style={{ opacity: 0.6 }} />
+                        JSON
+                      </button>
+                      <button
+                        type="button"
+                        className="table-export-button"
+                        onClick={() => {
+                          this.exportYaml();
+                          this.setState({ exportDropdownOpen: false });
+                        }}
+                      >
+                        <i className="fas fa-file-alt me-2" style={{ opacity: 0.6 }} />
+                        YAML
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               {!this.props.displayTrash && !this.props.newForm && (
@@ -1243,14 +1293,14 @@ class TableComponent extends Component {
                   title="Delete current item"
                   onClick={(e) => this.deleteItem(e, this.state.currentItem)}
                 >
-                  <i className="fas fa-trash" /> Delete
+                  Delete {this.props.itemName}
                 </button>
               )}
-              {!this.props.newForm && (
+              {/* {!this.props.newForm && (
                 <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
                   <i className="fas fa-arrow-left" /> Back to {this.props.itemName}s
                 </button>
-              )}
+              )} */}
               {this.props.stayAfterSave && !this.props.newForm && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
                   <i className="fas fa-edit" /> Update {this.props.itemName}

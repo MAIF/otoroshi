@@ -7,12 +7,19 @@ import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
 import { DraftOnly, VersionBadge } from './DraftOnly';
+import { MAX_WIDTH } from './constants';
+import PageTitle from '../../components/PageTitle';
+import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 
 export function Informations(props) {
   const history = useHistory();
   const location = useLocation();
 
   const { item, setItem, updateItem, isDraft } = useDraftOfAPI();
+
+  useEffect(() => {
+    props.setTitle(undefined);
+  }, []);
 
   const schema = {
     location: {
@@ -38,7 +45,7 @@ export function Informations(props) {
     },
     version: {
       type: 'string',
-      label: 'Version'
+      label: 'Version',
     },
     metadata: {
       type: 'object',
@@ -52,20 +59,108 @@ export function Informations(props) {
       type: 'box-bool',
       label: 'Capture endpoint traffic',
       props: {
-        description: 'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.'
+        description:
+          'Emit a TrafficCaptureEvent for each request, including request and response bodies. It can be exported using Data Exporters.',
       },
+    },
+    owner: {
+      label: ' ',
+      type: 'form',
+      schema: {
+        ref: {
+          label: 'Owner ref.',
+          type: 'string',
+        },
+        config: {
+          type: 'json',
+          label: 'Owner ref. config.',
+          props: {
+            defaultValue: '{}',
+            height: 100,
+          },
+        },
+      },
+      flow: ['ref', 'config'],
+    },
+    visibility: {
+      label: ' ',
+      type: 'form',
+      schema: {
+        kind: {
+          label: 'Kind',
+          type: 'dots',
+          props: {
+            defaultValue: 'public',
+            options: [
+              { value: 'public', label: 'Public' },
+              { value: 'semi_public', label: 'Semi Public' },
+              { value: 'private', label: 'Private' },
+              { value: 'custom', label: 'Custom' },
+            ],
+          },
+        },
+        config: {
+          type: 'json',
+          label: 'Visibility config.',
+          props: {
+            defaultValue: '{}',
+            height: 100,
+          },
+        },
+      },
+      flow: ['kind', 'config'],
+    },
+    members: {
+      array: true,
+      label: 'Members',
+      type: 'form',
+      schema: {
+        ref: {
+          label: 'Owner ref.',
+          type: 'string',
+        },
+        config: {
+          type: 'json',
+          label: 'Owner ref. config.',
+          props: {
+            defaultValue: '{}',
+            height: 100,
+          },
+        },
+      },
+      flow: ['ref', 'config'],
+    },
+    hooks: {
+      array: true,
+      label: 'State hooks',
+      type: 'form',
+      schema: {
+        ref: {
+          label: 'Hook ref.',
+          type: 'string',
+        },
+        config: {
+          type: 'json',
+          label: 'Hook config.',
+          props: {
+            defaultValue: '{}',
+            height: 100,
+          },
+        },
+      },
+      flow: ['ref', 'config'],
     },
     debug_flow: {
       type: 'box-bool',
       label: 'Debug the endpoint',
-      props: {
-      },
+      props: {},
     },
     export_reporting: {
       type: 'box-bool',
       label: 'Export reporting',
       props: {
-        description: 'Export execution of each steps of the route as RequestFlowReport event. It can be exported using Data Exporters. This feature can have actual impact on CPU and RAM consumption'
+        description:
+          'Export execution of each steps of the route as RequestFlowReport event. It can be exported using Data Exporters. This feature can have actual impact on CPU and RAM consumption',
       },
     },
     danger_zone: {
@@ -109,52 +204,61 @@ export function Informations(props) {
     },
     {
       type: 'group',
+      collapsed: true,
+      name: 'Collaborators and teams',
+      fields: ['owner', 'members'],
+    },
+    {
+      type: 'group',
+      collapsed: true,
+      name: 'Visibility & Hook Exposure',
+      fields: ['visibility', 'hooks'],
+    },
+    {
+      type: 'group',
       name: 'Misc.',
       collapsed: true,
-      fields: [
-        'tags',
-        'metadata',
-        'debug_flow',
-        'export_reporting',
-        'capture'
-      ],
+      fields: ['tags', 'metadata', 'debug_flow', 'export_reporting', 'capture'],
     },
-    isDraft ? {
-      type: 'group',
-      name: 'Danger zone',
-      collapsed: true,
-      fields: ['danger_zone'],
-    } : null,
-  ].filter(f => f);
+    isDraft
+      ? {
+          type: 'group',
+          name: 'Danger zone',
+          collapsed: true,
+          fields: ['danger_zone'],
+        }
+      : null,
+  ].filter((f) => f);
 
   const updateAPI = () => {
-    updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
+    return updateItem().then(() => historyPush(history, location, `/apis/${item.id}`));
   };
-
-  useEffect(() => {
-    if (item) {
-      props.setTitle({
-        value: 'Informations',
-        noThumbtack: true,
-        children: <VersionBadge />,
-      });
-    }
-  }, [item]);
 
   if (!item) return <SimpleLoader />;
 
   return (
-    <>
-      <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
-      <DraftOnly>
-        <Button
+    <div className="page">
+      <PageTitle
+        style={{
+          paddingBottom: 0,
+        }}
+        title="Informations"
+        {...props}
+      />
+
+      <div className="displayGroupBtn">
+        <FeedbackButton
           type="success"
-          className="btn-sm ms-auto d-flex align-items-center"
-          onClick={updateAPI}
-        >
-          Update <VersionBadge size="xs" className="ms-2" />
-        </Button>
-      </DraftOnly>
-    </>
+          onPress={updateAPI}
+          text={
+            <div className="d-flex align-items-center">
+              Save <VersionBadge size="xs" className="ms-2" />
+            </div>
+          }
+        />
+      </div>
+
+      <NgForm schema={schema} flow={flow} value={item} onChange={setItem} />
+    </div>
   );
 }

@@ -46,7 +46,7 @@ class ClassGraphScanner {
       Seq(
         "./conf/schemas/openapi.json",
         "./public/openapi.json",
-        "../manual/src/main/paradox/code/openapi.json"
+        "../manual/next/static/openapi.json"
       ),
       scanResult = scanResult,
       write = true

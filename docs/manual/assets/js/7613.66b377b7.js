@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[7613],{37613(o,e,i){i.d(e,{createPieServices:()=>t.f});var t=i(29515);i(72519)}}]);

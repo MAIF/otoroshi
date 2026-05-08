@@ -38,7 +38,9 @@ export function VersionToggle({ isDraft }) {
       className={`dashboard-version-toggle ${isDraft ? 'dashboard-version-toggle--draft' : 'dashboard-version-toggle--prod'}`}
       onClick={switchVersion}
     >
-      <span className={`dashboard-version-toggle-indicator ${isDraft ? 'dashboard-version-toggle-indicator--draft' : 'dashboard-version-toggle-indicator--prod'}`}>
+      <span
+        className={`dashboard-version-toggle-indicator ${isDraft ? 'dashboard-version-toggle-indicator--draft' : 'dashboard-version-toggle-indicator--prod'}`}
+      >
         {isDraft ? 'DEV' : 'PROD'}
       </span>
       <span className="dashboard-version-toggle-label">

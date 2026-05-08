@@ -203,6 +203,7 @@ export function RouteTemplatesTable(props) {
     <Loader loading={loading || defaultRouteTemplate.isLoading}>
       <div className="designer">
         <Table
+          formStyle={{ maxWidth: 1500 }}
           ref={ref}
           parentProps={props}
           navigateTo={(item) => {

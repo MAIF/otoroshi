@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import {
   Table,
@@ -40,6 +40,110 @@ function tryOrFalse(f) {
   } catch (e) {
     return false;
   }
+}
+
+function CustomDataExporterRefSection({ label, role, value, onChange }) {
+  const enabled = !!value;
+  const v = value || { kind: 'wasm', ref: '', config: {} };
+  const [pluginList, setPluginList] = useState(null);
+  const stepName = role === 'transform' ? 'DataExporterTransform' : 'DataExporterFilter';
+
+  useEffect(() => {
+    if (enabled && v.kind === 'plugin') {
+      fetch('/bo/api/proxy/api/plugins/all', {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      })
+        .then((r) => r.json())
+        .then((list) =>
+          (list || []).filter((p) => (p.plugin_steps || p.pluginSteps || []).includes(stepName))
+        )
+        .then((list) => setPluginList(list))
+        .catch(() => setPluginList([]));
+    } else {
+      setPluginList(null);
+    }
+  }, [enabled, v.kind, stepName]);
+
+  const pluginMeta =
+    v.kind === 'plugin' && pluginList ? pluginList.find((p) => p.id === v.ref) : null;
+  const hasFormSchema =
+    pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
+
+  const refSelectorByKind = {
+    wasm: {
+      label: 'WASM plugin',
+      valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins',
+      transformer: (i) => ({ value: i.id, label: i.name }),
+    },
+    workflow: {
+      label: 'Workflow',
+      valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows',
+      transformer: (i) => ({ value: i.id, label: i.name }),
+    },
+  };
+
+  return (
+    <div>
+      <BooleanInput
+        label={label}
+        value={enabled}
+        onChange={(b) => onChange(b ? { kind: 'wasm', ref: '', config: {} } : null)}
+      />
+      {enabled && (
+        <div style={{ paddingLeft: 20, borderLeft: '2px solid #eee' }}>
+          <SelectInput
+            label="Kind"
+            value={v.kind}
+            possibleValues={[
+              { value: 'wasm', label: 'WASM plugin' },
+              { value: 'workflow', label: 'Workflow' },
+              { value: 'plugin', label: 'Plugin class' },
+            ]}
+            onChange={(kind) => onChange({ ...v, kind, ref: '' })}
+          />
+          {v.kind === 'plugin' &&  <SelectInput
+            label="Plugin"
+            value={v.ref}
+            possibleValues={(pluginList || []).map((p) => ({
+              value: p.id,
+              label: p.name || p.id,
+            }))}
+            onChange={(ref) => onChange({ ...v, ref, config: {} })}
+          />}
+          {v.kind === 'workflow' && <SelectInput
+            label="Workflow"
+            value={v.ref}
+            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
+            transformer={(i) => ({ value: i.id, label: i.name })}
+            onChange={(ref) => onChange({ ...v, ref })}
+          />}
+          {v.kind === 'wasm' && <SelectInput
+            label="WASM plugin"
+            value={v.ref}
+            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+            transformer={(i) => ({ value: i.id, label: i.name })}
+            onChange={(ref) => onChange({ ...v, ref })}
+          />}
+          {hasFormSchema ? (
+            <Form
+              value={v.config || {}}
+              onChange={(config) => onChange({ ...v, config })}
+              schema={pluginMeta.configSchema || pluginMeta.config_schema}
+              flow={pluginMeta.configFlow || pluginMeta.config_flow || []}
+            />
+          ) : (
+            <JsonObjectAsCodeInput
+              label="Config"
+              value={v.config || {}}
+              onChange={(config) => onChange({ ...v, config })}
+              height="150px"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 class CustomMetrics extends Component {
@@ -392,6 +496,33 @@ export class DataExportersPage extends Component {
     this.props.setTitle(`Data exporters`);
   }
 
+  /**
+   * Build the initial value for a brand-new exporter, taking optional query
+   * params into account. Supported params on `/bo/dashboard/exporters/add`:
+   *
+   *   - `type=mailer|webhook|user-analytics|...` : pre-select the exporter type
+   *   - `name=Some+name` : pre-fill the name
+   *   - `kind=alert-channel` : add a filter that only keeps user-analytics alerts
+   *     (`{ alert: "UserAnalyticsAlert" }` in `filtering.include`)
+   */
+  buildDefaultValue = () => {
+    const q = (this.props.location && this.props.location.query) || {};
+    const type = q.type || 'file';
+    return BackOfficeServices.createNewDataExporterConfig(type).then((cfg) => {
+      let next = { ...cfg };
+      if (q.name) next.name = q.name;
+      if (q.kind === 'alert-channel') {
+        const include = (next.filtering && next.filtering.include) || [];
+        next.filtering = {
+          ...(next.filtering || {}),
+          include: [...include, { alert: 'UserAnalyticsAlert' }],
+        };
+        if (!q.name) next.name = 'User analytics alert channel';
+      }
+      return next;
+    });
+  };
+
   nothing() {
     return null;
   }
@@ -482,7 +613,7 @@ export class DataExportersPage extends Component {
           parentProps={this.props}
           selfUrl="exporters"
           defaultTitle="Data exporters"
-          defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
+          defaultValue={this.buildDefaultValue}
           itemName="Data exporter"
           columns={this.columns}
           fetchItems={(paginationState) =>
@@ -720,6 +851,20 @@ export class NewExporterForm extends Component {
               </div>
             </div>
           </Collapse>
+          <Collapse initCollapsed={true} label="Custom filter & projection">
+            <CustomDataExporterRefSection
+              label="Enable custom filter"
+              role="filter"
+              value={this.data().customFilter}
+              onChange={(e) => this.dataChange({ customFilter: e })}
+            />
+            <CustomDataExporterRefSection
+              label="Enable custom projection"
+              role="transform"
+              value={this.data().customTransform}
+              onChange={(e) => this.dataChange({ customTransform: e })}
+            />
+          </Collapse>
           <Collapse initCollapsed={true} label="Queue details">
             <NumberInput
               label="Buffer Size"
@@ -779,8 +924,94 @@ export class NewExporterForm extends Component {
             </Collapse>
           )}
           {this.data().type === 'kafka' && <KafkaExporterTryIt exporter={this.props.value} />}
+          {this.data().type === 'user-analytics' && (
+            <UserAnalyticsActivationBlock exporter={this.data()} />
+          )}
         </form>
       </>
+    );
+  }
+}
+
+class UserAnalyticsActivationBlock extends Component {
+  state = { busy: false, message: null, error: null };
+
+  isActive() {
+    const md = (this.props.exporter && this.props.exporter.metadata) || {};
+    return md['otoroshi:user-analytics:active'] === 'true';
+  }
+
+  promote = () => {
+    const id = this.props.exporter && this.props.exporter.id;
+    if (!id) {
+      this.setState({ error: 'Save the exporter first' });
+      return;
+    }
+    this.setState({ busy: true, message: null, error: null });
+    fetch(`/bo/api/proxy/api/analytics/_set-active-exporter/${id}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.error) {
+          this.setState({ busy: false, error: res.error });
+        } else {
+          const seeded = (res && res.seeded_default) || [];
+          this.setState({
+            busy: false,
+            message:
+              seeded.length > 0
+                ? `Exporter is now active. Seeded default dashboards: ${seeded.join(', ')}`
+                : 'Exporter is now active.',
+          });
+          window.setTimeout(() => window.location.reload(), 800);
+        }
+      })
+      .catch((e) => this.setState({ busy: false, error: e.message }));
+  };
+
+  render() {
+    const active = this.isActive();
+    return (
+      <Collapse initCollapsed={false} label="User analytics activation">
+        <div style={{ padding: 12 }}>
+          <p style={{ color: '#aaa', marginBottom: 12 }}>
+            Only one user-analytics exporter can be active at a time. The active exporter is the one
+            queried by dashboards. Promoting an exporter automatically demotes any other
+            user-analytics exporter and seeds the default dashboards if missing.
+          </p>
+          {active ? (
+            <span className="badge badge-success" style={{ fontSize: 14, padding: 6 }}>
+              <i className="fas fa-check" /> This exporter is currently active
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={this.promote}
+              disabled={this.state.busy}
+            >
+              {this.state.busy ? (
+                <><i className="fas fa-spinner fa-spin" /> Promoting…</>
+              ) : (
+                <><i className="fas fa-star" /> Set as active analytics exporter</>
+              )}
+            </button>
+          )}
+          {this.state.message && (
+            <div className="alert alert-success" style={{ marginTop: 12 }}>
+              {this.state.message}
+            </div>
+          )}
+          {this.state.error && (
+            <div className="alert alert-danger" style={{ marginTop: 12 }}>
+              {this.state.error}
+            </div>
+          )}
+        </div>
+      </Collapse>
     );
   }
 }
@@ -2583,15 +2814,80 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
-  postgresql: {
-    label: 'PostgreSQL',
-    flow: ['uri', 'host', 'port', 'database', 'user', 'password', 'schema', 'table', 'pool_size', 'ssl'],
+  'user-analytics': {
+    label: 'User Analytics (PostgreSQL)',
+    flow: [
+      'uri',
+      'host',
+      'port',
+      'database',
+      'user',
+      'password',
+      'schema',
+      'table',
+      'pool_size',
+      'ssl',
+      'retention_days',
+      'statement_timeout_ms',
+      'rollup_enabled',
+    ],
     schema: {
       uri: {
         type: 'string',
         props: {
           label: 'Connection URI',
-          placeholder: 'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+          placeholder:
+            'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+        },
+      },
+      host: { type: 'string', props: { label: 'Host', placeholder: 'localhost' } },
+      port: { type: 'number', props: { label: 'Port' } },
+      database: { type: 'string', props: { label: 'Database' } },
+      user: { type: 'string', props: { label: 'User' } },
+      password: { type: 'password', props: { label: 'Password' } },
+      schema: { type: 'string', props: { label: 'Schema', placeholder: 'public' } },
+      table: {
+        type: 'string',
+        props: { label: 'Table', placeholder: 'otoroshi_analytics_events' },
+      },
+      pool_size: { type: 'number', props: { label: 'Pool size' } },
+      ssl: { type: 'bool', props: { label: 'SSL (REQUIRE mode)' } },
+      retention_days: {
+        type: 'number',
+        props: { label: 'Retention (days)', placeholder: '30' },
+      },
+      statement_timeout_ms: {
+        type: 'number',
+        props: { label: 'Statement timeout (ms)', placeholder: '30000' },
+      },
+      rollup_enabled: {
+        type: 'bool',
+        props: { label: 'Rollup tables (phase 2 — keep disabled)' },
+      },
+    },
+  },
+  postgresql: {
+    label: 'PostgreSQL',
+    flow: [
+      'uri',
+      'host',
+      'port',
+      'database',
+      'user',
+      'password',
+      'schema',
+      'table',
+      'pool_size',
+      'ssl',
+      'retention_days',
+    ],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Connection URI',
+          placeholder:
+            'postgresql://user:password@host:5432/database (optional, overrides fields below)',
         },
       },
       host: {
@@ -2629,6 +2925,14 @@ const possibleExporterConfigFormValues = {
       ssl: {
         type: 'bool',
         props: { label: 'SSL (REQUIRE mode)' },
+      },
+      retention_days: {
+        type: 'number',
+        props: {
+          label: 'Retention (days)',
+          placeholder: '0',
+          help: 'Number of days to keep events. Set to 0 or leave empty to disable cleanup.',
+        },
       },
     },
   },

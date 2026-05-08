@@ -5,6 +5,7 @@ import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.models.ApiKey
 import otoroshi.security.IdGenerator
+import otoroshi.utils.TypedMap
 import otoroshi.utils.controllers.*
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import otoroshi.utils.syntax.implicits.given
@@ -139,37 +140,36 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
           case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
           case Some(desc)                            =>
             env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-              case None                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
-              case Some(apiKey) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
-              case Some(apiKey)                              =>
-                if (!apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)) {
-                  NotFound(
-                    Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
-                  ).asFuture
-                } else {
-                  ApiKey.fromJsonSafe(ctx.request.body) match {
-                    case JsError(_)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                    case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
-                      BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                    case JsSuccess(newApiKey, _)                                   =>
-                      env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                        case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
-                        case Some(oldApik) if !ctx.canUserWrite(oldApik) =>
-                          BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
-                        case Some(_)                                     =>
-                          sendAuditAndAlert(
-                            "UPDATE_APIKEY",
-                            s"User updated an ApiKey",
-                            "ApiKeyUpdatedAlert",
-                            Json.obj(
-                              "desc"   -> desc.toJson,
-                              "apikey" -> apiKey.toJson
-                            ),
-                            ctx
-                          )
-                          newApiKey.save().map(_ => Ok(newApiKey.toJson))
-                      }
-                  }
+              case None                                                                      => NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found")).asFuture
+              case Some(apiKey) if !ctx.canUserWrite(apiKey)                                 => ctx.fforbidden
+              case Some(apiKey) if !apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups) =>
+                NotFound(
+                  Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$serviceId'")
+                ).asFuture
+              case Some(apiKey)                                                              =>
+                ApiKey.fromJsonSafe(ctx.request.body) match {
+                  case JsError(_)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
+                    BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
+                  case JsSuccess(newApiKey, _)                                   =>
+                    env.datastores.apiKeyDataStore.findById(clientId).flatMap {
+                      case None                                        => BadRequest(Json.obj("error" -> "Apikey not found")).asFuture
+                      case Some(oldApik) if !ctx.canUserWrite(oldApik) =>
+                        BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
+                      case Some(_)                                     =>
+                        sendAuditAndAlert(
+                          "UPDATE_APIKEY",
+                          s"User updated an ApiKey",
+                          "ApiKeyUpdatedAlert",
+                          Json.obj(
+                            "desc"            -> desc.toJson,
+                            "apikey"          -> newApiKey.toJson,
+                            "previous_apikey" -> apiKey.toJson
+                          ),
+                          ctx
+                        )
+                        newApiKey.save().map(_ => Ok(newApiKey.toJson))
+                    }
                 }
             }
         }
@@ -201,8 +201,9 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                     s"User updated an ApiKey",
                     "ApiKeyUpdatedAlert",
                     Json.obj(
-                      "desc"   -> desc.toJson,
-                      "apikey" -> apiKey.toJson
+                      "desc"            -> desc.toJson,
+                      "apikey"          -> newApiKey.toJson,
+                      "previous_apikey" -> apiKey.toJson
                     ),
                     ctx
                   )
@@ -552,8 +553,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                         s"User updated an ApiKey",
                         "ApiKeyUpdatedAlert",
                         Json.obj(
-                          "group"  -> group.toJson,
-                          "apikey" -> apiKey.toJson
+                          "group"           -> group.toJson,
+                          "apikey"          -> newApiKey.toJson,
+                          "previous_apikey" -> apiKey.toJson
                         ),
                         ctx
                       )
@@ -590,8 +592,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                     s"User updated an ApiKey",
                     "ApiKeyUpdatedAlert",
                     Json.obj(
-                      "group"  -> group.toJson,
-                      "apikey" -> apiKey.toJson
+                      "group"           -> group.toJson,
+                      "apikey"          -> newApiKey.toJson,
+                      "previous_apikey" -> apiKey.toJson
                     ),
                     ctx
                   )
@@ -804,7 +807,12 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             Json.obj("clientId" -> clientId),
             ctx
           )
-          apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
+          val strategy = env.rateLimiter.getOrCreate(
+            clientId,
+            TypedMap.empty,
+            apiKey.throttlingStrategy
+          )
+          strategy.quotas(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
       }
     }
 
@@ -820,7 +828,12 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             Json.obj("clientId" -> clientId),
             ctx
           )
-          env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
+          val strategy = env.rateLimiter.getOrCreate(
+            clientId,
+            TypedMap.empty,
+            apiKey.throttlingStrategy
+          )
+          strategy.reset(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
       }
     }
 

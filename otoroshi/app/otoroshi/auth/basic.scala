@@ -14,6 +14,7 @@ import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.{LocalCredentialRepository, routes}
 import otoroshi.env.Env
 import otoroshi.models.*
+import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
@@ -255,7 +256,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     authConfig.users
       .find(u => u.email == username)
-      .filter(u => BCrypt.checkpw(password, u.password)) match {
+      .filter(u => BCryptHelper.checkpw(password, u.password)) match {
       case Some(user) =>
         PrivateAppsUser(
           randomId = IdGenerator.token(64),
@@ -284,7 +285,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.users
       .find(u => u.email == username)
-      .filter(u => BCrypt.checkpw(password, u.password)) match {
+      .filter(u => BCryptHelper.checkpw(password, u.password)) match {
       case Some(user) =>
         BackOfficeUser(
           randomId = IdGenerator.token(64),
@@ -431,7 +432,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 case true  =>
                   authConfig.users
                     .find(u => u.email == username)
-                    .filter(u => BCrypt.checkpw(password, u.password)) match {
+                    .filter(u => BCryptHelper.checkpw(password, u.password)) match {
                     case Some(user) =>
                       PrivateAppsUser(
                         randomId = IdGenerator.token(64),

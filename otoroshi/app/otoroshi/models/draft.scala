@@ -1,5 +1,6 @@
 package otoroshi.models
 
+import next.models.ApiSubscription
 import otoroshi.actions.ApiAction
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
@@ -65,6 +66,36 @@ object Draft {
         JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
+  }
+
+  def writeValidator(
+      entity: Draft,
+      body: JsValue,
+      oldEntity: Option[(Draft, JsValue)],
+      singularName: String,
+      id: Option[String],
+      action: WriteAction,
+      env: Env
+  ): Future[Either[JsValue, Draft]] = {
+
+    implicit val ec = env.otoroshiExecutionContext
+
+    entity.id
+      .split("_")
+      .headOption
+      .map {
+        case "api-subscription" =>
+          ApiSubscription.format.reads(entity.content) match {
+            case JsSuccess(value, _) =>
+              ApiSubscription.validate(value.apiRef, value, action, isDraft = true)(env).map {
+                case Left(r)  => JsString(r).left
+                case Right(r) => entity.right
+              }
+            case JsError(errors)     => JsString(errors.toString()).leftf
+          }
+        case _                  => entity.rightf
+      }
+      .getOrElse(entity.rightf)
   }
 }
 

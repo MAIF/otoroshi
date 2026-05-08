@@ -67,12 +67,14 @@ const features = [
 
 const useCases = [
   {
-    title: 'API Gateway',
+    // title: 'API Gateway',
+    title: 'API Control Plane',
     description: 'Centralize API traffic management with authentication, rate limiting, and monitoring.',
     icon: '🌐',
   },
   {
-    title: 'Service Mesh',
+    // title: 'Service Mesh',
+    title: 'Traffic Orchestration',
     description: 'Manage inter-service communication with mTLS, circuit breakers, and retry policies.',
     icon: '🕸️',
   },
@@ -97,7 +99,8 @@ const stats = [
   { value: '200+', label: 'Built-in Plugins' },
   { value: '15+', label: 'Event Exporters' },
   { value: '10+', label: 'Auth Protocols' },
-  { value: '6', label: 'Storage Backends' },
+  { value: '50+', label: 'LLM Providers supported' },
+  //{ value: '6', label: 'Storage Backends' },
 ];
 
 function HeroBanner() {
@@ -109,7 +112,7 @@ function HeroBanner() {
         <div className={styles.heroContent}>
           <div className={styles.heroText}>
             <Heading as="h1" className={styles.heroTitle}>
-              The Cloud Native <span className={styles.highlight}>API Gateway</span> for Modern Architectures
+              The Cloud Native <span className={styles.highlight}>API & AI Gateway</span> for Modern Architectures
             </Heading>
             <p className={styles.heroSubtitle}>
               Otoroshi is a lightweight, high-performance reverse proxy and API gateway with dynamic hot configuration,
@@ -146,7 +149,7 @@ function HeroBanner() {
             </div>
           </div>
           <div className={styles.heroImage}>
-            <img src={logoUrl} alt="Otoroshi" width="300" />
+            <img src={logoUrl} alt="Otoroshi" width="300" title="I am the gate !" />
           </div>
         </div>
       </div>
@@ -187,6 +190,69 @@ function FeaturesSection() {
               <p>{feature.description}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AIGatewaySection() {
+  return (
+    <section className={styles.aiGatewaySection}>
+      <div className="container">
+        <div className={styles.aiGatewayCard}>
+          <div className={styles.aiGatewayIntro}>
+            <div className={styles.aiGatewayEyebrow}>AI capabilities</div>
+            <Heading as="h2">AI Gateway built-in<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a></Heading>
+            <p>
+              Connect, secure and control 50+ LLM providers with a unified API<a href="#ecosystem-note" style={{ fontWeight: 'bold' }}>*</a>.
+            </p>
+          </div>
+          <div className={styles.aiGatewayListWrap}>
+            <ul className={styles.aiGatewayList}>
+              <li>Multi-modal</li>
+              <li>Guardrails</li>
+              <li>Cost tracking & Bugets management</li>
+              <li>MCP support</li>
+              <li>Observability</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProgrammableSection() {
+  return (
+    <section className={styles.programmableSection}>
+      <div className="container">
+        <div className={styles.programmableCard}>
+          <div className={styles.programmableIntro}>
+            <div className={styles.programmableEyebrow}>API-First Gateway</div>
+            <Heading as="h2">Fully Programmable, Fully Automatable</Heading>
+            <p>
+              Every single aspect of Otoroshi is accessible through its Admin API.
+              Manage your gateway programmatically, automate your workflows, and treat your configuration as code.
+            </p>
+          </div>
+          <div className={styles.programmableItems}>
+            <div className={styles.programmableItem}>
+              <div className={styles.programmableItemIcon}>{"{ }"}</div>
+              <Heading as="h4">Complete Admin API</Heading>
+              <p>A comprehensive REST API covering every entity — routes, backends, API keys, certificates, plugins, and more. Integrate Otoroshi into any CI/CD pipeline or custom tooling.</p>
+            </div>
+            <div className={styles.programmableItem}>
+              <div className={styles.programmableItemIcon}>{">_"}</div>
+              <Heading as="h4">otoroshictl CLI</Heading>
+              <p>A dedicated command-line tool to manage your gateway from the terminal. Import, export, sync configurations, and script your operations with ease.</p>
+            </div>
+            <div className={styles.programmableItem}>
+              <div className={styles.programmableItemIcon}>{"< />"}</div>
+              <Heading as="h4">Infrastructure as Code</Heading>
+              <p>Use Remote Catalogs to sync your configuration from Git repositories (GitHub, GitLab, Bitbucket), S3 buckets, or any HTTP source — with automatic reconciliation.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -251,7 +317,7 @@ function ComparisonSection() {
       <div className="container">
         <div className={styles.sectionHeader}>
           <Heading as="h2">Why Otoroshi?</Heading>
-          <p>What makes Otoroshi different from other API gateways.</p>
+          <p>What makes Otoroshi different from other API gateways. Unlike traditional API gateways, Otoroshi is a runtime programmable gateway that lets you execute logic directly on traffic.</p>
         </div>
         <div className={styles.comparisonGrid}>
           <div className={styles.comparisonItem}>
@@ -271,6 +337,46 @@ function ComparisonSection() {
             <p>Complete REST API, expression language, WASM plugins in any language, visual workflow editor, and comprehensive documentation.</p>
           </div>
         </div>
+        <div className={styles.comparisonTableWrapper}>
+          <table className={styles.comparisonTable}>
+            <thead>
+              <tr>
+                <th>Traditional gateways</th>
+                <th>Otoroshi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Configure APIs</td>
+                <td><strong>Program your gateway</strong></td>
+              </tr>
+              <tr>
+                <td>Static policies</td>
+                <td><strong>Dynamic runtime logic</strong></td>
+              </tr>
+              <tr>
+                <td>API-only</td>
+                <td><strong>HTTP + API + AI + workflows</strong></td>
+              </tr>
+              <tr>
+                <td>Reload to change</td>
+                <td><strong>Change instantly</strong></td>
+              </tr>
+              <tr>
+                <td>Limited extensibility</td>
+                <td><strong>Unlimited (WASM + Workflows + plugins)</strong></td>
+              </tr>
+              <tr>
+                <td>Vendor lock-in</td>
+                <td><strong>Open & sovereign</strong></td>
+              </tr>
+              <tr>
+                <td>Manage endpoints</td>
+                <td><strong>Control flows</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
@@ -284,6 +390,36 @@ function FootnoteSection() {
           * These features require open source extensions from the{' '}
           <Link to="/ecosystem">Otoroshi ecosystem</Link>.
         </p>
+      </div>
+    </section>
+  );
+}
+
+function SovereigntySection() {
+  return (
+    <section className={styles.sovereigntySection}>
+      <div className="container">
+        <div className={styles.sectionHeader}>
+          <Heading as="h2">Open Source &amp; Sovereign by Design</Heading>
+          <p>Otoroshi is built from the ground up as an open source project. Your infrastructure, your rules — no strings attached.</p>
+        </div>
+        <div className={styles.sovereigntyGrid}>
+          <div className={styles.sovereigntyCard}>
+            <div className={styles.sovereigntyIcon}>🔓</div>
+            <Heading as="h4">No Vendor Lock-in</Heading>
+            <p>Apache 2.0 licensed, community-driven. Switch, fork, or extend — you're always in control.</p>
+          </div>
+          <div className={styles.sovereigntyCard}>
+            <div className={styles.sovereigntyIcon}>🌍</div>
+            <Heading as="h4">Deploy Anywhere</Heading>
+            <p>On-premises, any cloud, Kubernetes, bare metal, or edge. Otoroshi runs wherever you need it — no call-home, no telemetry walls.</p>
+          </div>
+          <div className={styles.sovereigntyCard}>
+            <div className={styles.sovereigntyIcon}>🗄️</div>
+            <Heading as="h4">Full Control Over Your Data</Heading>
+            <p>Every request, every config, every secret stays in your perimeter. Choose your own storage backend and export events on your terms.</p>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -312,15 +448,18 @@ export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title="Cloud Native API Gateway"
+      title="Cloud Native API & AI Gateway"
       description="Otoroshi is a lightweight, blazing fast API gateway and reverse proxy with dynamic hot configuration, enterprise security, 200+ plugins, and deep observability.">
       <HeroBanner />
       <main>
         <StatsSection />
         <FeaturesSection />
+        <AIGatewaySection />
+        <ProgrammableSection />
         <ComparisonSection />
         <UseCasesSection />
         <QuickStartSection />
+        <SovereigntySection />
         <CTASection />
         <FootnoteSection />
       </main>

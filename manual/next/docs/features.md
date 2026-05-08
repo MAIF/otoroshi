@@ -6,9 +6,9 @@ sidebar_position: 4
 
 **Traffic Management**
 
-* Can proxy any HTTP(s) service (APIs, webapps, websocket, etc) ([routes](./entities/routes.md), [engine](./topics/engine.md))
+* Can proxy any HTTP(s) service (APIs, webapps, websocket, etc) ([routes](./entities/routes.md), [engine](./topics/engine.mdx))
 * Can proxy any TCP service (app, database, etc) ([TCP services](./entities/tcp-services.md))
-* Can proxy any gRPC service (using a netty listener), also gRPC-Web support ([HTTP listeners](./topics/http-listeners.md))
+* Can proxy any gRPC service (using a netty listener), also gRPC-Web support ([HTTP listeners](./topics/http-listeners.mdx))
 * Can proxy any GraphQL service (proxy, query composition, and schema-first backend) ([GraphQL composer](./topics/graphql-composer.mdx))
 * Full WebSocket support with message validation, transformation, and mirroring
 * End-to-end HTTP/1.1 support
@@ -33,16 +33,16 @@ sidebar_position: 4
 * Request and response bandwidth throttling
 * Request and response body size limiting
 * Traffic mirroring to secondary backends ([built-in plugins](./plugins/built-in-plugins.mdx))
-* Traffic capture (GoReplay format) ([engine](./topics/engine.md))
+* Traffic capture (GoReplay format) ([engine](./topics/engine.mdx))
 * Canary deployments (percentage-based and time-controlled)
-* Relay routing across network zones ([relay routing](./topics/relay-routing.md))
-* Tunnels for easier network exposition (TCP, UDP, WebSocket-based) ([tunnels](./topics/tunnels.md))
+* Relay routing across network zones ([relay routing](./topics/relay-routing.mdx))
+* Tunnels for easier network exposition (TCP, UDP, WebSocket-based) ([tunnels](./topics/tunnels.mdx))
 * Custom error templates ([error templates](./entities/error-templates.md))
 
 **Routing**
 
-* Router can support tens of thousands of concurrent routes ([engine](./topics/engine.md))
-* Router supports path parameter extraction (with regex validation) ([engine](./topics/engine.md))
+* Router can support tens of thousands of concurrent routes ([engine](./topics/engine.mdx))
+* Router supports path parameter extraction (with regex validation) ([engine](./topics/engine.mdx))
 * Routing based on: ([routes](./entities/routes.md))
     * HTTP method
     * hostname (exact, wildcard)
@@ -53,6 +53,22 @@ sidebar_position: 4
 * Full URL rewriting ([backends](./entities/backends.md))
 * Path stripping ([routes](./entities/routes.md))
 * Target predicates (route to specific backends based on geolocation, cloud region, datacenter, rack, etc) ([backends](./entities/backends.md))
+
+**API Management** ([APIs](./entities/apis.mdx), [tutorial](./tutorials/create-your-first-api.mdx))
+
+Beyond low-level routing, Otoroshi exposes an [API entity](./entities/apis.mdx) that covers the full API Management lifecycle -- design, secure, expose, monetize, document and govern an API as a single first-class object.
+
+* **Design** -- group all endpoints of an API (REST, GraphQL, gRPC, HTTP, WebSocket) under a shared domain and context path, with reusable backends, HTTP client settings and named plugin chains
+* **Lifecycle** -- staging / published / deprecated / removed states, multi-version support, drafts with a dedicated testing mode (test draft endpoints through a header without touching the published API), and immutable deployment snapshots for full publication traceability
+* **Secure** -- consumer plans with pluggable access modes: `keyless`, API key, JWT, mTLS, built-in OAuth2 `client_credentials` (local token endpoint) or remote OAuth2 introspection
+* **Quotas and rate limiting** -- per-plan throttling strategies applied automatically to every route of the API
+* **Monetize** -- attach pricing (price, currency, custom parameters) to plans
+* **Subscribe** -- self-service subscription flow that auto-generates the right credentials (API keys, certificates, JWTs) for the chosen plan and tracks the full subscription lifecycle (created / started / paused / ending / closed)
+* **Govern** -- owner and members per API, visibility modes (public, semi-public, private, custom), tags, metadata and groups for multi-team setups
+* **Document** -- built-in documentation entity (pages, sidebar navigation, search, logo, banner, footer, references, optional remote source) ready to power a developer portal
+* **Bootstrap from OpenAPI** -- generate a complete API entity from an OpenAPI specification (JSON or YAML)
+* **Observe** -- live stats, per-route stats, request capture, debug flows and reporting toggles per API
+* **Operate** -- dedicated API editor in the admin UI (dashboard, routes, backends, plans, subscriptions, clients, documentation, deployments, testing, version manager) and full admin API for everything above
 
 **Routes customization**
 
@@ -74,14 +90,15 @@ sidebar_position: 4
     * etc
 * Support middlewares compiled to WASM (using Extism) ([WASM plugins](./entities/wasm-plugins.md), [WASM usage](./topics/wasm-usage.mdx))
 * Support Open Policy Agent policies for traffic control (via WASM) ([WASM usage](./topics/wasm-usage.mdx))
-* Visual workflow engine for building complex processing pipelines ([workflows](./entities/workflows.md), [workflow editor](./topics/workflows-editor.md))
+* Visual workflow engine for building complex processing pipelines ([workflows](./entities/workflows.md), [workflow editor](./topics/workflows-editor.mdx))
 * Write your own custom middlewares: ([create plugins](./plugins/create-plugins.md))
     * in Scala deployed as jar files
-    * in whatever language you want that can be compiled to WASM ([WASM how-to](./how-to-s/wasm-usage.mdx))
+    * in whatever language you want that can be compiled to WASM ([WASM how-to](./tutorials/wasm-usage.mdx))
 
 **Security**
 
-* Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./how-to-s/instantiate-waf-coraza.mdx))
+* Coraza Web Application Firewall (WAF) with OWASP Core Rule Set support ([WAF how-to](./tutorials/instantiate-waf-coraza.mdx))
+    * For high-traffic deployments or configurations with many rules, Cloud APIM also publishes a [WAF extension](https://github.com/cloud-apim/otoroshi-waf-extension) -- a native JVM implementation of the ModSecurity SecLang DSL with embedded OWASP CRS, blocking / monitoring modes, JVM-native SQLi and XSS detection (libinjection), per-route configuration entities, and a lightweight incoming-request-only variant for the highest-throughput routes
 * IP address allow and block lists (with CIDR support) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Domain name allow and block lists ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Fail2Ban-style automatic IP banning ([built-in plugins](./plugins/built-in-plugins.mdx))
@@ -94,20 +111,19 @@ sidebar_position: 4
 
 **API security**
 
-* Access management with API keys and quotas ([API keys](./entities/apikeys.md), [how-to](./how-to-s/secure-with-apikey.mdx))
-* Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) ([API keys](./entities/apikeys.md))
-* Automatic API key secrets rotation ([API keys](./entities/apikeys.md))
+* Access management with API keys and quotas ([API keys](./entities/apikeys.mdx), [how-to](./tutorials/secure-with-apikey.mdx))
+* Multiple API key extraction methods (header, query param, cookie, bearer token, basic auth, JWT) ([API keys](./entities/apikeys.mdx))
+* Automatic API key secrets rotation ([API keys](./entities/apikeys.mdx))
 * Mandatory tags and metadata validation on API keys
 * HTTPS and TLS ([TLS](./topics/tls.md))
-* End-to-end mTLS calls ([mTLS how-to](./how-to-s/end-to-end-mtls.md))
+* End-to-end mTLS calls ([mTLS how-to](./tutorials/end-to-end-mtls.md))
 * Routing constraints and restrictions
 * Public/private path separation
-* JWT token validation and manipulation ([JWT verifiers](./entities/jwt-verifiers.md), [how-to](./how-to-s/secure-an-app-with-jwt-verifiers.mdx))
+* JWT token validation and manipulation ([JWT verifiers](./entities/jwt-verifiers.md), [how-to](./tutorials/secure-an-app-with-jwt-verifiers.mdx))
     * Multiple validators on the same route
     * JWE (encrypted JWT) support
     * JWT signing
 * HMAC request signing and validation ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
-* Biscuit token extraction and validation (datalog-based authorization) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * OpenFGA fine-grained authorization ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Role-based access control (RBAC) ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Context validation (JSON path-based claims validation) ([built-in plugins](./plugins/built-in-plugins.mdx))
@@ -119,16 +135,17 @@ sidebar_position: 4
 * Calls tracing using W3C Trace Context ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Real-time traffic metrics ([monitoring](./topics/monitoring.md))
 * Prometheus metrics export ([monitoring](./topics/monitoring.md))
-* OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.md))
+* OpenTelemetry metrics and logs export (OTLP) ([OpenTelemetry](./topics/opentelemetry.mdx))
 * Datadog, StatsD metrics export ([monitoring](./topics/monitoring.md))
-* Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.md))
-    * Elasticsearch ([how-to](./how-to-s/export-events-to-elastic.mdx))
-    * Apache Kafka ([how-to](./how-to-s/communicate-with-kafka.md))
+* Export alerts and events to external systems: ([data exporters](./entities/data-exporters.mdx), [events and analytics](./topics/events-and-analytics.mdx))
+    * Elasticsearch ([how-to](./tutorials/export-events-to-elastic.mdx))
+    * Apache Kafka ([how-to](./tutorials/communicate-with-kafka.mdx))
     * Apache Pulsar
     * Webhook (HTTP)
     * File
     * S3
-    * Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) ([how-to](./how-to-s/export-alerts-using-mailgun.md))
+    * PostgreSQL (with auto-created table, configurable schema/table, connection pool, SSL, and optional retention-based cleanup)
+    * Mailer (Mailgun, Mailjet, Sendgrid, generic SMTP) ([how-to](./tutorials/export-alerts-using-mailgun.md))
     * Console / Logger
     * Splunk
     * Datadog
@@ -138,31 +155,31 @@ sidebar_position: 4
     * JMS
     * WASM-based custom exporter ([WASM usage](./topics/wasm-usage.mdx))
     * Workflow-based custom exporter ([workflows](./topics/workflows.md))
-* GreenScore: ecological scoring of API routes based on efficiency rules ([GreenScore](./topics/green-score.md))
+* GreenScore: ecological scoring of API routes based on efficiency rules ([GreenScore](./topics/green-score.mdx))
 
 **Services discovery**
 
 * Through DNS
-* Through Eureka (internal and external) ([how-to](./how-to-s/working-with-eureka.mdx))
+* Through Eureka (internal and external) ([how-to](./tutorials/working-with-eureka.mdx))
 * Through Kubernetes API (namespace scanning) ([Kubernetes](./deploy/kubernetes.mdx))
 * Through custom Otoroshi protocol (self-registration) ([Otoroshi protocol](./topics/otoroshi-protocol.mdx))
-* Through Tailscale network ([how-to](./how-to-s/tailscale-integration.md))
+* Through Tailscale network ([how-to](./tutorials/tailscale-integration.md))
 
 **Authentication**
 
 * OAuth 2.0/2.1 authentication (with PKCE support) ([auth modules](./entities/auth-modules.md))
-* OpenID Connect (OIDC) authentication ([auth modules](./entities/auth-modules.md), [Keycloak how-to](./how-to-s/secure-app-with-keycloak.mdx))
-* LDAP authentication (with nested groups) ([auth modules](./entities/auth-modules.md), [LDAP how-to](./how-to-s/secure-app-with-ldap.mdx))
+* OpenID Connect (OIDC) authentication ([auth modules](./entities/auth-modules.md), [Keycloak how-to](./tutorials/secure-app-with-keycloak.mdx))
+* LDAP authentication (with nested groups) ([auth modules](./entities/auth-modules.md), [LDAP how-to](./tutorials/secure-app-with-ldap.mdx))
 * JWT authentication ([auth modules](./entities/auth-modules.md))
-* OAuth 1.0a authentication ([how-to](./how-to-s/secure-with-oauth1-client.mdx))
+* OAuth 1.0a authentication ([how-to](./tutorials/secure-with-oauth1-client.mdx))
 * SAML V2 authentication ([auth modules](./entities/auth-modules.md))
 * Basic authentication (username/password) ([auth modules](./entities/auth-modules.md))
 * WebAuthn / FIDO2 passwordless authentication
-* Auth0 passwordless flow ([Auth0 how-to](./how-to-s/secure-app-with-auth0.mdx))
+* Auth0 passwordless flow ([Auth0 how-to](./tutorials/secure-app-with-auth0.mdx))
 * WASM-based custom authentication ([auth modules](./entities/auth-modules.md), [WASM usage](./topics/wasm-usage.mdx))
 * Internal users management ([Otoroshi admins](./entities/otoroshi-admins.md))
 * Multi-authentication module chaining ([auth modules](./entities/auth-modules.md))
-* Client credentials OAuth2 flow with token endpoint ([how-to](./how-to-s/secure-with-oauth2-client-credentials.md))
+* Client credentials OAuth2 flow with token endpoint ([how-to](./tutorials/secure-with-oauth2-client-credentials.md))
 
 **Secret vaults support** ([secrets management](./topics/secrets.md))
 
@@ -183,33 +200,33 @@ sidebar_position: 4
 **Certificates management** ([PKI](./topics/pki.md), [certificates](./entities/certificates.md))
 
 * Dynamic TLS certificates store ([TLS](./topics/tls.md))
-* Dynamic TLS termination ([TLS how-to](./how-to-s/tls-termination-using-own-certificates.mdx))
+* Dynamic TLS termination ([TLS how-to](./tutorials/tls-termination-using-own-certificates.mdx))
 * Internal PKI ([PKI](./topics/pki.md))
     * generate self-signed certificates/CAs
     * generate/sign certificates/CAs/sub-CAs
     * AIA (Authority Information Access)
     * OCSP responder
     * import P12/certificate bundles
-* ACME / Let's Encrypt support ([Let's Encrypt how-to](./how-to-s/tls-using-lets-encrypt.md))
+* ACME / Let's Encrypt support ([Let's Encrypt how-to](./tutorials/tls-using-lets-encrypt.md))
 * On-the-fly certificate generation based on a CA certificate without request loss
 * JWKS exposition for public key pairs ([PKI](./topics/pki.md))
 * Default certificate
-* Customize mTLS trusted CAs in the TLS handshake ([mTLS how-to](./how-to-s/end-to-end-mtls.md))
-* Tailscale certificates integration ([how-to](./how-to-s/tailscale-integration.md))
+* Customize mTLS trusted CAs in the TLS handshake ([mTLS how-to](./tutorials/end-to-end-mtls.md))
+* Tailscale certificates integration ([how-to](./tutorials/tailscale-integration.md))
 
-**Clustering** ([clustering](./deploy/clustering.md))
+**Clustering** ([clustering](./deploy/clustering.mdx))
 
 * Based on a control plane / data plane pattern
 * Encrypted communication between nodes
 * Backup capabilities allowing data planes to start without control plane (improved resilience)
-* Relay routing to forward traffic across network zones ([relay routing](./topics/relay-routing.md))
+* Relay routing to forward traffic across network zones ([relay routing](./topics/relay-routing.mdx))
 * Distributed web authentication across nodes ([sessions management](./topics/sessions-mgmt.md))
 
 **Static content and backends**
 
 * Serve static files from local filesystem ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Serve static files from Amazon S3 ([built-in plugins](./plugins/built-in-plugins.mdx))
-* Serve static files from ZIP archives ([ZIP backend how-to](./how-to-s/zip-backend-plugin.mdx))
+* Serve static files from ZIP archives ([ZIP backend how-to](./tutorials/zip-backend-plugin.mdx))
 * Echo backend for debugging ([built-in plugins](./plugins/built-in-plugins.mdx))
 * Static response / mock backends ([built-in plugins](./plugins/built-in-plugins.mdx))
 
@@ -217,10 +234,10 @@ sidebar_position: 4
 
 * Manage and organize all resources
 * Secured user access with authentication module ([auth modules](./entities/auth-modules.md))
-* Audited user actions ([events and analytics](./topics/events-and-analytics.md))
+* Audited user actions ([events and analytics](./topics/events-and-analytics.mdx))
 * Dynamic changes at runtime without full reload
 * Test your routes without any external tools
-* Visual workflow designer with step-by-step debugger ([workflow editor](./topics/workflows-editor.md))
+* Visual workflow designer with step-by-step debugger ([workflow editor](./topics/workflows-editor.mdx))
 * Extensible via admin extensions (custom entities, routes, frontend modules)
 
 **Kubernetes integration** ([Kubernetes](./deploy/kubernetes.mdx))
@@ -233,7 +250,7 @@ sidebar_position: 4
 * Sidecar injection for service mesh
 * Bidirectional TLS certificate synchronization (Kubernetes secrets <-> Otoroshi certificates)
 
-**Dynamic HTTP listeners** ([topic](./topics/http-listeners.md), [entity](./entities/http-listeners.md))
+**Dynamic HTTP listeners** ([topic](./topics/http-listeners.mdx), [entity](./entities/http-listeners.md))
 
 * Create and manage additional HTTP listeners on custom ports
 * Multi-protocol support (HTTP/1.1, HTTP/2, HTTP/3, H2C)
@@ -265,7 +282,7 @@ sidebar_position: 4
     * Sync configuration with Otoroshi clusters
     * Push-based IaC, very similar to what `kubectl apply` can do
 
-**Storage backends** ([setup](./install/setup-otoroshi.mdxx))
+**Storage backends** ([setup](./install/setup-otoroshi.mdx))
 
 * Redis (via Lettuce)
 * PostgreSQL (via Reactive PG)
@@ -276,10 +293,47 @@ sidebar_position: 4
 
 **Organize**
 
-* Multi-organizations ([organizations](./entities/organizations.md))
-* Multi-teams ([teams](./entities/teams.md))
-* Routes groups ([service groups](./entities/service-groups.md))
+* Multi-organizations ([organizations](./entities/organizations.mdx))
+* Multi-teams ([teams](./entities/teams.mdx))
+* Routes groups ([service groups](./entities/service-groups.mdx))
 
 **Developers portal**
 
-* Using [Daikoku](https://maif.github.io/daikoku/manual/index.html) ([dev portal](./topics/dev-portal.md))
+* Using [Daikoku](https://maif.github.io/daikoku/manual/index.html) ([dev portal](./topics/dev-portal.mdx))
+
+**AI / LLM Gateway** ([AI Gateway](./topics/ai-gateway.md))
+
+Available through the optional [Otoroshi LLM Extension](https://cloud-apim.github.io/otoroshi-llm-extension/) developed by [Cloud APIM](https://www.cloud-apim.com/), Otoroshi can act as a full-featured AI Gateway in front of LLM providers.
+
+* Unified, OpenAI-compatible API in front of 50+ LLM providers (OpenAI, Anthropic, Azure OpenAI, Mistral, Groq, Cohere, Google Gemini, Ollama, DeepSeek, X.ai, Hugging Face, Cloudflare Workers AI, Scaleway, OVH, etc.)
+* Multi-modal endpoints: chat completions, embeddings, image generation, audio (TTS/STT), video generation, content moderation
+* Anthropic Messages API compatibility for Claude clients
+* Provider load balancing across multiple LLM backends (round robin, random, best response time, weighted)
+* Automatic provider fallback on failure
+* Cost tracking with a built-in pricing database covering 1000+ models
+* Budgets per API key, user, or service (USD or token-based, with time windows and alert thresholds)
+* Token-based rate limiting (per consumer, per provider, per model)
+* Caching strategies: TTL-based simple cache and semantic cache using embeddings
+* Persistent conversation memory with sliding window or full history, scoped by API key, user, header, etc.
+* Guardrails on prompts and responses:
+    * regex allow/deny lists
+    * LLM-based validation
+    * moderation API (OpenAI moderation and similar)
+    * webhook-based external validation
+    * WASM / QuickJS custom logic
+    * built-in detectors: prompt injection, PII, secrets leakage, toxic language, racial / gender bias, personal health information, gibberish, faithfulness
+    * text constraints: word / sentence / character counts, contains / semantic-contains
+* Reusable prompts, prompt contexts (system messages), and prompt templates with variable substitution
+* Model Context Protocol (MCP) connectors (stdio, SSE, WebSocket, HTTP) for tool / function calling
+* Full audit trail of every LLM call (consumer, provider, model, tokens, cost, cache status, guardrail results, latency) exported through Otoroshi's standard data exporters
+
+**Biscuit Studio**
+
+Available through the optional [Otoroshi Biscuit Studio](https://cloud-apim.github.io/otoroshi-biscuit-studio/) extension developed by [Cloud APIM](https://www.cloud-apim.com/) ([source](https://github.com/cloud-apim/otoroshi-biscuit-studio)), Otoroshi gains full [Eclipse Biscuit token](https://www.biscuitsec.org/) lifecycle management with first-class entities and plugins.
+
+* Entities to support the complete Biscuit lifecycle
+* Centralized administration of all Biscuit material from the Otoroshi UI and admin API
+* Integrates with Otoroshi's [secret vaults](./topics/secrets.md) for secure key material storage
+* Verious plugins to enforce biscuit authorizations and attenuate biscuit tokens on the fly, etc
+* Bridge with apikeys
+* Bridge with auth. modules

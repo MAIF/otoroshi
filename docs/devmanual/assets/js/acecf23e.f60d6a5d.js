@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkotoroshi_documentation=globalThis.webpackChunkotoroshi_documentation||[]).push([[1903],{1912(o){o.exports=JSON.parse('{"blogBasePath":"/otoroshi/devmanual/blog","blogTitle":"Blog","authorsListPath":"/otoroshi/devmanual/blog/authors"}')}}]);

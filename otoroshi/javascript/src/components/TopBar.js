@@ -1136,6 +1136,8 @@ export class TopBar extends Component {
       if (
         e.keyCode === 191 &&
         e.target.tagName?.toLowerCase() !== 'input' &&
+        e.target.tagName?.toLowerCase() !== 'textarea' &&
+        e.target?.className?.toLowerCase().indexOf('monaco') === -1 &&
         hasClassNameAndNotAceInput
       ) {
         setTimeout(() => this.selector.focus());
@@ -1829,7 +1831,6 @@ export class TopBar extends Component {
                               border: '1px solid rgba(var(--raw-text), .25)',
                               width: 400,
                               color: 'var(--text)',
-                              // backgroundColor: 'var(--bg-color_level3)',
                               background: 'transparent',
                               boxShadow: 'none',
                             }),
@@ -1843,6 +1844,7 @@ export class TopBar extends Component {
                               margin: 0,
                               borderTopLeftRadius: 0,
                               borderTopRightRadius: 0,
+                              border: '1px solid var(--input-border)',
                               backgroundColor: 'var(--bg-color_level2)',
                               color: 'var(--text)',
                             }),
@@ -1899,9 +1901,8 @@ export class TopBar extends Component {
                                     display: 'flex',
                                     alignItems: 'center',
                                     padding: '.5rem',
-                                    background: props.isFocused
-                                      ? 'var(--bg-color_level2)'
-                                      : 'var(--bg-color_level3)',
+                                    borderBottom: '1px solid var(--input-border)',
+                                    background: props.isFocused ? 'var(--bg-color_level3)' : 'none',
                                   }}
                                   ref={props.innerRef}
                                   {...props.innerProps}
@@ -1958,7 +1959,7 @@ export class TopBar extends Component {
                     )}
                     <div className="dropdown">
                       <Button
-                        type="quiet"
+                        type="success"
                         className="d-flex align-items-center justify-content-between dropdown dropdown-toggle mx-1"
                         id="add-components"
                         data-bs-toggle="dropdown"
@@ -1993,7 +1994,7 @@ export class TopBar extends Component {
                         aria-labelledby="add-components"
                         style={{
                           background: 'var(--bg-color_level1)',
-                          border: '1px solid var(--bg-color_level1)',
+                          border: '1px solid var(--border-color)',
                           borderTop: 0,
                           padding: '12px',
                           zIndex: 4000,
@@ -2006,6 +2007,9 @@ export class TopBar extends Component {
                             <Link to="/services">Service</Link>
                           </li>
                         )}
+                        <li className="d-flex">
+                          <Link to="/apis">API</Link>
+                        </li>
                         <li className="d-flex">
                           <Link to="/routes/new?tab=informations">Route</Link>
                         </li>

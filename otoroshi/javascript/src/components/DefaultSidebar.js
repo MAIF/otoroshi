@@ -5,7 +5,6 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
-import { useHistory } from 'react-router-dom/';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 import isString from 'lodash/isString';
 import isObject from 'lodash/isObject';
@@ -181,30 +180,32 @@ export function DefaultSidebar(props) {
           }, 50); // delay to avoid simple click
         }}
       >
-        {openedSidebar && !onRouteTab && <div className='mb-2'>
-          <p className='sidebar-title'>Gateway Management</p>
-          <CoreSidebarLink
-            rootClassName={rootClassName}
-            openedSidebar={openedSidebar}
-            clearSidebar={clearSidebar}
-            title='HTTP Routes'
-            description='All your routes'
-            img='routes'
-            icon='fa-road'
-            link='/routes'
-          />
-          <CoreSidebarLink
-            rootClassName={rootClassName}
-            openedSidebar={openedSidebar}
-            clearSidebar={clearSidebar}
-            title='APIs'
-            description='All apis'
-            img='apis'
-            icon='fa-brush'
-            link='/apis'
-            tag={<span className="badge bg-xs bg-warning">ALPHA</span>}
-          />
-        </div>}
+        {openedSidebar && !onRouteTab && (
+          <div className="mb-2">
+            <p className="sidebar-title mt-0">Gateway Management</p>
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="HTTP Routes"
+              description="All your routes"
+              img="routes"
+              icon="fa-road"
+              link="/routes"
+            />
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="APIs"
+              description="All apis"
+              img="apis"
+              icon="fa-brush"
+              link="/apis"
+              tag={<span className="badge bg-xs bg-warning">ALPHA</span>}
+            />
+          </div>
+        )}
 
         {openedSidebar && !onRouteTab && shortcuts.length > 0 && (
           <p className="sidebar-title">Shortcuts</p>
@@ -248,26 +249,7 @@ export function DefaultSidebar(props) {
             })}
       </ul>
       {openedSidebar && !onRouteTab && (
-        <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
-          <p className="sidebar-title">Categories</p>
-          <div className="d-flex flex-column">
-            {links.sort(sortCategory).map((item, i) => {
-              return (
-                <Block
-                  key={item.title}
-                  {...item}
-                  first={i === 0}
-                  last={i === links.length - 1}
-                  shortcuts={shortcuts}
-                  writeStorage={writeStorage}
-                  hightlighted={!hightlighted || item.title === hightlighted}
-                  setHighlighted={() => setHighlighted(item.title)}
-                  onClose={() => setHighlighted(undefined)}
-                />
-              );
-            })}
-          </div>
-
+        <ul className="nav flex-column nav-sidebar me-2">
           <li
             className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} mt-3`}
             style={{
@@ -290,6 +272,24 @@ export function DefaultSidebar(props) {
               <span style={{ marginTop: '4px' }}>{!openedSidebar ? '' : 'Features'}</span>
             </Link>
           </li>
+          <p className="sidebar-title">Categories</p>
+          <div className="d-flex flex-column">
+            {links.sort(sortCategory).map((item, i) => {
+              return (
+                <Block
+                  key={item.title}
+                  {...item}
+                  first={i === 0}
+                  last={i === links.length - 1}
+                  shortcuts={shortcuts}
+                  writeStorage={writeStorage}
+                  hightlighted={!hightlighted || item.title === hightlighted}
+                  setHighlighted={() => setHighlighted(item.title)}
+                  onClose={() => setHighlighted(undefined)}
+                />
+              );
+            })}
+          </div>
         </ul>
       )}
     </>
@@ -333,21 +333,28 @@ function Block({
   writeStorage,
 }) {
   const [open, setOpen] = useState(false);
-  const history = useHistory();
 
   return (
     <div
       key={title}
-      style={{
-        background: 'var(--bg-color_level1)',
-        borderTopLeftRadius: first ? 6 : 0,
-        borderTopRightRadius: first ? 6 : 0,
-        borderBottomLeftRadius: last ? 6 : 0,
-        borderBottomRightRadius: last ? 6 : 0,
-        cursor: 'pointer',
-        marginBottom: 1,
-        opacity: hightlighted ? 1 : 0.5,
-      }}
+      style={
+        last
+          ? {
+              border: '1px solid var(--input-border)',
+              borderBottomLeftRadius: 6,
+              borderBottomRightRadius: 6,
+            }
+          : {
+              border: '1px solid var(--input-border)',
+              borderBottom: 0,
+              borderTopLeftRadius: first ? 6 : 0,
+              borderTopRightRadius: first ? 6 : 0,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+              cursor: 'pointer',
+              opacity: hightlighted ? 1 : 0.5,
+            }
+      }
       className="py-2"
       onClick={() => {
         if (!open === false) {

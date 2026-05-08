@@ -28,6 +28,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import otoroshi.jobs.updates.Version
 import otoroshi.models.*
+import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
 import otoroshi.next.models.*
 import otoroshi.next.plugins.{NgCustomQuotas, NgCustomThrottling}
 import otoroshi.next.workflow.PausedWorkflowSession
@@ -3067,11 +3068,18 @@ class SwappableInMemoryDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiSubscriptionDataStore                              = new KvApiSubscriptionDataStore(redis, env)
+  private lazy val _apiSubscriptionDataStore                      = new KvApiSubscriptionDataStore(redis, env)
   override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
   private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
+
+  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
+
+  private lazy val _userAlertDataStore                                                =
+    new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
+  override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

@@ -746,7 +746,7 @@ const Type = ({
       <div
         style={{
           backgroundColor: 'var(--bg-color_level1)',
-          border: open ? '1px solid var(--bg-color_level1)' : 'none',
+          border: open ? '1px solid var(--border-color)' : 'none',
           paddingTop: open ? '4px' : 0,
         }}
       >

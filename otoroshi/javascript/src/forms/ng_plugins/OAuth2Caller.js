@@ -2,6 +2,7 @@ export default {
   id: 'cp:otoroshi.next.plugins.OAuth2Caller',
   config_flow: [
     'kind',
+    'authModRef',
     'url',
     'method',
     'headerName',
@@ -25,12 +26,26 @@ export default {
         options: [
           { value: 'client_credentials', label: 'Client credentials' },
           { value: 'password', label: 'Password' },
+          { value: 'password_with_basic_auth', label: 'Password with basic auth' },
+          { value: 'auth_module', label: 'ODIC Auth. module' },
         ],
       },
     },
     url: {
       type: 'string',
       label: 'URL',
+    },
+    authModRef: {
+      type: 'select',
+      label: 'Auth. module',
+      help: 'Optional, only useful with kind == auth_module',
+      props: {
+        optionsFrom: '/bo/api/proxy/api/auths',
+        optionsTransformer: {
+          label: 'name',
+          value: 'id',
+        },
+      },
     },
     method: {
       type: 'string',

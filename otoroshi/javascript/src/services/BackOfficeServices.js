@@ -471,10 +471,12 @@ export function fetchApiKeyById(serviceId, apkid) {
   }).then((r) => r.json());
 }
 
-export function deleteApiKey(serviceId, routeId, ak) {
+export function deleteApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
     ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+    : routeId
+      ? `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`
+      : `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'DELETE',
     credentials: 'include',
@@ -484,10 +486,22 @@ export function deleteApiKey(serviceId, routeId, ak) {
   }).then((r) => r.json());
 }
 
-export function createApiKey(serviceId, routeId, ak) {
+export function getBearer(clientId, clientSecret) {
+  return fetch(`/bo/api/proxy/api/apikeys/${clientId}/bearer?newSecret=${clientSecret}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function createApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
     ? `/bo/api/proxy/api/services/${serviceId}/apikeys`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
+    : apiId
+      ? `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys`
+      : `/bo/api/proxy/api/routes/${routeId}/apikeys`;
   return fetch(url, {
     method: 'POST',
     credentials: 'include',
@@ -511,10 +525,12 @@ export function createRawApiKey(ak) {
   }).then((r) => r.json());
 }
 
-export function updateApiKey(serviceId, routeId, ak) {
+export function updateApiKey(serviceId, routeId, apiId, ak) {
   const url = serviceId
     ? `/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`
-    : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
+    : apiId
+      ? `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/apikeys/${ak.clientId}`
+      : `/bo/api/proxy/api/routes/${routeId}/apikeys/${ak.clientId}`;
   return fetch(url, {
     method: 'PUT',
     credentials: 'include',
@@ -2085,19 +2101,6 @@ export function jsonToGraphqlSchema(schema, types) {
   }).then((r) => r.json());
 }
 
-export function subscribeToPlan(apiId, planId) {
-  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/plans/${planId}/subscribe`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({})
-  })
-    .then((r) => r.json());
-}
-
 // NgRoutes
 
 const fetchWrapper = (url, method = 'GET', body) => {
@@ -2144,6 +2147,24 @@ const fetchWrapperNextWithGroup = (group, url, method = 'GET', body) => {
   }).then((r) => r.json());
 };
 
+export const findDraftsByKind = (kind) => {
+  return fetch(`/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${kind}`, {
+    credentials: 'include',
+  }).then((r) => r.json());
+};
+
+export const duplicateAPI = (apiId, body) => {
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/duplicate`, {
+    credentials: 'include',
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  }).then((r) => r.json());
+};
+
 export const findAllWithPagination = (
   route,
   { page, pageSize, fields, filtered, sorted } = { page: 1 },
@@ -2185,6 +2206,43 @@ export const findAllWithPagination = (
       offset: xOffset,
       ngPages: pages,
     }));
+  });
+};
+
+export const subscribeToPlan = (apiId, planId, version, body) => {
+  return fetchWrapperNext(
+    `/apis/${apiId}/plans/${planId}/subscribe?version=${version}`,
+    'POST',
+    body,
+    'apis.otoroshi.io'
+  );
+};
+
+export const confirmSubscription = (apiId, subscriptionId, version) => {
+  const url = `/apis/${apiId}/subscriptions/${subscriptionId}/confirm?version=${version}`;
+
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1${url}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
+};
+
+export const listImpactedSubscriptions = (apiId, planId, version) => {
+  const url = `/apis/${apiId}/plans/${planId}/subscriptions/preview-update?version=${version}`;
+
+  return fetch(`/bo/api/proxy/apis/apis.otoroshi.io/v1${url}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
   });
 };
 

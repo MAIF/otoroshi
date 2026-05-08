@@ -47,7 +47,7 @@ export class SimpleLoginPage extends Component {
       <div
         className="login-card"
         style={{
-          borderColor: `${this.state.error ? 'var(--color-red)' : '#fff'}`,
+          borderColor: `${this.state.error ? 'var(--color-red)' : 'var(--border-color-strong)'}`,
         }}
       >
         <img src={this.props.otoroshiLogo} />

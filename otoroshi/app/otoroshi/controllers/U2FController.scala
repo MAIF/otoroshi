@@ -24,6 +24,9 @@ import java.security.SecureRandom
 import java.util
 import java.util.Optional
 import java.util.concurrent.TimeUnit
+import org.mindrot.jbcrypt.BCrypt
+import otoroshi.utils.crypto.BCryptHelper
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -65,7 +68,7 @@ class U2FController(
             case Some(user) =>
               val password = user.password
               val label    = user.label
-              if (BCrypt.checkpw(pass, password)) {
+              if (BCryptHelper.checkpw(pass, password)) {
                 if (logger.isDebugEnabled) logger.debug(s"Login successful for simple admin '$username'")
                 BackOfficeUser(
                   randomId = IdGenerator.token(64),
@@ -357,7 +360,7 @@ class U2FController(
                         .map { _ =>
                           Ok(Json.obj("username" -> username))
                         }
-                    case Some(user) if BCrypt.checkpw(password, user.password) =>
+                    case Some(user) if BCryptHelper.checkpw(password, user.password) =>
                       // update usrer
                       env.datastores.webAuthnAdminDataStore
                         .registerUser(
@@ -395,7 +398,7 @@ class U2FController(
         case (Some(username), Some(password)) =>
           env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
             users.find(u => u.username == username) match {
-              case Some(user) if BCrypt.checkpw(password, user.password) =>
+              case Some(user) if BCryptHelper.checkpw(password, user.password) =>
                 val rpIdentity: RelyingPartyIdentity =
                   RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
                 val rp: RelyingParty                 = RelyingParty.builder
@@ -461,7 +464,7 @@ class U2FController(
                     val password = user.password
                     val label    = user.label
 
-                    if (BCrypt.checkpw(pass, password)) {
+                    if (BCryptHelper.checkpw(pass, password)) {
                       Try {
                         val rpIdentity: RelyingPartyIdentity =
                           RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build

@@ -24,7 +24,7 @@ import {
   firstLetterUppercase,
   unsecuredCopyToClipboard,
 } from '../../util';
-import { NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgAnyRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 import snakeCase from 'lodash/snakeCase';
@@ -45,6 +45,7 @@ import {
 import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 import { HTTP_COLORS } from './MocksDesigner';
+import { MonacoInput } from '../../components/inputs';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -1246,7 +1247,7 @@ class Designer extends React.Component {
     return (
       <>
         <span
-          className="badge bg-warning text-dark"
+          className="badge bg-warning"
           style={{
             cursor: 'pointer',
           }}
@@ -1354,7 +1355,7 @@ class Designer extends React.Component {
       return (
         <React.Fragment key={`inbound-${i}`}>
           <span
-            className="badge bg-warning text-dark"
+            className="badge bg-warning"
             style={{
               cursor: 'pointer',
             }}
@@ -1443,7 +1444,7 @@ class Designer extends React.Component {
     return (
       nodes.find((n) => n.plugin_index.TransformResponse !== undefined) && (
         <span
-          className="badge bg-warning text-dark"
+          className="badge bg-warning"
           style={{ cursor: 'pointer' }}
           onClick={() => {
             const hidden_steps = {
@@ -1529,17 +1530,17 @@ class Designer extends React.Component {
     const tunnelNodes =
       route && route.plugins
         ? route.plugins
-          .map((p) => {
-            const id = p.plugin;
-            const pluginDef = plugins.filter((pl) => pl.id === id)[0];
-            if (pluginDef) {
-              if (pluginDef.plugin_steps.indexOf('HandlesTunnel') > -1) {
-                return { ...p, ...pluginDef };
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('HandlesTunnel') > -1) {
+                  return { ...p, ...pluginDef };
+                }
               }
-            }
-            return null;
-          })
-          .filter((p) => !!p)
+              return null;
+            })
+            .filter((p) => !!p)
         : [];
 
     const ownTemplates = getOwnTemplates(
@@ -1718,7 +1719,7 @@ class Designer extends React.Component {
                         }}
                       >
                         <span
-                          className="badge bg-warning text-dark"
+                          className="badge bg-warning"
                           style={{
                             width: '100%',
                             opacity: !selectedNode ? 1 : 0.25,
@@ -1760,7 +1761,7 @@ class Designer extends React.Component {
                         }}
                       >
                         <span
-                          className="badge bg-warning text-dark"
+                          className="badge bg-warning"
                           style={{
                             width: '100%',
                             opacity: !selectedNode ? 1 : 0.25,
@@ -1840,40 +1841,45 @@ class Designer extends React.Component {
   }
 }
 
-const Element = ({ element, addNode, showPreview, hidePreview }) => (
-  <div
-    className="element"
-    onClick={(e) => {
-      e.stopPropagation();
-      showPreview(element);
-    }}
-  >
-    <div className="d-flex-between element-text">
-      <div>
-        {element.legacy ? (
-          <span className="badge bg-info text-dark" style={{ marginRight: 5 }}>
-            legacy
-          </span>
-        ) : (
-          ''
-        )}
-        {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+const Element = ({ element, addNode, showPreview, hidePreview }) => {
+  console.log(element);
+  return (
+    <div
+      className="element"
+      onClick={(e) => {
+        e.stopPropagation();
+        showPreview(element);
+      }}
+    >
+      <div className="d-flex-between element-text">
+        <div>
+          {element.legacy ? (
+            <span className="badge bg-info" style={{ marginRight: 5 }}>
+              legacy
+            </span>
+          ) : (
+            ''
+          )}
+          <p>{element.name.charAt(0).toUpperCase() + element.name.slice(1)}</p>
+
+          {!element.legacy && <p className="mb-0">{element.description}</p>}
+        </div>
+        <i
+          className={`fas fa-arrow-right element-arrow`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (element.shortcut) {
+              element.shortcut();
+            } else {
+              hidePreview();
+              addNode(element);
+            }
+          }}
+        />
       </div>
-      <i
-        className={`fas fa-${element.plugin_multi_inst ? 'plus' : 'arrow-right'} element-arrow`}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (element.shortcut) {
-            element.shortcut();
-          } else {
-            hidePreview();
-            addNode(element);
-          }
-        }}
-      />
     </div>
-  </div>
-);
+  );
+};
 
 const Group = ({ group, elements, addNode, ...props }) => {
   const [open, setOpen] = useState(props.forceOpen);
@@ -1938,7 +1944,7 @@ const SearchBar = ({ handleSearch }) => (
       >
         <input
           type="text"
-          className="form-control"
+          className="form-control search-plugin"
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search the plugin"
         />
@@ -2170,7 +2176,7 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                   target.tls_config.enabled &&
                   [...(target.tls_config.certs || [])].length > 0 ? (
                     <span
-                      className="badge bg-warning text-dark"
+                      className="badge bg-warning"
                       style={{
                         marginRight: 10,
                         fontSize: '.75rem',
@@ -2272,7 +2278,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className="d-flex justify-content-center mb-2 me-2 dark-background">
+  <div className="d-flex justify-content-center mb-2 me-2">
     <PillButton
       className="mt-3"
       rightEnabled={!asJsonFormat}
@@ -2303,14 +2309,13 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   <>
     {value && value.toString().length > 0 && (
       <Suspense fallback={<div>Loading ...</div>}>
-        <CodeInput
-          mode="json"
+        <NgAnyRenderer
+          ngOptions={{ spread: true }}
+          useInternalState
+          language="json"
+          mode="jsonOrPlaintext"
           editorOnly={true}
-          themeStyle={{
-            maxHeight: readOnly ? '300px' : '-1',
-            minHeight: '100px',
-            width: '100%',
-          }}
+          height={readOnly ? '300px' : '500px'}
           value={value}
           onChange={(e) => {
             if (!readOnly) onChange(e);
@@ -2334,13 +2339,10 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   </>
 );
 
-const EditViewReadOnlyActions = ({ onCancel, onOk }) => (
+const EditViewReadOnlyActions = ({ onOk }) => (
   <div className="d-flex justify-content-end mt-3">
-    <button className="btn btn-sm btn-danger me-1" onClick={onCancel}>
-      Cancel
-    </button>
-    <button className="btn btn-sm btn-save" onClick={onOk}>
-      Add to flow
+    <button className="btn btn-save" onClick={onOk}>
+      Add to Policy Chain
     </button>
   </div>
 );
@@ -2609,10 +2611,6 @@ class EditView extends React.Component {
                   />
                   {readOnly ? (
                     <EditViewReadOnlyActions
-                      onCancel={() => {
-                        setSelectedNode(undefined);
-                        hidePreview();
-                      }}
                       onOk={() => {
                         hidePreview();
                         if (selectedNode.shortcut) selectedNode.shortcut(selectedNode);
@@ -2700,7 +2698,7 @@ export const BackendSelector = ({
   if (!enabled) return null;
   return (
     enabled && (
-      <div className="dark-background backend-selector">
+      <div className="backend-selector">
         <PillButton
           pillButtonStyle={{ width: 'auto', flex: 1 }}
           style={{ display: 'flex', width: '100%', minHeight: 36, maxWidth: 420 }}
@@ -2750,11 +2748,7 @@ export const Description = ({ text, steps, legacy }) => {
         <div className="steps py-2" style={{ paddingLeft: 12 }}>
           Active on steps{' '}
           {steps.map((step, i) => (
-            <span
-              className="badge bg-warning text-dark"
-              style={{ marginLeft: 5 }}
-              key={`steps-${i}`}
-            >
+            <span className="badge bg-warning" style={{ marginLeft: 5 }} key={`steps-${i}`}>
               {step}
             </span>
           ))}
@@ -2763,7 +2757,7 @@ export const Description = ({ text, steps, legacy }) => {
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
           This plugin is a{' '}
-          <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
+          <span className="badge bg-info" style={{ marginLeft: 5 }}>
             legacy plugin
           </span>
         </div>
