@@ -15,6 +15,22 @@ import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.*
 
+private object DiscoveryUnregister {
+  private val pattern = """/discovery/(.*)/_unregister""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(id) => Some(id)
+    case _           => None
+  }
+}
+
+private object DiscoveryHeartbeat {
+  private val pattern = """/discovery/(.*)/_heartbeat""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(id) => Some(id)
+    case _           => None
+  }
+}
+
 case class NgDiscoverySelfRegistrationConfig(
     raw: JsValue = Json.obj()
 ) extends NgPluginConfig {
@@ -52,8 +68,6 @@ object NgDiscoverySelfRegistrationConfig {
 
 class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
-  import kaleidoscope.*
-
   override def name: String                                = "Global self registration endpoints (service discovery)"
   override def description: Option[String]                 =
     "This plugin add support for self registration endpoint on specific hostnames".some
@@ -73,18 +87,16 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
     val config = NgDiscoverySelfRegistrationConfig(ctx.config)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => DiscoveryHelper.register(None, ctx.body, config.legacy)
-      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId.s, None, ctx.request, config.legacy)
-      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId.s, None, ctx.request, config.legacy)
+      case ("delete", DiscoveryUnregister(registrationId)) =>
+        DiscoveryHelper.unregister(registrationId, None, ctx.request, config.legacy)
+      case ("post", DiscoveryHeartbeat(registrationId))    =>
+        DiscoveryHelper.heartbeat(registrationId, None, ctx.request, config.legacy)
       case _                                                            => Results.NotFound(Json.obj("error" -> "resource not found !")).future
     }
   }
 }
 
 class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
-
-  import kaleidoscope.*
 
   override def name: String                                = "Self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -105,10 +117,10 @@ class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             =>
         DiscoveryHelper.register(ctx.route.id.some, ctx.otoroshiRequest.body, config.legacy).map(r => Left(r))
-      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId.s, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
-      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId.s, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
+      case ("delete", DiscoveryUnregister(registrationId)) =>
+        DiscoveryHelper.unregister(registrationId, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
+      case ("post", DiscoveryHeartbeat(registrationId))    =>
+        DiscoveryHelper.heartbeat(registrationId, ctx.route.id.some, ctx.request, config.legacy).map(r => Left(r))
       case _                                                            => Right(ctx.otoroshiRequest).future
     }
   }

@@ -298,6 +298,22 @@ object MockResponsesConfig {
   }
 }
 
+private object PathparamsWithDefault {
+  private val pattern = """req.pathparams.(.*):(.*)""".r
+  def unapply(s: String): Option[(String, String)] = s match {
+    case pattern(field, dv) => Some((field, dv))
+    case _                  => None
+  }
+}
+
+private object Pathparams {
+  private val pattern = """req.pathparams.(.*)""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(field) => Some(field)
+    case _              => None
+  }
+}
+
 class MockResponses extends NgBackendCall {
 
   override def useDelegates: Boolean                       = true
@@ -345,8 +361,6 @@ class MockResponses extends NgBackendCall {
           None
       }
       .map(result => {
-        import anticipation.Text
-        import kaleidoscope.*
 
         val route    = result.routes.headOption.get
         val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)
@@ -354,9 +368,9 @@ class MockResponses extends NgBackendCall {
         def replaceOn(value: String) = {
           val newValue = Try {
             expressionReplacer.replaceOn(value) {
-              case r"req.pathparams.$field(.*):$defaultValue(.*)" => result.pathParams.getOrElse(field.s, defaultValue.s)
-              case r"req.pathparams.$field(.*)"                   => result.pathParams.getOrElse(field.s, s"no-path-param-${field.s}")
-              case r                                              => r
+              case PathparamsWithDefault(field, defaultValue) => result.pathParams.getOrElse(field, defaultValue)
+              case Pathparams(field)                          => result.pathParams.getOrElse(field, s"no-path-param-$field")
+              case r                                          => r
             }
           } recover { case _ => value } get
 

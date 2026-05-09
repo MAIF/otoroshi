@@ -154,13 +154,57 @@ object WorkFlowTask {
 
 object WorkFlowEl {
 
-  import anticipation.Text
-  import kaleidoscope.*
-
   import scala.jdk.CollectionConverters.given
 
   val logger: Logger                     = Logger("workflow-el")
   val expressionReplacer: ReplaceAllWith = ReplaceAllWith("\\$\\{([^}]*)\\}")
+
+  // Regex extractors (replacing kaleidoscope `r"..."` patterns; dots kept unescaped to mirror original semantics).
+  private object InputPath {
+    private val p                          = """input.(.*)""".r
+    def unapply(s: String): Option[String] = s match { case p(x) => Some(x); case _ => None }
+  }
+  private object CacheLookup {
+    private val p                                    = """cache.(.*)\[(.*)\]""".r
+    def unapply(s: String): Option[(String, String)] = s match { case p(f, p2) => Some((f, p2)); case _ => None }
+  }
+  private object ResponsesLookup {
+    private val p                                    = """responses.(.*)\[(.*)\]""".r
+    def unapply(s: String): Option[(String, String)] = s match { case p(f, p2) => Some((f, p2)); case _ => None }
+  }
+  private object FileSlashSlash {
+    private val p                          = """file://(.*)""".r
+    def unapply(s: String): Option[String] = s match { case p(x) => Some(x); case _ => None }
+  }
+  private object FileColon {
+    private val p                          = """file:(.*)""".r
+    def unapply(s: String): Option[String] = s match { case p(x) => Some(x); case _ => None }
+  }
+  private object EnvWithDefault {
+    private val p                                    = """env.(.*):(.*)""".r
+    def unapply(s: String): Option[(String, String)] = s match { case p(f, d) => Some((f, d)); case _ => None }
+  }
+  private object EnvNoDefault {
+    private val p                          = """env.(.*)""".r
+    def unapply(s: String): Option[String] = s match { case p(x) => Some(x); case _ => None }
+  }
+  private object ConfigWithDefault {
+    private val p                                    = """config.(.*):(.*)""".r
+    def unapply(s: String): Option[(String, String)] = s match { case p(f, d) => Some((f, d)); case _ => None }
+  }
+  private object ConfigNoDefault {
+    private val p                          = """config.(.*)""".r
+    def unapply(s: String): Option[String] = s match { case p(x) => Some(x); case _ => None }
+  }
+
+  private def configLookup(field: String, default: => String)(env: Env): String =
+    env.configuration
+      .getOptionalWithFileSupport[String](field)
+      .orElse(env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString))
+      .orElse(env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString))
+      .orElse(env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString))
+      .orElse(env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString))
+      .getOrElse(default)
 
   def apply(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
     value match {
@@ -168,51 +212,21 @@ object WorkFlowEl {
         Try {
           expressionReplacer.replaceOn(value) {
 
-            case r"input.$path(.*)"                   => JsonPathUtils.getAtPolyJsonStr(ctx.input, path.s)
-            case r"cache.$field(.*)\[$path(.*)\]"     =>
-              ctx.cache.get(field.s).map(f => JsonPathUtils.getAtPolyJsonStr(f, path.s)).getOrElse("null")
-            case r"responses.$field(.*)\[$path(.*)\]" =>
-              ctx.responses.get(field.s).map(f => JsonPathUtils.getAtPolyJsonStr(f, path.s)).getOrElse("null")
+            case InputPath(path)              => JsonPathUtils.getAtPolyJsonStr(ctx.input, path)
+            case CacheLookup(field, path)     =>
+              ctx.cache.get(field).map(f => JsonPathUtils.getAtPolyJsonStr(f, path)).getOrElse("null")
+            case ResponsesLookup(field, path) =>
+              ctx.responses.get(field).map(f => JsonPathUtils.getAtPolyJsonStr(f, path)).getOrElse("null")
 
-            case r"file://$path(.*)"       =>
-              Try(Files.readAllLines(new File(path.s).toPath).asScala.mkString("\n").trim()).getOrElse("null")
-            case r"file:$path(.*)"         =>
-              Try(Files.readAllLines(new File(path.s).toPath).asScala.mkString("\n").trim()).getOrElse("null")
-            case r"env.$field(.*):$dv(.*)" => Option(System.getenv(field.s)).getOrElse(dv.s)
-            case r"env.$field(.*)"         => Option(System.getenv(field.s)).getOrElse(s"no-env-var-$field")
+            case FileSlashSlash(path)         =>
+              Try(Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()).getOrElse("null")
+            case FileColon(path)              =>
+              Try(Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()).getOrElse("null")
+            case EnvWithDefault(field, dv)    => Option(System.getenv(field)).getOrElse(dv)
+            case EnvNoDefault(field)          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
-            case r"config.$field(.*):$dv(.*)" =>
-              env.configuration
-                .getOptionalWithFileSupport[String](field.s)
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Int](field.s).map(_.toString)
-                )
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Double](field.s).map(_.toString)
-                )
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Long](field.s).map(_.toString)
-                )
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Boolean](field.s).map(_.toString)
-                )
-                .getOrElse(dv.s)
-            case r"config.$field(.*)"         =>
-              env.configuration
-                .getOptionalWithFileSupport[String](field.s)
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Int](field.s).map(_.toString)
-                )
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Double](field.s).map(_.toString)
-                )
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Long](field.s).map(_.toString)
-                )
-                .orElse(
-                  env.configuration.getOptionalWithFileSupport[Boolean](field.s).map(_.toString)
-                )
-                .getOrElse(s"no-config-${field.s}")
+            case ConfigWithDefault(field, dv) => configLookup(field, dv)(env)
+            case ConfigNoDefault(field)       => configLookup(field, s"no-config-$field")(env)
           }
         } recover { case e =>
           logger.error(s"Error while parsing expression, returning raw value: $value", e)

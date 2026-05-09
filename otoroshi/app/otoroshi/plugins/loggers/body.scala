@@ -1,7 +1,6 @@
 package otoroshi.plugins.loggers
 
 import com.google.common.base.Charsets
-import kaleidoscope.*
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -129,6 +128,15 @@ case class ResponseBodyEvent(
 
 object BodyLogger {
   val base64Encoder = java.util.Base64.getEncoder
+}
+
+private object BodyLoggerRequestById {
+  // dots are kept unescaped to match kaleidoscope's original behavior verbatim
+  private val pattern = """/.well-known/otoroshi/plugins/bodylogger/requests/(.*).json""".r
+  def unapply(path: String): Option[String] = path match {
+    case pattern(id) => Some(id)
+    case _           => None
+  }
 }
 
 // MIGRATED: this feature is now integrated in the new proxy engine (body capture)
@@ -592,7 +600,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(JsArray(requests ++ responses)))
           }
         }
-      case ("get", r"/.well-known/otoroshi/plugins/bodylogger/requests/$id(.*).json") =>
+      case ("get", BodyLoggerRequestById(id)) =>
         passWithAuth(config, ctx) {
           for {
             request  <- getOne(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:$id:request")

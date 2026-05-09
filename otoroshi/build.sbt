@@ -197,7 +197,6 @@ libraryDependencies ++= Seq(
     "com.auth0"                        % "jwks-rsa"                                  % "0.24.0" excludeAll (excludesJackson *),
     "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.9",
     "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
-    "dev.soundness"                    % "kaleidoscope-core"                         % "0.55.0",
     "io.github.classgraph"             % "classgraph"                                % "4.8.184" excludeAll (excludesJackson *),
     "com.comcast"                     %% "ip4s-core"                                 % "3.8.0",
     "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson *),
