@@ -118,8 +118,8 @@ case class JobId(id: String)
 trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener { self =>
 
   private val refId = new AtomicReference[String](s"cp:${self.getClass.getName}")
-//  private val promise = Promise[Unit]
-  val promise       = Promise[Unit]
+//  private val promise = Promise[Unit]()
+  val promise       = Promise[Unit]()
 
   final override def pluginType: PluginType = PluginType.JobType
 

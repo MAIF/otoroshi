@@ -54,7 +54,7 @@ inThisBuild(
 enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion    = "3.7.4"
+lazy val scalaLangVersion    = "3.8.3"
 val playVersion              = "3.0.10"
 val metricsVersion           = "4.2.38"
 val acme4jVersion            = "5.1.0"
@@ -93,7 +93,8 @@ val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
 )
 
 scalacOptions ++= Seq(
-    "-experimental",
+    // `-experimental` was a holdover; nothing in this codebase uses Scala's experimental
+    // language features. Re-enable only if you adopt @experimental APIs.
     "-explain",
     "-feature",
     "-explain-cyclic",
@@ -104,6 +105,23 @@ scalacOptions ++= Seq(
     // scala3-library_3 declares `scala.caps` as both a package and an object
     "-Wconf:msg=package scala contains object and package with same name:s",
 )
+
+// TODO: remove this hook once Play / Twirl ships a compiler that no longer emits
+// `import scala.language.adhocExtensions`. The language feature was promoted to default in
+// Scala 3.5 (the warning moved to a regular `-Wconf`-controlled feature category) and the
+// marker val itself was removed from `scala.runtime.stdLibPatches.language` in 3.8;
+// Twirl 2.0.x and 2.1.0-Mx still hardcode that import in their generated wrappers. The
+// import is a pure no-op in 3.8+ — stripping it produces identical bytecode to letting it
+// resolve, so we just delete the line rather than maintaining a polyfill object.
+Compile / TwirlKeys.compileTemplates := {
+  val generated = (Compile / TwirlKeys.compileTemplates).value
+  generated.foreach { f =>
+    val orig    = IO.read(f)
+    val patched = orig.replace("import scala.language.adhocExtensions", "")
+    if (patched != orig) IO.write(f, patched)
+  }
+  generated
+}
 
 // FIX: Comprehensive dependency overrides to enforce consistent versions
 dependencyOverrides ++= Seq(

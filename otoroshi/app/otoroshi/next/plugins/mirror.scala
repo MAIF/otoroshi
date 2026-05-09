@@ -276,8 +276,8 @@ class NgTrafficMirroring extends NgRequestTransformer {
     val cfg = ctx.cachedConfig(internalName)(NgTrafficMirroringConfig.format).getOrElse(NgTrafficMirroringConfig())
 
     if (cfg.legacy.shouldBeMirrored(ctx.route.id, ctx.request)) {
-      val done       = Promise[Unit]
-      val mirrorDone = Promise[Unit]
+      val done       = Promise[Unit]()
+      val mirrorDone = Promise[Unit]()
       val context    = NgRequestContext(
         id = ctx.snowflake,
         request = ctx.request,

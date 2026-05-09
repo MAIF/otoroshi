@@ -291,8 +291,8 @@ class MirroringPlugin extends RequestTransformer {
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = MirroringPluginConfig(ctx.configFor("MirroringPlugin"))
     if (cfg.shouldBeMirrored(ctx.descriptor.id, ctx.request)) {
-      val done       = Promise[Unit]
-      val mirrorDone = Promise[Unit]
+      val done       = Promise[Unit]()
+      val mirrorDone = Promise[Unit]()
       val context    = RequestContext(
         id = ctx.snowflake,
         request = ctx.request,
