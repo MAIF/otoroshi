@@ -18,7 +18,7 @@ import play.api.libs.json._
 import play.api.mvc.Results.TooManyRequests
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.given
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -61,7 +61,7 @@ object LocalTokensBucketStrategyConfig {
         capacity = json.selectAsOptLong("capacity").getOrElse(300),
         refillRequestIntervalMs = json.selectAsOptLong("refillRequestIntervalMs").getOrElse(50),
         refillRequestedTokens = json.selectAsOptLong("refillRequestedTokens").getOrElse(50),
-        quota = json.select("quota").asOpt(AllowedQuota.fmt).getOrElse(AllowedQuota())
+        quota = json.select("quota").asOpt(using AllowedQuota.fmt).getOrElse(AllowedQuota())
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -98,7 +98,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
         val timeElapsedSec = timeElapsedMs / 1000.0
 
         val tokensToAdd     = timeElapsedSec * config.refillRatePerSecond
-        val newBucketTokens = Math.min(config.capacity, oldBucket.tokens + tokensToAdd)
+        val newBucketTokens = Math.min(config.capacity.toDouble, oldBucket.tokens + tokensToAdd)
 
         if (tokensToAdd > 0) {
           oldBucket.copy(tokens = newBucketTokens, lastRefillMs = currentTimeMs)
@@ -256,7 +256,7 @@ object DistributedRedisThrottlingStrategyConfig {
     override def reads(json: JsValue): JsResult[DistributedRedisThrottlingStrategyConfig] = Try {
       DistributedRedisThrottlingStrategyConfig(
         bucketKey = json.selectAsOptString("bucketKey"),
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(using AllowedQuota.fmt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -295,7 +295,7 @@ object LuaDistributedRedisThrottlingStrategyConfig {
     override def reads(json: JsValue): JsResult[LuaDistributedRedisThrottlingStrategyConfig] = Try {
       LuaDistributedRedisThrottlingStrategyConfig(
         bucketKey = json.selectAsOptString("bucketKey"),
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(using AllowedQuota.fmt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -382,13 +382,13 @@ case class LuaDistributedRedisThrottlingStrategy(
       case l: LettuceRedisStandaloneAndSentinels =>
         Some(
           l.redis
-            .eval[java.util.List[Object]](LuaDistributedRedisThrottlingStrategy.script, ScriptOutputType.MULTI, keys, args: _*)
+            .eval[java.util.List[Object]](LuaDistributedRedisThrottlingStrategy.script, ScriptOutputType.MULTI, keys, args*)
             .toScala
         )
       case l: LettuceRedisCluster                =>
         Some(
           l.redis
-            .eval[java.util.List[Object]](LuaDistributedRedisThrottlingStrategy.script, ScriptOutputType.MULTI, keys, args: _*)
+            .eval[java.util.List[Object]](LuaDistributedRedisThrottlingStrategy.script, ScriptOutputType.MULTI, keys, args*)
             .toScala
         )
       case _                                     => None
@@ -448,7 +448,7 @@ object FixedWindowStrategyConfig {
     override def reads(json: JsValue): JsResult[FixedWindowStrategyConfig] = Try {
       FixedWindowStrategyConfig(
         windowDurationMs = json.selectAsOptLong("windowDurationMs").getOrElse(10000L),
-        quota = json.select("quota").as(AllowedQuota.fmt),
+        quota = json.select("quota").as(using AllowedQuota.fmt),
         bucketKey = json.selectAsOptString("bucketKey")
       )
     } match {
@@ -600,7 +600,7 @@ object LegacyThrottlingStrategyConfig {
   val format = new Format[LegacyThrottlingStrategyConfig] {
     override def reads(json: JsValue): JsResult[LegacyThrottlingStrategyConfig] = Try {
       LegacyThrottlingStrategyConfig(
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(using AllowedQuota.fmt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -1257,7 +1257,7 @@ class RateLimiter(_env: Env) {
     strategies.get(key) match {
       case Some(strategy) if strategy.config.id == config.id => strategy
       case _                                                 =>
-        val newStrategy = ThrottlingStrategy.apply(config, key)(env)
+        val newStrategy = ThrottlingStrategy.apply(config, key)(using env)
         strategies.put(key, newStrategy)
         newStrategy
     }

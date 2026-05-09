@@ -25,6 +25,8 @@ import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.given
+
+import scala.annotation.nowarn
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.ws.*
@@ -56,7 +58,8 @@ class NettySniSslContext(sslContext: QuicSslContext, host: String, port: Int) ex
     sslContext.newEngine(alloc, peerHost, peerPort)
   override def isClient: Boolean                                                                  = sslContext.isClient
   override def cipherSuites(): util.List[String]                                                  = sslContext.cipherSuites()
-  @SuppressWarnings(Array("Deprecation")) // todo needs to be removed when the underlying method is also removed
+  // todo needs to be removed when the underlying method is also removed
+  @nowarn("cat=deprecation")
   override def applicationProtocolNegotiator(): ApplicationProtocolNegotiator =
     sslContext.applicationProtocolNegotiator()
   override def sessionContext(): QuicSslSessionContext                        = sslContext.sessionContext()

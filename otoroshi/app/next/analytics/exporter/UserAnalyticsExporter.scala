@@ -15,7 +15,7 @@ import play.api.Logger
 import play.api.libs.json._
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.given
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -511,7 +511,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
                 config.metadata.get(UserAnalyticsExporterSettings.ActiveMetadataKey).contains("true")
               if (isActive) {
                 otoroshi.next.analytics.defaults.DefaultDashboards
-                  .seedIfMissing()(env, ec)
+                  .seedIfMissing()(using env, ec)
                   .map(_ => ())
                   .recover { case e: Throwable =>
                     logger.error(s"[user-analytics-exporter] error while seeding default dashboards", e)

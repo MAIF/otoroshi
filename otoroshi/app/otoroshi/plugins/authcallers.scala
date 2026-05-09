@@ -166,6 +166,12 @@ class OAuth2Caller extends RequestTransformer {
           .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.PasswordWithBasicAuth                     =>
+        s"grant_type=password&username=${config.user
+          .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
+          .map(s => s"&scope=$s")
+          .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.AuthModule                                => ""
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val authMod      = env.proxyState.authModule(config.authModRef.get).map(_.asInstanceOf[OAuth2ModuleConfig])

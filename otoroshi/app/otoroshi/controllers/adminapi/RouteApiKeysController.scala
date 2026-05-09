@@ -90,7 +90,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedOnService(id)  => {
+          case Some(apiKey)                                    => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY_QUOTAS",
               s"User accessed an apikey quotas",
@@ -147,7 +147,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$entity.id'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(id, entity.groups)  => {
+          case Some(apiKey)                                                           => {
             sendAudit(
               "RESET_SERVICE_APIKEY_QUOTAS",
               s"User reset an apikey quotas for a service descriptor",
@@ -257,13 +257,13 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
+          case Some(apiKey)                                                              => {
             val body = ctx.request.body
             env.datastores.apiKeyDataStore.findById(apiKey.clientId).flatMap {
               case None                                => BadRequest(Json.obj("error" -> "resource does no exists")).asFuture
               case Some(old) if !ctx.canUserWrite(old) =>
                 BadRequest(Json.obj("error" -> "you cannot access this resource")).asFuture
-              case Some(old)                           => {
+              case Some(_)                             => {
                 ctx.validateEntity(body, "apikey") match {
                   case Left(errs) =>
                     BadRequest(Json.obj("error" -> "Bad ApiKey format", "details" -> errs)).asFuture
@@ -272,7 +272,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                       case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                       case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                         BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                      case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
+                      case JsSuccess(newApiKey, _)                                   => {
                         sendAuditAndAlert(
                           "UPDATE_APIKEY",
                           s"User updated an ApiKey",
@@ -320,7 +320,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
+          case Some(apiKey)                                                              => {
             val currentApiKeyJson = apiKey.toJson
             val newApiKeyJson     = patchJson(ctx.request.body, currentApiKeyJson)
             ctx.validateEntity(newApiKeyJson, "apikey") match {
@@ -330,7 +330,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                   case JsError(e)                                                => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
                   case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
                     BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
-                  case JsSuccess(newApiKey, _) if newApiKey.clientId == clientId => {
+                  case JsSuccess(newApiKey, _)                                   => {
                     sendAuditAndAlert(
                       "UPDATE_APIKEY",
                       s"User updated an ApiKey",
@@ -376,7 +376,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
+          case Some(apiKey)                                                              => {
             sendAuditAndAlert(
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
@@ -473,7 +473,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             NotFound(
               Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for service with id: '$id'")
             )
-          case Some(apiKey) if apiKey.authorizedOnServiceOrGroups(desc.id, desc.groups)  => {
+          case Some(apiKey)                                                              => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY",
               s"User accessed an apikey from a service descriptor",

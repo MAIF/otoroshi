@@ -15,7 +15,7 @@ trait StatefulClientConfig[A] {
   def isOpen(client: A): Boolean
   def start(env: Env): A
   def stop(client: A): Unit
-  def isSameConfig(other: StatefulClientConfig[_]): Boolean
+  def isSameConfig(other: StatefulClientConfig[?]): Boolean
 }
 
 case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) {
@@ -30,8 +30,8 @@ case class StatefulClientWrapper[A](config: StatefulClientConfig[A], client: A) 
 class StatefulClientsManager(env: Env) {
 
   private val logger                                                     = Logger("otoroshi-stateful-clients-manager")
-  private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] =
-    new TrieMap[String, StatefulClientWrapper[_]]()
+  private val statefulClients: TrieMap[String, StatefulClientWrapper[?]] =
+    new TrieMap[String, StatefulClientWrapper[?]]()
   private implicit val ec: ExecutionContext                              = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
@@ -83,7 +83,7 @@ class StatefulClientsManager(env: Env) {
     FastFuture.successful(())
   }
 
-  private def getClientConfigsFromConfig(): List[(String, StatefulClientConfig[_])] = {
+  private def getClientConfigsFromConfig(): List[(String, StatefulClientConfig[?])] = {
     val staticConfigs     = env.configurationJson
       .select("otoroshi")
       .select("stateful-clients")

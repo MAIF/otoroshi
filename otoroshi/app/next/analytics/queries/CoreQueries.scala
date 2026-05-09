@@ -7,7 +7,7 @@ import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterS
 import otoroshi.storage.drivers.reactivepg.pgimplicits._
 import play.api.libs.json._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.given
 import scala.concurrent.{ExecutionContext, Future}
 
 /** Shared helpers for core queries (parameter binding, row → JSON, etc.). */

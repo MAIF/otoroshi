@@ -84,7 +84,7 @@ class AlertEvaluationJob extends Job {
               alertConfig = alert,
               evaluations = evals,
               `@id` = env.snowflakeGenerator.nextIdStr()
-            )(env)
+            )(using env)
             Try(Alerts.send(ev)(using env)).recover { case e: Throwable =>
               logger.error(s"failed to send alert '${alert.id}'", e)
             }

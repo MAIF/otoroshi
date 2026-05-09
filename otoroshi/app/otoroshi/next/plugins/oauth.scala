@@ -417,6 +417,7 @@ class OAuth2Caller extends NgRequestTransformer {
           .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.AuthModule                                  => ""
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val authMod      = env.proxyState

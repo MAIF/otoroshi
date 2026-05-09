@@ -11,7 +11,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.given 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -45,7 +45,7 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
   }
 
   private def requireTenantAccess(
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     val tenant = ctx.currentTenant
     val canAccess =
@@ -156,7 +156,7 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
       eventId: String,
       tenant: String,
       seen: Boolean,
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   ): Future[play.api.mvc.Result] = {
     val by = ctx.backOfficeUser.toOption.flatten.map(_.email).getOrElse("?")
     UserAnalyticsExporterRegistry.activeRunning.flatMap {
