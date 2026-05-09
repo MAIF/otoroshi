@@ -449,21 +449,21 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
   }
 
   def apiKeyOfRoute(routeId: String, clientId: String) = {
-    ApiAction.async(parse.json) { ctx =>
+    ApiAction.async { ctx =>
       apiKey(ctx, routeId, clientId, isRoute = true)
     }
   }
 
   def apiKeyOfApi(apiId: String, clientId: String) = {
-    ApiAction.async(parse.json) { ctx =>
+    ApiAction.async { ctx =>
       apiKey(ctx, apiId, clientId, isRoute = false)
     }
   }
 
-  private def apiKey(ctx: ApiActionContext[JsValue], id: String, clientId: String, isRoute: Boolean) =
+  private def apiKey(ctx: ApiActionContext[AnyContent], id: String, clientId: String, isRoute: Boolean) =
     (if (isRoute)
-       canReadOrWriteRoute[JsValue](ctx, id, (ctx, entity) => ctx.canUserRead(entity))
-     else canReadOrWriteApi[JsValue](ctx, id, (ctx, entity) => ctx.canUserRead(entity))).flatMap {
+       canReadOrWriteRoute[AnyContent](ctx, id, (ctx, entity) => ctx.canUserRead(entity))
+     else canReadOrWriteApi[AnyContent](ctx, id, (ctx, entity) => ctx.canUserRead(entity))).flatMap {
       case Left(err)   => err.vfuture
       case Right(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).map {
