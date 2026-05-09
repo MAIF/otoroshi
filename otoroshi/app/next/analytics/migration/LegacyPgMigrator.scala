@@ -1,7 +1,8 @@
 package otoroshi.next.analytics.migration
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.pgclient.{PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Row, Tuple => VertxTuple}
 import otoroshi.env.Env
 import otoroshi.models.PostgresExporterSettings
@@ -92,9 +93,9 @@ object LegacyPgMigrator {
       ec: ExecutionContext
   ): Future[Either[String, MigrationResult]] = {
     val sourceTable = s"${source.schema}.${source.table}"
-    val sourcePool  = PgPool.pool(buildConnectOptions(source), new PoolOptions().setMaxSize(2))
+    val sourcePool  = Pool.pool(buildConnectOptions(source), new PoolOptions().setMaxSize(2))
 
-    val targetFut: Future[Either[String, (String, PgPool, otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings)]] =
+    val targetFut: Future[Either[String, (String, Pool, otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings)]] =
       UserAnalyticsExporterRegistry.activeRunning.map {
         case None                   => Left("no active user-analytics exporter")
         case Some((settings, pool)) =>
@@ -145,9 +146,9 @@ object LegacyPgMigrator {
 
   /** Recursively page through the source by keyset on `id`. */
   private def runBatches(
-      sourcePool: PgPool,
+      sourcePool: Pool,
       sourceTable: String,
-      targetPool: PgPool,
+      targetPool: Pool,
       insertSql: String,
       batchSize: Int,
       lastId: String,

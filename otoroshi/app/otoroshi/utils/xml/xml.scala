@@ -155,10 +155,6 @@ object Xml {
         XmlElem(name, v)
       case JsNull           =>
         XmlElem(name, "null")
-      case JsTrue           =>
-        XmlElem(name, "true")
-      case JsFalse          =>
-        XmlElem(name, "false")
     }
 
     json match {

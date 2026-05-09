@@ -59,6 +59,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
+import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
@@ -945,6 +946,8 @@ class Env(
   displayDefaultValuesWarning()
 
   lazy val datastoreKind: String = configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce")
+  // legacy rediscala stack stays around (deprecated in favour of lettuce); intentional usage
+  @nowarn("cat=deprecation")
   lazy val datastores: DataStores = {
     configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>

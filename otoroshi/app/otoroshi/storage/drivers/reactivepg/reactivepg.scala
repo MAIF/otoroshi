@@ -3,8 +3,9 @@ package otoroshi.storage.drivers.reactivepg
 import com.typesafe.config.ConfigFactory
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.{JsonArray, JsonObject}
-import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.core.net.{ClientSSLOptions, NetClientOptions, PemKeyCertOptions, PemTrustOptions}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Row}
 import next.models.{
   ApiSubscriptionDataStore,
@@ -154,9 +155,6 @@ class ReactivePgDataStores(
     val ssl        = configuration.betterGetOptional[Configuration]("app.pg.ssl").getOrElse(Configuration.empty)
     val sslEnabled = ssl.betterGetOptional[Boolean]("enabled").getOrElse(false)
     new PgConnectOptions()
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
-      .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
       .applyOnWithOpt(configuration.betterGetOptional[Int]("pipelining-limit"))((p, v) => p.setPipeliningLimit(v))
       .setPort(configuration.getOptionalWithFileSupport[Int]("app.pg.port").getOrElse(5432))
       .setHost(configuration.getOptionalWithFileSupport[String]("app.pg.host").getOrElse("localhost"))
@@ -167,62 +165,69 @@ class ReactivePgDataStores(
         val mode              = SslMode.of(ssl.betterGetOptional[String]("mode").getOrElse("verify-ca"))
         val pemTrustOptions   = new PemTrustOptions()
         val pemKeyCertOptions = new PemKeyCertOptions()
+        val sslOptions        = new ClientSSLOptions()
         pgopt.setSslMode(mode)
-        pgopt.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v))
+        sslOptions.applyOnWithOpt(ssl.betterGetOptional[Int]("ssl-handshake-timeout"))((p, v) => p.setSslHandshakeTimeout(v.toLong))
         ssl.betterGetOptional[Seq[String]]("trusted-certs-path").map { pathes =>
           pathes.map(p => pemTrustOptions.addCertPath(p))
-          pgopt.setPemTrustOptions(pemTrustOptions)
+          sslOptions.setTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[String]("trusted-cert-path").map { path =>
           pemTrustOptions.addCertPath(path)
-          pgopt.setPemTrustOptions(pemTrustOptions)
+          sslOptions.setTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[Seq[String]]("trusted-certs").map { certs =>
           certs.map(p => pemTrustOptions.addCertValue(Buffer.buffer(p)))
-          pgopt.setPemTrustOptions(pemTrustOptions)
+          sslOptions.setTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[String]("trusted-cert").map { path =>
           pemTrustOptions.addCertValue(Buffer.buffer(path))
-          pgopt.setPemTrustOptions(pemTrustOptions)
+          sslOptions.setTrustOptions(pemTrustOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-certs-path").map { pathes =>
           pathes.map(p => pemKeyCertOptions.addCertPath(p))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-certs").map { certs =>
           certs.map(p => pemKeyCertOptions.addCertValue(Buffer.buffer(p)))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-cert-path").map { path =>
           pemKeyCertOptions.addCertPath(path)
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-cert").map { path =>
           pemKeyCertOptions.addCertValue(Buffer.buffer(path))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-keys-path").map { pathes =>
           pathes.map(p => pemKeyCertOptions.addKeyPath(p))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Seq[String]]("client-keys").map { certs =>
           certs.map(p => pemKeyCertOptions.addKeyValue(Buffer.buffer(p)))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-key-path").map { path =>
           pemKeyCertOptions.addKeyPath(path)
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[String]("client-key").map { path =>
           pemKeyCertOptions.addKeyValue(Buffer.buffer(path))
-          pgopt.setPemKeyCertOptions(pemKeyCertOptions)
+          sslOptions.setKeyCertOptions(pemKeyCertOptions)
         }
         ssl.betterGetOptional[Boolean]("trust-all").map { v =>
-          pgopt.setTrustAll(v)
+          sslOptions.setTrustAll(v)
         }
+        pgopt.setSslOptions(sslOptions)
         pgopt
       }
   }
+
+  private lazy val netClientOptions = new NetClientOptions()
+    .applyOnWithOpt(configuration.betterGetOptional[Int]("connect-timeout"))((p, v) => p.setConnectTimeout(v))
+    .applyOnWithOpt(configuration.betterGetOptional[Int]("idle-timeout"))((p, v) => p.setIdleTimeout(v))
+    .applyOnWithOpt(configuration.betterGetOptional[Boolean]("log-activity"))((p, v) => p.setLogActivity(v))
 
   private lazy val poolOptions = new PoolOptions()
     .setMaxSize(configuration.getOptionalWithFileSupport[Int]("app.pg.poolSize").getOrElse(100))
@@ -235,7 +240,12 @@ class ReactivePgDataStores(
   private lazy val schema             = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table              = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable     = s"$schema.$table"
-  private lazy val client             = PgPool.pool(connectOptions, poolOptions)
+  private lazy val client: Pool       = PgBuilder
+    .pool()
+    .`with`(poolOptions)
+    .`with`(netClientOptions)
+    .connectingTo(connectOptions)
+    .build()
 
   lazy val redis = new ReactivePgRedis(
     client,
@@ -612,7 +622,7 @@ class ReactivePgDataStores(
 }
 
 class ReactivePgRedis(
-                       pool: PgPool,
+                       pool: Pool,
                        system: ActorSystem,
                        env: Env,
                        schemaDotTable: String,

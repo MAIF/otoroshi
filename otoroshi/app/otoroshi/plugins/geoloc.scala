@@ -522,20 +522,20 @@ object MaxMindGeolocationHelper {
                       val location = Json.obj(
                         "ip"             -> ip,
                         "type"           -> ipType,
-                        "continent_code" -> c.getContinent.getCode,
-                        "continent_name" -> c.getContinent.getName,
-                        "country_code"   -> c.getCountry.getIsoCode,
-                        "country_name"   -> c.getCountry.getName,
-                        "region_code"    -> c.getPostal.getCode,
-                        "region_name"    -> c.getMostSpecificSubdivision.getName,
-                        "city"           -> c.getCity.getName,
-                        "latitude"       -> JsNumber(c.getLocation.getLatitude.toDouble),
-                        "longitude"      -> JsNumber(c.getLocation.getLongitude.toDouble),
+                        "continent_code" -> c.continent.code,
+                        "continent_name" -> c.continent.name,
+                        "country_code"   -> c.country.isoCode,
+                        "country_name"   -> c.country.name,
+                        "region_code"    -> c.postal.code,
+                        "region_name"    -> c.mostSpecificSubdivision.name,
+                        "city"           -> c.city.name,
+                        "latitude"       -> JsNumber(c.location.latitude.toDouble),
+                        "longitude"      -> JsNumber(c.location.longitude.toDouble),
                         "location"       -> Json.obj(
-                          "geoname_id" -> JsNumber(c.getCountry.getGeoNameId.toInt),
-                          "name"       -> c.getCountry.getName,
+                          "geoname_id" -> JsNumber(c.country.geonameId.toInt),
+                          "name"       -> c.country.name,
                           "languages"  -> Json.arr(),
-                          "is_eu"      -> c.getCountry.isInEuropeanUnion
+                          "is_eu"      -> c.country.isInEuropeanUnion
                         )
                       )
                       cache.put(ip, Some(location))

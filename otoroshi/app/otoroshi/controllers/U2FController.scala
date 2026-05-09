@@ -1,7 +1,9 @@
 package otoroshi.controllers
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.yubico.webauthn.*
 import com.yubico.webauthn.data.*
@@ -45,10 +47,12 @@ class U2FController(
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
   private val random        = new SecureRandom()
-  private val jsonMapper    = new ObjectMapper()
+  private val jsonMapper: ObjectMapper = JsonMapper
+    .builder()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-    .setSerializationInclusion(Include.NON_ABSENT)
-    .registerModule(new Jdk8Module())
+    .defaultPropertyInclusion(JsonInclude.Value.empty().withValueInclusion(Include.NON_ABSENT))
+    .addModule(new Jdk8Module())
+    .build()
 
   def loginPage(): Action[AnyContent] =
     BackOfficeAction { ctx =>

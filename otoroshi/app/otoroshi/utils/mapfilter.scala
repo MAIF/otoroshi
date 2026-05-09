@@ -341,8 +341,6 @@ object Composition {
         case JsString(value)                        => JsString(applyEl(value))
         case v @ JsNumber(_)                        => v
         case v @ JsBoolean(_)                       => v
-        case v @ JsTrue                             => v
-        case v @ JsFalse                            => v
         case JsNull                                 => JsNull
         case spec @ JsObject(_) if isOperator(spec) => transform(CompositionOperator(spec, source))
         case JsObject(values)                       =>

@@ -1,7 +1,8 @@
 package otoroshi.next.analytics.controllers
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.pgclient.{PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
@@ -136,7 +137,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 .setPassword(s.password)
                 .applyOnIf(s.ssl)(_.setSslMode(SslMode.REQUIRE))
           }
-          val pool = PgPool.pool(opts, new PoolOptions().setMaxSize(1))
+          val pool = Pool.pool(opts, new PoolOptions().setMaxSize(1))
           pool
             .query("SELECT 1")
             .executeAsync()

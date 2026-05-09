@@ -54,29 +54,33 @@ inThisBuild(
 enablePlugins(PlayScala)
 disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion   = "3.7.4"
-val playVersion             = "3.0.10"
-val metricsVersion          = "4.2.37"
-val acme4jVersion           = "3.5.1"
-val prometheusVersion       = "0.16.0"
-val playJsonVersion         = "3.0.6"
-val webAuthnVersion         = "2.7.0"
-val kubernetesVersion       = "25.0.0"
-val bouncyCastleVersion     = "1.83"
-val bouncyCastleExtVersion  = "1.78.1"
-val pulsarVersion           = "2.12.0.1"
-val openTelemetryVersion    = "1.58.0"
-val jacksonVersion          = "2.19.2"
-val pekkoVersion            = "1.3.0"
-val pekkoHttpVersion        = "1.3.0"
-val pekkoConnectorsVersion  = "1.2.0"
-val reactorNettyVersion     = "1.3.0"
-val circeVersion            = "0.14.14"
-val nettyVersion            = "4.2.7.Final"
-val okhttpVersion           = "5.3.2"
-val okioVersion             = "3.16.4"
-val scramVersion            = "3.2"
-val excludesJackson         = Seq(
+lazy val scalaLangVersion    = "3.7.4"
+val playVersion              = "3.0.10"
+val metricsVersion           = "4.2.38"
+val acme4jVersion            = "5.1.0"
+val prometheusVersion        = "0.16.0"
+val playJsonVersion          = "3.0.6"
+val webAuthnVersion          = "2.8.1"
+val kubernetesVersion        = "26.0.0"
+val bouncyCastleVersion      = "1.84"
+val bouncyCastleExtVersion   = "1.78.1"
+val pulsarVersion            = "2.12.0.1"
+val openTelemetryVersion     = "1.62.0"
+val jacksonVersion           = "2.21.3"
+val jacksonAnnotationVersion = jacksonVersion.take(jacksonVersion.length() - (jacksonVersion.reverse.takeWhile(_ != '.').length() + 1))
+val pekkoVersion             = "1.6.0"
+val pekkoHttpVersion         = "1.3.0"
+val pekkoConnectorsVersion   = "1.2.0"
+val reactorNettyVersion      = "1.3.5"
+val circeVersion             = "0.14.14"
+val nettyVersion                     = "4.2.13.Final"
+val nettyIncubatorTransportVersion   = "0.0.26.Final"
+val nettyIncubatorCodecNativeVersion = "0.0.75.Final"
+val nettyIncubatorCodecVersion       = "0.0.30.Final"
+val okhttpVersion            = "5.3.2"
+val okioVersion              = "3.17.0"
+val scramVersion             = "3.2"
+val excludesJackson          = Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
@@ -97,6 +101,8 @@ scalacOptions ++= Seq(
     "-language:implicitConversions",
     "-language:existentials",
     "-language:postfixOps",
+    // scala3-library_3 declares `scala.caps` as both a package and an object
+    "-Wconf:msg=package scala contains object and package with same name:s",
 )
 
 // FIX: Comprehensive dependency overrides to enforce consistent versions
@@ -137,7 +143,7 @@ dependencyOverrides ++= Seq(
 
     // Jackson overrides
     "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
-    "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
+    "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonAnnotationVersion,
     "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonVersion,
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % jacksonVersion,
@@ -170,11 +176,11 @@ libraryDependencies ++= Seq(
     "org.scala-lang"                  %% "scala3-tasty-inspector"                    % scalaLangVersion,
     "org.playframework"               %% "play-json"                                 % playJsonVersion,
     "org.playframework"               %% "play-json-joda"                            % playJsonVersion,
-    "joda-time"                        % "joda-time"                                 % "2.14.0",
-    "io.github.rediscala"             %% "rediscala"                                 % "1.17.0",
+    "joda-time"                        % "joda-time"                                 % "2.14.2",
+    "io.github.rediscala"             %% "rediscala"                                 % "2.0.2",
     ("com.github.gphat"               %% "censorinus"                                % "2.1.16").cross(CrossVersion.for3Use2_13),
     "org.apache.pekko"                %% "pekko-connectors-kafka"                    % "1.1.0",
-    "org.apache.pekko"                %% "pekko-connectors-s3"                       % "1.2.0",
+    "org.apache.pekko"                %% "pekko-connectors-s3"                       % "1.3.0",
     "org.apache.pekko"                %% "pekko-actor"                               % pekkoVersion,
     "org.apache.pekko"                %% "pekko-stream"                              % pekkoVersion,
     "org.apache.pekko"                %% "pekko-slf4j"                               % pekkoVersion,
@@ -187,37 +193,37 @@ libraryDependencies ++= Seq(
     "io.dropwizard.metrics"            % "metrics-json"                              % metricsVersion excludeAll (excludesJackson *),
     "io.prometheus"                    % "simpleclient_common"                       % prometheusVersion excludeAll (excludesJackson *),
     "io.prometheus"                    % "simpleclient_dropwizard"                   % prometheusVersion excludeAll (excludesJackson *),
-    "com.auth0"                        % "java-jwt"                                  % "4.5.0" excludeAll (excludesJackson *),
-    "com.auth0"                        % "jwks-rsa"                                  % "0.23.0" excludeAll (excludesJackson *),
-    "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.6",
+    "com.auth0"                        % "java-jwt"                                  % "4.5.2" excludeAll (excludesJackson *),
+    "com.auth0"                        % "jwks-rsa"                                  % "0.24.0" excludeAll (excludesJackson *),
+    "com.nimbusds"                     % "nimbus-jose-jwt"                           % "10.9",
     "de.svenkubiak"                    % "jBCrypt"                                   % "0.4.3",
-    "dev.soundness"                    % "kaleidoscope-core"                         % "0.53.0",
+    "dev.soundness"                    % "kaleidoscope-core"                         % "0.55.0",
     "io.github.classgraph"             % "classgraph"                                % "4.8.184" excludeAll (excludesJackson *),
-    "com.comcast"                     %% "ip4s-core"                                 % "3.7.0",
+    "com.comcast"                     %% "ip4s-core"                                 % "3.8.0",
     "com.yubico"                       % "webauthn-server-core"                      % webAuthnVersion excludeAll (excludesJackson *),
     "com.yubico"                       % "webauthn-server-attestation"               % webAuthnVersion excludeAll (excludesJackson *),
     "com.yubico"                       % "yubico-util"                               % webAuthnVersion excludeAll (excludesJackson *),
-    "com.maxmind.geoip2"               % "geoip2"                                    % "4.3.1",
+    "com.maxmind.geoip2"               % "geoip2"                                    % "5.0.2",
     "com.blueconic"                    % "browscap-java"                             % "1.5.1",
     "javax.xml.bind"                   % "jaxb-api"                                  % "2.3.1",
-    "com.sun.xml.bind"                 % "jaxb-core"                                 % "4.0.6",
+    "com.sun.xml.bind"                 % "jaxb-core"                                 % "4.0.8",
     "com.github.blemale"              %% "scaffeine"                                 % "5.3.0",
     "org.shredzone.acme4j"             % "acme4j-client"                             % acme4jVersion excludeAll (excludeSlf4jAndJackson *),
-    "io.lettuce"                       % "lettuce-core"                              % "7.1.0.RELEASE" excludeAll (excludesJackson *),
-    "io.vertx"                         % "vertx-pg-client"                           % "4.3.4",
+    "io.lettuce"                       % "lettuce-core"                              % "7.5.1.RELEASE" excludeAll (excludesJackson *),
+    "io.vertx"                         % "vertx-pg-client"                           % "5.0.12",
     "com.ongres.scram"                 % "scram-common"                              % scramVersion,
     "com.ongres.scram"                 % "scram-client"                              % scramVersion,
-    "com.jayway.jsonpath"              % "json-path"                                 % "2.10.0",
+    "com.jayway.jsonpath"              % "json-path"                                 % "3.0.0",
     "com.cronutils"                    % "cron-utils"                                % "9.2.1",
     "com.datastax.oss"                 % "java-driver-core"                          % "4.17.0" excludeAll (excludesJackson *),
-    "org.gnieh"                       %% "diffson-play-json"                         % "4.6.1" excludeAll ExclusionRule(organization = "org.apache.pekko"),
+    "org.gnieh"                       %% "diffson-play-json"                         % "4.7.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
     "io.kubernetes"                    % "client-java"                               % kubernetesVersion excludeAll (excludesJackson *),
     "io.kubernetes"                    % "client-java-extended"                      % kubernetesVersion excludeAll (excludesJackson *),
     "org.bouncycastle"                 % "bcpkix-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson *),
     "org.bouncycastle"                 % "bcprov-ext-jdk18on"                        % bouncyCastleExtVersion excludeAll (excludesJackson *),
     "org.bouncycastle"                 % "bcprov-jdk18on"                            % bouncyCastleVersion excludeAll (excludesJackson *),
-    "org.apache.pulsar"                % "pulsar-client"                             % "4.1.2" excludeAll (excludesJackson *),
-    "org.jsoup"                        % "jsoup"                                     % "1.22.1",
+    "org.apache.pulsar"                % "pulsar-client"                             % "4.2.1" excludeAll (excludesJackson *),
+    "org.jsoup"                        % "jsoup"                                     % "1.22.2",
     "org.biscuitsec"                   % "biscuit"                                   % "4.0.1",
     "org.opensaml"                     % "opensaml-core"                             % "4.0.1",
     "org.opensaml"                     % "opensaml-saml-api"                         % "4.0.1",
@@ -232,7 +238,7 @@ libraryDependencies ++= Seq(
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"                   % jacksonVersion,
     "com.fasterxml.jackson.datatype"   % "jackson-datatype-jsr310"                   % jacksonVersion,
     "com.fasterxml.jackson.module"    %% "jackson-module-scala"                      % jacksonVersion,
-    "org.yaml"                         % "snakeyaml"                                 % "2.4" excludeAll (excludesJackson *),
+    "org.yaml"                         % "snakeyaml"                                 % "2.6" excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-api"                         % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-bom"                         % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-context"                     % openTelemetryVersion excludeAll (excludesJackson *),
@@ -245,15 +251,15 @@ libraryDependencies ++= Seq(
     "io.opentelemetry"                 % "opentelemetry-exporter-otlp"               % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"             % openTelemetryVersion excludeAll (excludesJackson *),
     "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp"      % openTelemetryVersion excludeAll (excludesJackson *),
-    "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "2.22.0-alpha" excludeAll (excludesJackson *),
-    "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.793" excludeAll (excludesJackson *),
-    "org.apache.logging.log4j"         % "log4j-api"                                 % "2.25.3",
-    "org.sangria-graphql"             %% "sangria"                                   % "4.2.15",
+    "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"        % "2.27.0-alpha" excludeAll (excludesJackson *),
+    "com.amazonaws"                    % "aws-java-sdk-secretsmanager"               % "1.12.797" excludeAll (excludesJackson *),
+    "org.apache.logging.log4j"         % "log4j-api"                                 % "2.26.0",
+    "org.sangria-graphql"             %% "sangria"                                   % "4.2.18",
     "org.bigtesting"                   % "routd"                                     % "1.0.7",
     "com.nixxcode.jvmbrotli"           % "jvmbrotli"                                 % "0.2.0",
     "io.azam.ulidj"                    % "ulidj"                                     % "2.0.0",
     "fr.maif"                         %% "wasm4s"                                    % "5.0.3" classifier "bundle",
-    "com.google.crypto.tink"           % "tink"                                      % "1.20.0",
+    "com.google.crypto.tink"           % "tink"                                      % "1.21.0",
     "org.json4s"                      %% "json4s-jackson"                            % "4.0.7",
     "org.json4s"                      %% "json4s-ast"                                % "4.0.7",
     "org.json4s"                      %% "json4s-ext"                                % "4.0.7",
@@ -264,25 +270,23 @@ libraryDependencies ++= Seq(
     "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
     "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
     "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-    "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.26.Final",
-    "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.26.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-    "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.73.Final",
-    "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % "0.0.73.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-    "io.netty.incubator"               % "netty-incubator-codec-http3"               % "0.0.30.Final",
+    "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion,
+    "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion classifier "linux-x86_64" classifier "linux-aarch_64",
+    "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion,
+    "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion classifier "linux-x86_64" classifier "osx-x86_64",
+    "io.netty.incubator"               % "netty-incubator-codec-http3"               % nettyIncubatorCodecVersion,
     // Tests
     "org.scalatestplus.play"          %% "scalatestplus-play"                        % "7.0.2" % Test,
-    "com.networknt"                    % "json-schema-validator"                     % "1.5.8" excludeAll (excludeSlf4jAndJackson *),
+    "com.networknt"                    % "json-schema-validator"                     % "3.0.2" excludeAll (excludeSlf4jAndJackson *),
     "jakarta.jms"                      % "jakarta.jms-api"                           % "3.1.0",
-    "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.44.0" excludeAll (excludeSlf4jAndJackson *),
+    "org.apache.activemq"              % "artemis-jakarta-client"                    % "2.53.0" excludeAll (excludeSlf4jAndJackson *),
   "com.dimafeng"                    %% "testcontainers-scala-scalatest"            % "0.44.1" % Test,
-  "com.microsoft.playwright"         % "playwright"                                % "1.57.0" % Test
+  "com.microsoft.playwright"         % "playwright"                                % "1.59.0" % Test
 )
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
 Test / parallelExecution := false
-IntegrationTest / testForkedParallel := false
-IntegrationTest / fork := true
 
 Test / javaOptions ++= Seq(
   "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",

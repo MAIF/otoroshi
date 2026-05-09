@@ -3,22 +3,22 @@ package otoroshi.next.plugins
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
-import com.networknt.schema.SpecVersion.VersionFlag
+import com.networknt.schema.{InputFormat, SchemaRegistry, SchemaRegistryConfig, SpecificationVersion}
+import com.networknt.schema.path.PathType
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 case class JsonSchemaValidatorConfig(
     schema: Option[String] = None,
-    specification: String = VersionFlag.V202012.getId,
+    specification: String = SpecificationVersion.DRAFT_2020_12.getDialectId,
     failOnValidationError: Boolean = true
 ) extends NgPluginConfig {
   override def json: JsValue = JsonSchemaValidatorConfig.format.writes(this)
@@ -37,7 +37,7 @@ object JsonSchemaValidatorConfig {
     override def reads(json: JsValue): JsResult[JsonSchemaValidatorConfig] = Try {
       JsonSchemaValidatorConfig(
         schema = json.select("schema").asOpt[String],
-        specification = json.select("specification").asOpt[String].getOrElse(VersionFlag.V202012.getId),
+        specification = json.select("specification").asOpt[String].getOrElse(SpecificationVersion.DRAFT_2020_12.getDialectId),
         failOnValidationError = json.select("fail_on_validation_error").asOpt[Boolean].getOrElse(true)
       )
     } match {
@@ -70,11 +70,11 @@ object JsonSchemaValidatorConfig {
         "help"  -> "The JSON Schema draft version used to parse and validate.",
         "props" -> Json.obj(
           "options" -> Json.arr(
-            Json.obj("label" -> "Draft 2020-12", "value" -> VersionFlag.V202012.getId),
-            Json.obj("label" -> "Draft 2019-09", "value" -> VersionFlag.V201909.getId),
-            Json.obj("label" -> "Draft 07", "value"      -> VersionFlag.V7.getId),
-            Json.obj("label" -> "Draft 06", "value"      -> VersionFlag.V6.getId),
-            Json.obj("label" -> "Draft 04", "value"      -> VersionFlag.V4.getId)
+            Json.obj("label" -> "Draft 2020-12", "value" -> SpecificationVersion.DRAFT_2020_12.getDialectId),
+            Json.obj("label" -> "Draft 2019-09", "value" -> SpecificationVersion.DRAFT_2019_09.getDialectId),
+            Json.obj("label" -> "Draft 07", "value"      -> SpecificationVersion.DRAFT_7.getDialectId),
+            Json.obj("label" -> "Draft 06", "value"      -> SpecificationVersion.DRAFT_6.getDialectId),
+            Json.obj("label" -> "Draft 04", "value"      -> SpecificationVersion.DRAFT_4.getDialectId)
           )
         )
       ),
@@ -100,13 +100,15 @@ object JsonSchemaValidator {
       Right(())
     } else {
       Try {
-        val versionFlag  = Option(VersionFlag.fromId(config.specification)).flatMap(o => Option(o.orElse(null)))
-          .getOrElse(VersionFlag.V202012)
-        val factory      = JsonSchemaFactory.getInstance(versionFlag)
-        val schemaConfig = new SchemaValidatorsConfig()
-        schemaConfig.setPathType(PathType.JSON_POINTER)
-        schemaConfig.setFormatAssertionsEnabled(true)
-        val schema       = factory.getSchema(userSchema, schemaConfig)
+        val versionFlag  = Option(SpecificationVersion.fromDialectId(config.specification).orElse(null))
+          .getOrElse(SpecificationVersion.DRAFT_2020_12)
+        val schemaConfig = SchemaRegistryConfig
+          .builder()
+          .pathType(PathType.JSON_POINTER)
+          .formatAssertionsEnabled(true)
+          .build()
+        val registry     = SchemaRegistry.withDefaultDialect(versionFlag, b => b.schemaRegistryConfig(schemaConfig))
+        val schema       = registry.getSchema(userSchema, InputFormat.JSON)
         val results      = schema.validate(bodyStr, InputFormat.JSON)
         if (results.isEmpty) Right(())
         else Left(results.asScala.toSeq.map(_.getMessage))

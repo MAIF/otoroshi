@@ -127,8 +127,6 @@ trait WorkFlowTask {
         case JsString(value)                  => JsString(applyEl(value, ctx, env))
         case v @ JsNumber(_)                  => v
         case v @ JsBoolean(_)                 => v
-        case v @ JsTrue                       => v
-        case v @ JsFalse                      => v
         case JsNull                           => JsNull
         case v @ JsObject(_) if isOperator(v) => transform(WorkFlowOperator.apply(v, ctx))
         case JsObject(values)                 =>
