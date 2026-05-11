@@ -201,6 +201,7 @@ export default (props) => {
                     className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
                     key={title}
                     aria-disabled={isOnNewAPIView}
+                    data-testid={`sidebar-tab-${tab}`}
                   >
                     <Link
                       to={{

@@ -67,6 +67,14 @@ export function useDraftOfAPI() {
     }
   );
 
+  const surfaceBackendError = (res) => {
+    if (res && res.error) {
+      window.newAlert(res.error_description || res.error);
+      return true;
+    }
+    return false;
+  };
+
   const updateDraft = (optDraft) => {
     return nextClient
       .forEntityNext(nextClient.ENTITIES.DRAFTS)
@@ -77,14 +85,20 @@ export function useDraftOfAPI() {
           enabled: true,
         },
       })
-      .then(() => setDraft(optDraft ? optDraft : draft));
+      .then((res) => {
+        if (!surfaceBackendError(res)) setDraft(optDraft ? optDraft : draft);
+        return res;
+      });
   };
 
   const updateAPI = (optAPI) => {
     return nextClient
       .forEntityNext(nextClient.ENTITIES.APIS)
       .update(optAPI ? optAPI : api)
-      .then(() => setAPI(optAPI ? optAPI : api));
+      .then((res) => {
+        if (!surfaceBackendError(res)) setAPI(optAPI ? optAPI : api);
+        return res;
+      });
   };
 
   return {

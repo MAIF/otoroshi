@@ -250,6 +250,7 @@ export function Informations(props) {
         <FeedbackButton
           type="success"
           onPress={updateAPI}
+          testid="save-informations"
           text={
             <div className="d-flex align-items-center">
               Save <VersionBadge size="xs" className="ms-2" />

@@ -4,12 +4,16 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import next.models.{
   Api,
+  ApiBackend,
   ApiDeployment,
   ApiDeprecated,
+  ApiDocumentation,
   ApiDocumentationPlan,
+  ApiFlows,
   ApiPlanStatus,
   ApiPublished,
   ApiRemoved,
+  ApiRoute,
   ApiStaging,
   ApiSubscription,
   ApiSubscriptionDisabled,
@@ -27,7 +31,7 @@ import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json, Reads}
+import play.api.libs.json.{JsArray, JsError, JsNull, JsObject, JsSuccess, JsValue, Json, Reads}
 import play.api.mvc._
 
 import java.util.concurrent.TimeUnit
@@ -677,11 +681,38 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                     Api.format.reads(draftWrapper.content) match {
                       case JsError(_)             => Results.NotFound.future
                       case JsSuccess(apiDraft, _) =>
-                        val updatedApi = apiDraft.copy(
-                          deployments = (Seq(deployment) ++ api.deployments).slice(0, 5),
+                        val targetState = if (apiDraft.state == ApiStaging) ApiPublished else api.state
+                        // Redundant with Api.writeValidator (which apiDataStore.set bypasses):
+                        // guards against deploying e.g. a `removed` API back to published.
+                        if (!Api.isValidStateTransition(api.state, targetState, viaDeploy = true)) {
+                          Results
+                            .BadRequest(
+                              Json.obj(
+                                "error"             -> "invalid_deploy_transition",
+                                "error_description" -> s"cannot deploy from '${api.state.name}' to '${targetState.name}'",
+                                "from"              -> api.state.name,
+                                "to"                -> targetState.name
+                              )
+                            )
+                            .future
+                        } else {
+                        // Slim "design" snapshot of the deployed draft: only the production-locked
+                        // fields (routes, backends, flows, documentation) are useful for rollback/audit.
+                        // Trims subscriptions/clients/plans/testing/metadata noise out of the stored payload.
+                        val slimApiDefinition: JsValue = Json.obj(
+                          "routes"        -> JsArray(apiDraft.routes.map(ApiRoute._fmt.writes)),
+                          "backends"      -> JsArray(apiDraft.backends.map(ApiBackend._fmt.writes)),
+                          "flows"         -> JsArray(apiDraft.flows.map(ApiFlows._fmt.writes)),
+                          "documentation" -> apiDraft.documentation
+                            .map(ApiDocumentation._fmt.writes)
+                            .getOrElse[JsValue](JsNull)
+                        )
+                        val slimDeployment = deployment.copy(apiDefinition = slimApiDefinition)
+                        val updatedApi     = apiDraft.copy(
+                          deployments = (Seq(slimDeployment) ++ api.deployments).slice(0, 5),
                           id = api.id,
                           routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
-                          state = if (apiDraft.state == ApiStaging) ApiPublished else api.state,
+                          state = targetState,
                           documentation = api.documentation,
                           clients = api.clients
                         )
@@ -692,13 +723,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                             ApiDeploymentEvent(
                               `@id` = env.snowflakeGenerator.nextIdStr(),
                               `@timestamp` = DateTime.now(),
-                              apiRef = deployment.apiRef,
+                              apiRef = slimDeployment.apiRef,
                               owner =
-                                if (deployment.owner.isEmpty)
-                                  ctx.user.map(user => Json.stringify(user)).getOrElse(deployment.owner)
-                                else deployment.owner,
-                              at = deployment.at,
-                              apiDefinition = deployment.apiDefinition,
+                                if (slimDeployment.owner.isEmpty)
+                                  ctx.user.map(user => Json.stringify(user)).getOrElse(slimDeployment.owner)
+                                else slimDeployment.owner,
+                              at = slimDeployment.at,
+                              apiDefinition = slimDeployment.apiDefinition,
                               version = api.version,
                               `@service` = api.name,
                               `@serviceId` = apiId
@@ -709,6 +740,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
                             } else
                               Results.BadRequest(Json.obj("error" -> "something wrong happened"))
                           })
+                        }
                     }
                 }
             }

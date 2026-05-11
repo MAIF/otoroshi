@@ -10,9 +10,9 @@ import { Header } from '../../components/wizardframe';
 import { NgForm } from '../../components/nginputs';
 import PageTitle from '../../components/PageTitle';
 
-function ActionCard({ icon, title, description, onClick, color }) {
+function ActionCard({ icon, title, description, onClick, color, testid }) {
   return (
-    <div className="actions-action-card" onClick={onClick}>
+    <div className="actions-action-card" onClick={onClick} data-testid={testid}>
       <div
         className="actions-action-card-icon"
         style={{ backgroundColor: `${color || 'rgba(249, 181, 47, 0.15)'}` }}
@@ -59,15 +59,23 @@ export function publishAPI(draft, api, history) {
           deployment,
           'apis.otoroshi.io'
         )
-          .then(() => {
+          .then((res) => {
+            if (res && res.error) {
+              window.newAlert(res.error_description || res.error);
+              return { aborted: true };
+            }
             const queryParams = new URLSearchParams(window.location.search);
             queryParams.delete('version');
             window.history.replaceState(null, null, '?' + queryParams.toString());
             window.location.reload();
 
             history.push(`/apis/${api.id}`);
+            return { aborted: false };
           })
-          .then(() => nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(api.id));
+          .then((result) => {
+            if (!result?.aborted)
+              return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(api.id);
+          });
       }
     });
 }
@@ -165,7 +173,10 @@ export function Actions(props) {
             Promise.all([
               updateDraft({ ...item, state: targetState }),
               updateAPI({ ...api, state: targetState }),
-            ]).then(() => window.location.reload());
+            ]).then((results) => {
+              const failed = results.some((r) => r && r.error);
+              if (!failed) window.location.reload();
+            });
           }
         }
       });
@@ -353,6 +364,7 @@ export function Actions(props) {
             <div className="actions-general-actions">
               {currentState === API_STATE.STAGING && (
                 <ActionCard
+                  testid="action-card-publish"
                   icon="fas fa-rocket"
                   title="Publish API"
                   description="Make your API fully available to clients in production"
@@ -370,6 +382,7 @@ export function Actions(props) {
               {currentState === API_STATE.PUBLISHED && (
                 <>
                   <ActionCard
+                    testid="action-card-deprecate"
                     icon="fas fa-exclamation-triangle"
                     title="Deprecate API"
                     description="Prevent new subscriptions while keeping existing traffic"
@@ -384,6 +397,7 @@ export function Actions(props) {
                     }
                   />
                   <ActionCard
+                    testid="action-card-close"
                     icon="fas fa-times-circle"
                     title="Close API"
                     description="Shut down the API entirely — all traffic will be rejected"
@@ -403,6 +417,7 @@ export function Actions(props) {
               {currentState === API_STATE.DEPRECATED && (
                 <>
                   <ActionCard
+                    testid="action-card-republish"
                     icon="fas fa-check-circle"
                     title="Re-publish API"
                     description="Make the API available again for new subscriptions"
@@ -416,6 +431,7 @@ export function Actions(props) {
                     }
                   />
                   <ActionCard
+                    testid="action-card-close"
                     icon="fas fa-times-circle"
                     title="Close API"
                     description="Shut down the API entirely — all traffic will be rejected"
@@ -434,6 +450,7 @@ export function Actions(props) {
 
               {currentState === API_STATE.REMOVED && (
                 <ActionCard
+                  testid="action-card-reopen"
                   icon="fas fa-undo"
                   title="Reopen API"
                   description="Move the API back to staging — you will need to publish it again"
