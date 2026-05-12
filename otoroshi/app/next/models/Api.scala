@@ -1808,7 +1808,8 @@ object Api {
     "error"             -> "invalid_state_transition",
     "error_description" -> s"transition from '${from.name}' to '${to.name}' is not allowed",
     "from"              -> from.name,
-    "to"                -> to.name
+    "to"                -> to.name,
+    "http_status_code"  -> 400
   )
 
   // Fields that MUST go through Draft + deploy when the API is not in staging.
@@ -1844,7 +1845,8 @@ object Api {
             .obj(
               "error"             -> "cannot_create_in_state",
               "error_description" -> s"new API must be created in 'staging' state, got '${entity.state.name}'",
-              "state"             -> entity.state.name
+              "state"             -> entity.state.name,
+              "http_status_code"  -> 400
             )
             .leftf
         } else {
@@ -1862,7 +1864,8 @@ object Api {
             .obj(
               "error"             -> "production_readonly",
               "error_description" -> s"fields ${fields.mkString("[", ", ", "]")} are read-only in '${oldApi.state.name}' state; edit them via Draft and deploy",
-              "fields"            -> fields
+              "fields"            -> fields,
+              "http_status_code"  -> 400
             )
             .leftf
         } else {

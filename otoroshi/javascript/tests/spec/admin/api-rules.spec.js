@@ -58,13 +58,31 @@ async function bringTo(page, apiId, target) {
 }
 
 async function createPublishedHelperDeploy(page, apiId) {
-  const draftRes = await page.request.get(`${PROXY_ANY}/drafts/${apiId}`);
-  const draft = await draftRes.json();
+  // POST /apis doesn't auto-create a draft — but the deployment endpoint
+  // requires one. Ensure it exists (idempotent).
+  const existing = await page.request.get(`${PROXY_ANY}/drafts/${apiId}`);
+  let draftContent;
+  if (existing.status() === 200) {
+    draftContent = (await existing.json()).content;
+  } else {
+    const api = await getProd(page, apiId);
+    const draftTpl = await page.request.get(`${PROXY_ANY}/drafts/_template`);
+    const draftWrapper = {
+      ...(await draftTpl.json()),
+      id: apiId,
+      kind: apiId.split('_')[0],
+      name: api.name,
+      content: api,
+    };
+    const created = await page.request.post(`${PROXY_ANY}/drafts`, { data: draftWrapper });
+    expect(created.status()).toBeLessThan(400);
+    draftContent = api;
+  }
   const deployment = {
     apiRef: apiId,
     owner: 'tests',
     at: Date.now(),
-    apiDefinition: { ...(draft.content || {}), deployments: [] },
+    apiDefinition: { ...draftContent, deployments: [] },
     draftId: apiId,
     version: '0.0.1',
   };
@@ -198,18 +216,46 @@ test.describe('production read-only', () => {
     }
   });
 
-  for (const field of ['routes', 'backends', 'flows']) {
+  // For each locked field we need a mutation that survives JSON round-trip
+  // (malformed entries get silently dropped at deserialization → no diff →
+  // false negative). Strategy:
+  //  - routes: template ships zero, so inject a fully-shaped route
+  //  - backends / flows: template ships one entry each, so mutate its `name`
+  const lockedFieldMutations = {
+    routes: (prod) => [
+      ...prod.routes,
+      {
+        id: 'sentinel_route',
+        enabled: true,
+        name: 'sentinel',
+        frontend: {
+          // ApiRoute.frontend.domains entries are path-only — api.domain +
+          // api.contextPath get prefixed automatically when the NgRoute is
+          // built (see Api.scala routeToNgRoute).
+          domains: ['/sentinel'],
+          headers: {},
+          query: {},
+          methods: [],
+          strip_path: false,
+          exact: true,
+        },
+        flow_ref: prod.flows[0]?.id || 'default_plugin_chain',
+        backend: prod.backends[0]?.id || 'default_backend',
+      },
+    ],
+    backends: (prod) =>
+      prod.backends.map((b, i) => (i === 0 ? { ...b, name: 'mutated_' + b.name } : b)),
+    flows: (prod) =>
+      prod.flows.map((f, i) => (i === 0 ? { ...f, name: 'mutated_' + f.name } : f)),
+  };
+
+  for (const field of Object.keys(lockedFieldMutations)) {
     test(`denies ${field} edit in production`, async () => {
       const page = await context.newPage();
       const apiId = await createPublishedApi(page);
       try {
         const prod = await getProd(page, apiId);
-        const body = { ...prod, [field]: [] };
-        // routes/backends/flows non-empty -> set to empty (or vice-versa) is enough to trigger diff
-        if (JSON.stringify(prod[field]) === JSON.stringify(body[field])) {
-          // ensure a real diff
-          body[field] = [...(prod[field] || []), { id: 'sentinel-' + field }];
-        }
+        const body = { ...prod, [field]: lockedFieldMutations[field](prod) };
         const res = await putProd(page, apiId, body);
         expect(res.status()).toBe(400);
         const errBody = await res.json();
@@ -247,11 +293,16 @@ test.describe('production read-only', () => {
     const apiId = await createPublishedApi(page);
     try {
       const prod = await getProd(page, apiId);
+      // Use values that cannot collide with ApiDocumentation defaults
+      // (enabled=true, empty metadata/tags) — otherwise the JSON round-trip
+      // produces an identical case class and no diff fires.
       const body = {
         ...prod,
         documentation: {
           ...(prod.documentation || {}),
-          content: 'tampered doc',
+          enabled: false,
+          tags: ['mutated_doc'],
+          metadata: { mutated: 'yes' },
         },
       };
       const res = await putProd(page, apiId, body);
