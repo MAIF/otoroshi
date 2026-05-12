@@ -15,13 +15,40 @@ const ADMIN_API_HEADERS = {
     'Otoroshi-Client-Secret': 'admin-api-apikey-secret',
 };
 
-// Idempotent PUT — creates the entity on first run, no-op on subsequent runs.
-// We use PUT (not POST) on /api/tenants/:id so a re-run doesn't 409.
-async function ensureEntity(url, body) {
-    const res = await fetch(url, { method: 'PUT', headers: ADMIN_API_HEADERS, body: JSON.stringify(body) });
-    if (res.status >= 400) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`setup PUT ${url} failed: ${res.status} ${txt}`);
+// Idempotent upsert. Otoroshi's PUT /api/<entity>/:id requires the entity to
+// already exist (404 otherwise — see CrudControllerHelper.updateEntity), so we
+// GET first and route to POST or PUT accordingly. Tolerates 409 on POST in
+// case of a concurrent setup run.
+async function ensureEntity(collectionUrl, body) {
+    const itemUrl = `${collectionUrl}/${encodeURIComponent(body.id)}`;
+    const get = await fetch(itemUrl, { headers: ADMIN_API_HEADERS });
+    if (get.status === 404) {
+        const create = await fetch(collectionUrl, {
+            method: 'POST',
+            headers: ADMIN_API_HEADERS,
+            body: JSON.stringify(body),
+        });
+        if (create.status >= 400) {
+            const txt = await create.text().catch(() => '');
+            // Otoroshi returns 400 with "Entity already exists" on race conditions.
+            if (!(create.status === 400 && txt.includes('already exists'))) {
+                throw new Error(`setup POST ${collectionUrl} failed: ${create.status} ${txt}`);
+            }
+        }
+        return;
+    }
+    if (get.status >= 400) {
+        const txt = await get.text().catch(() => '');
+        throw new Error(`setup GET ${itemUrl} failed: ${get.status} ${txt}`);
+    }
+    const update = await fetch(itemUrl, {
+        method: 'PUT',
+        headers: ADMIN_API_HEADERS,
+        body: JSON.stringify(body),
+    });
+    if (update.status >= 400) {
+        const txt = await update.text().catch(() => '');
+        throw new Error(`setup PUT ${itemUrl} failed: ${update.status} ${txt}`);
     }
 }
 
@@ -30,7 +57,7 @@ async function ensureEntity(url, body) {
 //   - Tester Team (id: tester-team, in tester tenant)
 //   - tester@otoroshi.io admin with rights tester:rw / tester-team:rw
 async function ensureTesterTenancySetup() {
-    await ensureEntity(`${ADMIN_API}/api/tenants/tester`, {
+    await ensureEntity(`${ADMIN_API}/api/tenants`, {
         id: 'tester',
         name: 'Tester Organization',
         description: 'Auto-seeded by Playwright auth.setup.js',
@@ -38,7 +65,7 @@ async function ensureTesterTenancySetup() {
         tags: [],
     });
 
-    await ensureEntity(`${ADMIN_API}/api/teams/tester-team`, {
+    await ensureEntity(`${ADMIN_API}/api/teams`, {
         id: 'tester-team',
         tenant: 'tester',
         name: 'Tester Team',
@@ -50,10 +77,12 @@ async function ensureTesterTenancySetup() {
     // Simple admin: register if missing (forced super-admin rights by API),
     // then PUT to constrain rights to tester:rw / tester-team:rw — the
     // Location component only auto-fills when the user has a single
-    // tenant/team scope.
-    const existing = await fetch(`${ADMIN_API}/api/admins/simple/tester@otoroshi.io`, {
-        headers: ADMIN_API_HEADERS,
-    });
+    // tenant/team scope. SimpleOtoroshiAdmin.reads requires `password` and
+    // `createdAt`, so we re-GET the entity and merge our overrides on top
+    // (preserving the bcrypt-hashed password registered above).
+    const adminUrl = `${ADMIN_API}/api/admins/simple/tester@otoroshi.io`;
+    const existing = await fetch(adminUrl, { headers: ADMIN_API_HEADERS });
+    let currentBody;
     if (existing.status === 404) {
         const create = await fetch(`${ADMIN_API}/api/admins/simple`, {
             method: 'POST',
@@ -67,12 +96,22 @@ async function ensureTesterTenancySetup() {
         if (create.status >= 400) {
             throw new Error(`setup: cannot create tester admin: ${create.status} ${await create.text()}`);
         }
+        const refetch = await fetch(adminUrl, { headers: ADMIN_API_HEADERS });
+        if (refetch.status >= 400) {
+            throw new Error(`setup: cannot read tester admin after create: ${refetch.status} ${await refetch.text()}`);
+        }
+        currentBody = await refetch.json();
+    } else if (existing.status >= 400) {
+        throw new Error(`setup: cannot read tester admin: ${existing.status} ${await existing.text()}`);
+    } else {
+        currentBody = await existing.json();
     }
 
-    const update = await fetch(`${ADMIN_API}/api/admins/simple/tester@otoroshi.io`, {
+    const update = await fetch(adminUrl, {
         method: 'PUT',
         headers: ADMIN_API_HEADERS,
         body: JSON.stringify({
+            ...currentBody,
             username: 'tester@otoroshi.io',
             label: 'Tester',
             metadata: {},

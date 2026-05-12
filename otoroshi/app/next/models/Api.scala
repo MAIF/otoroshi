@@ -1043,11 +1043,20 @@ object ApiSubscription {
     } else if (action == Update) {
       subscription.subscriptionKind match {
         case ApiKind.Apikey if plan.status == ApiPlanStatus.Closed =>
-          (if (isDraft)
-             env.datastores.draftsDataStore.delete(subscription.id)
-           else
-             env.datastores.apiSubscriptionDataStore.delete(subscription.id))
-            .map(_ => subscription.right)
+          // Cascade-delete the subscription AND the apikeys it points at.
+          // Otherwise the apikey lingers in the datastore unreachable from
+          // its owning subscription.
+          val apikeyIds = subscription.tokenRefs.flatMap(ref => (ref \ "apikey").asOpt[String])
+          val deleteApikeys = Future.sequence(apikeyIds.map { id =>
+            env.datastores.apiKeyDataStore.delete(id).recover { case _ => false }
+          })
+          val deleteSubscription =
+            if (isDraft) env.datastores.draftsDataStore.delete(subscription.id)
+            else env.datastores.apiSubscriptionDataStore.delete(subscription.id)
+          for {
+            _ <- deleteApikeys
+            _ <- deleteSubscription
+          } yield subscription.right
         case ApiKind.Apikey                                        =>
           updateApikeyFromPlan(api, plan, subscription)
             .map(results =>
@@ -1084,12 +1093,17 @@ object ApiSubscription {
       .flatMap {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
           api.plans.find(_.id == entity.planRef) match {
-            case None                                                                                         =>
-              "plan not found".leftf
-            case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
+            case None                                       => "plan not found".leftf
+            // Active plans (Staging/Published): Create + Update both go.
+            // Inactive plans (Deprecated/Closed): only Update goes — required
+            // so existing subs on a deprecated plan can still be managed, and
+            // the Closed cascade-delete (in handleSubscriptionChanged) fires.
+            case Some(plan)
+                if plan.status == ApiPlanStatus.Staging ||
+                  plan.status == ApiPlanStatus.Published ||
+                  action == WriteAction.Update =>
               handleSubscriptionChanged(api, plan, entity, action, isDraft)
-            case _                                                                                            =>
-              "wrong status plan".leftf
+            case _                                          => "wrong status plan".leftf
           }
         case _                                                                 => "wrong status api".leftf
       }

@@ -366,6 +366,7 @@ function AccessModeConfigurationTypeSelector({ onChange, value, onEdit }) {
               {selected && !['keyless', 'public'].includes(id) && (
                 <button
                   className="btn btn-success btn-sm ms-auto d-flex"
+                  data-testid="access-mode-edit"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit();
@@ -427,7 +428,12 @@ function AccessModeLayout({ children, hide, onConfirm }) {
             }}
             className="p-3 d-flex justify-content-end"
           >
-            <button onClick={onConfirm} type="btn" className="btn btn-success">
+            <button
+              onClick={onConfirm}
+              type="btn"
+              className="btn btn-success"
+              data-testid="access-mode-save"
+            >
               Save
             </button>
           </div>
@@ -834,7 +840,12 @@ export function Plans(props) {
         ) : plan.status !== 'published' ? (
           <span style={{ fontStyle: 'italic' }}>Plan is not published</span>
         ) : (
-          <Button type="success" className="btn-sm" onClick={() => setPlan(plan)}>
+          <Button
+            type="success"
+            className="btn-sm"
+            onClick={() => setPlan(plan)}
+            data-testid="plan-subscribe"
+          >
             Subscribe
           </Button>
         ),

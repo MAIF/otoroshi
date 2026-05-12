@@ -72,8 +72,18 @@ jobs:
             sonatype-snapshots: https://oss.sonatype.org/content/repositories/snapshots
           EOF
 
+      - name: Redirect repo1.maven.org to Google mirror (Coursier)
+        run: |
+          mkdir -p ~/.config/coursier
+          cat > ~/.config/coursier/mirror.properties <<'EOF'
+          central.from=https://repo1.maven.org/maven2
+          central.to=https://maven-central.storage-download.googleapis.com/maven2
+          EOF
+
       - name: Build Otoroshi server (dist)
         working-directory: otoroshi
+        env:
+          COURSIER_PARALLEL_DOWNLOAD_COUNT: '4'
         run: sbt -Dsbt.override.build.repos=true ';clean;compile;dist'
 
       - name: Unpack server distribution
