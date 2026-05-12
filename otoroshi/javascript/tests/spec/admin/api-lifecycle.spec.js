@@ -14,27 +14,33 @@ const {
   getProd,
   putDraft,
   postDeployment,
-  wipeLeftovers,
+  uniqueName,
 } = require('./_apiHelpers');
 
 test.setTimeout(30_000);
 
 let context;
+// Safety net for parallel runs: every API a test creates is registered here
+// and torn down in afterEach — even if the test crashes before its own
+// try/finally fires. delete is idempotent so this co-exists with the per-test
+// cleanup just fine.
+const trackedApis = new Set();
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext({ storageState: 'tests/playwright/.auth/admin.json' });
-  // Wipe leftovers from previous failed runs (every API this suite creates is
-  // named with a `lifecycle-` prefix).
+});
+
+test.afterEach(async () => {
+  if (trackedApis.size === 0) return;
   const page = await context.newPage();
-  await wipeLeftovers(page, ['lifecycle-']);
+  for (const id of trackedApis) {
+    await deleteApiViaApi(page, id);
+  }
+  trackedApis.clear();
   await page.close();
 });
 
 test.afterAll(async () => {
-  // Best-effort sweep in case any test failed before its finally{} cleanup.
-  const page = await context.newPage();
-  // await wipeLeftovers(page, ['lifecycle-']);
-  await page.close();
   await context.close();
 });
 
@@ -44,7 +50,8 @@ test.afterAll(async () => {
 
 test('creates an API from scratch and lands in staging', async () => {
   const page = await context.newPage();
-  const apiId = await createApiViaUI(page, { name: 'lifecycle-1' });
+  const apiId = await createApiViaUI(page);
+  trackedApis.add(apiId);
   try {
     expect(page.url()).toMatch(/\/apis\/api_dev_[a-f0-9-]+/);
 
@@ -76,7 +83,8 @@ test('creates an API from scratch and lands in staging', async () => {
 
 test('publishes from staging, deployment payload is slim, draft is wiped', async () => {
   const page = await context.newPage();
-  const apiId = await createApiViaUI(page, { name: 'lifecycle-2' });
+  const apiId = await createApiViaUI(page);
+  trackedApis.add(apiId);
   try {
     // Publish via the header CTA (the entry point we expose to users now).
     await page.getByTestId('publish-this-version').click();
@@ -113,7 +121,8 @@ test('publishes from staging, deployment payload is slim, draft is wiped', async
 
 test('draft vs prod fetch diverges after a draft-only edit', async () => {
   const page = await context.newPage();
-  const apiId = await createPublishedApi(page, { name: 'lifecycle-3' });
+  const apiId = await createPublishedApi(page);
+  trackedApis.add(apiId);
   try {
     // The draft already exists (createPublishedApi creates it). Update it
     // with a draft-only description change, then assert prod/draft diverge.
@@ -220,6 +229,7 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
   expect(createRes.status()).toBeLessThan(400);
   const created = await createRes.json();
   const apiId = created.id;
+  trackedApis.add(apiId);
   try {
     // Visit the API in draft mode — useDraftOfAPI auto-creates the draft
     // wrapper for us (no manual POST /drafts).
@@ -309,7 +319,8 @@ async function navigateToActions(page, apiId) {
 test.describe('Actions tab only shows legal transitions', () => {
   test('staging shows no transition cards (publish lives in the header CTA)', async () => {
     const page = await context.newPage();
-    const apiId = await createApiViaApi(page, { name: 'lifecycle-8-staging' });
+    const apiId = await createApiViaApi(page);
+  trackedApis.add(apiId);
     try {
       await navigateToActions(page, apiId);
       // The Actions tab is intentionally empty in staging — the publish CTA
@@ -327,7 +338,8 @@ test.describe('Actions tab only shows legal transitions', () => {
 
   test('published shows deprecate + close', async () => {
     const page = await context.newPage();
-    const apiId = await createPublishedApi(page, { name: 'lifecycle-8-published' });
+    const apiId = await createPublishedApi(page);
+  trackedApis.add(apiId);
     try {
       await navigateToActions(page, apiId);
       await expect(page.getByTestId('action-card-deprecate')).toBeVisible();
@@ -342,7 +354,8 @@ test.describe('Actions tab only shows legal transitions', () => {
 
   test('deprecated shows republish + close', async () => {
     const page = await context.newPage();
-    const apiId = await createPublishedApi(page, { name: 'lifecycle-8-deprecated' });
+    const apiId = await createPublishedApi(page);
+  trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
       const res = await page.request.put(`${PROXY_ANY}/apis/${apiId}`, {
@@ -361,7 +374,8 @@ test.describe('Actions tab only shows legal transitions', () => {
 
   test('removed shows reopen', async () => {
     const page = await context.newPage();
-    const apiId = await createPublishedApi(page, { name: 'lifecycle-8-removed' });
+    const apiId = await createPublishedApi(page);
+  trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
       const res = await page.request.put(`${PROXY_ANY}/apis/${apiId}`, {
@@ -384,7 +398,8 @@ test.describe('Actions tab only shows legal transitions', () => {
 
 test('production-locked tabs disable write actions', async () => {
   const page = await context.newPage();
-  const apiId = await createPublishedApi(page, { name: 'lifecycle-9' });
+  const apiId = await createPublishedApi(page);
+  trackedApis.add(apiId);
   try {
     await page.goto(`/bo/dashboard/apis/${apiId}?version=Published`);
     await validAnonymousModal(page);

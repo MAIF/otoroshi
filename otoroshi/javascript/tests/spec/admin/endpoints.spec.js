@@ -250,7 +250,9 @@ test('Should be able to create a JWT verifier with || and ::', async () => {
 
         const cookies = await context.cookies();
 
-        const proxied = await fetch('http://verifier.oto.tools:9999', {
+        // Otoroshi's proxy route cache refreshes asynchronously after a route
+        // POST. Poll the gateway until it serves before driving the assertions.
+        const callGateway = () => fetch('http://verifier.oto.tools:9999', {
             cookies,
             headers: {
                 Accept: 'application/json',
@@ -265,6 +267,10 @@ test('Should be able to create a JWT verifier with || and ::', async () => {
                 } */
             }
         })
+        await expect
+            .poll(async () => (await callGateway()).status, { timeout: 15_000, intervals: [500, 1000, 2000] })
+            .toBeLessThan(400)
+        const proxied = await callGateway()
         expect(proxied.status, `gateway call failed`).toBeLessThan(400)
         const response = await proxied.json()
         expect(response.headers, `request.otoroshi.io echo missing headers: ${JSON.stringify(response)}`).toBeDefined()

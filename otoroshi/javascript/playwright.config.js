@@ -2,7 +2,12 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
     testDir: './tests',
-    fullyParallel: false,
+    // Tests across files AND inside a file may run in parallel. Each test
+    // must (a) generate unique entity names (use `uniqueName()` from the
+    // helpers) and (b) clean up everything it creates in a try/finally —
+    // shared `wipeLeftovers` runs only in `beforeAll` (once per worker)
+    // and uses file-scoped prefixes that never overlap between specs.
+    fullyParallel: true,
     timeout: 5000,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,

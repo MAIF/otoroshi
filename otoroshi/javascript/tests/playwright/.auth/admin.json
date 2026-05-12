@@ -2,10 +2,10 @@
   "cookies": [
     {
       "name": "otoroshi-session",
-      "value": "eyJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7ImJvdXNyIjoiSlptRDQ5OVozWFhPa3VJUmkyN0E1VFdySmZ5cHVkbGxFRTBwM0FvUUdUU1IxNGNtbEFvSDZ5Q0VOck1SeGd2cSJ9LCJleHAiOjE3Nzg4MzA1NjMsIm5iZiI6MTc3ODU3MTM2MywiaWF0IjoxNzc4NTcxMzYzfQ.PCWvZDiaHdCtDTOnVefXptXaf4DOhEtbZrXSQI77O48",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJkYXRhIjp7ImJvdXNyIjoid0FHNmZhUzF3ajQwR3V3cnB2dzg2d25lTVdSbndjRFVMOFQ1RXAzNnVmNEJoUUJJZkhGVHNUbE5IR1J3d0lwSCJ9LCJleHAiOjE3Nzg4MzY5NzcsIm5iZiI6MTc3ODU3Nzc3NywiaWF0IjoxNzc4NTc3Nzc3fQ.finmwABi7Ss4Qnr2tkqE0he1Q622VPGbEfxrwjNx2ng",
       "domain": ".oto.tools",
       "path": "/",
-      "expires": 1778830563.226753,
+      "expires": 1778836977.109112,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"

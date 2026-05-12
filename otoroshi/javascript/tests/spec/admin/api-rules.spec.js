@@ -11,28 +11,32 @@ const {
   getProd,
   putProd,
   postDeployment,
-  wipeLeftovers,
 } = require('./_apiHelpers');
 
 test.setTimeout(30_000);
 
-// API names this suite creates start with one of these prefixes — used for
-// pre/post sweeps to clean leftovers from prior failed runs.
-const LEFTOVER_PREFIXES = ['rules-api', 'should-fail'];
-
 let context;
+// Safety net for parallel runs: every API a test creates is registered here
+// and torn down in afterEach — even if the test crashes before its own
+// try/finally fires. delete is idempotent so this co-exists with the per-test
+// cleanup just fine.
+const trackedApis = new Set();
 
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext({ storageState: 'tests/playwright/.auth/admin.json' });
+});
+
+test.afterEach(async () => {
+  if (trackedApis.size === 0) return;
   const page = await context.newPage();
-  await wipeLeftovers(page, LEFTOVER_PREFIXES);
+  for (const id of trackedApis) {
+    await deleteApiViaApi(page, id);
+  }
+  trackedApis.clear();
   await page.close();
 });
 
 test.afterAll(async () => {
-  const page = await context.newPage();
-  await wipeLeftovers(page, LEFTOVER_PREFIXES);
-  await page.close();
   await context.close();
 });
 
@@ -104,6 +108,7 @@ test.describe('state transitions', () => {
     test(`allows ${from} -> ${to}`, async () => {
       const page = await context.newPage();
       const apiId = await createApiViaApi(page);
+      trackedApis.add(apiId);
       try {
         await bringTo(page, apiId, from);
         const prod = await getProd(page, apiId);
@@ -121,6 +126,7 @@ test.describe('state transitions', () => {
   test('allows staging -> published via deployment endpoint', async () => {
     const page = await context.newPage();
     const apiId = await createApiViaApi(page);
+      trackedApis.add(apiId);
     try {
       await createPublishedHelperDeploy(page, apiId);
       const after = await getProd(page, apiId);
@@ -144,6 +150,7 @@ test.describe('state transitions', () => {
     test(`denies ${from} -> ${to} via PUT`, async () => {
       const page = await context.newPage();
       const apiId = await createApiViaApi(page);
+      trackedApis.add(apiId);
       try {
         await bringTo(page, apiId, from);
         const prod = await getProd(page, apiId);
@@ -167,6 +174,7 @@ test.describe('production read-only', () => {
   test('allows edits on unprotected fields', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
+      trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
       const updates = [
@@ -192,6 +200,7 @@ test.describe('production read-only', () => {
   test('allows adding a plan in production', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
+      trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
       const plan = {
@@ -253,6 +262,7 @@ test.describe('production read-only', () => {
     test(`denies ${field} edit in production`, async () => {
       const page = await context.newPage();
       const apiId = await createPublishedApi(page);
+      trackedApis.add(apiId);
       try {
         const prod = await getProd(page, apiId);
         const body = { ...prod, [field]: lockedFieldMutations[field](prod) };
@@ -271,6 +281,7 @@ test.describe('production read-only', () => {
   test('denies testing.headerValue edit in production', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
+      trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
       const body = {
@@ -291,6 +302,7 @@ test.describe('production read-only', () => {
   test('denies documentation edit in production', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
+      trackedApis.add(apiId);
     try {
       const prod = await getProd(page, apiId);
       // Use values that cannot collide with ApiDocumentation defaults
@@ -331,6 +343,7 @@ test('create with non-staging state is rejected', async () => {
       // Defensive: backend let it through (shouldn't happen) — capture id for cleanup.
       const created = await res.json();
       leakedId = created.id;
+      trackedApis.add(leakedId);
     }
     expect(res.status()).toBe(400);
     const errBody = await res.json();

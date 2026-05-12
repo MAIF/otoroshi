@@ -1,6 +1,5 @@
-const { test, expect, describe } = require('@playwright/test');
-const { SECTIONS, validAnonymousModal } = require('../../utils');
-
+const { test, expect } = require('@playwright/test');
+const { validAnonymousModal } = require('../../utils');
 
 let context;
 
@@ -12,31 +11,51 @@ test.afterAll(async () => {
     await context.close();
 });
 
-async function showTableOfEntity(section, tab, expected) {
-    const page = await context.newPage()
+// Drive the topbar search bar: type a query, pick the option, assert the page.
+//   query        — what we type in the search input
+//   optionLabel  — the exact label of the menu item we expect to find in the
+//                  dropdown (must come from FeaturesPage `graph` / topbar)
+//   expectedText — substring expected on the destination page (defaults to
+//                  optionLabel)
+async function searchAndOpen(query, optionLabel, expectedText) {
+    const page = await context.newPage();
     await page.goto('/');
-    await validAnonymousModal(page)
+    await validAnonymousModal(page);
 
-    await page.getByText(section).click();
+    // Focus the topbar search. `getByPlaceholder` resolves to a hidden form
+    // input on react-select, so we target the visible placeholder text node
+    // and let keyboard.type drive the now-focused combobox input.
     await page
-        .locator(`div[title^="${tab}"]`).click();
+        .locator('div')
+        .filter({ hasText: /^Search service, line, etc \.\.\.$/ })
+        .nth(2)
+        .click();
+    await page.keyboard.type(query);
 
-    await expect(page.locator('#content-scroll-container')).toContainText(expected ? expected : tab);
+    // Sanity: the option must actually show up in the dropdown.
+    const option = page.getByText(optionLabel, { exact: true }).first();
+    await expect(option, `'${optionLabel}' should appear in the search dropdown for query '${query}'`).toBeVisible();
+    await option.click();
+
+    await expect(page.locator('#content-scroll-container'))
+        .toContainText(expectedText || optionLabel);
 }
 
-test('Show Routes', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Routes'));
-test('Show Services', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Services'));
-test('Show Admins', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Administrator', 'All administrators'));
-test('Show Data Exporters', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Data exporters'));
-test('Show Apikeys', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Apikeys'));
-test('Show Auth. modules', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Auth. modules', 'Authentication modules'));
-test('Show Backends', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Backends'));
-test('Show Drafts', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Drafts'));
-test('Show Error Templates', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Error Templates', 'Error templates'));
-test('Show JWT verifiers', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'JWT verifiers', 'Jwt verifiers'));
-test('Show Service Groups', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Service groups', 'Groups'));
-test('Show TCP Services', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'TCP services', 'Tcp services'));
-test('Show Teams', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Teams'));
-test('Show Wasm Plugins', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'Wasm Plugins', 'Wasm plugins'));
-test('Show APIs', async () => showTableOfEntity(SECTIONS.MANAGE_RESOURCES, 'APIs'));
-test('Show Workflows', async () => showTableOfEntity(SECTIONS.EXTENSIONS, 'Workflows'));
+test('Search → HTTP Routes', async () => searchAndOpen('Routes', 'HTTP Routes', 'Routes'));
+test('Search → Services', async () => searchAndOpen('Services', 'Services'));
+test('Search → Administrators', async () => searchAndOpen('Admin', 'Administrators', 'All administrators'));
+test('Search → Data exporters', async () => searchAndOpen('exporter', 'Data exporters'));
+test('Search → Apikeys', async () => searchAndOpen('Apikeys', 'Apikeys'));
+test('Search → Auth. modules', async () => searchAndOpen('Auth', 'Auth. modules', 'Authentication modules'));
+test('Search → Backends', async () => searchAndOpen('Backends', 'Backends'));
+test('Search → Drafts', async () => searchAndOpen('Drafts', 'Drafts'));
+test('Search → Error Templates', async () => searchAndOpen('Error', 'Error Templates', 'Error templates'));
+test('Search → JWT verifiers', async () => searchAndOpen('JWT', 'JWT verifiers', 'Jwt verifiers'));
+test('Search → Service groups', async () => searchAndOpen('Service groups', 'Service groups', 'Groups'));
+test('Search → TCP services', async () => searchAndOpen('TCP', 'TCP services', 'Tcp services'));
+test('Search → Teams', async () => searchAndOpen('Teams', 'Teams'));
+test('Search → Wasm Plugins', async () => searchAndOpen('Wasm', 'Wasm Plugins', 'Wasm plugins'));
+test('Search → APIs', async () => searchAndOpen('APIs', 'APIs'));
+test('Search → Route Tester', async () => searchAndOpen('Tester', 'Route Tester'));
+test('Search → Resources loader', async () => searchAndOpen('Resource', 'Resources loader'));
+test('Search → Workflows', async () => searchAndOpen('Workflows', 'Workflows'));

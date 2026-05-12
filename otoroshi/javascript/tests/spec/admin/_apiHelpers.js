@@ -7,7 +7,8 @@ const { validAnonymousModal } = require('../../utils');
 const PROXY_ANY = '/bo/api/proxy/apis/any/v1';
 const PROXY_APIS = '/bo/api/proxy/apis/apis.otoroshi.io/v1';
 
-async function createApiViaUI(page, { name = 'lifecycle-api', description = 'lifecycle test api' } = {}) {
+async function createApiViaUI(page, { name, description = 'lifecycle test api' } = {}) {
+  const finalName = name || uniqueName('lifecycle-api');
   await page.goto('/bo/dashboard/apis');
   await validAnonymousModal(page);
 
@@ -32,7 +33,7 @@ async function createApiViaUI(page, { name = 'lifecycle-api', description = 'lif
   if (count < 2) {
     throw new Error(`expected at least 2 editable text inputs, found ${count}`);
   }
-  await editable.nth(count - 2).fill(name);
+  await editable.nth(count - 2).fill(finalName);
   await editable.nth(count - 1).fill(description);
   // Click Create and wait for the wizard to redirect to the API page
   // (no DEV/PROD toggle exists yet — toggle only appears after first publish).
