@@ -28,6 +28,7 @@ import { Testing } from './Testing';
 import { NewAPI, Apis } from './Apis';
 import { Informations } from './Informations';
 import { Dashboard } from './Dashboard';
+import { GettingStartedStepper } from './GettingStartedStepper';
 import { ClientEditor, Clients } from './Clients';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
 
@@ -208,6 +209,9 @@ export default function ApiEditor(props) {
           <RouteWithProps exact path="/apis" component={Apis} props={props} />
           <RouteWithProps exact path="/apis/:apiId" component={Dashboard} props={props} />
         </Switch>
+        {/* Global getting-started stepper — visible on every /apis/:apiId/*
+            route so progress stays in sight when navigating across tabs. */}
+        <Route path="/apis/:apiId" render={() => <GettingStartedStepper />} />
       </QueryClientProvider>
     </div>
   );

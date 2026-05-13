@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useHistory, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import moment from 'moment';
@@ -17,6 +17,7 @@ import { DraftOnly, VersionBadge, VersionToggle } from './DraftOnly';
 import { VersionManager } from './VersionManager';
 import { publishAPI } from './Actions';
 import { signalVersion } from './VersionSignal';
+import { signalHighlight } from './HighlightSignal';
 import { fetchWrapperNext } from '../../services/BackOfficeServices';
 
 export function ContainerBlock({ children, full, highlighted, style = {} }) {
@@ -81,86 +82,6 @@ function SectionHeader({ text, description, main, actions, icon }) {
 
 function Entities({ children }) {
   return <div className="d-flex flex-column gap-3">{children}</div>;
-}
-
-function ProgressCard({ children, step }) {
-  const steps = 7;
-
-  const ref = useRef();
-
-  useEffect(() => {
-    const handleWheel = (event) => {
-      event.preventDefault();
-
-      ref.current.scrollBy({
-        left: event.deltaY < 0 ? -35 : 35,
-      });
-    };
-
-    ref.current?.addEventListener('wheel', handleWheel);
-
-    return () => {
-      ref.current?.removeEventListener('wheel', handleWheel);
-    };
-  }, [ref]);
-
-  return (
-    <ContainerBlock full style={{ minWidth: '100%' }}>
-      <div className="d-flex">
-        <div className="me-4">
-          <div className="cards-title d-flex align-items-center justify-content-between">
-            Get started with API
-          </div>
-          <div className="d-flex align-items-center gap-2 mb-3 mt-1">
-            <div className="progress">
-              <div
-                className="progress-bar"
-                style={{
-                  right: `${(1 - step / steps) * 100}%`,
-                }}
-              ></div>
-            </div>
-            <span>
-              {step}/{steps}
-            </span>
-          </div>
-          <p className="cards-description" style={{ position: 'relative' }}>
-            <i
-              className="fas fa-hand-spock fa-lg me-1"
-              style={{
-                color: 'var(--color-primary)',
-              }}
-            />{' '}
-            Let's build your first API!
-          </p>
-        </div>
-        <div className="d-flex progress-childs" ref={ref}>
-          {children}
-        </div>
-      </div>
-    </ContainerBlock>
-  );
-}
-
-function ObjectiveCard({ title, description, icon, to, onClick }) {
-  const history = useHistory();
-  const location = useLocation();
-
-  return (
-    <div className="objective-card">
-      <div className="objective-card-icon">{icon}</div>
-      <div className="objective-card-body">
-        <p>{title}</p>
-        <p
-          onClick={() => {
-            onClick ? onClick() : historyPush(history, location, to);
-          }}
-        >
-          {description}
-        </p>
-      </div>
-    </div>
-  );
 }
 
 function QuickStat({ icon, label, value, onClick }) {
@@ -396,14 +317,14 @@ function RouteItem({ item, api, ports, isDraft }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-          <span
-            key={`frontendmethod-${i}`}
-            className={`badge me-1`}
-            style={{ backgroundColor: HTTP_COLORS[m] }}
-          >
-            {m}
-          </span>
-        ))
+        <span
+          key={`frontendmethod-${i}`}
+          className={`badge me-1`}
+          style={{ backgroundColor: HTTP_COLORS[m] }}
+        >
+          {m}
+        </span>
+      ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -627,8 +548,78 @@ function SubscriptionsView({ api }) {
   );
 }
 
-function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
+function DashboardTitle({ item, api, draftWrapper, draft, ...props }) {
   const history = useHistory();
+  const highlight = useSignalValue(signalHighlight);
+
+  // Publish CTA visible for any state except `removed` (a removed API cannot be
+  // redeployed). `<DraftOnly>` already scopes to draft / staging — you publish
+  // FROM the draft, not from the prod view.
+  const canPublish = item.state !== 'removed';
+  const isFirstPublish = item.state === 'staging';
+
+  // Spotlight effect: when the stepper "Deploy" step is clicked, it sets
+  // signalHighlight to 'publish-this-version'. We scroll the button into view,
+  // pulse it, then clear the signal.
+  useEffect(() => {
+    if (highlight !== 'publish-this-version') return;
+    const btn = document.querySelector('[data-testid="publish-this-version"]');
+    if (!btn) return;
+    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    btn.classList.add('gs-spotlight');
+    const timer = setTimeout(() => {
+      btn.classList.remove('gs-spotlight');
+      signalHighlight.value = null;
+    }, 3000);
+    return () => {
+      clearTimeout(timer);
+      btn.classList.remove('gs-spotlight');
+    };
+  }, [highlight]);
+
+  const onPublishClick = () => {
+    if (isFirstPublish) {
+      // No version bump for first publish — straight deployment of the draft.
+      publishAPI(draft, item, history);
+      return;
+    }
+    // Re-publish (published / deprecated): open the version manager wizard.
+    nextClient
+      .forEntityNext(nextClient.ENTITIES.APIS)
+      .findById(props.params.apiId)
+      .then((freshApi) => {
+        window
+          .wizard(
+            'Version manager',
+            (ok, cancel, state, setState) => (
+              <VersionManager
+                api={freshApi}
+                draft={draftWrapper}
+                owner={props.globalEnv.user}
+                setState={setState}
+              />
+            ),
+            {
+              style: { width: '100%' },
+              noCancel: false,
+              okClassName: 'ms-2',
+              okLabel: 'Publish this version',
+            }
+          )
+          .then((deployment) => {
+            if (deployment) {
+              fetchWrapperNext(
+                `/${nextClient.ENTITIES.APIS}/${freshApi.id}/deployments`,
+                'POST',
+                deployment,
+                'apis.otoroshi.io'
+              ).then(() => {
+                history.push(`/apis/${freshApi.id}`);
+              });
+            }
+          });
+      });
+  };
 
   return (
     <div className="page-header_title d-flex align-item-center justify-content-between mb-3">
@@ -640,54 +631,17 @@ function DashboardTitle({ item, api, draftWrapper, draft, step, ...props }) {
       </div>
       <div className="d-flex align-item-center justify-content-between">
         <DraftOnly>
-          {(item.state === 'published' || item.state === 'deprecated') && step > 3 && (
+          {canPublish && (
             <div className="d-flex align-items-center">
               <Button
-                text="Publish this version"
+                text={isFirstPublish ? 'Publish API' : 'Publish this version'}
                 className="btn-sm mx-2"
                 type="primaryColor"
                 style={{
                   borderColor: 'var(--color-primary)',
                 }}
-                onClick={() => {
-                  nextClient
-                    .forEntityNext(nextClient.ENTITIES.APIS)
-                    .findById(props.params.apiId)
-                    .then((api) => {
-                      window
-                        .wizard(
-                          'Version manager',
-                          (ok, cancel, state, setState) => {
-                            return (
-                              <VersionManager
-                                api={api}
-                                draft={draftWrapper}
-                                owner={props.globalEnv.user}
-                                setState={setState}
-                              />
-                            );
-                          },
-                          {
-                            style: { width: '100%' },
-                            noCancel: false,
-                            okClassName: 'ms-2',
-                            okLabel: 'Publish this version',
-                          }
-                        )
-                        .then((deployment) => {
-                          if (deployment) {
-                            fetchWrapperNext(
-                              `/${nextClient.ENTITIES.APIS}/${api.id}/deployments`,
-                              'POST',
-                              deployment,
-                              'apis.otoroshi.io'
-                            ).then(() => {
-                              history.push(`/apis/${api.id}`);
-                            });
-                          }
-                        });
-                    });
-                }}
+                data-testid="publish-this-version"
+                onClick={onPublishClick}
               />
             </div>
           )}
@@ -710,89 +664,10 @@ export function Dashboard(props) {
 
   if (!draft || !item) return <SimpleLoader />;
 
-  const hasCreateFlow = item.flows.filter((f) => f.name !== 'default_plugin_chain').length > 0;
-  const hasCreateBackend = item.backends.filter((f) => f.name !== 'default_backend').length > 0;
+  // Flags still used by the layout (Endpoints / Subscriptions cards below).
+  // The full getting-started progress is now owned by GettingStartedStepper.
   const hasCreateRoute = item.routes.length > 0;
   const hasCreatePlan = item.plans?.length > 0;
-  const hasTestingEnabled = item.testing.enabled;
-  const hasDomainConfigured = !!(item.domain && item.contextPath);
-
-  const steps = [
-    {
-      id: 1,
-      title: 'Create an endpoint',
-      description: 'Define how traffic reaches your API',
-      icon: 'fas fa-road',
-      completed: item.routes.length > 0,
-      to: `/apis/${params.apiId}/endpoints/new?version=${version}`,
-    },
-    {
-      id: 2,
-      title: 'Add a backend',
-      description: 'Configure a backend target',
-      icon: 'fas fa-microchip',
-      completed: item.backends.some((b) => b.name !== 'default_backend'),
-      to: `/apis/${params.apiId}/backends/new?version=${version}`,
-    },
-    {
-      id: 3,
-      title: 'Create a plugin chain',
-      description: 'Add plugin rules and transformations',
-      icon: 'fas fa-project-diagram',
-      completed: item.flows.some((f) => f.name !== 'default_plugin_chain'),
-      to: `/apis/${params.apiId}/plugin-chains/new?version=${version}`,
-      showOnlyIfPublished: true,
-    },
-    {
-      id: 4,
-      title: 'Configure the API Gateway',
-      description: 'Set the domain and context path in the API Gateway tab',
-      icon: 'fas fa-network-wired',
-      completed: !!(item.domain && item.contextPath),
-    },
-    {
-      id: 5,
-      title: 'Enable testing',
-      description: 'Set up API testing',
-      icon: 'fas fa-vial',
-      completed: item.testing.enabled,
-      to: `/apis/${params.apiId}/testing?version=${version}`,
-    },
-    {
-      id: 6,
-      title: 'Add a plan',
-      description: 'Define your API plans',
-      icon: 'fas fa-file-alt',
-      completed: item.plans?.length > 0,
-      to: `/apis/${params.apiId}/plans/new`,
-    },
-    {
-      id: 7,
-      title: 'Deploy your API',
-      description: 'Publish to production',
-      icon: 'fas fa-rocket',
-      completed: item.state === API_STATE.PUBLISHED,
-      onClick: () => publishAPI(draft, item, history),
-    },
-  ];
-
-  const currentStep =
-    Number(hasCreateFlow) +
-    Number(hasCreateRoute) +
-    Number(hasCreateBackend) +
-    Number(hasTestingEnabled) +
-    Number(hasDomainConfigured) +
-    Number(item.state === API_STATE.PUBLISHED);
-
-  // const showGettingStarted =
-  //   isDraft &&
-  //   item.state !== API_STATE.DEPRECATED && currentStep < 7
-
-  const nextStep = steps.find(
-    (s) => !s.completed && (!s.showOnlyIfPublished || item.state === API_STATE.PUBLISHED)
-  );
-
-  const showGettingStarted = isDraft && item.state !== API_STATE.DEPRECATED && nextStep;
 
   // TODO
   const totalSubscriptions = 0; // item.consumers.flatMap((c) => c.subscriptions).length;
@@ -806,7 +681,6 @@ export function Dashboard(props) {
         api={api}
         draftWrapper={draftWrapper}
         draft={draft}
-        step={currentStep}
       />
       <div className="dashboard-layout">
         {/* API Header */}
@@ -843,17 +717,7 @@ export function Dashboard(props) {
           />
         </div>
 
-        {showGettingStarted && nextStep && (
-          <ProgressCard step={nextStep.id}>
-            <ObjectiveCard
-              to={nextStep.to}
-              onClick={nextStep.onClick}
-              title={nextStep.title}
-              description={<p className="objective-link">{nextStep.description}</p>}
-              icon={<i className={nextStep.icon} />}
-            />
-          </ProgressCard>
-        )}
+        {/* Stepper is rendered globally (floating bottom-right) — see below */}
 
         {/* Main two-column grid */}
         <div className="dashboard-grid">

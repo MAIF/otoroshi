@@ -143,7 +143,7 @@ export function PluginChainsDesigner(props) {
 
   const isCreation = params.action === 'new';
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [flow, setFlow] = useState();
   const ref = useRef(flow);
@@ -156,6 +156,10 @@ export function PluginChainsDesigner(props) {
     if (item && !flow) {
       setFlow(item.flows.find((flow) => flow.id === params.flowId));
 
+      // Inject the title into the global signal. We can't use <DraftOnly> here
+      // because the signal is rendered outside ApiEditor's QueryClientProvider
+      // and DraftOnly internally calls useQuery via useDraftOfAPI. Evaluate
+      // `isDraft` once and conditionally include the Save button instead.
       dynamicTitleContent.value = (
         <PageTitle
           style={{
@@ -164,21 +168,23 @@ export function PluginChainsDesigner(props) {
           title={item.flows.find((flow) => flow.id === params.flowId)?.name}
           {...props}
         >
-          <FeedbackButton
-            type="success"
-            className="ms-2 mb-1 d-flex align-items-center"
-            onPress={saveFlow}
-            text={
-              <>
-                {isCreation ? 'Create a new flow' : 'Save'}{' '}
-                <VersionBadge size="xs" className="ms-2" />
-              </>
-            }
-          />
+          {isDraft && (
+            <FeedbackButton
+              type="success"
+              className="ms-2 mb-1 d-flex align-items-center"
+              onPress={saveFlow}
+              text={
+                <>
+                  {isCreation ? 'Create a new flow' : 'Save'}{' '}
+                  <VersionBadge size="xs" className="ms-2" />
+                </>
+              }
+            />
+          )}
         </PageTitle>
       );
     }
-  }, [item]);
+  }, [item, isDraft]);
 
   const saveFlow = () => {
     const { id, name, plugins } = ref.current;

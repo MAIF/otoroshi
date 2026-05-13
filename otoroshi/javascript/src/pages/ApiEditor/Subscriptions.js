@@ -408,6 +408,7 @@ export function NewSubscription(props) {
         <FeedbackButton
           type="success"
           onPress={updateSubscription}
+          testid="subscription-create"
           text={
             <div className="d-flex align-items-center">
               Create <VersionBadge size="xs" />

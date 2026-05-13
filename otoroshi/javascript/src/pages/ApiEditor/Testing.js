@@ -7,7 +7,7 @@ import { useDraftOfAPI } from './hooks';
 import { RoutesView } from './Dashboard';
 import PageTitle from '../../components/PageTitle';
 
-function CopyableInput({ value, onRotate }) {
+function CopyableInput({ value, onRotate, testid, rotateTestid }) {
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = () => {
@@ -23,6 +23,7 @@ function CopyableInput({ value, onRotate }) {
         readOnly
         type="text"
         value={value}
+        data-testid={testid}
         style={{
           borderTopRightRadius: 0,
           borderBottomRightRadius: 0,
@@ -38,7 +39,12 @@ function CopyableInput({ value, onRotate }) {
         <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
       </button>
       {onRotate && (
-        <button className="btn btn-sm btn-secondary ms-1" title="Rotate value" onClick={onRotate}>
+        <button
+          className="btn btn-sm btn-secondary ms-1"
+          title="Rotate value"
+          onClick={onRotate}
+          data-testid={rotateTestid}
+        >
           <i className="fas fa-rotate" />
         </button>
       )}
@@ -97,11 +103,13 @@ function TestingConfiguration(props) {
         </div>
       </Row>
       <Row title="Header name">
-        <CopyableInput value={headerKey} />
+        <CopyableInput value={headerKey} testid="testing-header-key" />
       </Row>
       <Row title="Header value">
         <CopyableInput
           value={headerValue}
+          testid="testing-header-value"
+          rotateTestid="testing-rotate-button"
           onRotate={() =>
             props.onSecretRotation({
               ...props.item.testing,

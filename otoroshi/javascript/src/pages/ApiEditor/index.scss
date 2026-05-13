@@ -282,7 +282,7 @@
 
     .progress {
         height: .5rem;
-        background: var(--bg-color_level3);
+        background: var(--bg-color_level2);
         width: 250px;
         border-radius: 1rem;
         position: relative;
@@ -880,5 +880,206 @@
     .actions-action-card:hover & {
         opacity: .8;
         transform: translateX(3px);
+    }
+}
+
+/* ---------------------------------------------------------------------
+ * Getting-started stepper (Stripe-style, floating bottom-right)
+ * --------------------------------------------------------------------- */
+.gs-stepper {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    width: 260px;
+    max-width: calc(100vw - 2rem);
+    /* Level3 is the most elevated surface — page bg is level1, so we lift
+       the stepper above it (avoids the dark-on-dark "blends in" problem). */
+    background: var(--bg-color_level2);
+    border: 1px solid var(--text);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+    color: var(--text);
+    z-index: 1049;
+    overflow: hidden;
+    font-size: .75rem;
+}
+
+.gs-stepper--collapsed {
+    width: auto;
+    padding: .35rem .65rem;
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    cursor: pointer;
+    border: 1px solid var(--text);
+    background: var(--bg-color_level2);
+    color: var(--text);
+    font-weight: 500;
+    font-size: .75rem;
+}
+
+.gs-stepper-collapsed-count {
+    font-size: .7rem;
+    opacity: .7;
+}
+
+.gs-stepper-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .35rem;
+    padding: .45rem .65rem;
+    border-bottom: 1px solid var(--bg-color_level1);
+}
+
+.gs-stepper-title {
+    display: flex;
+    align-items: center;
+    color: var(--text);
+    font-size: .75rem;
+
+    > strong {
+        font-size: .75rem;
+    }
+}
+
+.gs-stepper-actions {
+    display: flex;
+    align-items: center;
+    gap: .15rem;
+}
+
+.gs-stepper-count {
+    font-size: .65rem;
+    color: var(--text);
+    opacity: .6;
+    margin-right: .15rem;
+}
+
+.gs-stepper-iconbtn {
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    opacity: .55;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: .65rem;
+    transition: opacity .15s, background .15s;
+
+    &:hover {
+        opacity: 1;
+        background: var(--bg-color_level2, rgba(255, 255, 255, .05));
+    }
+}
+
+.gs-stepper-progress {
+    height: 2px;
+    background: var(--bg-color_level1);
+    overflow: hidden;
+}
+
+.gs-stepper-progress-bar {
+    height: 100%;
+    background: var(--text);
+    transition: width .25s ease-out;
+}
+
+.gs-stepper-steps {
+    list-style: none;
+    margin: 0;
+    padding: .15rem 0;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+.gs-stepper-step {
+    padding: 0;
+    margin: 0;
+}
+
+.gs-stepper-step-button {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    padding: .35rem .65rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s;
+    font-size: .75rem;
+    line-height: 1.25;
+
+    &:hover:not(:disabled) {
+        background: var(--bg-color_level2);
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: .5;
+    }
+}
+
+.gs-stepper-step-checkbox {
+    flex: 0 0 auto;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gs-stepper-step--done .gs-stepper-step-checkbox {
+    color: var(--color-primary, #f9b000);
+}
+
+.gs-stepper-step-body {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    min-width: 0;
+}
+
+.gs-stepper-step-title {
+    font-weight: 500;
+    font-size: .75rem;
+}
+
+.gs-stepper-step--done .gs-stepper-step-title {
+    text-decoration: line-through;
+    opacity: .65;
+}
+
+.gs-stepper-step-description {
+    display: none;
+}
+
+/* Spotlight pulse — applied to a target button when the stepper hands off
+   ("look here!"). Auto-removed after 3s by the consuming component. */
+.gs-spotlight {
+    position: relative;
+    z-index: 1;
+    animation: gs-spotlight-pulse 1s ease-in-out 3;
+}
+
+@keyframes gs-spotlight-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(249, 181, 47, .7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(249, 181, 47, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(249, 181, 47, 0);
     }
 }

@@ -30,6 +30,7 @@ otoroshi/javascript/stats.json
 .scala-build
 *.iml
 CLAUDE.md
+.claude/
 _doc-research
 gateway-api-conformance-suite
 logs/

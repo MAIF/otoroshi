@@ -12,9 +12,35 @@ export class AuthModuleConfigsPage extends Component {
     showWizard: false,
   };
 
+  static TYPE_BADGE_COLORS = {
+    oauth2: 'bg-primary',
+    'oauth2-global': 'bg-primary',
+    oauth1: 'bg-info',
+    basic: 'bg-secondary',
+    ldap: 'bg-warning',
+    saml: 'bg-danger',
+    wasm: 'bg-dark',
+    workflow: 'bg-success',
+  };
+
   columns = [
     { title: 'Name', filterId: 'name', content: (item) => item.name },
     { title: 'Description', filterId: 'desc', content: (item) => item.desc },
+    {
+      title: 'Type',
+      filterId: 'type',
+      content: (item) => {
+        const cls = AuthModuleConfigsPage.TYPE_BADGE_COLORS[item.type];
+        return (
+          <span
+            className={`badge ${cls || ''}`}
+            style={cls ? undefined : { backgroundColor: 'rgba(128, 128, 128, 0.25)', color: 'inherit' }}
+          >
+            {item.type}
+          </span>
+        );
+      },
+    },
   ];
 
   componentDidMount() {
@@ -124,7 +150,7 @@ export class AuthModuleConfigsPage extends Component {
             BackOfficeServices.findAllAuthConfigs({
               // findAuthConfigs
               ...paginationState,
-              fields: ['id', 'name', 'desc'],
+              fields: ['id', 'name', 'desc', 'type'],
             })
           }
           updateItem={BackOfficeServices.updateAuthConfig}

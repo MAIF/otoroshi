@@ -10,6 +10,7 @@ export function FeedbackButton({
   className,
   disabled,
   style = {},
+  testid,
 }) {
   const [uploading, setUploading] = useState(false);
   const [result, onResult] = useState('waiting');
@@ -67,6 +68,7 @@ export function FeedbackButton({
       disabled={disabled}
       className={`btn btn-sm ${color} ${className || ''}`}
       style={setStyle()}
+      data-testid={testid}
       onClick={() => {
         if (!uploading && waiting) {
           setUploading(true);

@@ -33,6 +33,7 @@ import otoroshi.utils.UrlSanitizer.sanitize
 import otoroshi.utils.controllers.{GenericAlert, SendAuditAndAlert}
 import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
+import play.api.Logger
 import play.api.libs.json.*
 
 import java.net.URI
@@ -1055,11 +1056,20 @@ object ApiSubscription {
     } else if (action == Update) {
       subscription.subscriptionKind match {
         case ApiKind.Apikey if plan.status == ApiPlanStatus.Closed =>
-          (if (isDraft)
-             env.datastores.draftsDataStore.delete(subscription.id)
-           else
-             env.datastores.apiSubscriptionDataStore.delete(subscription.id))
-            .map(_ => subscription.right)
+          // Cascade-delete the subscription AND the apikeys it points at.
+          // Otherwise the apikey lingers in the datastore unreachable from
+          // its owning subscription.
+          val apikeyIds = subscription.tokenRefs.flatMap(ref => (ref \ "apikey").asOpt[String])
+          val deleteApikeys = Future.sequence(apikeyIds.map { id =>
+            env.datastores.apiKeyDataStore.delete(id).recover { case _ => false }
+          })
+          val deleteSubscription =
+            if (isDraft) env.datastores.draftsDataStore.delete(subscription.id)
+            else env.datastores.apiSubscriptionDataStore.delete(subscription.id)
+          for {
+            _ <- deleteApikeys
+            _ <- deleteSubscription
+          } yield subscription.right
         case ApiKind.Apikey                                        =>
           updateApikeyFromPlan(api, plan, subscription)
             .map(results =>
@@ -1096,12 +1106,17 @@ object ApiSubscription {
       .flatMap {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
           api.plans.find(_.id == entity.planRef) match {
-            case None                                                                                         =>
-              "plan not found".leftf
-            case Some(plan) if plan.status == ApiPlanStatus.Staging || plan.status == ApiPlanStatus.Published =>
+            case None                                       => "plan not found".leftf
+            // Active plans (Staging/Published): Create + Update both go.
+            // Inactive plans (Deprecated/Closed): only Update goes — required
+            // so existing subs on a deprecated plan can still be managed, and
+            // the Closed cascade-delete (in handleSubscriptionChanged) fires.
+            case Some(plan)
+                if plan.status == ApiPlanStatus.Staging ||
+                  plan.status == ApiPlanStatus.Published ||
+                  action == WriteAction.Update =>
               handleSubscriptionChanged(api, plan, entity, action, isDraft)
-            case _                                                                                            =>
-              "wrong status plan".leftf
+            case _                                          => "wrong status plan".leftf
           }
         case _                                                                 => "wrong status api".leftf
       }
@@ -1793,6 +1808,49 @@ case class Api(
 
 object Api {
 
+  private val logger = Logger("otoroshi-api-model")
+
+  def isValidStateTransition(from: ApiState, to: ApiState, viaDeploy: Boolean): Boolean = (from, to) match {
+    // staging
+    case (ApiStaging, ApiStaging)       => true
+    case (ApiStaging, ApiPublished)     => viaDeploy // only via deploy
+    case (ApiStaging, _)                => false
+    // published
+    case (ApiPublished, ApiPublished)   => true
+    case (ApiPublished, ApiDeprecated)  => true
+    case (ApiPublished, ApiRemoved)     => true
+    case (ApiPublished, _)              => false
+    // deprecated
+    case (ApiDeprecated, ApiPublished)  => true // republish, direct (no deploy needed)
+    case (ApiDeprecated, ApiDeprecated) => true
+    case (ApiDeprecated, ApiRemoved)    => true
+    case (ApiDeprecated, _)             => false
+    // removed
+    case (ApiRemoved, ApiStaging)       => true // reopen
+    case (ApiRemoved, ApiRemoved)       => true
+    case (ApiRemoved, _)                => false
+  }
+
+  def transitionError(from: ApiState, to: ApiState): JsValue = Json.obj(
+    "error"             -> "invalid_state_transition",
+    "error_description" -> s"transition from '${from.name}' to '${to.name}' is not allowed",
+    "from"              -> from.name,
+    "to"                -> to.name,
+    "http_status_code"  -> 400
+  )
+
+  // Fields that MUST go through Draft + deploy when the API is not in staging.
+  // Every other field on the Api case class is freely editable in production.
+  def diffProtectedFields(oldApi: Api, newApi: Api): Seq[String] = {
+    val diffs = scala.collection.mutable.ListBuffer.empty[String]
+    if (oldApi.routes != newApi.routes) diffs += "routes"
+    if (oldApi.backends != newApi.backends) diffs += "backends"
+    if (oldApi.flows != newApi.flows) diffs += "flows"
+    if (oldApi.documentation != newApi.documentation) diffs += "documentation"
+    if (oldApi.testing != newApi.testing) diffs += "testing"
+    diffs.toSeq
+  }
+
   def writeValidator(
       entity: Api,
       body: JsValue,
@@ -1806,9 +1864,41 @@ object Api {
     implicit val ec = env.otoroshiExecutionContext
     implicit val e  = env
 
-    oldEntity
-      .map(old => ApiConsistencyService.applyApiChanges(old._1, entity, isDraft = false).flatMap(_.rightf))
-      .getOrElse(entity.rightf)
+    oldEntity match {
+      case None      =>
+        // Create path: API must start in staging.
+        if (entity.state != ApiStaging) {
+          Json
+            .obj(
+              "error"             -> "cannot_create_in_state",
+              "error_description" -> s"new API must be created in 'staging' state, got '${entity.state.name}'",
+              "state"             -> entity.state.name,
+              "http_status_code"  -> 400
+            )
+            .leftf
+        } else {
+          entity.rightf
+        }
+      case Some(old) =>
+        val oldApi = old._1
+        // 1. State transition guard. Plain PUT cannot move staging -> published; that goes through deploy.
+        if (!isValidStateTransition(oldApi.state, entity.state, viaDeploy = false)) {
+          transitionError(oldApi.state, entity.state).leftf
+        } else if (oldApi.state != ApiStaging && diffProtectedFields(oldApi, entity).nonEmpty) {
+          // 2. Production read-only guard: locked fields must go through Draft + deploy.
+          val fields = diffProtectedFields(oldApi, entity)
+          Json
+            .obj(
+              "error"             -> "production_readonly",
+              "error_description" -> s"fields ${fields.mkString("[", ", ", "]")} are read-only in '${oldApi.state.name}' state; edit them via Draft and deploy",
+              "fields"            -> fields,
+              "http_status_code"  -> 400
+            )
+            .leftf
+        } else {
+          ApiConsistencyService.applyApiChanges(oldApi, entity, isDraft = false).flatMap(_.rightf)
+        }
+    }
   }
 
   def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(
@@ -1974,7 +2064,9 @@ object Api {
             case "published"  => ApiPublished
             case "deprecated" => ApiDeprecated
             case "removed"    => ApiRemoved
-            case _            => ApiStaging
+            case other        =>
+              logger.warn(s"unknown api state '$other', falling back to 'staging'")
+              ApiStaging
           }
           .getOrElse(ApiStaging),
         enabled = (json \ "enabled").asOptBoolean.getOrElse(true),
