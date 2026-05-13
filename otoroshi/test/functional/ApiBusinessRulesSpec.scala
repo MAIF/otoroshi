@@ -1,11 +1,12 @@
 package functional
 
 import next.models._
-import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgFrontend, NgPlugins}
 
-class ApiBusinessRulesSpec extends WordSpec with MustMatchers {
+class ApiBusinessRulesSpec extends AnyWordSpec with Matchers {
 
   private def baseApi(state: ApiState, name: String = "test-api"): Api = Api(
     location = EntityLocation.default,
