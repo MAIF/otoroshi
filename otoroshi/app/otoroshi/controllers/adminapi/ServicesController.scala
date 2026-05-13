@@ -1,38 +1,24 @@
 package otoroshi.controllers.adminapi
 
 import org.apache.pekko.stream.Materializer
-import otoroshi.actions.{ApiAction, ApiActionContext}
+import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.next.models.NgRoute
-import otoroshi.utils.controllers.{
-  AdminApiHelper,
-  ApiError,
-  BulkControllerHelper,
-  CrudControllerHelper,
-  EntityAndContext,
-  JsonApiError,
-  NoEntityAndContext,
-  OptionalEntityAndContext,
-  SendAuditAndAlert,
-  SeqEntityAndContext
-}
+import otoroshi.utils.controllers.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
+import play.api.{Logger, mvc}
 import play.api.mvc.Results.Status
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
-import org.apache.pekko.stream.scaladsl.Source
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
@@ -567,8 +553,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           desc.copy(enabled = false).save()
           Ok(
             route.json.asObject ++ Json.obj(
-              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:$port/api/routes/${route.id}",
-              "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:$port/bo/dashboard/routes/${route.id}"
+              "resource_url"    -> s"${ctx.request.theProtocol}://${env.adminApiExposedHost}:${port}/api/routes/${route.id}",
+              "resource_ui_url" -> s"${ctx.request.theProtocol}://${env.backOfficeHost}:${port}${env.backOfficePath}/routes/${route.id}"
             )
           )
         }

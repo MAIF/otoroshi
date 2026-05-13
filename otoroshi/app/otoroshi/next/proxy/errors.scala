@@ -1,7 +1,7 @@
 package otoroshi.next.proxy
 
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}

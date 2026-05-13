@@ -1,9 +1,10 @@
 package otoroshi.plugins.biscuit
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.biscuitsec.biscuit.crypto._
+import org.biscuitsec.biscuit.crypto.*
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.error.Error
+import org.biscuitsec.biscuit.token.builder.Rule
 import org.biscuitsec.biscuit.token.builder.Term.Str
 import org.biscuitsec.biscuit.token.builder.Utils.{fact, string}
 import org.biscuitsec.biscuit.token.builder.parser.Parser
@@ -11,17 +12,16 @@ import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Results}
 
 import java.security.SecureRandom
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import org.biscuitsec.biscuit.token.builder.Rule
 
 object vavr_implicits {
   implicit class BetterVavrEither[L, R](val either: io.vavr.control.Either[L, R]) extends AnyVal {
@@ -92,7 +92,7 @@ case class SealedBiscuitToken(token: String) extends BiscuitToken
 
 object BiscuitHelper {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
 
   def readConfigFromJson(rawConfig: JsValue): BiscuitConfig = {
     BiscuitConfig(
@@ -201,7 +201,7 @@ object BiscuitHelper {
 // MIGRATED
 class BiscuitExtractor extends PreRouting {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
 
   override def name: String = "Apikey from Biscuit token extractor"
 
@@ -256,7 +256,7 @@ class BiscuitExtractor extends PreRouting {
   def testing(): Unit = {
 
     import org.biscuitsec.biscuit.token.builder.Block
-    import org.biscuitsec.biscuit.token.builder.Utils._
+    import org.biscuitsec.biscuit.token.builder.Utils.*
 
     val client_id         = "tdrw4ixcssyvljrq"
     val client_secret     = "pdpzme7xpg58y1za0yqyihycschnq74iu7437qqfjor0h3jeo505n6w4ofg1pa17"

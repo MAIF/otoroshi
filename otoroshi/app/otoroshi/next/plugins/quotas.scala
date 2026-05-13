@@ -6,10 +6,10 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Results
 
@@ -163,10 +163,10 @@ class ApikeyQuotas extends NgAccessValidator {
     // increments calls for apikey
     ctx.attrs
       .get(otoroshi.plugins.Keys.ApiKeyKey)
-      .map(_.updateQuotas())
-      .getOrElse(RemainingQuotas().vfuture)
+      .map(_.updateQuotasAndCheck())
+      .getOrElse((RemainingQuotas(), false).vfuture)
       .map { value =>
-        ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value)
+        ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> value._1)
         NgAccess.NgAllowed
       }
   }
@@ -226,62 +226,39 @@ class NgServiceQuotas extends NgAccessValidator {
   private def updateQuotas(route: NgRoute, qconf: NgServiceQuotasConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Boolean] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     env.clusterAgent.incrementApi(route.id, increment)
+
+    val throttlingId = throttlingKey(route.id)
+    val dailyId      = dailyQuotaKey(route.id)
+    val monthlyId    = monthlyQuotaKey(route.id)
+
     for {
+      secCalls     <- env.datastores.rawDataStore.incrby(throttlingId, increment)
+      _            <- env.datastores.rawDataStore.pttl(throttlingId).flatMap {
+                        case -1 => env.datastores.rawDataStore.expire(throttlingId, env.throttlingWindow)
+                        case _  => Future.successful(())
+                      }
+      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyId, increment)
+      _            <- env.datastores.rawDataStore.pttl(dailyId).flatMap {
+                        case -1 => env.datastores.rawDataStore.expire(dailyId, (toDayEnd / 1000).toInt)
+                        case _  => Future.successful(())
+                      }
+      monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyId, increment)
+      _            <- env.datastores.rawDataStore.pttl(monthlyId).flatMap {
+                        case -1 =>
+                          env.datastores.rawDataStore.expire(monthlyId, (toMonthEnd / 1000).toInt)
+                        case _  => Future.successful(())
+                      }
       _            <- env.datastores.rawDataStore.incrby(totalCallsKey(route.id), increment)
-      secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(route.id), increment)
-      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(throttlingKey(route.id), env.throttlingWindow * 1000)
-                      }
-      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(route.id), increment)
-      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(dailyQuotaKey(route.id), toDayEnd.toInt)
-                      }
-      monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(route.id), increment)
-      monthlyTtl   <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(route.id)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(monthlyQuotaKey(route.id), toMonthEnd.toInt)
-                      }
-    } yield ()
+    } yield {
+      (secCalls <= qconf.throttlingQuota && dailyCalls <= qconf.dailyQuota && monthlyCalls <= qconf.monthlyQuota)
+    }
   }
-
-  private def withingQuotas(route: NgRoute, qconf: NgServiceQuotasConfig)(using
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] =
-    for {
-      sec <- withinThrottlingQuota(route, qconf)
-      day <- withinDailyQuota(route, qconf)
-      mon <- withinMonthlyQuota(route, qconf)
-    } yield sec && day && mon
-
-  private def withinThrottlingQuota(
-      route: NgRoute,
-      qconf: NgServiceQuotasConfig
-  )(using ec: ExecutionContext, env: Env): Future[Boolean] =
-    env.datastores.rawDataStore
-      .get(throttlingKey(route.id))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
-
-  private def withinDailyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(using
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] =
-    env.datastores.rawDataStore
-      .get(dailyQuotaKey(route.id))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
-
-  private def withinMonthlyQuota(route: NgRoute, qconf: NgServiceQuotasConfig)(using
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] =
-    env.datastores.rawDataStore
-      .get(monthlyQuotaKey(route.id))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
 
   def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     Errors
@@ -301,10 +278,15 @@ class NgServiceQuotas extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgServiceQuotasConfig.format).getOrElse(NgServiceQuotasConfig())
-    withingQuotas(ctx.route, config).flatMap {
-      case true  => updateQuotas(ctx.route, config).map(_ => NgAccess.NgAllowed)
-      case false => forbidden(ctx)
-    }
+
+    updateQuotas(ctx.route, config)
+      .flatMap(passed => {
+        if (passed) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          forbidden(ctx)
+        }
+      })
   }
 }
 
@@ -362,7 +344,7 @@ object NgCustomQuotasConfig {
     )
     override def reads(json: JsValue): JsResult[NgCustomQuotasConfig] = Try {
       NgCustomQuotasConfig(
-        perRoute = json.select("perRoute").asOpt[Boolean].getOrElse(true),
+        perRoute = json.select("per_route").asOpt[Boolean].getOrElse(true),
         global = json.select("global").asOpt[Boolean].getOrElse(false),
         group = json.select("group").asOpt[String],
         expression = json.select("expression").asOpt[String].getOrElse("${req.ip}"),
@@ -387,22 +369,33 @@ object NgCustomQuotas {
   def updateQuotas(expr: String, group: String, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[(Long, Long)] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
+
+    val dailyQuotaId   = dailyQuotaKey(expr, group)
+    val monthlyQuotaId = monthlyQuotaKey(expr, group)
+
     for {
-      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(expr, group), increment)
-      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-                        env.datastores.rawDataStore.pexpire(dailyQuotaKey(expr, group), toDayEnd.toInt)
+      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaId, increment)
+      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaId).flatMap {
+                        case -1 => env.datastores.rawDataStore.expire(dailyQuotaId, env.throttlingWindow)
+                        case _  => Future.successful(())
                       }
-      monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(expr, group), increment)
+      monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaId, increment)
       monthlyTtl   <-
-        env.datastores.rawDataStore.pttl(monthlyQuotaKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-          env.datastores.rawDataStore.pexpire(monthlyQuotaKey(expr, group), toMonthEnd.toInt)
+        env.datastores.rawDataStore.pttl(monthlyQuotaId).flatMap {
+          case -1 => env.datastores.rawDataStore.expire(monthlyQuotaId, (toMonthEnd / 1000).toInt)
+          case _  => Future.successful(())
         }
-    } yield ()
+    } yield (
+      (
+        dailyCalls,
+        monthlyCalls
+      )
+    )
   }
 }
 
@@ -421,39 +414,11 @@ class NgCustomQuotas extends NgAccessValidator {
   private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[(Long, Long)] = {
     val group = qconf.computeGroup(ctx, env)
     val expr  = qconf.computeExpression(ctx, env)
     env.clusterAgent.incrementCustomQuota(expr, group, increment)
     NgCustomQuotas.updateQuotas(expr, group, increment)
-  }
-
-  private def withingQuotas(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(using
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] = {
-    for {
-      day <- withinDailyQuota(ctx, qconf)
-      mon <- withinMonthlyQuota(ctx, qconf)
-    } yield day && mon
-  }
-
-  private def withinDailyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(using
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] = {
-    env.datastores.rawDataStore
-      .get(NgCustomQuotas.dailyQuotaKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
-  }
-
-  private def withinMonthlyQuota(ctx: NgAccessContext, qconf: NgCustomQuotasConfig)(using
-      ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] = {
-    env.datastores.rawDataStore
-      .get(NgCustomQuotas.monthlyQuotaKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
   }
 
   def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -474,10 +439,15 @@ class NgCustomQuotas extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgCustomQuotasConfig.format).getOrElse(NgCustomQuotasConfig())
-    withingQuotas(ctx, config).flatMap {
-      case true  => updateQuotas(ctx, config).map(_ => NgAccess.NgAllowed)
-      case false => forbidden(ctx)
-    }
+
+    updateQuotas(ctx, config)
+      .flatMap(quotas => {
+        if (quotas._1 <= config.dailyQuota && quotas._2 <= config.monthlyQuota) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          forbidden(ctx)
+        }
+      })
   }
 }
 
@@ -554,28 +524,33 @@ object NgCustomThrottling {
   def localThrottlingKey(name: String, group: String)(using env: Env): String =
     s"${env.storageRoot}:local-plugins:custom-throttling:${group}:second:$name"
 
-  def updateQuotas(expr: String, group: String, increment: Long = 1L, ttl: Long)(using
+  private def updateQuotasOf(key: String, increment: Long = 1L, limit: Long, ttl: Long)(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Boolean] = {
     for {
-      secCalls <- env.datastores.rawDataStore.incrby(throttlingKey(expr, group), increment)
-      secTtl   <- env.datastores.rawDataStore.pttl(throttlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-                    env.datastores.rawDataStore.pexpire(throttlingKey(expr, group), ttl) // env.throttlingWindow * 1000
+      secCalls <- env.datastores.rawDataStore.incrby(key, increment)
+      _        <- env.datastores.rawDataStore.pttl(key).flatMap {
+                    case -1 => env.datastores.rawDataStore.pexpire(key, ttl)
+                    case _  => Future.successful(())
                   }
-    } yield ()
+    } yield secCalls <= limit
   }
 
-  def localUpdateQuotas(expr: String, group: String, increment: Long = 1L, ttl: Long)(implicit
-                                                                                 ec: ExecutionContext,
-                                                                                 env: Env
-  ): Future[Unit] = {
-    for {
-      secCalls <- env.datastores.rawDataStore.incrby(localThrottlingKey(expr, group), increment)
-      secTtl   <- env.datastores.rawDataStore.pttl(localThrottlingKey(expr, group)).filter(_ > -1).recoverWith { case _ =>
-        env.datastores.rawDataStore.pexpire(localThrottlingKey(expr, group), ttl) // env.throttlingWindow * 1000
-      }
-    } yield ()
+  def updateQuotas(expr: String, group: String, increment: Long = 1L, limit: Long, ttl: Long)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
+    val throttlingId = throttlingKey(expr, group)
+    updateQuotasOf(throttlingId, increment, limit, ttl)
+  }
+
+  def localUpdateQuotas(expr: String, group: String, increment: Long = 1L, limit: Long, ttl: Long)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
+    val throttlingId = localThrottlingKey(expr, group)
+    updateQuotasOf(throttlingId, increment, limit, ttl)
   }
 }
 
@@ -594,20 +569,11 @@ class NgCustomThrottling extends NgAccessValidator {
   private def updateQuotas(ctx: NgAccessContext, qconf: NgCustomThrottlingConfig, increment: Long = 1L)(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Unit] = {
+  ): Future[Boolean] = {
     val group = qconf.computeGroup(ctx, env)
     val expr  = qconf.computeExpression(ctx, env)
     env.clusterAgent.incrementCustomThrottling(expr, group, increment, env.throttlingWindow * 1000)
-    NgCustomThrottling.updateQuotas(expr, group, increment, env.throttlingWindow * 1000)
-  }
-
-  private def withingQuotas(
-      ctx: NgAccessContext,
-      qconf: NgCustomThrottlingConfig
-  )(using ec: ExecutionContext, env: Env): Future[Boolean] = {
-    env.datastores.rawDataStore
-      .get(NgCustomThrottling.throttlingKey(qconf.computeExpression(ctx, env), qconf.computeGroup(ctx, env)))
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= qconf.throttlingQuota)
+    NgCustomThrottling.updateQuotas(expr, group, increment, qconf.throttlingQuota, env.throttlingWindow * 1000)
   }
 
   def forbidden(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
@@ -628,9 +594,13 @@ class NgCustomThrottling extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgCustomThrottlingConfig.format).getOrElse(NgCustomThrottlingConfig())
-    withingQuotas(ctx, config).flatMap {
-      case true  => updateQuotas(ctx, config).map(_ => NgAccess.NgAllowed)
-      case false => forbidden(ctx)
-    }
+    updateQuotas(ctx, config)
+      .flatMap(passed => {
+        if (passed) {
+          NgAccess.NgAllowed.vfuture
+        } else {
+          forbidden(ctx)
+        }
+      })
   }
 }

@@ -1,6 +1,6 @@
 package otoroshi.utils.prometheus
 
-import com.codahale.metrics._
+import com.codahale.metrics.*
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import io.prometheus.client.Collector.{MetricFamilySamples, Type}
 import io.prometheus.client.CollectorRegistry
@@ -8,7 +8,7 @@ import io.prometheus.client.dropwizard.samplebuilder.{DefaultSampleBuilder, Samp
 
 import java.util
 import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 
 class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegistry)
     extends io.prometheus.client.Collector

@@ -8,11 +8,11 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget
 import otoroshi.next.plugins.NgOtoroshiChallengeKeys
-import otoroshi.next.plugins.api._
-import otoroshi.script._
+import otoroshi.next.plugins.api.*
+import otoroshi.script.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.Json
 import play.api.mvc.{Result, Results}
 

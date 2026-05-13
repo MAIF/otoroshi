@@ -67,7 +67,7 @@ export class SnowMonkeyPage extends Component {
   };
 
   columns = [
-    { title: 'Service Name', content: (item) => item.descriptorName },
+    { title: 'Route Name', content: (item) => item.descriptorName },
     {
       title: 'Outage started at',
       content: (item) => moment(item.startedAt).format('YYYY-MM-DD HH:mm:ss.SSS'),
@@ -94,10 +94,10 @@ export class SnowMonkeyPage extends Component {
             type="button"
             className="btn btn-success btn-sm"
             onClick={(e) =>
-              (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
+              (window.location = `/bo/dashboard/routes/${item.descriptorId}?tab=flow`)
             }
           >
-            <i className="fas fa-link" /> Go to service descriptor
+            <i className="fas fa-link" /> Go to route
           </button>
         );
       },
@@ -173,25 +173,23 @@ export class SnowMonkeyPage extends Component {
     return (
       <div class="container">
         <div className="row">
-          <div className="mb-3 btnsService">
-            <div className="displayGroupBtn">
-              <button
-                type="button"
-                className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
-                onClick={this.toggle}
-              >
-                <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
-                {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
-              </button>
-              <button
-                type="button"
-                className={`btn btn-success`}
-                {...moreProps}
-                onClick={this.saveChanges}
-              >
-                Save
-              </button>
-            </div>
+          <div className="displayGroupBtn">
+            <button
+              type="button"
+              className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
+              onClick={this.toggle}
+            >
+              <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
+              {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
+            </button>
+            <button
+              type="button"
+              className={`btn btn-success`}
+              {...moreProps}
+              onClick={this.saveChanges}
+            >
+              Save
+            </button>
           </div>
           <div className="col-md-12 text-center">
             <svg

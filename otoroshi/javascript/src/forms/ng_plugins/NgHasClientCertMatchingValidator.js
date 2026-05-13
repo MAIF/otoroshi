@@ -1,6 +1,10 @@
 export default {
   id: 'cp:otoroshi.next.plugins.NgHasClientCertMatchingValidator',
   config_schema: {
+    mandatory: {
+      type: 'bool',
+      label: 'mandatory',
+    },
     serial_numbers: {
       type: 'array',
       array: true,
@@ -33,6 +37,7 @@ export default {
     },
   },
   config_flow: [
+    'mandatory',
     'serial_numbers',
     'subject_dns',
     'issuer_dns',

@@ -5,15 +5,42 @@ import faker from 'faker';
 import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleConfig';
 import { Button } from '../components/Button';
 import { ClassifiedForms } from '../forms';
+import InfoCollapse from '../components/InfoCollapse';
 
 export class AuthModuleConfigsPage extends Component {
   state = {
     showWizard: false,
   };
 
+  static TYPE_BADGE_COLORS = {
+    oauth2: 'bg-primary',
+    'oauth2-global': 'bg-primary',
+    oauth1: 'bg-info',
+    basic: 'bg-secondary',
+    ldap: 'bg-warning',
+    saml: 'bg-danger',
+    wasm: 'bg-dark',
+    workflow: 'bg-success',
+  };
+
   columns = [
     { title: 'Name', filterId: 'name', content: (item) => item.name },
     { title: 'Description', filterId: 'desc', content: (item) => item.desc },
+    {
+      title: 'Type',
+      filterId: 'type',
+      content: (item) => {
+        const cls = AuthModuleConfigsPage.TYPE_BADGE_COLORS[item.type];
+        return (
+          <span
+            className={`badge ${cls || ''}`}
+            style={cls ? undefined : { backgroundColor: 'rgba(128, 128, 128, 0.25)', color: 'inherit' }}
+          >
+            {item.type}
+          </span>
+        );
+      },
+    },
   ];
 
   componentDidMount() {
@@ -54,6 +81,51 @@ export class AuthModuleConfigsPage extends Component {
             disableSelectMode={true}
           />
         )}
+        <InfoCollapse title="What is an Authentication Module?">
+          <p>
+            An Authentication Module lets you{' '}
+            <strong>secure the Otoroshi admin UI, your HTTP Routes, and your APIs</strong> using
+            either a built-in in-memory user store or an external identity provider.
+          </p>
+          <p>Otoroshi supports a wide range of protocols and providers out of the box:</p>
+          <ul>
+            <li>
+              <strong>In-memory</strong> — a simple, built-in user directory for quick setups and
+              testing.
+            </li>
+            <li>
+              <strong>LDAP</strong> — connect to your enterprise directory (Active Directory,
+              OpenLDAP, etc.).
+            </li>
+            <li>
+              <strong>OAuth2 / OpenID Connect</strong> — integrate with providers like Keycloak,
+              Auth0, Google, GitHub, or any OIDC-compliant server.
+            </li>
+            <li>
+              <strong>SAML 2.0</strong> — connect to enterprise identity providers like
+              PingFederate, ADFS, or Okta.
+            </li>
+          </ul>
+          <p>Beyond simple authentication, modules unlock powerful capabilities:</p>
+          <ul>
+            <li>
+              <strong>Single Sign-On (SSO)</strong> — share one module across multiple HTTP Routes
+              and APIs so users authenticate once and access everything seamlessly.
+            </li>
+            <li>
+              <strong>Cluster-wide</strong> — sessions are replicated across all nodes in the
+              cluster, so authentication works consistently in multi-node deployments.
+            </li>
+            <li>
+              <strong>Session administration</strong> — view, monitor, and revoke active user
+              sessions from the admin UI.
+            </li>
+            <li>
+              <strong>Runtime customization</strong> — modify module configuration on the fly
+              without restart or redeployment.
+            </li>
+          </ul>
+        </InfoCollapse>
         <Table
           parentProps={this.props}
           selfUrl="auth-configs"
@@ -78,7 +150,7 @@ export class AuthModuleConfigsPage extends Component {
             BackOfficeServices.findAllAuthConfigs({
               // findAuthConfigs
               ...paginationState,
-              fields: ['id', 'name', 'desc'],
+              fields: ['id', 'name', 'desc', 'type'],
             })
           }
           updateItem={BackOfficeServices.updateAuthConfig}
@@ -96,18 +168,16 @@ export class AuthModuleConfigsPage extends Component {
           kubernetesKind="security.otoroshi.io/AuthModule"
           injectToolbar={(s, ss) => {
             return (
-              <div className="mb-3 btnsService">
-                <div className="displayGroupBtn">
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    title="Duplicate auth. module"
-                    style={{ marginRight: 20 }}
-                    onClick={(e) => this.duplicate(s, ss, e)}
-                  >
-                    <i className="far fa-copy" aria-hidden="true" />
-                  </button>
-                </div>
+              <div className="displayGroupBtn">
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  title="Duplicate auth. module"
+                  style={{ marginRight: 20 }}
+                  onClick={(e) => this.duplicate(s, ss, e)}
+                >
+                  <i className="far fa-copy" aria-hidden="true" />
+                </button>
               </div>
             );
           }}

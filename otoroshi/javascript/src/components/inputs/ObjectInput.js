@@ -12,13 +12,12 @@ export class ObjectInput extends React.Component {
   };
 
   componentDidUpdate(prevProps) {
-    if (prevProps.value !== this.props.value) { 
-      const newData = Object.entries(this.props.value || {})
-        .map(([key, value], i) => ({
-          idx: i,
-          key,
-          value,
-        }));
+    if (prevProps.value !== this.props.value) {
+      const newData = Object.entries(this.props.value || {}).map(([key, value], i) => ({
+        idx: i,
+        key,
+        value,
+      }));
       this.setState({
         data: newData,
       });
@@ -142,88 +141,90 @@ export class ObjectInput extends React.Component {
           </div>
         )}
         {data.map(({ key, value, idx }, i) => {
-          return <div className="row mb-3" key={idx}>
-            {i === 0 && !props.ngOptions?.spread && (
-              <label className="col-xs-12 col-sm-2 col-form-label">
-                {props.label} <Help text={props.help} />
-              </label>
-            )}
-            {i > 0 && !props.ngOptions?.spread && (
-              <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
-            )}
-            <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
-              <div className="input-group justify-content-between">
-                {props.itemRenderer &&
-                  props.itemRenderer(
-                    key,
-                    value,
-                    idx,
-                    (e) => this.changeKey(idx, key, e),
-                    (e) => this.changeValue(idx, key, e)
-                  )}
-                {!props.itemRenderer && (
-                  <>
-                    <input
-                      disabled={props.disabled}
-                      type="text"
-                      className="form-control"
-                      placeholder={props.placeholderKey}
-                      value={key}
-                      onChange={(e) => this.changeKey(idx, key, e)}
-                    />
-                    {ValueRenderer &&
-                      ValueRenderer(key, value, idx, (e) => this.changeValue(idx, key, e))}
-                    {!ValueRenderer && (
-                      <>
-                        <input
-                          disabled={props.disabled}
-                          type="text"
-                          className="form-control"
-                          placeholder={props.placeholderValue}
-                          value={value}
-                          onChange={(e) => this.changeValue(idx, key, e)}
-                        />
-                        {props.bcryptable ? (
-                          <button
-                            className="btn btn-outline-secondary"
-                            type="button"
-                            disabled={this.disableBcrypt(value)}
-                            onClick={(e) => {
-                              this.changeValue(idx, key, {
-                                target: { value: bcrypt.hashSync(value, 10) },
-                              });
-                            }}
-                          >
-                            bcrypt
-                          </button>
-                        ) : null}
-                      </>
+          return (
+            <div className="row mb-3" key={idx}>
+              {i === 0 && !props.ngOptions?.spread && (
+                <label className="col-xs-12 col-sm-2 col-form-label">
+                  {props.label} <Help text={props.help} />
+                </label>
+              )}
+              {i > 0 && !props.ngOptions?.spread && (
+                <label className="col-xs-12 col-sm-2 col-form-label">&nbsp;</label>
+              )}
+              <div className={`${props.ngOptions?.spread ? 'col-sm-12' : 'col-sm-10'}`}>
+                <div className="input-group justify-content-between">
+                  {props.itemRenderer &&
+                    props.itemRenderer(
+                      key,
+                      value,
+                      idx,
+                      (e) => this.changeKey(idx, key, e),
+                      (e) => this.changeValue(idx, key, e)
                     )}
-                  </>
-                )}
-                <span className="input-group-btn">
-                  <button
-                    disabled={props.disabled}
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={(e) => this.remove(idx, key, e)}
-                  >
-                    <i className="fas fa-trash" />
-                  </button>
-                  {i === data.length - 1 && (
+                  {!props.itemRenderer && (
+                    <>
+                      <input
+                        disabled={props.disabled}
+                        type="text"
+                        className="form-control"
+                        placeholder={props.placeholderKey}
+                        value={key}
+                        onChange={(e) => this.changeKey(idx, key, e)}
+                      />
+                      {ValueRenderer &&
+                        ValueRenderer(key, value, idx, (e) => this.changeValue(idx, key, e))}
+                      {!ValueRenderer && (
+                        <>
+                          <input
+                            disabled={props.disabled}
+                            type="text"
+                            className="form-control"
+                            placeholder={props.placeholderValue}
+                            value={value}
+                            onChange={(e) => this.changeValue(idx, key, e)}
+                          />
+                          {props.bcryptable ? (
+                            <button
+                              className="btn btn-outline-secondary"
+                              type="button"
+                              disabled={this.disableBcrypt(value)}
+                              onClick={(e) => {
+                                this.changeValue(idx, key, {
+                                  target: { value: bcrypt.hashSync(value, 10) },
+                                });
+                              }}
+                            >
+                              bcrypt
+                            </button>
+                          ) : null}
+                        </>
+                      )}
+                    </>
+                  )}
+                  <span className="input-group-btn">
                     <button
                       disabled={props.disabled}
                       type="button"
-                      className="btn btn-primary"
-                      onClick={this.addNext}
+                      className="btn btn-danger"
+                      onClick={(e) => this.remove(idx, key, e)}
                     >
-                      <i className="fas fa-plus-circle" />{' '}
+                      <i className="fas fa-trash" />
                     </button>
-                  )}
-                </span>
+                    {i === data.length - 1 && (
+                      <button
+                        disabled={props.disabled}
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={this.addNext}
+                      >
+                        <i className="fas fa-plus-circle" />{' '}
+                      </button>
+                    )}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          );
         })}
       </div>
     );

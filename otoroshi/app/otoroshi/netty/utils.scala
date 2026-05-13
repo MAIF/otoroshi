@@ -6,7 +6,7 @@ import io.netty.channel.kqueue.KQueueIoHandler
 import io.netty.channel.nio.NioIoHandler
 import io.netty.channel.{EventLoopGroup, MultiThreadIoEventLoopGroup}
 import org.apache.pekko.util.ByteString
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.core.NamedThreadFactory
 import reactor.util.Logger
 
@@ -63,13 +63,13 @@ object EventLoopUtils {
     if (config.isEpoll && io.netty.channel.epoll.Epoll.isAvailable) {
       val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, EpollIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, Some("Epoll"))
-    } else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
-      // Note: IOUringEventLoopGroup might also be deprecated, check if there's an IOUringIoHandler
+    } /*else if (config.isIOUring && io.netty.incubator.channel.uring.IOUring.isAvailable) {
       val channelHttp  = new io.netty.incubator.channel.uring.IOUringServerSocketChannel()
       val evlGroupHttp = new io.netty.incubator.channel.uring.IOUringEventLoopGroup(nThread, threadFactory)
       evlGroupHttp.register(channelHttp).sync().await()
       EventLoopGroupCreation(evlGroupHttp, Some("IO-Uring"))
-    } else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
+    }*/
+    else if (config.isKQueue && io.netty.channel.kqueue.KQueue.isAvailable) {
       val evlGroupHttp = new MultiThreadIoEventLoopGroup(nThread, threadFactory, KQueueIoHandler.newFactory())
       EventLoopGroupCreation(evlGroupHttp, Some("KQueue"))
     } else {

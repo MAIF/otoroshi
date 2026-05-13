@@ -9,7 +9,9 @@ export const CallNode = {
   form_schema: {
     function: {
       renderer: (props) => {
-        const functions = Object.values(nodesCatalogSignal.value.nodes).filter(node => node.category === 'functions')
+        const functions = Object.values(nodesCatalogSignal.value.nodes).filter(
+          (node) => node.category === 'functions'
+        );
         return (
           <Row title="Select a function to execute">
             <NgSelectRenderer

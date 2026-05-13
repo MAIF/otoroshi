@@ -1,0 +1,637 @@
+package plugins
+
+import com.dimafeng.testcontainers.GenericContainer
+import com.github.dockerjava.api.model.*
+import functional.PluginsTestSpec
+import io.netty.handler.ssl.SslContextBuilder
+import org.apache.pekko.Done
+import org.apache.pekko.stream.scaladsl.Source
+import org.testcontainers.containers.output.ToStringConsumer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.containers.{BindMode, Network}
+import org.testcontainers.images.builder.{ImageFromDockerfile, Transferable}
+import org.testcontainers.utility.MountableFile
+import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
+import play.api.libs.json.Json
+import reactor.core.publisher.Mono
+import reactor.netty.{ByteBufFlux, ByteBufMono}
+import reactor.netty.http.client.{HttpClient, HttpClientResponse}
+
+import java.io.{File, FileInputStream}
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.security.cert.CertificateFactory
+import java.util.function.BiFunction
+import scala.annotation.tailrec
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Future, Promise}
+import scala.jdk.FutureConverters.*
+import scala.sys.process.*
+import scala.util.{Failure, Success, Try}
+
+class KubernetesIntegrationTests(parent: PluginsTestSpec) {
+
+  import parent.{*, given}
+
+  val instanceId = IdGenerator.uuid
+
+  val network = Network.newNetwork()
+
+  def isReady(k3sContainer: GenericContainer) = {
+    println(".Waiting for k3s to start..")
+    var ready       = false
+    val maxAttempts = 60
+    var attempts    = 0
+
+    while (!ready && attempts < maxAttempts) {
+      try {
+        val logs = k3sContainer.logs
+        if (logs.contains("bootstrap done")) {
+          ready = true
+          println("k3s is ready!")
+        } else {
+          Thread.sleep(2000)
+          attempts += 1
+        }
+      } catch {
+        case _: Exception =>
+          Thread.sleep(2000)
+          attempts += 1
+      }
+    }
+
+    if (!ready) {
+      throw new RuntimeException("k3s failed to start within timeout")
+    }
+  }
+
+  def deployK3s(otoroshiDevImageName: Option[String] = None): GenericContainer = {
+    val k3sContainer = GenericContainer(
+      dockerImage = "rancher/k3s:v1.28.5-k3s1",
+      exposedPorts = Seq(6443, 31080),
+      command = Seq("server", "--disable=traefik"),
+      waitStrategy = Wait.forLogMessage(".*k3s is up and running.*", 1)
+    ).configure { c =>
+      println("Configuring container...")
+      c.withPrivilegedMode(true)
+      c.withEnv("K3S_KUBECONFIG_OUTPUT", "/output/kubeconfig.yaml")
+      c.withEnv("K3S_KUBECONFIG_MODE", "666")
+      c.withNetwork(network)
+      c.withNetworkAliases("k3s")
+    }
+
+    k3sContainer.start()
+    isReady(k3sContainer)
+
+    k3sContainer.copyFileFromContainer(
+      "/var/lib/rancher/k3s/server/tls/client-admin.crt",
+      s"/tmp/${instanceId}client-admin.crt"
+    )
+    k3sContainer.copyFileFromContainer(
+      "/var/lib/rancher/k3s/server/tls/client-admin.key",
+      s"/tmp/${instanceId}client-admin.key"
+    )
+    k3sContainer.copyFileFromContainer(
+      "/var/lib/rancher/k3s/server/tls/server-ca.crt",
+      s"/tmp/${instanceId}server-ca.crt"
+    )
+
+    otoroshiDevImageName.foreach { imageName =>
+      k3sContainer.execInContainer("mkdir", "-p", "/var/lib/rancher/k3s/agent/images")
+
+      // Copy the tar file to the container
+      k3sContainer.copyFileToContainer(
+        MountableFile.forHostPath("/tmp/otoroshi-local.tar"),
+        "/var/lib/rancher/k3s/agent/images/otoroshi-local.tar"
+      )
+    }
+
+    k3sContainer
+  }
+
+  def getNettyClient(container: GenericContainer): HttpClient = {
+    val tlsBase = Paths.get("/tmp")
+
+    val clientCertFile = new FileInputStream(tlsBase.resolve(s"${instanceId}client-admin.crt").toFile)
+    val clientKeyFile  = new FileInputStream(tlsBase.resolve(s"${instanceId}client-admin.key").toFile)
+    val caCertFile     = new FileInputStream(tlsBase.resolve(s"${instanceId}server-ca.crt").toFile)
+
+    val pureNettyClient = HttpClient
+      .create()
+      .host(container.host)
+      .port(container.mappedPort(6443))
+      .protocol(reactor.netty.http.HttpProtocol.HTTP11)
+      .secure { spec =>
+        val certFactory = CertificateFactory.getInstance("X.509")
+        val caCert      = certFactory
+          .generateCertificate(caCertFile)
+          .asInstanceOf[java.security.cert.X509Certificate]
+
+        val sslCtxBuilder = SslContextBuilder
+          .forClient()
+          .trustManager(caCert)
+          .keyManager(clientCertFile, clientKeyFile)
+
+        spec.sslContext(sslCtxBuilder.build())
+      }
+
+    pureNettyClient
+  }
+
+  def mintToken(container: GenericContainer): Future[String] = {
+    val body = Json.obj(
+      "apiVersion" -> "authentication.k8s.io/v1",
+      "kind"       -> "TokenRequest",
+      "spec"       -> Json.obj(
+        "audiences"         -> Json.arr("https://kubernetes.default.svc"),
+        "expirationSeconds" -> 3600
+      )
+    )
+
+    val pureNettyClient = getNettyClient(container)
+
+    val promise = Promise[String]()
+    pureNettyClient
+      .headers(h => h.set("Content-Type", "application/json"))
+      .post()
+      .uri("/api/v1/namespaces/default/serviceaccounts/default/token")
+      .send(ByteBufFlux.fromString(Mono.just(Json.stringify(body))))
+      .responseContent()
+      .aggregate()
+      .asString()
+      .map { json =>
+        Json
+          .parse(json)
+          .selectAsObject("status")
+          .selectAsString("token")
+      }
+      .doOnError(error => promise.failure(error))
+      .subscribe(
+        token => promise.success(token),
+        err => promise.failure(err)
+      )
+    promise.future
+  }
+
+  def callReadyz(container: GenericContainer, token: String): Future[Unit] = {
+    println(s"callReadyz $token")
+
+    val client = getNettyClient(container)
+
+    // Cast to the "real" receiver type so Scala 3 can see responseSingle
+    val receiver =
+      client
+          .headers(h => h.set("Authorization", s"Bearer $token"))
+          .get()
+          .uri("/readyz")
+          .asInstanceOf[HttpClient.ResponseReceiver[?]]
+
+    val mono: Mono[Unit] =
+      receiver.responseSingle(
+        new BiFunction[HttpClientResponse, ByteBufMono, Mono[Unit]] {
+          override def apply(resp: HttpClientResponse, bytes: ByteBufMono): Mono[Unit] = {
+            val status = resp.status().code()
+            bytes.asString().map { body =>
+              val b = body.trim
+              println(s"readyz response: status=$status, body=$b")
+
+              if (status == 200 && b == "ok") ()
+              else throw new RuntimeException(s"readyz check failed: status=$status, body=$b")
+            }
+          }
+        }
+      )
+
+    mono
+        .doOnError(err => println(s"ERROR during readyz check: ${err.getMessage}"))
+        .toFuture
+        .asScala
+  }
+
+  def createKubectl(k3sContainer: GenericContainer) = {
+    Future {
+      println("createKubectl")
+      val kubeconfigResult = k3sContainer.execInContainer("cat", "/etc/rancher/k3s/k3s.yaml")
+      if (kubeconfigResult.getExitCode != 0) {
+        throw new RuntimeException(s"Failed to get kubeconfig: ${kubeconfigResult.getStderr}")
+      }
+      val kubeconfig       = kubeconfigResult.getStdout
+
+      val internalIp         =
+        k3sContainer.container.getContainerInfo.getNetworkSettings.getNetworks.values().iterator().next().getIpAddress
+      val modifiedKubeconfig = kubeconfig.replace("127.0.0.1:6443", s"$internalIp:6443")
+
+      println(s"k3s internal IP: $internalIp")
+
+      val tempKubeconfig = Files.createTempFile("kubeconfig", ".yaml")
+      Files.write(tempKubeconfig, modifiedKubeconfig.getBytes())
+
+      val resourceUrl = getClass.getResource("/kubernetes")
+      if (resourceUrl == null) {
+        throw new RuntimeException(s"Resource path not found: kubernetes")
+      }
+
+      val resourcePath = Paths.get(resourceUrl.toURI).toString
+
+      val kubectlContainer = GenericContainer(
+        dockerImage = "alpine/k8s:1.34.1"
+      ).configure { c =>
+        c.withCommand("sh", "-c", "while true; do sleep 30; done")
+        c.withFileSystemBind(
+          tempKubeconfig.toString,
+          "/root/.kube/config",
+          org.testcontainers.containers.BindMode.READ_ONLY
+        )
+        c.withFileSystemBind(
+          resourcePath,
+          "/manifests",
+          org.testcontainers.containers.BindMode.READ_ONLY
+        )
+        c.withNetwork(network)
+      }
+
+      kubectlContainer.start()
+      println("kubectl container started!")
+
+      val testResult = kubectlContainer.execInContainer("kubectl", "version", "--client")
+      println(s"kubectl version: ${testResult.getStdout}")
+
+      kubectlContainer
+    }
+  }
+
+  def cleanup(k3sContainer: GenericContainer, kubectlContainer: GenericContainer) = Future {
+    val clientCert = s"/tmp/${instanceId}client-admin.crt"
+    val clientKey  = s"/tmp/${instanceId}client-admin.key"
+    val serverCa   = s"/tmp/${instanceId}server-ca.crt"
+
+    Files.deleteIfExists(Paths.get(clientCert))
+    Files.deleteIfExists(Paths.get(clientKey))
+    Files.deleteIfExists(Paths.get(serverCa))
+
+    network.close()
+    k3sContainer.close()
+    kubectlContainer.close()
+  }
+
+  def applyManifest(kubectlContainer: GenericContainer, manifestFilename: String, namespace: String = "default") = {
+    println(s"Apply manifest: $manifestFilename in namespace: $namespace")
+    Future {
+      val applyResult = kubectlContainer.execInContainer(
+        "kubectl",
+        "apply",
+        "-f",
+        s"/manifests/$manifestFilename",
+        "-n",
+        namespace
+      )
+
+      if (applyResult.getExitCode != 0) {
+        println(s"Failed to apply manifests: ${applyResult.getStderr}")
+        throw new RuntimeException("Failed to apply manifests")
+      }
+
+      println(s"Successfully applied manifests: ${applyResult.getStdout}")
+    }
+  }
+
+  def waitForResource(
+      kubectlContainer: GenericContainer,
+      resourceType: String,
+      resourceName: String,
+      namespace: String = "foo",
+      timeoutSeconds: Int = 120
+  ): Future[String] = {
+
+    println(s"Waiting for $resourceType/$resourceName to be ready...")
+
+    waitForReady(
+      Seq(
+        "kubectl",
+        "get",
+        s"$resourceType/$resourceName",
+        s"--timeout=${timeoutSeconds}s",
+        "-n",
+        namespace,
+        "-o",
+        "jsonpath={.status}"
+      ),
+      kubectlContainer,
+      timeoutSeconds
+    )
+  }
+
+  def waitForReady(
+      commands: Seq[String],
+      kubectlContainer: GenericContainer,
+      timeoutSeconds: Int = 120
+  ): Future[String] = Future {
+
+    @tailrec
+    def check(attemptsLeft: Int): String = {
+      if (attemptsLeft <= 0) {
+        throw new RuntimeException(s"Timeout waiting after ${timeoutSeconds}s")
+      }
+
+      val getResult = kubectlContainer.execInContainer(commands*)
+      val output    = getResult.getStdout
+      val stderr    = getResult.getStderr
+
+      println(s"Exit code: ${getResult.getExitCode}")
+      println(s"Stdout: $output")
+      println(s"Stderr: $stderr")
+
+      if (getResult.getExitCode != 0) {
+        println(s"Command failed, retrying... ($attemptsLeft left)")
+        Thread.sleep(2000)
+        check(attemptsLeft - 1)
+      } else if (output.isEmpty || !output.contains("Running") || output.contains("Init")) {
+        println(s"($attemptsLeft left)")
+        Thread.sleep(2000)
+        check(attemptsLeft - 1)
+      } else {
+        output
+      }
+    }
+
+    check(timeoutSeconds / 2)
+  }
+
+  def call(k3sContainer: GenericContainer, waitingMessage: String, host: String, path: String): Future[Done] = {
+    println(waitingMessage)
+
+    val hostPort = k3sContainer.mappedPort(31080)
+
+    Source
+      .tick(1.millisecond, 1.second, ())
+      .mapAsync(1) { _ =>
+        ws
+          .url(s"http://127.0.0.1:$hostPort$path")
+          .withHttpHeaders("Host" -> host)
+          .withRequestTimeout(1.second)
+          .get()
+          .map(r => {
+            println(s"Status: ${r.status}, Body: ${r.body}")
+            r.status mustBe play.mvc.Http.Status.OK
+            r.status
+          })
+          .recover { case e =>
+            println(s"Error: ${e.getMessage}")
+            0
+          }
+      }
+      .filter(_ == play.mvc.Http.Status.OK)
+      .take(1)
+      .run()
+  }
+
+  def clusterWithOneLeader() = {
+    val k3sContainer: GenericContainer = deployK3s()
+    val namespace                      = "foo"
+
+    for {
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- cleanup(k3sContainer, kubectlContainer)
+    } yield {}
+  }
+
+  def scanEntities() = {
+    val k3sContainer: GenericContainer = deployK3s()
+    val namespace                      = "foo"
+
+    for {
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- applyManifest(kubectlContainer, "foo-route.yaml", namespace)
+      _                <- call(k3sContainer, "Wait foo route", "foo.k3s.local", "/")
+      _                <- cleanup(k3sContainer, kubectlContainer)
+    } yield {}
+  }
+
+  def prepareManifest(
+      manifestFilename: String,
+      otoroshiImage: String
+  ): Future[String] = Future {
+    println(s"Preparing manifest: $manifestFilename with Otoroshi image: $otoroshiImage")
+
+    val resourceUrl = getClass.getResource(s"/kubernetes/$manifestFilename")
+    if (resourceUrl == null) {
+      throw new RuntimeException(s"Manifest not found: /kubernetes/$manifestFilename")
+    }
+
+    val manifestPath    = Paths.get(resourceUrl.toURI)
+    val originalContent = Files.readString(manifestPath)
+
+    val updatedContent = originalContent.replace("@@IMAGE_FROM_REGISTRY@@", otoroshiImage)
+
+    val kubernetesDir = Paths.get(getClass.getResource("/kubernetes").toURI)
+    val tmpDir        = kubernetesDir.resolve("tmp")
+
+    // Create tmp directory if it doesn't exist
+    if (!Files.exists(tmpDir)) {
+      Files.createDirectories(tmpDir)
+    }
+
+    val tempFileName = s"prepared-$instanceId-$manifestFilename"
+    val tempFile     = tmpDir.resolve(tempFileName)
+    Files.writeString(tempFile, updatedContent)
+
+    println(s"✓ Prepared manifest at: ${tempFile.toAbsolutePath}")
+    tempFileName
+  }
+
+  def buildOtoroshiJar(): Option[GenericContainer] = {
+    val projectRoot  = new File("../..").getCanonicalFile
+    val otoroshiPath = new File(projectRoot, "otoroshi").getAbsolutePath
+    val outputJar    = new File("/tmp/otoroshi.jar")
+
+    if (outputJar.exists() && outputJar.length() > 0) {
+      println(s"✓ Using existing JAR: ${outputJar.getAbsolutePath}")
+      None
+    } else {
+      println(s"Building from: $otoroshiPath")
+
+      val sbtContainer = new GenericContainer(
+        "sbtscala/scala-sbt:eclipse-temurin-17.0.15_6_1.11.7_3.7.4"
+      ).configure { c =>
+        c.withFileSystemBind(otoroshiPath, "/app", BindMode.READ_WRITE)
+        c.withWorkingDirectory("/app")
+        c.withCommand("tail", "-f", "/dev/null")
+        c.withLogConsumer(new ToStringConsumer())
+      }
+
+      sbtContainer.start()
+
+      val result = sbtContainer.execInContainer(
+        "sh",
+        "-c",
+        "cd /app/otoroshi && sbt ';set Test / skip := true;clean;compile;dist;assembly'"
+      )
+
+      if (result.getExitCode != 0) {
+        throw new RuntimeException(s"Build failed: ${result.getStderr}")
+      }
+
+      sbtContainer.copyFileFromContainer(
+        "/app/otoroshi/target/scala-2.12/otoroshi.jar",
+        outputJar.getAbsolutePath
+      )
+      println(s"✓ JAR built successfully")
+      Some(sbtContainer)
+    }
+  }
+
+  def buildAndSaveDockerImage(imageName: String): Unit = {
+    val dockerClient = GenericContainer("docker:27-cli")
+      .configure { c =>
+        c.withNetwork(network)
+        c.withCreateContainerCmdModifier { cmd =>
+          cmd.getHostConfig.withBinds(
+            new Bind("/var/run/docker.sock", new Volume("/var/run/docker.sock"))
+          )
+        }
+        c.withCommand("sh", "-c", "sleep infinity")
+      }
+
+    dockerClient.start()
+
+    try {
+      val resourcePath = Paths.get(getClass.getResource("/kubernetes").toURI).toString
+
+      dockerClient.copyFileToContainer(MountableFile.forHostPath("/tmp/otoroshi.jar"), "/build/otoroshi.jar")
+      dockerClient.copyFileToContainer(
+        MountableFile.forHostPath(s"$resourcePath/entrypoint-jar.sh"),
+        "/build/entrypoint-jar.sh"
+      )
+      dockerClient.copyFileToContainer(MountableFile.forHostPath(s"$resourcePath/Dockerfile"), "/build/Dockerfile")
+
+      println(s"Building Docker image: $imageName:latest")
+      val buildResult = dockerClient.execInContainer("docker", "build", "-t", s"$imageName:latest", "/build")
+      if (buildResult.getExitCode != 0) {
+        throw new RuntimeException(s"Docker build failed: ${buildResult.getStderr}")
+      }
+
+      val saveResult =
+        dockerClient.execInContainer("docker", "save", "-o", s"/tmp/$imageName.tar", s"$imageName:latest")
+      if (saveResult.getExitCode != 0) {
+        throw new RuntimeException(s"Docker save failed: ${saveResult.getStderr}")
+      }
+
+      dockerClient.copyFileFromContainer(s"/tmp/$imageName.tar", s"/tmp/$imageName.tar")
+      println(s"Image saved to /tmp/$imageName.tar")
+
+    } finally {
+      dockerClient.stop()
+    }
+  }
+
+  def importImageToK3s(k3sContainer: GenericContainer, imageName: String): Future[Unit] = Future {
+    println(s"Importing $imageName to k3s...")
+
+    k3sContainer.execInContainer("mkdir", "-p", "/var/lib/rancher/k3s/agent/images")
+    k3sContainer.copyFileToContainer(
+      MountableFile.forHostPath(s"/tmp/$imageName.tar"),
+      s"/var/lib/rancher/k3s/agent/images/$imageName.tar"
+    )
+
+    val importResult = k3sContainer.execInContainer(
+      "ctr",
+      "-n",
+      "k8s.io",
+      "images",
+      "import",
+      s"/var/lib/rancher/k3s/agent/images/$imageName.tar"
+    )
+
+    if (importResult.getExitCode != 0) {
+      throw new RuntimeException(s"Import failed: ${importResult.getStderr}")
+    }
+
+    println(s"✓ Image imported successfully")
+
+    // Verify
+    val images = k3sContainer.execInContainer("crictl", "images").getStdout
+    println(s"Available images:\n$images")
+  }
+
+  def build(): Future[Unit] = {
+    val imageName = "otoroshi-local"
+    val namespace = "foo"
+
+    val sbtContainer = buildOtoroshiJar()
+
+    buildAndSaveDockerImage(imageName)
+
+    val k3sContainer = deployK3s(Some(s"$imageName:latest"))
+
+    val workflow = for {
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      _                <- importImageToK3s(k3sContainer, imageName)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      leaderFilename   <- prepareManifest("leader.yaml", s"$imageName:latest")
+      _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- cleanup(k3sContainer, kubectlContainer)
+    } yield ()
+
+    workflow.andThen { case _ => sbtContainer.foreach(_.stop()) }
+  }
+
+  def triggerScannerJob(): Future[Unit] = {
+    val imageName = "otoroshi-local"
+    val namespace = "foo"
+
+    val sbtContainer = buildOtoroshiJar()
+
+    buildAndSaveDockerImage(imageName)
+
+    val k3sContainer = deployK3s(Some(s"$imageName:latest"))
+
+    val workflow = for {
+      token            <- mintToken(k3sContainer)
+      _                <- callReadyz(k3sContainer, token)
+      _                <- importImageToK3s(k3sContainer, imageName)
+      kubectlContainer <- createKubectl(k3sContainer)
+      _                <- applyManifest(kubectlContainer, "namespace.yaml")
+      _                <- applyManifest(kubectlContainer, "common/serviceAccount.yaml", namespace)
+      _                <- applyManifest(kubectlContainer, "common/crds.yaml")
+      _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
+      _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
+      leaderFilename   <- prepareManifest("leader.yaml", s"$imageName:latest")
+      _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
+      _                <- applyManifest(kubectlContainer, "kubernetes-scanner.yaml", namespace)
+      _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
+      _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
+      _                <- call(k3sContainer, "Wait leader health ...", "k3s-scanner.k3s.local", "/")
+      _                <- cleanup(k3sContainer, kubectlContainer)
+    } yield ()
+
+    workflow.andThen { case _ => sbtContainer.foreach(_.stop()) }
+  }
+}

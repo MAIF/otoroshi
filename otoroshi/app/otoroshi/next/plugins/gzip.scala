@@ -2,19 +2,11 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginHttpResponse,
-  NgPluginVisibility,
-  NgRequestTransformer,
-  NgStep,
-  NgTransformerResponseContext
-}
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -4,8 +4,8 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
 import java.util.UUID

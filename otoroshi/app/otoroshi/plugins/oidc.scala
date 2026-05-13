@@ -13,7 +13,7 @@ import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.libs.json.*
@@ -248,7 +248,6 @@ class OIDCAccessTokenValidator extends AccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
         }
       }
 
@@ -356,7 +355,6 @@ class OIDCAccessTokenAsApikey extends PreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
         }
       }
 
@@ -658,11 +656,12 @@ case class OIDCThirdPartyApiKeyConfig(
                                         }
                                     }
                                 }) flatMap { apiKey =>
-                                  (quotasEnabled match {
-                                    case true  => apiKey.withinQuotasAndRotation()
-                                    case false => FastFuture.successful(true)
+                                  (if (quotasEnabled) {
+                                    apiKey.withinQuotasAndRotation()
+                                  } else {
+                                    FastFuture.successful((true, None))
                                   }).flatMap {
-                                    case true  =>
+                                    case (true, _)  =>
                                       if (localVerificationOnly) {
                                         f(Some(apiKey)).fright[Result]
                                       } else {
@@ -725,7 +724,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                               }
                                         }
                                       }
-                                    case false =>
+                                    case (false, _) =>
                                       Errors
                                         .craftResponseResult(
                                           "You performed too much requests",

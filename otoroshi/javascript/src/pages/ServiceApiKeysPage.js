@@ -9,9 +9,11 @@ import { Restrictions } from '../components/Restrictions';
 import DesignerSidebar from './RouteDesigner/Sidebar';
 import Loader from '../components/Loader';
 import { firstLetterUppercase, unsecuredCopyToClipboard } from '../util';
-import { DraftEditorContainer } from '../components/Drafts/DraftEditor';
 
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { NgForm } from '../components/nginputs';
+import InfoCollapse from '../components/InfoCollapse';
+import { WizardFrame } from '../components/wizardframe';
 
 const FIELDS_SELECTOR = 'otoroshi-fields-selector';
 
@@ -36,16 +38,13 @@ class ApikeyBearer extends Component {
 
   copy = () => {
     if (this.state.bearer) {
-      console.log('copy');
       try {
         navigator.clipboard.writeText(this.state.bearer);
       } catch (e) {
         console.log(e);
       }
       this.setState({ cname: 'fas fa-check' }, () => {
-        console.log('changed');
         setTimeout(() => {
-          console.log('back');
           this.setState({ cname: 'fas fa-copy' });
         }, 2000);
       });
@@ -54,23 +53,12 @@ class ApikeyBearer extends Component {
 
   update = () => {
     if (!window.location.pathname.endsWith('/add')) {
-      fetch(
-        '/bo/api/proxy/api/apikeys/' +
-          this.props.rawValue.clientId +
-          '/bearer?newSecret=' +
-          this.props.rawValue.clientSecret,
-        {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-          },
-        }
-      )
-        .then((r) => r.json())
-        .then((r) => {
-          this.setState({ bearer: r.bearer_new });
-        });
+      BackOfficeServices.getBearer(
+        this.props.rawValue.clientId,
+        this.props.rawValue.clientSecret
+      ).then((r) => {
+        this.setState({ bearer: r.bearer_new });
+      });
     }
   };
 
@@ -110,31 +98,45 @@ class ApikeyBearer extends Component {
             {this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="hide bearer"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye-slash" />
+                <i className="fas fa-eye-slash" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {!this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                  text: 'var(--text)',
+                }}
                 title="show bearer"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye" />
+                <i className="fas fa-eye" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {navigator.clipboard && window.isSecureContext && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                  text: 'var(--text)',
+                }}
                 title="copy bearer"
                 onClick={this.copy}
               >
-                <i className={this.state.cname} />
+                <i className={this.state.cname} style={{ color: 'var(--text)' }} />
               </span>
             )}
           </div>
@@ -198,31 +200,43 @@ class ApikeySecret extends Component {
             {this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="hide secret"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye-slash" />
+                <i className="fas fa-eye-slash" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {!this.state.show && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="show secret"
                 onClick={this.toggle}
               >
-                <i className="fas fa-eye" />
+                <i className="fas fa-eye" style={{ color: 'var(--text)' }} />
               </span>
             )}
             {navigator.clipboard && window.isSecureContext && (
               <span
                 className="input-group-text"
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: '1px solid var(--input-border)',
+                }}
                 title="copy secret"
                 onClick={this.copy}
               >
-                <i className={this.state.cname} />
+                <i className={this.state.cname} style={{ color: 'var(--text)' }} />
               </span>
             )}
           </div>
@@ -255,9 +269,9 @@ const CurlCommand = ({ label, rawValue, env }) => (
           onChange={(e) => ''}
           type="text"
           className="form-control"
-          value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
+          value={`curl -X GET -H '${env.clientIdHeader || 'Otoroshi-Client-Id'}: ${
             rawValue.clientId
-          }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
+          }' -H '${env.clientSecretHeader || 'Otoroshi-Client-Secret'}: ${
             rawValue.clientSecret
           }' http://xxxxxx --include`}
         />
@@ -286,16 +300,14 @@ const CurlCommandWithBasicAuth = ({ label, rawValue, env }) => (
   <div className="row mb-3">
     <label className="col-sm-2 col-form-label">{label}</label>
     <div className="col-sm-10">
-      {env && (
-        <input
-          onChange={(e) => ''}
-          type="text"
-          className="form-control"
-          value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
-            rawValue.clientId + ':' + rawValue.clientSecret
-          )}' http://xxxxxx --include`}
-        />
-      )}
+      <input
+        onChange={(e) => ''}
+        type="text"
+        className="form-control"
+        value={`curl -X GET -H 'Authorization: Basic ${window.btoa(
+          rawValue.clientId + ':' + rawValue.clientSecret
+        )}' http://xxxxxx --include`}
+      />
     </div>
   </div>
 );
@@ -337,80 +349,434 @@ class ResetQuotas extends Component {
   }
 }
 
-class CopyCredentials extends Component {
-  state = {
-    copyIconName: 'fas fa-copy',
-  };
+// class CopyCredentials extends Component {
+//   state = {
+//     copyIconName: 'fas fa-copy',
+//     showModal: false
+//   };
 
-  copy = (value) => {
+//   copy = (value) => {
+//     if (window.isSecureContext && navigator.clipboard) {
+//       navigator.clipboard.writeText(value);
+//     } else {
+//       unsecuredCopyToClipboard(value);
+//     }
+//     this.setState({
+//       copyIconName: 'fas fa-check',
+//     });
+
+//     setTimeout(() => {
+//       this.setState({
+//         copyIconName: 'fas fa-copy',
+//       });
+//     }, 2000);
+//   };
+//   render() {
+//     const props = this.props;
+
+//     return (
+//       <div className="row mb-3">
+//         <label className="col-sm-2 col-form-label" />
+//         <div className="col-sm-10">
+//           {this.state.showModal && <BearerModal
+//             bearer={this.state.bearer}
+//             onClose={() => this.setState({ showModal: false })}
+//           />}
+//           <input
+//             ref={(r) => (this.clipboard = r)}
+//             style={{ position: 'fixed', left: 0, top: -250 }}
+//             type="text"
+//             value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
+//             alt="copy credentials"
+//           />
+//           <button
+//             type="button"
+//             className="btn btn-success btn-sm"
+//             onClick={() => {
+//               // this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret);
+//               this.setState({ showModal: true })
+//             }}
+//           >
+//             <i className={this.state.copyIconName} /> Copy credentials to clipboard
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+// }
+
+function BearerModal({ bearer, onClose }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
     if (window.isSecureContext && navigator.clipboard) {
-      navigator.clipboard.writeText(value);
+      navigator.clipboard.writeText(bearer);
     } else {
-      unsecuredCopyToClipboard(value);
+      unsecuredCopyToClipboard(bearer);
     }
-    this.setState({
-      copyIconName: 'fas fa-check',
-    });
-
-    setTimeout(() => {
-      this.setState({
-        copyIconName: 'fas fa-copy',
-      });
-    }, 2000);
-  };
-  render() {
-    const props = this.props;
-    return (
-      <div className="row mb-3">
-        <label className="col-sm-2 col-form-label" />
-        <div className="col-sm-10">
-          <input
-            ref={(r) => (this.clipboard = r)}
-            style={{ position: 'fixed', left: 0, top: -250 }}
-            type="text"
-            value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
-            alt="copy credentials"
-          />
-          <button
-            type="button"
-            className="btn btn-success btn-sm"
-            onClick={() => {
-              this.copy(props.rawValue.clientId + ':' + props.rawValue.clientSecret);
-            }}
-          >
-            <i className={this.state.copyIconName} /> Copy credentials to clipboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-}
-
-function CopyFromLineItem({ item }) {
-  const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-
-  const copy = (value) => {
-    if (window.isSecureContext && navigator.clipboard) {
-      navigator.clipboard.writeText(value);
-    } else {
-      unsecuredCopyToClipboard(value);
-    }
-
-    setCopyIconName('fas fa-check');
-
-    setTimeout(() => {
-      setCopyIconName('fas fa-copy');
-    }, 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <button
-      type="button"
-      className="btn btn-success btn-sm"
-      onClick={() => copy(item.clientId + ':' + item.clientSecret)}
-    >
-      <i className={copyIconName} />
-    </button>
+    <WizardFrame
+      title="How to use this Bearer token"
+      cancel={onClose}
+      noOk
+      noCancel={false}
+      cancelLabel="Close"
+      body={() => (
+        <div className="d-flex flex-column gap-3 mt-3 pe-3">
+          <ol className="mb-0 ps-3" style={{ lineHeight: '2rem', textAlign: 'start' }}>
+            <li>
+              Copy the <strong>Bearer token</strong> below
+            </li>
+            <li>
+              Add it as an <strong>Authorization</strong> header in your request
+            </li>
+          </ol>
+          <div
+            className="p-2 rounded"
+            style={{
+              textAlign: 'left',
+              background: 'var(--bg-color_level3)',
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'break-word',
+              fontFamily: 'monospace',
+            }}
+          >
+            <span style={{ color: '#888' }}>curl</span>{' '}
+            <span style={{ color: '#888' }}>https://your-api-host/...</span>{' '}
+            <span style={{ color: '#f9b000' }}>-H</span>{' '}
+            <span style={{ color: '#a3e635' }}>"Authorization: Bearer {bearer}"</span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <input
+              className="form-control form-control-sm"
+              readOnly
+              value={bearer}
+              style={{ fontFamily: 'monospace', fontSize: 12, width: '100%' }}
+            />
+            <button
+              type="button"
+              className={`btn btn-sm ${copied ? 'btn-success' : 'btn-save'}`}
+              style={{ minWidth: 40 }}
+              onClick={handleCopy}
+              title={copied ? 'Copied!' : 'Copy to clipboard'}
+            >
+              <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} />
+            </button>
+          </div>
+          <p className="mb-0" style={{ fontSize: 12, color: '#888' }}>
+            <i className="fas fa-info-circle me-1" />
+            The header name <code>Authorization</code> may have been changed in the ApiKey extractor
+            settings of the Apikeys plugin on the route or API endpoints.
+          </p>
+        </div>
+      )}
+    />
+  );
+}
+
+function CopyFromLineItem({ item, rowDisplay, text }) {
+  const [bearers, setBearers] = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const fetchAndShow = () => {
+    if (bearers[item.clientId]) {
+      setShowModal(true);
+    } else {
+      setLoading(true);
+      BackOfficeServices.getBearer(item.clientId, item.clientSecret)
+        .then((r) => {
+          setBearers((prev) => ({ ...prev, [item.clientId]: r.bearer_new }));
+          setShowModal(true);
+        })
+        .finally(() => setLoading(false));
+    }
+  };
+
+  const component = (
+    <>
+      <button
+        type="button"
+        className="btn btn-success btn-sm"
+        onClick={fetchAndShow}
+        disabled={loading}
+      >
+        {text ? text : <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-key'} />}
+      </button>
+      {showModal && bearers[item.clientId] && (
+        <BearerModal bearer={bearers[item.clientId]} onClose={() => setShowModal(false)} />
+      )}
+    </>
+  );
+
+  if (rowDisplay)
+    return (
+      <div className="row mb-3">
+        <label className="col-xs-12 col-sm-2 col-form-label"></label>
+        <div className="col-sm-10">{component}</div>
+      </div>
+    );
+
+  return component;
+}
+
+function LocalTokensBucketStrategyConfig({ value, onChange }) {
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        capacity: {
+          type: 'number',
+          label: 'Bucket capacity',
+          props: {
+            defaultValue: 300,
+          },
+        },
+        refillRequestIntervalMs: {
+          type: 'number',
+          label: 'Refill request interval (ms)',
+          props: {
+            defaultValue: 50,
+          },
+        },
+        refillRequestedTokens: {
+          type: 'number',
+          label: 'Refill requested tokens',
+          props: {
+            defaultValue: 50,
+          },
+        },
+        example: {
+          renderer: () => {
+            const {
+              capacity = 300,
+              refillRequestIntervalMs = 50,
+              refillRequestedTokens = 50,
+            } = value || {};
+            const refillsPerSecond = 1000 / refillRequestIntervalMs;
+            const tokensPerSecond = refillsPerSecond * refillRequestedTokens;
+            const timeToFillBucket = capacity / tokensPerSecond;
+            return (
+              <div className="row mb-3">
+                <label className="col-xs-12 col-sm-2 col-form-label">Example</label>
+                <div className="col-sm-10">
+                  <p className="m-1">
+                    With these settings, the bucket refills <b>{refillRequestedTokens}</b> tokens
+                    every <b>{refillRequestIntervalMs}ms</b>
+                  </p>
+                  <p className="m-1">
+                    which means <b>{tokensPerSecond.toFixed(2)}</b> requests/second.
+                  </p>
+                  <p className="m-1">
+                    Starting at full capacity, the bucket fills to capacity ({capacity}) in{' '}
+                    <b>{timeToFillBucket.toFixed(2)}s</b>.
+                  </p>
+                </div>
+              </div>
+            );
+          },
+        },
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['daily', 'monthly'],
+        },
+      }}
+    />
+  );
+}
+function LegacyThrottlingStrategyConfig({ value, onChange }) {
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['window', 'daily', 'monthly'],
+        },
+      }}
+    />
+  );
+}
+function DistributedRedisThrottlingStrategyConfig({ value, onChange }) {
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['window', 'daily', 'monthly'],
+        },
+      }}
+    />
+  );
+}
+function LuaDistributedRedisThrottlingStrategyConfig({ value, onChange }) {
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['window', 'daily', 'monthly'],
+        },
+      }}
+    />
+  );
+}
+function FixedWindowStrategyConfig({ value, onChange }) {
+  return (
+    <NgForm
+      value={value}
+      onChange={onChange}
+      schema={{
+        windowDurationMs: {
+          type: 'number',
+          label: 'Window Duration (ms)',
+          help: 'The time span of each fixed window in milliseconds. Requests are counted within each window, and throttling limits are applied per window.',
+        },
+        quota: {
+          type: 'form',
+          collapsable: false,
+          label: 'Allowed Quota',
+          schema: {
+            window: {
+              type: 'number',
+              label: 'Request Quota',
+              help: 'The maximum number of requests allowed within each fixed window. Once this limit is reached, additional requests will be blocked until the next window.',
+            },
+            daily: {
+              type: 'number',
+              label: 'Daily Request Quota',
+              help: 'The maximum number of requests allowed per day. Once this limit is reached, further requests are blocked until the next day.',
+            },
+            monthly: {
+              type: 'number',
+              label: 'Monthly Request Quota',
+              help: 'The maximum number of requests allowed per month. Once this limit is reached, further requests are blocked until the next month.',
+            },
+          },
+          flow: ['window', 'daily', 'monthly'],
+        },
+      }}
+    />
+  );
+}
+
+export function ThrottlingStrategy({ value, onChange }) {
+  const strategies = {
+    LegacyThrottlingStrategyConfig,
+    DistributedRedisThrottlingStrategyConfig,
+    LuaDistributedRedisThrottlingStrategyConfig,
+    LocalTokensBucketStrategyConfig,
+    FixedWindowStrategyConfig,
+  };
+
+  const Component = strategies[value?.id];
+
+  return (
+    <>
+      <NgForm
+        schema={{
+          id: {
+            type: 'select',
+            label: 'Strategy',
+            props: {
+              defaultValue: 'LegacyThrottlingStrategyConfig',
+              options: [
+                { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
+                { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+                { value: 'DistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy' },
+                { value: 'LuaDistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy (using Lua scripts)' },
+                { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
+              ],
+            },
+          },
+        }}
+        value={value}
+        onChange={onChange}
+      />
+
+      {Component && <Component value={value} onChange={onChange} />}
+    </>
   );
 }
 
@@ -535,6 +901,50 @@ class DailyRemainingQuotas extends Component {
   }
 }
 
+function InfoApikeysCollapse() {
+  return (
+    <InfoCollapse title="What is an API Key?">
+      <p>
+        An API Key is the <strong>main entity for API management</strong> in Otoroshi. It is a
+        unique credential — composed of a <strong>client ID</strong> and a{' '}
+        <strong>client secret</strong> — that identifies and authenticates a consumer when calling
+        your protected routes and services.
+      </p>
+      <p>
+        API keys give you fine-grained control over who can access what, how often, and under which
+        conditions. Here are some examples of what you can achieve with them:
+      </p>
+      <ul>
+        <li>
+          <strong>Authenticate consumers</strong> — clients present their credentials via HTTP
+          headers, Basic auth, or even client ID only for simpler use cases.
+        </li>
+        <li>
+          <strong>Enforce quotas and rate limiting</strong> — set throttling (calls per second),
+          daily, and monthly quotas to control usage and prevent abuse.
+        </li>
+        <li>
+          <strong>Restrict access</strong> — limit which routes or services a key can access,
+          restrict by IP address, allowed/forbidden paths, or HTTP methods (e.g. read-only mode).
+        </li>
+        <li>
+          <strong>Manage lifecycle</strong> — enable or disable keys instantly, set expiration
+          dates, and rotate secrets automatically with a configurable grace period.
+        </li>
+        <li>
+          <strong>Track and audit usage</strong> — monitor consumption in real time, track remaining
+          quotas, and identify which consumer is responsible for each call.
+        </li>
+        <li>
+          <strong>Organize with metadata</strong> — tag and annotate keys with custom metadata for
+          easier management across teams and tenants.
+        </li>
+      </ul>
+      <p>Each API key can be scoped to specific routes, services, or groups.</p>
+    </InfoCollapse>
+  );
+}
+
 const ApiKeysConstants = {
   formSchema: (that) => ({
     _loc: {
@@ -548,8 +958,16 @@ const ApiKeysConstants = {
         label: '',
       },
     },
+    throttlingStrategy: {
+      type: ThrottlingStrategy,
+      props: {
+        label: '',
+      },
+    },
     copyCredentials: {
-      type: CopyCredentials,
+      type: (props) => {
+        return <CopyFromLineItem item={props?.rawValue} text="Copy credentials" rowDisplay />;
+      },
       props: {
         label: '',
       },
@@ -598,6 +1016,10 @@ const ApiKeysConstants = {
     curlCommandWithBasicAuth: {
       type: CurlCommandWithBasicAuth,
       props: { label: 'Curl Command with Basic Auth. Header', env: that.props.env },
+    },
+    apikeyBearer: {
+      type: ApikeyBearer,
+      props: { label: 'Curl Command with Apikey header as bearer', env: that.props.env },
     },
     clientName: {
       type: 'string',
@@ -699,8 +1121,8 @@ const ApiKeysConstants = {
       props: {
         label: 'Throttling quota',
         placeholder: 'Authorized calls per window',
-        suffix: 'calls per sec.',
-        help: 'The authorized number of calls per window',
+        suffix: 'calls per window',
+        help: 'The authorized number of calls per window. See the `otoroshi.throttlingWindow` config. or `OTOROSHI_THROTTLING_WINDOW` environment variable.',
       },
     },
     dailyQuota: {
@@ -792,12 +1214,6 @@ const ApiKeysConstants = {
     {
       title: 'Enabled',
       filterId: 'enabled',
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        flexDirection: 'column-reverse',
-        justifyContent: 'flex-start',
-      },
       notFilterable: true,
       content: (item) => item.enabled,
       cell: (v, item, table) => (
@@ -881,7 +1297,9 @@ const ApiKeysConstants = {
     'curlCommand',
     'basicAuth',
     'curlCommandWithBasicAuth',
-    '>>>Quotas',
+    '>>>Throttling strategy',
+    'throttlingStrategy',
+    '>>>Legacy Quotas',
     'throttlingQuota',
     'dailyQuota',
     'monthlyQuota',
@@ -899,6 +1317,7 @@ export class ServiceApiKeysPage extends Component {
   };
 
   onRoutes = window.location.pathname.indexOf('/bo/dashboard/routes') === 0;
+  onApis = window.location.pathname.indexOf('/bo/dashboard/apis') === 0;
 
   sidebarContent(name) {
     if (this.onRoutes) {
@@ -908,6 +1327,8 @@ export class ServiceApiKeysPage extends Component {
           setSidebarContent={this.props.setSidebarContent}
         />
       );
+    } else if (this.onApis) {
+      return null;
     }
     return (
       <ServiceSidebar
@@ -925,13 +1346,17 @@ export class ServiceApiKeysPage extends Component {
   componentDidMount() {
     const fu = this.onRoutes
       ? nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.params.routeId)
-      : nextClient
-          .forEntityNext(nextClient.ENTITIES.SERVICES)
-          .findById(this.props.params.serviceId);
+      : this.onApis
+        ? nextClient.forEntityNext(nextClient.ENTITIES.APIS).findById(this.props.params.apiId)
+        : nextClient
+            .forEntityNext(nextClient.ENTITIES.SERVICES)
+            .findById(this.props.params.serviceId);
+
     fu.then((service) => {
-      this.onRoutes
-        ? this.props.setTitle(this.props.title || `Routes Apikeys`)
-        : this.props.setTitle(`Service Apikeys`);
+      if (this.onRoutes) this.props.setTitle(this.props.title || `HTTP Routes Apikeys`);
+      else if (this.onApis) this.props.setTitle(this.props.title || `APIs Apikeys`);
+      else this.props.setTitle(`Service Apikeys`);
+
       this.setState({ service, loading: false }, () => {
         this.props.setSidebarContent(this.sidebarContent(service.name));
         if (this.table) {
@@ -944,9 +1369,9 @@ export class ServiceApiKeysPage extends Component {
     });
   }
 
-  fetchAllApiKeys = () => {
+  fetchAllApiKeys = (paginationState) => {
     return BackOfficeServices.fetchApiKeysForPage(
-      this.props.params.serviceId || this.props.params.routeId
+      this.props.params.serviceId || this.props.params.routeId || this.props.params.apiId
     );
   };
 
@@ -956,6 +1381,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.createApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -967,6 +1393,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.updateApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -975,6 +1402,7 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.deleteApiKey(
       this.props.params.serviceId,
       this.props.params.routeId,
+      this.props.params.apiId,
       ak
     );
   };
@@ -982,15 +1410,20 @@ export class ServiceApiKeysPage extends Component {
   render() {
     return (
       <Loader loading={this.state.loading}>
+        <InfoApikeysCollapse />
         <Table
           parentProps={this.props}
           selfUrl={
             this.onRoutes
               ? // ? `services/${this.props.params.routeId}/apikeys`
                 `routes/${this.props.params.routeId}/apikeys`
-              : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
+              : this.onApis
+                ? `apis/${this.props.params.apiId}/apikeys`
+                : `lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys`
           }
-          defaultTitle={this.onRoutes ? 'Route Apikeys' : 'Service Apikeys'}
+          defaultTitle={
+            this.onRoutes ? 'Route Apikeys' : this.onApis ? 'APIs Apikeys' : 'Service Apikeys'
+          }
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)
@@ -998,7 +1431,15 @@ export class ServiceApiKeysPage extends Component {
               .then((apk) => ({
                 ...apk,
                 clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
-                authorizedEntities: (this.state.service.groups || []).map((g) => 'group_' + g),
+                authorizedEntities: this.onRoutes
+                  ? [
+                      `route_${this.props.params.routeId}`, // just authorize the route
+                    ]
+                  : this.onApis
+                    ? [
+                        `api_${this.props.params.apiId}`, // just authorize the api
+                      ]
+                    : [...(this.state.service.groups || []).map((g) => 'group_' + g)], // Here we authorize the group by default, can be dangerous],
               }))
           }
           _defaultValue={() => ({
@@ -1013,6 +1454,8 @@ export class ServiceApiKeysPage extends Component {
             authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
           })}
           itemName="ApiKey"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           formSchema={ApiKeysConstants.formSchema(this)}
           formFlow={ApiKeysConstants.formFlow}
           columns={ApiKeysConstants.columns(this)}
@@ -1034,7 +1477,10 @@ export class ServiceApiKeysPage extends Component {
             if (this.onRoutes) {
               this.props.history.push(
                 `/routes/${this.props.params.routeId}/apikeys/edit/${item.clientId}`
-                // `/apikeys/edit/${item.clientId}`
+              );
+            } else if (this.onApis) {
+              this.props.history.push(
+                `/apis/${this.props.params.apiId}/apikeys/edit/${item.clientId}`
               );
             } else {
               this.props.history.push(
@@ -1045,6 +1491,8 @@ export class ServiceApiKeysPage extends Component {
           itemUrl={(i) => {
             if (this.onRoutes) {
               return `/bo/dashboard/routes/${this.props.params.routeId}/apikeys/edit/${i.clientId}`;
+            } else if (this.onApis) {
+              return `/bo/dashboard/apis/${this.props.params.apiId}/apikeys/edit/${i.clientId}`;
             } else {
               return `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`;
             }
@@ -1205,11 +1653,14 @@ export class ApiKeysPage extends Component {
 
     return (
       <Loader loading={this.state.loading}>
+        <InfoApikeysCollapse />
         <Table
           ref={this.ref}
           parentProps={this.props}
           selfUrl={`apikeys`}
           defaultTitle="All apikeys"
+          defaultSort="clientName"
+          defaultSortDesc="true"
           defaultValue={() =>
             nextClient
               .forEntityNext(nextClient.ENTITIES.APIKEYS)

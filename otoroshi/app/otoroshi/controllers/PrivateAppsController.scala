@@ -1,23 +1,24 @@
 package otoroshi.controllers
 
-import otoroshi.actions.{ApiAction, PrivateAppsAction}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
+import org.mindrot.jbcrypt.BCrypt
+import otoroshi.actions.{ApiAction, PrivateAppsAction}
 import otoroshi.auth.{BasicAuthModule, BasicAuthUser}
 import otoroshi.env.Env
+import otoroshi.security.IdGenerator
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.mailer.EmailLocation
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.*
 
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.utils.mailer.EmailLocation
-import play.api.libs.json.Json
-import play.api.mvc._
-import otoroshi.security.IdGenerator
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.crypto.BCryptHelper
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.json.JsValue
 
 class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)(
     implicit env: Env
@@ -90,7 +91,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   }
 
   def registerSessionForUser(authModuleId: String, username: String): Future[(String, String)] = {
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
     val sessionId = IdGenerator.token(32)
     env.datastores.rawDataStore
       .set(
@@ -179,7 +180,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
       withShortSession(req) { case (bam, user, _) =>
         var newUser = user
         (req.body \ "password").asOpt[String] match {
-          case Some(pass) if BCrypt.checkpw(pass, user.password) =>
+          case Some(pass) if BCryptHelper.checkpw(pass, user.password) =>
             val name          = (req.body \ "name").asOpt[String].getOrElse(user.name)
             val newPassword   = (req.body \ "newPassword").asOpt[String]
             val reNewPassword = (req.body \ "reNewPassword").asOpt[String]

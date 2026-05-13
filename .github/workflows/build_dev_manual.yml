@@ -21,13 +21,26 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v2.0.0
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      # - name: Set up JDK 11
+      #   uses: actions/setup-java@v1
+      #   with:
+      #     java-version: 11
+      # - uses: sbt/setup-sbt@v1.1.5
+      # - name: Generate dev documentation website (Paradox)
+      #   run: sh ./scripts/doc.sh buildDev
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
         with:
-          java-version: 11
-      - uses: sbt/setup-sbt@v1.1.5
-      - name: Generate dev documentation website
-        run: sh ./scripts/doc.sh buildDev
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: manual/next/package-lock.json
+      - name: Build Docusaurus documentation
+        run: |
+          cd manual/next
+          npm ci --legacy-peer-deps
+          npm run build-dev
+          rm -rf ../../docs/devmanual
+          cp -r build-dev ../../docs/devmanual
       - name: Commit files
         run: |
           git config --local user.email "otoroshi-github-actions@users.noreply.github.com"

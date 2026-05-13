@@ -137,6 +137,100 @@ function responseToObject(response) {
   }
 }
 
+class OIDCConfigModal extends Component {
+  state = {
+    url: '',
+    trust_all: false,
+    loose: false,
+    trusted_certs: [],
+    client_certs: [],
+  };
+
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <Form
+            value={this.state}
+            onChange={(doc) => this.setState({ ...doc })}
+            flow={['url', 'trust_all', 'loose', 'trusted_certs', 'client_certs']}
+            schema={{
+              url: {
+                type: 'string',
+                props: {
+                  label: 'OIDC config. URL',
+                },
+              },
+              trust_all: {
+                type: 'bool',
+                props: {
+                  label: 'TLS trust all',
+                },
+              },
+              loose: {
+                type: 'bool',
+                props: {
+                  label: 'TLS loose',
+                },
+              },
+              client_certs: {
+                type: 'array',
+                props: {
+                  label: 'Client certificates',
+                  placeholder: 'Choose a client certificate',
+                  valuesFrom: '/bo/api/proxy/api/certificates',
+                  transformer: (a) => ({
+                    value: a.id,
+                    label: (
+                      <span>
+                        <span className="badge bg-success" style={{ minWidth: 63 }}>
+                          {a.certType}
+                        </span>{' '}
+                        {a.name} - {a.description}
+                      </span>
+                    ),
+                  }),
+                },
+              },
+              trusted_certs: {
+                type: 'array',
+                props: {
+                  label: 'Trusted certificates',
+                  placeholder: 'Choose a trusted certificate',
+                  valuesFrom: '/bo/api/proxy/api/certificates',
+                  transformer: (a) => ({
+                    value: a.id,
+                    label: (
+                      <span>
+                        <span className="badge bg-success" style={{ minWidth: 63 }}>
+                          {a.certType}
+                        </span>{' '}
+                        {a.name} - {a.description}
+                      </span>
+                    ),
+                  }),
+                },
+              },
+            }}
+          />
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={(e) => this.props.ok(this.state)}
+          >
+            Fetch
+          </button>
+        </div>
+      </>
+    );
+  }
+}
+
 export class Oauth2ModuleConfig extends Component {
   state = {
     error: null,
@@ -204,30 +298,64 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchConfig = () => {
-    window.newPrompt('URL of the OIDC config').then((url) => {
-      if (url) {
-        return fetch(`/bo/api/oidc/_fetchConfig`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url,
-            id: this.props.value.id,
-            name: this.props.value.name,
-            desc: this.props.value.desc,
-            clientId: this.props.value.clientId,
-            clientSecret: this.props.value.clientSecret,
-          }),
-        })
-          .then((r) => r.json())
-          .then((config) => {
-            this.props.onChange(config);
-          });
-      }
-    });
+    // ici !!!!!
+
+    window
+      .popup(
+        'URL of the OIDC config',
+        (ok, cancel) => <OIDCConfigModal ok={ok} cancel={cancel} />,
+        { additionalClass: 'modal-xl' }
+      )
+      .then((resp) => {
+        if (resp) {
+          console.log(resp);
+          return fetch(`/bo/api/oidc/_fetchConfig`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: this.props.value.id,
+              name: this.props.value.name,
+              desc: this.props.value.desc,
+              clientId: this.props.value.clientId,
+              clientSecret: this.props.value.clientSecret,
+              ...resp,
+            }),
+          })
+            .then((r) => r.json())
+            .then((config) => {
+              this.props.onChange(config);
+            });
+        }
+      });
+
+    // window.newPrompt('URL of the OIDC config').then((url) => {
+    //   if (url) {
+    //     return fetch(`/bo/api/oidc/_fetchConfig`, {
+    //       method: 'POST',
+    //       credentials: 'include',
+    //       headers: {
+    //         Accept: 'application/json',
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({
+    //         url,
+    //         id: this.props.value.id,
+    //         name: this.props.value.name,
+    //         desc: this.props.value.desc,
+    //         clientId: this.props.value.clientId,
+    //         clientSecret: this.props.value.clientSecret,
+    //       }),
+    //     })
+    //       .then((r) => r.json())
+    //       .then((config) => {
+    //         this.props.onChange(config);
+    //       });
+    //   }
+    // });
   };
 
   fetchKeycloakConfig = () => {
@@ -1263,6 +1391,108 @@ export class WasmAuthModuleConfig extends Component {
   }
 }
 
+export class WorkflowAuthModuleConfig extends Component {
+  state = {
+    error: null,
+    showRaw: false,
+  };
+
+  componentDidCatch(error) {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    console.log('WorkflowAuthModuleConfig did catch', error, path, settings);
+    this.setState({ error });
+  }
+
+  changeTheValue = (name, value) => {
+    console.log('changing', name, value);
+    if (this.props.onChange) {
+      const clone = cloneDeep(this.props.value || this.props.settings);
+      const path = name.startsWith('.') ? name.substr(1) : name;
+      const newObj = deepSet(clone, path, value);
+      this.props.onChange(newObj);
+    } else {
+      this.props.changeTheValue(name, value);
+    }
+  };
+
+  render() {
+    const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
+    const changeTheValue = this.changeTheValue;
+    if (this.state.error) {
+      return <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>;
+    }
+    return (
+      <div>
+        <TextInput
+          label="Id"
+          value={settings.id}
+          disabled
+          help="..."
+          onChange={(v) => changeTheValue(path + '.id', v)}
+        />
+        <TextInput
+          label="Name"
+          value={settings.name}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.name', v)}
+        />
+        <TextInput
+          label="Description"
+          value={settings.description}
+          help="..."
+          onChange={(v) => changeTheValue(path + '.description', v)}
+        />
+        <SelectInput
+          label="Workflow"
+          valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
+          transformer={(i) => ({ label: i.name, value: i.id })}
+          value={settings.workflowRef}
+          onChange={(v) => changeTheValue(path + '.workflowRef', v)}
+        />
+        <BooleanInput
+          label="Client side session"
+          value={settings.clientSideSessionEnabled}
+          help="When using cluster mode, client side session will improve user experience with auth. modules. It allow to be logged in on a worker that has not been sync with leader yet."
+          onChange={(v) => changeTheValue(path + '.clientSideSessionEnabled', v)}
+        />
+        <ArrayInput
+          label="Allowed users"
+          value={settings.allowedUsers}
+          onChange={(v) => changeTheValue(path + '.allowedUsers', v)}
+        />
+        <ArrayInput
+          label="Denied users"
+          value={settings.deniedUsers}
+          onChange={(v) => changeTheValue(path + '.deniedUsers', v)}
+        />
+        <ArrayInput
+          label="User validators"
+          component={UserValidator}
+          value={settings.userValidators}
+          onChange={(v) => changeTheValue(path + '.userValidators', v)}
+          defaultValue={{
+            path: '$.profile.admin',
+            value: true,
+          }}
+        />
+        <ArrayInput
+          label="Remote validators"
+          component={RemoteValidator}
+          value={settings.remoteValidators}
+          onChange={(v) => changeTheValue(path + '.remoteValidators', v)}
+          defaultValue={{
+            url: 'https://validator.oto.tools:3005/user_validation',
+            headers: {},
+            timeout: 3000,
+          }}
+        />
+      </div>
+    );
+  }
+}
+
 export class LdapModuleConfig extends Component {
   state = {
     error: null,
@@ -1919,10 +2149,10 @@ export class AuthModuleConfig extends Component {
     //   return <h3>Unknown config type ...</h3>;
     // }
 
-    console.log(this.props.value);
+    // console.log(this.props.value);
 
     return (
-      <div>
+      <div style={{ maxWidth: 1000 }}>
         <Collapse initCollapsed={false} label="Location" lineEnd={true}>
           <Location
             tenant={settings._loc.tenant || 'default'}
@@ -1951,9 +2181,10 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
         {settings.type === 'oauth1' && <OAuth1ModuleConfig {...this.props} />}
         {settings.type === 'wasm' && <WasmAuthModuleConfig {...this.props} />}
-        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm'].includes(settings.type) && (
-          <CustomModuleConfig {...this.props} />
-        )}
+        {settings.type === 'workflow' && <WorkflowAuthModuleConfig {...this.props} />}
+        {!['oauth2', 'basic', 'ldap', 'saml', 'oauth1', 'wasm', 'workflow'].includes(
+          settings.type
+        ) && <CustomModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"

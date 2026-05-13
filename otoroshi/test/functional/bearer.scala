@@ -1,7 +1,6 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import functional.Implicits.BetterFuture
 import play.api.Configuration
 import play.api.libs.json.JsObject
 
@@ -12,7 +11,10 @@ class ApikeyBearerSpec extends OtoroshiSpec {
       startOtoroshi()
     }
     "be able to be used as opaque tokens" in {
-      val apikey         = otoroshiComponents.env.proxyState.apikey(otoroshiComponents.env.backOfficeApiKeyClientId).get
+      otoroshiComponents.env.proxyState.sync().futureValue
+      val apikey         = otoroshiComponents.env.proxyState.apikey(otoroshiComponents.env.backOfficeApiKeyClientId).getOrElse {
+        throw new RuntimeException(s"BackOffice apikey ${otoroshiComponents.env.backOfficeApiKeyClientId} not found in proxyState")
+      }
       val bearer         = apikey.toBearer()
       val (body, status) = wsClient
         .url(s"http://127.0.0.1:$port/apis/apim.otoroshi.io/v1/apikeys")
@@ -26,7 +28,7 @@ class ApikeyBearerSpec extends OtoroshiSpec {
         .map { response =>
           (response.json, response.status)
         }
-        .await()
+        .futureValue
       status mustBe 200
       body.as[Seq[JsObject]].size mustBe 2
     }

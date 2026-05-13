@@ -1,24 +1,25 @@
 package otoroshi.controllers
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
-import otoroshi.auth._
-import otoroshi.auth.implicits._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
+import otoroshi.auth.*
+import otoroshi.auth.implicits.given
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.Errors
-import otoroshi.models.{BackOfficeUser, CorsSettings, GlobalConfig, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
+import otoroshi.models.*
+import otoroshi.next.models.{NgPluginInstance, NgRoute}
+import otoroshi.next.plugins.{AuthModule, MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -26,9 +27,10 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
+import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.given
+import scala.reflect.ClassTag
 
 object AuthController {
   val logger: Logger = Logger("otoroshi-auth-controller")
@@ -98,7 +100,12 @@ class AuthController(
     }
   }
 
-  def withMultiAuthConfig(route: NgRoute, req: RequestHeader, refFromRelayState: Option[String] = None)(
+  def withMultiAuthConfig(
+      route: NgRoute,
+      req: RequestHeader,
+      refFromRelayState: Option[String] = None,
+      refFromState: Option[String] = None
+  )(
       f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
     lazy val error = Errors.craftResponseResult(
@@ -107,25 +114,20 @@ class AuthController(
       req,
       None,
       Some("errors.multi.auth.config.ref.not.found"),
-      maybeRoute = Some(route),
+      maybeRoute = route.some,
       attrs = TypedMap.empty
     )
 
     route.plugins.getPluginByClass[MultiAuthModule] match {
       case None             => error
       case Some(authPlugin) =>
-        (req.getQueryString("ref"), refFromRelayState) match {
-          case (Some(ref), _) =>
+        req.getQueryString("ref") orElse refFromRelayState orElse refFromState match {
+          case Some(ref) =>
             env.proxyState.authModuleAsync(ref).flatMap {
               case None       => error
               case Some(auth) => f(auth)
             }
-          case (_, Some(ref)) =>
-            env.proxyState.authModuleAsync(ref).flatMap {
-              case None       => error
-              case Some(auth) => f(auth)
-            }
-          case (_, _)         =>
+          case None      =>
             req.getQueryString("email") match {
               case None        => error
               case Some(email) =>
@@ -211,22 +213,22 @@ class AuthController(
       }
     }
 
-  def confidentialAppSimpleLoginPage(): Action[AnyContent] =
-    multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String]) => {
+  def confidentialAppSimpleLoginPage() =
+    multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String], hash: Option[String]) => {
       Results
-        .Ok(otoroshi.views.html.privateapps.simplelogin(env, redirect, route.id))
+        .Ok(otoroshi.views.html.privateapps.simplelogin(env, redirect, route.id, hash))
         .vfuture
     })
 
-  def confidentialAppMultiLoginPage(): Action[AnyContent] =
-    multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String]) => {
+  def confidentialAppMultiLoginPage() =
+    multiLoginPage()((auths: JsObject, route: NgRoute, redirect: Option[String], hash: Option[String]) => {
       Results
-        .Ok(otoroshi.views.html.privateapps.multilogin(env, Json.stringify(auths), redirect, route.id))
+        .Ok(otoroshi.views.html.privateapps.multilogin(env, Json.stringify(auths), redirect, route.id, hash))
         .vfuture
     })
 
-  private def multiLoginPage()(f: (JsObject, NgRoute, Option[String]) => Future[Result]) = PrivateAppsAction.async {
-    ctx =>
+  private def multiLoginPage()(f: (JsObject, NgRoute, Option[String], Option[String]) => Future[Result]) =
+    PrivateAppsAction.async { ctx =>
       ctx.request.getQueryString("route") match {
         case None          => NotFound(otoroshi.views.html.oto.error("Route not found", env)).vfuture
         case Some(routeId) =>
@@ -253,12 +255,19 @@ class AuthController(
                       val redirect = ctx.request
                         .getQueryString("redirect")
                         .filter(redirect =>
-                          ctx.request.getQueryString("hash").contains(env.sign(s"desc=$routeId&redirect=$redirect"))
+                          ctx.request
+                            .getQueryString("hash")
+                            .contains(env.sign(s"desc=${routeId}&redirect=${redirect}")) ||
+                          ctx.request
+                            .getQueryString("hash")
+                            .contains(
+                              env.sign(s"route=${routeId}&redirect=${redirect}")
+                            ) // TODO - check desc= || route=
                         )
                         .map(redirectBase64Encoded =>
                           new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
                         )
-                      f(auths, route, redirect)
+                      f(auths, route, redirect, ctx.request.getQueryString("hash"))
                     case JsError(errors)      =>
                       logger.error(s"Failed to parse multi auth configuration, $errors")
                       NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
@@ -269,11 +278,11 @@ class AuthController(
             case _ => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           }
       }
-  }
+    }
 
   def confidentialAppLoginPage(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.given
       given req: Request[AnyContent] = ctx.request
 
       (req.getQueryString("desc"), req.getQueryString("route")) match {
@@ -285,232 +294,259 @@ class AuthController(
               NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
             case Some(route) if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id =>
               withMultiAuthConfig(route, req) { auth =>
-                val expectedCookieName = s"oto-papps-${auth.routeCookieSuffix(route)}"
-                req.cookies.find(c => c.name == expectedCookieName) match {
-                  case Some(cookie) =>
-                    env.extractPrivateSessionId(cookie) match {
-                      case None            =>
-                        auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, route.legacy, true)
-                      case Some(sessionId) =>
-                        env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
-                          case None       =>
-                            auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, route.legacy, true)
-                          case Some(user) =>
-                            val sec    = computeSec(user)
-                            val secStr = if (auth.clientSideSessionEnabled) s"&sec=$sec" else ""
-                            req
-                              .getQueryString("redirect")
-                              .filter(redirect =>
-                                req.getQueryString("hash").contains(env.sign(s"desc=${route.id}&redirect=$redirect"))
-                              )
-                              .map(redirectBase64Encoded =>
-                                new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
-                              )
-                              .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
-                              case "urn:ietf:wg:oauth:2.0:oob" =>
-                                val redirection =
-                                  s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                                    .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}$secStr"
-                                val hash        = env.sign(redirection)
-                                if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                  otoroshi.controllers.AuthController.logger.debug(
-                                    s"[session ${user.randomId}] redirection to '$redirection' with hash '$hash'"
-                                  )
-                                }
-                                FastFuture.successful(
-                                  Redirect(s"$redirection&hash=$hash")
-                                    .removingFromPrivateAppSession(
-                                      s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
-                                      "desc"
-                                    )
-                                    .withCookies(
-                                      env.createPrivateSessionCookies(
-                                        req.theHost,
-                                        user.randomId,
-                                        route.legacy,
-                                        auth,
-                                        user.some
-                                      )*
-                                    )
-                                )
-                              case redirectTo                  =>
-                                // TODO - check if ref is needed
-                                val encodedRedirectTo =
-                                  Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
-                                val url               =
-                                  java.net.URI
-                                    .create(
-                                      redirectTo
-                                    )
-                                    .toURL //s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
-                                val host               = url.getHost
-                                val scheme             = url.getProtocol
-                                val setCookiesRedirect = url.getPort match {
-                                  case -1   =>
-                                    val redirection =
-                                      s"$scheme://$host/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
-                                        .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}$secStr"
-                                    val hash        = env.sign(redirection)
-                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(
-                                        s"[session ${user.randomId}] redirection to '$redirection' with hash '$hash'"
-                                      )
-                                    }
-                                    s"$redirection&hash=$hash"
-                                  case port =>
-                                    val redirection =
-                                      s"$scheme://$host:$port/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
-                                        .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}$secStr"
-                                    val hash        = env.sign(redirection)
-                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(
-                                        s"[session ${user.randomId}] redirection to '$redirection' with hash '$hash'"
-                                      )
-                                    }
-                                    s"$redirection&hash=$hash"
-                                }
-                                FastFuture.successful(
-                                  Redirect(setCookiesRedirect)
-                                    .removingFromPrivateAppSession(
-                                      s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
-                                      "desc"
-                                    )
-                                    .withCookies(
-                                      env.createPrivateSessionCookies(
-                                        host,
-                                        user.randomId,
-                                        route.legacy,
-                                        auth,
-                                        user.some
-                                      )*
-                                    )
-                                )
-                            }
-                        }
-                    }
-                  case None         =>
-                    auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, route.legacy, true)
-                }
+                multiAuthCallback(auth, route, ctx)
               }
             case _                                                                                                  => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           }
         case (Some(serviceId), _) =>
           env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
-            case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
-            case Some(descriptor) if !descriptor.privateApp                                                =>
+            case None                                       => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
+            case Some(descriptor) if !descriptor.privateApp =>
               NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
-            case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id =>
-              withAuthConfig(descriptor, req) { auth =>
-                val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
-                req.cookies.find(c => c.name == expectedCookieName) match {
-                  case Some(cookie) =>
-                    env.extractPrivateSessionId(cookie) match {
-                      case None            =>
-                        auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
-                      case Some(sessionId) =>
-                        env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
-                          case None       =>
-                            auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
-                          case Some(user) =>
-                            val sec    = computeSec(user)
-                            val secStr = if (auth.clientSideSessionEnabled) s"&sec=$sec" else ""
-                            req
-                              .getQueryString("redirect")
-                              .filter(redirect =>
-                                req.getQueryString("hash").contains(env.sign(s"desc=$serviceId&redirect=$redirect"))
-                              )
-                              .map(redirectBase64Encoded =>
-                                new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
-                              )
-                              .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
-                              case "urn:ietf:wg:oauth:2.0:oob" =>
-                                val redirection =
-                                  s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}$secStr"
-                                val hash        = env.sign(redirection)
-                                if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                  otoroshi.controllers.AuthController.logger.debug(
-                                    s"[session ${user.randomId}] redirection to '$redirection' with hash '$hash'"
-                                  )
-                                }
-                                FastFuture.successful(
-                                  Redirect(s"$redirection&hash=$hash")
-                                    .removingFromPrivateAppSession(
-                                      s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
-                                      "desc"
-                                    )
-                                    .withCookies(
-                                      env.createPrivateSessionCookies(
-                                        req.theHost,
-                                        user.randomId,
-                                        descriptor,
-                                        auth,
-                                        user.some
-                                      )*
-                                    )
-                                )
-                              case redirectTo                  =>
-                                val encodedRedirectTo =
-                                  Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
-                                val url               =
-                                  java.net.URI
-                                    .create(
-                                      redirectTo
-                                    )
-                                    .toURL // new java.net.URL(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
-                                val host               = url.getHost
-                                val scheme             = url.getProtocol
-                                val setCookiesRedirect = url.getPort match {
-                                  case -1   =>
-                                    val redirection =
-                                      s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
-                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}$secStr"
-                                    val hash        = env.sign(redirection)
-                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(
-                                        s"[session ${user.randomId}] redirection to '$redirection' with hash '$hash'"
-                                      )
-                                    }
-                                    s"$redirection&hash=$hash"
-                                  case port =>
-                                    val redirection =
-                                      s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
-                                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}$secStr"
-                                    val hash        = env.sign(redirection)
-                                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
-                                      otoroshi.controllers.AuthController.logger.debug(
-                                        s"[session ${user.randomId}] redirection to '$redirection' with hash '$hash'"
-                                      )
-                                    }
-                                    s"$redirection&hash=$hash"
-                                }
-                                FastFuture.successful(
-                                  Redirect(setCookiesRedirect)
-                                    .removingFromPrivateAppSession(
-                                      s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
-                                      "desc"
-                                    )
-                                    .withCookies(
-                                      env.createPrivateSessionCookies(
-                                        host,
-                                        user.randomId,
-                                        descriptor,
-                                        auth,
-                                        user.some
-                                      )*
-                                    )
-                                )
-                            }
-                        }
-                    }
-                  case None         =>
-                    auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
+            case Some(descriptor)                           =>
+              env.datastores.routeDataStore
+                .findById(descriptor.id)
+                .map {
+                  case None        => env.proxyState.route(descriptor.id)
+                  case Some(route) => Some(route)
                 }
-              }
-            case _                                                                                         => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+                .flatMap {
+                  case None if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id                 =>
+                    withAuthConfig(descriptor, req) { auth => authCallback(auth, descriptor, ctx) }
+                  case Some(route) if route.plugins.hasPlugin[AuthModule] && route.id != env.backOfficeDescriptor.id =>
+                    withAuthConfig(descriptor, req) { auth => authCallback(auth, descriptor, ctx) }
+                  case Some(route)
+                      if route.plugins.hasPlugin[MultiAuthModule] && route.id != env.backOfficeDescriptor.id =>
+                    withMultiAuthConfig(route, req) { auth => multiAuthCallback(auth, route, ctx) }
+                  case _                                                                                             => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+                }
+          }
+        }
+      }
+
+  private def authCallback(
+      auth: AuthModuleConfig,
+      descriptor: ServiceDescriptor,
+      ctx: PrivateAppsActionContext[AnyContent]
+  )(using req: Request[AnyContent]) = {
+    val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
+    req.cookies.find(c => c.name == expectedCookieName) match {
+      case Some(cookie) => {
+        env.extractPrivateSessionId(cookie) match {
+          case None            =>
+            auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
+          case Some(sessionId) => {
+            env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
+              case None       =>
+                auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
+              case Some(user) =>
+                val sec    = computeSec(user)
+                val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
+                req
+                  .getQueryString("redirect")
+                  .filter(redirect =>
+                    req.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+                    req.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
+                  )
+                  .map(redirectBase64Encoded =>
+                    new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+                  )
+                  .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
+                  case "urn:ietf:wg:oauth:2.0:oob" => {
+                    val redirection =
+                      s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
+                        .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                    val hash        = env.sign(redirection)
+                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                      otoroshi.controllers.AuthController.logger.debug(
+                        s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                      )
+                    }
+                    FastFuture.successful(
+                      Redirect(s"$redirection&hash=$hash")
+                        .removingFromPrivateAppSession(
+                          s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
+                          "desc"
+                        )
+                        .withCookies(
+                          env.createPrivateSessionCookies(
+                            req.theHost,
+                            user.randomId,
+                            descriptor,
+                            auth,
+                            user.some
+                          )*
+                        )
+                    )
+                  }
+                  case redirectTo                  =>
+                    val encodedRedirectTo =
+                      Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
+                    val url               = new java.net.URI(redirectTo).toURL
+                    val host               = url.getHost
+                    val scheme             = url.getProtocol
+                    val setCookiesRedirect = url.getPort match {
+                      case -1   =>
+                        val redirection =
+                          s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                        val hash        = env.sign(redirection)
+                        if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                          otoroshi.controllers.AuthController.logger.debug(
+                            s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                          )
+                        }
+                        s"$redirection&hash=$hash"
+                      case port =>
+                        val redirection =
+                          s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
+                            .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                        val hash        = env.sign(redirection)
+                        if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                          otoroshi.controllers.AuthController.logger.debug(
+                            s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                          )
+                        }
+                        s"$redirection&hash=$hash"
+                    }
+                    FastFuture.successful(
+                      Redirect(setCookiesRedirect)
+                        .removingFromPrivateAppSession(
+                          s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
+                          "desc"
+                        )
+                        .withCookies(
+                          env.createPrivateSessionCookies(
+                            host,
+                            user.randomId,
+                            descriptor,
+                            auth,
+                            user.some
+                          )*
+                        )
+                    )
+                  }
+                }
+            }
           }
       }
+      case None         =>
+        auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, descriptor, false)
     }
+  }
+
+  private def multiAuthCallback(auth: AuthModuleConfig, route: NgRoute, ctx: PrivateAppsActionContext[AnyContent])(
+      using req: Request[AnyContent]
+  ) = {
+    val legacy             = route.legacy
+    val expectedCookieName = s"oto-papps-${auth.routeCookieSuffix(route)}"
+    req.cookies.find(c => c.name == expectedCookieName) match {
+      case Some(cookie) => {
+        env.extractPrivateSessionId(cookie) match {
+          case None            =>
+            auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, legacy, true)
+          case Some(sessionId) =>
+            env.datastores.privateAppsUserDataStore.findById(sessionId).flatMap {
+              case None       =>
+                auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, legacy, true)
+              case Some(user) =>
+                val sec    = computeSec(user)
+                val secStr = if (auth.clientSideSessionEnabled) s"&sec=${sec}" else ""
+                req
+                  .getQueryString("redirect")
+                  .filter(redirect =>
+                    req.getQueryString("hash").contains(env.sign(s"desc=${route.id}&redirect=${redirect}")) ||
+                    req
+                      .getQueryString("hash")
+                      .contains(env.sign(s"route=${route.id}&redirect=${redirect}")) // TODO - check desc= || route=
+                  )
+                  .map(redirectBase64Encoded =>
+                    new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
+                  )
+                  .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
+                  case "urn:ietf:wg:oauth:2.0:oob" => {
+                    val redirection =
+                      s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
+                        .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                    val hash        = env.sign(redirection)
+                    if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                      otoroshi.controllers.AuthController.logger.debug(
+                        s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                      )
+                    }
+                    FastFuture.successful(
+                      Redirect(s"$redirection&hash=$hash")
+                        .removingFromPrivateAppSession(
+                          s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
+                          "desc"
+                        )
+                        .withCookies(
+                          env.createPrivateSessionCookies(
+                            req.theHost,
+                            user.randomId,
+                            legacy,
+                            auth,
+                            user.some
+                          )*
+                        )
+                    )
+                  }
+                  case redirectTo                  => {
+                    // TODO - check if ref is needed
+                    val encodedRedirectTo =
+                      Base64.getUrlEncoder.encodeToString(redirectTo.getBytes(StandardCharsets.UTF_8))
+                    val url                = new java.net.URI(redirectTo).toURL
+                    val host               = url.getHost
+                    val scheme             = url.getProtocol
+                    val setCookiesRedirect = url.getPort match {
+                      case -1   =>
+                        val redirection =
+                          s"$scheme://$host/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
+                            .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                        val hash        = env.sign(redirection)
+                        if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                          otoroshi.controllers.AuthController.logger.debug(
+                            s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                          )
+                        }
+                        s"$redirection&hash=$hash"
+                      case port =>
+                        val redirection =
+                          s"$scheme://$host:$port/.well-known/otoroshi/login?route=true&sessionId=${user.randomId}&redirectTo=$encodedRedirectTo&host=$host&cp=${auth
+                            .routeCookieSuffix(route)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}${secStr}"
+                        val hash        = env.sign(redirection)
+                        if (otoroshi.controllers.AuthController.logger.isDebugEnabled) {
+                          otoroshi.controllers.AuthController.logger.debug(
+                            s"[session ${user.randomId}] redirection to '${redirection}' with hash '${hash}'"
+                          )
+                        }
+                        s"$redirection&hash=$hash"
+                    }
+                    FastFuture.successful(
+                      Redirect(setCookiesRedirect)
+                        .removingFromPrivateAppSession(
+                          s"pa-redirect-after-login-${auth.routeCookieSuffix(route)}",
+                          "desc"
+                        )
+                        .withCookies(
+                          env.createPrivateSessionCookies(
+                            host,
+                            user.randomId,
+                            legacy,
+                            auth,
+                            user.some
+                          )*
+                        )
+                    )
+                  }
+                }
+            }
+        }
+      }
+      case None         =>
+        auth.authModule(ctx.globalConfig).paLoginPage(req, ctx.globalConfig, legacy, true)
+    }
+  }
 
   def confidentialAppLogout(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
@@ -537,7 +573,7 @@ class AuthController(
 
   def confidentialAppCallback(): Action[AnyContent] =
     PrivateAppsAction.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.given
 
       given req: Request[AnyContent] = ctx.request
 
@@ -697,7 +733,7 @@ class AuthController(
         case None       =>
       }
 
-      def processService(serviceId: String) = {
+      def processService(serviceId: String, refFromState: Option[String] = None) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to service descriptor : $serviceId")
         env.datastores.serviceDescriptorDataStore.findOrRouteById(serviceId).flatMap {
           case None                                                                                      => NotFound(otoroshi.views.html.oto.error("Service not found", env)).vfuture
@@ -751,7 +787,7 @@ class AuthController(
         }
       }
 
-      def processRoute(routeId: String) = {
+      def processRoute(routeId: String, refFromState: Option[String] = None) = {
         if (logger.isDebugEnabled) logger.debug(s"redirect to route : $routeId")
 
         env.proxyState.route(routeId).vfuture.flatMap {
@@ -874,11 +910,12 @@ class AuthController(
         case (_, Some(state))                 =>
           if (logger.isDebugEnabled) logger.debug(s"Received state : $state")
           val unsignedState = decryptState(ctx.request.requestHeader)
+          val refFromState  = unsignedState.selectAsOptString("ref")
           (unsignedState \ "descriptor").asOpt[String] match {
             case Some(route) if isRoute    =>
-              processRoute(route).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+              processRoute(route, refFromState).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
             case Some(service) if !isRoute =>
-              processService(service).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
+              processService(service, refFromState).map(_.removingFromPrivateAppSession("desc", "ref", "route"))
             case _                         =>
               NotFound(otoroshi.views.html.oto.error(s"${if (isRoute) "Route" else "service"} not found", env)).vfuture
           }
@@ -933,7 +970,7 @@ class AuthController(
 
   def backOfficeLogout(): Action[AnyContent] =
     BackOfficeActionAuth.async { ctx =>
-      import otoroshi.utils.http.RequestImplicits._
+      import otoroshi.utils.http.RequestImplicits.given
       given request: Request[AnyContent] = ctx.request
       val redirect                              = request.getQueryString("redirect")
       if (ctx.user.simpleLogin) {

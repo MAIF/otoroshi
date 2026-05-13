@@ -13,7 +13,7 @@
   border-bottom-color: transparent;
   border-top-left-radius: 3px;
   border-top-right-radius: 3px;
-  color: #fff;
+  color: var(--text);
 }
 
 .panel-body {
@@ -22,6 +22,13 @@
 .panel,
 .panel-heading {
   background-color: var(--bg-color_level1);
+  h4 {
+    color: var(--text);
+  }
+}
+
+.panel-primary > .panel-heading {
+  color: #fff;
   h4 {
     color: #fff;
   }

@@ -239,7 +239,7 @@ export default function ({ route }) {
               control: (baseStyles, _) => {
                 return {
                   ...baseStyles,
-                  border: '1px solid var(--bg-color_level3)',
+                  border: '1px solid var(--border-color)',
                   color: 'var(--text)',
                   backgroundColor: 'var(--bg-color_level2)',
                   boxShadow: 'none',
@@ -254,7 +254,7 @@ export default function ({ route }) {
           className="form-control"
           style={{
             borderRadius: 0,
-            border: '1px solid var(--bg-color_level3)',
+            border: '1px solid var(--border-color)',
             borderRight: 0,
             borderLeft: 0,
           }}
@@ -302,8 +302,8 @@ export default function ({ route }) {
                   style={{
                     padding: 0,
                     border: 'none',
-                    borderRight: i === 1 || i === 2 ? '1px solid var(--bg-color_level3)' : 0,
-                    borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                    borderRight: i === 1 || i === 2 ? '1px solid var(--border-color)' : 0,
+                    borderLeft: i === 1 ? '1px solid var(--border-color)' : 0,
                     boxShadow:
                       headersStatus === 'up'
                         ? 'none'
@@ -619,8 +619,8 @@ export default function ({ route }) {
                   style={{
                     padding: 0,
                     border: 'none',
-                    borderRight: i === 1 || i === 2 ? '1px solid var(--bg-color_level3)' : 0,
-                    borderLeft: i === 1 ? '1px solid var(--bg-color_level3)' : 0,
+                    borderRight: i === 1 || i === 2 ? '1px solid var(--border-color)' : 0,
+                    borderLeft: i === 1 ? '1px solid var(--border-color)' : 0,
                     boxShadow:
                       selectedResponseTab === label && i !== 1
                         ? '0 1px 0 0 var(--bg-color_level1)'

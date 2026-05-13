@@ -1,9 +1,22 @@
 package otoroshi.utils.reactive
 
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.reactivestreams.Publisher
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+
+object ReactiveStreamImplicits {
+  implicit class MonoOps[T](val mono: reactor.core.publisher.Mono[T]) extends AnyVal {
+    def toScala: Future[T] = ReactiveStreamUtils.MonoUtils.toFuture(mono)
+  }
+  implicit class FluxOps[T](val flux: reactor.core.publisher.Flux[T]) extends AnyVal {
+    def toScala(implicit mat: Materializer): Future[Seq[T]] = {
+      Source.fromPublisher(flux).runWith(Sink.seq)
+    }
+  }
+}
 
 object ReactiveStreamUtils {
   object MonoUtils {
@@ -31,7 +44,7 @@ object ReactiveStreamUtils {
 
   }
   object FluxUtils {
-    import reactor.core.publisher._
+    import reactor.core.publisher.*
     def fromFPublisher[A](future: => Future[Publisher[A]])(using ec: ExecutionContext): Flux[A] = {
       Mono
         .create[Publisher[A]] { sink =>

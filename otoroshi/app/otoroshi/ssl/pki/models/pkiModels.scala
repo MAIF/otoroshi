@@ -3,16 +3,14 @@ package otoroshi.ssl.pki.models
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
-import play.api.libs.json.{Format, JsError, JsNull, JsResult, JsString, JsSuccess, JsValue, Json}
+import otoroshi.ssl.SSLImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
-import java.security.{KeyPair, PrivateKey, PublicKey}
 import java.security.cert.X509Certificate
-import scala.concurrent.duration.FiniteDuration
+import java.security.{KeyPair, PrivateKey, PublicKey}
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success, Try}
-
-import otoroshi.ssl.SSLImplicits._
-import scala.concurrent.duration._
-import otoroshi.utils.syntax.implicits._
 
 case class GenKeyPairQuery(algo: String = "rsa", size: Int = 2048) {
   def json: JsValue = GenKeyPairQuery.format.writes(this)

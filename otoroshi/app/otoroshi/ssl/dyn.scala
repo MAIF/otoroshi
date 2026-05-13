@@ -1,14 +1,14 @@
 package otoroshi.ssl
 
+import com.typesafe.config.Config
+import com.typesafe.sslconfig.ssl.*
+import com.typesafe.sslconfig.util.{LoggerFactory, NoDepsLogger}
+import play.api.Logger
+
 import java.security.{Provider, SecureRandom}
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
-
-import com.typesafe.config.Config
-import com.typesafe.sslconfig.ssl._
-import com.typesafe.sslconfig.util.{LoggerFactory, NoDepsLogger}
-import javax.net.ssl._
-import play.api.Logger
+import javax.net.ssl.*
 
 case class ConfigAndHash(config: Config, hash: String)
 case class SSLConfigAndHash(config: SSLConfigSettings, hash: String)

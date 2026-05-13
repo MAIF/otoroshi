@@ -360,7 +360,7 @@ export class ServiceEventsPage extends Component {
           role="alert"
           style={{
             background: 'var(--bg-color_level2)',
-            borderColor: 'var(--bg-color_level2)',
+            borderColor: 'var(--border-color)',
           }}
         >
           <p style={{ color: 'var(--text)' }}>{this.state.error}</p>

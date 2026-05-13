@@ -1,13 +1,13 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.http.scaladsl.model.MediaTypes
-import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.{Materializer, StreamLimitReachedException}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -80,23 +80,40 @@ class EchoBackend extends NgBackendCall {
       "cookies"  -> cookies
     )
     if (ctx.request.hasBody) {
-      ctx.request.body.limit(config.limit).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val body: JsValue = ctx.request.typedContentType match {
-          case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` =>
-            bodyRaw.utf8String.json
-          case Some(ctype) if ctype.mediaType == MediaTypes.`application/json`                  =>
-            Try(Json.parse(bodyRaw.utf8String)) match {
-              case Success(value) => value
-              case Failure(_)     => JsString(bodyRaw.utf8String)
-            }
-          case Some(ctype) if ctype.mediaType.isText                                            => JsString(bodyRaw.utf8String)
-          case _                                                                                => JsString(bodyRaw.encodeBase64.utf8String)
+      val limited = ctx.request.body.limitWeighted(config.limit)(_.size)
+      limited
+        .runFold(ByteString.empty)(_ ++ _)
+        .map { bodyRaw =>
+          val body: JsValue = ctx.request.typedContentType match {
+            case Some(ctype) if ctype.mediaType == MediaTypes.`application/x-www-form-urlencoded` =>
+              bodyRaw.utf8String.json
+            case Some(ctype) if ctype.mediaType == MediaTypes.`application/json`                  =>
+              Try(Json.parse(bodyRaw.utf8String)) match {
+                case Success(value) => value
+                case Failure(_)     => JsString(bodyRaw.utf8String)
+              }
+            case Some(ctype) if ctype.mediaType.isText                                            => JsString(bodyRaw.utf8String)
+            case _                                                                                => JsString(bodyRaw.encodeBase64.utf8String)
+          }
+          BackendCallResponse(
+            NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> body))),
+            None
+          ).right
         }
-        BackendCallResponse(
-          NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> body))),
-          None
-        ).right
-      }
+        .recover {
+          case _: StreamLimitReachedException =>
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(
+                Results.Status(413)(Json.obj(
+                  "error" -> "request_body_too_large",
+                  "message" -> s"Request body exceeds maximum allowed size of ${config.limit} bytes",
+                  "limit"   -> config.limit
+                )
+              )
+            ),
+            None
+          ).right
+        }
     } else {
       BackendCallResponse(
         NgPluginHttpResponse.fromResult(Results.Ok(payload ++ Json.obj("body" -> JsNull))),
@@ -131,10 +148,27 @@ class RequestBodyEchoBackend extends NgBackendCall {
   ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
     val config = ctx.cachedConfig(internalName)(EchoBackendConfig.format).getOrElse(EchoBackendConfig.default)
     if (ctx.request.hasBody) {
-      ctx.request.body.limit(config.limit).runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
-        BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
-      }
+      val limited = ctx.request.body.limitWeighted(config.limit)(_.size)
+      limited
+        .runFold(ByteString.empty)(_ ++ _)
+        .map { bodyRaw =>
+          val ctype = ctx.request.contentType.getOrElse("application/octet-stream")
+          BackendCallResponse(NgPluginHttpResponse.fromResult(Results.Ok(bodyRaw).as(ctype)), None).right
+        }
+        .recover {
+          case _: StreamLimitReachedException =>
+            BackendCallResponse(
+              NgPluginHttpResponse.fromResult(
+                Results.Status(413)(Json.obj(
+                  "error" -> "request_body_too_large",
+                  "message" -> s"Request body exceeds maximum allowed size of ${config.limit} bytes",
+                  "limit"   -> config.limit
+                )
+              )
+            ),
+            None
+          ).right
+        }
     } else {
       BackendCallResponse(NgPluginHttpResponse.fromResult(Results.NoContent), None).rightf
     }

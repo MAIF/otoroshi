@@ -8,7 +8,7 @@ export const ValueNode = {
   kind: 'value',
   sources: ['output'],
   form_schema: {
-    value: ValueToCheck('Value', false),
+    value: ValueToCheck('Value'),
   },
   flow: ['value'],
   nodeRenderer: (props) => {

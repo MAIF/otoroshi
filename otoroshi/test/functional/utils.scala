@@ -1,41 +1,49 @@
 package functional
 
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
-import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage}
-import org.apache.pekko.http.scaladsl.model.AttributeKeys
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.OptionValues
+import io.netty.resolver.InetNameResolver
+import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
+import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.slf4j
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
+import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.models._
-import otoroshi.next.models.NgRoute
+import otoroshi.models.*
+import otoroshi.next.models.*
+import otoroshi.next.workflow.Workflow
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.Cert
+import otoroshi.utils.syntax.implicits.*
+import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.http.Status
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
 
-import java.net.ServerSocket
+import java.net.{InetAddress, ServerSocket, UnknownHostException}
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import scala.concurrent.duration._
-import scala.concurrent._
+import scala.concurrent.*
+import scala.concurrent.duration.*
 import scala.util.{Random, Success, Try}
-import org.slf4j
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -544,13 +552,13 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
 trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with ScalaFutures with IntegrationPatience {
 
-  import Implicits._
+  import Implicits.{*, given}
 
   def getTestConfiguration(configuration: Configuration): Configuration
 
   private lazy val logger                              = Logger("otoroshi-spec")
-  private lazy given actorSystem: ActorSystem   = ActorSystem(s"test-actor-system")
-  private lazy given materializer: Materializer = Materializer(actorSystem)
+  private given actorSystem: ActorSystem   = ActorSystem(s"test-actor-system")
+  private given materializer: Materializer = Materializer(actorSystem)
   private lazy val wsClientInstance: WSClient = {
     val parser: WSConfigParser         = new WSConfigParser(
       Configuration(
@@ -821,8 +829,8 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       )
     )(using materializer)
   }
-  private lazy given scheduler: Scheduler       = actorSystem.scheduler
-  lazy given ec: ExecutionContext               = actorSystem.dispatcher
+  private given scheduler: Scheduler       = actorSystem.scheduler
+  given ec: ExecutionContext               = actorSystem.dispatcher
   private lazy val httpPort: Int = {
     Try {
       val s = new ServerSocket(0)
@@ -831,7 +839,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       p
     }.getOrElse(8080)
   }
-  private lazy val httpsPort: Int = {
+  lazy val httpsPort: Int = {
     Try {
       val s = new ServerSocket(0)
       val p = s.getLocalPort
@@ -842,7 +850,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
 
   def wsClient: WSClient             = wsClientInstance
   def ws: WSClient                   = wsClientInstance
-  lazy given wsImpl: WSClient = wsClientInstance
+  given wsImpl: WSClient = wsClientInstance
   def port: Int                      = httpPort
   def otoroshiComponents: Otoroshi   = otoroshiRef.get()
 
@@ -1294,6 +1302,59 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       }
   }
 
+  def createOtoroshiWAF(
+      coraza: CorazaWafConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(coraza.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def getOtoroshiCertificate(
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates/_template")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .get()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def createOtoroshiCertificate(
+      certificate: Cert,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/certificates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(certificate.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def createOtoroshiRoute(
       route: NgRoute,
       customPort: Option[Int] = None,
@@ -1348,6 +1409,24 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(2000.millis)
   }
 
+  def createAuthModule(
+      auth: AuthModuleConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/auths")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(auth.asJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
   def createOtoroshiApiKey(
       apiKey: ApiKey,
       customPort: Option[Int] = None,
@@ -1366,12 +1445,84 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(2000.millis)
   }
 
+  def createOtoroshiWorkflow(
+      workflow: Workflow,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/apis/plugins.otoroshi.io/v1/workflows")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(workflow.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
+  def createOtoroshiErrorTemplate(
+      errorTemplate: ErrorTemplate,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(errorTemplate.toJson))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(2000.millis)
+  }
+
   def deleteOtoroshiVerifier(
       verifier: GlobalJwtVerifier,
       customPort: Option[Int] = None,
       ws: WSClient = wsClient
   ): Future[(JsValue, Int)] = {
     ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/verifiers/${verifier.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteAuthModule(
+      auth: AuthModuleConfig,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/auths/${auth.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiErrorTemplate(
+      errorTemplate: ErrorTemplate,
+      customPort: Option[Int] = None,
+      ws: WSClient = wsClient
+  ): Future[(JsValue, Int)] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/error-templates/${errorTemplate.serviceId}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
         "Content-Type" -> "application/json"
@@ -1417,9 +1568,55 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .andWait(1000.millis)
   }
 
+  def updateOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .put(Json.stringify(route.json))
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiWAF(
+      coraza: CorazaWafConfig,
+      customPort: Option[Int] = None
+  ): Future[(JsValue, Int)] = {
+    ws.url(
+      s"http://localhost:${customPort.getOrElse(port)}/apis/coraza-waf.extensions.otoroshi.io/v1/coraza-configs/${coraza.id}"
+    ).withHttpHeaders(
+      "Host"         -> "otoroshi-api.oto.tools",
+      "Content-Type" -> "application/json"
+    ).withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
   def deleteOtoroshiRoute(route: NgRoute, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
     wsClient
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/routes/${route.id}")
+      .withHttpHeaders(
+        "Host" -> "otoroshi-api.oto.tools"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map { resp =>
+        (resp.json, resp.status)
+      }
+      .andWait(1000.millis)
+  }
+
+  def deleteOtoroshiWorkflow(workflow: Workflow, customPort: Option[Int] = None): Future[(JsValue, Int)] = {
+    wsClient
+      .url(s"http://localhost:${customPort.getOrElse(port)}/apis/plugins.otoroshi.io/v1/workflows/${workflow.id}")
       .withHttpHeaders(
         "Host" -> "otoroshi-api.oto.tools"
       )
@@ -1444,6 +1641,181 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
         (resp.json, resp.status)
       }
       .andWait(2000.millis)
+  }
+
+  def createRouteWithExternalTarget(
+      plugins: Seq[NgPluginInstance] = Seq.empty,
+      domain: Option[String] = None,
+      id: String = IdGenerator.uuid,
+      hostname: String = "request.otoroshi.io",
+      root: String = "/",
+      target: Option[NgTarget] = None,
+      customOtoroshiPort: Option[Int] = None
+  ): Future[NgRoute] = {
+    val newRoute = NgRoute(
+      location = EntityLocation.default,
+      id = id,
+      name = "plugins-route",
+      description = "plugins-route",
+      enabled = true,
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath(domain.getOrElse(s"$id.oto.tools"))),
+        headers = Map(),
+        cookies = Map(),
+        query = Map(),
+        methods = Seq(),
+        stripPath = true,
+        exact = false
+      ),
+      backend = NgBackend(
+        targets = Seq(
+          target.getOrElse(
+            NgTarget(
+              hostname = hostname,
+              port = 443,
+              id = "request.otoroshi.io.target",
+              tls = true
+            )
+          )
+        ),
+        root,
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        client = NgClientConfig.default
+      ),
+      plugins = NgPlugins(plugins),
+      tags = Seq.empty,
+      metadata = Map.empty
+    )
+
+    createOtoroshiRoute(newRoute, customOtoroshiPort)
+      .flatMap(result => {
+        if (result._2 == Status.CREATED) {
+          newRoute.future
+        } else {
+          if (result._1.select("error_description").asOptString.contains("Entity already exists")) {
+            deleteOtoroshiRoute(newRoute).futureValue
+            await(2.seconds)
+            createRouteWithExternalTarget(plugins, domain, id, hostname, root)
+          } else {
+            throw new RuntimeException(s"failed to create a new otoroshi route - ${result._2} - ${result._1.prettify}")
+          }
+        }
+      })
+  }
+
+  def createLocalRoute(
+      plugins: Seq[NgPluginInstance] = Seq.empty,
+      responseStatus: Int = Status.OK,
+      result: HttpRequest => JsValue = _ => Json.obj(),
+      responseHeaders: List[HttpHeader] = List.empty[HttpHeader],
+      rawDomain: Option[String] = None,
+      https: Boolean = false,
+      frontendPath: String = "/api",
+      jsonAPI: Boolean = true,
+      responseContentType: String = "application/json",
+      stringResult: HttpRequest => String = _ => "",
+      target: Option[NgTarget] = None,
+      rawResult: Option[HttpRequest => (Int, String, List[HttpHeader])] = None,
+      customOtoroshiPort: Option[Int] = None,
+      id: String = IdGenerator.uuid,
+      backendHostname: Option[String] = None
+  ): Future[NgRoute] = {
+
+    var _target: Option[TargetService] = None
+
+    val domain = rawDomain.getOrElse(s"$id.oto.tools")
+
+    if (target.isEmpty)
+      _target = (if (rawResult.isDefined) {
+                   TargetService
+                     .full(
+                       domain.some,
+                       frontendPath,
+                       contentType = responseContentType,
+                       rawResult.get
+                     )
+                 } else if (jsonAPI)
+                   TargetService
+                     .jsonFull(
+                       domain.some,
+                       frontendPath,
+                       r => (responseStatus, result(r), responseHeaders)
+                     )
+                 else
+                   TargetService
+                     .full(
+                       domain.some,
+                       frontendPath,
+                       contentType = responseContentType,
+                       r => (responseStatus, stringResult(r), responseHeaders)
+                     ))
+        .await()
+        .some
+
+    val newRoute = NgRoute(
+      location = EntityLocation.default,
+      id = s"route_$id",
+      name = "local-route",
+      description = "local-route",
+      enabled = true,
+      debugFlow = false,
+      capture = false,
+      exportReporting = false,
+      frontend = NgFrontend(
+        domains = Seq(NgDomainAndPath(domain)),
+        headers = Map(),
+        cookies = Map(),
+        query = Map(),
+        methods = Seq(),
+        stripPath = true,
+        exact = false
+      ),
+      backend = NgBackend(
+        targets = Seq(
+          target.getOrElse(
+            NgTarget(
+              hostname = backendHostname.getOrElse("127.0.0.1"),
+              port = _target.get.port,
+              id = "local.target",
+              tls = https
+            )
+          )
+        ),
+        root = "/",
+        rewrite = false,
+        loadBalancing = RoundRobin,
+        client = NgClientConfig.default
+      ),
+      plugins = NgPlugins(plugins),
+      tags = Seq.empty,
+      metadata = Map.empty
+    )
+
+    createOtoroshiRoute(newRoute, customOtoroshiPort)
+      .flatMap(resp => {
+        if (resp._2 == Status.CREATED) {
+          newRoute.future
+        } else {
+          throw new RuntimeException("failed to create a new local route")
+        }
+      })
+  }
+
+  def getOutHeader(resp: WSRequest#Self#Response, headerName: String) = {
+    resp.headers.find { case (k, _) => k.equalsIgnoreCase(headerName) }.map(_._2).flatMap(_.headOption)
+  }
+
+  def getInHeader(resp: WSRequest#Self#Response, headerName: String) = {
+    val headers = Json
+      .parse(resp.body)
+      .as[JsValue]
+      .select("headers")
+      .as[Map[String, String]]
+    headers.get(headerName)
   }
 }
 
@@ -1529,7 +1901,7 @@ class TargetService(
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     (request.method, request.uri.path) match {
-      case (HttpMethods.GET, _) if host.isEmpty                                    =>
+      case (HttpMethods.GET, p) if host.isEmpty                                       =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1543,7 +1915,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (HttpMethods.GET, _) if TargetService.extractHost(request) == host.get  =>
+      case (HttpMethods.GET, p) /*if TargetService.extractHost(request) == host.get*/ =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1557,7 +1929,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (HttpMethods.POST, _) if TargetService.extractHost(request) == host.get =>
+      case (HttpMethods.POST, p) if TargetService.extractHost(request) == host.get    =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1571,7 +1943,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (HttpMethods.DELETE, _)                                                 =>
+      case (HttpMethods.DELETE, p)                                                    =>
         val (code, body, source, headers) = result(request)
         val entity                        = source match {
           case None    =>
@@ -1585,7 +1957,7 @@ class TargetService(
             entity = entity
           )
         )
-      case (_, p)                                                                  =>
+      case (_, p)                                                                     =>
         FastFuture.successful(HttpResponses.NotFound(p.toString()))
     }
   }
@@ -1763,9 +2135,48 @@ class WebsocketServer(counter: AtomicInteger) {
   }
 }
 
+class WebsocketBackend(
+    root: String = "",
+    callback: String => Message = text => TextMessage(s"Echo: $text"),
+    streamCallback: Source[String, ?] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
+) {
+  import org.apache.pekko.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
+
+  implicit val system: ActorSystem = ActorSystem("otoroshi-test")
+  implicit val mat: Materializer   = Materializer(system)
+  val http: HttpExt = Http()
+
+  val websocketFlow: Flow[Message, Message, Any] = Flow[Message].map {
+    case TextMessage.Strict(text)         => callback(text)
+    case TextMessage.Streamed(textStream) => streamCallback(textStream)
+    case _                                => TextMessage("Unsupported message type")
+  }
+
+  val websocketRoute = path(root) {
+    get {
+      handleWebSocketMessages(websocketFlow)
+    }
+  }
+
+  val backendPort = TargetService.freePort
+
+  val bound = http.newServerAt("0.0.0.0", backendPort).bind(websocketRoute)
+
+  def await(): WebsocketBackend = {
+    Await.result(bound, 60.seconds)
+    this
+  }
+
+  def stop(): Unit = {
+    Await.result(bound, 60.seconds).unbind()
+    Await.result(http.shutdownAllConnectionPools(), 60.seconds)
+    Await.result(system.terminate(), 60.seconds)
+  }
+}
+
 object TargetService {
 
-  import Implicits._
+  import Implicits.{*, given}
 
   def apply(host: Option[String], contentType: String, result: HttpRequest => String): TargetService = {
     new TargetService(
@@ -1821,10 +2232,59 @@ object TargetService {
     }.toOption.getOrElse(Random.nextInt(1000) + 7000)
   }
 
-//  private val AbsoluteUri = """(?is)^(https?)://([^/]+)(/.*|$)""".r
-
   def extractHost(request: HttpRequest): String =
-    request.getHeader("Otoroshi-Proxied-Host").asOption.map(_.value()).getOrElse("--")
+    request
+      .getHeader("Otoroshi-Proxied-Host")
+      .asOption
+      .map(_.value())
+      .orElse(request.getHeader("Host").asOption.map(_.value()))
+      .getOrElse("--")
+
+  def json(host: Option[String], path: String, result: HttpRequest => JsValue): TargetService = {
+    apply(host, "application/json", r => result(r).stringify)
+  }
+
+  def jsonStreamed(
+      host: Option[String],
+      path: String,
+      result: HttpRequest => (JsValue, Source[ByteString, NotUsed]),
+      headers: List[HttpHeader] = List.empty[HttpHeader]
+  ): TargetService = {
+    new TargetService(
+      freePort,
+      host,
+      "application/json",
+      r => {
+        val (json, source) = result(r)
+        (200, json.stringify, Some(source), headers)
+      }
+    )
+  }
+
+  def jsonFull(
+      host: Option[String],
+      path: String,
+      result: HttpRequest => (Int, JsValue, List[HttpHeader])
+  ): TargetService = {
+    full(
+      host,
+      path,
+      "application/json",
+      r => {
+        val (status, json, headers) = result(r)
+        (status, json.stringify, headers)
+      }
+    )
+  }
+
+  def jsonWithPort(
+      port: Int,
+      host: Option[String],
+      path: String,
+      result: HttpRequest => JsValue
+  ): TargetService = {
+    withPort(port, host, path, "application/json", r => result(r).stringify)
+  }
 }
 
 class BodySizeService {
@@ -1890,7 +2350,7 @@ case class ApiTesterResult(
 
 trait ApiTester[Entity] {
 
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.syntax.implicits.given
 
   private val logger = Logger("otoroshi-api-tester")
 
@@ -2297,6 +2757,58 @@ trait ApiTester[Entity] {
         delete,
         deleteBulk
       )
+    }
+  }
+}
+
+class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, String])
+    extends InetNameResolver(executor) {
+
+  /** Resolve exact match or wildcard like *.domain.tld */
+  private def resolveMapping(host: String): String = {
+    mappings.get(host) match {
+      case Some(ip) => ip
+      case None     =>
+        mappings
+          .collectFirst {
+            case (pattern, ip) if pattern.startsWith("*.") && host.endsWith(pattern.drop(1)) =>
+              ip
+          }
+          .getOrElse(host)
+    }
+  }
+
+  override def doResolve(inetHost: String, promise: NettyPromise[InetAddress]): Unit = {
+    try {
+      val targetHost = resolveMapping(inetHost)
+      println(s"[DNS] Resolving $inetHost -> $targetHost")
+
+      val address = InetAddress.getByName(targetHost)
+      promise.setSuccess(address)
+
+    } catch {
+      case e: UnknownHostException =>
+        println(s"[DNS] Failed to resolve $inetHost: ${e.getMessage}")
+        promise.setFailure(e)
+      case e: Exception            =>
+        promise.setFailure(e)
+    }
+  }
+
+  override def doResolveAll(inetHost: String, promise: NettyPromise[java.util.List[InetAddress]]): Unit = {
+    try {
+      val targetHost = resolveMapping(inetHost)
+      println(s"[DNS] Resolving all $inetHost -> $targetHost")
+      val addresses  = InetAddress.getAllByName(targetHost)
+      val list       = java.util.Arrays.asList(addresses*)
+      promise.setSuccess(list)
+
+    } catch {
+      case e: UnknownHostException =>
+        println(s"[DNS] Failed to resolve all $inetHost: ${e.getMessage}")
+        promise.setFailure(e)
+      case e: Exception            =>
+        promise.setFailure(e)
     }
   }
 }

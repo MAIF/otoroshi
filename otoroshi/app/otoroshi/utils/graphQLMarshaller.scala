@@ -1,7 +1,7 @@
 package otoroshi.utils
 
-import play.api.libs.json._
-import sangria.marshalling._
+import play.api.libs.json.*
+import sangria.marshalling.*
 
 import scala.util.Try
 
@@ -77,7 +77,7 @@ object JsonMarshaller extends PlayJsonSupportLowPrioImplicits {
 
     override def isScalarNode(node: JsValue): Boolean = node match {
       case _: JsValue => true
-      case _          => false
+      case null       => false
     }
 
     override def isVariableNode(node: JsValue): Boolean = false
@@ -97,7 +97,7 @@ object JsonMarshaller extends PlayJsonSupportLowPrioImplicits {
     PlayJsonToInput.asInstanceOf[ToInput[T, JsValue]]
 
   implicit def playJsonWriterToInput[T: Writes]: ToInput[T, JsValue] =
-    (value: T) => summon[Writes[T]].writes(value) -> PlayJsonInputUnmarshaller
+    (value: T) => implicitly[Writes[T]].writes(value) -> PlayJsonInputUnmarshaller
 
   private object PlayJsonFromInput extends FromInput[JsValue] {
     val marshaller: PlayJsonResultMarshaller.type  = PlayJsonResultMarshaller
@@ -110,7 +110,7 @@ object JsonMarshaller extends PlayJsonSupportLowPrioImplicits {
   implicit def playJsonReaderFromInput[T: Reads]: FromInput[T] =
     new FromInput[T] {
       val marshaller: PlayJsonResultMarshaller.type = PlayJsonResultMarshaller
-      def fromResult(node: marshaller.Node): T      = summon[Reads[T]].reads(node) match {
+      def fromResult(node: marshaller.Node): T      = implicitly[Reads[T]].reads(node) match {
         case JsSuccess(v, _) => v
         case JsError(errors) =>
           val formattedErrors = errors.toVector.flatMap { case (JsPath(nodes), es) =>

@@ -1,25 +1,19 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
-import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.{Attributes, Materializer}
-import org.apache.pekko.stream.connectors.s3.{
-  ApiVersion,
-  MemoryBufferType,
-  ObjectMetadata,
-  S3Attributes,
-  S3Exception,
-  S3Settings
-}
-import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
-import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
+import org.apache.pekko.stream.connectors.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3.*
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.storage.drivers.inmemory.S3Configuration
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -121,6 +115,7 @@ class StaticBackend extends NgBackendCall {
       val config        = ctx.cachedConfig(internalName)(StaticBackendConfig.format).getOrElse(StaticBackendConfig("/tmp"))
       val askedFilePath = ctx.request.path.replace("//", "")
       val filePath      = fileUtils.normalize(askedFilePath, config.rootPath)
+
       fileCache.getIfPresent(filePath) match {
         case Some((contentType, content)) =>
           inMemoryBodyResponse(200, Map("Content-Type" -> contentType), content).vfuture
@@ -178,7 +173,9 @@ class S3Backend extends NgBackendCall {
         override def getRegion: Region = Region.of(conf.region)
       },
       listBucketApiVersion = ApiVersion.ListBucketVersion2
-    ).withEndpointUrl(conf.endpoint)
+    )
+      .withEndpointUrl(conf.endpoint)
+      .withAccessStyle(if (conf.pathStyleAccess) PathAccessStyle else VirtualHostAccessStyle)
     S3Attributes.settings(settings)
   }
 
@@ -221,10 +218,14 @@ class S3Backend extends NgBackendCall {
       ec: ExecutionContext,
       mat: Materializer
   ): Future[String] = {
-    val keyWithIndex = s"$key/index.html"
-    fileExists(key, config).flatMap {
-      case true  => key.vfuture
-      case false => keyWithIndex.vfuture
+    if (key.endsWith("/")) {
+      val keyWithIndex = s"$key/index.html"
+      fileExists(key, config).flatMap {
+        case false => key.vfuture
+        case true  => keyWithIndex.vfuture
+      }
+    } else {
+      key.vfuture
     }
   }
 
@@ -256,8 +257,13 @@ class S3Backend extends NgBackendCall {
     if (ctx.request.method == "GET") {
       val config        = ctx.cachedConfig(internalName)(S3Configuration.format).getOrElse(S3Configuration.default)
       val askedFilePath = ctx.request.path.replace("//", "")
-      val key           = s"${config.key}$askedFilePath"
-      val cacheKey      = s"${ctx.route.id}-$key"
+      val key           = if (config.key.isEmpty && askedFilePath.startsWith("/")) {
+        askedFilePath.replaceFirst("/", "")
+      } else {
+        s"${config.key}${askedFilePath}"
+      }
+      val cacheKey      = s"${ctx.route.id}-${key}"
+
       normalizeKey(key, config).map(_.replace("//", "/")).flatMap { filePath =>
         fileCache.getIfPresent(cacheKey) match {
           case Some((om, content)) =>

@@ -11,12 +11,13 @@ import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events.*
 import otoroshi.models.*
-import otoroshi.script.Implicits.*
+import otoroshi.script.Implicits.given
 import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.http.Implicits.*
-import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.Implicits.{*, given}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.http.ResponseImplicits.given
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits.BetterSyntax
@@ -28,23 +29,15 @@ import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.*
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
-import play.api.mvc._
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.streams.MaxLengthLimiter
-import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 class HttpHandler()(using env: Env) {
 
-  implicit lazy val currentEc: ExecutionContext       = env.otoroshiExecutionContext
-  implicit lazy val currentScheduler: Scheduler       = env.otoroshiScheduler
-  implicit lazy val currentSystem: ActorSystem        = env.otoroshiActorSystem
+  implicit lazy val currentEc: ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val currentScheduler: Scheduler = env.otoroshiScheduler
+  implicit lazy val currentSystem: ActorSystem = env.otoroshiActorSystem
   implicit lazy val currentMaterializer: Materializer = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-http-handler")
@@ -54,34 +47,33 @@ class HttpHandler()(using env: Env) {
   }
 
   def rawForwardCall(
-      reverseProxyAction: ReverseProxyAction,
-      analyticsQueue: ActorRef,
-      snowMonkey: SnowMonkey,
-      headersInFiltered: Seq[String],
-      headersOutFiltered: Seq[String]
-  ): (RequestHeader, Source[ByteString, ?]) => Future[Result] = { (req, body) =>
-    {
-      reverseProxyAction
-        .async[Result](
-          ReverseProxyActionContext(req, body, snowMonkey, logger),
-          ws = false,
-          c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)
-        )
-        .map {
-          case Left(r)  => r
-          case Right(r) => r
-        }
-    }
+                      reverseProxyAction: ReverseProxyAction,
+                      analyticsQueue: ActorRef,
+                      snowMonkey: SnowMonkey,
+                      headersInFiltered: Seq[String],
+                      headersOutFiltered: Seq[String]
+                    ): (RequestHeader, Source[ByteString, ?]) => Future[Result] = { (req, body) => {
+    reverseProxyAction
+      .async[Result](
+        ReverseProxyActionContext(req, body, snowMonkey, logger),
+        ws = false,
+        c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)
+      )
+      .map {
+        case Left(r) => r
+        case Right(r) => r
+      }
+  }
   }
 
   def forwardCall(
-      actionBuilder: ActionBuilder[Request, AnyContent],
-      reverseProxyAction: ReverseProxyAction,
-      analyticsQueue: ActorRef,
-      snowMonkey: SnowMonkey,
-      headersInFiltered: Seq[String],
-      headersOutFiltered: Seq[String]
-  ): Action[Source[ByteString, ?]] =
+                   actionBuilder: ActionBuilder[Request, AnyContent],
+                   reverseProxyAction: ReverseProxyAction,
+                   analyticsQueue: ActorRef,
+                   snowMonkey: SnowMonkey,
+                   headersInFiltered: Seq[String],
+                   headersOutFiltered: Seq[String]
+                 ): Action[Source[ByteString, ?]] =
     actionBuilder.async(sourceBodyParser) { req =>
       env.metrics.withTimerAsync("handle-request")(
         reverseProxyAction
@@ -91,19 +83,19 @@ class HttpHandler()(using env: Env) {
             c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)
           )
           .map {
-            case Left(r)  => r
+            case Left(r) => r
             case Right(r) => r
           }
       )
     }
 
   def forwardAction(
-      reverseProxyAction: ReverseProxyAction,
-      analyticsQueue: ActorRef,
-      snowMonkey: SnowMonkey,
-      headersInFiltered: Seq[String],
-      headersOutFiltered: Seq[String]
-  ): Request[Source[ByteString, ?]] => Future[Result] = (req: Request[Source[ByteString, ?]]) => {
+                     reverseProxyAction: ReverseProxyAction,
+                     analyticsQueue: ActorRef,
+                     snowMonkey: SnowMonkey,
+                     headersInFiltered: Seq[String],
+                     headersOutFiltered: Seq[String]
+                   ): Request[Source[ByteString, ?]] => Future[Result] = (req: Request[Source[ByteString, ?]]) => {
     reverseProxyAction
       .async[Result](
         ReverseProxyActionContext(req, req.body, snowMonkey, logger),
@@ -111,51 +103,51 @@ class HttpHandler()(using env: Env) {
         c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)
       )
       .map {
-        case Left(r)  => r
+        case Left(r) => r
         case Right(r) => r
       }
   }
 
   def actuallyCallDownstream(
-      ctx: ActualCallContext,
-      analyticsQueue: ActorRef,
-      headersInFiltered: Seq[String],
-      headersOutFiltered: Seq[String]
-  ): Future[Either[Result, Result]] = {
+                              ctx: ActualCallContext,
+                              analyticsQueue: ActorRef,
+                              headersInFiltered: Seq[String],
+                              headersOutFiltered: Seq[String]
+                            ): Future[Either[Result, Result]] = {
 
     val ActualCallContext(
-      req,
-      descriptor,
-      _target,
-      apiKey,
-      paUsr,
-      jwtInjection,
-      snowMonkeyContext,
-      snowflake,
-      attrs,
-      elCtx,
-      globalConfig,
-      withTrackingCookies,
-      bodyAlreadyConsumed,
-      requestBody,
-      secondStart,
-      firstOverhead,
-      cbDuration,
-      callAttempts,
-      attempts,
-      alreadyFailed
+    req,
+    descriptor,
+    _target,
+    apiKey,
+    paUsr,
+    jwtInjection,
+    snowMonkeyContext,
+    snowflake,
+    attrs,
+    elCtx,
+    globalConfig,
+    withTrackingCookies,
+    bodyAlreadyConsumed,
+    requestBody,
+    secondStart,
+    firstOverhead,
+    cbDuration,
+    callAttempts,
+    attempts,
+    alreadyFailed
     ) = ctx
 
-    val counterIn  = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+    val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
     val counterOut = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
-    val canaryId   = attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey).get
-    val callDate   = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
-    val start      = attrs.get(otoroshi.plugins.Keys.RequestStartKey).get
+    val canaryId = attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey).get
+    val callDate = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
+    val start = attrs.get(otoroshi.plugins.Keys.RequestStartKey).get
 
-    val requestTimestamp                                    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-    val jti                                                 = IdGenerator.uuid
-    val stateValue                                          = IdGenerator.extendedToken(128)
-    val stateToken: String                                  = descriptor.secComVersion match {
+    val requestTimestamp = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+    val jti = IdGenerator.uuid
+    val stateValue = IdGenerator.extendedToken(128)
+    val stateToken: String = descriptor.secComVersion match {
       case SecComVersion.V1 => stateValue
       case SecComVersion.V2 =>
         OtoroshiClaim(
@@ -172,12 +164,12 @@ class HttpHandler()(using env: Env) {
         ).withClaim("state", stateValue)
           .serialize(descriptor.algoChallengeFromOtoToBack)
     }
-    val rawUri                                              = req.relativeUri.substring(1)
-    val uriParts                                            = rawUri.split("/").toSeq
-    val uri: String                                         = descriptor.maybeStrippedUri(req, rawUri)
-    val scheme                                              =
+    val rawUri = req.relativeUri.substring(1)
+    val uriParts = rawUri.split("/").toSeq
+    val uri: String = descriptor.maybeStrippedUri(req, rawUri)
+    val scheme =
       if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
-    val host                                                = TargetExpressionLanguage(
+    val host = TargetExpressionLanguage(
       if (descriptor.redirectToLocal)
         descriptor.localHost
       else _target.host,
@@ -190,8 +182,8 @@ class HttpHandler()(using env: Env) {
       attrs,
       env
     )
-    val root                                                = descriptor.root
-    val url                                                 = TargetExpressionLanguage(
+    val root = descriptor.root
+    val url = TargetExpressionLanguage(
       s"$scheme://$host$root$uri",
       Some(req),
       Some(descriptor),
@@ -204,10 +196,10 @@ class HttpHandler()(using env: Env) {
     )
     lazy val (currentReqHasBody, shouldInjectContentLength) = req.theHasBodyWithoutLength
     // val queryString = req.queryString.toSeq.flatMap { case (key, values) => values.map(v => (key, v)) }
-    val fromOtoroshi                                        = req.headers
+    val fromOtoroshi = req.headers
       .get(env.Headers.OtoroshiRequestId)
       .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
-    val promise                                             = Promise[ProxyDone]()
+    val promise = Promise[ProxyDone]()
 
     val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")
@@ -246,7 +238,7 @@ class HttpHandler()(using env: Env) {
         })
     }
 
-    val overhead                        = (System.currentTimeMillis() - secondStart) + firstOverhead
+    val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
     if (overhead > env.overheadThreshold) {
       HighOverheadAlert(
         `@id` = env.snowflakeGenerator.nextIdStr(),
@@ -266,7 +258,7 @@ class HttpHandler()(using env: Env) {
         .getOrElse(FastFuture.successful(RemainingQuotas()))
     promise.future.andThen { case Success(resp) =>
       val actualDuration: Long = System.currentTimeMillis() - start
-      val duration: Long       =
+      val duration: Long =
         if (descriptor.id == env.backOfficeServiceId && actualDuration > 300L)
           300L
         else actualDuration
@@ -282,15 +274,15 @@ class HttpHandler()(using env: Env) {
       )
 
       descriptor.targetsLoadBalancing match {
-        case BestResponseTime            =>
+        case BestResponseTime =>
           BestResponseTime.incrementAverage(descriptor, _target, duration)
         case WeightedBestResponseTime(_) =>
           BestResponseTime.incrementAverage(descriptor, _target, duration)
-        case _                           =>
+        case _ =>
       }
 
       quotas.andThen { case Success(q) =>
-        val fromLbl          =
+        val fromLbl =
           req.headers
             .get(env.Headers.OtoroshiVizFromLabel)
             .getOrElse("internet")
@@ -303,7 +295,7 @@ class HttpHandler()(using env: Env) {
           fromLbl = fromLbl,
           fromTo = s"$fromLbl###${descriptor.name}"
         )
-        val evt              = GatewayEvent(
+        val evt = GatewayEvent(
           `@id` = env.snowflakeGenerator.nextIdStr(),
           reqId = snowflake,
           parentReqId = fromOtoroshi,
@@ -321,6 +313,9 @@ class HttpHandler()(using env: Env) {
             uri = req.relativeUri
           ),
           backendDuration = attrs.get(otoroshi.plugins.Keys.BackendDurationKey).getOrElse(-1L),
+          requestStreamingDuration = -1L,
+          responseStreamingDuration = -1L,
+          backendResponseStreamingDuration = -1L,
           duration = duration,
           overhead = overhead,
           cbDuration = cbDuration,
@@ -349,17 +344,6 @@ class HttpHandler()(using env: Env) {
                 tags = k.tags,
                 metadata = k.metadata
               )
-            )
-            .orElse(
-              paUsr.map(k =>
-                Identity(
-                  identityType = "PRIVATEAPP",
-                  identity = k.email,
-                  label = k.name,
-                  tags = k.tags,
-                  metadata = k.metadata
-                )
-              )
             ),
           responseChunked = resp.isChunked,
           `@serviceId` = descriptor.id,
@@ -385,7 +369,7 @@ class HttpHandler()(using env: Env) {
     //.andThen {
     //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
     //}
-    val wsCookiesIn                     = req.cookies.toSeq.map(c =>
+    val wsCookiesIn = req.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
         name = c.name,
         value = c.value,
@@ -397,7 +381,7 @@ class HttpHandler()(using env: Env) {
         sameSite = c.sameSite
       )
     )
-    val rawRequest                      = otoroshi.script.HttpRequest(
+    val rawRequest = otoroshi.script.HttpRequest(
       url = s"${req.theProtocol}://${req.theHost}${req.relativeUri}",
       method = req.method,
       headers = req.headers.toSimpleMap,
@@ -408,7 +392,7 @@ class HttpHandler()(using env: Env) {
       claims = claim,
       body = () => requestBody
     )
-    val otoroshiRequest                 = otoroshi.script.HttpRequest(
+    val otoroshiRequest = otoroshi.script.HttpRequest(
       url = url,
       method = req.method,
       headers = headersIn.toMap,
@@ -419,7 +403,7 @@ class HttpHandler()(using env: Env) {
       claims = claim,
       body = () => requestBody
     )
-    val transReqCtx                     = TransformerRequestContext(
+    val transReqCtx = TransformerRequestContext(
       index = -1,
       snowflake = snowflake,
       rawRequest = rawRequest,
@@ -431,9 +415,9 @@ class HttpHandler()(using env: Env) {
       config = descriptor.transformerConfig,
       attrs = attrs
     )
-    val finalRequest                    = descriptor
+    val finalRequest = descriptor
       .transformRequest(transReqCtx)
-    val finalBody                       = descriptor.transformRequestBody(
+    val finalBody = descriptor.transformRequestBody(
       TransformerRequestBodyContext(
         index = -1,
         snowflake = snowflake,
@@ -450,7 +434,7 @@ class HttpHandler()(using env: Env) {
     )
     finalRequest
       .flatMap {
-        case Left(badResult)    =>
+        case Left(badResult) =>
           quotas.fast.map { remainingQuotas =>
             val _headersOut: Seq[(String, String)] =
               HeadersHelper.composeHeadersOutBadResult(
@@ -479,12 +463,12 @@ class HttpHandler()(using env: Env) {
                 otoroshiHeadersIn = headersIn.map(Header.apply)
               )
             )
-            badResult.withHeaders(_headersOut*)
+            badResult.withHeaders(_headersOut *)
           }
         case Right(httpRequest) =>
           val upstreamStart = System.currentTimeMillis()
           // Stream IN
-          val body          =
+          val body =
             if (currentReqHasBody) SourceBody(finalBody)
             else EmptyBody
 
@@ -498,13 +482,13 @@ class HttpHandler()(using env: Env) {
                 finalTarget,
                 descriptor.clientConfig
               )
-            case true                             =>
+            case true =>
               env.gatewayClient.akkaUrlWithTarget(
                 UrlSanitizer.sanitize(httpRequest.url),
                 finalTarget,
                 descriptor.clientConfig
               )
-            case false                            =>
+            case false =>
               env.gatewayClient.urlWithTarget(
                 UrlSanitizer.sanitize(httpRequest.url),
                 finalTarget,
@@ -516,7 +500,7 @@ class HttpHandler()(using env: Env) {
             descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
           if (ClientConfig.logger.isDebugEnabled)
             ClientConfig.logger.debug(s"[gateway] using callAndStreamTimeout: $extractedTimeout")
-          val builder          = clientReq
+          val builder = clientReq
             .withRequestTimeout(extractedTimeout)
             .withFailureIndicator(alreadyFailed)
             //.withRequestTimeout(env.requestTimeout) // we should monitor leaks
@@ -525,9 +509,9 @@ class HttpHandler()(using env: Env) {
             .withHttpHeaders(
               HeadersHelper
                 .addClaims(httpRequest.headers, httpRequest.claims, descriptor)
-                .filterNot(_._1 == "Cookie")*
+                .filterNot(_._1 == "Cookie") *
             )
-            .withCookies(wsCookiesIn*)
+            .withCookies(wsCookiesIn *)
             .withFollowRedirects(false)
             .withMaybeProxyServer(
               descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
@@ -548,15 +532,15 @@ class HttpHandler()(using env: Env) {
             .stream()
             .flatMap(resp => quotas.fast.map(q => (resp, q)))
             .flatMap { tuple =>
-              val isUp                                  = true
-              val (resp, remainingQuotas)               = tuple
+              val isUp = true
+              val (resp, remainingQuotas) = tuple
               // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-              val headers                               = resp.headers.view.mapValues(_.head)
+              val headers = resp.headers.view.mapValues(_.head)
               val _headersForOut: Seq[(String, String)] =
                 resp.headers.toSeq.flatMap(c =>
                   c._2.map(v => (c._1, v))
                 ) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
-              val rawResponse         = otoroshi.script.HttpResponse(
+              val rawResponse = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
                 cookies = resp.safeCookies(env),
@@ -564,7 +548,7 @@ class HttpHandler()(using env: Env) {
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
                 .getOrElse(env.Headers.OtoroshiStateResp)
-              val stateResp           = headers
+              val stateResp = headers
                 .get(stateRespHeaderName)
                 .orElse(headers.get(stateRespHeaderName.toLowerCase))
               ReverseProxyActionHelper.stateRespValidM(stateValue, stateResp, jti, descriptor, uri, req) match {
@@ -590,7 +574,7 @@ class HttpHandler()(using env: Env) {
                     )
                   } else if (isUp) {
                     logger.error(stateRespInvalid.errorMessage(resp.status, resp.headers.view.mapValues(_.last).toMap))
-                    val extraInfos    = attrs
+                    val extraInfos = attrs
                       .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
                       .map(_.as[JsObject])
                       .getOrElse(Json.obj())
@@ -628,8 +612,8 @@ class HttpHandler()(using env: Env) {
                       attrs = attrs
                     )
                   }
-                case Right(_)               =>
-                  val upstreamLatency                    = System.currentTimeMillis() - upstreamStart
+                case Right(_) =>
+                  val upstreamLatency = System.currentTimeMillis() - upstreamStart
                   val _headersOut: Seq[(String, String)] =
                     HeadersHelper.composeHeadersOut(
                       descriptor = descriptor,
@@ -670,33 +654,33 @@ class HttpHandler()(using env: Env) {
                       )
                     )
                     .flatMap {
-                      case Left(badResult)     =>
+                      case Left(badResult) =>
                         resp.ignore()
                         FastFuture.successful(badResult)
                       case Right(httpResponse) =>
-                        val headersOut                  = httpResponse.headers.toSeq
+                        val headersOut = httpResponse.headers.toSeq
                         val contentType: Option[String] = httpResponse.headers
                           .get("Content-Type")
                           .orElse(httpResponse.headers.get("content-type"))
 
                         val noContentLengthHeader: Boolean =
                           resp.contentLength.isEmpty
-                        val hasChunkedHeader: Boolean      = resp
+                        val hasChunkedHeader: Boolean = resp
                           .header("Transfer-Encoding")
                           .orElse(httpResponse.headers.get("Transfer-Encoding"))
                           .exists(h => h.toLowerCase().contains("chunked"))
-                        val isContentLengthZero: Boolean   =
+                        val isContentLengthZero: Boolean =
                           resp.header("Content-Length").orElse(httpResponse.headers.get("Content-Length")).contains("0")
-                        val isChunked: Boolean             = resp.isChunked match {
-                          case _ if isContentLengthZero                                                              => false
-                          case Some(chunked)                                                                         => chunked
-                          case None if !env.emptyContentLengthIsChunked                                              =>
+                        val isChunked: Boolean = resp.isChunked match {
+                          case _ if isContentLengthZero => false
+                          case Some(chunked) => chunked
+                          case None if !env.emptyContentLengthIsChunked =>
                             hasChunkedHeader // false
-                          case None if env.emptyContentLengthIsChunked && hasChunkedHeader                           =>
+                          case None if env.emptyContentLengthIsChunked && hasChunkedHeader =>
                             true
                           case None if env.emptyContentLengthIsChunked && !hasChunkedHeader && noContentLengthHeader =>
                             true
-                          case _                                                                                     => false
+                          case _ => false
                         }
 
                         val theStream: Source[ByteString, ?] = resp.bodyAsSource
@@ -769,7 +753,7 @@ class HttpHandler()(using env: Env) {
                               httpOnly = c.httpOnly,
                               sameSite = c.sameSite
                             )
-                          case c                       =>
+                          case c =>
                             val sameSite: Option[Cookie.SameSite] = resp.headers.get("Set-Cookie").flatMap { values =>
                               values
                                 .find { sc =>
@@ -819,14 +803,14 @@ class HttpHandler()(using env: Env) {
                                     headersOut.filterNot { h =>
                                       val lower = h._1.toLowerCase()
                                       lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                    }*
+                                    } *
                                   )
                                   .withCookies(
                                     withTrackingCookies ++ jwtInjection.additionalCookies
-                                      .map(t => Cookie(t._1, t._2)) ++ cookies*
+                                      .map(t => Cookie(t._1, t._2)) ++ cookies *
                                   )
                                 contentType match {
-                                  case None      => descriptor.gzip.handleResult(req, response)
+                                  case None => descriptor.gzip.handleResult(req, response)
                                   case Some(ctp) =>
                                     descriptor.gzip.handleResult(req, response.as(ctp))
                                 }
@@ -849,7 +833,7 @@ class HttpHandler()(using env: Env) {
                           }
                         } else {
                           val response: Result = isChunked match {
-                            case true  =>
+                            case true =>
                               // stream out
                               val res = Status(
                                 attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status)
@@ -859,14 +843,14 @@ class HttpHandler()(using env: Env) {
                                   headersOut.filterNot { h =>
                                     val lower = h._1.toLowerCase()
                                     lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }*
+                                  } *
                                 )
                                 .withCookies(
                                   (withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies)*
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies) *
                                 )
                               contentType match {
-                                case None      => res
+                                case None => res
                                 case Some(ctp) => res.as(ctp)
                               }
                             case false =>
@@ -877,7 +861,7 @@ class HttpHandler()(using env: Env) {
                                 .map(
                                   _.toLong + snowMonkeyContext.trailingResponseBodySize
                                 )
-                              val actualContentLength: Long   =
+                              val actualContentLength: Long =
                                 contentLength.getOrElse(0L)
                               if (actualContentLength == 0L) {
                                 // here, Play did not run the body because it's empty, so triggering things manually
@@ -897,7 +881,7 @@ class HttpHandler()(using env: Env) {
                                 )
                               }
                               // stream out
-                              val res                         = Status(
+                              val res = Status(
                                 attrs.get(otoroshi.plugins.Keys.StatusOverrideKey).getOrElse(httpResponse.status)
                               )
                                 .sendEntity(
@@ -911,14 +895,14 @@ class HttpHandler()(using env: Env) {
                                   headersOut.filterNot { h =>
                                     val lower = h._1.toLowerCase()
                                     lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }*
+                                  } *
                                 )
                                 .withCookies(
                                   (withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies)*
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies) *
                                 )
                               contentType match {
-                                case None      => res
+                                case None => res
                                 case Some(ctp) => res.as(ctp)
                               }
                           }

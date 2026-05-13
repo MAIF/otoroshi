@@ -1,38 +1,12 @@
 package otoroshi.netty
 
-import io.netty.buffer.ByteBufAllocator
-import io.netty.buffer.Unpooled
-import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.ChannelOutboundHandler
-import io.netty.channel.ChannelPromise
-import io.netty.handler.codec.EncoderException
-import io.netty.handler.codec.UnsupportedMessageTypeException
-import io.netty.handler.codec.http.DefaultHttpContent
-import io.netty.handler.codec.http.DefaultLastHttpContent
-import io.netty.handler.codec.http.FullHttpMessage
-import io.netty.handler.codec.http.FullHttpResponse
-import io.netty.handler.codec.http.HttpContent
-import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpHeaderValues
-import io.netty.handler.codec.http.HttpMessage
-import io.netty.handler.codec.http.HttpObject
-import io.netty.handler.codec.http.HttpRequest
-import io.netty.handler.codec.http.HttpResponse
-import io.netty.handler.codec.http.HttpResponseStatus
-import io.netty.handler.codec.http.HttpScheme
-import io.netty.handler.codec.http.HttpUtil
-import io.netty.handler.codec.http.HttpVersion
-import io.netty.handler.codec.http.LastHttpContent
-import io.netty.incubator.codec.http3.{
-  DefaultHttp3DataFrame,
-  DefaultHttp3HeadersFrame,
-  Http3ConversionUtil,
-  Http3HeadersFrame,
-  Http3RequestStreamInboundHandler,
-  HttpConversionUtil
-}
+import io.netty.buffer.{ByteBufAllocator, Unpooled}
+import io.netty.channel.{ChannelHandlerContext, ChannelOutboundHandler, ChannelPromise}
+import io.netty.handler.codec.{EncoderException, UnsupportedMessageTypeException}
+import io.netty.handler.codec.http.*
+import io.netty.incubator.codec.http3.*
 import io.netty.incubator.codec.quic.QuicStreamChannel
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 
 import java.net.SocketAddress
 

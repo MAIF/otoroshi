@@ -1,6 +1,6 @@
 package otoroshi.plugins.core
 
-import otoroshi.plugins.core.apikeys._
+import otoroshi.plugins.core.apikeys.*
 
 object DefaultPlugins {
   val all: Seq[String] = Seq(

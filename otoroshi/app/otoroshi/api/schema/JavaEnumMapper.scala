@@ -1,7 +1,7 @@
 package otoroshi.api.schema
 
-import org.json4s.JsonDSL._
-import org.json4s._
+import org.json4s.*
+import org.json4s.JsonDSL.*
 
 object JavaEnumMapper extends TypeMapper {
   def canMap(clazz: Class[?]): Boolean = {

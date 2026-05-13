@@ -4,9 +4,9 @@ import org.apache.pekko.Done
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.models.RedirectionSettings
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.ExecutionContext

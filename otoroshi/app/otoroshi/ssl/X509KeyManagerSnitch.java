@@ -2,10 +2,10 @@ package otoroshi.ssl;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import otoroshi.utils.RegexPool;
 import scala.Option;
 import scala.Tuple3;
 import scala.Unit$;
-import otoroshi.utils.RegexPool;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;

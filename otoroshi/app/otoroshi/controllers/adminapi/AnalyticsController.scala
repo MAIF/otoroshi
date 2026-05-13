@@ -1,29 +1,18 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions._
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.ServiceDescriptor
 import org.joda.time.DateTime
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{
-  AbstractController,
-  Action,
-  AnyContent,
-  AnyContentAsEmpty,
-  BodyParser,
-  BodyParsers,
-  ControllerComponents,
-  RequestHeader,
-  Result,
-  Results
-}
-import otoroshi.jobs.updates._
+import otoroshi.actions.*
+import otoroshi.env.Env
+import otoroshi.events.*
+import otoroshi.jobs.updates.*
+import otoroshi.models.ServiceDescriptor
 import otoroshi.utils.EntityFiltering
+import otoroshi.utils.syntax.implicits.given
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -627,17 +616,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
 
         eventualDescriptors
           .map(_.filter(d => ctx.canUserRead(d)))
-          .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
-          }
-          .flatMap {
-            case Some(desc) =>
-              analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
-                case Some(value) => Ok(value)
-                case None        => NotFound(Json.obj("error" -> "No entity found"))
-              }
-            case None       => NotFound(Json.obj("error" -> "No entity found")).future
+          .flatMap { desc =>
+            analyticsService.fetchServicesStatus(desc, fromDate, toDate)
+              .map(_.map(Ok.apply).getOrElse(NotFound(Json.obj("error" -> "No entity found"))))
           }
       }
     }
@@ -680,17 +661,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
               .filter(d => d.healthCheck.enabled)
               .sortWith(_.name < _.name)
           )
-          .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
-          }
-          .flatMap {
-            case None       => NotFound(Json.obj("error" -> "No entity found")).future
-            case Some(desc) =>
-              analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
-                case Some(value) => Ok(value)
-                case None        => NotFound(Json.obj("error" -> "No entity found"))
-              }
+          .flatMap { desc =>
+            analyticsService.fetchServicesStatus(desc, fromDate, toDate)
+              .map(_.map(Ok.apply).getOrElse(NotFound(Json.obj("error" -> "No entity found"))))
           }
       }
     }

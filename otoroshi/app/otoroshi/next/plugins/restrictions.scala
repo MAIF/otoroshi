@@ -2,16 +2,16 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.models.{RestrictionPath, Restrictions}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class NgRestrictionPath(method: String, path: String) {
   def json: JsValue           = NgRestrictionPath.format.writes(this)
-  def legacy: RestrictionPath = RestrictionPath(method, path)
+  def legacy: RestrictionPath = RestrictionPath(method, path, None)
 }
 
 object NgRestrictionPath {

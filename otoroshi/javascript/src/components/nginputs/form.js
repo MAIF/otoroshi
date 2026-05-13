@@ -25,7 +25,7 @@ import {
   NgLocationRenderer,
   NgDotsRenderer,
   LabelAndInput,
-  NgCustomFormsRenderer
+  NgCustomFormsRenderer,
 } from './inputs';
 
 import {
@@ -69,7 +69,7 @@ const Helpers = {
       return components.ObjectSelectRenderer;
     } else if (type === 'code') {
       return components.CodeRenderer;
-    } else if(type === 'any') {
+    } else if (type === 'any') {
       return components.AnyRenderer;
     } else if (type === 'json') {
       return components.JsonRenderer;
@@ -585,6 +585,7 @@ export class NgForm extends Component {
       const FormRenderer = config.components.FormRenderer;
       return (
         <FormRenderer
+          style={this.props.style}
           embedded={true}
           breadcrumb={config.breadcrumb}
           setBreadcrumb={

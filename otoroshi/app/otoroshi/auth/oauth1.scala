@@ -4,16 +4,16 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.WSResponse
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.Results.{Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
@@ -304,7 +304,7 @@ object Oauth1AuthModule {
 }
 
 case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
-  import Oauth1AuthModule._
+  import Oauth1AuthModule.*
 
   def this() = this(Oauth1AuthModule.defaultConfig)
 
@@ -348,7 +348,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             val redirect    = request
               .getQueryString("redirect")
               .filter(redirect =>
-                request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+                request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+                request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
               )
               .map(redirectBase64Encoded =>
                 new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)

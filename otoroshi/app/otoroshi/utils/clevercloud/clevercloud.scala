@@ -78,7 +78,7 @@ object CleverCloudClient {
 class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSettings, val orgaId: String) {
 
   import CleverCloudClient.*
-  import otoroshi.utils.http.Implicits.*
+  import otoroshi.utils.http.Implicits.given
 
   given mat: Materializer = env.otoroshiMaterializer
 

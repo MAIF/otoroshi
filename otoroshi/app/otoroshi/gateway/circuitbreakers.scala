@@ -1,29 +1,28 @@
 package otoroshi.gateway
 
-import org.apache.pekko.http.scaladsl.util.FastFuture._
-
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import org.apache.pekko.Done
 import org.apache.pekko.actor.Scheduler
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.pattern.{CircuitBreaker => AkkaCircuitBreaker}
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.pattern.CircuitBreaker as AkkaCircuitBreaker
 import org.apache.pekko.stream.scaladsl.Flow
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.health.HealthCheck
-import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
+import otoroshi.events.*
+import otoroshi.health.HealthCheckLogic
+import otoroshi.models.*
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.syntax.implicits._
+import play.api.http.websocket.Message as PlayWSMessage
 import play.api.libs.json.Json
+import play.api.mvc.{RequestHeader, Result}
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
-import scala.concurrent.{duration, ExecutionContext, Future, Promise}
+import scala.concurrent.duration.*
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -188,7 +187,7 @@ class ServiceDescriptorCircuitBreaker()(using ec: ExecutionContext, scheduler: S
   ): Option[(Target, AkkaCircuitBreaker)] = {
     val raw_healthy_targets = _targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
-      .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
+      .filterNot(t => HealthCheckLogic.badHealth.contains(t.asCleanTarget)) // health check can disable targets
       .filterNot(t => breakers.get(t.host).exists(_.cb.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)

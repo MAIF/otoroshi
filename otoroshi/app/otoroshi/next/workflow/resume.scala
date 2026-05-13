@@ -5,8 +5,8 @@ import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}

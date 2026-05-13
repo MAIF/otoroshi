@@ -1,34 +1,32 @@
 package otoroshi.gateway
 
+import com.auth0.jwt.JWT
 import org.apache.pekko.Done
-
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import org.apache.pekko.actor.{ActorRef, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import com.auth0.jwt.JWT
-import otoroshi.env.{Env, SidecarConfig}
-import otoroshi.events._
-import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.el.HeadersExpressionLanguage
-import otoroshi.script.Implicits._
-import otoroshi.script._
-import otoroshi.utils.TypedMap
+import otoroshi.env.{Env, SidecarConfig}
+import otoroshi.events.*
+import otoroshi.models.*
+import otoroshi.script.*
+import otoroshi.script.Implicits.given
+import otoroshi.security.IdGenerator
+import otoroshi.utils.*
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.mvc.Results._
-import play.api.mvc.{Cookie, RequestHeader, Result, Results}
-import otoroshi.security.IdGenerator
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import otoroshi.utils._
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
 import play.api.libs.ws.WSResponse
+import play.api.mvc.Results.*
+import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

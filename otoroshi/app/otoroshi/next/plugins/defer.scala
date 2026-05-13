@@ -3,15 +3,15 @@ package otoroshi.next.plugins
 import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util._
+import scala.util.*
 
 case class NgDeferPluginConfig(
     duration: FiniteDuration = FiniteDuration(0, TimeUnit.MILLISECONDS)

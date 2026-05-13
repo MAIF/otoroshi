@@ -12,7 +12,7 @@ import play.api.Logger
 import play.api.libs.json.Format
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends CertificateDataStore with RedisLikeStore[Cert] {
@@ -61,7 +61,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
           lastIcaClient =
             env.datastores.globalConfigDataStore.latestSafe.forall(_.tlsSettings.includeJdkCaClient)
           lastTrustedCA =
-            env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.trustedCAsServer).getOrElse(Seq.empty)
+            env.datastores.globalConfigDataStore.latestSafe
+              .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
+              .getOrElse(Seq.empty)
         } yield {
           if (
             last != lastUpdatedRef.get()

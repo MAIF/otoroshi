@@ -3,12 +3,12 @@ package otoroshi.models
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.wasm.*
+import play.api.libs.json.*
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}

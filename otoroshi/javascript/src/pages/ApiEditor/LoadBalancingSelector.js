@@ -40,6 +40,21 @@ export function LoadBalancingSelector({ onChange, value }) {
             advice: 'Helps maintain session persistence, useful for stateful applications.',
           },
           {
+            key: 'HeaderHash',
+            text: 'Routes requests from the same client to the same target based on a session identifier provided as a request header value.',
+            advice: 'Helps maintain session persistence, useful for stateful applications.',
+          },
+          {
+            key: 'CookieHash',
+            text: 'Routes requests from the same client to the same target based on a session identifier provided as a request cookie value.',
+            advice: 'Helps maintain session persistence, useful for stateful applications.',
+          },
+          {
+            key: 'QueryHash',
+            text: 'Routes requests from the same client to the same target based on a session identifier provided as a request query param value.',
+            advice: 'Helps maintain session persistence, useful for stateful applications.',
+          },
+          {
             key: 'WeightedBestResponseTime',
             text: 'Similar to BestResponseTime but assigns weights to backend targets, allowing some to handle more traffic than others.',
             advice:

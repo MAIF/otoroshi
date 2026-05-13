@@ -1,0 +1,97 @@
+package plugins
+
+import functional.PluginsTestSpec
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
+import otoroshi.models.{ApiKey, ApiKeyRotation, RouteIdentifier}
+import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
+import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.next.plugins.*
+import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.BetterJsValue
+import play.api.http.Status
+import play.api.libs.json.*
+
+class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
+  import parent.{*, given}
+
+  given system: ActorSystem = ActorSystem("otoroshi-test")
+  given mat: Materializer   = Materializer(system)
+  given http: HttpExt       = Http()
+  given env: otoroshi.env.Env = otoroshiComponents.env
+
+  val route = createRouteWithExternalTarget(
+    Seq(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[OverrideHost]
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[ApikeyCalls]
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[SendOtoroshiHeadersBack]
+      )
+    )
+  ).futureValue
+
+  val apikey = ApiKey(
+    clientId = s"client-${IdGenerator.uuid}",
+    clientSecret = "1234",
+    clientName = s"name-${IdGenerator.uuid}",
+    authorizedEntities = Seq(RouteIdentifier(route.id)),
+    rotation = ApiKeyRotation(enabled = true)
+  )
+
+  createOtoroshiApiKey(apikey).futureValue
+
+  val resp = ws
+    .url(s"http://127.0.0.1:$port/api")
+    .withHttpHeaders(
+      "Host"                   -> route.frontend.domains.head.domain,
+      "Otoroshi-Client-Id"     -> apikey.clientId,
+      "Otoroshi-Client-Secret" -> apikey.clientSecret
+    )
+    .get()
+    .futureValue
+
+  val body = Json.parse(resp.body).as[JsValue]
+
+  resp.header(env.Headers.OtoroshiRequestId) mustBe defined
+  resp.header(env.Headers.OtoroshiRequestTimestamp) mustBe defined
+  resp.header(env.Headers.OtoroshiProxyLatency) mustBe defined
+  resp.header(env.Headers.OtoroshiUpstreamLatency) mustBe defined
+
+  val requestId = resp.header(env.Headers.OtoroshiRequestId).get
+  requestId.nonEmpty mustBe true
+
+  val timestamp = resp.header(env.Headers.OtoroshiRequestTimestamp).get
+  timestamp must include("T")
+
+  val proxyLatency = resp.header(env.Headers.OtoroshiProxyLatency).get
+  proxyLatency.toLong >= 0 mustBe true
+
+  val upstreamLatency = resp.header(env.Headers.OtoroshiUpstreamLatency).get
+  upstreamLatency.toLong >= -1 mustBe true
+
+  resp.header(env.Headers.OtoroshiDailyCallsRemaining) mustBe defined
+  resp.header(env.Headers.OtoroshiMonthlyCallsRemaining) mustBe defined
+
+  val dailyRemaining = resp.header(env.Headers.OtoroshiDailyCallsRemaining).get
+  dailyRemaining.toLong >= 0 mustBe true
+
+  val monthlyRemaining = resp.header(env.Headers.OtoroshiMonthlyCallsRemaining).get
+  monthlyRemaining.toLong >= 0 mustBe true
+
+  resp.header("Otoroshi-ApiKey-Rotation-At") mustBe defined
+  resp.header("Otoroshi-ApiKey-Rotation-Remaining") mustBe defined
+
+  val rotationAt = resp.header("Otoroshi-ApiKey-Rotation-At").get
+  rotationAt must include("T")
+
+  val rotationRemaining = resp.header("Otoroshi-ApiKey-Rotation-Remaining").get
+  rotationRemaining.toLong >= 0 mustBe true
+
+  deleteOtoroshiApiKey(apikey).futureValue
+  deleteOtoroshiRoute(route).futureValue
+}

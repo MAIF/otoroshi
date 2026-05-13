@@ -7,7 +7,7 @@ cleanup () {
 }
 
 prepare_build () {
-  yarn install
+  npm install
 }
 
 build () {

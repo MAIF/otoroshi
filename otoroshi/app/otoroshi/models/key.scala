@@ -32,8 +32,8 @@ case class Key(key: String) {
 
 object Key {
 
-  import play.api.libs.json.Reads._
-  import play.api.libs.json._
+  import play.api.libs.json.*
+  import play.api.libs.json.Reads.*
 
   val Empty: Key = Key("")
 

@@ -1,17 +1,17 @@
 package otoroshi.auth
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, _}
-import play.api.mvc._
+import play.api.libs.json.{JsArray, JsObject, *}
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
 import java.util
@@ -384,8 +384,8 @@ case class LdapAuthModuleConfig(
   }
 
   private def _bindUser(urls: Seq[String], username: String, password: String): Either[String, LdapAuthUser] = {
-    import javax.naming._
-    import scala.jdk.CollectionConverters._
+    import javax.naming.*
+    import scala.jdk.CollectionConverters.given
 
     if (urls.isEmpty)
       Left(s"Missing LDAP server URLs or all down")
@@ -632,22 +632,25 @@ case class LdapAuthModuleConfig(
     adminUsername.foreach(u => env.put(Context.SECURITY_PRINCIPAL, u))
     adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
 
-    try {
-      for (url <- serverUrls) {
+    def tryConnect(url: String): Either[Throwable, Unit] =
+      Try {
         env.put(Context.PROVIDER_URL, url)
-        scala.util.Try {
-          val ctx2 = new InitialDirContext(env)
-          ctx2.close()
-        } match {
-          case Success(_)                                                          => return FastFuture.successful((true, "--"))
-          case Failure(_: ServiceUnavailableException | _: CommunicationException) =>
-          case Failure(e)                                                          => throw e
+        val ctx = new InitialDirContext(env)
+        ctx.close()
+      }.toEither
+
+    FastFuture.successful(
+      serverUrls
+        .view
+        .map(tryConnect)
+        .collectFirst {
+          case Right(_) => (true, "--")
         }
-      }
-      FastFuture.successful((false, "Missing LDAP server URLs or all down"))
-    } catch {
-      case e: Exception => FastFuture.successful((false, e.getMessage))
-    }
+        .orElse {
+          serverUrls.headOption.map(_ => (false, "Missing LDAP server URLs or all down"))
+        }
+        .getOrElse((false, "No LDAP server URLs configured"))
+    )
   }
 }
 
@@ -789,7 +792,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     val redirect                    = request
       .getQueryString("redirect")
       .filter(redirect =>
-        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+        request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
       )
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)

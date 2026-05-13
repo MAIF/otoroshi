@@ -1,47 +1,99 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
-import com.nimbusds.jose.crypto.{RSADecrypter, RSAEncrypter}
+import com.auth0.jwt.algorithms.Algorithm
+import com.github.blemale.scaffeine.Scaffeine
+import com.nimbusds.jose.crypto.{AESEncrypter, RSADecrypter, RSAEncrypter}
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jose.{EncryptionMethod, JOSEException, JWEAlgorithm, JWEHeader, JWEObject}
 import com.nimbusds.jwt.{EncryptedJWT, JWTClaimsSet}
-import java.util.{Base64 => JavaBase64}
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.el.JwtExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.{
+  ApiKey,
+  DefaultToken,
+  InCookie,
+  InHeader,
+  InQueryParam,
+  JwtTokenLocation,
+  LocalJwtVerifier,
+  OutputMode,
+  PrivateAppsUser,
+  RefJwtVerifier,
+  ServiceDescriptor
+}
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.{
+  BetterJsReadable,
+  BetterJsValue,
+  BetterMapOfStringAndB,
+  BetterString,
+  BetterSyntax
+}
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
-import play.api.libs.ws.WSBodyWritables._
-import play.api.mvc.{Result, Results}
+import play.api.libs.ws.WSBodyWritables.given
+import play.api.mvc.{RequestHeader, Result, Results}
+import org.joda.time.DateTime
+import otoroshi.auth.OAuth2ModuleConfig
+import otoroshi.el.JwtExpressionLanguage
+import play.api.libs.typedmap.TypedKey
+import otoroshi.ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.pki.models.GenKeyPairQuery
+import otoroshi.utils.TypedMap
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
+import java.util.Base64 as JavaBase64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NgJwtVerificationConfig(verifiers: Seq[String] = Seq.empty) extends NgPluginConfig {
+case class NgJwtVerificationConfig(
+    verifiers: Seq[String] = Seq.empty,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
 }
 
 object NgJwtVerificationConfig {
   val format: Format[NgJwtVerificationConfig] = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
-        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty)
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: NgJwtVerificationConfig): JsValue             = Json.obj("verifiers" -> o.verifiers)
+    override def writes(o: NgJwtVerificationConfig): JsValue             = Json.obj(
+      "verifiers"               -> o.verifiers,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
+    )
   }
 }
 
@@ -71,7 +123,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
     config.verifiers match {
       case Nil         => JwtVerifierUtils.onError()
-      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds)
+      case verifierIds => JwtVerifierUtils.verify(ctx, verifierIds, config.asResult)
     }
   }
 
@@ -110,7 +162,7 @@ object JwtVerifierUtils {
       .vfuture
   }
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String])(using
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -126,7 +178,7 @@ object JwtVerifierUtils {
           attrs = ctx.attrs
         )
         .flatMap {
-          case Left(result)     => onError(result.some)
+          case Left(result)     => onError(customResult.orElse(result.some))
           case Right(injection) =>
             ctx.attrs.put(JwtInjectionKey -> injection)
             NgAccess.NgAllowed.vfuture
@@ -140,7 +192,7 @@ object JwtVerifierUtils {
         elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
         attrs = ctx.attrs
       ) match {
-        case Left(result)     => onError(result.some)
+        case Left(result)     => onError(customResult.orElse(result.some))
         case Right(injection) =>
           ctx.attrs.put(JwtInjectionKey -> injection)
           NgAccess.NgAllowed.vfuture
@@ -149,9 +201,24 @@ object JwtVerifierUtils {
   }
 }
 
-case class NgJwtVerificationOnlyConfig(verifier: Option[String] = None, failIfAbsent: Boolean = true)
-    extends NgPluginConfig {
+case class NgJwtVerificationOnlyConfig(
+    verifier: Option[String] = None,
+    failIfAbsent: Boolean = true,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
   def json: JsValue = NgJwtVerificationOnlyConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
 }
 
 object NgJwtVerificationOnlyConfig {
@@ -159,15 +226,24 @@ object NgJwtVerificationOnlyConfig {
     override def reads(json: JsValue): JsResult[NgJwtVerificationOnlyConfig] = Try {
       NgJwtVerificationOnlyConfig(
         verifier = json.select("verifier").asOpt[String],
-        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true)
+        failIfAbsent = json.select("fail_if_absent").asOpt[Boolean].getOrElse(true),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
     override def writes(o: NgJwtVerificationOnlyConfig): JsValue             = Json.obj(
-      "verifier"       -> o.verifier,
-      "fail_if_absent" -> o.failIfAbsent
+      "verifier"                -> o.verifier,
+      "fail_if_absent"          -> o.failIfAbsent,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
     )
   }
 }
@@ -206,7 +282,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
           case Some(verifier) =>
             verifier.source.token(ctx.request) match {
               case None if !config.failIfAbsent => NgAccess.NgAllowed.vfuture
-              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId))
+              case _                            => JwtVerifierUtils.verify(ctx, Seq(verifierId), config.asResult)
             }
         }
     }
@@ -713,6 +789,709 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
               case None        => Left(Results.BadRequest(Json.obj("error" -> "something wrong happened"))).future
             }
         }
+    }
+  }
+}
+
+case class OIDCJwtVerifierConfig(
+    mandatory: Boolean = true,
+    ref: Option[String] = None,
+    source: Option[JwtTokenLocation] = None,
+    user: Boolean = false,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
+  def json: JsValue = OIDCJwtVerifierConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
+}
+
+object OIDCJwtVerifierConfig {
+  val configFlow                     = Seq(
+    "mandatory",
+    "ref",
+    "user",
+    "custom_response",
+    "custom_response_status",
+    "custom_response_headers",
+    "custom_response_body",
+    "source"
+  )
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "mandatory"               -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Mandatory"
+      ),
+      "user"                    -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Use as connected user"
+      ),
+      "custom_response"         -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Custom error"
+      ),
+      "custom_response_status"  -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Custom error status"
+      ),
+      "custom_response_headers" -> Json.obj(
+        "type"  -> "object",
+        "label" -> "Custom error headers"
+      ),
+      "custom_response_body"    -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Custom error body",
+        "props" -> Json.obj("editorOnly" -> true)
+      ),
+      "source"                  -> Json.obj(
+        "type"  -> "any",
+        "label" -> "JWT Source",
+        "props" -> Json.obj("height" -> 200)
+      ),
+      "ref"                     -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Auth. module",
+        "props" -> Json.obj(
+          "optionsFrom"        -> "/bo/api/proxy/apis/security.otoroshi.io/v1/auth-modules",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id"
+          )
+        )
+      )
+    )
+  )
+  val format                         = new Format[OIDCJwtVerifierConfig] {
+    override def reads(json: JsValue): JsResult[OIDCJwtVerifierConfig] = Try {
+      OIDCJwtVerifierConfig(
+        mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
+        ref = json.select("ref").asOpt[String],
+        user = json.select("user").asOptBoolean.getOrElse(false),
+        source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OIDCJwtVerifierConfig): JsValue             = Json.obj(
+      "mandatory"               -> o.mandatory,
+      "ref"                     -> o.ref.map(_.json).getOrElse(JsNull).asValue,
+      "source"                  -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
+      "custom_response"         -> o.customResponse,
+      "custom_response_status"  -> o.customResponseStatus,
+      "custom_response_headers" -> o.customResponseHeaders,
+      "custom_response_body"    -> o.customResponseBody
+    )
+  }
+}
+
+class OIDCJwtVerifier extends NgAccessValidator {
+
+  override def defaultConfigObject: Option[NgPluginConfig] = OIDCJwtVerifierConfig().some
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess)
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.AccessControl, NgPluginCategory.Classic)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def isAccessAsync: Boolean                      = true
+  override def name: String                                = "OIDC JWT verification"
+  override def description: Option[String]                 =
+    "This plugin verifies the current request jwt token against OIDC JWT verification settings living in an OIDC auth. module".some
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OIDCJwtVerifierConfig.configFlow
+  override def configSchema: Option[JsObject] = OIDCJwtVerifierConfig.configSchema
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx.cachedConfig(internalName)(OIDCJwtVerifierConfig.format).getOrElse(OIDCJwtVerifierConfig())
+    config.ref match {
+      case None               => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
+      case Some(authModuleId) =>
+        env.proxyState.authModule(authModuleId) match {
+          case None    => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
+          case Some(m) =>
+            m match {
+              case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
+                val customResult = config.asResult
+                val verifier     = LocalJwtVerifier()
+                  .copy(
+                    enabled = true,
+                    algoSettings = oidcModule.jwtVerifier.get
+                  )
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None if !config.mandatory  => NgAccess.NgAllowed.vfuture
+                  case None /* config.mandatory */ =>
+                    NgAccess
+                      .NgDenied(customResult.getOrElse(Results.BadRequest(Json.obj("error" -> "token not found"))))
+                      .vfuture
+                  case Some((source, token))     =>
+                    verifier
+                      .copy(source = source)
+                      .verifyGen[NgAccess](
+                        ctx.request,
+                        ctx.route.legacy,
+                        ctx.apikey,
+                        ctx.user,
+                        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                        ctx.attrs
+                      ) { _ =>
+                        if (config.user) {
+                          OIDCAuthToken.getSession(
+                            ctx,
+                            oidcModule,
+                            OIDCAuthTokenConfig(
+                              ref = config.ref.get,
+                              opaque = false,
+                              fetchUserProfile = true,
+                              validateAudience = false,
+                              headerName = "Authorization"
+                            ),
+                            Some(token)
+                          )
+                        } else {
+                          NgAccess.NgAllowed.rightf
+                        }
+                      }
+                      .map {
+                        case Left(_) if !config.mandatory     => NgAccess.NgAllowed
+                        case Left(result)                     => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Right(r)                         => r
+                      }
+                }
+              }
+              case _                                                                  =>
+                if (!config.mandatory)
+                  NgAccess.NgAllowed.vfuture
+                else
+                  NgAccess
+                    .NgDenied(
+                      Results.BadRequest(
+                        Json.obj(
+                          "error" -> "auth. module not an oidc module or does not have jwt verification settings"
+                        )
+                      )
+                    )
+                    .vfuture
+            }
+        }
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OAuth2 Token Exchange (RFC 8693)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+case class OAuth2TokenExchangeConfig(
+    ref: Option[String] = None,
+    source: Option[JwtTokenLocation] = None,
+    exchange: OAuth2TokenExchangeParams = OAuth2TokenExchangeParams(),
+    clientCredentialsOverride: Option[OAuth2ClientCredentialsOverride] = None,
+    cacheTtlMs: Long = 0,
+    callTimeoutMs: Long = 10000,
+    customResponse: Boolean = false,
+    customResponseStatus: Int = 401,
+    customResponseHeaders: Map[String, String] = Map.empty,
+    customResponseBody: String = Json.obj("error" -> "unauthorized").stringify
+) extends NgPluginConfig {
+  def json: JsValue = OAuth2TokenExchangeConfig.format.writes(this)
+  def asResult: Option[Result] = {
+    if (customResponse) {
+      val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
+      val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
+    } else {
+      None
+    }
+  }
+
+  def withExpressionLanguage(attrs: TypedMap)(implicit env: Env): OAuth2TokenExchangeConfig = {
+    OAuth2TokenExchangeConfig.format.reads(json.stringify.evaluateEl(attrs).parseJson) match {
+      case JsError(errs)     =>
+        OAuth2TokenExchange.logger.error(s"error while applying EL on OAuth2TokenExchangeConfig: ${errs}")
+        this
+      case JsSuccess(cfg, _) => cfg
+    }
+  }
+}
+
+case class OAuth2TokenExchangeParams(
+    audience: Option[String] = None,
+    resource: Option[String] = None,
+    scope: Option[String] = None,
+    requestedTokenType: String = "urn:ietf:params:oauth:token-type:access_token",
+    actorToken: Option[String] = None,
+    actorTokenType: String = "urn:ietf:params:oauth:token-type:access_token"
+) {
+  def json: JsValue = OAuth2TokenExchangeParams.format.writes(this)
+}
+
+object OAuth2TokenExchangeParams {
+  val format = new Format[OAuth2TokenExchangeParams] {
+    override def reads(json: JsValue): JsResult[OAuth2TokenExchangeParams] = Try {
+      OAuth2TokenExchangeParams(
+        audience = json.select("audience").asOpt[String],
+        resource = json.select("resource").asOpt[String],
+        scope = json.select("scope").asOpt[String],
+        requestedTokenType = json
+          .select("requested_token_type")
+          .asOpt[String]
+          .getOrElse("urn:ietf:params:oauth:token-type:access_token"),
+        actorToken = json.select("actor_token").asOpt[String],
+        actorTokenType = json
+          .select("actor_token_type")
+          .asOpt[String]
+          .getOrElse("urn:ietf:params:oauth:token-type:access_token")
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2TokenExchangeParams): JsValue             = Json.obj(
+      "audience"             -> o.audience.map(JsString(_)).getOrElse(JsNull).asValue,
+      "resource"             -> o.resource.map(JsString(_)).getOrElse(JsNull).asValue,
+      "scope"                -> o.scope.map(JsString(_)).getOrElse(JsNull).asValue,
+      "requested_token_type" -> o.requestedTokenType,
+      "actor_token"          -> o.actorToken.map(JsString(_)).getOrElse(JsNull).asValue,
+      "actor_token_type"     -> o.actorTokenType
+    )
+  }
+}
+
+case class OAuth2ClientCredentialsOverride(
+    clientId: String,
+    clientSecret: String
+) {
+  def json: JsValue = OAuth2ClientCredentialsOverride.format.writes(this)
+}
+
+object OAuth2ClientCredentialsOverride {
+  val format = new Format[OAuth2ClientCredentialsOverride] {
+    override def reads(json: JsValue): JsResult[OAuth2ClientCredentialsOverride] = Try {
+      OAuth2ClientCredentialsOverride(
+        clientId = json.select("client_id").as[String],
+        clientSecret = json.select("client_secret").as[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2ClientCredentialsOverride): JsValue             = Json.obj(
+      "client_id"     -> o.clientId,
+      "client_secret" -> o.clientSecret
+    )
+  }
+}
+
+object OAuth2TokenExchangeConfig {
+  val configFlow: Seq[String] = Seq(
+    "ref",
+    "source",
+    "exchange",
+    "client_credentials_override",
+    "cache_ttl_ms",
+    "call_timeout_ms",
+    "custom_response",
+    "custom_response_status",
+    "custom_response_headers",
+    "custom_response_body"
+  )
+
+  val configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "ref"                         -> Json.obj(
+        "type"  -> "select",
+        "label" -> s"Auth. module",
+        "props" -> Json.obj(
+          "optionsFrom"        -> "/bo/api/proxy/apis/security.otoroshi.io/v1/auth-modules",
+          "optionsTransformer" -> Json.obj(
+            "label" -> "name",
+            "value" -> "id"
+          )
+        )
+      ),
+      "source"                      -> Json.obj(
+        "type"  -> "any",
+        "label" -> "JWT Source",
+        "props" -> Json.obj("height" -> 200)
+      ),
+      "exchange"                    -> Json.obj(
+        "type"        -> "form",
+        "label"       -> "Exchange settings",
+        "collapsable" -> true,
+        "collapsed"   -> true,
+        "schema"      -> Json.obj(
+          "audience"             -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Target audience"
+          ),
+          "resource"             -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Resource"
+          ),
+          "scope"                -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Scope"
+          ),
+          "requested_token_type" -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Requested token type"
+          ),
+          "actor_token"          -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Actor token"
+          ),
+          "actor_token_type"     -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Actor token type"
+          )
+        ),
+        "flow"        -> Json.arr(
+          "audience",
+          "resource",
+          "scope",
+          "requested_token_type",
+          "actor_token",
+          "actor_token_type"
+        )
+      ),
+      "client_credentials_override" -> Json.obj(
+        "type"        -> "form",
+        "label"       -> "Client credentials override",
+        "collapsable" -> true,
+        "collapsed"   -> true,
+        "schema"      -> Json.obj(
+          "client_id"     -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Client ID"
+          ),
+          "client_secret" -> Json.obj(
+            "type"  -> "string",
+            "label" -> "Client secret"
+          )
+        ),
+        "flow"        -> Json.arr("client_id", "client_secret")
+      ),
+      "cache_ttl_ms"                -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Cache TTL (0 to disable)",
+        "props" -> Json.obj(
+          "suffix" -> "ms."
+        )
+      ),
+      "call_timeout_ms"             -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Call timeout",
+        "props" -> Json.obj(
+          "suffix" -> "ms."
+        )
+      ),
+      "custom_response"             -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Custom error"
+      ),
+      "custom_response_status"      -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Custom error status"
+      ),
+      "custom_response_headers"     -> Json.obj(
+        "type"  -> "object",
+        "label" -> "Custom error headers"
+      ),
+      "custom_response_body"        -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Custom error body",
+        "props" -> Json.obj("editorOnly" -> true)
+      )
+    )
+  )
+
+  val format = new Format[OAuth2TokenExchangeConfig] {
+    override def reads(json: JsValue): JsResult[OAuth2TokenExchangeConfig] = Try {
+      OAuth2TokenExchangeConfig(
+        ref = json.select("ref").asOpt[String],
+        source = json.select("source").asOpt[JsObject].flatMap(o => JwtTokenLocation.fromJson(o).toOption),
+        exchange = json
+          .select("exchange")
+          .asOpt[JsObject]
+          .flatMap(o => OAuth2TokenExchangeParams.format.reads(o).asOpt)
+          .getOrElse(OAuth2TokenExchangeParams()),
+        clientCredentialsOverride = json
+          .select("client_credentials_override")
+          .asOpt[JsObject]
+          .flatMap(o => OAuth2ClientCredentialsOverride.format.reads(o).asOpt),
+        cacheTtlMs = json.select("cache_ttl_ms").asOpt[Long].getOrElse(0L),
+        callTimeoutMs = json.select("call_timeout_ms").asOpt[Long].getOrElse(10000L),
+        customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
+        customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
+        customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        customResponseBody =
+          json.select("custom_response_body").asOpt[String].getOrElse(Json.obj("error" -> "unauthorized").stringify)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+    override def writes(o: OAuth2TokenExchangeConfig): JsValue             = Json.obj(
+      "ref"                         -> o.ref.map(_.json).getOrElse(JsNull).asValue,
+      "source"                      -> o.source.map(_.asJson).getOrElse(JsNull).asValue,
+      "exchange"                    -> o.exchange.json,
+      "client_credentials_override" -> o.clientCredentialsOverride.map(_.json).getOrElse(JsNull).asValue,
+      "cache_ttl_ms"                -> o.cacheTtlMs,
+      "call_timeout_ms"             -> o.callTimeoutMs,
+      "custom_response"             -> o.customResponse,
+      "custom_response_status"      -> o.customResponseStatus,
+      "custom_response_headers"     -> o.customResponseHeaders,
+      "custom_response_body"        -> o.customResponseBody
+    )
+  }
+}
+
+object OAuth2TokenExchange {
+  lazy val logger   = play.api.Logger("otoroshi-plugin-oauth2-token-exchange")
+  val exchangeCache = Scaffeine()
+    .maximumSize(1000)
+    .build[String, (String, Long)]()
+}
+
+class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
+
+  import otoroshi.utils.http.Implicits._
+  import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+
+  override def defaultConfigObject: Option[NgPluginConfig] = OAuth2TokenExchangeConfig().some
+  override def steps: Seq[NgStep]                          = Seq(NgStep.ValidateAccess, NgStep.TransformRequest)
+  override def categories: Seq[NgPluginCategory]           =
+    Seq(NgPluginCategory.AccessControl, NgPluginCategory.Transformations)
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def usesCallbacks: Boolean                      = false
+  override def transformsRequest: Boolean                  = true
+  override def transformsResponse: Boolean                 = false
+  override def transformsError: Boolean                    = false
+  override def isAccessAsync: Boolean                      = true
+  override def isTransformRequestAsync: Boolean            = true
+  override def name: String                                = "OAuth2 token exchange"
+  override def description: Option[String]                 =
+    "This plugin performs an OAuth 2.0 Token Exchange (RFC 8693) using an OIDC auth. module configuration, validates the incoming token, exchanges it with the IdP, and forwards the exchanged token upstream".some
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OAuth2TokenExchangeConfig.configFlow
+  override def configSchema: Option[JsObject] = OAuth2TokenExchangeConfig.configSchema
+
+  private val ExchangedTokenKey = TypedKey[String]("otoroshi.next.plugins.OAuth2TokenExchange.ExchangedToken")
+
+  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+    val config = ctx
+      .cachedConfig(internalName)(OAuth2TokenExchangeConfig.format)
+      .getOrElse(OAuth2TokenExchangeConfig())
+      .withExpressionLanguage(ctx.attrs)
+    config.ref match {
+      case None               =>
+        NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
+      case Some(authModuleId) =>
+        env.proxyState.authModule(authModuleId) match {
+          case None    =>
+            NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "auth. module not found"))).vfuture
+          case Some(m) =>
+            m match {
+              case oidcModule: OAuth2ModuleConfig if oidcModule.jwtVerifier.isDefined => {
+                val customResult = config.asResult
+                val verifier     = LocalJwtVerifier()
+                  .copy(
+                    enabled = true,
+                    algoSettings = oidcModule.jwtVerifier.get
+                  )
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None                  =>
+                    NgAccess
+                      .NgDenied(
+                        customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
+                      )
+                      .vfuture
+                  case Some((source, token)) =>
+                    verifier
+                      .copy(source = source)
+                      .verifyGen[NgAccess](
+                        ctx.request,
+                        ctx.route.legacy,
+                        ctx.apikey,
+                        ctx.user,
+                        ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                        ctx.attrs
+                      ) { _ =>
+                        performTokenExchange(token, config, oidcModule, ctx.attrs).map {
+                          case Left(result) => Left(result)
+                          case Right(_)     => Right(NgAccess.NgAllowed)
+                        }
+                      }
+                      .map {
+                        case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
+                        case Right(r)     => r
+                      }
+                }
+              }
+              case _: OAuth2ModuleConfig                                              => {
+                // no jwtVerifier: treat token as opaque, skip local validation, go straight to exchange
+                val customResult = config.asResult
+                val sources      = config.source
+                  .map(s => Seq(s))
+                  .getOrElse(Seq(InHeader("Authorization", "Bearer "), InQueryParam("access_token")))
+                sources.iterator.map(s => s.token(ctx.request).map(t => (s, t))).collectFirst { case Some(tuple) =>
+                  tuple
+                } match {
+                  case None             =>
+                    NgAccess
+                      .NgDenied(
+                        customResult.getOrElse(Results.Unauthorized(Json.obj("error" -> "token not found")))
+                      )
+                      .vfuture
+                  case Some((_, token)) =>
+                    performTokenExchange(token, config, m.asInstanceOf[OAuth2ModuleConfig], ctx.attrs).map {
+                      case Left(result) => NgAccess.NgDenied(customResult.getOrElse(result))
+                      case Right(_)     => NgAccess.NgAllowed
+                    }
+                }
+              }
+              case _                                                                  =>
+                NgAccess
+                  .NgDenied(
+                    Results.BadRequest(Json.obj("error" -> "auth. module is not an OAuth2/OIDC module"))
+                  )
+                  .vfuture
+            }
+        }
+    }
+  }
+
+  private def performTokenExchange(
+      subjectToken: String,
+      config: OAuth2TokenExchangeConfig,
+      oidcModule: OAuth2ModuleConfig,
+      attrs: TypedMap
+  )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
+    val cacheKey  =
+      s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
+    val cacheTtl  = config.cacheTtlMs
+    val now       = System.currentTimeMillis()
+    val fromCache = if (cacheTtl > 0) {
+      OAuth2TokenExchange.exchangeCache.getIfPresent(cacheKey).flatMap { case (cachedToken, expiresAt) =>
+        if (expiresAt > now) Some(cachedToken) else { OAuth2TokenExchange.exchangeCache.invalidate(cacheKey); None }
+      }
+    } else None
+
+    fromCache match {
+      case Some(cachedToken) =>
+        attrs.put(ExchangedTokenKey -> cachedToken)
+        Right(()).vfuture
+      case None              =>
+        val clientId     = config.clientCredentialsOverride.map(_.clientId).getOrElse(oidcModule.clientId)
+        val clientSecret = config.clientCredentialsOverride.map(_.clientSecret).getOrElse(oidcModule.clientSecret)
+
+        val params  = Map(
+          "grant_type"                            -> "urn:ietf:params:oauth:grant-type:token-exchange",
+          "subject_token"                         -> subjectToken,
+          "subject_token_type"                    -> "urn:ietf:params:oauth:token-type:access_token",
+          "client_id"                             -> clientId,
+          "client_secret"                         -> clientSecret
+        ) ++
+          config.exchange.audience.map("audience" -> _) ++
+          config.exchange.resource.map("resource" -> _) ++
+          config.exchange.scope.map("scope" -> _) ++
+          Some("requested_token_type" -> config.exchange.requestedTokenType) ++
+          config.exchange.actorToken.map("actor_token" -> _) ++
+          config.exchange.actorToken.map(_ => "actor_token_type" -> config.exchange.actorTokenType)
+
+        val timeout =
+          scala.concurrent.duration.Duration(config.callTimeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+
+        val builder = env.MtlsWs
+          .url(oidcModule.tokenUrl, oidcModule.mtlsConfig)
+          .withMaybeProxyServer(
+            oidcModule.proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.auth))
+          )
+          .withRequestTimeout(timeout)
+
+        builder
+          .post(params)(using writeableOf_urlEncodedSimpleForm)
+          .map { response =>
+            if (response.status == 200) {
+              val json           = response.json
+              val exchangedToken = json
+                .select(oidcModule.accessTokenField)
+                .asOpt[String]
+                .getOrElse(json.select("access_token").as[String])
+              if (cacheTtl > 0) {
+                val expiresIn    = json.select("expires_in").asOpt[Long].map(_ * 1000).getOrElse(cacheTtl)
+                val effectiveTtl = Math.min(expiresIn, cacheTtl)
+                OAuth2TokenExchange.exchangeCache.put(cacheKey, (exchangedToken, now + effectiveTtl))
+              }
+              attrs.put(ExchangedTokenKey -> exchangedToken)
+              Right(())
+            } else {
+              OAuth2TokenExchange.logger.error(
+                s"token exchange failed with status ${response.status}: ${response.body}"
+              )
+              Left(
+                Results.BadGateway(
+                  Json.obj(
+                    "error"           -> "token exchange failed",
+                    "exchange_status" -> response.status
+                  )
+                )
+              )
+            }
+          }
+          .recover { case e: Throwable =>
+            OAuth2TokenExchange.logger.error("token exchange call failed", e)
+            Left(
+              Results.BadGateway(
+                Json.obj("error" -> "token exchange call failed", "message" -> e.getMessage)
+              )
+            )
+          }
+    }
+  }
+
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    ctx.attrs.get(ExchangedTokenKey) match {
+      case Some(exchangedToken) =>
+        Right(
+          ctx.otoroshiRequest.copy(
+            headers = ctx.otoroshiRequest.headers
+              .filterNot(_._1.equalsIgnoreCase("Authorization")) + ("Authorization" -> s"Bearer $exchangedToken")
+          )
+        ).vfuture
+      case None                 =>
+        Right(ctx.otoroshiRequest).vfuture
     }
   }
 }

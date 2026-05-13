@@ -1,21 +1,21 @@
 package otoroshi.storage.stores
 
-import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
+import otoroshi.storage.{RedisLike, RedisLikeStore}
+import otoroshi.utils.{RegexPool, SchedulerHelper}
 import play.api.Logger
 import play.api.libs.json.Format
 import play.api.mvc.RequestHeader
-import otoroshi.storage.{RedisLike, RedisLikeStore}
-import otoroshi.utils.{RegexPool, SchedulerHelper}
 
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 import scala.util.Success
 
 class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env: Env)

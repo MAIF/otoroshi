@@ -1,20 +1,19 @@
 package otoroshi.plugins.clientcert
 
-import java.security.cert.X509Certificate
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.{DN, MtlsConfig}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
-import otoroshi.utils.http.MtlsConfig
 
+import java.security.cert.X509Certificate
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -1,10 +1,12 @@
 package otoroshi.utils.http
 
-import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.http.scaladsl.model.Uri
 import otoroshi.env.Env
+import otoroshi.ssl.PemHeaders
 import play.api.mvc.RequestHeader
 
+import java.util.Base64
 import scala.util.Try
 
 object RequestImplicits {
@@ -116,7 +118,7 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPem: Seq[String] = {
-      import otoroshi.ssl.SSLImplicits._
+      import otoroshi.ssl.SSLImplicits.given
       requestHeader.clientCertificateChain
         .map(chain =>
           chain.map { cert =>
@@ -128,6 +130,31 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPemString: String     = clientCertChainPem.mkString("\n")
+
+    @inline
+    def inlinePem: String = {
+      requestHeader.clientCertificateChain
+        .map(chain =>
+          chain
+            .map { cert =>
+              val value = Base64.getEncoder.encodeToString(cert.getEncoded)
+              val begin = PemHeaders.BeginCertificate
+              val end   = PemHeaders.EndCertificate
+
+              val lines = value.replace("\r", "").linesIterator.toList
+
+              val payload = lines
+                .filterNot(_.startsWith("-----")) // keep only the base64 lines
+                .mkString(" ")                    // flatten
+                .split(" +")                      // collapse multiple spaces
+                .mkString(" ")
+
+              s"$begin $payload $end"
+            }
+            .mkString(",")
+        )
+        .getOrElse("")
+    }
 
     @inline
     def theHasBody: Boolean = {

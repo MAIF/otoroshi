@@ -24,7 +24,7 @@ import {
   firstLetterUppercase,
   unsecuredCopyToClipboard,
 } from '../../util';
-import { NgForm, NgSelectRenderer } from '../../components/nginputs';
+import { NgAnyRenderer, NgForm, NgSelectRenderer } from '../../components/nginputs';
 const CodeInput = React.lazy(() => Promise.resolve(require('../../components/inputs/CodeInput')));
 
 import snakeCase from 'lodash/snakeCase';
@@ -32,7 +32,7 @@ import camelCase from 'lodash/camelCase';
 import isFunction from 'lodash/isFunction';
 import _ from 'lodash';
 
-import { getPluginsPatterns } from './patterns';
+import { getPluginsPatterns, getOwnTemplates } from './patterns';
 import { EurekaTargetForm } from './EurekaTargetForm';
 import { ExternalEurekaTargetForm } from './ExternalEurekaTargetForm';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
@@ -45,6 +45,7 @@ import {
 import { useSignalValue } from 'signals-react-safe';
 import { DraftStateDaemon } from '../../components/Drafts/DraftEditor';
 import { HTTP_COLORS } from './MocksDesigner';
+import { MonacoInput } from '../../components/inputs';
 
 const HeaderNode = ({ selectedNode, text, icon }) => (
   <Dot selectedNode={selectedNode} style={{ border: 'none' }}>
@@ -366,6 +367,25 @@ const BackendCallNode = ({ selectedNode, backendCall, isPluginEnabled, ...props 
   </div>
 );
 
+const TunnelHandlerNode = ({ selectedNode, tunnelHandler, isPluginEnabled, ...props }) => (
+  <div
+    className="main-view tunnel-handler-button"
+    style={{
+      opacity: !selectedNode ? 1 : selectedNode.id === tunnelHandler.id ? 1 : 0.25,
+    }}
+  >
+    <NodeElement
+      element={tunnelHandler}
+      selectedNode={selectedNode}
+      hideLink={false}
+      disableBorder={false}
+      bold={false}
+      enabled={isPluginEnabled(tunnelHandler)}
+      {...props}
+    />
+  </div>
+);
+
 const InBoundFlow = (props) => (
   <div className="col-sm-6 flex-column">
     <div className="main-view">{props.children}</div>
@@ -469,6 +489,7 @@ class Designer extends React.Component {
   state = {
     backends: [],
     categories: [],
+    routeTemplates: [],
     nodes: [],
     plugins: [],
     ports: [],
@@ -578,7 +599,7 @@ class Designer extends React.Component {
           : nextClient.forEntityNext(nextClient.ENTITIES.ROUTES).findById(this.props.routeId),
       getCategories(),
       Promise.resolve(
-        Plugins('Designer').map((plugin) => {
+        Plugins().map((plugin) => {
           return {
             ...plugin,
             config_schema: isFunction(plugin.config_schema)
@@ -594,113 +615,132 @@ class Designer extends React.Component {
       getOldPlugins(),
       getPlugins(),
       routePorts(),
-    ]).then(([backends, route, categories, plugins, oldPlugins, metadataPlugins, ports]) => {
-      if (route.error) {
-        this.setState({
-          loading: false,
-          notFound: true,
-        });
-        return;
-      }
+      nextClient.forEntityNext(nextClient.ENTITIES.ROUTE_TEMPLATES).findAll(),
+    ]).then(
+      ([backends, route, categories, plugins, oldPlugins, allPlugins, ports, routeTemplates]) => {
+        if (route.error) {
+          this.setState({
+            loading: false,
+            notFound: true,
+          });
+          return;
+        }
 
-      const formattedPlugins = [
-        ...plugins.map((p) => ({
-          ...(metadataPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
-          ...p,
-        })),
-        ...oldPlugins.map((p) => ({
-          ...p,
-          legacy: true,
-        })),
-        ...metadataPlugins.filter((p) => p.no_js_form),
-      ]
-        .filter(this.filterSpecificPlugin)
-        .map((plugin) => ({
-          ...plugin,
-          config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
-          config: plugin.default_config || plugin.defaultConfig,
-        }));
-
-      const routePlugins = route.plugins
-        .filter((ref) =>
-          formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
-        )
-        .map((ref) => ({
-          ...ref,
-          plugin_index: Object.fromEntries(
-            Object.entries(ref.plugin_index || {}).map(([key, v]) => [
-              firstLetterUppercase(camelCase(key)),
-              v,
-            ])
-          ),
-          ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
-        }));
-      const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
-
-      let routeWithNodeId = {
-        ...route,
-        plugins: route.plugins
-          .filter((ref) =>
-            formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
-          )
-          .map((plugin, i) => ({
-            ...plugin,
-            nodeId: pluginsWithNodeId[i].nodeId,
+        const formattedPlugins = [
+          ...plugins.map((p) => ({
+            ...(allPlugins.find((metaPlugin) => metaPlugin.id === p.id) || {}),
+            ...p,
           })),
-      };
+          ...oldPlugins.map((p) => ({
+            ...p,
+            legacy: true,
+          })),
+          ...allPlugins.filter((p) => p.no_js_form),
+        ]
+          .filter(this.filterSpecificPlugin)
+          .map((plugin) => ({
+            ...plugin,
+            config_schema: toUpperCaseLabels(plugin.config_schema || plugin.configSchema || {}),
+            config: plugin.default_config || plugin.defaultConfig,
+          }));
 
-      this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
+        const routePlugins = route.plugins.map((ref) => {
+          const existingPlugin = formattedPlugins.find(
+            (p) => p.id === ref.plugin || p.id === ref.config.plugin
+          );
 
-      const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
-        ? pluginsWithNodeId
-        : this.generatedPluginIndex(pluginsWithNodeId);
+          if (existingPlugin) {
+            return {
+              ...ref,
+              plugin_index: Object.fromEntries(
+                Object.entries(ref.plugin_index || {}).map(([key, v]) => [
+                  firstLetterUppercase(camelCase(key)),
+                  v,
+                ])
+              ),
+              ...formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin),
+            };
+          } else {
+            return {
+              ...ref,
+              id: ref.plugin
+                ?.split('.')
+                .slice(-1)[0]
+                .replace(/([a-z])([A-Z])/g, '$1 $2'),
+              config_schema: {},
+              config_flow: [],
+            };
+          }
+        });
 
-      if (
-        routeWithNodeId.backend_ref &&
-        !backends.find((back) => back.id === routeWithNodeId.backend_ref)
-      ) {
-        routeWithNodeId = {
-          ...routeWithNodeId,
-          backend_ref: undefined,
+        const pluginsWithNodeId = this.generateInternalNodeId(routePlugins);
+
+        let routeWithNodeId = {
+          ...route,
+          plugins: route.plugins
+            .filter((ref) =>
+              formattedPlugins.find((p) => p.id === ref.plugin || p.id === ref.config.plugin)
+            )
+            .map((plugin, i) => ({
+              ...plugin,
+              nodeId: pluginsWithNodeId[i].nodeId,
+            })),
         };
+
+        this.loadHiddenStepsFromLocalStorage(routeWithNodeId);
+
+        const nodes = pluginsWithNodeId.some((p) => Object.keys(p.plugin_index || {}).length > 0)
+          ? pluginsWithNodeId
+          : this.generatedPluginIndex(pluginsWithNodeId);
+
+        if (
+          routeWithNodeId.backend_ref &&
+          !backends.find((back) => back.id === routeWithNodeId.backend_ref)
+        ) {
+          routeWithNodeId = {
+            ...routeWithNodeId,
+            backend_ref: undefined,
+          };
+        }
+
+        const isApis = window.location.pathname.includes('/apis');
+
+        const frontendConfiguration = isApis ? ApiFrontend : Frontend;
+        const backendConfiguration = isApis ? ApiBackend : Backend;
+
+        this.setState({
+          ports,
+          backends,
+          routeTemplates,
+          loading: false,
+          categories: categories.filter((category) => !['Job'].includes(category)),
+          route: { ...routeWithNodeId },
+          originalRoute: { ...routeWithNodeId },
+          plugins: formattedPlugins.map((p) => ({
+            ...p,
+            selected: p.plugin_multi_inst
+              ? false
+              : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
+          })),
+          nodes,
+          frontend: {
+            ...frontendConfiguration,
+            config_schema: toUpperCaseLabels(frontendConfiguration.schema),
+            config_flow: frontendConfiguration.flow,
+            nodeId: 'Frontend',
+            readOnly: isApis,
+          },
+          backend: {
+            ...backendConfiguration,
+            config_schema: toUpperCaseLabels(backendConfiguration.schema),
+            config_flow: backendConfiguration.flow,
+            nodeId: 'Backend',
+            readOnly: isApis,
+          },
+          selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
+        });
       }
-
-      const isApis = window.location.pathname.includes('/apis');
-
-      const frontendConfiguration = isApis ? ApiFrontend : Frontend;
-      const backendConfiguration = isApis ? ApiBackend : Backend;
-
-      this.setState({
-        ports,
-        backends,
-        loading: false,
-        categories: categories.filter((category) => !['Job'].includes(category)),
-        route: { ...routeWithNodeId },
-        originalRoute: { ...routeWithNodeId },
-        plugins: formattedPlugins.map((p) => ({
-          ...p,
-          selected: p.plugin_multi_inst
-            ? false
-            : routeWithNodeId.plugins.find((r) => r.plugin === p.id),
-        })),
-        nodes,
-        frontend: {
-          ...frontendConfiguration,
-          config_schema: toUpperCaseLabels(frontendConfiguration.schema),
-          config_flow: frontendConfiguration.flow,
-          nodeId: 'Frontend',
-          readOnly: isApis,
-        },
-        backend: {
-          ...backendConfiguration,
-          config_schema: toUpperCaseLabels(backendConfiguration.schema),
-          config_flow: backendConfiguration.flow,
-          nodeId: 'Backend',
-          readOnly: isApis,
-        },
-        selectedNode: this.getSelectedNodeFromLocation(routeWithNodeId.plugins, formattedPlugins),
-      });
-    });
+    );
   };
 
   getSelectedNodeFromLocation = (routePlugins, plugins) => {
@@ -1199,6 +1239,42 @@ class Designer extends React.Component {
     return this.state.route.plugins.find((plugin) => plugin.nodeId === value.nodeId)?.enabled;
   };
 
+  renderUnknownNodes = () => {
+    const unknowns = this.state.nodes.filter((r) => !r.plugin_steps || !r.plugin_steps.length);
+
+    if (!unknowns.length) return null;
+
+    return (
+      <>
+        <span
+          className="badge bg-warning"
+          style={{
+            cursor: 'pointer',
+          }}
+        >
+          Unknown nodes
+        </span>
+        <Hr highlighted={!this.state.selectedNode} />
+        {unknowns.map((unknown, i) => {
+          return (
+            <NodeElement
+              onUp={(e) => {}}
+              onDown={(e) => {}}
+              enabled={this.isPluginEnabled(unknown)}
+              element={unknown}
+              key={`${unknown.nodeId}-inbound-${i}`}
+              selectedNode={this.state.selectedNode}
+              setSelectedNode={() => {
+                if (!this.state.alertModal.show) this.setState({ selectedNode: unknown });
+              }}
+              onRemove={this.removeNode}
+            />
+          );
+        })}
+      </>
+    );
+  };
+
   renderInBound = () => {
     let steps = [...REQUEST_STEPS_FLOW];
 
@@ -1279,7 +1355,7 @@ class Designer extends React.Component {
       return (
         <React.Fragment key={`inbound-${i}`}>
           <span
-            className="badge bg-warning text-dark"
+            className="badge bg-warning"
             style={{
               cursor: 'pointer',
             }}
@@ -1368,7 +1444,7 @@ class Designer extends React.Component {
     return (
       nodes.find((n) => n.plugin_index.TransformResponse !== undefined) && (
         <span
-          className="badge bg-warning text-dark"
+          className="badge bg-warning"
           style={{ cursor: 'pointer' }}
           onClick={() => {
             const hidden_steps = {
@@ -1451,7 +1527,41 @@ class Designer extends React.Component {
             .filter((p) => !!p)
         : [];
 
-    const patterns = getPluginsPatterns(plugins, this.setNodes, this.addNodes, this.clearPlugins);
+    const tunnelNodes =
+      route && route.plugins
+        ? route.plugins
+            .map((p) => {
+              const id = p.plugin;
+              const pluginDef = plugins.filter((pl) => pl.id === id)[0];
+              if (pluginDef) {
+                if (pluginDef.plugin_steps.indexOf('HandlesTunnel') > -1) {
+                  return { ...p, ...pluginDef };
+                }
+              }
+              return null;
+            })
+            .filter((p) => !!p)
+        : [];
+
+    const ownTemplates = getOwnTemplates(
+      plugins,
+      this.setNodes,
+      this.state.routeTemplates,
+      (frontend, backend, callback) =>
+        this.setState(
+          {
+            route: {
+              ...this.state.route,
+              frontend: { ...this.state.route.frontend, ...frontend },
+              backend: { ...this.state.route.backend, ...backend },
+            },
+          },
+          callback
+        )
+    );
+
+    const patterns = getPluginsPatterns(plugins, this.setNodes);
+
     plugins.map((p) => {
       if (p.legacy) {
         if (!p.plugin_categories) {
@@ -1525,8 +1635,8 @@ class Designer extends React.Component {
             onExpandAll={() => this.setState({ expandAll: !expandAll })}
             expandAll={expandAll}
             searched={searched}
-            plugins={[...plugins, ...patterns]}
-            categories={[...categories, 'Legacy', 'Patterns']}
+            plugins={[...plugins, ...patterns, ...ownTemplates]}
+            categories={[...categories, 'Legacy', 'Patterns', 'My own templates']}
             addNode={this.addNode}
             showPreview={(element) =>
               this.setState({
@@ -1586,6 +1696,7 @@ class Designer extends React.Component {
                             this.setState({ selectedNode: frontend });
                         }}
                       />
+                      {this.renderUnknownNodes()}
                       {this.renderInBound()}
                       <Hr highlighted={!selectedNode} flex={true} />
                     </InBoundFlow>
@@ -1608,7 +1719,7 @@ class Designer extends React.Component {
                         }}
                       >
                         <span
-                          className="badge bg-warning text-dark"
+                          className="badge bg-warning"
                           style={{
                             width: '100%',
                             opacity: !selectedNode ? 1 : 0.25,
@@ -1624,6 +1735,48 @@ class Designer extends React.Component {
                           key={node.id}
                           isPluginEnabled={this.isPluginEnabled}
                           backendCall={node}
+                          selectedNode={selectedNode}
+                          hideLink={!node.plugin_backend_call_delegates}
+                          setSelectedNode={() => {
+                            if (!this.state.alertModal.show) {
+                              this.setState({ selectedNode: node });
+                            }
+                          }}
+                          onRemove={this.removeNode}
+                        />
+                      ))}
+                      {false && !backendCall.plugin_backend_call_delegates && (
+                        <div style={{ height: 10 }}></div>
+                      )}
+                    </>
+                  )}
+                  {tunnelNodes.length > 0 && (
+                    <>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '100%',
+                        }}
+                      >
+                        <span
+                          className="badge bg-warning"
+                          style={{
+                            width: '100%',
+                            opacity: !selectedNode ? 1 : 0.25,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          HandlesTunnel
+                        </span>
+                        <Hr highlighted={!selectedNode} />
+                      </div>
+                      {tunnelNodes.map((node) => (
+                        <TunnelHandlerNode
+                          key={node.id}
+                          isPluginEnabled={this.isPluginEnabled}
+                          tunnelHandler={node}
                           selectedNode={selectedNode}
                           hideLink={!node.plugin_backend_call_delegates}
                           setSelectedNode={() => {
@@ -1688,40 +1841,45 @@ class Designer extends React.Component {
   }
 }
 
-const Element = ({ element, addNode, showPreview, hidePreview }) => (
-  <div
-    className="element"
-    onClick={(e) => {
-      e.stopPropagation();
-      showPreview(element);
-    }}
-  >
-    <div className="d-flex-between element-text">
-      <div>
-        {element.legacy ? (
-          <span className="badge bg-info text-dark" style={{ marginRight: 5 }}>
-            legacy
-          </span>
-        ) : (
-          ''
-        )}
-        {element.name.charAt(0).toUpperCase() + element.name.slice(1)}
+const Element = ({ element, addNode, showPreview, hidePreview }) => {
+  console.log(element);
+  return (
+    <div
+      className="element"
+      onClick={(e) => {
+        e.stopPropagation();
+        showPreview(element);
+      }}
+    >
+      <div className="d-flex-between element-text">
+        <div>
+          {element.legacy ? (
+            <span className="badge bg-info" style={{ marginRight: 5 }}>
+              legacy
+            </span>
+          ) : (
+            ''
+          )}
+          <p>{element.name.charAt(0).toUpperCase() + element.name.slice(1)}</p>
+
+          {!element.legacy && <p className="mb-0">{element.description}</p>}
+        </div>
+        <i
+          className={`fas fa-arrow-right element-arrow`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (element.shortcut) {
+              element.shortcut();
+            } else {
+              hidePreview();
+              addNode(element);
+            }
+          }}
+        />
       </div>
-      <i
-        className={`fas fa-${element.plugin_multi_inst ? 'plus' : 'arrow-right'} element-arrow`}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (element.shortcut) {
-            element.shortcut();
-          } else {
-            hidePreview();
-            addNode(element);
-          }
-        }}
-      />
     </div>
-  </div>
-);
+  );
+};
 
 const Group = ({ group, elements, addNode, ...props }) => {
   const [open, setOpen] = useState(props.forceOpen);
@@ -1786,7 +1944,7 @@ const SearchBar = ({ handleSearch }) => (
       >
         <input
           type="text"
-          className="form-control"
+          className="form-control search-plugin"
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search the plugin"
         />
@@ -1801,6 +1959,42 @@ const read = (value, path) => {
 
   return read(value[keys[0]], keys.slice(1).join('.'));
 };
+
+function FrontendInformations({ frontend, allMethods, domain, idx, routeEntries, copy }) {
+  const [copyIconName, setCopyIconName] = useState('fas fa-copy');
+  const exact = frontend.exact;
+  const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
+  const start = 'http://';
+  return allMethods.map((method, i) => {
+    return (
+      <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
+        <div style={{ minWidth: 60 }}>{method}</div>
+        <span style={{ fontSize: 15 }}>
+          {routeEntries(idx)}
+          {end}
+        </span>
+        <div className="d-flex align-items-center ms-auto">
+          <button
+            className="btn btn-sm btn-quiet"
+            title="Copy URL"
+            onClick={() => copy(routeEntries(idx), setCopyIconName)}
+          >
+            <i className={copyIconName} />
+          </button>
+          {draftVersionSignal.value.version === 'published' && (
+            <button
+              className="btn btn-sm btn-quiet ms-1"
+              title={`Go to ${start}${domain}`}
+              onClick={() => goTo(idx)}
+            >
+              <i className="fas fa-external-link-alt" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  });
+}
 
 const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports }) => {
   if (route && route.frontend && route.backend && !hideText) {
@@ -1885,39 +2079,16 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
             }}
           >
             {frontend.domains.map((domain, idx) => {
-              const [copyIconName, setCopyIconName] = useState('fas fa-copy');
-              const exact = frontend.exact;
-              const end = exact ? '' : domain.indexOf('/') < 0 ? '/*' : '*';
-              const start = 'http://';
-              return allMethods.map((method, i) => {
-                return (
-                  <div className="d-flex align-items-center mx-3 mb-1" key={`allmethods-${i}`}>
-                    <div style={{ minWidth: 60 }}>{method}</div>
-                    <span style={{ fontSize: 15 }}>
-                      {routeEntries(idx)}
-                      {end}
-                    </span>
-                    <div className="d-flex align-items-center ms-auto">
-                      <button
-                        className="btn btn-sm btn-quiet"
-                        title="Copy URL"
-                        onClick={() => copy(routeEntries(idx), setCopyIconName)}
-                      >
-                        <i className={copyIconName} />
-                      </button>
-                      {draftVersionSignal.value.version === 'published' && (
-                        <button
-                          className="btn btn-sm btn-quiet ms-1"
-                          title={`Go to ${start}${domain}`}
-                          onClick={() => goTo(idx)}
-                        >
-                          <i className="fas fa-external-link-alt" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              });
+              return (
+                <FrontendInformations
+                  frontend={frontend}
+                  allMethods={allMethods}
+                  domain={domain}
+                  idx={idx}
+                  routeEntries={routeEntries}
+                  copy={copy}
+                />
+              );
             })}
           </div>
           {frontend.query && Object.keys(frontend.query).length > 0 && (
@@ -2000,12 +2171,12 @@ const UnselectedNode = ({ hideText, route, clearPlugins, selectBackend, ports })
                   ''
                 );
                 const mtls =
+                  target.tls &&
                   target.tls_config &&
                   target.tls_config.enabled &&
-                  [...(target.tls_config.certs || []), ...(target.tls_config.trusted_certs || [])]
-                    .length > 0 ? (
+                  [...(target.tls_config.certs || [])].length > 0 ? (
                     <span
-                      className="badge bg-warning text-dark"
+                      className="badge bg-warning"
                       style={{
                         marginRight: 10,
                         fontSize: '.75rem',
@@ -2107,7 +2278,7 @@ const EditViewHeader = ({ icon, name, id, onCloseForm }) => (
 );
 
 const EditViewFormatActions = ({ asJsonFormat, errors, onFormClick, onRawJsonClick }) => (
-  <div className="d-flex justify-content-center mb-2 me-2 dark-background">
+  <div className="d-flex justify-content-center mb-2 me-2">
     <PillButton
       className="mt-3"
       rightEnabled={!asJsonFormat}
@@ -2138,14 +2309,13 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   <>
     {value && value.toString().length > 0 && (
       <Suspense fallback={<div>Loading ...</div>}>
-        <CodeInput
-          mode="json"
+        <NgAnyRenderer
+          ngOptions={{ spread: true }}
+          useInternalState
+          language="json"
+          mode="jsonOrPlaintext"
           editorOnly={true}
-          themeStyle={{
-            maxHeight: readOnly ? '300px' : '-1',
-            minHeight: '100px',
-            width: '100%',
-          }}
+          height={readOnly ? '300px' : '500px'}
           value={value}
           onChange={(e) => {
             if (!readOnly) onChange(e);
@@ -2169,13 +2339,10 @@ const EditViewJsonEditor = ({ readOnly, value, onChange, errors }) => (
   </>
 );
 
-const EditViewReadOnlyActions = ({ onCancel, onOk }) => (
+const EditViewReadOnlyActions = ({ onOk }) => (
   <div className="d-flex justify-content-end mt-3">
-    <button className="btn btn-sm btn-danger me-1" onClick={onCancel}>
-      Cancel
-    </button>
-    <button className="btn btn-sm btn-save" onClick={onOk}>
-      Add to flow
+    <button className="btn btn-save" onClick={onOk}>
+      Add to Policy Chain
     </button>
   </div>
 );
@@ -2444,10 +2611,6 @@ class EditView extends React.Component {
                   />
                   {readOnly ? (
                     <EditViewReadOnlyActions
-                      onCancel={() => {
-                        setSelectedNode(undefined);
-                        hidePreview();
-                      }}
                       onOk={() => {
                         hidePreview();
                         if (selectedNode.shortcut) selectedNode.shortcut(selectedNode);
@@ -2535,7 +2698,7 @@ export const BackendSelector = ({
   if (!enabled) return null;
   return (
     enabled && (
-      <div className="dark-background backend-selector">
+      <div className="backend-selector">
         <PillButton
           pillButtonStyle={{ width: 'auto', flex: 1 }}
           style={{ display: 'flex', width: '100%', minHeight: 36, maxWidth: 420 }}
@@ -2585,11 +2748,7 @@ export const Description = ({ text, steps, legacy }) => {
         <div className="steps py-2" style={{ paddingLeft: 12 }}>
           Active on steps{' '}
           {steps.map((step, i) => (
-            <span
-              className="badge bg-warning text-dark"
-              style={{ marginLeft: 5 }}
-              key={`steps-${i}`}
-            >
+            <span className="badge bg-warning" style={{ marginLeft: 5 }} key={`steps-${i}`}>
               {step}
             </span>
           ))}
@@ -2598,7 +2757,7 @@ export const Description = ({ text, steps, legacy }) => {
       {legacy && (
         <div className="steps" style={{ paddingBottom: 10, paddingLeft: 12 }}>
           This plugin is a{' '}
-          <span className="badge bg-info text-dark" style={{ marginLeft: 5 }}>
+          <span className="badge bg-info" style={{ marginLeft: 5 }}>
             legacy plugin
           </span>
         </div>

@@ -3,17 +3,17 @@ package otoroshi.next.controllers.adminapi
 import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, RawCertificate}
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -214,7 +214,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def domainsAndCertificates(): Action[AnyContent] = ApiAction { ctx =>
-    import otoroshi.ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits.given
 
     val routes           = env.proxyState.allRoutes()
     val domains          = routes.flatMap(_.frontend.domains).map(_.domainLowerCase).distinct
@@ -247,7 +247,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       env.datastores.globalConfigDataStore
         .latest()
         .tlsSettings
-        .trustedCAsServer
+        .trustedCAsServerWithLocalCAs(env)
         .flatMap(id => env.proxyState.certificate(id))
         .flatMap(certToJson)
     )

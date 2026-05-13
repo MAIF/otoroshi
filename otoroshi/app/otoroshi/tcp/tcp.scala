@@ -15,15 +15,15 @@ import otoroshi.models.EntityLocation
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{ClientAuth, CustomSSLEngine, DynamicSSLEngineProvider}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, SchedulerHelper}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
-import javax.net.ssl._
+import javax.net.ssl.*
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
 import scala.util.control.NonFatal
@@ -320,7 +320,7 @@ object TcpService {
                 }
                 Tcp().outgoingConnectionWithTls(
                   remoteAddress,
-                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None, env)
+                  () => DynamicSSLEngineProvider.createSSLEngine(service.clientAuth, None, None, None, env)
                 )
               case false =>
                 val remoteAddress = target.ip match {
@@ -480,7 +480,7 @@ object TcpService {
                       }
                       Tcp().outgoingConnectionWithTls(
                         remoteAddress,
-                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None, None, env)
+                        () => DynamicSSLEngineProvider.createSSLEngine(service.clientAuth, None, None, None, env)
                       )
                     case false =>
                       val remoteAddress = target.ip match {
@@ -877,7 +877,7 @@ case class RunningServer(port: Int, oldService: TcpService, binding: Future[Tcp.
 
 class RunningServers(env: Env) {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private given system: ActorSystem  = env.otoroshiActorSystem
   private given ec: ExecutionContext = env.otoroshiExecutionContext

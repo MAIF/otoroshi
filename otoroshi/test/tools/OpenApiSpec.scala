@@ -1,13 +1,13 @@
 package tools
 
-import io.github.classgraph.ClassGraph
+import io.github.classgraph.{ClassGraph, ScanResult}
 import org.scalatest.OptionValues
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.openapi.{CrdsGenerator, OpenApiGenerator}
-import java.io.File
-import io.github.classgraph.ScanResult
 import play.api.libs.json.JsValue
+
+import java.io.File
 
 class OpenApiSpec extends AnyWordSpec with Matchers with OptionValues {
 

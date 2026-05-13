@@ -5,18 +5,18 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.util.ByteString
 import otoroshi.cluster.Cluster
 import otoroshi.env.Env
-import otoroshi.storage._
+import otoroshi.storage.*
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
-import scala.collection.mutable.ListBuffer
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
@@ -103,8 +103,8 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
 
   import actorSystem.dispatcher
 
-  import scala.jdk.CollectionConverters._
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
+  import scala.jdk.CollectionConverters.given
 
   val patterns: ConcurrentHashMap[String, Pattern] = new UnboundedConcurrentHashMap[String, Pattern]()
 
@@ -440,8 +440,8 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   import actorSystem.dispatcher
 
-  import scala.jdk.CollectionConverters._
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
+  import scala.jdk.CollectionConverters.given
 
   lazy val logger: Logger = Logger("otoroshi-datastores")
 

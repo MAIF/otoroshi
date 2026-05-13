@@ -1,11 +1,12 @@
 package otoroshi.events
 
-import com.sksamuel.pulsar4s.Producer
+import org.apache.pulsar.client.api.Producer as ApacheProducer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
 import io.netty.channel.unix.DomainSocketAddress
 import io.opentelemetry.api.logs.Severity
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
+import io.vertx.sqlclient.internal.ArrayTuple
 import jakarta.jms.{Destination, JMSContext, JMSProducer}
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import org.apache.pekko.Done
@@ -13,14 +14,7 @@ import org.apache.pekko.actor.{Actor, Props}
 import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3.{
-  ApiVersion,
-  ListBucketResultContents,
-  MemoryBufferType,
-  MetaHeaders,
-  S3Attributes,
-  S3Settings
-}
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
 import org.joda.time.DateTime
@@ -29,11 +23,13 @@ import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import otoroshi.events.pulsar.{PulsarConfig, PulsarSetting}
 import otoroshi.metrics.opentelemetry.{OpenTelemetryMeter, OtlpSettings}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.plugins.FakeWasmContext
-import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
+import otoroshi.next.plugins.api.{NgPlugin, NgPluginCategory, NgPluginConfig, NgPluginVisibility, NgStep}
+import otoroshi.next.proxy.NgProxyStateLoaderJob
+import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.storage.drivers.inmemory.S3Configuration
@@ -41,9 +37,9 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import reactor.core.publisher.Mono
 import reactor.netty.{Connection, ConnectionObserver}
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
@@ -59,9 +55,9 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.Consumer
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 object OtoroshiEventsActorSupervizer {
@@ -92,7 +88,10 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   }
 
   def updateExporters(): Future[Unit] = {
-    env.proxyState.allDataExporters().vfuture.map { exporters =>
+    val fu =
+      if (NgProxyStateLoaderJob.firstSync.get()) env.proxyState.allDataExporters().vfuture
+      else env.datastores.dataExporterConfigDataStore.findAll()
+    fu.flatMap { exporters =>
       for {
         _ <- Future.sequence(dataExporters.map {
                case (key, c) if !exporters.exists(e => e.id == c.configUnsafe.id || e.id == key) =>
@@ -197,6 +196,23 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
   def stopExporter(ctx: CustomDataExporterContext)(using ec: ExecutionContext, env: Env): Future[Unit]
 }
 
+// Plugin trait used by DataExporter custom filter step
+trait CustomDataExporterFilter extends NgPlugin {
+  override def pluginType: PluginType                      = PluginType.DataExporterType
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterFilter)
+  def matchEvent(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+}
+
+trait CustomDataExporterTransformer extends NgPlugin {
+  override def pluginType: PluginType                      = PluginType.DataExporterType
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterTransform)
+  def project(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[JsValue]
+}
+
 object DataExporter {
 
   def acceptEvent(event: JsValue, configUnsafe: DataExporterConfig, logger: Logger): Boolean = {
@@ -248,7 +264,20 @@ object DataExporter {
         .filter(_ => configOpt.exists(_.enabled))
         .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson.map(js => (js, event)))
         .filter { case (event, _) => accept(event) }
+        .applyOnIf(configUnsafe.customFilter.isDefined) { s =>
+          s.mapAsync(1) { case (event, rawEvent) =>
+            customFilterAsync(event).map(r => (event, rawEvent, r))
+          }
+          .collect {
+            case (event, rawEvent, true) => (event, rawEvent)
+          }
+        }
         .map { case (event, rawEvent) => (project(event), rawEvent) }
+        .applyOnIf(configUnsafe.customTransform.isDefined) { s =>
+          s.mapAsync(1) { case (event, rawEvent) =>
+            customTransformAsync(event).map(e => (e, rawEvent))
+          }
+        }
         .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
         .filterNot(_.isEmpty)
         .mapAsync(configUnsafe.sendWorkers) { items =>
@@ -346,6 +375,187 @@ object DataExporter {
           logger.error("error while projecting event", t)
           event
       }
+    }
+
+    def customFilterAsync(event: JsValue): Future[Boolean] = {
+      configUnsafe.customFilter match {
+        case None      => FastFuture.successful(true)
+        case Some(cfg) =>
+          cfg.kind.toLowerCase match {
+            case "wasm"     =>
+              env.proxyState.wasmPlugin(cfg.ref) match {
+                case None         =>
+                  logger.error(s"customFilter wasm plugin '${cfg.ref}' not found on exporter '${id}'")
+                  FastFuture.successful(false)
+                case Some(plugin) =>
+                  val input = Json.obj("event" -> event, "config" -> cfg.config)
+                  env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
+                    case None          =>
+                      logger.error(s"customFilter wasm vm not available for '${cfg.ref}' on exporter '${id}'")
+                      FastFuture.successful(false)
+                    case Some((vm, _)) =>
+                      vm.call(
+                        WasmFunctionParameters.ExtismFuntionCall("custom_filter", input.stringify),
+                        None
+                      ).map {
+                        case Left(err)  =>
+                          logger.error(s"customFilter wasm error on exporter '${id}': ${err.stringify}")
+                          false
+                        case Right(res) =>
+                          val parsed = res._1.parseJson
+                          parsed.select("error").asOpt[JsValue] match {
+                            case Some(e) =>
+                              logger.error(s"customFilter wasm returned error on exporter '${id}': ${e.stringify}")
+                              false
+                            case None    =>
+                              parsed
+                                .select("result")
+                                .asOpt[Boolean]
+                                .orElse(parsed.asOpt[Boolean])
+                                .getOrElse(false)
+                          }
+                      }.andThen { case _ => vm.release() }
+                  }
+              }
+            case "workflow" =>
+              env.metrics.withTimerAsync("run-wf-filter", display = false) {
+                env.adminExtensions.extension[WorkflowAdminExtension] match {
+                  case None =>
+                    logger.error(s"workflow extension not available for customFilter on exporter '${id}'")
+                    FastFuture.successful(false)
+                  case Some(extension) =>
+                    extension.workflow(cfg.ref) match {
+                      case None =>
+                        logger.error(s"customFilter workflow '${cfg.ref}' not found on exporter '${id}'")
+                        FastFuture.successful(false)
+                      case Some(workflow) =>
+                        extension.engine
+                          .run(
+                            cfg.ref,
+                            Node.from(workflow.config),
+                            Json.obj("event" -> event, "config" -> cfg.config),
+                            TypedMap.empty,
+                            workflow.functions,
+                            noRunEvent = true,
+                          )
+                          .map { result =>
+                            if (result.hasError) {
+                              logger.error(
+                                s"customFilter workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
+                              )
+                              false
+                            } else {
+                              result.returned
+                                .flatMap(r => r.asOpt[Boolean].orElse(r.select("result").asOpt[Boolean]))
+                                .getOrElse(false)
+                            }
+                          }
+                    }
+                }
+              }
+            case "plugin"   =>
+              env.scriptManager.getAnyScript[CustomDataExporterFilter](cfg.ref) match {
+                case Left(err) =>
+                  logger.error(s"customFilter plugin '${cfg.ref}' not found on exporter '${id}': ${err}")
+                  FastFuture.successful(false)
+                case Right(p)  => p.matchEvent(event)
+              }
+            case other      =>
+              logger.error(s"customFilter unknown kind '${other}' on exporter '${id}'")
+              FastFuture.successful(false)
+          }
+      }
+    }.recover { case t =>
+      logger.error(s"error while applying customFilter on exporter '${id}'", t)
+      false
+    }
+
+    def customTransformAsync(event: JsValue): Future[JsValue] = {
+      configUnsafe.customTransform match {
+        case None      => FastFuture.successful(event)
+        case Some(cfg) =>
+          cfg.kind.toLowerCase match {
+            case "wasm"     =>
+              env.proxyState.wasmPlugin(cfg.ref) match {
+                case None         =>
+                  logger.error(s"customTransform wasm plugin '${cfg.ref}' not found on exporter '${id}'")
+                  FastFuture.successful(event)
+                case Some(plugin) =>
+                  val input = Json.obj("event" -> event, "config" -> cfg.config)
+                  env.wasmIntegration.wasmVmFor(plugin.config).flatMap {
+                    case None          =>
+                      logger.error(s"customTransform wasm vm not available for '${cfg.ref}' on exporter '${id}'")
+                      FastFuture.successful(event)
+                    case Some((vm, _)) =>
+                      vm.call(
+                        WasmFunctionParameters.ExtismFuntionCall("custom_project", input.stringify),
+                        None
+                      ).map {
+                        case Left(err)  =>
+                          logger.error(s"customTransform wasm error on exporter '${id}': ${err.stringify}")
+                          event
+                        case Right(res) =>
+                          val parsed = res._1.parseJson
+                          parsed.select("error").asOpt[JsValue] match {
+                            case Some(e) =>
+                              logger.error(s"customTransform wasm returned error on exporter '${id}': ${e.stringify}")
+                              event
+                            case None    => parsed.select("event").asOpt[JsValue].getOrElse(parsed)
+                          }
+                      }.andThen { case _ => vm.release() }
+                  }
+              }
+            case "workflow" =>
+              env.metrics.withTimerAsync("run-wf-project", display = false) {
+                env.adminExtensions.extension[WorkflowAdminExtension] match {
+                  case None =>
+                    logger.error(s"workflow extension not available for customTransform on exporter '${id}'")
+                    FastFuture.successful(event)
+                  case Some(extension) =>
+                    extension.workflow(cfg.ref) match {
+                      case None =>
+                        logger.error(s"customTransform workflow '${cfg.ref}' not found on exporter '${id}'")
+                        FastFuture.successful(event)
+                      case Some(workflow) =>
+                        extension.engine
+                          .run(
+                            cfg.ref,
+                            Node.from(workflow.config),
+                            Json.obj("event" -> event, "config" -> cfg.config),
+                            TypedMap.empty,
+                            workflow.functions,
+                            noRunEvent = true,
+                          )
+                          .map { result =>
+                            if (result.hasError) {
+                              logger.error(
+                                s"customTransform workflow '${cfg.ref}' failed on exporter '${id}': ${result.error.get.json.stringify}"
+                              )
+                              event
+                            } else {
+                              result.returned
+                                .map(r => r.select("event").asOpt[JsValue].getOrElse(r))
+                                .getOrElse(event)
+                            }
+                          }
+                    }
+                }
+              }
+            case "plugin"   =>
+              env.scriptManager.getAnyScript[CustomDataExporterTransformer](cfg.ref) match {
+                case Left(err) =>
+                  logger.error(s"customTransform plugin '${cfg.ref}' not found on exporter '${id}': ${err}")
+                  FastFuture.successful(event)
+                case Right(p)  => p.project(event)
+              }
+            case other      =>
+              logger.error(s"customTransform unknown kind '${other}' on exporter '${id}'")
+              FastFuture.successful(event)
+          }
+      }
+    }.recover { case t =>
+      logger.error(s"error while applying customTransform on exporter '${id}'", t)
+      event
     }
 
     def publish(event: OtoroshiEvent): Unit = {
@@ -1064,6 +1274,32 @@ object Exporters {
     }
   }
 
+  class DatadogCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[DatadogCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
+  class NewRelicCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        exporter[NewRelicCallSettings].map { eec =>
+          eec.call(events, config, globalConfig)
+        } getOrElse {
+          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+        }
+      }
+    }
+  }
+
   class WorkflowCallExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
@@ -1111,7 +1347,7 @@ object Exporters {
   class PulsarExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
       extends DefaultDataExporter(config)(using ec, env) {
 
-    val clientRef = new AtomicReference[Producer[JsValue]]()
+    val clientRef = new AtomicReference[ApacheProducer[JsValue]]()
 
     override def start(): Future[Unit] = {
       exporter[PulsarConfig].foreach { eec =>
@@ -1121,7 +1357,12 @@ object Exporters {
     }
 
     override def stop(): Future[Unit] = {
-      Option(clientRef.get()).map(_.closeAsync).getOrElse(FastFuture.successful(()))
+      Option(clientRef.get()).map { p =>
+        Future {
+          p.closeAsync().get()
+          ()
+        }(using ec)
+      }.getOrElse(FastFuture.successful(()))
     }
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
@@ -1131,7 +1372,10 @@ object Exporters {
           start()
         }
         Source(events.toList)
-          .mapAsync(10)(evt => cli.sendAsync(evt))
+          .mapAsync(10)(evt => Future {
+            cli.sendAsync(evt).get()
+            ()
+          }(using ec))
           .runWith(Sink.ignore)(using env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
@@ -2106,6 +2350,161 @@ object Exporters {
           .getOrElse(
             JsonOperationsHelper.getValueAtPath(label._1.replace("$at", "@"), event)._2.asOpt[String].getOrElse("")
           ))
+      }
+    }
+  }
+
+  class PostgresExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
+      extends DefaultDataExporter(config)(using ec, env) {
+
+    import otoroshi.storage.drivers.reactivepg.pgimplicits._
+    import io.vertx.pgclient.{PgConnectOptions, SslMode}
+    import io.vertx.sqlclient.Pool
+    import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
+    import io.vertx.core.json.JsonObject
+    import scala.jdk.CollectionConverters.given
+
+    private val poolRef        = new AtomicReference[Pool](null)
+    private val lastCleanupRef = new AtomicReference[Long](0L)
+
+    private def buildConnectOptions(settings: PostgresExporterSettings): PgConnectOptions = {
+      settings.uri match {
+        case Some(uri) => PgConnectOptions.fromUri(uri)
+        case None      =>
+          new PgConnectOptions()
+            .setHost(settings.host)
+            .setPort(settings.port)
+            .setDatabase(settings.database)
+            .setUser(settings.user)
+            .setPassword(settings.password)
+            .applyOnIf(settings.ssl)(_.setSslMode(SslMode.REQUIRE))
+      }
+    }
+
+    private def initTable(pool: Pool, settings: PostgresExporterSettings): Future[Unit] = {
+      pool
+        .query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};")
+        .executeAsync()
+        .flatMap { _ =>
+          pool
+            .query(s"""
+              |CREATE TABLE IF NOT EXISTS ${settings.schema}.${settings.table} (
+              |  id         TEXT        NOT NULL,
+              |  timestamp  TIMESTAMPTZ NOT NULL,
+              |  service    TEXT        NOT NULL DEFAULT '',
+              |  service_id TEXT        NOT NULL DEFAULT '',
+              |  env        TEXT        NOT NULL DEFAULT '',
+              |  event      JSONB       NOT NULL DEFAULT '{}'::jsonb,
+              |  PRIMARY KEY (id)
+              |);
+            """.stripMargin)
+            .executeAsync()
+        }
+        .map(_ => ())
+    }
+
+    override def start(): Future[Unit] = {
+      exporter[PostgresExporterSettings]
+        .map { settings =>
+          val pool = Pool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
+          poolRef.set(pool)
+          initTable(pool, settings).recover { case e: Throwable =>
+            logger.error(
+              s"[postgres-exporter] Error while initializing table '${settings.schema}.${settings.table}'",
+              e
+            )
+          }
+        }
+        .getOrElse(FastFuture.successful(()))
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(poolRef.getAndSet(null)).foreach(_.close())
+      FastFuture.successful(())
+    }
+
+    def tuple(any: AnyRef): VertxTuple = {
+      val tuple = new ArrayTuple(1)
+      tuple.addValue(any)
+      tuple
+    }
+
+    private def cleanupOldEvents(pool: Pool, settings: PostgresExporterSettings): Future[Unit] = {
+      if (settings.retentionDays > 0) {
+        val now           = System.currentTimeMillis()
+        val last          = lastCleanupRef.get()
+        val oneHourMillis = 3600000L
+        if (now - last > oneHourMillis && lastCleanupRef.compareAndSet(last, now)) {
+          val cutoff = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC).minusDays(settings.retentionDays.toLong)
+          pool
+            .preparedQuery(s"DELETE FROM ${settings.schema}.${settings.table} WHERE timestamp < $$1")
+            .execute(tuple(cutoff))
+            .scala
+            .map { rs =>
+              logger.info(
+                s"[postgres-exporter] Cleaned up ${rs.rowCount()} events older than $cutoff from '${settings.schema}.${settings.table}'"
+              )
+            }
+            .recover { case e: Throwable =>
+              lastCleanupRef.set(last)
+              logger.error(
+                s"[postgres-exporter] Error while cleaning up old events from '${settings.schema}.${settings.table}'",
+                e
+              )
+            }
+        } else {
+          FastFuture.successful(())
+        }
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      Option(poolRef.get()) match {
+        case None       => FastFuture.successful(ExportResult.ExportResultFailure("PostgreSQL pool not initialized"))
+        case Some(pool) =>
+          exporter[PostgresExporterSettings] match {
+            case None           => FastFuture.successful(ExportResult.ExportResultFailure("Bad config type!"))
+            case Some(settings) =>
+              cleanupOldEvents(pool, settings)
+              val tuples: java.util.List[VertxTuple] = events.map { event =>
+                val id        = event.select("@id").asOpt[String].getOrElse(IdGenerator.uuid)
+                val timestamp = event
+                  .select("@timestamp")
+                  .asOpt[Long]
+                  .map(ts => java.time.Instant.ofEpochMilli(ts).atOffset(java.time.ZoneOffset.UTC))
+                  .orElse(
+                    event
+                      .select("@timestamp")
+                      .asOpt[String]
+                      .flatMap(s => scala.util.Try(java.time.OffsetDateTime.parse(s)).toOption)
+                  )
+                  .getOrElse(java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC))
+                val service   = event.select("@service").asOpt[String].getOrElse("")
+                val serviceId = event.select("@serviceId").asOpt[String].getOrElse("")
+                val envStr    = event.select("@env").asOpt[String].getOrElse("")
+                VertxTuple.from(
+                  Array[AnyRef](id, timestamp, service, serviceId, envStr, new JsonObject(Json.stringify(event)))
+                )
+              }.asJava
+              pool
+                .preparedQuery(
+                  s"""INSERT INTO ${settings.schema}.${settings.table} (id, timestamp, service, service_id, env, event)
+                     |VALUES ($$1, $$2, $$3, $$4, $$5, $$6::jsonb)
+                     |ON CONFLICT (id) DO NOTHING;""".stripMargin
+                )
+                .executeBatch(tuples)
+                .scala
+                .map(_ => ExportResult.ExportResultSuccess: ExportResult)
+                .recover { case e: Throwable =>
+                  logger.error(
+                    s"[postgres-exporter] Error while inserting events into '${settings.schema}.${settings.table}'",
+                    e
+                  )
+                  ExportResult.ExportResultFailure(e.getMessage)
+                }
+          }
       }
     }
   }

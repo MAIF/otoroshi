@@ -7,14 +7,14 @@ import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import org.joda.time.{DateTime, DateTimeZone}
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.script._
+import otoroshi.next.plugins.api.*
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.Codecs
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 
@@ -22,7 +22,7 @@ import java.util.Locale
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util._
+import scala.util.*
 
 case class NgHttpClientCacheConfig(maxAgeSeconds: Long, methods: Seq[String], status: Seq[Int], mimeTypes: Seq[String])
     extends NgPluginConfig {
@@ -125,7 +125,7 @@ class NgHttpClientCache extends NgRequestTransformer {
             "Cache-Control" -> s"max-age=${config.maxAgeSeconds}",
             "Date"          -> date,
             "Expires"       -> expires,
-            "ETag"          -> Codecs.sha1(s"$date -> ${ctx.request.domain}${ctx.request.uri}"),
+            "ETag"          -> Codecs.sha1(s"${ctx.request.domain}${ctx.request.uri}"),
             "Last-Modified" -> date,
             "Vary"          -> "Accept-Encoding"
           )

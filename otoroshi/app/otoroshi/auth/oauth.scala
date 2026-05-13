@@ -1,24 +1,22 @@
 package otoroshi.auth
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
-import java.util.{Base64 => JavaBase64}
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.joda.time.DateTime
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.{WSProxyServer, WSResponse}
-import java.util.{Base64 => JavaBase64}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
-import play.api.libs.ws.WSBodyWritables.writeableOf_urlEncodedSimpleForm
 
 import java.nio.charset.StandardCharsets
 import java.security.{MessageDigest, SecureRandom}
@@ -269,9 +267,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   lazy val logger: Logger = Logger("otoroshi-global-oauth2-module")
 
-  import otoroshi.utils.http.Implicits._
-  import otoroshi.utils.syntax.implicits._
-  import play.api.libs.ws.WSBodyWritables._
+  import otoroshi.utils.http.Implicits.given
+  import otoroshi.utils.syntax.implicits.given
+  import play.api.libs.ws.WSBodyWritables.given
 
   def this() = this(GenericOauth2Module.defaultConfig)
 
@@ -296,14 +294,16 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   ): Future[Result] = {
     given req: RequestHeader = request
 
-    val redirect     = request
+    val redirect = request
       .getQueryString("redirect")
       .filter(redirect =>
-        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+        request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
       )
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
       )
+
     val clientId     = authConfig.clientId
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
@@ -324,7 +324,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         encryptState(
           Json.obj(
             "descriptor" -> descriptor.id,
-            "hash"       -> hash
+            "hash"       -> hash,
+            "ref"        -> authConfig.id
           )
         )
       else ""
@@ -382,7 +383,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
     codeChallengeMethod match {
       case Some("S256") =>
-        (codeVerifier, JavaBase64.getUrlEncoder.withoutPadding().encodeToString(digest), "S256")
+        (codeVerifier, Base64.getUrlEncoder.withoutPadding().encodeToString(digest), "S256")
       case _            => (codeVerifier, codeVerifier, "plain")
     }
   }
@@ -408,7 +409,15 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case url                                                => url
         }
 
-    val state = if (authConfig.noWildcardRedirectURI) encryptState(Json.obj("hash" -> hash)) else ""
+    val state =
+      if (authConfig.noWildcardRedirectURI)
+        encryptState(
+          Json.obj(
+            "hash" -> hash,
+            "ref"  -> authConfig.id
+          )
+        )
+      else ""
 
     val (loginUrl, sessionParams) = authConfig.pkce match {
       case Some(pcke) if pcke.enabled =>
@@ -646,9 +655,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   def readProfileFromToken(accessToken: String)(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
     val tokenHeader  =
-      Try(Json.parse(JavaBase64.getDecoder.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+      Try(Json.parse(Base64.getDecoder.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
     val tokenBody    =
-      Try(Json.parse(JavaBase64.getDecoder.decode(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+      Try(Json.parse(Base64.getDecoder.decode(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
     val kid          = (tokenHeader \ "kid").asOpt[String]
     val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
     algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
@@ -828,7 +837,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     Try {
       val algoSettings = authConfig.jwtVerifier.get
       val tokenHeader  =
-        Try(Json.parse(JavaBase64.getDecoder.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+        Try(Json.parse(Base64.getDecoder.decode(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
       val kid          = (tokenHeader \ "kid").asOpt[String]
       val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
       algoSettings.asAlgorithmF(InputMode(alg, kid)).map {

@@ -9,17 +9,17 @@ import otoroshi.auth.{GenericOauth2Module, OAuth2ModuleConfig}
 import otoroshi.cluster.{Cluster, ClusterMode}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -227,7 +227,6 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
         }
       }
 
@@ -320,7 +319,6 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
         }
       }
 
@@ -409,31 +407,21 @@ object OIDCAuthTokenConfig {
   }
 }
 
-class OIDCAuthToken extends NgAccessValidator {
-
-  override def multiInstance: Boolean                      = true
-  override def name: String                                = "OIDC access_token authentication"
-  override def defaultConfigObject: Option[NgPluginConfig] = OIDCAuthTokenConfig.default.some
-
-  override def description: Option[String] =
-    s"""This plugin will authenticate a user based on it's OIDC access_token""".stripMargin.some
-
-  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
-  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
-
-  override def noJsForm: Boolean              = true
-  override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
-  override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
-
-  private def getSession(ctx: NgAccessContext, oauth2Config: OAuth2ModuleConfig, config: OIDCAuthTokenConfig)(using
+object OIDCAuthToken {
+  def getSession(
+      ctx: NgAccessContext,
+      oauth2Config: OAuth2ModuleConfig,
+      config: OIDCAuthTokenConfig,
+      maybeToken: Option[String] = None
+  )(using
       env: Env,
       ec: ExecutionContext
-  ) = {
+  ): Future[Either[Result, NgAccess]] = {
 
     val authModule =
       oauth2Config.authModule(env.datastores.globalConfigDataStore.latest()).asInstanceOf[GenericOauth2Module]
-    val token      = ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption).getOrElse("")
+    val token      =
+      maybeToken.orElse(ctx.request.headers.get(config.headerName).flatMap(v => v.split(" ").lastOption)).getOrElse("")
     val tokenHash  = token.sha256
 
     def createSession(): Future[Either[Result, NgAccess]] = {
@@ -630,6 +618,24 @@ class OIDCAuthToken extends NgAccessValidator {
         }
       }
   }
+}
+
+class OIDCAuthToken extends NgAccessValidator {
+
+  override def multiInstance: Boolean                      = true
+  override def name: String                                = "OIDC access_token authentication"
+  override def defaultConfigObject: Option[NgPluginConfig] = OIDCAuthTokenConfig.default.some
+
+  override def description: Option[String] =
+    s"""This plugin will authenticate a user based on it's OIDC access_token""".stripMargin.some
+
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
+  override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
+
+  override def noJsForm: Boolean              = true
+  override def configFlow: Seq[String]        = OIDCAuthTokenConfig.configFlow
+  override def configSchema: Option[JsObject] = OIDCAuthTokenConfig.configSchema
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
@@ -647,48 +653,47 @@ class OIDCAuthToken extends NgAccessValidator {
             attrs = ctx.attrs
           )
           .map(NgAccess.NgDenied.apply)
+      case Some(authModuleConfig) if !config.opaque =>
+        val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
+        oauth2Config.jwtVerifier match {
+          case None               =>
+            Errors
+              .craftResponseResult(
+                "bad jwt settings",
+                Results.InternalServerError,
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs
+              )
+              .map(NgAccess.NgDenied.apply)
+          case Some(algoSettings) =>
+            val jwtVerifier = LocalJwtVerifier(
+              enabled = true,
+              source = InHeader(config.headerName, "Bearer "),
+              algoSettings = algoSettings
+            )
+            jwtVerifier
+              .verifyGen(
+                request = ctx.request,
+                desc = ctx.route.legacy,
+                apikey = ctx.apikey,
+                user = ctx.user,
+                elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+                attrs = ctx.attrs
+              ) { _ =>
+                OIDCAuthToken.getSession(ctx, oauth2Config, config)
+              }
+              .flatMap {
+                case Left(err) => NgAccess.NgDenied.apply(err).vfuture
+                case Right(v)  => v.vfuture
+              }
+          }
       case Some(authModuleConfig) =>
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
-        if (config.opaque) {
-          getSession(ctx, oauth2Config, config).flatMap {
-            case Left(err) => NgAccess.NgDenied.apply(err).vfuture
-            case Right(v)  => v.vfuture
-          }
-        } else {
-          oauth2Config.jwtVerifier match {
-            case None               =>
-              Errors
-                .craftResponseResult(
-                  "bad jwt settings",
-                  Results.InternalServerError,
-                  ctx.request,
-                  None,
-                  None,
-                  attrs = ctx.attrs
-                )
-                .map(NgAccess.NgDenied.apply)
-            case Some(algoSettings) =>
-              val jwtVerifier = LocalJwtVerifier(
-                enabled = true,
-                source = InHeader(config.headerName, "Bearer "),
-                algoSettings = algoSettings
-              )
-              jwtVerifier
-                .verifyGen(
-                  request = ctx.request,
-                  desc = ctx.route.legacy,
-                  apikey = ctx.apikey,
-                  user = ctx.user,
-                  elContext = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
-                  attrs = ctx.attrs
-                ) { _ =>
-                  getSession(ctx, oauth2Config, config)
-                }
-                .flatMap {
-                  case Left(err) => NgAccess.NgDenied.apply(err).vfuture
-                  case Right(v)  => v.vfuture
-                }
-          }
+        OIDCAuthToken.getSession(ctx, oauth2Config, config).flatMap {
+          case Left(err) => NgAccess.NgDenied.apply(err).vfuture
+          case Right(v)  => v.vfuture
         }
     }
   }

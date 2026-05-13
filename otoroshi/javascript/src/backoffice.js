@@ -30,6 +30,7 @@ import { setupGreenScoreExtension } from './extensions/greenscore';
 import { setupCorazaExtension } from './extensions/coraza';
 import { setupHttpListenersExtension } from './extensions/httplisteners';
 import { setupWorkflowsExtension } from './extensions/workflows';
+import { setupRemoteCatalogsExtension } from './extensions/catalogs';
 
 import * as Forms from './forms/ng_plugins/index';
 
@@ -259,4 +260,5 @@ function setupLocalExtensions() {
   setupCorazaExtension(registerExtension);
   setupHttpListenersExtension(registerExtension);
   setupWorkflowsExtension(registerExtension);
+  setupRemoteCatalogsExtension(registerExtension);
 }

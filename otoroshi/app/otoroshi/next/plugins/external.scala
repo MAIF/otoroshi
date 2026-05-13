@@ -5,7 +5,7 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.plugins.api.*
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*

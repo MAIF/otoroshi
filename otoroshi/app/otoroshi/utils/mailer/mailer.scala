@@ -4,7 +4,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import otoroshi.env.Env
 import otoroshi.models.{Exporter, GlobalConfig}
-import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.http.Implicits.given
 import play.api.Logger
 import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme

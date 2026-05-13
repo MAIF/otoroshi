@@ -3,22 +3,37 @@ package otoroshi.plugins.discovery
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import kaleidoscope.*
 import otoroshi.env.Env
 import otoroshi.models.Target
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
 import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
+
+private object DiscoveryUnregisterLegacy {
+  private val pattern = """/discovery/(.*)/_unregister""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(id) => Some(id)
+    case _           => None
+  }
+}
+
+private object DiscoveryHeartbeatLegacy {
+  private val pattern = """/discovery/(.*)/_heartbeat""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(id) => Some(id)
+    case _           => None
+  }
+}
 
 case class SelfRegistrationConfig(raw: JsValue) {
   lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -184,8 +199,6 @@ object DiscoveryHelper {
 // MIGRATED
 class DiscoverySelfRegistrationSink extends RequestSink {
 
-  import kaleidoscope.*
-
   override def name: String = "Global self registration endpoints (service discovery)"
 
   override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
@@ -226,10 +239,10 @@ class DiscoverySelfRegistrationSink extends RequestSink {
     val config = SelfRegistrationConfig.from(ctx)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => DiscoveryHelper.register(None, ctx.body, config)
-      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId.s, None, ctx.request, config)
-      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId.s, None, ctx.request, config)
+      case ("delete", DiscoveryUnregisterLegacy(registrationId)) =>
+        DiscoveryHelper.unregister(registrationId, None, ctx.request, config)
+      case ("post", DiscoveryHeartbeatLegacy(registrationId))    =>
+        DiscoveryHelper.heartbeat(registrationId, None, ctx.request, config)
       case _                                                            => Results.NotFound(Json.obj("error" -> "resource not found !")).future
     }
   }
@@ -237,8 +250,6 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 
 // MIGRATED
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
-
-  import kaleidoscope.*
 
   private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
@@ -309,10 +320,10 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
           // no body
           Results.BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"no body found !")).leftf
         }
-      case ("delete", r"/discovery/$registrationId(.*)/_unregister") =>
-        DiscoveryHelper.unregister(registrationId.s, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
-      case ("post", r"/discovery/$registrationId(.*)/_heartbeat")    =>
-        DiscoveryHelper.heartbeat(registrationId.s, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
+      case ("delete", DiscoveryUnregisterLegacy(registrationId)) =>
+        DiscoveryHelper.unregister(registrationId, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
+      case ("post", DiscoveryHeartbeatLegacy(registrationId))    =>
+        DiscoveryHelper.heartbeat(registrationId, ctx.descriptor.id.some, ctx.request, config).map(r => Left(r))
       case _                                                            => Right(ctx.otoroshiRequest).future
     }
   }

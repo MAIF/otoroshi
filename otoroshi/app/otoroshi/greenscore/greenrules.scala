@@ -1,8 +1,9 @@
 package otoroshi.greenscore
 
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+
 import scala.util.{Failure, Success, Try}
 
 case class RuleId(value: String)

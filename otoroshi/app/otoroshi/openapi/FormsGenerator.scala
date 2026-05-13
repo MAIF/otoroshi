@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.collection.concurrent.TrieMap
 

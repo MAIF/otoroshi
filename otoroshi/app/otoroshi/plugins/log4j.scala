@@ -8,7 +8,7 @@ import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import otoroshi.utils.body.BodyUtils
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.typedmap.TypedKey

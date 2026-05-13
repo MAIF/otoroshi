@@ -7,7 +7,7 @@ import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.ssl.SslContextBuilder
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
-import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import org.apache.pekko.http.scaladsl.model.headers.{RawHeader, `Content-Length`, `Content-Type`, `User-Agent`}
 import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
@@ -16,24 +16,10 @@ import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.utils.http.{AkkaWsClientRequest, MtlsConfig}
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{
-  BodyWritable,
-  DefaultWSCookie,
-  EmptyBody,
-  InMemoryBody,
-  SourceBody,
-  WSAuthScheme,
-  WSBody,
-  WSCookie,
-  WSProxyServer,
-  WSRequest,
-  WSRequestFilter,
-  WSResponse,
-  WSSignatureCalculator
-}
+import play.api.libs.ws.{BodyWritable, DefaultWSCookie, EmptyBody, InMemoryBody, SourceBody, WSAuthScheme, WSBody, WSCookie, WSProxyServer, WSRequest, WSRequestFilter, WSResponse, WSSignatureCalculator}
 import play.api.mvc.MultipartFormData
 import reactor.core.publisher.{Flux, Mono}
 import reactor.netty.ByteBufFlux
@@ -45,12 +31,12 @@ import reactor.netty.transport.ProxyProvider
 import java.io.File
 import java.net.{InetSocketAddress, URI}
 import java.nio.charset.StandardCharsets
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.{Base64 => JavaBase64}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 
@@ -447,7 +433,7 @@ case class NettyWsClientRequest(
         }
         //.httpResponseDecoder(spec => spec) // TODO: check if needed
         .headers { heads =>
-          import scala.jdk.CollectionConverters._
+          import scala.jdk.CollectionConverters.given
           headers.foreach { case (name, values) =>
             heads.add(name, values.asJava)
           }

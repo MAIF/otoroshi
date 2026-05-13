@@ -1,50 +1,48 @@
 package otoroshi.gateway
 
-import java.net.URLEncoder
-import java.util.concurrent.atomic.AtomicInteger
+import com.auth0.jwt.JWT
+import com.github.blemale.scaffeine.Scaffeine
+import com.google.common.base.Charsets
+import controllers.Assets
 import org.apache.pekko.actor.{Actor, Props, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Source}
 import org.apache.pekko.util.ByteString
-import com.auth0.jwt.JWT
-import com.github.blemale.scaffeine.Scaffeine
-import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
-import com.google.common.base.Charsets
-import controllers.Assets
 import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
+import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
-import otoroshi.script._
-import otoroshi.ssl.OcspResponder
-import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.letsencrypt._
+import otoroshi.script.*
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.ssl.{KeyManagerCompatibility, OcspResponder, SSLSessionJavaHelper}
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.jwk.JWKSHelper
+import otoroshi.utils.letsencrypt.*
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{Regex, RegexPool, TypedMap}
 import play.api.ApplicationLoader.DevContext
 import play.api.Logger
-import play.api.http.{Status => _, _}
-import play.api.libs.json._
+import play.api.http.{Status as _, *}
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.*
+import play.api.mvc.Results.*
 import play.api.routing.Router
 import play.core.WebCommands
-import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
 
 import java.io.File
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 import scala.util.control.NoStackTrace
-import otoroshi.utils.Regex
+import scala.util.{Failure, Success, Try}
 
 case class ProxyDone(
     status: Int,
@@ -244,6 +242,16 @@ object GatewayRequestHandler {
       maybeRoute = Some(route)
     )
 
+    lazy val missingCookie = Errors.craftResponseResult(
+      s"No authentication cookies found",
+      Unauthorized,
+      req,
+      None,
+      Some("errors.invalid.session"),
+      attrs = attrs,
+      maybeRoute = Some(route)
+    )
+
     route.legacy.authConfigRef match {
       case None      =>
         route.plugins
@@ -252,7 +260,7 @@ object GatewayRequestHandler {
             NgMultiAuthModuleConfig.format.reads(multiAuth.config.raw) match {
               case JsSuccess(config, _) =>
                 req.cookies.filter(cookie => cookie.name.startsWith("oto-papps")) match {
-                  case Nil                         => missingAuthRefError
+                  case Nil                         => missingCookie
                   case cookies if cookies.nonEmpty =>
                     config.modules
                       .flatMap(module => env.proxyState.authModule(module))
@@ -260,7 +268,7 @@ object GatewayRequestHandler {
                         cookies.exists(cookie => cookie.name == s"oto-papps-${module.routeCookieSuffix(route)}")
                       ) match {
                       case Some(authModuleConfig) => f(authModuleConfig)
-                      case None                   => missingAuthRefError
+                      case None                   => missingCookie
                     }
                 }
               case JsError(_)           => missingAuthRefError
@@ -707,12 +715,22 @@ class GatewayRequestHandler(
   def jwks(): Action[AnyContent] =
     actionBuilder.async { req =>
       env.adminExtensions.publicKeys().flatMap { extensionsPublicKeys =>
-        JWKSHelper.jwks(req, Seq.empty).map {
-          case Left(body) if extensionsPublicKeys.isEmpty => Results.NotFound(body)
-          case Left(_)                                    =>
-            Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
-          case Right(keys)                                => Results.Ok(Json.obj("keys" -> JsArray(keys ++ extensionsPublicKeys.map(_.raw))))
-        }
+        JWKSHelper
+          .jwks(
+            req,
+            Seq.empty,
+            true,
+            env.confJwksIncludeAlgorithms,
+            env.confJwksRsaAlgorithms,
+            env.confJwksEsAlgorithms
+          )
+          .map {
+            case Left(body) if extensionsPublicKeys.isEmpty  => Results.NotFound(body)
+            case Left(_) if extensionsPublicKeys.nonEmpty   =>
+              Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
+            case Left(_)                                    => Results.NotFound(Json.obj("error" -> "no keys found"))
+            case Right(keys)                                => Results.Ok(Json.obj("keys" -> JsArray(keys ++ extensionsPublicKeys.map(_.raw))))
+          }
       }
     }
 

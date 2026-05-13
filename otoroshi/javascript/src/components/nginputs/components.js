@@ -155,7 +155,7 @@ export class NgFormRenderer extends Component {
     if (!this.props.embedded) {
       return (
         <form
-          style={this.props.style}
+          style={{ maxWidth: 1000, ...this.props.style }}
           className={this.props.className}
           onSubmit={(e) => {
             e.preventDefault();
@@ -238,7 +238,7 @@ export class NgFormRenderer extends Component {
               border: clickable
                 ? showChildren
                   ? '1px solid var(--color-primary)'
-                  : '1px solid var(--bg-color_level2)'
+                  : '1px solid var(--border-color)'
                 : 'none',
               borderRadius: 6,
               padding: clickable ? 5 : 0,
@@ -302,7 +302,7 @@ export class NgFormRenderer extends Component {
         return (
           <div
             style={{
-              border: clickable ? '1px solid var(--bg-color_level2)' : 'none',
+              border: clickable ? '1px solid var(--border-color)' : 'none',
               borderRadius: 6,
               padding: clickable ? 5 : 0,
               margin: clickable ? '5px 0' : '',

@@ -1,16 +1,16 @@
 package otoroshi.wasm
 
-import org.apache.pekko.stream.Materializer
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
 import io.otoroshi.wasm4s.scaladsl.security.TlsConfig
+import org.apache.pekko.stream.Materializer
 import org.extism.sdk.{HostFunction, HostUserData}
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.{NgPluginConfig, NgPluginVisibility, NgStep}
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSRequest}
 import play.api.mvc.Cookie
 

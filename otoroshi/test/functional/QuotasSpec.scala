@@ -1,16 +1,15 @@
 package functional
 
-import java.util.Base64
-import java.util.concurrent.atomic.AtomicInteger
-
-import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import play.api.Configuration
 
-import scala.concurrent.duration._
+import java.util.Base64
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.duration.*
 
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

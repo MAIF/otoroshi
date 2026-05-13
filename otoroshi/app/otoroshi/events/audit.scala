@@ -1,13 +1,13 @@
 package otoroshi.events
 
 import org.apache.pekko.util.ByteString
-import otoroshi.env.Env
-import otoroshi.models._
 import org.joda.time.DateTime
+import otoroshi.env.Env
+import otoroshi.models.*
 import otoroshi.script.{Job, JobContext}
-import play.api.libs.json._
 import otoroshi.ssl.Cert
 import otoroshi.utils.syntax.implicits.BetterJsValue
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

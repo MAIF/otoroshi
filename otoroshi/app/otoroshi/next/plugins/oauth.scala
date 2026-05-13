@@ -1,24 +1,26 @@
 package otoroshi.next.plugins
 
+import com.google.common.base.Charsets
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import com.google.common.base.Charsets
 import org.joda.time.DateTime
+import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
 import otoroshi.models.{GlobalConfig, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.authcallers.{ForceRetryException, OAuth2Kind}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterString, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.Results.BadRequest
-import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}
+import play.api.mvc.*
 import play.utils.UriEncoding
 
 import java.nio.charset.StandardCharsets
@@ -57,6 +59,9 @@ case class OAuth1CallerConfig(
     algo: Option[String] = None
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth1CallerConfig.format.writes(this)
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth1CallerConfig = {
+    OAuth1CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
+  }
 }
 
 object OAuth1CallerConfig {
@@ -206,7 +211,7 @@ class OAuth1Caller extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val oAuth1CallerConfig =
-      ctx.cachedConfig(internalName)(OAuth1CallerConfig.format).getOrElse(OAuth1CallerConfig())
+      ctx.cachedConfig(internalName)(OAuth1CallerConfig.format).getOrElse(OAuth1CallerConfig()).applyEl(ctx.attrs)
 
     val metadata         = ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey).map(_.metadata).getOrElse(Map.empty)
     val consumerKey      = getOrElse(oAuth1CallerConfig.consumerKey, metadata, OAuth1Caller.Keys.consumerKey)
@@ -256,6 +261,7 @@ class OAuth1Caller extends NgRequestTransformer {
 
 case class OAuth2CallerConfig(
     kind: OAuth2Kind = OAuth2Kind.ClientCredentials,
+    authModRef: Option[String] = None,
     url: String = "https://127.0.0.1:8080/oauth/token",
     method: String = "POST",
     headerName: String = "Authorization",
@@ -271,6 +277,9 @@ case class OAuth2CallerConfig(
     tlsConfig: MtlsConfig = MtlsConfig()
 ) extends NgPluginConfig {
   override def json: JsValue = OAuth2CallerConfig.format.writes(this)
+  def applyEl(attrs: TypedMap)(using env: Env): OAuth2CallerConfig = {
+    OAuth2CallerConfig.format.reads(json.stringify.evaluateEl(attrs)(using env).parseJson).get
+  }
 }
 
 object OAuth2CallerConfig {
@@ -289,7 +298,8 @@ object OAuth2CallerConfig {
       "user"              -> o.user,
       "password"          -> o.password,
       "cacheTokenSeconds" -> o.cacheTokenSeconds.toMillis,
-      "tlsConfig"         -> MtlsConfig.format.writes(o.tlsConfig)
+      "tlsConfig"         -> MtlsConfig.format.writes(o.tlsConfig),
+      "authModRef"        -> o.authModRef
     )
 
     override def reads(json: JsValue): JsResult[OAuth2CallerConfig] = Try {
@@ -298,10 +308,13 @@ object OAuth2CallerConfig {
           .select("kind")
           .asOpt[String]
           .map {
-            case "client_credentials" => OAuth2Kind.ClientCredentials
-            case _                    => OAuth2Kind.Password
+            case "client_credentials"       => OAuth2Kind.ClientCredentials
+            case "auth_module"              => OAuth2Kind.AuthModule
+            case "password_with_basic_auth" => OAuth2Kind.PasswordWithBasicAuth
+            case _                          => OAuth2Kind.Password
           }
           .getOrElse(OAuth2Kind.ClientCredentials),
+        authModRef = json.select("authModRef").asOpt[String],
         url = json.select("url").asOpt[String].getOrElse("https://127.0.0.1:8080/oauth/token"),
         method = json.select("method").asOpt[String].getOrElse("POST"),
         headerName = json.select("headerName").asOpt[String].getOrElse("Authorization"),
@@ -351,7 +364,7 @@ class OAuth2Caller extends NgRequestTransformer {
       mat: Materializer
   ): Future[Either[(String, Int), String]] = {
     val body: String = config.kind match {
-      case OAuth2Kind.ClientCredentials if config.jsonPayload =>
+      case OAuth2Kind.ClientCredentials if config.jsonPayload     =>
         Json
           .obj(
             "client_id"     -> config.clientId,
@@ -361,7 +374,7 @@ class OAuth2Caller extends NgRequestTransformer {
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
           .stringify
-      case OAuth2Kind.Password if config.jsonPayload          =>
+      case OAuth2Kind.Password if config.jsonPayload              =>
         val user: String     = config.user.getOrElse("--")
         val password: String = config.password.getOrElse("--")
         Json
@@ -375,27 +388,59 @@ class OAuth2Caller extends NgRequestTransformer {
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
           .stringify
-      case OAuth2Kind.ClientCredentials                       =>
+      case OAuth2Kind.PasswordWithBasicAuth if config.jsonPayload =>
+        val user: String     = config.user.getOrElse("--")
+        val password: String = config.password.getOrElse("--")
+        Json
+          .obj(
+            "grant_type" -> "password",
+            "username"   -> user,
+            "password"   -> password
+          )
+          .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
+          .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
+          .stringify
+      case OAuth2Kind.ClientCredentials                           =>
         s"client_id=${config.clientId}&client_secret=${config.clientSecret}&grant_type=client_credentials${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
-      case OAuth2Kind.Password                                =>
+      case OAuth2Kind.AuthModule if config.authModRef.isDefined   =>
+        val authMod = env.proxyState.authModule(config.authModRef.get).get.asInstanceOf[OAuth2ModuleConfig]
+        s"client_id=${authMod.clientId}&client_secret=${authMod.clientSecret}&grant_type=client_credentials&scope=${authMod.scope}"
+      case OAuth2Kind.PasswordWithBasicAuth                       =>
+        s"grant_type=password&username=${config.user
+          .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
+          .map(s => s"&scope=$s")
+          .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.Password                                    =>
         s"client_id=${config.clientId}&client_secret=${config.clientSecret}&grant_type=password&username=${config.user
           .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.AuthModule                                  => ""
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
+    val authMod      = env.proxyState
+      .authModule(config.authModRef.get)
+      .map(_.asInstanceOf[OAuth2ModuleConfig])
+      .filter(_ => config.kind == OAuth2Kind.AuthModule)
+    val url          = authMod.map(_.tokenUrl).getOrElse(config.url)
+    val tlsConfig    = authMod.map(_.mtlsConfig).getOrElse(config.tlsConfig)
+    val method       = authMod.map(_ => "POST").getOrElse(config.method)
     env.MtlsWs
-      .url(config.url, config.tlsConfig)
-      .withMethod(config.method)
+      .url(url, tlsConfig)
+      .withMethod(method)
       .withHttpHeaders("Content-Type" -> ctype)
+      .applyOnIf(config.kind == OAuth2Kind.PasswordWithBasicAuth) { b =>
+        b.addHttpHeaders("Authorization" -> s"Basic ${Base64.getEncoder
+          .encodeToString(s"${config.clientId}:${config.clientSecret}".getBytes(StandardCharsets.UTF_8))}")
+      }
       .withBody(body)
       .execute()
       .flatMap { resp =>
         val respBody = resp.body
         if (resp.status == 200) {
-          if (resp.contentType.toLowerCase().equals("application/x-www-form-urlencoded")) {
+          if (resp.contentType.toLowerCase().startsWith("application/x-www-form-urlencoded")) {
             val body             = resp.body
               .split("&")
               .map { p =>
@@ -436,35 +481,53 @@ class OAuth2Caller extends NgRequestTransformer {
       refreshToken: String,
       config: OAuth2CallerConfig
   )(using env: Env, ec: ExecutionContext): Future[JsValue] = {
-    val ctype   = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
-    val builder =
+    val ctype     = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
+    val authMod   = env.proxyState
+      .authModule(config.authModRef.get)
+      .map(_.asInstanceOf[OAuth2ModuleConfig])
+      .filter(_ => config.kind == OAuth2Kind.AuthModule)
+    val url       = authMod.map(_.tokenUrl).getOrElse(config.url)
+    val tlsConfig = authMod.map(_.mtlsConfig).getOrElse(config.tlsConfig)
+    val method    = authMod.map(_ => "POST").getOrElse(config.method)
+    val builder   =
       env.MtlsWs
-        .url(config.url, config.tlsConfig)
-        .withMethod(config.method)
+        .url(url, tlsConfig)
+        .withMethod(method)
         .withHttpHeaders("Content-Type" -> ctype)
-    val future1 = if (config.jsonPayload) {
-      builder.post(
-        Json
-          .obj(
+    val future1   = config.kind match {
+      case OAuth2Kind.AuthModule   =>
+        builder.post(
+          Map(
+            "refresh_token" -> refreshToken,
+            "grant_type"    -> "refresh_token",
+            "client_id"     -> authMod.get.clientId,
+            "client_secret" -> authMod.get.clientSecret,
+            "scope"         -> authMod.get.scope
+          )
+        )(using writeableOf_urlEncodedSimpleForm)
+      case _ if config.jsonPayload =>
+        builder.post(
+          Json
+            .obj(
+              "refresh_token" -> refreshToken,
+              "grant_type"    -> "refresh_token",
+              "client_id"     -> config.clientId,
+              "client_secret" -> config.clientSecret
+            )
+            .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
+            .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
+        )
+      case _                       =>
+        builder.post(
+          Map(
             "refresh_token" -> refreshToken,
             "grant_type"    -> "refresh_token",
             "client_id"     -> config.clientId,
             "client_secret" -> config.clientSecret
           )
-          .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
-          .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
-      )
-    } else {
-      builder.post(
-        Map(
-          "refresh_token" -> refreshToken,
-          "grant_type"    -> "refresh_token",
-          "client_id"     -> config.clientId,
-          "client_secret" -> config.clientSecret
-        )
-          .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
-          .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
-      )(using writeableOf_urlEncodedSimpleForm)
+            .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
+            .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
+        )(using writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
     future1.map(_.json).map { json =>
@@ -525,9 +588,10 @@ class OAuth2Caller extends NgRequestTransformer {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
-      case None         => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
-      case Some(config) =>
-        val key = computeKey(env, config, ctx.route)
+      case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
+      case Some(_config) =>
+        val config = _config.applyEl(ctx.attrs)
+        val key    = computeKey(env, config, ctx.route)
         env.datastores.rawDataStore.get(key).flatMap {
           case Some(tokenBody) =>
             val jsonToken = tokenBody.utf8String.parseJson
@@ -566,9 +630,10 @@ class OAuth2Caller extends NgRequestTransformer {
     val rawConfig = ctx.cachedConfig(internalName)(OAuth2CallerConfig.format)
 
     rawConfig match {
-      case None         => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
-      case Some(config) =>
-        val key = computeKey(env, config, ctx.route)
+      case None          => Left(BadRequest(Json.obj("error" -> "bad configuration"))).vfuture
+      case Some(_config) =>
+        val config = _config.applyEl(ctx.attrs)
+        val key    = computeKey(env, config, ctx.route)
         if (ctx.otoroshiResponse.status == 401) {
           tryRenewToken(key, config).flatMap {
             case Left(_)      =>
