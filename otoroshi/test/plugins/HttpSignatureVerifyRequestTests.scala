@@ -1,0 +1,5 @@
+package plugins
+
+class HttpSignatureVerifyRequestTests {
+
+}

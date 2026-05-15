@@ -1,4 +1,4 @@
-package tools
+package plugins
 
 import org.scalatest.{MustMatchers, WordSpec}
 import otoroshi.next.plugins._
@@ -91,9 +91,9 @@ class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
       // The expected canonical signature base (verbatim from the RFC).
       val expected =
         """"date": Tue, 20 Apr 2021 02:07:55 GMT""" + "\n" +
-        """"@authority": example.com""" + "\n" +
-        """"content-type": application/json""" + "\n" +
-        """"@signature-params": ("date" "@authority" "content-type");created=1618884473;keyid="test-shared-secret""""
+          """"@authority": example.com""" + "\n" +
+          """"content-type": application/json""" + "\n" +
+          """"@signature-params": ("date" "@authority" "content-type");created=1618884473;keyid="test-shared-secret""""
       base mustBe expected
     }
 
