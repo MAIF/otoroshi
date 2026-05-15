@@ -198,6 +198,27 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "HMAC access validator with apikey as secret" in {
       new HMACAccessValidatorTests(this).withApikeyAsSecret()
     }
+    "HTTP Signature - verify request: accept valid HMAC signature" in {
+      new HttpSignatureVerifyRequestTests(this).default()
+    }
+    "HTTP Signature - verify request: mandatory rejects unsigned" in {
+      new HttpSignatureVerifyRequestTests(this).mandatoryRejectsUnsigned()
+    }
+    "HTTP Signature - verify request: optional allows unsigned" in {
+      new HttpSignatureVerifyRequestTests(this).optionalAllowsUnsigned()
+    }
+    "HTTP Signature - verify request: rejects tampered signature" in {
+      new HttpSignatureVerifyRequestTests(this).rejectsTamperedSignature()
+    }
+    "HTTP Signature - verify request: rejects unknown keyid" in {
+      new HttpSignatureVerifyRequestTests(this).rejectsUnknownKeyid()
+    }
+    "HTTP Signature - sign response: emits Signature-Input and Signature headers" in {
+      new HttpSignatureSignResponseTests(this).default()
+    }
+    "HTTP Signature - sign response: signed response is verifiable end-to-end" in {
+      new HttpSignatureSignResponseTests(this).signedResponseIsVerifiable()
+    }
     "Static Response" in {
       new StaticResponseTests(this)
     }
