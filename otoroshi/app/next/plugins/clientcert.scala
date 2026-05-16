@@ -569,3 +569,100 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
     }
   }
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// RFC 9440 — Client-Cert HTTP Header Field
+// https://datatracker.ietf.org/doc/rfc9440/
+//
+// Server-side: when Otoroshi terminates TLS with a client certificate, forward the certificate to the upstream
+// using the standardized `Client-Cert` (end-entity) and `Client-Cert-Chain` (intermediates) headers as structured-field
+// byte sequences (RFC 8941). Any incoming Client-Cert / Client-Cert-Chain headers from the original request are
+// stripped before injection to defeat spoofing by untrusted clients (RFC 9440 §3 Security Considerations).
+// ---------------------------------------------------------------------------------------------------------------------
+
+case class NgRfc9440ClientCertHeaderConfig(
+    sendChain: Boolean = true
+) extends NgPluginConfig {
+  def json: JsValue = Json.obj(
+    "send_chain" -> sendChain
+  )
+}
+
+object NgRfc9440ClientCertHeaderConfig {
+  val format = new Format[NgRfc9440ClientCertHeaderConfig] {
+    override def writes(o: NgRfc9440ClientCertHeaderConfig): JsValue             = o.json
+    override def reads(json: JsValue): JsResult[NgRfc9440ClientCertHeaderConfig] = Try {
+      NgRfc9440ClientCertHeaderConfig(
+        sendChain = json.select("send_chain").asOpt[Boolean].getOrElse(true)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(c) => JsSuccess(c)
+    }
+  }
+}
+
+class NgRfc9440ClientCertHeader extends NgRequestTransformer {
+
+  override def name: String                                = "Client certificate header (RFC 9440)"
+  override def description: Option[String]                 =
+    "Forwards the TLS client certificate to the backend per RFC 9440 (`Client-Cert` and `Client-Cert-Chain` headers)".some
+  override def defaultConfigObject: Option[NgPluginConfig] = NgRfc9440ClientCertHeaderConfig().some
+  override def multiInstance: Boolean                      = true
+  override def core: Boolean                               = true
+  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Headers)
+  override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
+
+  override def noJsForm: Boolean = true
+  override def configFlow: Seq[String]        = Seq("send_chain")
+  override def configSchema: Option[JsObject] = Some(
+    Json.obj(
+      "send_chain" -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Send chain",
+        "help"  -> "When true, also emit the `Client-Cert-Chain` header carrying the intermediate certificates."
+      )
+    )
+  )
+
+  private val LeafHeaderName  = "Client-Cert"
+  private val ChainHeaderName = "Client-Cert-Chain"
+
+  // RFC 8941 byte-sequence: the base64 payload is wrapped between two colons with no whitespace.
+  private def asByteSequence(cert: X509Certificate): Option[String] =
+    Try(java.util.Base64.getEncoder.encodeToString(cert.getEncoded)).toOption.map(b64 => s":$b64:")
+
+  private def stripIncoming(headers: Map[String, String]): Map[String, String] =
+    headers.filterNot { case (k, _) =>
+      k.equalsIgnoreCase(LeafHeaderName) || k.equalsIgnoreCase(ChainHeaderName)
+    }
+
+  override def transformRequest(
+      ctx: NgTransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+    val stripped = stripIncoming(ctx.otoroshiRequest.headers)
+    ctx.request.clientCertificateChain match {
+      case None                            => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
+      case Some(chain) if chain.isEmpty    => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
+      case Some(chain)                     =>
+        val config        = ctx
+          .cachedConfig(internalName)(NgRfc9440ClientCertHeaderConfig.format)
+          .getOrElse(NgRfc9440ClientCertHeaderConfig())
+        val leaf          = chain.head
+        val intermediates = chain.drop(1)
+        asByteSequence(leaf) match {
+          case None       => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
+          case Some(leafEncoded) =>
+            val withLeaf      = stripped + (LeafHeaderName -> leafEncoded)
+            val finalHeaders  =
+              if (config.sendChain && intermediates.nonEmpty) {
+                val encodedChain = intermediates.flatMap(asByteSequence)
+                if (encodedChain.isEmpty) withLeaf
+                else withLeaf + (ChainHeaderName -> encodedChain.mkString(", "))
+              } else withLeaf
+            Right(ctx.otoroshiRequest.copy(headers = finalHeaders)).future
+        }
+    }
+  }
+}
