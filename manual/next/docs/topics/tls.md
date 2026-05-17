@@ -238,6 +238,96 @@ This configuration tells Otoroshi to:
 2. Only trust the CA `internal-ca-id` when verifying the backend's TLS certificate
 3. Perform strict hostname verification
 
+## Forwarding the client certificate to backends
+
+When Otoroshi terminates mTLS at the edge, the TLS handshake stops at the gateway and the upstream application never sees the underlying socket. The backend, however, often still needs to know **which** certificate was presented — to authorize the call, attach identity to audit logs, enforce per-client quotas, or feed downstream tracing. Otoroshi ships several plugins to forward that information; the standards-compliant one is `NgRfc9440ClientCertHeader`.
+
+### RFC 9440 — `Client-Cert` / `Client-Cert-Chain` headers
+
+The **Client certificate header (RFC 9440)** plugin (`cp:otoroshi.next.plugins.NgRfc9440ClientCertHeader`) implements [RFC 9440](https://datatracker.ietf.org/doc/rfc9440/), which defines two standardized headers a TLS-terminating reverse proxy can use to convey the validated client certificate to its upstream:
+
+* `Client-Cert` — the end-entity (leaf) certificate, base64-encoded DER, wrapped as a structured-field byte sequence (RFC 8941)
+* `Client-Cert-Chain` — the chain of intermediates (the leaf is **not** repeated), as a structured-field list of byte sequences
+
+The structured-field byte sequence form is the base64 DER surrounded by two colons:
+
+```http
+Client-Cert: :MIIBqDCCAU2gAwIBAgIBBzAKBggqhkjOPQQDAjA...:
+Client-Cert-Chain: :MIIBczCCARigAwIBAgIBBzAKBggqhkjOPQQ...:, :MIIBcz...:
+```
+
+For every incoming request, the plugin:
+
+1. **Strips** any `Client-Cert` / `Client-Cert-Chain` header that was already present on the original request — RFC 9440 §3 explicitly requires this so an untrusted client cannot spoof a header that the backend treats as a trusted source of identity.
+2. If the TLS handshake produced a client certificate, **injects** the encoded leaf as `Client-Cert`.
+3. If `send_chain` is enabled and the chain has more than just the leaf, **injects** the intermediates as `Client-Cert-Chain`.
+
+When the request was not mutually authenticated, no header is added (but the strip step still happens).
+
+#### Configuration
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `send_chain` | boolean | `true` | Also emit `Client-Cert-Chain` for the intermediates when the chain contains more than the leaf certificate. Set to `false` if the upstream only consumes the leaf |
+
+#### Example: enabling on a route
+
+```json
+{
+  "frontend": { "domains": ["mtls-api.my-domain.com"] },
+  "plugins": [
+    {
+      "plugin": "cp:otoroshi.next.plugins.NgRfc9440ClientCertHeader",
+      "config": { "send_chain": true }
+    }
+  ]
+}
+```
+
+Combined with `clientAuth = "Need"` (see [Client authentication (mTLS)](#client-authentication-mtls)), every request that reaches the upstream will carry the validated certificate as a structured header.
+
+#### Decoding the header in the backend
+
+Because the encoded value is just `:` + base64 DER + `:`, parsing it is trivial in any language. Java/Scala:
+
+```java
+String header = request.getHeader("Client-Cert"); // ":MIIBqD...:"
+String b64    = header.substring(1, header.length() - 1);
+byte[] der    = java.util.Base64.getDecoder().decode(b64);
+X509Certificate cert = (X509Certificate) java.security.cert.CertificateFactory
+  .getInstance("X.509")
+  .generateCertificate(new java.io.ByteArrayInputStream(der));
+```
+
+Node.js (using the built-in `crypto.X509Certificate`):
+
+```js
+const raw = req.headers['client-cert'];
+const der = Buffer.from(raw.slice(1, -1), 'base64');
+const cert = new crypto.X509Certificate(der);
+console.log(cert.subject, cert.issuer, cert.validTo);
+```
+
+#### Typical usage patterns
+
+* **Edge mTLS, app-level authorization.** Otoroshi handles the TLS handshake and authenticates the client at the edge; the backend reads `Client-Cert`, extracts the subject DN, and applies its own RBAC. The app stays cleanly out of the TLS machinery.
+* **Audit and tracing.** The backend logs the certificate subject or fingerprint on every call so security teams can correlate calls to specific client identities even when the call goes through several internal hops.
+* **Migration from / coexistence with NGINX or Envoy.** Both NGINX (`ssl_client_escaped_cert` + a custom header) and Envoy (`forward_client_cert_details`) can produce RFC 9440 headers. Putting Otoroshi in front of (or behind) such a deployment lets the backend keep a single parsing path.
+* **Vendor-neutral integration.** Frameworks that ship native support for RFC 9440 (notably Spring Security's `X509AuthenticationFilter` with a header preprocessor, recent Istio/Envoy filters, and the Apache HTTP Server `mod_ssl` forward-cert option) will pick the header up without any glue code.
+* **Multi-hop deployments.** When several proxies sit in front of the backend, only the **outermost** trust boundary should set this header — and every intermediate proxy should keep stripping/re-injecting it. The "strip-before-inject" semantics of the plugin make Otoroshi safe to chain in either position.
+
+#### Comparison with the legacy `NgClientCertChainHeader` plugin
+
+Otoroshi also ships the older **Client certificate header** plugin (`NgClientCertChainHeader`) which can forward the cert as `X-Client-Cert-Pem` (inline PEM), `X-Client-Cert-DNs` (JSON array of subject DNs), and `X-Client-Cert-Chain` (JSON array of subject/issuer/serial/validity). Use the RFC 9440 plugin when:
+
+* you want a header format other tools and frameworks already understand;
+* you prefer a compact DER payload over inline PEM (which often gets mangled by intermediate logs);
+* you need a single, standards-anchored contract with the upstream.
+
+Use the legacy plugin when the backend specifically expects Otoroshi's JSON metadata fields (subject CN, issuer CN, `notAfter`, etc.) and re-implementing them on top of the DER would be wasteful.
+
+The two plugins can also be combined: the RFC 9440 plugin gives the upstream a faithful copy of the certificate, while the legacy plugin offers pre-extracted metadata convenient for header-based routing or log enrichment.
+
 ## Key pair for JWT signing and verification
 
 Certificates can also be used as key pairs for signing and verifying JWT tokens. To use a certificate as a key pair, mark it with the `keypair` flag on the certificate page or via the admin API.
