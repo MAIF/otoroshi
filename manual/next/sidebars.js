@@ -152,6 +152,7 @@ const sidebars = {
         'tutorials/custom-initial-state',
         'tutorials/setup-ai-gateway-with-otoroshictl',
         'tutorials/oauth2-token-exchange',
+        'tutorials/http-message-signatures-rfc9421',
       ],
     },
     {
