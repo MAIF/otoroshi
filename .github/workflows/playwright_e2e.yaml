@@ -155,9 +155,28 @@ jobs:
               "label": "Tester"
             }' || echo "tester admin may already exist"
 
+      - name: Resolve Playwright version
+        id: playwright-version
+        working-directory: otoroshi/javascript
+        run: echo "version=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
         working-directory: otoroshi/javascript
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+            # Browser binaries restored from cache; OS-level libs aren't, so
+            # install just those (they live on the runner, not in the cache).
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Run Playwright tests
         working-directory: otoroshi/javascript

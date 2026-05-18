@@ -15,8 +15,8 @@ export default defineConfig({
     timeout: process.env.CI ? 60_000 : 15_000,
     expect: { timeout: process.env.CI ? 15_000 : 5_000 },
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 1 : 0,
-    workers: process.env.CI ? 3 : undefined,
+    retries: 0,
+    workers: 1,
     reporter: 'html',
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
