@@ -175,6 +175,7 @@ export function Subscriptions(props) {
             <Button
               type="success"
               className="btn-sm"
+              data-testid="subscription-confirm"
               onClick={() => {
                 BackOfficeServices.confirmSubscription(
                   item.id,

@@ -119,16 +119,9 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
   def findAllByKind(kind: String) =
     ApiAction.async { ctx =>
-      Results
-        .Ok(
-          JsArray(
-            env.proxyState
-              .allDrafts()
-              .filter(_.id.startsWith(kind))
-              .map(_.json)
-          )
-        )
-        .future
+      env.datastores.draftsDataStore.findAll().map { drafts =>
+        Results.Ok(JsArray(drafts.filter(_.id.startsWith(kind)).map(_.json)))
+      }
     }
 
   def foldStats(stats: Seq[RouteStats]) = {
@@ -343,12 +336,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
           )
         )
 
+        // Read the draft straight from the datastore (not proxyState, whose
+        // cache lags behind writes) so a draft is visible right after it is
+        // POSTed — keeping draft mode consistent with the non-draft path.
         def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
-          env.proxyState
-            .allDrafts()
-            .find(_.id == id)
-            .flatMap(draft => fmt.reads(draft.content).asOpt)
-            .future
+          env.datastores.draftsDataStore
+            .findById(id)
+            .map(_.flatMap(draft => fmt.reads(draft.content).asOpt))
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
@@ -480,12 +474,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
+        // Read the draft straight from the datastore (not proxyState, whose
+        // cache lags behind writes) so a draft is visible right after it is
+        // POSTed — keeping draft mode consistent with the non-draft path.
         def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
-          env.proxyState
-            .allDrafts()
-            .find(_.id == id)
-            .flatMap(draft => fmt.reads(draft.content).asOpt)
-            .future
+          env.datastores.draftsDataStore
+            .findById(id)
+            .map(_.flatMap(draft => fmt.reads(draft.content).asOpt))
 
         def findApi(): Future[Option[Api]] =
           if (isDraft) findDraft(apiId, Api.format)
@@ -555,12 +550,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
+        // Read the draft straight from the datastore (not proxyState, whose
+        // cache lags behind writes) so a draft is visible right after it is
+        // POSTed — keeping draft mode consistent with the non-draft path.
         def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
-          env.proxyState
-            .allDrafts()
-            .find(_.id == id)
-            .flatMap(draft => fmt.reads(draft.content).asOpt)
-            .future
+          env.datastores.draftsDataStore
+            .findById(id)
+            .map(_.flatMap(draft => fmt.reads(draft.content).asOpt))
 
         def findApi(): Future[Option[Api]] =
           if (isDraft) findDraft(apiId, Api.format)
@@ -572,7 +568,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
 
         def enableSubscription(subscription: ApiSubscription): Future[Boolean] =
           if (isDraft) {
-            env.proxyState.allDrafts().find(_.id == subscriptionId) match {
+            env.datastores.draftsDataStore.findById(subscriptionId).flatMap {
               case None        => false.future
               case Some(draft) =>
                 val updated = draft.copy(

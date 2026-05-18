@@ -53,7 +53,9 @@ test('creates an API from scratch and lands in staging', async () => {
   const apiId = await createApiViaUI(page);
   trackedApis.add(apiId);
   try {
-    expect(page.url()).toMatch(/\/apis\/api_dev_[a-f0-9-]+/);
+    // id is `api_dev_<uuid>` under `sbt run` (env.isDev) but `api_<uuid>` in a
+    // packaged/CI build — accept both.
+    expect(page.url()).toMatch(/\/apis\/api_(dev_)?[a-f0-9-]+/);
 
     // Getting-started stepper visible on a fresh API (state=staging, all steps
     // incomplete).
