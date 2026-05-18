@@ -1,5 +1,6 @@
 package plugins
 
+import com.auth0.jwt.JWT
 import functional.PluginsTestSpec
 import otoroshi.auth.{GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
@@ -216,6 +217,65 @@ class Rfc9728MetadataTests(parent: PluginsTestSpec) {
     // extraMetadata is merged in
     (body \ "custom_field").as[String] mustBe "custom_value"
     (body \ "x_vendor_flag").as[Boolean] mustBe true
+
+    deleteOtoroshiRoute(route).futureValue
+  }
+
+  def withSignedMetadata(): Unit = {
+    // Otoroshi auto-provisions the `otoroshi-jwt-signing` RSA keypair at startup, so we can use it directly
+    // as the signing key without having to create a new cert in the test.
+    val resourceId   = "https://api.example.com/"
+    val asOverride   = Seq("https://issuer.example.com")
+    val jwksUri      = "https://api.example.com/.well-known/jwks.json"
+
+    val route = createRouteWithExternalTarget(
+      Seq(
+        NgPluginInstance(
+          plugin = NgPluginHelper.pluginId[OAuthProtectedResourceMetadata],
+          config = NgPluginInstanceConfig(
+            OAuthProtectedResourceMetadataConfig(
+              resource = Some(resourceId),
+              authorizationServersOverride = asOverride,
+              jwksUri = Some(jwksUri),
+              scopesSupported = Seq("read", "write"),
+              signedMetadata = true,
+              signingCertRef = Some("otoroshi-jwt-signing"),
+              signingAlg = "RS256",
+              signedMetadataKid = Some("rfc9728-test-kid")
+            ).json.as[JsObject]
+          )
+        )
+      )
+    ).futureValue
+
+    val resp = ws
+      .url(s"http://127.0.0.1:$port$WellKnownPath")
+      .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
+      .get()
+      .futureValue
+
+    resp.status mustBe Status.OK
+    val body = resp.json
+
+    // The unsigned claims are still present alongside the signed envelope.
+    (body \ "resource").as[String] mustBe resourceId
+    (body \ "authorization_servers").as[Seq[String]] mustBe asOverride
+    (body \ "jwks_uri").as[String] mustBe jwksUri
+
+    // signed_metadata is a JWT string (header.payload.signature, base64url).
+    val jwt = (body \ "signed_metadata").as[String]
+    jwt.split('.').length mustBe 3
+
+    val decoded = JWT.decode(jwt)
+    decoded.getAlgorithm mustBe "RS256"
+    decoded.getKeyId mustBe "rfc9728-test-kid"
+    decoded.getIssuer mustBe resourceId
+    decoded.getSubject mustBe resourceId
+    decoded.getClaim("resource").asString() mustBe resourceId
+    decoded.getClaim("jwks_uri").asString() mustBe jwksUri
+    // Array claims survive the JWT round-trip.
+    decoded.getClaim("authorization_servers").asArray(classOf[String]).toSeq mustBe asOverride
+    decoded.getClaim("scopes_supported").asArray(classOf[String]).toSeq mustBe Seq("read", "write")
 
     deleteOtoroshiRoute(route).futureValue
   }
