@@ -236,7 +236,7 @@ export function Subscriptions(props) {
       navigateOnEdit={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/subscriptions/${item.id}/edit`)
       }
-      selfUrl="subscriptions"
+      selfUrl={`apis/${params.apiId}/subscriptions`}
       defaultTitle="Subscription"
       itemName="Subscription"
       columns={columns}

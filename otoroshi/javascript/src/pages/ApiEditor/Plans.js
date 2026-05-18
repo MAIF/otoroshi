@@ -880,7 +880,7 @@ export function Plans(props) {
         navigateOnEdit={(plan) =>
           history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)
         }
-        selfUrl="plans"
+        selfUrl={`apis/${params.apiId}/plans`}
         defaultTitle="Plans"
         itemName="Plan"
         formSchema={null}

@@ -78,7 +78,7 @@ export function Backends(props) {
       navigateOnEdit={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/backends/${item.id}/edit`)
       }
-      selfUrl="backends"
+      selfUrl={`apis/${params.apiId}/backends`}
       defaultTitle="Backend"
       itemName="Backend"
       columns={columns}

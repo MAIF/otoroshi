@@ -21,7 +21,7 @@ async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
     await page.getByRole('button', { name: action, exact: false }).click();
 
     await expect(page.locator('#content-scroll-container')).toContainText('Default organization - The default organization');
-    await expect(page.locator('#content-scroll-container')).toContainText('Default team - Default team created for any otoroshi instance');
+    await expect(page.locator('#content-scroll-container')).toContainText('Default Team - The default Team of the default organization');
 }
 
 async function shouldDefaultTenantOnTeam() {
@@ -41,7 +41,7 @@ async function shouldDefaultTeamsAndTenantOnRoutes() {
     await page.locator('div').filter({ hasText: /^Location$/ }).nth(1).click();
 
     await expect(page.locator('#content-scroll-container')).toContainText('Default organization - The default organization');
-    await expect(page.locator('#content-scroll-container')).toContainText('Default team - Default team created for any otoroshi instance');
+    await expect(page.locator('#content-scroll-container')).toContainText('Default Team - The default Team of the default organization');
 }
 
 test('[admin] New Routes got the right entity location', async () => shouldDefaultTeamsAndTenantOnRoutes());

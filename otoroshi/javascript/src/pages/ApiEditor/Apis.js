@@ -395,7 +395,7 @@ export function Apis(props) {
         parentProps={{ params }}
         navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
         navigateOnEdit={(item) => historyPush(history, location, `/apis/${item.id}`)}
-        selfUrl="apis"
+        selfUrl={`apis/${params.apiId}/apis`}
         defaultTitle="Api"
         itemName="Api"
         formSchema={null}

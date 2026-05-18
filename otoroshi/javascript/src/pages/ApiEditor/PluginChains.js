@@ -287,7 +287,7 @@ export function PluginChains(props) {
       navigateOnEdit={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/plugin-chains/${item.id}/designer`)
       }
-      selfUrl={`/apis/${params.apiId}/plugin-chains`}
+      selfUrl={`apis/${params.apiId}/plugin-chains`}
       defaultTitle="Flow"
       itemName="Flow"
       columns={columns}

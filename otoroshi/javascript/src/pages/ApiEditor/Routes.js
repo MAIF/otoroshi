@@ -444,7 +444,7 @@ export function Endpoints(props) {
         navigateOnEdit={(item) =>
           historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
         }
-        selfUrl="endpoints"
+        selfUrl={`apis/${params.apiId}/endpoints`}
         defaultTitle="Endpoint"
         itemName="Endpoint"
         columns={columns}

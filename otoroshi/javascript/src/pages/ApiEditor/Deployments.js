@@ -59,7 +59,7 @@ export function Deployments(props) {
         )
       }
       parentProps={{ params }}
-      selfUrl="deployments"
+      selfUrl={`apis/${params.apiId}/deployments`}
       defaultTitle="Deployment"
       itemName="Deployment"
       columns={columns}

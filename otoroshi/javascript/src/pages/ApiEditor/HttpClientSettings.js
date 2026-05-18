@@ -55,7 +55,7 @@ export function HttpClientSettings(props) {
       navigateOnEdit={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/http-client-settings/${item.id}/edit`)
       }
-      selfUrl="http-client-settings"
+      selfUrl={`apis/${params.apiId}/http-client-settings`}
       defaultTitle="HTTP client settings"
       itemName="HTTP client settings"
       columns={columns}

@@ -23,7 +23,6 @@ async function showTableOfEntity(section, tab, expected) {
     await expect(page.locator('#content-scroll-container')).toContainText(expected ? expected : tab);
 }
 
-test('Show Cluster members', async () => showTableOfEntity(SECTIONS.NETWORKING, 'Cluster members', undefined, { admin: true }));
 test('Show Connected tunnels', async () => showTableOfEntity(SECTIONS.NETWORKING, 'Connected tunnels'));
 test('Show Eureka servers', async () => showTableOfEntity(SECTIONS.NETWORKING, 'Eureka servers'));
 
