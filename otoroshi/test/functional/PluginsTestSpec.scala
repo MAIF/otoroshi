@@ -234,6 +234,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "RFC 9728 - protected resource metadata: extra metadata and optional fields" in {
       new Rfc9728MetadataTests(this).withExtraMetadataAndOptionalFields()
     }
+    "RFC 9728 - protected resource metadata: signed_metadata JWT" in {
+      new Rfc9728MetadataTests(this).withSignedMetadata()
+    }
     "Static Response" in {
       new StaticResponseTests(this)
     }
