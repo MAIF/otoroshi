@@ -2,8 +2,8 @@
 // Validates Api.writeValidator (state transitions, production read-only)
 // and createNewVersion (invalid deploy transitions).
 
-const { test, expect } = require('@playwright/test');
-const {
+import { test, expect } from '@playwright/test';
+import {
   PROXY_ANY,
   createApiViaApi,
   createPublishedApi,
@@ -11,7 +11,7 @@ const {
   getProd,
   putProd,
   postDeployment,
-} = require('./_apiHelpers');
+} from './_apiHelpers';
 
 test.setTimeout(30_000);
 

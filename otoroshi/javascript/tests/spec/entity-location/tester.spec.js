@@ -2,8 +2,8 @@
 // Logs in as tester@otoroshi.io with rights `tester:rw / tester-team:rw`
 // (seeded by auth.setup.js), so the default location should resolve to
 // "tester-team". See admin.spec.js for the super-admin variant.
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { test, expect } from '@playwright/test';
+import { validAnonymousModal } from '../../utils';
 
 let context;
 

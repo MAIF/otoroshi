@@ -1,5 +1,5 @@
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { test, expect } from '@playwright/test';
+import { validAnonymousModal } from '../../utils';
 
 let context;
 

@@ -1654,7 +1654,8 @@ case class Api(
   }
 
   private def applyPlansPolicies(routeWithApi: RouteWithApi): NgRoute = {
-    val route = plans
+    val routeApiPlans = routeWithApi.api.plans
+    val route         = routeApiPlans
       .filter(plan => plan.status == ApiPlanStatus.Published)
       .foldLeft(routeWithApi.route) { case (route, plan) =>
         applyPlan(route, plan)
@@ -1662,7 +1663,7 @@ case class Api(
     // TODO - replace chain of plugins by MandatoryConsumerPreset plugin
 
     if (
-      plans
+      routeApiPlans
         .exists(plan =>
           plan.accessModeConfigurationType != "keyless" &&
           plan.status == ApiPlanStatus.Published

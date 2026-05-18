@@ -2,8 +2,8 @@
 // Logs in as admin@otoroshi.io (super-admin), so the default location should
 // resolve to "Default organization" + "Default team".
 // See tester.spec.js for the constrained-rights variant.
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { test, expect } from '@playwright/test';
+import { validAnonymousModal } from '../../utils';
 
 let context;
 

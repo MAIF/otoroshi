@@ -1,9 +1,9 @@
 // End-to-end coverage of the API lifecycle: create, publish, draft divergence,
 // gateway dev/prod gating via X-OTOROSHI-TESTING, and UI cross-checks.
 
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
-const {
+import { test, expect } from '@playwright/test';
+import { validAnonymousModal } from '../../utils';
+import {
   PROXY_ANY,
   createApiViaUI,
   createApiViaApi,
@@ -15,7 +15,7 @@ const {
   putDraft,
   postDeployment,
   uniqueName,
-} = require('./_apiHelpers');
+} from './_apiHelpers';
 
 test.setTimeout(30_000);
 
@@ -108,9 +108,12 @@ test('publishes from staging, deployment payload is slim, draft is wiped', async
     const keys = Object.keys(apiDef).sort();
     expect(keys).toEqual(['backends', 'documentation', 'flows', 'routes']);
 
-    // B.4 — draft is wiped after deploy.
+    // B.4 (revised) — the draft is KEPT after publish so testing routes
+    // (X-OTOROSHI-TESTING) continue to serve without a UI roundtrip via
+    // "Edit in Draft Mode". The draft content equals the just-published
+    // prod anyway since the deploy snapshotted from it.
     const draftRes = await getDraftRaw(page, apiId);
-    expect(draftRes.status()).toBe(404);
+    expect(draftRes.status()).toBe(200);
   } finally {
     await deleteApiViaApi(page, apiId);
     await page.close();

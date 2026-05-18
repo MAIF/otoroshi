@@ -1,5 +1,5 @@
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { test, expect } from '@playwright/test';
+import { validAnonymousModal } from '../../utils';
 
 test('search bar must return entity', async ({ browser }) => {
     const context = await browser.newContext({ storageState: 'tests/playwright/.auth/tester.json' });

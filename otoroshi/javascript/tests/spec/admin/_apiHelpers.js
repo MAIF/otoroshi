@@ -1,13 +1,13 @@
 // Shared helpers for the API lifecycle Playwright suites.
 // Underscore prefix so Playwright doesn't pick it up as a spec file.
 
-const { expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { expect } from '@playwright/test';
+import { validAnonymousModal } from '../../utils';
 
-const PROXY_ANY = '/bo/api/proxy/apis/any/v1';
-const PROXY_APIS = '/bo/api/proxy/apis/apis.otoroshi.io/v1';
+export const PROXY_ANY = '/bo/api/proxy/apis/any/v1';
+export const PROXY_APIS = '/bo/api/proxy/apis/apis.otoroshi.io/v1';
 
-async function createApiViaUI(page, { name, description = 'lifecycle test api' } = {}) {
+export async function createApiViaUI(page, { name, description = 'lifecycle test api' } = {}) {
   const finalName = name || uniqueName('lifecycle-api');
   await page.goto('/bo/dashboard/apis');
   await validAnonymousModal(page);
@@ -48,11 +48,11 @@ async function createApiViaUI(page, { name, description = 'lifecycle test api' }
 }
 
 // Unique suffix so concurrent runs / leftover entities don't collide.
-function uniqueName(prefix) {
+export function uniqueName(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function createApiViaApi(page, { name, description = 'rules test api' } = {}) {
+export async function createApiViaApi(page, { name, description = 'rules test api' } = {}) {
   const finalName = name || uniqueName('rules-api');
   const template = await getJson(page, `${PROXY_ANY}/apis/_template`);
   const body = { ...template, name: finalName, description };
@@ -63,42 +63,42 @@ async function createApiViaApi(page, { name, description = 'rules test api' } = 
   return created.id;
 }
 
-async function deleteApiViaUI(page) {
+export async function deleteApiViaUI(page) {
   await page.getByRole('link', { name: ' Informations' }).click();
   await page.locator('div').filter({ hasText: /^Danger zone$/ }).nth(1).click();
   await page.getByRole('button', { name: 'Delete this API' }).click();
   await page.getByRole('button', { name: 'Ok' }).click();
 }
 
-async function deleteApiViaApi(page, apiId) {
+export async function deleteApiViaApi(page, apiId) {
   if (!apiId) return;
   // Order matters: drop the draft first so a stale draft can't resurrect data.
   await page.request.delete(`${PROXY_ANY}/drafts/${apiId}`).catch(() => {});
   await page.request.delete(`${PROXY_ANY}/apis/${apiId}`).catch(() => {});
 }
 
-async function getProd(page, apiId) {
+export async function getProd(page, apiId) {
   return getJson(page, `${PROXY_ANY}/apis/${apiId}`);
 }
 
-async function getDraft(page, apiId) {
+export async function getDraft(page, apiId) {
   return getJson(page, `${PROXY_ANY}/drafts/${apiId}`);
 }
 
-async function getDraftRaw(page, apiId) {
+export async function getDraftRaw(page, apiId) {
   // Returns the raw HTTP response so callers can assert status (e.g. 404).
   return page.request.get(`${PROXY_ANY}/drafts/${apiId}`);
 }
 
-async function putProd(page, apiId, body) {
+export async function putProd(page, apiId, body) {
   return page.request.put(`${PROXY_ANY}/apis/${apiId}`, { data: body });
 }
 
-async function putDraft(page, apiId, body) {
+export async function putDraft(page, apiId, body) {
   return page.request.put(`${PROXY_ANY}/drafts/${apiId}`, { data: body });
 }
 
-async function postDeployment(page, apiId, body) {
+export async function postDeployment(page, apiId, body) {
   return page.request.post(`${PROXY_APIS}/apis/${apiId}/deployments`, { data: body });
 }
 
@@ -116,7 +116,7 @@ async function postJson(page, path, body) {
 
 // Build a published API the fast way (no UI): create + draft + deploy.
 // The deployment endpoint requires a draft to exist (otherwise it returns 404).
-async function createPublishedApi(page, opts = {}) {
+export async function createPublishedApi(page, opts = {}) {
   const apiId = await createApiViaApi(page, opts);
   const api = await getProd(page, apiId);
 
@@ -153,7 +153,7 @@ async function createPublishedApi(page, opts = {}) {
 
 // Wipe any leftover APIs from previous (failed) test runs that match a name
 // prefix. Conservative on purpose — we only delete what we recognise as ours.
-async function wipeLeftovers(page, namePrefixes = []) {
+export async function wipeLeftovers(page, namePrefixes = []) {
   if (!namePrefixes.length) return;
   const res = await page.request.get(`${PROXY_ANY}/apis`);
   if (res.status() >= 400) return;
@@ -166,20 +166,3 @@ async function wipeLeftovers(page, namePrefixes = []) {
   }
 }
 
-module.exports = {
-  PROXY_ANY,
-  PROXY_APIS,
-  uniqueName,
-  createApiViaUI,
-  createApiViaApi,
-  createPublishedApi,
-  deleteApiViaUI,
-  deleteApiViaApi,
-  getProd,
-  getDraft,
-  getDraftRaw,
-  putProd,
-  putDraft,
-  postDeployment,
-  wipeLeftovers,
-};

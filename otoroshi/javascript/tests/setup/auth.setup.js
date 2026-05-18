@@ -68,7 +68,10 @@ async function ensureTesterTenancySetup() {
     await ensureEntity(`${ADMIN_API}/api/teams`, {
         id: 'tester-team',
         tenant: 'tester',
-        name: 'Tester Team',
+        // Name kept equal to the id on purpose: the Location component renders
+        // teams as "<name> - <description>", and entity-location specs assert
+        // the string "tester-team" shows up.
+        name: 'tester-team',
         description: 'Auto-seeded by Playwright auth.setup.js',
         metadata: {},
         tags: [],
