@@ -1,5 +1,5 @@
 import { test, expect, describe } from '@playwright/test';
-import { SECTIONS, validAnonymousModal } from '../../utils';
+import { SECTIONS } from '../../utils';
 
 
 let context;
@@ -15,8 +15,6 @@ test.afterAll(async () => {
 async function showTableOfEntity(section, tab, expected) {
     const page = await context.newPage();
     await page.goto('/');
-    await validAnonymousModal(page)
-
 
     await page.getByText(section).click();
     await page

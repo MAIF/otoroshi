@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 
 let context;
 
@@ -14,7 +13,6 @@ test.afterAll(async () => {
 test('access to the admin api', async () => {
     const page = await context.newPage()
     await page.goto('/');
-    await validAnonymousModal(page)
 
     await page.locator('#navbar').click();
 

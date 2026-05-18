@@ -24,6 +24,11 @@ jobs:
       OTOROSHI_INITIAL_ADMIN_PASSWORD: 'password'
       ADMIN_API_CLIENT_ID: 'admin-api-apikey-id'
       ADMIN_API_CLIENT_SECRET: 'admin-api-apikey-secret'
+      # Disable the anonymous-reporting opt-in popup: on a fresh instance it
+      # renders asynchronously after login and overlays the whole BO, making
+      # its modal intercept every click. Off => backend reports should_enable,
+      # so BackOfficeApp never triggers the popup at all.
+      OTOROSHI_ANONYMOUS_REPORTING_ENABLED: 'false'
       # Playwright config
       PW_AUTH_TTL_MIN: '0'
       CI: 'true'
@@ -180,7 +185,7 @@ jobs:
 
       - name: Run Playwright tests
         working-directory: otoroshi/javascript
-        run: npx playwright test
+        run: npx playwright test --reporter=line
 
       - name: Stop Otoroshi
         if: always()

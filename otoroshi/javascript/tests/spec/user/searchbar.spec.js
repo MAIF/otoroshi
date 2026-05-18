@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 
 test('search bar must return entity', async ({ browser }) => {
     const context = await browser.newContext({ storageState: 'tests/playwright/.auth/tester.json' });
     const page = await context.newPage();
     await page.goto('/');
-    await validAnonymousModal(page)
 
     await page.locator('#navbar').click();
 

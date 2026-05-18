@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 
 let context;
 
@@ -13,8 +12,6 @@ test.afterAll(async () => {
 
 async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
     const page = await context.newPage();
-    await validAnonymousModal(page)
-
     await page.goto(`/bo/dashboard/${path}`);
 
     await page.getByRole('button', { name: action, exact: false }).click();
@@ -24,7 +21,6 @@ async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
 
 async function shouldDefaultTeamsAndTenantOnRoutes() {
     const page = await context.newPage();
-    await validAnonymousModal(page)
     await page.goto('/bo/dashboard/routes');
 
     await page.getByRole('link', { name: /Create new route/ }).click();

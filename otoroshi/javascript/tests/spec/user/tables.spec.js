@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 
 let context;
 
@@ -20,7 +19,6 @@ test.afterAll(async () => {
 async function searchAndOpen(query, optionLabel, expectedText) {
     const page = await context.newPage();
     await page.goto('/');
-    await validAnonymousModal(page);
 
     // Focus the topbar search. `getByPlaceholder` resolves to a hidden form
     // input on react-select, so we target the visible placeholder text node

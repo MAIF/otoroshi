@@ -1,7 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
-import { validAnonymousModal } from '../utils';
 
 const userAuthFile = path.join(__dirname, '../playwright/.auth/tester.json');
 const adminAuthFile = path.join(__dirname, '../playwright/.auth/admin.json');
@@ -163,7 +162,6 @@ setup('authenticate', async ({ page }) => {
     await ensureTesterTenancySetup();
 
     await page.goto('/');
-    await validAnonymousModal(page);
     await page.getByRole('button', { name: 'Login', exact: true }).click();
     await page.locator('input[name="email"]').click();
     await page.locator('input[name="email"]').fill('tester@otoroshi.io');
@@ -191,9 +189,4 @@ setup('authenticate', async ({ page }) => {
     await expect(page.locator('#content-scroll-container img')).toBeVisible();
 
     await page.context().storageState({ path: adminAuthFile });
-
-    const closeButton = await page.$('text=Close');
-    if (closeButton) {
-        await closeButton.click();
-    }
 });

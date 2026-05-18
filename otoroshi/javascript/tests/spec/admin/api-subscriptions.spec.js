@@ -14,7 +14,6 @@
 //                no longer authenticate
 
 import { test, expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 import {
     PROXY_ANY,
     createApiViaApi,
@@ -188,7 +187,6 @@ test('keyless plan: stepper reflects setup, X-OTOROSHI-TESTING gates traffic', a
 
     // --- UI: the draft already exists, useDraftOfAPI just loads it. ---
     await page.goto(`/bo/dashboard/apis/${apiId}?version=Draft`);
-    await validAnonymousModal(page);
 
     // The stepper reflects the steps we populated (1=routes, 2=backends,
     // 4=gateway, 5=testing, 6=plan). Completed steps render with the
@@ -581,7 +579,6 @@ test('apikey plan: EL clientName + description + validUntil + metadata propagate
     // share the table and we must Confirm the exact row.
     const subName = uniqueName('el-sub');
     await page.goto(`/bo/dashboard/apis/${apiId}/plans?version=Draft`);
-    await validAnonymousModal(page);
     await page.getByTestId('plan-subscribe').first().click();
 
     const subFieldInput = (label) =>

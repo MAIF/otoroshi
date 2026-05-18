@@ -2,7 +2,6 @@
 // gateway dev/prod gating via X-OTOROSHI-TESTING, and UI cross-checks.
 
 import { test, expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 import {
   PROXY_ANY,
   createApiViaUI,
@@ -239,7 +238,6 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
     // Visit the API in draft mode — useDraftOfAPI auto-creates the draft
     // wrapper for us (no manual POST /drafts).
     await page.goto(`/bo/dashboard/apis/${apiId}/testing?version=Draft`);
-    await validAnonymousModal(page);
     await expect.poll(async () => (await getDraftRaw(page, apiId)).status()).toBe(200);
     const draft = await getDraft(page, apiId);
 
@@ -317,7 +315,6 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
 
 async function navigateToActions(page, apiId) {
   await page.goto(`/bo/dashboard/apis/${apiId}`);
-  await validAnonymousModal(page);
   await page.getByTestId('sidebar-tab-actions').click();
 }
 
@@ -407,7 +404,6 @@ test('production-locked tabs disable write actions', async () => {
   trackedApis.add(apiId);
   try {
     await page.goto(`/bo/dashboard/apis/${apiId}?version=Published`);
-    await validAnonymousModal(page);
 
     // Endpoints — no "Create new endpoint" link in prod (it's an <a>, not <button>).
     await page.getByTestId('sidebar-tab-endpoints').click();

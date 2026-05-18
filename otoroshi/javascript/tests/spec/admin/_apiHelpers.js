@@ -2,7 +2,6 @@
 // Underscore prefix so Playwright doesn't pick it up as a spec file.
 
 import { expect } from '@playwright/test';
-import { validAnonymousModal } from '../../utils';
 
 export const PROXY_ANY = '/bo/api/proxy/apis/any/v1';
 export const PROXY_APIS = '/bo/api/proxy/apis/apis.otoroshi.io/v1';
@@ -10,7 +9,6 @@ export const PROXY_APIS = '/bo/api/proxy/apis/apis.otoroshi.io/v1';
 export async function createApiViaUI(page, { name, description = 'lifecycle test api' } = {}) {
   const finalName = name || uniqueName('lifecycle-api');
   await page.goto('/bo/dashboard/apis');
-  await validAnonymousModal(page);
 
   // The "Create new API" Link uses an inline onClick that fetches the template and
   // then history.push() to apis/<id>/new. Wait explicitly for that URL change —
