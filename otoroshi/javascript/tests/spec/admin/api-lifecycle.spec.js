@@ -87,6 +87,10 @@ test('publishes from staging, deployment payload is slim, draft is wiped', async
   const apiId = await createApiViaUI(page);
   trackedApis.add(apiId);
   try {
+    // The dashboard auto-creates the draft asynchronously; the deploy 404s
+    // without it. Wait for the draft before publishing.
+    await expect.poll(async () => (await getDraftRaw(page, apiId)).status()).toBe(200);
+
     // Publish via the header CTA (the entry point we expose to users now).
     await page.getByTestId('publish-this-version').click();
     // Confirm modal — "Publish API" header button is "Publish API", the modal
