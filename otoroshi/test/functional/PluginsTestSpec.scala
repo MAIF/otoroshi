@@ -219,6 +219,21 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "HTTP Signature - sign response: signed response is verifiable end-to-end" in {
       new HttpSignatureSignResponseTests(this).signedResponseIsVerifiable()
     }
+    "RFC 9728 - protected resource metadata: override only" in {
+      new Rfc9728MetadataTests(this).withOverrideOnly()
+    }
+    "RFC 9728 - protected resource metadata: auth module ref with oidConfig" in {
+      new Rfc9728MetadataTests(this).withAuthModuleRefOidConfig()
+    }
+    "RFC 9728 - protected resource metadata: auth module ref with tokenUrl fallback" in {
+      new Rfc9728MetadataTests(this).withAuthModuleRefTokenUrlFallback()
+    }
+    "RFC 9728 - protected resource metadata: resource inferred from Host" in {
+      new Rfc9728MetadataTests(this).withInferredResource()
+    }
+    "RFC 9728 - protected resource metadata: extra metadata and optional fields" in {
+      new Rfc9728MetadataTests(this).withExtraMetadataAndOptionalFields()
+    }
     "Static Response" in {
       new StaticResponseTests(this)
     }
