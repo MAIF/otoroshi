@@ -10,7 +10,8 @@ import PageTitle from '../../components/PageTitle';
 import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
-import { DraftOnly, VersionBadge } from './DraftOnly';
+import { DraftOnly, VersionBadge, EditInDraftButton } from './DraftOnly';
+import { SchemaReadOnlyView } from './SchemaReadOnlyView';
 import { MAX_WIDTH } from './constants';
 
 export function HttpClientSettings(props) {
@@ -192,7 +193,7 @@ export function EditHttpClientSettings(props) {
   const history = useHistory();
   const location = useLocation();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [client, setClient] = useState();
 
@@ -218,53 +219,59 @@ export function EditHttpClientSettings(props) {
     }).then(() => historyPush(history, location, `/apis/${params.apiId}/http-client-settings`));
   };
 
-  if (!item) return <SimpleLoader />;
+  if (!item || !client) return <SimpleLoader />;
+
+  const formSchema = {
+    name: {
+      label: 'Name',
+      type: 'string',
+      placeholder: 'New HTTP client settings',
+      disabled: client?.name === 'default_client',
+    },
+    client: {
+      ...NgBackend.schema.client,
+      collapsable: false,
+      collapsed: false,
+    },
+  };
+
+  const formFlow = [
+    {
+      type: 'group',
+      name: 'Informations',
+      collapsable: false,
+      fields: ['name'],
+    },
+    'client',
+  ];
 
   return (
     <div className="page">
       <PageTitle title="Http Client settings" {...props} style={{ paddingBottom: 0 }} />
       <div className="displayGroupBtn">
-        <FeedbackButton
-          type="success"
-          onPress={updateBackend}
-          text={
-            <div className="d-flex align-items-center">
-              Save <VersionBadge size="xs" />
-            </div>
-          }
-        />
+        {isDraft ? (
+          <FeedbackButton
+            type="success"
+            onPress={updateBackend}
+            text={
+              <div className="d-flex align-items-center">
+                Save <VersionBadge size="xs" />
+              </div>
+            }
+          />
+        ) : (
+          <EditInDraftButton />
+        )}
       </div>
 
-      <BackendForm
-        state={{
-          form: {
-            schema: {
-              name: {
-                label: 'Name',
-                type: 'string',
-                placeholder: 'New HTTP client settings',
-                disabled: client?.name === 'default_client',
-              },
-              client: {
-                ...NgBackend.schema.client,
-                collapsable: false,
-                collapsed: false,
-              },
-            },
-            flow: [
-              {
-                type: 'group',
-                name: 'Informations',
-                collapsable: false,
-                fields: ['name'],
-              },
-              'client',
-            ],
-            value: client,
-          },
-        }}
-        onChange={setClient}
-      />
+      {isDraft ? (
+        <BackendForm
+          state={{ form: { schema: formSchema, flow: formFlow, value: client } }}
+          onChange={setClient}
+        />
+      ) : (
+        <SchemaReadOnlyView schema={formSchema} flow={formFlow} value={client} />
+      )}
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { ApiStats } from './ApiStats';
 import { API_STATE } from './model';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
-import { DraftOnly, VersionBadge, VersionToggle } from './DraftOnly';
+import { DraftOnly, VersionBadge } from './DraftOnly';
 import { VersionManager } from './VersionManager';
 import { publishAPI } from './Actions';
 import { signalVersion } from './VersionSignal';
@@ -686,7 +686,6 @@ export function Dashboard(props) {
         {/* API Header */}
         <ContainerBlock full highlighted>
           <APIHeader api={item} version={version} draft={draft} />
-          {version !== 'staging' && <VersionToggle isDraft={version === 'Draft'} />}
         </ContainerBlock>
 
         {/* Quick Stats Row */}

@@ -84,20 +84,13 @@ export function GettingStartedStepper() {
   const { item, draft, isDraft } = useDraftOfAPI();
 
   const apiId = params?.apiId;
-  const storageKey = `otoroshi.gs-stepper.dismissed.${apiId}`;
   const collapseKey = `otoroshi.gs-stepper.collapsed.${apiId}`;
 
-  const [dismissed, setDismissed] = useState(
-    () => !!apiId && window.localStorage.getItem(storageKey) === '1'
-  );
   const [collapsed, setCollapsed] = useState(
     () => !!apiId && window.localStorage.getItem(collapseKey) === '1'
   );
 
-  // Bail out for routes without an apiId, or while the API hasn't loaded yet,
-  // or for users who explicitly dismissed the tutorial.
   if (!apiId || apiId === 'new' || !item) return null;
-  if (dismissed) return null;
   if (!isDraft) return null;
   if (item.state === API_STATE.DEPRECATED || item.state === API_STATE.REMOVED) return null;
 
@@ -118,11 +111,6 @@ export function GettingStartedStepper() {
     } else if (step.to) {
       historyPush(history, location, step.to);
     }
-  };
-
-  const handleSkip = () => {
-    window.localStorage.setItem(storageKey, '1');
-    setDismissed(true);
   };
 
   const toggleCollapsed = () => {
@@ -163,17 +151,8 @@ export function GettingStartedStepper() {
             type="button"
             className="gs-stepper-iconbtn"
             onClick={toggleCollapsed}
-            title="Minimize"
+            title="Hide"
             data-testid="gs-stepper-collapse"
-          >
-            <i className="fas fa-minus" />
-          </button>
-          <button
-            type="button"
-            className="gs-stepper-iconbtn"
-            onClick={handleSkip}
-            title="Skip this tutorial"
-            data-testid="gs-stepper-skip"
           >
             <i className="fas fa-times" />
           </button>

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import './index.scss';
-import { Switch, Route } from 'react-router-dom';
+import { Switch, Route, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from 'react-query';
+import { VersionBanner } from './DraftOnly';
 import { queryClient } from '../../components/Drafts/DraftEditor';
 import { Documentation } from './Documentation';
 import { Plans, PlanEditor } from './Plans';
@@ -48,14 +49,23 @@ const RouteWithProps = ({ component: Component, props: extraProps, ...rest }) =>
 );
 
 export default function ApiEditor(props) {
+  const location = useLocation();
+
   useEffect(() => {
     document.getElementById('otoroshi-toasts')?.remove();
   }, []);
+
+  const parts = location.pathname.split('/').filter(Boolean); // ['apis', apiId, section?, ...]
+  const section = parts[2];
+  const onApiPage = parts[0] === 'apis' && parts.length >= 2;
+  const isEntityForm = parts.length > 3 || ['documentation', 'new'].includes(section);
+  const showBanner = onApiPage && !isEntityForm;
 
   return (
     <div className="editor">
       <QueryClientProvider client={queryClient}>
         <SidebarComponent {...props} />
+        {showBanner && <VersionBanner />}
 
         <Switch>
           <RouteWithProps
@@ -219,4 +229,4 @@ export default function ApiEditor(props) {
 
 // Re-exports for backward compatibility (Sidebar.js and Documentation.js import from here)
 export { useDraftOfAPI } from './hooks';
-export { DraftOnly, VersionBadge, VersionToggle } from './DraftOnly';
+export { DraftOnly, VersionBadge, VersionBanner } from './DraftOnly';

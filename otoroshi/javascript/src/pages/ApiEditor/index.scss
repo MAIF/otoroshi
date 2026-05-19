@@ -6,7 +6,198 @@
 
 .editor {
     padding-bottom: 10rem;
+}
 
+// Sticky banner surfacing the current version (draft vs production) on every
+// tab of the API editor. The background must be fully opaque: it pins to the
+// top of the scrolling content, so any translucency would let the content
+// bleed through as it scrolls underneath.
+.version-banner {
+    position: sticky;
+    top: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.25rem;
+    padding: .85rem 1.5rem;
+    font-size: .95rem;
+    color: var(--text);
+    border-bottom: 1px solid transparent;
+    box-shadow: 0 2px 6px hsla(0, 0%, 0%, .12);
+}
+
+// Opaque base (theme bg of the scroll container) + a flat colour layer on top
+// — the result reads as a tinted bar but stays fully opaque on scroll.
+.version-banner--draft {
+    background-color: var(--bg-color_level1);
+    background-image: linear-gradient(hsla(40, 90%, 55%, .18), hsla(40, 90%, 55%, .18));
+    border-bottom-color: hsla(40, 90%, 55%, .5);
+}
+
+.version-banner--prod {
+    background-color: var(--bg-color_level1);
+    background-image: linear-gradient(hsla(0, 75%, 55%, .18), hsla(0, 75%, 55%, .18));
+    border-bottom-color: hsla(0, 75%, 55%, .5);
+}
+
+.version-banner-info {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+}
+
+.version-banner-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.version-banner-tag i {
+    font-size: .7rem;
+}
+
+.version-banner--draft .version-banner-tag {
+    color: hsl(36, 100%, 38%);
+}
+
+.version-banner--prod .version-banner-tag {
+    color: hsl(0, 72%, 48%);
+}
+
+.version-banner-text {
+    opacity: .75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.version-banner-action {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    flex-shrink: 0;
+    padding: .35rem .85rem;
+    border-radius: .4rem;
+    border: 1px solid currentColor;
+    background: none;
+    color: inherit;
+    font-weight: 600;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: background-color .15s;
+}
+
+.version-banner-action i {
+    font-size: .7rem;
+    transition: transform .15s;
+}
+
+.version-banner-action:hover i {
+    transform: translateX(3px);
+}
+
+.version-banner--draft .version-banner-action:hover {
+    background-color: hsla(40, 90%, 55%, .22);
+}
+
+.version-banner--prod .version-banner-action:hover {
+    background-color: hsla(0, 75%, 55%, .22);
+}
+
+// Read-only schema view — the production (non-draft) rendering of config tabs.
+.schema-ro {
+    max-width: 900px;
+}
+
+.schema-ro-row {
+    display: flex;
+    gap: 1.5rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--bg-color_level3);
+}
+
+.schema-ro-label {
+    flex: 0 0 220px;
+    color: var(--text);
+    opacity: .65;
+}
+
+.schema-ro-value {
+    flex: 1;
+    min-width: 0;
+    color: var(--text);
+    word-break: break-word;
+}
+
+.schema-ro-json {
+    margin: 0;
+    padding: .5rem .75rem;
+    border-radius: .4rem;
+    background-color: var(--bg-color_level1);
+    font-size: .8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.schema-ro-section {
+    margin: 1rem 0;
+    padding-left: 1rem;
+    border-left: 2px solid var(--bg-color_level3);
+}
+
+.schema-ro-section-title {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: .8rem;
+    opacity: .8;
+    margin-bottom: .35rem;
+}
+
+.schema-ro-group {
+    margin: .75rem 0;
+}
+
+.schema-ro-group-title {
+    font-weight: 600;
+    margin-bottom: .25rem;
+}
+
+.schema-ro-item {
+    margin: .5rem 0;
+    padding: .5rem .75rem;
+    border-radius: .4rem;
+    background-color: var(--bg-color_level2);
+}
+
+.schema-ro-item-index {
+    font-weight: 700;
+    opacity: .6;
+    font-size: .8rem;
+    margin-bottom: .25rem;
+}
+
+.schema-ro-empty {
+    opacity: .55;
+    font-style: italic;
+    padding: .25rem 0;
+}
+
+.schema-ro-url {
+    font-family: monospace;
+    font-size: 1.05rem;
+    color: var(--color-primary);
+    word-break: break-all;
+}
+
+.editor {
     .btn-warning {
         border-color: var(--color-primary) !important;
     }
@@ -530,44 +721,7 @@
 }
 
 
-// Version toggle button
-.dashboard-version-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: .6rem;
-    padding: .5rem 1rem;
-    border-radius: .5rem;
-    border: 1px solid var(--bg-color_level3);
-    background: none;
-    color: var(--text);
-    cursor: pointer;
-    font-size: .85rem;
-    transition: border-color .2s, background-color .2s;
-
-    &:hover {
-        opacity: .9;
-    }
-
-    i {
-        font-size: .7rem;
-        opacity: .6;
-        transition: transform .2s;
-    }
-
-    &:hover i {
-        transform: translateX(3px);
-        opacity: 1;
-    }
-}
-
-.dashboard-version-toggle--draft {
-    border-color: hsla(40, 90%, 55%, .35);
-}
-
-.dashboard-version-toggle--prod {
-    border-color: hsla(0, 75%, 55%, .35);
-}
-
+// Small "PROD" pill shown on production-only links in the sidebar.
 .dashboard-version-toggle-indicator {
     display: inline-block;
     padding: .1rem .4rem;
@@ -577,18 +731,9 @@
     letter-spacing: .04em;
 }
 
-.dashboard-version-toggle-indicator--draft {
-    background-color: var(--color-primary);
-    color: var(--text);
-}
-
 .dashboard-version-toggle-indicator--prod {
     background-color: hsla(0, 75%, 55%, 1);
     color: #fff;
-}
-
-.dashboard-version-toggle-label {
-    font-weight: 500;
 }
 
 .page {

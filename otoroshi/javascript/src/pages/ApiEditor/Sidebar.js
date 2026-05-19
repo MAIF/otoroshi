@@ -1,10 +1,9 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSignalValue } from 'signals-react-safe';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 import { signalVersion } from './VersionSignal';
-import { useSignalValue } from 'signals-react-safe';
-import { VersionToggle } from './DraftOnly';
 
 const LINK_GROUPS = (id) => [
   {
@@ -150,7 +149,8 @@ export default (props) => {
 
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
-  const version = useSignalValue(signalVersion);
+
+  const isStaging = useSignalValue(signalVersion) === 'staging';
 
   const isActive = (tab) => {
     if (tab.toLowerCase() === 'overview' && noneTabIsActive) return 'active';
@@ -184,11 +184,6 @@ export default (props) => {
         </li>
         {!isOnApisHome && (
           <>
-            {openedSidebar && version && version !== 'staging' && (
-              <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
-                <VersionToggle isDraft={version === 'Draft'} />
-              </div>
-            )}
             {LINK_GROUPS(params.apiId).map((group) => (
               <React.Fragment key={group.label}>
                 {openedSidebar && (
@@ -196,7 +191,9 @@ export default (props) => {
                     {group.label}
                   </p>
                 )}
-                {group.links.map(({ to, icon, title, tooltip, tab, isProd }) => (
+                {group.links
+                  .filter((link) => !(isStaging && link.isProd))
+                  .map(({ to, icon, title, tooltip, tab, isProd }) => (
                   <li
                     className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
                     key={title}
