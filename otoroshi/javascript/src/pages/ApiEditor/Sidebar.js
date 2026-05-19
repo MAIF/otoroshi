@@ -150,7 +150,7 @@ export default (props) => {
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
 
-  const isStaging = useSignalValue(signalVersion) === 'staging';
+  const isProdView = useSignalValue(signalVersion) === 'Published';
 
   const isActive = (tab) => {
     if (tab.toLowerCase() === 'overview' && noneTabIsActive) return 'active';
@@ -192,7 +192,7 @@ export default (props) => {
                   </p>
                 )}
                 {group.links
-                  .filter((link) => !(isStaging && link.isProd))
+                  .filter((link) => !link.isProd || isProdView)
                   .map(({ to, icon, title, tooltip, tab, isProd }) => (
                   <li
                     className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}

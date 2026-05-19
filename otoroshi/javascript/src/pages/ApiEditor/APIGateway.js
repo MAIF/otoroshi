@@ -5,7 +5,7 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import InfoCollapse from '../../components/InfoCollapse';
 import { Row } from '../../components/Row';
 import { useDraftOfAPI } from './hooks';
-import { VersionBadge } from './DraftOnly';
+import { VersionBadge, EditInDraftButton } from './DraftOnly';
 
 export function APIGateway(props) {
   const { item, updateItem, isDraft } = useDraftOfAPI();
@@ -84,59 +84,34 @@ export function APIGateway(props) {
     },
   };
 
-  // Production is read-only: the published exposition can only be changed
-  // through the draft. Show a synthesis instead of a non-editable form.
-  if (!isDraft) {
-    const url = item?.domain
-      ? `http://${item.domain}${item.contextPath ?? ''}`
-      : '—';
-    return (
-      <div className="page">
-        <PageTitle title="API Gateway" {...props} />
-
-        <div className="actions-page mt-3">
-          <div className="schema-ro">
-            <div className="schema-ro-section">
-              <div className="schema-ro-section-title">Complete API URL</div>
-              <div className="schema-ro-url">{url}</div>
-            </div>
-            <div className="schema-ro-row">
-              <div className="schema-ro-label">API Domain</div>
-              <div className="schema-ro-value">{item?.domain || '—'}</div>
-            </div>
-            <div className="schema-ro-row">
-              <div className="schema-ro-label">Context path</div>
-              <div className="schema-ro-value">{item?.contextPath || '—'}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="page">
       <PageTitle title="API Gateway" {...props} />
 
       <div className="displayGroupBtn">
-        <FeedbackButton
-          type="success"
-          onPress={() =>
-            updateItem({
-              ...item,
-              ...state,
-            })
-          }
-          text={
-            <div className="d-flex align-items-center">
-              Save <VersionBadge size="xs" />
-            </div>
-          }
-        />
+        {isDraft ? (
+          <FeedbackButton
+            type="success"
+            onPress={() =>
+              updateItem({
+                ...item,
+                ...state,
+              })
+            }
+            text={
+              <div className="d-flex align-items-center">
+                Save <VersionBadge size="xs" />
+              </div>
+            }
+          />
+        ) : (
+          <EditInDraftButton />
+        )}
       </div>
 
       <div className="actions-page mt-3">
         <NgForm
+          readOnly={!isDraft}
           value={state}
           onChange={setState}
           schema={schema}

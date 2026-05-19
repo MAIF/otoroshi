@@ -190,7 +190,7 @@ export function RouteDesigner(props) {
   const [route, setRoute] = useState();
   const [schema, setSchema] = useState();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [backends, setBackends] = useState([]);
 
@@ -246,6 +246,7 @@ export function RouteDesigner(props) {
       </DraftOnly>
 
       <NgForm
+        readOnly={!isDraft}
         value={route}
         flow={ROUTE_FORM_SETTINGS.flow}
         schema={schema}

@@ -23,8 +23,6 @@ export function VersionBadge({ size, className }) {
   );
 }
 
-// Switch the editor between the draft working copy and the live production
-// config — updates the `version` query param and reloads.
 export function switchToVersion(target) {
   const queryParams = new URLSearchParams(window.location.search);
   queryParams.set('version', target);
@@ -32,13 +30,11 @@ export function switchToVersion(target) {
   window.location.reload();
 }
 
-// CTA shown on the read-only production view of a config tab: jumps to the
-// draft so the user can actually edit.
 export function EditInDraftButton() {
   return (
     <button
       type="button"
-      className="btn btn-sm btn-warning d-flex align-items-center"
+      className="version-banner-action"
       onClick={() => switchToVersion('Draft')}
     >
       <i className="fas fa-pen me-2" />
@@ -47,12 +43,7 @@ export function EditInDraftButton() {
   );
 }
 
-// Sticky, full-width banner at the top of the API editor. Draft and production
-// aren't parallel universes here — the draft is the working copy you publish
-// to production — so the wording surfaces that workflow rather than a sandbox
-// metaphor. Hidden on a staging (never-published) API: nothing to distinguish
-// yet.
-export function VersionBanner() {
+export function VersionBanner({ showAction = true }) {
   const version = useSignalValue(signalVersion);
 
   if (!version || version === 'staging') return null;
@@ -72,15 +63,17 @@ export function VersionBanner() {
             : 'live config — edit through the draft'}
         </span>
       </div>
-      <button
-        type="button"
-        className="version-banner-action"
-        onClick={() => switchToVersion(isDraft ? 'Published' : 'Draft')}
-        data-testid="version-banner-switch"
-      >
-        {isDraft ? 'View production' : 'Edit in draft'}
-        <i className="fas fa-arrow-right" />
-      </button>
+      {showAction && (
+        <button
+          type="button"
+          className="version-banner-action"
+          onClick={() => switchToVersion(isDraft ? 'Published' : 'Draft')}
+          data-testid="version-banner-switch"
+        >
+          {isDraft ? 'View production' : 'Edit in draft'}
+          <i className="fas fa-arrow-right" />
+        </button>
+      )}
     </div>
   );
 }

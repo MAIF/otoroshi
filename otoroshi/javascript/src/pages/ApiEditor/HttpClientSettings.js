@@ -11,7 +11,6 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
 import { DraftOnly, VersionBadge, EditInDraftButton } from './DraftOnly';
-import { SchemaReadOnlyView } from './SchemaReadOnlyView';
 import { MAX_WIDTH } from './constants';
 
 export function HttpClientSettings(props) {
@@ -264,14 +263,11 @@ export function EditHttpClientSettings(props) {
         )}
       </div>
 
-      {isDraft ? (
-        <BackendForm
-          state={{ form: { schema: formSchema, flow: formFlow, value: client } }}
-          onChange={setClient}
-        />
-      ) : (
-        <SchemaReadOnlyView schema={formSchema} flow={formFlow} value={client} />
-      )}
+      <BackendForm
+        readOnly={!isDraft}
+        state={{ form: { schema: formSchema, flow: formFlow, value: client } }}
+        onChange={setClient}
+      />
     </div>
   );
 }

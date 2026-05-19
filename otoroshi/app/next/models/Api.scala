@@ -1831,6 +1831,8 @@ object Api {
   // Every other field on the Api case class is freely editable in production.
   def diffProtectedFields(oldApi: Api, newApi: Api): Seq[String] = {
     val diffs = scala.collection.mutable.ListBuffer.empty[String]
+    if (oldApi.domain != newApi.domain) diffs += "domain"
+    if (oldApi.contextPath != newApi.contextPath) diffs += "contextPath"
     if (oldApi.routes != newApi.routes) diffs += "routes"
     if (oldApi.backends != newApi.backends) diffs += "backends"
     if (oldApi.flows != newApi.flows) diffs += "flows"

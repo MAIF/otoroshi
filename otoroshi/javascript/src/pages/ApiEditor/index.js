@@ -65,7 +65,7 @@ export default function ApiEditor(props) {
     <div className="editor">
       <QueryClientProvider client={queryClient}>
         <SidebarComponent {...props} />
-        {showBanner && <VersionBanner />}
+        {showBanner && <VersionBanner showAction={section !== 'actions'} />}
 
         <Switch>
           <RouteWithProps

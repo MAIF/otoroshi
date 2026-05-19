@@ -13,7 +13,6 @@ import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
 import { DraftOnly, VersionBadge, EditInDraftButton } from './DraftOnly';
-import { SchemaReadOnlyView } from './SchemaReadOnlyView';
 
 export function Backends(props) {
   const history = useHistory();
@@ -320,14 +319,11 @@ export function EditBackend(props) {
         )}
       </div>
 
-      {isDraft ? (
-        <BackendForm
-          state={{ form: { schema: formSchema, flow: formFlow, value: backend } }}
-          onChange={setBackend}
-        />
-      ) : (
-        <SchemaReadOnlyView schema={formSchema} flow={formFlow} value={backend} />
-      )}
+      <BackendForm
+        readOnly={!isDraft}
+        state={{ form: { schema: formSchema, flow: formFlow, value: backend } }}
+        onChange={setBackend}
+      />
     </div>
   );
 }
