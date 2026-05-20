@@ -91,7 +91,7 @@ case class AsyncNode(json: JsObject) extends Node {
     .some
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
-      "kind"        -> "try",
+      "kind"        -> "async",
       "description" -> "This node runs a node asynchronously and does not wait for the end.",
       "node"        -> Json.obj(
         "kind"    -> "error",
@@ -277,9 +277,11 @@ case class WhileNode(json: JsObject) extends Node {
     .deepMerge(
       Json.obj(
         "properties" -> Json.obj(
-          "predicate" -> Json
+          "predicate"  -> Json
             .obj("type" -> "boolean", "description" -> "The predicate defining if the node is run or not"),
-          "node"      -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+          "node"       -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
+          "max_budget" -> Json
+            .obj("type" -> "number", "description" -> "Maximum number of iterations before the loop is aborted (default 999)")
         )
       )
     )
@@ -377,7 +379,7 @@ case class EndNode(json: JsObject) extends Node {
     .some
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
-      "kind"        -> "exit",
+      "kind"        -> "end",
       "description" -> "End the workflow at this point."
     )
   )
@@ -504,8 +506,10 @@ case class ErrorNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "message" -> Json.obj("type" -> "string", "description" -> "the error message"),
-        "details" -> Json.obj("type" -> "object", "description" -> "the optional details of the error")
+        "properties" -> Json.obj(
+          "message" -> Json.obj("type" -> "string", "description" -> "the error message"),
+          "details" -> Json.obj("type" -> "object", "description" -> "the optional details of the error")
+        )
       )
     )
     .some
@@ -551,7 +555,9 @@ case class WaitNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "duration" -> Json.obj("type" -> "number", "description" -> "the number of milliseconds to wait")
+        "properties" -> Json.obj(
+          "duration" -> Json.obj("type" -> "number", "description" -> "the number of milliseconds to wait")
+        )
       )
     )
     .some
@@ -687,7 +693,7 @@ case class CallNode(json: JsObject) extends Node {
     .deepMerge(
       Json.obj(
         "properties" -> Json.obj(
-          "async"    -> Json.obj("type" -> "bool", "description" -> "if true, the call do not block"),
+          "async"    -> Json.obj("type" -> "boolean", "description" -> "if true, the call do not block"),
           "function" -> Json.obj("type" -> "string", "description" -> "the function name"),
           "args"     -> Json.obj("type" -> "object", "description" -> "the arguments of the call")
         )
@@ -864,11 +870,15 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
             "description" -> "the nodes to be executed",
             "items"       -> Json.obj(
               "type"   -> "form",
-              "flow"   -> Seq("predicate"),
+              "flow"   -> Seq("predicate", "node"),
               "schema" -> Json.obj(
                 "predicate" -> Json.obj(
                   "type"        -> "boolean",
                   "description" -> "The predicate defining if the path is run or not"
+                ),
+                "node"      -> Json.obj(
+                  "type"        -> "object",
+                  "description" -> "The node to run (optional - if absent, the path object itself is treated as the node)"
                 )
               )
             )
@@ -935,7 +945,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
                 val node = o
                   .selectAsOptObject("node")
                   .map(Node.from)
-                  .getOrElse(NoopNode(json))
+                  .getOrElse(Node.from(o))
                 (node, idx)
               }
             }
@@ -989,7 +999,11 @@ case class SwitchNode(json: JsObject) extends Node {
               "type"       -> "object",
               "properties" -> Json.obj(
                 "predicate" -> Json
-                  .obj("type" -> "boolean", "description" -> "The predicate defining if the path is run or not")
+                  .obj("type" -> "boolean", "description" -> "The predicate defining if the path is run or not"),
+                "node"      -> Json.obj(
+                  "type"        -> "object",
+                  "description" -> "The node to run (optional - if absent, the path object itself is treated as the node)"
+                )
               )
             )
           )
@@ -1041,7 +1055,7 @@ case class SwitchNode(json: JsObject) extends Node {
         case None              => JsNull.rightf
         case Some((path, idx)) => {
           if (env.isDev) println(s"running: ${prefix.mkString(".")}.${idx} - ${kind} / ${id}")
-          val node = Node.from(path.select("node").asObject)
+          val node = Node.from(path.selectAsOptObject("node").getOrElse(path))
           node.internalRun(wfr, prefix :+ idx, from).recover { case t: Throwable =>
             WorkflowError(s"caught exception on task '${id}' at path: '${node.id}'", None, Some(t), id.some).left
           }
@@ -1148,8 +1162,10 @@ case class ForEachNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
-        "node"   -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+        "properties" -> Json.obj(
+          "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+          "node"   -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+        )
       )
     )
     .some
@@ -1272,8 +1288,12 @@ case class MapNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
-        "node"   -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+        "properties" -> Json.obj(
+          "values"      -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+          "node"        -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
+          "destination" -> Json
+            .obj("type" -> "string", "description" -> "optional memory name where the resulting array is also stored")
+        )
       )
     )
     .some
@@ -1368,17 +1388,21 @@ case class FlatMapNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "values" -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
-        "node"   -> Json.obj(
-          "type"        -> "object",
-          "description" -> "the node to execute for each element in an array, should return an array to flatten it"
+        "properties" -> Json.obj(
+          "values"      -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+          "node"        -> Json.obj(
+            "type"        -> "object",
+            "description" -> "the node to execute for each element in an array, should return an array to flatten it"
+          ),
+          "destination" -> Json
+            .obj("type" -> "string", "description" -> "optional memory name where the resulting array is also stored")
         )
       )
     )
     .some
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
-      "kind"        -> "map",
+      "kind"        -> "flatmap",
       "description" -> "This node extract all emails from users",
       "values"      -> "${users}",
       "node"        -> Json.obj(
@@ -1458,7 +1482,7 @@ case class FilterNode(json: JsObject) extends Node {
         )
       ),
       "not"         -> Json.obj(
-        "type"  -> "bool",
+        "type"  -> "boolean",
         "label" -> "Not"
       ),
       "destination" -> Json.obj(
@@ -1470,9 +1494,15 @@ case class FilterNode(json: JsObject) extends Node {
   override def documentationInputSchema: Option[JsObject] = Node.baseInputSchema
     .deepMerge(
       Json.obj(
-        "values"    -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
-        "predicate" -> Json
-          .obj("type" -> "object", "description" -> "the node to execute for each element in an array")
+        "properties" -> Json.obj(
+          "values"      -> Json.obj("type" -> "array", "description" -> "the values to iterate on"),
+          "predicate"   -> Json
+            .obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
+          "not"         -> Json
+            .obj("type" -> "boolean", "description" -> "if true, the predicate result is inverted"),
+          "destination" -> Json
+            .obj("type" -> "string", "description" -> "optional memory name where the resulting array is also stored")
+        )
       )
     )
     .some
