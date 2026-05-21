@@ -2406,7 +2406,15 @@ object ApiKeyHelper {
                   .checkAndIncrement(
                     apikey.clientId,
                     1,
-                    apikey.throttlingStrategy.map(_.quota).getOrElse(AllowedQuota()),
+                    apikey.throttlingStrategy
+                      .map(_.quota)
+                      .getOrElse(
+                        AllowedQuota(
+                          window = apikey.throttlingQuota,
+                          daily = apikey.dailyQuota,
+                          monthly = apikey.monthlyQuota
+                        )
+                      ),
                     env.throttlingWindow
                   )
                   .flatMap {

@@ -5,7 +5,6 @@ import { test, expect } from '@playwright/test';
 import {
   PROXY_ANY,
   createApiViaUI,
-  createApiViaApi,
   createPublishedApi,
   deleteApiViaApi,
   getDraft,
@@ -317,31 +316,15 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
 
 // Actions tab only shows the legal transitions per state. ----------------------
 
+// The Actions tab is production-only — the sidebar entry is gated behind the
+// Published version (Sidebar.js `isProd`). Navigate with `?version=Published`
+// so the tab is guaranteed to render.
 async function navigateToActions(page, apiId) {
-  await page.goto(`/bo/dashboard/apis/${apiId}`);
+  await page.goto(`/bo/dashboard/apis/${apiId}?version=Published`);
   await page.getByTestId('sidebar-tab-actions').click();
 }
 
 test.describe('Actions tab only shows legal transitions', () => {
-  test('staging shows no transition cards (publish lives in the header CTA)', async () => {
-    const page = await context.newPage();
-    const apiId = await createApiViaApi(page);
-  trackedApis.add(apiId);
-    try {
-      await navigateToActions(page, apiId);
-      // The Actions tab is intentionally empty in staging — the publish CTA
-      // is exposed via the dashboard header (`publish-this-version`).
-      await expect(page.getByTestId('action-card-publish')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-deprecate')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-close')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-reopen')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-republish')).toHaveCount(0);
-    } finally {
-      await deleteApiViaApi(page, apiId);
-      await page.close();
-    }
-  });
-
   test('published shows deprecate + close', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
@@ -421,8 +404,9 @@ test('production-locked tabs disable write actions', async () => {
     await page.getByTestId('sidebar-tab-testing').click();
     await expect(page.getByTestId('testing-rotate-button')).toHaveCount(0);
 
-    // Switching to Draft re-enables them.
-    await page.getByTestId('version-toggle').click();
+    // Switching to Draft re-enables them — the version banner exposes the
+    // "Edit in draft" switch (data-testid="version-banner-switch").
+    await page.getByTestId('version-banner-switch').click();
     await page.waitForLoadState('domcontentloaded');
     await page.getByTestId('sidebar-tab-endpoints').click();
     await expect(page.getByRole('link', { name: /Create new endpoint/ })).toBeVisible();

@@ -184,8 +184,6 @@ test.describe('production read-only', () => {
         { ...prod, metadata: { ...(prod.metadata || {}), k: 'v' } },
         { ...prod, tags: ['t1'] },
         { ...prod, enabled: !prod.enabled },
-        { ...prod, domain: 'rules.oto.tools' },
-        { ...prod, contextPath: '/v2' },
       ];
       for (const body of updates) {
         const res = await putProd(page, apiId, body);
@@ -228,9 +226,12 @@ test.describe('production read-only', () => {
   // For each locked field we need a mutation that survives JSON round-trip
   // (malformed entries get silently dropped at deserialization → no diff →
   // false negative). Strategy:
+  //  - domain / contextPath: scalar strings, just derive a different value
   //  - routes: template ships zero, so inject a fully-shaped route
   //  - backends / flows: template ships one entry each, so mutate its `name`
   const lockedFieldMutations = {
+    domain: (prod) => `mutated-${prod.domain}`,
+    contextPath: (prod) => `${prod.contextPath}/mutated`,
     routes: (prod) => [
       ...prod.routes,
       {
