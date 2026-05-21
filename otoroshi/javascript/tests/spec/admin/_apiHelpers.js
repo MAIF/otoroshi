@@ -92,6 +92,21 @@ export async function putProd(page, apiId, body) {
   return page.request.put(`${PROXY_ANY}/apis/${apiId}`, { data: body });
 }
 
+// Re-read the prod entity and PUT it back, applying `mutate` to the freshest
+// copy on every attempt. After a deploy the prod entity can lag in CI: a stale
+// read makes the writeValidator reject the locked-field diff with a 4xx. Reading
+// immediately before each PUT and retrying absorbs that propagation window.
+export async function putProdWithRetry(page, apiId, mutate, { attempts = 5, delayMs = 500 } = {}) {
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    const current = await getProd(page, apiId);
+    last = await putProd(page, apiId, mutate({ ...current }));
+    if (last.status() < 400) return last;
+    if (i < attempts - 1) await page.waitForTimeout(delayMs);
+  }
+  return last;
+}
+
 export async function putDraft(page, apiId, body) {
   return page.request.put(`${PROXY_ANY}/drafts/${apiId}`, { data: body });
 }

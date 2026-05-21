@@ -20,7 +20,7 @@ import {
     createPublishedApi,
     deleteApiViaApi,
     getProd,
-    putProd,
+    putProdWithRetry,
     putDraft,
     getDraft,
     uniqueName,
@@ -220,20 +220,18 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     // is permitted by writeValidator.
     const headerValue = 'subs-apikey-' + Math.random().toString(36).slice(2, 10);
     const domain = `subs-apikey-${apiId.slice(-8)}.oto.tools`;
-    const prod = await getProd(page, apiId);
     const backendId = 'be_apk_' + apiId.split('_').pop();
     const flowId = 'flow_apk_' + apiId.split('_').pop();
-    const updated = {
+    // The rest is locked in prod (routes/backends/flows/testing). For this
+    // lifecycle test we don't actually need to call the route — what we
+    // care about is the validate() behaviour on subscription writes per
+    // plan status. So we only update the plan + domain/contextPath.
+    const updateRes = await putProdWithRetry(page, apiId, (prod) => ({
         ...prod,
         domain,
         contextPath: '/v1',
         plans: [APIKEY_PLAN()],
-        // The rest is locked in prod (routes/backends/flows/testing). For this
-        // lifecycle test we don't actually need to call the route — what we
-        // care about is the validate() behaviour on subscription writes per
-        // plan status. So we only update the plan + domain/contextPath.
-    };
-    const updateRes = await putProd(page, apiId, updated);
+    }));
     expect(updateRes.status()).toBeLessThan(400);
 
     // ------------------------------------------------------------------
@@ -264,9 +262,10 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     // Deprecated: new subscriptions are refused, the existing apikey is
     // not deleted.
     // ------------------------------------------------------------------
-    const deprecated = await getProd(page, apiId);
-    deprecated.plans = [{ ...APIKEY_PLAN(), status: 'deprecated' }];
-    const depRes = await putProd(page, apiId, deprecated);
+    const depRes = await putProdWithRetry(page, apiId, (prod) => ({
+        ...prod,
+        plans: [{ ...APIKEY_PLAN(), status: 'deprecated' }],
+    }));
     expect(depRes.status()).toBeLessThan(400);
 
     const newSubBody = { ...subBody, id: uniqueName('apisub'), name: 'should fail' };
@@ -284,9 +283,10 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     // ------------------------------------------------------------------
     // Closed: an Update on the subscription deletes it.
     // ------------------------------------------------------------------
-    const closed = await getProd(page, apiId);
-    closed.plans = [{ ...APIKEY_PLAN(), status: 'closed' }];
-    const closeRes = await putProd(page, apiId, closed);
+    const closeRes = await putProdWithRetry(page, apiId, (prod) => ({
+        ...prod,
+        plans: [{ ...APIKEY_PLAN(), status: 'closed' }],
+    }));
     expect(closeRes.status()).toBeLessThan(400);
 
     // Trigger the Update path on the existing subscription — the validator
@@ -597,9 +597,19 @@ test('apikey plan: EL clientName + description + validUntil + metadata propagate
     await page.getByTestId('subscription-create').click();
     await page.waitForURL(/\/subscriptions(\?|$)/, { timeout: 10_000 });
 
-    // Confirm our subscription's row (matched by its unique name).
+    // Confirm our subscription's row (matched by its unique name). The draft
+    // subscriptions table can lag behind the create in CI — reload until our
+    // row shows up rather than relying on a single 15s click timeout.
     const subRow = page.locator('.rt-tr', { hasText: subName });
-    await subRow.getByTestId('subscription-confirm').click();
+    const confirmBtn = subRow.getByTestId('subscription-confirm');
+    await expect
+        .poll(async () => {
+            if (await confirmBtn.count()) return true;
+            await page.reload();
+            return false;
+        }, { timeout: 30_000, intervals: [500, 1000, 2000, 3000] })
+        .toBe(true);
+    await confirmBtn.click();
     await expect(subRow).toContainText('enabled');
 
     // clientName is unique (random suffix) — locate the apikey by it.
