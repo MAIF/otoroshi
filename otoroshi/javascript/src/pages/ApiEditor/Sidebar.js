@@ -118,6 +118,13 @@ const LINK_GROUPS = (id) => [
     label: 'Operations',
     links: [
       {
+        to: `/apis/${id}/quality`,
+        icon: 'fa-clipboard-check',
+        title: 'Quality',
+        tab: 'quality',
+        tooltip: { ...createTooltip(`Show API quality tab`) },
+      },
+      {
         to: `/apis/${id}/deployments`,
         icon: 'fa-server',
         title: 'Deployments',

@@ -10,6 +10,7 @@ import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
 import { ApiStats } from './ApiStats';
+import { ApiQualityCard } from './ApiQualityCard';
 import { API_STATE } from './model';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
@@ -735,6 +736,24 @@ export function Dashboard(props) {
                     : `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
                 }
               />
+            </ContainerBlock>
+
+            {/* API Quality */}
+            <ContainerBlock full>
+              <SectionHeader
+                text="API Quality"
+                description="How complete and precise this API definition is"
+                icon="fas fa-clipboard-check"
+                actions={
+                  <Link
+                    to={{ pathname: `/apis/${params.apiId}/quality`, search: location.search }}
+                    className="btn btn-sm btn-primaryColor"
+                  >
+                    View details
+                  </Link>
+                }
+              />
+              <ApiQualityCard api={item} />
             </ContainerBlock>
 
             {/* Health */}

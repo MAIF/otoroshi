@@ -29,6 +29,7 @@ import { Testing } from './Testing';
 import { NewAPI, Apis } from './Apis';
 import { Informations } from './Informations';
 import { Dashboard } from './Dashboard';
+import { Quality } from './Quality';
 import { GettingStartedStepper } from './GettingStartedStepper';
 import { ClientEditor, Clients } from './Clients';
 import { ServiceApiKeysPage } from '../ServiceApiKeysPage';
@@ -216,6 +217,7 @@ export default function ApiEditor(props) {
             component={Informations}
             props={props}
           />
+          <RouteWithProps exact path="/apis/:apiId/quality" component={Quality} props={props} />
           <RouteWithProps exact path="/apis" component={Apis} props={props} />
           <RouteWithProps exact path="/apis/:apiId" component={Dashboard} props={props} />
         </Switch>
