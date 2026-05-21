@@ -207,28 +207,28 @@ export function NewAPI(props) {
     step === 0
       ? ['picker']
       : [
-          'location',
-          choice === 'openapi'
-            ? {
-                type: 'group',
-                name: 'OpenAPI',
-                collapsable: false,
-                fields: [
-                  'openapi',
-                  'domain',
-                  'contextPath',
-                  'backendHostname',
-                  'backendPath',
-                  'action',
-                ],
-              }
-            : {
-                type: 'group',
-                name: 'Informations',
-                collapsable: false,
-                fields: ['id', 'name', 'description'],
-              },
-        ];
+        'location',
+        choice === 'openapi'
+          ? {
+            type: 'group',
+            name: 'OpenAPI',
+            collapsable: false,
+            fields: [
+              'openapi',
+              'domain',
+              'contextPath',
+              'backendHostname',
+              'backendPath',
+              'action',
+            ],
+          }
+          : {
+            type: 'group',
+            name: 'Informations',
+            collapsable: false,
+            fields: ['id', 'name', 'description'],
+          },
+      ];
 
   const createApi = () => {
     if (choice === 'fromScratch') {
@@ -395,14 +395,15 @@ export function Apis(props) {
         parentProps={{ params }}
         navigateTo={(item) => historyPush(history, location, `/apis/${item.id}`)}
         navigateOnEdit={(item) => historyPush(history, location, `/apis/${item.id}`)}
-        selfUrl={`apis/${params.apiId}/apis`}
+        selfUrl="apis"
         defaultTitle="Api"
         itemName="Api"
         formSchema={null}
         formFlow={null}
         columns={columns}
         deleteItem={(item) =>
-          nextClient.forEntityNext(nextClient.ENTITIES.APIS).deleteById(item.id)
+          nextClient.forEntityNext(nextClient.ENTITIES.APIS)
+            .deleteById(item.id)
         }
         defaultSort="name"
         defaultSortDesc="true"

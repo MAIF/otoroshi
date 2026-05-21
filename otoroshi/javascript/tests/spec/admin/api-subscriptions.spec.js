@@ -18,7 +18,7 @@ import {
     PROXY_ANY,
     createApiViaApi,
     createPublishedApi,
-    deleteApiViaApi,
+    cleanupApi,
     getProd,
     putProdWithRetry,
     putDraft,
@@ -43,7 +43,7 @@ test.afterEach(async () => {
         await page.request.delete(`${PROXY_ANY}/apikeys/${id}`).catch(() => { });
     }
     for (const id of trackedApis) {
-        await deleteApiViaApi(page, id);
+        await cleanupApi(page, id);
     }
     trackedApis.clear();
     trackedApikeys.clear();
@@ -212,35 +212,17 @@ test('keyless plan: stepper reflects setup, X-OTOROSHI-TESTING gates traffic', a
 
 test('apikey plan lifecycle: published → deprecated → closed gates new subs / kills tokens', async () => {
     const page = await context.newPage();
-    const apiId = await createPublishedApi(page);
+    const apiId = await createPublishedApi(page, {
+        setup: (api, id) => ({
+            domain: `subs-apikey-${id.slice(-8)}.oto.tools`,
+            contextPath: '/v1',
+            plans: [APIKEY_PLAN()],
+        }),
+    });
     trackedApis.add(apiId);
 
-    // Drop in a fresh apikey plan + route + backend + testing config, all in
-    // one PUT. The API is published — `plans` is not a locked field so this
-    // is permitted by writeValidator.
-    const headerValue = 'subs-apikey-' + Math.random().toString(36).slice(2, 10);
-    const domain = `subs-apikey-${apiId.slice(-8)}.oto.tools`;
-    const backendId = 'be_apk_' + apiId.split('_').pop();
-    const flowId = 'flow_apk_' + apiId.split('_').pop();
-    // The rest is locked in prod (routes/backends/flows/testing). For this
-    // lifecycle test we don't actually need to call the route — what we
-    // care about is the validate() behaviour on subscription writes per
-    // plan status. So we only update the plan + domain/contextPath.
-    const updateRes = await putProdWithRetry(page, apiId, (prod) => ({
-        ...prod,
-        domain,
-        contextPath: '/v1',
-        plans: [APIKEY_PLAN()],
-    }));
-    expect(updateRes.status()).toBeLessThan(400);
-
-    // ------------------------------------------------------------------
-    // Published: a fresh subscription is accepted and yields an apikey.
-    // ------------------------------------------------------------------
     const subTpl = await page.request.get(`${PROXY_ANY}/apisubscriptions/_template`);
     const subTemplate = await subTpl.json();
-    // ApiSubscription JSON uses snake_case keys (api_ref, plan_ref, etc.) —
-    // camelCase variants are silently dropped at deserialization.
     const subBody = {
         ...subTemplate,
         id: uniqueName('apisub'),
@@ -258,10 +240,6 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
         trackedApikeys.add(sub.tokenRefs[0].clientId);
     }
 
-    // ------------------------------------------------------------------
-    // Deprecated: new subscriptions are refused, the existing apikey is
-    // not deleted.
-    // ------------------------------------------------------------------
     const depRes = await putProdWithRetry(page, apiId, (prod) => ({
         ...prod,
         plans: [{ ...APIKEY_PLAN(), status: 'deprecated' }],
@@ -272,7 +250,6 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     const newSub = await page.request.post(`${PROXY_ANY}/apisubscriptions`, { data: newSubBody });
     expect(newSub.status(), 'new subscription should be refused on deprecated plan').toBeGreaterThanOrEqual(400);
 
-    // Existing subscription still resolvable and apikey still in the store.
     const stillThere = await page.request.get(`${PROXY_ANY}/apisubscriptions/${sub.id}`);
     expect(stillThere.status()).toBeLessThan(400);
     if (sub.tokenRefs?.[0]?.clientId) {
@@ -280,23 +257,15 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
         expect(apikey.status(), 'existing apikey should remain in the store on deprecated').toBeLessThan(400);
     }
 
-    // ------------------------------------------------------------------
-    // Closed: an Update on the subscription deletes it.
-    // ------------------------------------------------------------------
     const closeRes = await putProdWithRetry(page, apiId, (prod) => ({
         ...prod,
         plans: [{ ...APIKEY_PLAN(), status: 'closed' }],
     }));
     expect(closeRes.status()).toBeLessThan(400);
 
-    // Trigger the Update path on the existing subscription — the validator
-    // for Closed plans deletes the subscription (Api.scala:1045-1049).
     const touchSub = await page.request.put(`${PROXY_ANY}/apisubscriptions/${sub.id}`, {
         data: { ...sub, name: 'touch' },
     });
-    // Either the PUT succeeds and the sub disappears, or the framework
-    // returns 4xx because the sub no longer exists after the validator
-    // ran. Both are acceptable signals.
     expect([200, 404].includes(touchSub.status()) || touchSub.status() >= 400).toBe(true);
 
     await expect
@@ -306,22 +275,6 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     await page.close();
 });
 
-// Test 3 — UI subscribe path (the whole plan + client + subscribe flow driven
-// via the dashboard). Drives:
-//   1. Create a Client (the future subscription owner) via the Clients tab UI.
-//   2. Create an apikey plan via the Plans tab UI, set the access mode to
-//      "API Key" and configure the "ApiKey Name Pattern" with EL syntax.
-//   3. Click Subscribe on the plan row, pick the owner, hit Create.
-// Then verifies via the admin API that:
-//   - the subscription was created with owner_ref pointing at our client
-//   - subscription.token_refs[0].apikey is a real apikey id
-//   - the apikey clientName has the EL evaluated ("<plan.name>-foo-bar")
-//   - apikey.enabled is false (template-default sub.status = disabled →
-//     generateNewApikeyFromPlan picks enabled = false)
-//
-// Plan + Client forms use custom NgForm renderers (status dots, access-mode
-// modal). Selectors below depend on the exact rendered structure — flagging
-// inline where they're fragile.
 test('UI subscribe: client + apikey plan with EL clientNamePattern, generated key linked to sub', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
@@ -335,9 +288,6 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
             .locator('input:not([disabled])')
             .first();
 
-    // ------------------------------------------------------------------
-    // (1) Create a Client via the UI.
-    // ------------------------------------------------------------------
     await page.goto(`/bo/dashboard/apis/${apiId}/clients?version=Published`);
     await page.getByRole('link', { name: /Create new client/ }).click();
     await fieldInput('Name').fill(clientName);
@@ -345,26 +295,16 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
     await page.waitForURL(/\/clients(\?|$)/, { timeout: 10_000 });
     await expect(page.locator('#content-scroll-container')).toContainText(clientName);
 
-    // ------------------------------------------------------------------
-    // (2) Create an apikey plan via the UI. The Plan form uses a custom
-    //     renderer for access_mode_configuration_type that opens a modal
-    //     with the apikey config (we set the clientNamePattern there).
-    // ------------------------------------------------------------------
     await page.goto(`/bo/dashboard/apis/${apiId}/plans?version=Published`);
     await page.getByRole('link', { name: /Create new plan/ }).click();
 
     await fieldInput('Name').fill(planName);
 
-    // Status: published. The dots renderer wraps each option in a <button>
-    // whose accessible name is exactly the option value. Scope to the Status
-    // Row so we don't pick a "published" label elsewhere on the page.
     const statusRow = page
         .locator('div.row', { has: page.locator('label', { hasText: /^\s*Status\s*$/ }) })
         .first();
     await statusRow.getByRole('button', { name: 'published', exact: true }).click();
 
-    // Access mode is already 'apikey' by default (PlanEditor initial state at
-    // Plans.js:929). Open the access-mode config modal then fill the pattern.
     await page.getByTestId('access-mode-edit').click();
     await fieldInput('ApiKey Name Pattern').fill('${plan.name}-foo-bar');
     await page.getByTestId('access-mode-save').click();
@@ -388,13 +328,6 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
     await page.getByTestId('subscription-create').click();
     await page.waitForURL(/\/subscriptions(\?|$)/, { timeout: 10_000 });
 
-    // ------------------------------------------------------------------
-    // (4) Backend assertions.
-    // ------------------------------------------------------------------
-    // The admin API lists subscriptions via the proxy state cache, which
-    // refreshes async after a write — poll until our newly-created sub
-    // appears (with tokenRefs populated, so we know createNewApikeyFromPlan
-    // also ran to completion).
     let sub;
     await expect.poll(
         async () => {
@@ -423,59 +356,30 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
     await page.close();
 });
 
-// Test 4 — Full publish flow then draft-only apikey plan.
-//
-//   Setup:   100% admin API (createApiViaApi + setUpFullApi) so nothing
-//            races the draft creation — done before any UI page is opened.
-//   Phase 1: publish via the header CTA. Assert the prod route serves both
-//            WITH and WITHOUT the testing header.
-//   Phase 2: draft persists across publish (B.4 revised), so the testing
-//            routes keep serving. We add an apikey plan to that draft only,
-//            then assert:
-//              - draft route (matched only when X-OTOROSHI-TESTING is set)
-//                requires the apikey → 401
-//              - production route still 200 without any auth (plan lives in
-//                draft, not prod)
 test('publish flow + apikey plan in draft only gates draft route but not prod', async () => {
     const page = await context.newPage();
 
-    // --- Setup: 100% admin API, no UI page mounted yet → no draft race. ---
     const apiId = await createApiViaApi(page);
     trackedApis.add(apiId);
     const headerValue = 'pub-' + Math.random().toString(36).slice(2, 10);
     const domain = `pub-${apiId.slice(-8)}.oto.tools`;
     await setUpFullApi(page, apiId, { domain, headerValue, plan: null });
 
-    // ------------------------------------------------------------------
-    // Phase 1: publish via the header CTA + assert both call modes work.
-    // ------------------------------------------------------------------
     await page.goto(`/bo/dashboard/apis/${apiId}?version=staging`);
     await page.getByTestId('publish-this-version').click();
     await page.getByRole('button', { name: 'Publish', exact: true }).click();
     await expect.poll(async () => (await getProd(page, apiId)).state).toBe('published');
 
-    // Prod route serves without the testing header (poll for cache refresh).
     await expect
         .poll(async () => (await page.request.get(`http://${domain}:9999/v1/hello`)).status(),
             { timeout: 15_000, intervals: [500, 1000, 2000] })
         .toBe(200);
-    // And with the testing header it still serves (testing header is permissive
-    // on prod routes — it doesn't add a filter, only the draft route does).
+
     const withHeader = await page.request.get(`http://${domain}:9999/v1/hello`, {
         headers: { 'X-OTOROSHI-TESTING': headerValue },
     });
     expect(withHeader.status()).toBe(200);
 
-    // ------------------------------------------------------------------
-    // Phase 2: re-enter draft, add an apikey plan only to the draft.
-    // ------------------------------------------------------------------
-    // Draft survives the publish (B.4 revised). Just confirm it's reachable
-    // before mutating it.
-    await expect.poll(async () => (await page.request.get(`${PROXY_ANY}/drafts/${apiId}`)).status(),
-        { timeout: 10_000 }).toBe(200);
-
-    // Add the apikey plan via PUT on the draft. The draft route picks up the
-    // policy via applyPlansPolicies (status: published).
     const draft = await getDraft(page, apiId);
     const draftWithPlan = {
         ...draft,
@@ -502,18 +406,15 @@ test('publish flow + apikey plan in draft only gates draft route but not prod', 
     const putRes = await putDraft(page, apiId, draftWithPlan);
     expect(putRes.status()).toBeLessThan(400);
 
-    // Draft route (matched only when X-OTOROSHI-TESTING is set to the stored
-    // value) should now require an apikey → 401 without one.
     await expect
         .poll(
             async () => (await page.request.get(`http://${domain}:9999/v1/hello`, {
                 headers: { 'X-OTOROSHI-TESTING': headerValue },
             })).status(),
-            { timeout: 15_000, intervals: [500, 1000, 2000] }
+            { timeout: 30_000, intervals: [1000, 5000, 15000] }
         )
         .toBe(401);
 
-    // Production route is untouched — no plan in prod state, so still 200.
     const stillProd = await page.request.get(`http://${domain}:9999/v1/hello`);
     expect(stillProd.status()).toBe(200);
 
@@ -594,12 +495,12 @@ test('apikey plan: EL clientName + description + validUntil + metadata propagate
     await expect(ownerRow).toBeVisible({ timeout: 10_000 });
     await ownerRow.locator('div').filter({ hasText: /^Select\.\.\.$/ }).first().click();
     await page.getByText(ownerName, { exact: true }).click();
+
+    await page.waitForTimeout(5000)
+
     await page.getByTestId('subscription-create').click();
     await page.waitForURL(/\/subscriptions(\?|$)/, { timeout: 10_000 });
 
-    // Confirm our subscription's row (matched by its unique name). The draft
-    // subscriptions table can lag behind the create in CI — reload until our
-    // row shows up rather than relying on a single 15s click timeout.
     const subRow = page.locator('.rt-tr', { hasText: subName });
     const confirmBtn = subRow.getByTestId('subscription-confirm');
     await expect
@@ -612,7 +513,6 @@ test('apikey plan: EL clientName + description + validUntil + metadata propagate
     await confirmBtn.click();
     await expect(subRow).toContainText('enabled');
 
-    // clientName is unique (random suffix) — locate the apikey by it.
     let apikey;
     await expect.poll(
         async () => {

@@ -181,7 +181,7 @@ export function Subscriptions(props) {
                   item.id,
                   subscription.id,
                   isDraft ? 'Draft' : 'Published'
-                ).then(() => window.location.reload());
+                ).then(() => table.update());
               }}
             >
               Confirm
@@ -229,6 +229,7 @@ export function Subscriptions(props) {
 
   return (
     <Table
+      key={version}
       parentProps={{ params }}
       navigateTo={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/subscriptions/${item.id}/edit`)

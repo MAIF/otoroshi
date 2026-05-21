@@ -1046,8 +1046,8 @@ object ApiSubscription {
           // Cascade-delete the subscription AND the apikeys it points at.
           // Otherwise the apikey lingers in the datastore unreachable from
           // its owning subscription.
-          val apikeyIds = subscription.tokenRefs.flatMap(ref => (ref \ "apikey").asOpt[String])
-          val deleteApikeys = Future.sequence(apikeyIds.map { id =>
+          val apikeyIds          = subscription.tokenRefs.flatMap(ref => (ref \ "apikey").asOpt[String])
+          val deleteApikeys      = Future.sequence(apikeyIds.map { id =>
             env.datastores.apiKeyDataStore.delete(id).recover { case _ => false }
           })
           val deleteSubscription =
@@ -1093,7 +1093,7 @@ object ApiSubscription {
       .flatMap {
         case Some(api) if api.state == ApiStaging || api.state == ApiPublished =>
           api.plans.find(_.id == entity.planRef) match {
-            case None                                       => "plan not found".leftf
+            case None => "plan not found".leftf
             // Active plans (Staging/Published): Create + Update both go.
             // Inactive plans (Deprecated/Closed): only Update goes — required
             // so existing subs on a deprecated plan can still be managed, and
@@ -1103,7 +1103,7 @@ object ApiSubscription {
                   plan.status == ApiPlanStatus.Published ||
                   action == WriteAction.Update =>
               handleSubscriptionChanged(api, plan, entity, action, isDraft)
-            case _                                          => "wrong status plan".leftf
+            case _    => "wrong status plan".leftf
           }
         case _                                                                 => "wrong status api".leftf
       }
@@ -1809,12 +1809,12 @@ object Api {
     case (ApiPublished, ApiRemoved)     => true
     case (ApiPublished, _)              => false
     // deprecated
-    case (ApiDeprecated, ApiPublished)  => true // republish, direct (no deploy needed)
+    case (ApiDeprecated, ApiPublished)  => true      // republish, direct (no deploy needed)
     case (ApiDeprecated, ApiDeprecated) => true
     case (ApiDeprecated, ApiRemoved)    => true
     case (ApiDeprecated, _)             => false
     // removed
-    case (ApiRemoved, ApiStaging)       => true // reopen
+    case (ApiRemoved, ApiStaging)       => true      // reopen
     case (ApiRemoved, ApiRemoved)       => true
     case (ApiRemoved, _)                => false
   }

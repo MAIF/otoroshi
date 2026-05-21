@@ -103,6 +103,7 @@ const LINK_GROUPS = (id) => [
         title: 'API Keys',
         tab: 'apikeys',
         tooltip: { ...createTooltip(`Manage all API keys that can access`) },
+        isProd: true,
       },
       {
         to: `/apis/${id}/documentation`,

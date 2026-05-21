@@ -10,21 +10,16 @@ export async function createApiViaUI(page, { name, description = 'lifecycle test
   const finalName = name || uniqueName('lifecycle-api');
   await page.goto('/bo/dashboard/apis');
 
-  // The "Create new API" Link uses an inline onClick that fetches the template and
-  // then history.push() to apis/<id>/new. Wait explicitly for that URL change —
-  // otherwise the next selector races against an unfinished navigation.
+
   await Promise.all([
     page.waitForURL(/\/new(\?|$)/, { timeout: 15_000 }),
     page.getByRole('link', { name: /Create new API/ }).click(),
   ]);
 
-  // Picker step — click the "Build from Scratch" card via its title text.
+  
   await page.locator('button:has-text("Build from Scratch")').click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
 
-  // Form step — `id` is disabled, Location renders an unknown number of inputs.
-  // Editable text inputs in declaration order end with: ... name, description.
-  // Wait for description's empty input to be ready, then fill last-2 + last.
   const editable = page.locator('input[type="text"]:not([disabled])');
   await expect(editable.last()).toBeVisible({ timeout: 10_000 });
   const count = await editable.count();
@@ -33,8 +28,7 @@ export async function createApiViaUI(page, { name, description = 'lifecycle test
   }
   await editable.nth(count - 2).fill(finalName);
   await editable.nth(count - 1).fill(description);
-  // Click Create and wait for the wizard to redirect to the API page
-  // (no DEV/PROD toggle exists yet — toggle only appears after first publish).
+  
   await Promise.all([
     page.waitForURL(/\/apis\/api_[^/]+(\?|$)/, { timeout: 15_000 }),
     page.getByRole('button', { name: 'Create', exact: true }).click(),
@@ -71,8 +65,41 @@ export async function deleteApiViaUI(page) {
 export async function deleteApiViaApi(page, apiId) {
   if (!apiId) return;
   // Order matters: drop the draft first so a stale draft can't resurrect data.
-  await page.request.delete(`${PROXY_ANY}/drafts/${apiId}`).catch(() => {});
-  await page.request.delete(`${PROXY_ANY}/apis/${apiId}`).catch(() => {});
+  await page.request.delete(`${PROXY_ANY}/drafts/${apiId}`).catch(() => { });
+  await page.request.delete(`${PROXY_ANY}/apis/${apiId}`).catch(() => { });
+}
+
+// Drafts are listed by kind on the proxy.otoroshi.io entity.
+const PROXY_PROXY = '/bo/api/proxy/apis/proxy.otoroshi.io/v1';
+
+export async function cleanupApi(page, apiId) {
+  if (!apiId) return;
+
+  // 1) Prod subscriptions referencing this API.
+  const subsRes = await page.request.get(`${PROXY_ANY}/apisubscriptions`).catch(() => null);
+  if (subsRes && subsRes.status() < 400) {
+    const subs = await subsRes.json().catch(() => []);
+    for (const s of Array.isArray(subs) ? subs : []) {
+      if (s?.api_ref === apiId) {
+        await page.request.delete(`${PROXY_ANY}/apisubscriptions/${s.id}`).catch(() => { });
+      }
+    }
+  }
+
+  // 2) Draft subscriptions referencing this API (deleted as draft entities).
+  const draftSubsRes = await page.request.get(`${PROXY_PROXY}/drafts/api-subscription`).catch(() => null);
+  if (draftSubsRes && draftSubsRes.status() < 400) {
+    const draftSubs = await draftSubsRes.json().catch(() => []);
+    for (const d of Array.isArray(draftSubs) ? draftSubs : []) {
+      const apiRef = d?.content?.api_ref ?? d?.api_ref;
+      if (apiRef === apiId) {
+        await page.request.delete(`${PROXY_ANY}/drafts/${d.id}`).catch(() => { });
+      }
+    }
+  }
+
+  // 3) The API and its draft.
+  await deleteApiViaApi(page, apiId);
 }
 
 export async function getProd(page, apiId) {
@@ -92,10 +119,7 @@ export async function putProd(page, apiId, body) {
   return page.request.put(`${PROXY_ANY}/apis/${apiId}`, { data: body });
 }
 
-// Re-read the prod entity and PUT it back, applying `mutate` to the freshest
-// copy on every attempt. After a deploy the prod entity can lag in CI: a stale
-// read makes the writeValidator reject the locked-field diff with a 4xx. Reading
-// immediately before each PUT and retrying absorbs that propagation window.
+
 export async function putProdWithRetry(page, apiId, mutate, { attempts = 5, delayMs = 500 } = {}) {
   let last;
   for (let i = 0; i < attempts; i++) {
@@ -127,11 +151,12 @@ async function postJson(page, path, body) {
   return res.json();
 }
 
-// Build a published API the fast way (no UI): create + draft + deploy.
-// The deployment endpoint requires a draft to exist (otherwise it returns 404).
+
 export async function createPublishedApi(page, opts = {}) {
-  const apiId = await createApiViaApi(page, opts);
-  const api = await getProd(page, apiId);
+  const { setup, ...createOpts } = opts;
+  const apiId = await createApiViaApi(page, createOpts);
+  const base = await getProd(page, apiId);
+  const api = setup ? { ...base, ...setup(base, apiId) } : base;
 
   // Create the draft wrapper so the deployment endpoint can find it.
   const draftTemplate = await getJson(page, `${PROXY_ANY}/drafts/_template`);
@@ -161,11 +186,11 @@ export async function createPublishedApi(page, opts = {}) {
   if (depRes.status() >= 400) {
     throw new Error(`createPublishedApi: deploy failed: ${depRes.status()} ${await depRes.text()}`);
   }
+
   return apiId;
 }
 
-// Wipe any leftover APIs from previous (failed) test runs that match a name
-// prefix. Conservative on purpose — we only delete what we recognise as ours.
+
 export async function wipeLeftovers(page, namePrefixes = []) {
   if (!namePrefixes.length) return;
   const res = await page.request.get(`${PROXY_ANY}/apis`);
