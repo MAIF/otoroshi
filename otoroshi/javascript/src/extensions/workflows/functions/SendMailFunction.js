@@ -41,6 +41,7 @@ export const SendMailFunction = {
             mailgun: MAILERS_FORM.mailgunFormFlow,
             sendgrid: MAILERS_FORM.sendgridFormFlow,
             scaleway: MAILERS_FORM.scalewayFormFlow,
+            mailpace: MAILERS_FORM.mailpaceFormFlow,
             generic: MAILERS_FORM.genericFormFlow,
           }[kind] || [];
 
@@ -58,6 +59,7 @@ export const SendMailFunction = {
                       { label: 'Mailgun', value: 'mailgun' },
                       { label: 'SendGrid', value: 'sendgrid' },
                       { label: 'Scaleway TEM', value: 'scaleway' },
+                      { label: 'MailPace', value: 'mailpace' },
                       { label: 'Generic', value: 'generic' },
                     ],
                   },
@@ -67,6 +69,7 @@ export const SendMailFunction = {
                   mailgun: MAILERS_FORM.mailgunFormSchema,
                   sendgrid: MAILERS_FORM.sendgridFormSchema,
                   scaleway: MAILERS_FORM.scalewayFormSchema,
+                  mailpace: MAILERS_FORM.mailpaceFormSchema,
                   generic: MAILERS_FORM.genericFormSchema,
                 }[kind],
               }}
