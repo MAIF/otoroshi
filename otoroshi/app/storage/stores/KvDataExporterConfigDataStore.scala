@@ -207,6 +207,26 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             to = Seq.empty
           )
         )
+      case Some("scaleway")       =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Mailer,
+          id = IdGenerator.namedId("data_exporter", env),
+          name = "New scaleway TEM exporter config",
+          desc = "New scaleway TEM exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation.ownEntityLocation(ctx)(env),
+          groupSize = 25,
+          groupDuration = 60.seconds,
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = ScalewayTEMSettings(
+            secretKey = "secret-key",
+            projectId = "project-id",
+            region = "fr-par",
+            to = Seq.empty
+          )
+        )
       case Some("file")           =>
         DataExporterConfig(
           typ = DataExporterConfigType.File,
