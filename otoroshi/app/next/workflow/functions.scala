@@ -360,6 +360,14 @@ class SendMailFunction extends WorkflowFunction {
         )
         sendMail(mailer)
       }
+      case "scaleway" => {
+        val mailer = new ScalewayTEMMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          ScalewayTEMSettings.format.reads(config).get
+        )
+        sendMail(mailer)
+      }
       case "generic"  => {
         val mailer = new GenericMailer(
           env,
