@@ -278,6 +278,7 @@ export const MAILERS_FORM = {
   mailjetFormFlow: ['apiKeyPublic', 'apiKeyPrivate', 'to'],
   sendgridFormFlow: ['apiKey', 'to'],
   scalewayFormFlow: ['secretKey', 'projectId', 'region', 'to'],
+  mailpaceFormFlow: ['serverToken', 'to'],
   genericFormSchema: {
     url: {
       type: 'string',
@@ -425,6 +426,27 @@ export const MAILERS_FORM = {
       },
     },
   },
+  mailpaceFormSchema: {
+    serverToken: {
+      type: 'string',
+      label: 'MailPace server token',
+      props: {
+        label: 'MailPace server token',
+        placeholder: 'MailPace server token',
+        help: 'Per-domain server token used in the MailPace-Server-Token header',
+      },
+    },
+    to: {
+      type: 'array',
+      label: 'Email addresses',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive events',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
+  },
 };
 
 class Mailer extends Component {
@@ -482,6 +504,13 @@ class Mailer extends Component {
                   to: [],
                 });
                 break;
+              case 'mailpace':
+                this.props.onChange({
+                  type: 'mailpace',
+                  serverToken: '',
+                  to: [],
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -491,6 +520,7 @@ class Mailer extends Component {
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
             { label: 'Scaleway TEM', value: 'scaleway' },
+            { label: 'MailPace', value: 'mailpace' },
           ]}
           help="..."
         />
@@ -536,6 +566,15 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={MAILERS_FORM.scalewayFormFlow}
             schema={MAILERS_FORM.scalewayFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailpace' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={MAILERS_FORM.mailpaceFormFlow}
+            schema={MAILERS_FORM.mailpaceFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
