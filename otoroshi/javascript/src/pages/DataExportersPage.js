@@ -277,6 +277,7 @@ export const MAILERS_FORM = {
   mailgunFormFlow: ['eu', 'apiKey', 'domain', 'to'],
   mailjetFormFlow: ['apiKeyPublic', 'apiKeyPrivate', 'to'],
   sendgridFormFlow: ['apiKey', 'to'],
+  scalewayFormFlow: ['secretKey', 'projectId', 'region', 'to'],
   genericFormSchema: {
     url: {
       type: 'string',
@@ -387,6 +388,43 @@ export const MAILERS_FORM = {
       },
     },
   },
+  scalewayFormSchema: {
+    secretKey: {
+      type: 'string',
+      label: 'Scaleway secret key',
+      props: {
+        label: 'Scaleway secret key',
+        placeholder: 'Scaleway secret key',
+      },
+    },
+    projectId: {
+      type: 'string',
+      label: 'Scaleway project id',
+      props: {
+        label: 'Scaleway project id',
+        placeholder: 'Scaleway project id',
+      },
+    },
+    region: {
+      type: 'string',
+      label: 'Scaleway region',
+      props: {
+        label: 'Scaleway region',
+        placeholder: 'fr-par',
+        help: 'Scaleway region where the TEM API is exposed (e.g. fr-par)',
+      },
+    },
+    to: {
+      type: 'array',
+      label: 'Email addresses',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive events',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
+  },
 };
 
 class Mailer extends Component {
@@ -435,6 +473,15 @@ class Mailer extends Component {
                   to: [],
                 });
                 break;
+              case 'scaleway':
+                this.props.onChange({
+                  type: 'scaleway',
+                  secretKey: '',
+                  projectId: '',
+                  region: 'fr-par',
+                  to: [],
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -443,6 +490,7 @@ class Mailer extends Component {
             { label: 'Mailgun', value: 'mailgun' },
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
+            { label: 'Scaleway TEM', value: 'scaleway' },
           ]}
           help="..."
         />
@@ -479,6 +527,15 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={MAILERS_FORM.sendgridFormFlow}
             schema={MAILERS_FORM.sendgridFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'scaleway' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={MAILERS_FORM.scalewayFormFlow}
+            schema={MAILERS_FORM.scalewayFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
