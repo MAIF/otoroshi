@@ -167,6 +167,7 @@ class Mailer extends Component {
   mailgunFormFlow = ['eu', 'apiKey', 'domain'];
   mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
   sendgridFormFlow = ['apiKey'];
+  scalewayFormFlow = ['secretKey', 'projectId', 'region'];
   genericFormSchema = {
     url: {
       type: 'string',
@@ -229,6 +230,29 @@ class Mailer extends Component {
       },
     },
   };
+  scalewayFormSchema = {
+    secretKey: {
+      type: 'string',
+      props: {
+        label: 'Scaleway secret key',
+        placeholder: 'Scaleway secret key',
+      },
+    },
+    projectId: {
+      type: 'string',
+      props: {
+        label: 'Scaleway project id',
+        placeholder: 'Scaleway project id',
+      },
+    },
+    region: {
+      type: 'string',
+      props: {
+        label: 'Scaleway region',
+        placeholder: 'fr-par',
+      },
+    },
+  };
   render() {
     const settings = this.props.value;
     const type = settings.type;
@@ -272,6 +296,14 @@ class Mailer extends Component {
                   apiKeyPrivate: '',
                 });
                 break;
+              case 'scaleway':
+                this.props.onChange({
+                  type: 'scaleway',
+                  secretKey: '',
+                  projectId: '',
+                  region: 'fr-par',
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -281,6 +313,7 @@ class Mailer extends Component {
             { label: 'Mailgun', value: 'mailgun' },
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
+            { label: 'Scaleway TEM', value: 'scaleway' },
           ]}
           help="..."
         />
@@ -317,6 +350,15 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={this.sendgridFormFlow}
             schema={this.sendgridSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'scaleway' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.scalewayFormFlow}
+            schema={this.scalewayFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
