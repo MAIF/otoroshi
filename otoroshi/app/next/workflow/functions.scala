@@ -368,6 +368,14 @@ class SendMailFunction extends WorkflowFunction {
         )
         sendMail(mailer)
       }
+      case "mailpace" => {
+        val mailer = new MailPaceMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          MailPaceSettings.format.reads(config).get
+        )
+        sendMail(mailer)
+      }
       case "generic"  => {
         val mailer = new GenericMailer(
           env,
