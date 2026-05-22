@@ -67,6 +67,13 @@ case class ScalewayTEMSettings(
   override def toJson: JsValue                                  = ScalewayTEMSettings.format.writes(this)
 }
 
+case class MailPaceSettings(serverToken: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
+  override def typ: String                                      = "mailpace"
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailPaceMailer(env, config, this)
+  override def json: JsValue                                    = MailPaceSettings.format.writes(this)
+  override def toJson: JsValue                                  = MailPaceSettings.format.writes(this)
+}
+
 case class GenericMailerSettings(url: String, headers: Map[String, String], to: Seq[EmailLocation])
     extends MailerSettings
     with Exporter {
@@ -110,6 +117,11 @@ trait MailerSettings extends Exporter {
       case _: ScalewayTEMSettings => Some(this.asInstanceOf[ScalewayTEMSettings])
       case _                      => None
     }
+  def mailPaceSettings: Option[MailPaceSettings]       =
+    this match {
+      case _: MailPaceSettings => Some(this.asInstanceOf[MailPaceSettings])
+      case _                   => None
+    }
   def json: JsValue
   def toJson: JsValue
 }
@@ -125,6 +137,7 @@ object MailerSettings {
         case "mailjet"  => MailjetSettings.format.reads(json)
         case "sendgrid" => SendgridSettings.format.reads(json)
         case "scaleway" => ScalewayTEMSettings.format.reads(json)
+        case "mailpace" => MailPaceSettings.format.reads(json)
         case _          => ConsoleMailerSettings.format.reads(json)
       }
     override def writes(o: MailerSettings): JsValue             = o.json
@@ -200,6 +213,31 @@ object SendgridSettings {
         JsSuccess(
           SendgridSettings(
             apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get,
+            to = (json \ "to")
+              .asOpt[Seq[JsValue]]
+              .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
+              .getOrElse(Seq.empty)
+          )
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+  }
+}
+
+object MailPaceSettings {
+  val format = new Format[MailPaceSettings] {
+    override def writes(o: MailPaceSettings) =
+      Json.obj(
+        "type"        -> o.typ,
+        "serverToken" -> o.serverToken,
+        "to"          -> JsArray(o.to.map(_.json))
+      )
+    override def reads(json: JsValue)        =
+      Try {
+        JsSuccess(
+          MailPaceSettings(
+            serverToken = (json \ "serverToken").asOpt[String].map(_.trim).get,
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
@@ -477,6 +515,38 @@ class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings)
               "value" -> html
             )
           )
+        )
+      )
+      .map(_.ignore()(env.otoroshiMaterializer))
+    fu.andThen {
+      case Success(res) => logger.info("Alert email sent")
+      case Failure(e)   => logger.error("Error while sending alert email", e)
+    }.fast
+      .map(_ => ())
+  }
+}
+
+class MailPaceMailer(env: Env, config: GlobalConfig, settings: MailPaceSettings) extends Mailer {
+
+  lazy val logger = Logger("otoroshi-mailpace-mailer")
+
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+      ec: ExecutionContext
+  ): Future[Unit] = {
+    val fu = env.Ws // no need for mtls here
+      .url("https://app.mailpace.com/api/v1/send")
+      .withHttpHeaders(
+        "MailPace-Server-Token" -> settings.serverToken,
+        "Content-Type"          -> "application/json",
+        "Accept"                -> "application/json"
+      )
+      .withMaybeProxyServer(config.proxies.alertEmails)
+      .post(
+        Json.obj(
+          "from"     -> from.toEmailString,
+          "to"       -> to.map(_.toEmailString).mkString(","),
+          "subject"  -> subject,
+          "htmlbody" -> html
         )
       )
       .map(_.ignore()(env.otoroshiMaterializer))
