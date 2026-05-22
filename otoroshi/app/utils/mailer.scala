@@ -54,6 +54,19 @@ case class SendgridSettings(apiKey: String, to: Seq[EmailLocation]) extends Mail
   override def toJson: JsValue                                  = SendgridSettings.format.writes(this)
 }
 
+case class ScalewayTEMSettings(
+    secretKey: String,
+    projectId: String,
+    region: String,
+    to: Seq[EmailLocation]
+) extends MailerSettings
+    with Exporter {
+  override def typ: String                                      = "scaleway"
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new ScalewayTEMMailer(env, config, this)
+  override def json: JsValue                                    = ScalewayTEMSettings.format.writes(this)
+  override def toJson: JsValue                                  = ScalewayTEMSettings.format.writes(this)
+}
+
 case class GenericMailerSettings(url: String, headers: Map[String, String], to: Seq[EmailLocation])
     extends MailerSettings
     with Exporter {
@@ -92,6 +105,11 @@ trait MailerSettings extends Exporter {
       case _: SendgridSettings => Some(this.asInstanceOf[SendgridSettings])
       case _                   => None
     }
+  def scalewayTEMSettings: Option[ScalewayTEMSettings] =
+    this match {
+      case _: ScalewayTEMSettings => Some(this.asInstanceOf[ScalewayTEMSettings])
+      case _                      => None
+    }
   def json: JsValue
   def toJson: JsValue
 }
@@ -106,6 +124,7 @@ object MailerSettings {
         case "mailgun"  => MailgunSettings.format.reads(json)
         case "mailjet"  => MailjetSettings.format.reads(json)
         case "sendgrid" => SendgridSettings.format.reads(json)
+        case "scaleway" => ScalewayTEMSettings.format.reads(json)
         case _          => ConsoleMailerSettings.format.reads(json)
       }
     override def writes(o: MailerSettings): JsValue             = o.json
@@ -181,6 +200,35 @@ object SendgridSettings {
         JsSuccess(
           SendgridSettings(
             apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get,
+            to = (json \ "to")
+              .asOpt[Seq[JsValue]]
+              .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
+              .getOrElse(Seq.empty)
+          )
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+  }
+}
+
+object ScalewayTEMSettings {
+  val format = new Format[ScalewayTEMSettings] {
+    override def writes(o: ScalewayTEMSettings) =
+      Json.obj(
+        "type"      -> o.typ,
+        "secretKey" -> o.secretKey,
+        "projectId" -> o.projectId,
+        "region"    -> o.region,
+        "to"        -> JsArray(o.to.map(_.json))
+      )
+    override def reads(json: JsValue)           =
+      Try {
+        JsSuccess(
+          ScalewayTEMSettings(
+            secretKey = (json \ "secretKey").asOpt[String].map(_.trim).get,
+            projectId = (json \ "projectId").asOpt[String].map(_.trim).get,
+            region = (json \ "region").asOpt[String].map(_.trim).getOrElse("fr-par"),
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
@@ -429,6 +477,49 @@ class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings)
               "value" -> html
             )
           )
+        )
+      )
+      .map(_.ignore()(env.otoroshiMaterializer))
+    fu.andThen {
+      case Success(res) => logger.info("Alert email sent")
+      case Failure(e)   => logger.error("Error while sending alert email", e)
+    }.fast
+      .map(_ => ())
+  }
+}
+
+class ScalewayTEMMailer(env: Env, config: GlobalConfig, settings: ScalewayTEMSettings) extends Mailer {
+
+  lazy val logger = Logger("otoroshi-scaleway-tem-mailer")
+
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(implicit
+      ec: ExecutionContext
+  ): Future[Unit] = {
+    val region = Option(settings.region).map(_.trim).filter(_.nonEmpty).getOrElse("fr-par")
+    val fu     = env.Ws // no need for mtls here
+      .url(s"https://api.scaleway.com/transactional-email/v1alpha1/regions/$region/emails")
+      .withHttpHeaders(
+        "X-Auth-Token" -> settings.secretKey,
+        "Content-Type" -> "application/json"
+      )
+      .withMaybeProxyServer(config.proxies.alertEmails)
+      .post(
+        Json.obj(
+          "from"       -> Json.obj(
+            "email" -> from.email,
+            "name"  -> from.name
+          ),
+          "to"         -> JsArray(
+            to.map(t =>
+              Json.obj(
+                "email" -> t.email,
+                "name"  -> t.name
+              )
+            )
+          ),
+          "subject"    -> subject,
+          "html"       -> html,
+          "project_id" -> settings.projectId
         )
       )
       .map(_.ignore()(env.otoroshiMaterializer))
