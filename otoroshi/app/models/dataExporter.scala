@@ -1198,6 +1198,7 @@ case class DataExporterConfig(
       case c: MailgunSettings             => new GenericMailerExporter(this)
       case c: SendgridSettings            => new GenericMailerExporter(this)
       case c: ScalewayTEMSettings         => new GenericMailerExporter(this)
+      case c: MailPaceSettings            => new GenericMailerExporter(this)
       case c: GenericMailerSettings       => new GenericMailerExporter(this)
       case c: ExporterRef                 => new CustomExporter(this)
       case c: ConsoleSettings             => new ConsoleExporter(this)
