@@ -168,6 +168,7 @@ class Mailer extends Component {
   mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
   sendgridFormFlow = ['apiKey'];
   scalewayFormFlow = ['secretKey', 'projectId', 'region'];
+  mailpaceFormFlow = ['serverToken'];
   genericFormSchema = {
     url: {
       type: 'string',
@@ -253,6 +254,15 @@ class Mailer extends Component {
       },
     },
   };
+  mailpaceFormSchema = {
+    serverToken: {
+      type: 'string',
+      props: {
+        label: 'MailPace server token',
+        placeholder: 'MailPace server token',
+      },
+    },
+  };
   render() {
     const settings = this.props.value;
     const type = settings.type;
@@ -304,6 +314,12 @@ class Mailer extends Component {
                   region: 'fr-par',
                 });
                 break;
+              case 'mailpace':
+                this.props.onChange({
+                  type: 'mailpace',
+                  serverToken: '',
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -314,6 +330,7 @@ class Mailer extends Component {
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
             { label: 'Scaleway TEM', value: 'scaleway' },
+            { label: 'MailPace', value: 'mailpace' },
           ]}
           help="..."
         />
@@ -359,6 +376,15 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={this.scalewayFormFlow}
             schema={this.scalewayFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailpace' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.mailpaceFormFlow}
+            schema={this.mailpaceFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
