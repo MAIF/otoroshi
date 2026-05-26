@@ -47,7 +47,11 @@ export class MonacoInput extends Component {
       return this.state.error.message;
     }
 
-    let code = this.state.value || this.props.value;
+    let code = this.state.value || this.props.value || '';
+
+    if (!(typeof code === "string")) {
+      code = '';
+    }
 
     const options = {
       automaticLayout: true,
