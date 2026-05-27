@@ -79,8 +79,8 @@ spec:
                 key: domain
           - name: REDIS_URL
             valueFrom:
-              configMapKeyRef:
-                name: otoroshi-config
+              secretKeyRef:
+                name: otoroshi-redis-secret
                 key: redisUrl
           - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
             valueFrom:
