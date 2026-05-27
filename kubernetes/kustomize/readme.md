@@ -25,6 +25,24 @@ kubectl kustomize overlays/simple        # preview
 kubectl apply -k overlays/simple         # deploy
 ```
 
+### Baremetal port allocation
+
+Overlays that bypass cloud LoadBalancers expose Otoroshi via well-known
+`nodePort` / `hostPort` values. Allocations within a single overlay are
+collision-free; pick the table row that matches what you're deploying.
+
+| Overlay | Pod | HTTP | HTTPS |
+|---|---|---|---|
+| `simple-baremetal` | Otoroshi | `31080` (nodePort) | `31443` (nodePort) |
+| `simple-baremetal-daemonset` | Otoroshi | `41080` (hostPort) | `41443` (hostPort) |
+| `cluster-baremetal` | Leader | `31080` (nodePort) | `31443` (nodePort) |
+| `cluster-baremetal` | Worker | `32080` (nodePort) | `32443` (nodePort) |
+| `cluster-baremetal-daemonset` | Leader | `41080` (hostPort) | `41443` (hostPort) |
+| `cluster-baremetal-daemonset` | Worker | `42080` (hostPort) | `42443` (hostPort) |
+
+The `*.example` files (`nginx.example`, `haproxy.example`, `dns.example`)
+shipped next to each baremetal overlay are pre-wired with these ports.
+
 ## Provide configuration values
 
 No `${var}` substitution, no `envsubst` step. Values come from:
