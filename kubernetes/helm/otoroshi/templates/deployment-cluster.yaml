@@ -1,6 +1,5 @@
 {{- if .Values.cluster.enabled }}
 {{- $secretName := default (printf "%s-admin-secret" .Values.name) .Values.env.existingSecret -}}
-{{- $redisURL := default (printf "redis://%s-redis-master:6379" .Release.Name) .Values.env.redisURL -}}
 {{- $leaderApiFqdn := printf "%s.%s.svc.cluster.local" .Values.cluster.leaderApiServiceName .Release.Namespace -}}
 {{- $lbType := include "otoroshi.loadBalancerType" . -}}
 apiVersion: apps/v1
@@ -79,8 +78,7 @@ spec:
             value: {{ .Values.env.domain }}
           - name: APP_STORAGE
             value: {{ .Values.storage.backend | quote }}
-          - name: REDIS_URL
-            value: {{ $redisURL | quote }}
+          {{- include "otoroshi.redisURLEnv" . | nindent 10 }}
           {{- $redisPwEnv := include "otoroshi.redisPasswordEnv" . }}
           {{- if $redisPwEnv }}
           {{- $redisPwEnv | nindent 10 }}
