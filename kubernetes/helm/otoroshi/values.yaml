@@ -112,6 +112,28 @@ webhooks:
   validation: true
   sidecarInject: false
 
+# Cluster (Leader / Worker) mode.
+# When enabled, the chart renders two Deployments (leader + worker) and the corresponding
+# Services, instead of a single Deployment. Workers connect to the leader API service via mTLS.
+# Mirrors kustomize/overlays/cluster/.
+cluster:
+  enabled: false
+  mtls:
+    enabled: true
+    loose: true
+    trustAll: true
+  leader:
+    name: otoroshi-leader-deployment
+    replicas: 2
+  worker:
+    name: otoroshi-worker-deployment
+    replicas: 2
+  leaderApiServiceName: otoroshi-leader-api-service
+  leaderServiceName: otoroshi-leader-service
+  workerServiceName: otoroshi-worker-service
+  leaderExternalServiceName: otoroshi-leader-external-service
+  workerExternalServiceName: otoroshi-worker-external-service
+
 # Kubernetes Gateway API support.
 # Requires Gateway API CRDs (https://github.com/kubernetes-sigs/gateway-api/releases) installed on the cluster.
 gatewayApi:
