@@ -192,7 +192,7 @@ test('keyless plan: stepper reflects setup, X-OTOROSHI-TESTING gates traffic', a
     // 4=gateway, 5=testing, 6=plan). Completed steps render with the
     // --done modifier (and are disabled — can't be re-clicked).
     await expect(page.getByTestId('gs-stepper')).toBeVisible();
-    for (const n of [1, 2, 4, 5, 6]) {
+    for (const n of [1, 2, 3, 4, 5]) {
         await expect(page.getByTestId(`gs-step-${n}`)).toHaveClass(/gs-stepper-step--done/);
     }
 
@@ -411,7 +411,7 @@ test('publish flow + apikey plan in draft only gates draft route but not prod', 
             async () => (await page.request.get(`http://${domain}:9999/v1/hello`, {
                 headers: { 'X-OTOROSHI-TESTING': headerValue },
             })).status(),
-            { timeout: 30_000, intervals: [1000, 5000, 15000] }
+            { timeout: 30_000, intervals: [1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000, 25000] }
         )
         .toBe(401);
 
