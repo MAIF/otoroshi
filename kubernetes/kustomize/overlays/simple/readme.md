@@ -71,7 +71,6 @@ components:
   - ../../components/hpa                           # autoscale on CPU/memory
   - ../../components/pdb-single                    # PodDisruptionBudget
   - ../../components/network-policy                # NetworkPolicy
-  - ../../components/observability                 # Prometheus Operator integration
 ```
 
 ## DNS
