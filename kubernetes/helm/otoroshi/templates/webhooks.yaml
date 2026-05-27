@@ -30,7 +30,7 @@ webhooks:
         name: {{ .Values.service.name }}
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/validation"
-        port: 8443
+        port: {{ .Values.service.https }}
       caBundle: "" # injected at runtime
     failurePolicy: Ignore
     sideEffects: None
@@ -74,8 +74,8 @@ webhooks:
         name: {{ .Values.service.name }}
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/inject"
-        port: 8443
-      caBundle: "." # injected at runtime
+        port: {{ .Values.service.https }}
+      caBundle: "" # injected at runtime
     failurePolicy: Ignore
     sideEffects: None
     admissionReviewVersions: 
