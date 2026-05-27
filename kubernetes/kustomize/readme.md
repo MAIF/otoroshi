@@ -1,8 +1,17 @@
-# Otoroshi — Kustomize overlays
+# Otoroshi — Kustomize manifests
 
-Each overlay under `overlays/` is a runnable scenario:
+```
+base/         # mandatory floor: CRDs + RBAC
+overlays/     # runnable scenarios (single vs cluster, LB vs NodePort vs DaemonSet)
+components/   # opt-in add-ons (webhooks, redis, hpa, coredns, gateway-api)
+examples/     # reference apps (sidecar-app, …)
+```
 
-| Overlay | Mode | Exposure | Workload |
+## Pick an overlay
+
+Each overlay is self-contained and runnable. Pick the one closest to your environment:
+
+| Overlay | Otoroshi mode | External exposure | Workload kind |
 |---|---|---|---|
 | `simple` | single | LoadBalancer | Deployment |
 | `simple-baremetal` | single | NodePort | Deployment |
@@ -11,27 +20,23 @@ Each overlay under `overlays/` is a runnable scenario:
 | `cluster-baremetal` | Leader + Worker | NodePort | Deployment |
 | `cluster-baremetal-daemonset` | Leader + Worker | hostPort | DaemonSet |
 
-Build a render or apply directly:
-
 ```sh
 kubectl kustomize overlays/simple        # preview
 kubectl apply -k overlays/simple         # deploy
 ```
 
-## Configuration
+## Provide configuration values
 
-All overlays are **self-contained** — no `${var}` substitution step, no `envsubst`. Values come from:
+No `${var}` substitution, no `envsubst` step. Values come from:
 
-- a **`secretGenerator`** for credentials (`password`, `clientId`, `clientSecret`, `otoroshiSecret`)
-- a **`configMapGenerator`** for non-secret config (`domain`, `redisUrl`)
-- a **`configMapGenerator`** built from `initial-customization.json` (mounted in the pod and loaded by Otoroshi via `OTOROSHI_INITIAL_CUSTOMIZATION=file:///etc/otoroshi/initial-customization.json`)
-- the **Downward API** + Kubernetes `$(VAR)` substitution for namespace-templated hostnames (the pod reads its own namespace from `metadata.namespace`)
+- a **`secretGenerator`** for credentials (`password`, `clientId`, `clientSecret`, `otoroshiSecret`, `redisUrl`)
+- a **`configMapGenerator`** for non-secret config (`domain`)
+- a **`configMapGenerator`** built from `initial-customization.json` (mounted in the pod, loaded by Otoroshi via `OTOROSHI_INITIAL_CUSTOMIZATION=file:///etc/otoroshi/initial-customization.json`)
+- the **Downward API** + Kubernetes `$(VAR)` substitution for hostnames that need the pod's own namespace
 
 Both generators ship in each overlay's `kustomization.yaml` with **placeholder defaults you must override before deploying to anything other than a throwaway cluster**.
 
-### Editing the literals in place
-
-For a quick test:
+### Edit literals in place
 
 ```yaml
 # overlays/simple/kustomization.yaml
@@ -42,21 +47,21 @@ secretGenerator:
       - clientId=admin-api-apikey-id
       - clientSecret=$(openssl rand -hex 32)
       - otoroshiSecret=$(openssl rand -hex 32)
+  - name: otoroshi-redis-secret
+    literals:
+      - redisUrl=redis://:redisPassword@redis.svc.cluster.local:6379/0
 
 configMapGenerator:
   - name: otoroshi-config
     literals:
       - domain=otoroshi.example.com
-      - redisUrl=redis://:redisPassword@redis.svc.cluster.local:6379/0
 ```
 
-Then `kubectl apply -k overlays/simple`.
+Because the generators have **hash-suffixed names** by default, pods automatically roll when you change any value — no `kubectl rollout restart` needed.
 
-Because the generators have **hash-suffixed names** by default (kustomize standard), pods automatically roll when you change any value — no `kubectl rollout restart` needed.
+### Production: layered overlay + external secret manager
 
-### Production: bring your own Secret / ConfigMap
-
-For real workloads, don't put plaintext in `kustomization.yaml`. Replace the generator with one that points at an external source, or layer a personal overlay on top:
+For real workloads, don't put plaintext in `kustomization.yaml`. Layer a personal overlay:
 
 ```yaml
 # my-overlay/kustomization.yaml
@@ -66,53 +71,60 @@ resources:
 secretGenerator:
   - name: otoroshi-admin-secret
     behavior: replace
-    env: my-secrets.env       # gitignored
+    envs:
+      - my-admin.env            # gitignored
+
+  - name: otoroshi-redis-secret
+    behavior: replace
+    envs:
+      - my-redis.env
 
 configMapGenerator:
   - name: otoroshi-config
     behavior: replace
-    env: my-config.env
+    literals:
+      - domain=otoroshi.acme.io
 ```
 
-Or use [External Secrets](https://external-secrets.io/), [SOPS](https://github.com/getsops/sops), [Vault Secrets Operator](https://developer.hashicorp.com/vault/docs/platform/k8s/vso), etc. — the in-cluster `otoroshi-admin-secret` is a regular `Secret` and can be produced by any external mechanism, as long as the keys match (`password`, `clientId`, `clientSecret`, `otoroshiSecret`).
+Or use [External Secrets](https://external-secrets.io/), [SOPS](https://github.com/getsops/sops), [Vault Secrets Operator](https://developer.hashicorp.com/vault/docs/platform/k8s/vso) — the in-cluster Secrets are regular `Secret` objects with documented keys (`password`, `clientId`, `clientSecret`, `otoroshiSecret`, `redisUrl`) and can be produced by any external mechanism.
 
-### Tweaking the bootstrap JSON
+### Bootstrap JSON (`initial-customization.json`)
 
-`initial-customization.json` sits next to each overlay's `kustomization.yaml`. It seeds:
+The JSON file sitting next to each overlay's `kustomization.yaml` seeds:
 
 - the Kubernetes CRDs controller job (`KubernetesOtoroshiCRDsControllerJob`)
-- the validation + sidecar-injection admission webhook sinks
+- the validation + sidecar-injection admission webhook sinks (consumed by `components/webhooks/`)
 - the `KubernetesConfig` block (namespaces, ingress class, webhook names, …)
 
-Override per-overlay by editing the file in place. The kustomize hash suffix on the generated ConfigMap means a rolling restart is triggered automatically on each change.
+Edit it in place to tune Otoroshi's Kubernetes integration. The hash suffix on the generated ConfigMap means a rolling restart is triggered automatically when the file changes.
 
-The JSON intentionally does **not** include `tlsSettings.defaultDomain` anymore — that's persisted in Otoroshi's GlobalConfig and can be set later via the admin UI or a `GlobalConfig` CR.
+The JSON intentionally does **not** seed `tlsSettings.defaultDomain` — that's persisted in Otoroshi's GlobalConfig and can be set later via the admin UI or a `GlobalConfig` CR.
 
-If you deploy in a non-`otoroshi` namespace, edit the JSON's `otoroshiNamespace` field to match.
+If you deploy in a namespace other than `otoroshi`, edit the JSON's `otoroshiNamespace` field to match.
 
-## `base/` content
+## Components — opt-in add-ons
 
-Everything in `base/` is opt-in unless explicitly referenced from an overlay's `resources:` list:
-
-| File | Wired into base? | Purpose |
-|---|---|---|
-| `rbac.yaml` | ✓ | ServiceAccount + ClusterRole + ClusterRoleBinding |
-| `crds.yaml` | ✓ | Otoroshi CRDs (`proxy.otoroshi.io/v1`) |
-| `crds-gateway.yaml` | — | Kubernetes Gateway API integration CRD |
-| `webhooks.yaml` | — | Validating + Mutating admission webhooks (canonical) |
-| `validation-webhook.yaml` | — | Validating webhook only (legacy split) |
-| `sidecar-webhook.yaml` | — | Mutating sidecar-injector webhook only (legacy split) |
-| `hpa.yml` | — | Horizontal Pod Autoscaler (uses removed API — needs update) |
-| `redis.yaml` | — | Bundled Redis (leader + follower StatefulSets, no auth) |
-| `coredns.yaml` | — | Optional in-cluster CoreDNS for `*.otoroshi.mesh` resolution |
-| `sidecar.yaml` / `example.yaml` | — | Example backend app with otoroshi-sidecar |
-
-To enable any of them in an overlay, add the path to `resources:`:
+All add-ons are off by default. To enable, uncomment the `components:` block in your overlay's `kustomization.yaml`:
 
 ```yaml
-resources:
-  - ../../base
-  - ../../base/webhooks.yaml
-  - ../../base/redis.yaml
-  - deployment.yaml
+components:
+  - ../../components/webhooks
+  - ../../components/redis
+  - ../../components/hpa
+  - ../../components/coredns
+  - ../../components/gateway-api
 ```
+
+| Component | What it adds | When to enable |
+|---|---|---|
+| [`webhooks`](components/webhooks/readme.md) | Validating + Mutating admission webhooks | Validate CRs server-side + inject otoroshi-sidecar via pod label |
+| [`redis`](components/redis/readme.md) | Bundled Redis StatefulSets (leader+follower) with AUTH | Dev / small self-managed clusters; prefer managed Redis in prod |
+| [`hpa`](components/hpa/readme.md) | HorizontalPodAutoscaler (autoscaling/v2) | Autoscale Otoroshi on CPU/memory (needs metrics-server) |
+| [`coredns`](components/coredns/readme.md) | In-cluster CoreDNS resolving `*.otoroshi.mesh` | Service mesh mode / otoroshi-sidecar; isolation from the cluster's main CoreDNS |
+| [`gateway-api`](components/gateway-api/readme.md) | RBAC patch for `gateway.networking.k8s.io` | Use Otoroshi as a Gateway API controller (CRDs must be installed separately from upstream) |
+
+## Examples
+
+- [`examples/sidecar-app/`](examples/sidecar-app/readme.md) — reference whoami backend wired with the otoroshi-sidecar pattern (uses `components/webhooks/`)
+
+Examples are **not** building blocks — copy them into your own setup rather than depending on them from production overlays.
