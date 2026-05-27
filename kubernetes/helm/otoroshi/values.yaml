@@ -94,6 +94,16 @@ env:
   # Redis connection URL. Leave empty to default to the bundled Redis subchart service.
   # Example: redis://redis.example.com:6379/0
   redisURL: ""
+  # Redis password (read by Otoroshi as REDIS_PASSWORD). Resolution order:
+  # 1. `redisPasswordExistingSecret.name` set → read from that Secret (recommended for external Redis).
+  # 2. `redisPassword` non-empty → injected inline.
+  # 3. `redis.deploy=true` AND `redis.auth.enabled=true` (default) → read from the bundled subchart Secret.
+  # 4. None of the above → no REDIS_PASSWORD env var (assumes a passwordless Redis).
+  redisPassword: ""
+  redisPasswordExistingSecret:
+    name: ""
+    # Defaults to `redis-password` if empty.
+    key: ""
 
 # Extra env vars appended to the Otoroshi container.
 extraEnv: []
@@ -248,10 +258,19 @@ redis:
     enabled: false
   sentinel:
     enabled: false
-    usePassword: false
-  usePassword: false
+  # SECURE BY DEFAULT: bitnami auto-generates a password on first install and persists
+  # it across `helm upgrade` via lookup. Otoroshi reads it via REDIS_PASSWORD env var
+  # (wired automatically by the chart).
+  #
+  # To use a pre-existing Redis password Secret, set:
+  #   redis.auth.existingSecret: my-redis-secret
+  #   redis.auth.existingSecretPasswordKey: redis-password
+  #
+  # To run Redis without auth (NOT RECOMMENDED — anyone in the cluster who can reach
+  # `redis-master:6379` can read/write Otoroshi's data plane state):
+  #   redis.auth.enabled: false
   auth:
-    enabled: false
+    enabled: true
   master:
     persistence:
       enabled: true
