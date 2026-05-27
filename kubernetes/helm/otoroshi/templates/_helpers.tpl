@@ -96,6 +96,36 @@ imagePullSecrets:
 {{- end }}
 
 {{/*
+Pod-template annotations that trigger a rolling restart when watched secrets change.
+Emits (when applicable):
+  - checksum/admin-secret: hash of the rendered secret.yaml (chart-managed creds) OR
+                           hash of the user-provided existingSecret's .data (via lookup).
+  - checksum/redis-password: hash of the bundled bitnami redis Secret's .data (via lookup).
+                             Only emitted on `helm upgrade` (lookup is empty on first install,
+                             which is fine since pods are being created fresh anyway).
+The output is one annotation per line; the caller is responsible for the surrounding indent (nindent).
+*/}}
+{{- define "otoroshi.checksumAnnotations" -}}
+{{- $annots := list -}}
+{{- if .Values.env.existingSecret -}}
+  {{- $existing := lookup "v1" "Secret" .Release.Namespace .Values.env.existingSecret -}}
+  {{- if and $existing $existing.data -}}
+    {{- $annots = append $annots (printf "checksum/admin-secret: %s" ($existing.data | toJson | sha256sum)) -}}
+  {{- end -}}
+{{- else -}}
+  {{- $annots = append $annots (printf "checksum/admin-secret: %s" (include (print .Template.BasePath "/secret.yaml") . | sha256sum)) -}}
+{{- end -}}
+{{- if and .Values.redis.deploy .Values.redis.auth.enabled (not .Values.env.redisPasswordExistingSecret.name) (not .Values.env.redisPassword) -}}
+  {{- $redisSecretName := default (printf "%s-redis" .Release.Name) .Values.redis.auth.existingSecret -}}
+  {{- $redisSecret := lookup "v1" "Secret" .Release.Namespace $redisSecretName -}}
+  {{- if and $redisSecret $redisSecret.data -}}
+    {{- $annots = append $annots (printf "checksum/redis-password: %s" ($redisSecret.data | toJson | sha256sum)) -}}
+  {{- end -}}
+{{- end -}}
+{{- join "\n" $annots -}}
+{{- end }}
+
+{{/*
 Resolve the REDIS_PASSWORD env var entry for the Otoroshi container.
 Resolution order:
   1. user-provided existing Secret (env.redisPasswordExistingSecret.name)
