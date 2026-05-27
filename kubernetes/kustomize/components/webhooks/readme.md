@@ -7,7 +7,7 @@ Validating + Mutating admission webhooks for Otoroshi.
 
 Both `caBundle` and `failurePolicy` are left as placeholders and patched at runtime by Otoroshi (`KubernetesAdmissionWebhookCRDValidator` + `KubernetesAdmissionWebhookSidecarInjector` sinks — enabled in `initial-customization.json` by default).
 
-Both webhooks point at the in-cluster `otoroshi-service` in the `otoroshi` namespace. If you deploy Otoroshi in a different namespace, patch `webhooks[].clientConfig.service.namespace` (or use this component as inspiration and copy + tweak).
+Both webhooks point at the in-cluster `otoroshi-service`. The namespace is automatically rewritten from the overlay's top-level `namespace:` field via a custom `kustomizeconfig.yaml` (kustomize's built-in NamespaceTransformer doesn't cover `webhooks[].clientConfig.service.namespace`).
 
 ## Enable
 
