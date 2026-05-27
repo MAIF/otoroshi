@@ -9,6 +9,7 @@ import play.api.libs.json._
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 case class RemoteCatalogDeploySingleConfig(json: JsValue = Json.obj()) extends NgPluginConfig {
   lazy val catalogRef: String = json.select("catalog_ref").asOpt[String].getOrElse("")
@@ -73,8 +74,12 @@ class RemoteCatalogDeploySingle extends NgBackendCall {
           .NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "catalog not found")))
           .leftf
       case Some((extension, catalog)) =>
-        ctx.jsonWithTypedBody.flatMap { case (input, _) =>
-          extension.engine.deploy(catalog, input.asOpt[JsObject].getOrElse(Json.obj())).map {
+        ctx.jsonWithTypedBody.flatMap { case (_, bodyBytesOpt) =>
+          val args = bodyBytesOpt
+            .flatMap(bytes => Try(Json.parse(bytes.toArray)).toOption)
+            .flatMap(_.asOpt[JsObject])
+            .getOrElse(Json.obj())
+          extension.engine.deploy(catalog, args).map {
             case Left(err)     =>
               BackendCallResponse(
                 NgPluginHttpResponse.fromResult(Results.InternalServerError(Json.obj("error" -> err))),
@@ -153,8 +158,11 @@ class RemoteCatalogDeployMany extends NgBackendCall {
           .NgResultProxyEngineError(Results.NotFound(Json.obj("error" -> "extension not found")))
           .leftf
       case Some(ext) =>
-        ctx.jsonWithTypedBody.flatMap { case (input, _) =>
-          val items = input.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+        ctx.jsonWithTypedBody.flatMap { case (_, bodyBytesOpt) =>
+          val items = bodyBytesOpt
+            .flatMap(bytes => Try(Json.parse(bytes.toArray)).toOption)
+            .flatMap(_.asOpt[Seq[JsObject]])
+            .getOrElse(Seq.empty)
           items
             .filter(item => config.catalogRefs.contains(item.select("id").asOpt[String].getOrElse("")))
             .mapAsync { item =>
