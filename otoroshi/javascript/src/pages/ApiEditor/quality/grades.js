@@ -1,7 +1,4 @@
-// Maps a 0-100 quality percentage to a letter grade + color.
-// The color palette is intentionally aligned with the GreenScore feature
-// (see extensions/greenscore/util.js) so score visualizations stay consistent
-// across the product.
+// Percentage (0-100) -> letter grade + color (palette aligned with GreenScore).
 export const QUALITY_GRADES = [
   { grade: 'A', min: 90, color: '#2ecc71' },
   { grade: 'B', min: 75, color: '#27ae60' },

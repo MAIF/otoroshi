@@ -25,9 +25,6 @@ const hasPluginMatching = (api, needle) =>
 
 const KEYLESS_TYPES = ['keyless', 'public'];
 
-// Each rule: { id, category, severity, message, fix, to, failed(api) -> bool }.
-// `to` is the API-editor section suffix the user should visit to fix the issue;
-// the UI builds the link as `/apis/:apiId/${to}`.
 export const RULES = [
   // ---- Documentation ----------------------------------------------------
   {
@@ -61,13 +58,22 @@ export const RULES = [
     failed: (api) => !api?.documentation || api.documentation.enabled === false,
   },
   {
-    id: 'doc-no-resources',
+    id: 'doc-no-pages',
     category: 'documentation',
     severity: 'info',
-    message: 'No documentation resources (OpenAPI, markdown pages, …) are attached.',
-    fix: 'Attach an OpenAPI spec or markdown pages to document your endpoints.',
+    message: 'The documentation has no content pages.',
+    fix: 'Add documentation pages (markdown guides, …) shown in the dev portal.',
     to: 'documentation',
     failed: (api) => (api?.documentation?.resources?.length || 0) === 0,
+  },
+  {
+    id: 'doc-no-openapi',
+    category: 'documentation',
+    severity: 'info',
+    message: 'No OpenAPI specification is referenced.',
+    fix: 'Reference an OpenAPI spec so consumers get an interactive API reference.',
+    to: 'documentation',
+    failed: (api) => (api?.documentation?.references?.length || 0) === 0,
   },
   // ---- Security ---------------------------------------------------------
   {
@@ -90,16 +96,15 @@ export const RULES = [
       plansOf(api).some((p) => KEYLESS_TYPES.includes(p?.access_mode_configuration_type)),
   },
   {
-    id: 'sec-no-ratelimit',
+    id: 'sec-no-rate-limiting',
     category: 'security',
     severity: 'info',
-    message: 'No rate-limiting or quota plugin found in the plugin chains.',
-    fix: 'Add a rate-limiting / quota plugin to protect your backends from abuse.',
-    to: 'plugin-chains',
-    failed: (api) =>
-      !hasPluginMatching(api, 'RateLimit') &&
-      !hasPluginMatching(api, 'Quota') &&
-      !hasPluginMatching(api, 'Throttling'),
+    message: 'No plan defines a rate-limiting / quota strategy.',
+    fix: 'Configure a rate-limiting & quotas strategy on at least one plan.',
+    to: 'plans',
+    // Only relevant once plans exist — otherwise sec-no-plans already covers it.
+    applies: (api) => plansOf(api).length > 0,
+    failed: (api) => !plansOf(api).some((p) => Boolean(p?.rateLimiting && p.rateLimiting.strategy)),
   },
   {
     id: 'sec-no-https',
@@ -138,9 +143,8 @@ export const RULES = [
     message: 'No backend has a health-check enabled.',
     fix: 'Enable health-checks so unhealthy targets are detected automatically.',
     to: 'backends',
-    failed: (api) =>
-      backendsOf(api).length > 0 &&
-      !backendsOf(api).some((b) => b?.backend?.health_check?.enabled === true),
+    applies: (api) => backendsOf(api).length > 0,
+    failed: (api) => !backendsOf(api).some((b) => b?.backend?.health_check?.enabled === true),
   },
   {
     id: 'route-all-methods',
@@ -149,6 +153,7 @@ export const RULES = [
     message: 'An endpoint accepts every HTTP method (no explicit methods).',
     fix: 'Restrict endpoints to the HTTP methods they actually support.',
     to: 'endpoints',
+    applies: (api) => routesOf(api).length > 0,
     failed: (api) =>
       routesOf(api).some(
         (r) => ((r?.frontend?.methods || []).filter((m) => (m || '').length).length) === 0
@@ -161,6 +166,7 @@ export const RULES = [
     message: 'An endpoint is disabled.',
     fix: 'Remove or re-enable disabled endpoints to keep the definition clean.',
     to: 'endpoints',
+    applies: (api) => routesOf(api).length > 0,
     failed: (api) => routesOf(api).some((r) => r?.enabled === false),
   },
   // ---- Governance / metadata -------------------------------------------
@@ -202,58 +208,72 @@ export const RULES = [
   },
 ];
 
-function scoreFromIssues(issues) {
-  const counts = { error: 0, warn: 0, info: 0, hint: 0 };
-  issues.forEach((i) => {
-    counts[i.severity] = (counts[i.severity] || 0) + 1;
-  });
-  const penalty = SEVERITY_ORDER.reduce(
-    (acc, s) => acc + SEVERITY_WEIGHTS[s] * (counts[s] || 0),
-    0
-  );
-  const percent = Math.round(100 * Math.exp(-0.1 * penalty));
-  return { percent, counts };
+function ruleFailed(rule, api) {
+  try {
+    return !!rule.failed(api);
+  } catch (e) {
+    return false;
+  }
 }
 
-// Evaluates every rule against the given API entity and returns a full report:
-//   {
-//     percent, grade, color,
-//     counts: { error, warn, info, hint },
-//     issues: [{ id, category, categoryLabel, severity, message, fix, to }],
-//     categories: [{ key, label, percent, grade, color, counts, issues, total }]
-//   }
-export function computeApiQuality(api) {
-  const failed = RULES.filter((r) => {
-    try {
-      return r.failed(api);
-    } catch (e) {
-      return false;
-    }
-  }).map((r) => ({
-    id: r.id,
-    category: r.category,
-    categoryLabel: categoryLabel(r.category),
-    severity: r.severity,
-    message: r.message,
-    fix: r.fix,
-    to: r.to,
-  }));
+function ruleApplies(rule, api) {
+  if (!rule.applies) return true;
+  try {
+    return !!rule.applies(api);
+  } catch (e) {
+    return true;
+  }
+}
 
-  const global = scoreFromIssues(failed);
+// Weighted completeness: passed-rule weight / total applicable-rule weight.
+function scoreRules(rules, api) {
+  let totalWeight = 0;
+  let earnedWeight = 0;
+  const counts = { error: 0, warn: 0, info: 0, hint: 0 };
+  const issues = [];
+
+  rules.forEach((rule) => {
+    if (!ruleApplies(rule, api)) return;
+    const weight = SEVERITY_WEIGHTS[rule.severity] || 0;
+    totalWeight += weight;
+    if (ruleFailed(rule, api)) {
+      counts[rule.severity] = (counts[rule.severity] || 0) + 1;
+      issues.push({
+        id: rule.id,
+        category: rule.category,
+        categoryLabel: categoryLabel(rule.category),
+        severity: rule.severity,
+        message: rule.message,
+        fix: rule.fix,
+        to: rule.to,
+      });
+    } else {
+      earnedWeight += weight;
+    }
+  });
+
+  const percent = totalWeight === 0 ? 100 : Math.round((100 * earnedWeight) / totalWeight);
+  return { percent, counts, issues };
+}
+
+export function computeApiQuality(api) {
+  const global = scoreRules(RULES, api);
   const { grade, color } = gradeFor(global.percent);
 
   const categories = CATEGORIES.map(({ key, label }) => {
-    const issues = failed.filter((i) => i.category === key);
-    const { percent, counts } = scoreFromIssues(issues);
-    const g = gradeFor(percent);
+    const cat = scoreRules(
+      RULES.filter((r) => r.category === key),
+      api
+    );
+    const g = gradeFor(cat.percent);
     return {
       key,
       label,
-      percent,
+      percent: cat.percent,
       grade: g.grade,
       color: g.color,
-      counts,
-      issues,
+      counts: cat.counts,
+      issues: cat.issues,
       total: RULES.filter((r) => r.category === key).length,
     };
   });
@@ -263,7 +283,7 @@ export function computeApiQuality(api) {
     grade,
     color,
     counts: global.counts,
-    issues: failed,
+    issues: global.issues,
     categories,
   };
 }

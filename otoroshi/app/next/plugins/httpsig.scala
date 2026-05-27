@@ -1,5 +1,6 @@
 package otoroshi.next.plugins
 
+import akka.http.scaladsl.model.ContentType
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -1426,8 +1427,13 @@ class HttpSignatureSignResponse extends NgRequestTransformer {
             val sigInput = HttpSigStructuredFields.SignatureInputValue(componentIds, inputParams.toList)
 
             val relatedRequest = HttpSigMessage.fromRequest(ctx.request)
+            // Sign content-type as the server will emit it (Akka drops the charset for fixed-charset types like application/json).
+            val signingHeaders = respHeaders.map {
+              case (k, v) if k.equalsIgnoreCase("content-type") => k -> renderedContentType(v)
+              case kv                                           => kv
+            }
             val responseMsg    = relatedRequest.copy(
-              headers = respHeaders.toSeq,
+              headers = signingHeaders.toSeq,
               status = Some(ctx.otoroshiResponse.status)
             )
 
@@ -1465,6 +1471,12 @@ class HttpSignatureSignResponse extends NgRequestTransformer {
   // ("@query-param;name=\"foo\"", "content-digest;sf"). The helper in HttpSigStructuredFields handles both.
   private def parseComponents(components: Seq[String]): List[HttpSigStructuredFields.ComponentId] =
     components.toList.map(HttpSigStructuredFields.parseComponentString)
+
+  private def renderedContentType(raw: String): String =
+    ContentType.parse(raw) match {
+      case Right(ct) => ct.toString()
+      case Left(_)   => raw
+    }
 
   private def randomNonce(): String = {
     val bytes = new Array[Byte](16)
