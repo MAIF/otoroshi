@@ -71,6 +71,10 @@ spec:
             value: {{ .Values.storage.backend | quote }}
           - name: REDIS_URL
             value: {{ $redisURL | quote }}
+          {{- $redisPwEnv := include "otoroshi.redisPasswordEnv" . }}
+          {{- if $redisPwEnv }}
+          {{- $redisPwEnv | nindent 10 }}
+          {{- end }}
           - name: ADMIN_API_CLIENT_ID
             valueFrom:
               secretKeyRef:
