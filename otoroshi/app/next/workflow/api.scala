@@ -275,6 +275,7 @@ case class WorkflowRun(
   }
   def json: JsValue      = WorkflowRun.format.writes(this)
   def lightJson: JsValue = json.asObject - "log" - "functions"
+  override def toString: String = s"WorkflowRun($id, ref=$workflow_ref)"
 }
 
 object WorkflowRun {
