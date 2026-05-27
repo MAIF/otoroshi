@@ -202,7 +202,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
     Future.successful(())
   }
 
-  def createRoute(keycloakPort: Int) = {
+  def createRoute(keycloakUrl: String) = {
     createRouteWithExternalTarget(
       Seq(
         NgPluginInstance(plugin = NgPluginHelper.pluginId[OverrideHost]),
@@ -211,7 +211,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
           config = NgPluginInstanceConfig(
             OAuth2CallerConfig(
               kind = OAuth2Kind.Password,
-              url = s"http://localhost:$keycloakPort/realms/master/protocol/openid-connect/token",
+              url = s"$keycloakUrl/realms/master/protocol/openid-connect/token",
               method = "POST",
               headerName = "Authorization",
               headerValueFormat = "Bearer %s",
@@ -258,6 +258,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
+    println(resp.body)
     resp.status mustBe 200
     resp.body.contains("GET") mustBe true
   }
@@ -268,7 +269,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
 
   verifyKeycloakTokenEndpoint(keycloakUrl)
 
-  val route = createRoute(keycloakContainer.mappedPort(8080)).futureValue
+  val route = createRoute(keycloakUrl).futureValue
   verify(route)
 
   deleteOtoroshiRoute(route).futureValue

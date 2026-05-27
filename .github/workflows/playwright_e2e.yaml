@@ -29,6 +29,8 @@ jobs:
       # its modal intercept every click. Off => backend reports should_enable,
       # so BackOfficeApp never triggers the popup at all.
       OTOROSHI_ANONYMOUS_REPORTING_ENABLED: 'false'
+      # Refresh proxyState every 2s (default 10s) so the admin API reflects writes quickly in tests.
+      OTOROSHI_NEXT_STATE_SYNC_INTERVAL: '2000'
       # Playwright config
       PW_AUTH_TTL_MIN: '0'
       CI: 'true'
