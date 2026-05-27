@@ -18,4 +18,4 @@ dependencies:
   - name: redis
     version: "21.2.9"
     repository: "https://charts.bitnami.com/bitnami"
-    condition: global.prod
+    condition: redis.deploy
