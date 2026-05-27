@@ -23,10 +23,12 @@ export const SendMailFunction = {
       props: { description: 'The email subject' },
     },
     html: {
-      type: 'code',
+      type: 'any',
       label: 'HTML',
       props: {
+        language: 'html',
         editorOnly: true,
+        height: 300,
         description: 'The email HTML content',
       },
     },
