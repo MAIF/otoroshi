@@ -1,3 +1,4 @@
+{{- if not .Values.cluster.enabled }}
 {{- $secretName := default (printf "%s-admin-secret" .Values.name) .Values.env.existingSecret -}}
 {{- $redisURL := default (printf "redis://%s-redis-master:6379" .Release.Name) .Values.env.redisURL -}}
 apiVersion: apps/v1
@@ -267,3 +268,4 @@ spec:
     {{- if not .Values.loadbalancer.enabled }}
     nodePort: {{ .Values.loadbalancer.nodePort.https }}
     {{- end }}
+{{- end }}
