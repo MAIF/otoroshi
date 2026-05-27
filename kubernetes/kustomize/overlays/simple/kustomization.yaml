@@ -7,8 +7,14 @@ resources:
   - ../../base
   - deployment.yaml
 
-# Admin credentials. Override these literals before deploying to anything other
-# than a throwaway cluster. For production, replace this generator with a
+# Opt-in components — uncomment any of them you need.
+# Available: ../../components/{webhooks,redis,hpa,coredns,gateway-api}
+# components:
+#   - ../../components/webhooks
+#   - ../../components/redis
+
+# Admin credentials. Override before deploying to anything other than a
+# throwaway cluster. For production, replace this generator with a
 # `behavior: replace` one in a personal overlay, or feed values from a real
 # secret manager (External Secrets, SOPS, Vault, …).
 secretGenerator:
@@ -18,16 +24,20 @@ secretGenerator:
       - clientId=admin-api-apikey-id
       - clientSecret=admin-api-apikey-secret
       - otoroshiSecret=verysecretvaluethatyoumustoverwrite
+  # Redis connection. The full URL is in a Secret (not a ConfigMap) because it
+  # may contain a password (redis://:password@host:port/db). The default points
+  # at the bundled `components/redis` Service; override here when bringing your
+  # own Redis. The `components/redis` component overrides this Secret to inject
+  # the auto-generated password into the URL.
+  - name: otoroshi-redis-secret
+    literals:
+      - redisUrl=redis://redis-leader-service:6379/0
 
 # Non-secret configuration.
-# - domain: the wildcard domain Otoroshi serves under (no scheme, no port).
-# - redisUrl: full URL with optional credentials, e.g.
-#   redis://:password@redis.example.com:6379/0
 configMapGenerator:
   - name: otoroshi-config
     literals:
       - domain=oto.tools
-      - redisUrl=redis://redis-leader-service:6379/0
   - name: otoroshi-initial-customization
     files:
       - initial-customization.json
