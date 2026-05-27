@@ -1,86 +1,50 @@
-# Simple deployment on baremetal kubernetes cluster
+# simple-baremetal overlay
 
-here we only deploy 2 replicas of the same otoroshi instance using redis. 
+Single-pod Otoroshi exposed via `NodePort` for clusters without a cloud-managed
+LoadBalancer (on-prem k3s/kubeadm, …). You put your own L4 LB (nginx,
+haproxy, F5, …) in front of the cluster nodes and route to the well-known
+nodePorts.
 
-The otoroshi instance are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You'll also have to configure your DNS to route otoroshi domain names to the loadbalancer itself
+## What it deploys
 
-## NGINX config. example
+- 1 × Otoroshi `Deployment` (`otoroshi-deployment`, 2 replicas)
+- 1 × `Service: ClusterIP` (`otoroshi-service`, in-cluster)
+- 1 × `Service: NodePort` (`otoroshi-external-service`, ports **31080** / **31443**)
+- 1 × `Certificate`
+- Base + initial-customization-single component
 
-```
-stream {
+## Prerequisites
 
-  upstream back_http_nodes {
-    zone back_http_nodes 64k;
-    server 10.2.2.40:31080 max_fails=1;
-    server 10.2.2.41:31080 max_fails=1;
-    server 10.2.2.42:31080 max_fails=1;
-  }
+- Kubernetes ≥ 1.25 baremetal cluster
+- An external L4 load balancer reachable on its own IP, routing TCP/80/443 to
+  the cluster nodes on TCP/31080 / TCP/31443
+- DNS pointing the Otoroshi hostnames at the LB's IP
+- See [`nginx.example`](nginx.example) and [`haproxy.example`](haproxy.example)
+  for ready-to-use LB configs
+- An external Redis (or enable `components/redis`)
 
-  upstream back_https_nodes {
-    zone back_https_nodes 64k;
-    server 10.2.2.40:31443 max_fails=1;
-    server 10.2.2.41:31443 max_fails=1;
-    server 10.2.2.42:31443 max_fails=1;
-  }
+## Override checklist
 
-  server {
-    listen     80;
-    proxy_pass back_http_nodes;
-    health_check;
-  }
+Same as the [simple overlay](../simple/readme.md), plus the NodePort numbers
+if they collide with another workload on your cluster:
 
-  server {
-    listen     443;
-    proxy_pass back_https_nodes;
-    health_check;
-  }
-  
-}
-```
-
-## HAProxy config. example
-
-```
-frontend front_nodes_http
-    bind *:80
-    mode tcp
-    default_backend back_http_nodes
-    timeout client          1m
-
-frontend front_nodes_https
-    bind *:443
-    mode tcp
-    default_backend back_https_nodes
-    timeout client          1m
-
-backend back_http_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:31080
-    server kubernetes-node2 10.2.2.41:31080
-    server kubernetes-node3 10.2.2.42:31080
-    timeout connect        10s
-    timeout server          1m
-
-backend back_https_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:31443
-    server kubernetes-node2 10.2.2.41:31443
-    server kubernetes-node3 10.2.2.42:31443
-    timeout connect        10s
-    timeout server          1m
+```yaml
+# overlays/simple-baremetal/deployment.yaml
+spec:
+  ports:
+    - port: 80
+      nodePort: 31080   # ← change here
+    - port: 443
+      nodePort: 31443   # ← and here
 ```
 
-## DNS config. example
-
-if your loadbalancer is at ip address 10.2.2.50
+## DNS
 
 ```
-otoroshi.your.otoroshi.domain      IN A 10.2.2.50
-otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
-privateapps.your.otoroshi.domain   IN A 10.2.2.50
-api1.another.domain                IN A 10.2.2.50
-api2.another.domain                IN A 10.2.2.50
-*.api.the.api.domain               IN A 10.2.2.50
+otoroshi.your.domain        IN A <lb-ip>
+otoroshi-api.your.domain    IN A <lb-ip>
+privateapps.your.domain     IN A <lb-ip>
+*.api.your.domain           IN A <lb-ip>
 ```
+
+See [`dns.example`](dns.example) for a full sample.
