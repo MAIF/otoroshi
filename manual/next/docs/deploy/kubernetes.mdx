@@ -74,7 +74,9 @@ Common overrides:
 # External / managed Redis (skip bundled subchart)
 helm install my-otoroshi otoroshi/otoroshi \
   --set redis.deploy=false \
-  --set env.redisURL=redis://redis.example.com:6379/0
+  --set env.redisURL=redis://redis.example.com:6379/0 \
+  --set env.redisPasswordExistingSecret.name=my-redis-creds \
+  --set env.redisPasswordExistingSecret.key=password
 
 # Otoroshi cluster (Leader + Worker)
 helm install my-otoroshi otoroshi/otoroshi \
