@@ -5,6 +5,7 @@ import { DesignerActions } from './DesignerActions';
 import ReportInformation from './ReportInformation';
 import moment from 'moment';
 import { NgAnyRenderer } from '../../components/nginputs';
+import {MonacoInput} from "../../components/inputs";
 
 const Tab = ({ onClick, name, selected, isError }) => {
   return (
@@ -326,12 +327,12 @@ const LogTab = ({ log }) => {
             <div>{item.data.node.kind}</div>
             {itemOpened ? (
               <div onClick={(e) => e.stopPropagation()}>
-                <CodeInput
-                  ace_config={{
-                    readOnly: true,
-                  }}
+                <MonacoInput
+                  language="json"
                   key={`debug${i}`}
-                  value={item.data}
+                  height={200}
+                  value={JSON.stringify(item.data, null, 2)}
+                  onChange={() => ''}
                   editorOnly={true}
                   label={null}
                 />
@@ -383,14 +384,10 @@ const MemoryTab = ({ memory, setMemory }) => {
     return <div className="terminal-memory-tab">Click Play or Debug to view workflow memory.</div>;
 
   return (
-    <CodeInput
-      ace_config={{
-        readOnly: true,
-        fontSize: 14,
-        minLines: 1,
-      }}
-      value={memory}
-      onChange={setMemory}
+    <MonacoInput
+      language="json"
+      value={JSON.stringify(memory, null, 2)}
+      onChange={() => ''}
       editorOnly={true}
       label={null}
     />
