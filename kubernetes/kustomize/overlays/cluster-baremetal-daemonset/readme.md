@@ -1,144 +1,52 @@
-# Cluster Daemonset on baremetal kubernetes cluster
+# cluster-baremetal-daemonset overlay
 
-here we deploy 1 otoroshi leader instance on each kubernetes node (with the `otoroshi-kind: leader` label) and 1 otoroshi worker instance on each kubernetes node (with the `otoroshi-kind: worker` label). We use redis persistance. 
+Otoroshi Leader + Worker as `DaemonSet`s on baremetal — one pod per node,
+listening on `hostPort` directly. Performance-sensitive variant of
+[cluster-baremetal](../cluster-baremetal/readme.md).
 
-The otoroshi instances are exposed as `hostPort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You'll also have to configure your DNS to route otoroshi domain names to the loadbalancer itself
+## What it deploys
 
-## NGINX config. example
+- 1 × Leader `DaemonSet` (`nodeAffinity: otoroshi-kind=leader`,
+  hostPort **41080** / **41443**)
+- 1 × Worker `DaemonSet` (`nodeAffinity: otoroshi-kind=worker`,
+  hostPort **42080** / **42443**)
+- 3 × `Service: ClusterIP` (`otoroshi-leader-api-service`,
+  `otoroshi-leader-service`, `otoroshi-worker-service` — used for in-cluster
+  traffic only; external traffic hits the hostPorts directly)
+- 1 × `Certificate`
 
-```
-stream {
+## Prerequisites
 
-  upstream worker_http_nodes {
-    zone worker_http_nodes 64k;
-    server 10.2.2.40:42080 max_fails=1;
-    server 10.2.2.41:42080 max_fails=1;
-    server 10.2.2.42:42080 max_fails=1;
-  }
+- Baremetal Kubernetes cluster
+- Label your nodes:
 
-  upstream worker_https_nodes {
-    zone worker_https_nodes 64k;
-    server 10.2.2.40:42443 max_fails=1;
-    server 10.2.2.41:42443 max_fails=1;
-    server 10.2.2.42:42443 max_fails=1;
-  }
+  ```sh
+  kubectl label node leader-node-A otoroshi-kind=leader
+  kubectl label node leader-node-B otoroshi-kind=leader
+  kubectl label node worker-node-1 otoroshi-kind=worker
+  kubectl label node worker-node-2 otoroshi-kind=worker
+  kubectl label node worker-node-3 otoroshi-kind=worker
+  ```
 
-  upstream leader_http_nodes {
-    zone leader_http_nodes 64k;
-    server 10.2.2.40:41080 max_fails=1;
-    server 10.2.2.41:41080 max_fails=1;
-    server 10.2.2.42:41080 max_fails=1;
-  }
+- External L4 LB(s) routing:
+  - control plane → `<leader-node-ip>:41080` / `<leader-node-ip>:41443`
+  - production traffic → `<worker-node-ip>:42080` /
+    `<worker-node-ip>:42443`
+  - see [`nginx.example`](nginx.example) and [`haproxy.example`](haproxy.example)
+- DNS pointing at the LB(s) — see [`dns.example`](dns.example)
+- An external Redis (or enable `components/redis`)
 
-  upstream leader_https_nodes {
-    zone leader_https_nodes 64k;
-    server 10.2.2.40:41443 max_fails=1;
-    server 10.2.2.41:41443 max_fails=1;
-    server 10.2.2.42:41443 max_fails=1;
-  }
+## Port allocation
 
-  server {
-    listen     80;
-    proxy_pass worker_http_nodes;
-    health_check;
-  }
+| Pod | HTTP | HTTPS |
+|---|---|---|
+| Leader | `41080` | `41443` |
+| Worker | `42080` | `42443` |
 
-  server {
-    listen     443;
-    proxy_pass worker_https_nodes;
-    health_check;
-  }
+## Trade-offs vs `cluster-baremetal`
 
-  server {
-    listen     81;
-    proxy_pass leader_http_nodes;
-    health_check;
-  }
-
-  server {
-    listen     444;
-    proxy_pass leader_https_nodes;
-    health_check;
-  }
-  
-}
-```
-
-## HAProxy config. example
-
-here we use different ports to access either leader or workers. You can also configure HAProxy to use SNI to route to the right instance using the same input port (https://www.haproxy.com/fr/blog/enhanced-ssl-load-balancing-with-server-name-indication-sni-tls-extension/)
-
-```
-frontend front_worker_nodes_http
-    bind *:80
-    mode tcp
-    default_backend worker_http_nodes
-    timeout client          1m
-
-frontend front_worker_nodes_https
-    bind *:443
-    mode tcp
-    default_backend worker_https_nodes
-    timeout client          1m
-
-frontend front_leader_nodes_http
-    bind *:81
-    mode tcp
-    default_backend leader_http_nodes
-    timeout client          1m
-
-frontend front_leader_nodes_https
-    bind *:444
-    mode tcp
-    default_backend leader_https_nodes
-    timeout client          1m
-
-backend worker_http_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:42080
-    server kubernetes-node2 10.2.2.41:42080
-    server kubernetes-node3 10.2.2.42:42080
-    timeout connect        10s
-    timeout server          1m
-
-backend worker_https_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:42443
-    server kubernetes-node2 10.2.2.41:42443
-    server kubernetes-node3 10.2.2.42:42443
-    timeout connect        10s
-    timeout server          1m
-
-backend leader_http_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:41080
-    server kubernetes-node2 10.2.2.41:41080
-    server kubernetes-node3 10.2.2.42:41080
-    timeout connect        10s
-    timeout server          1m
-
-backend leader_https_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:41443
-    server kubernetes-node2 10.2.2.41:41443
-    server kubernetes-node3 10.2.2.42:41443
-    timeout connect        10s
-    timeout server          1m
-```
-
-## DNS config. example
-
-if your loadbalancer is at ip address 10.2.2.50
-
-```
-otoroshi.your.otoroshi.domain      IN A 10.2.2.50
-otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
-privateapps.your.otoroshi.domain   IN A 10.2.2.50
-api1.another.domain                IN A 10.2.2.50
-api2.another.domain                IN A 10.2.2.50
-*.api.the.api.domain               IN A 10.2.2.50
-```
+- ✅ Direct node networking — one hop less, source IP preserved
+- ✅ Clear physical separation: leader pods only on leader-labeled nodes,
+  worker pods only on worker-labeled nodes
+- ❌ `replicas:` doesn't apply — one pod per matching node
+- ❌ Adding capacity requires labelling more nodes (not just bumping a number)
