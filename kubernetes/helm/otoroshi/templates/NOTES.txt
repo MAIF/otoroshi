@@ -57,6 +57,13 @@ Retrieve credentials:
     kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.clientId}' | base64 -d
     kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.clientSecret}' | base64 -d
 {{- end }}
+{{- if and .Values.redis.deploy .Values.redis.auth.enabled }}
+
+The bundled Redis subchart runs WITH authentication. The password lives in Secret "{{ .Release.Name }}-redis"
+(key `redis-password`) and is auto-wired into Otoroshi via the REDIS_PASSWORD env var. Read it with:
+
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-redis -o jsonpath='{.data.redis-password}' | base64 -d
+{{- end }}
 
 ============================================================
 3. Upgrading CRDs
