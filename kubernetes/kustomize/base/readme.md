@@ -1,7 +1,9 @@
-# Base
+# base
 
-here we can found the base kubernetes manifest such as
+Mandatory floor that every overlay builds on top of:
 
-- CRDs definitions
-- RBAC definitions
-- Redis deployment (not included in overlays, you have to deploy it yourself)
+- `crds.yaml` — Otoroshi CRDs (`proxy.otoroshi.io/v1` — Route, Backend, ApiKey, Certificate, …)
+- `rbac.yaml` — ServiceAccount + ClusterRole + ClusterRoleBinding for the Otoroshi controller
+
+Optional add-ons live in `../components/` (webhooks, redis, hpa, coredns, gateway-api).
+Demo manifests live in `../examples/`.
