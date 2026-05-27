@@ -5,16 +5,42 @@ namespace: otoroshi
 
 resources:
   - ../../base
-  - deployment.yaml
 
 components:
+  - ../../components/cluster-deployments
   - ../../components/initial-customization-cluster
+
+# deployment.yaml here is NOT a resource — it's a strategic-merge patch that
+# changes the cluster-deployments component's leader/worker Services from
+# ClusterIP to NodePort, and pins the four nodePort values documented in the
+# top-level readme.
+patches:
+  - path: deployment.yaml
   # Opt-in add-ons — uncomment to enable.
   # - ../../components/webhooks
   # - ../../components/redis
   # - ../../components/hpa
   # - ../../components/coredns
   # - ../../components/gateway-api
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/name: otoroshi
+      app.kubernetes.io/instance: cluster-baremetal
+      app.kubernetes.io/version: "17.16.0"
+      app.kubernetes.io/part-of: otoroshi
+      app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: maif/otoroshi
+    newTag: 17.16.0-dev-jdk11
+
+replicas:
+  - name: otoroshi-leader-deployment
+    count: 2
+  - name: otoroshi-worker-deployment
+    count: 2
 
 secretGenerator:
   - name: otoroshi-admin-secret
