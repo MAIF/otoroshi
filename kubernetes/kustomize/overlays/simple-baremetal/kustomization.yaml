@@ -7,10 +7,12 @@ resources:
   - ../../base
   - deployment.yaml
 
-# Admin credentials. Override these literals before deploying to anything other
-# than a throwaway cluster. For production, replace this generator with a
-# `behavior: replace` one in a personal overlay, or feed values from a real
-# secret manager (External Secrets, SOPS, Vault, …).
+# Opt-in components — uncomment any of them you need.
+# Available: ../../components/{webhooks,redis,hpa,coredns,gateway-api}
+# components:
+#   - ../../components/webhooks
+#   - ../../components/redis
+
 secretGenerator:
   - name: otoroshi-admin-secret
     literals:
@@ -18,13 +20,14 @@ secretGenerator:
       - clientId=admin-api-apikey-id
       - clientSecret=admin-api-apikey-secret
       - otoroshiSecret=verysecretvaluethatyoumustoverwrite
+  - name: otoroshi-redis-secret
+    literals:
+      - redisUrl=redis://redis-leader-service:6379/0
 
-# Non-secret configuration.
 configMapGenerator:
   - name: otoroshi-config
     literals:
       - domain=oto.tools
-      - redisUrl=redis://redis-leader-service:6379/0
   - name: otoroshi-initial-customization
     files:
       - initial-customization.json
