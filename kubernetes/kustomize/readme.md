@@ -140,6 +140,106 @@ components:
 | [`hpa`](components/hpa/readme.md) | HorizontalPodAutoscaler (autoscaling/v2) | Autoscale Otoroshi on CPU/memory (needs metrics-server) |
 | [`coredns`](components/coredns/readme.md) | In-cluster CoreDNS resolving `*.otoroshi.mesh` | Service mesh mode / otoroshi-sidecar; isolation from the cluster's main CoreDNS |
 | [`gateway-api`](components/gateway-api/readme.md) | RBAC patch for `gateway.networking.k8s.io` | Use Otoroshi as a Gateway API controller (CRDs must be installed separately from upstream) |
+| [`pdb-single`](components/pdb-single/readme.md) / [`pdb-cluster`](components/pdb-cluster/readme.md) | PodDisruptionBudget | Survive node drains / cluster upgrades without losing all replicas |
+| [`network-policy`](components/network-policy/readme.md) | Default NetworkPolicy (permissive starting point) | Required by clusters with deny-by-default policies; tighten via overlay patches |
+
+## Patch recipes
+
+Kustomize doesn't have "values" — anything not exposed as a generator
+literal is a **patch**. The recipes below cover the common asks the Helm
+chart exposes as values.
+
+### Cloud LoadBalancer annotations + source ranges (P9)
+
+```yaml
+# overlays/your-overlay/kustomization.yaml
+patches:
+  - target:
+      kind: Service
+      name: otoroshi-external-service       # or otoroshi-{leader,worker}-external-service in cluster mode
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+          service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      - op: add
+        path: /spec/loadBalancerSourceRanges
+        value:
+          - 10.0.0.0/8
+          - 192.168.0.0/16
+      - op: add
+        path: /spec/loadBalancerClass
+        value: service.k8s.aws/nlb
+```
+
+### IRSA / Workload Identity on the ServiceAccount (P3)
+
+```yaml
+patches:
+  - target:
+      kind: ServiceAccount
+      name: otoroshi-admin-user
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/otoroshi-irsa
+          # or GCP Workload Identity:
+          # iam.gke.io/gcp-service-account: otoroshi@my-project.iam.gserviceaccount.com
+```
+
+### `extraEnv` / `extraVolumes` / scheduling fields (P11)
+
+For arbitrary additions to the Otoroshi pod spec — `nodeSelector`,
+`tolerations`, `priorityClassName`, extra env vars, extra volumes,
+`imagePullSecrets`, etc. — patch the canonical Deployment:
+
+```yaml
+patches:
+  - target:
+      kind: Deployment
+      name: otoroshi-deployment              # or otoroshi-{leader,worker}-deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          workload: otoroshi
+      - op: add
+        path: /spec/template/spec/tolerations
+        value:
+          - key: dedicated
+            operator: Equal
+            value: otoroshi
+            effect: NoSchedule
+      - op: add
+        path: /spec/template/spec/priorityClassName
+        value: system-cluster-critical
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: my-private-registry
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: MY_EXTRA_VAR
+          value: hello
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: extra-config
+          configMap:
+            name: my-extra-config
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: extra-config
+          mountPath: /etc/otoroshi-extra
+          readOnly: true
+```
+
+For `topologySpreadConstraints`, `dnsConfig`, `hostAliases`, etc., same
+pattern — the Deployment is the canvas.
 
 ## Examples
 
