@@ -17,6 +17,8 @@ components:
   # - ../../components/hpa
   # - ../../components/coredns
   # - ../../components/gateway-api
+  # - ../../components/pdb-single
+  # - ../../components/network-policy
 
 labels:
   - includeSelectors: false
