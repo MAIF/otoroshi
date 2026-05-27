@@ -75,6 +75,10 @@ spec:
             value: {{ .Values.storage.backend | quote }}
           - name: REDIS_URL
             value: {{ $redisURL | quote }}
+          {{- $redisPwEnv := include "otoroshi.redisPasswordEnv" . }}
+          {{- if $redisPwEnv }}
+          {{- $redisPwEnv | nindent 10 }}
+          {{- end }}
           - name: CLUSTER_MODE
             value: Leader
           - name: CLUSTER_AUTO_UPDATE_STATE
