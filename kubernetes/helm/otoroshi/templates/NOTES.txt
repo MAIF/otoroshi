@@ -1,12 +1,13 @@
 {{- $externalSvc := ternary .Values.cluster.workerExternalServiceName .Values.loadbalancer.name .Values.cluster.enabled -}}
 {{- $internalSvc := ternary .Values.cluster.leaderServiceName .Values.service.name .Values.cluster.enabled -}}
+{{- $lbType := include "otoroshi.loadBalancerType" . -}}
 Otoroshi {{ .Chart.AppVersion }} has been deployed to namespace "{{ .Release.Namespace }}".
 
 ============================================================
 1. Accessing the admin UI
 ============================================================
-{{- if .Values.loadbalancer.enabled }}
-A LoadBalancer service "{{ $externalSvc }}" was created. Wait for an external IP:
+{{- if eq $lbType "LoadBalancer" }}
+The external service "{{ $externalSvc }}" is of type LoadBalancer. Wait for an external IP:
 
     kubectl -n {{ .Release.Namespace }} get svc {{ $externalSvc }} -w
 
@@ -17,13 +18,17 @@ Once an EXTERNAL-IP appears, point the following DNS names at it (CNAME or A rec
     privateapps.{{ .Values.env.domain }}
 
 Then open https://otoroshi.{{ .Values.env.domain }}/
-{{- else }}
-LoadBalancer is disabled. The service "{{ $externalSvc }}" is exposed as NodePort:
+{{- else if eq $lbType "NodePort" }}
+The external service "{{ $externalSvc }}" is of type NodePort:
 
     HTTP  → node:{{ .Values.loadbalancer.nodePort.http }}
     HTTPS → node:{{ .Values.loadbalancer.nodePort.https }}
 
 Put your own loadbalancer (MetalLB, HAProxy, NGINX, …) in front of the cluster nodes.
+{{- else }}
+The external service "{{ $externalSvc }}" is of type ClusterIP — Otoroshi is not directly
+exposed outside the cluster. Either point your own Ingress / Gateway at this service, or
+use port-forwarding (see below).
 {{- end }}
 
 Or run a quick port-forward:
