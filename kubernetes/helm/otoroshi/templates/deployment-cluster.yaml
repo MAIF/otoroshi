@@ -8,23 +8,17 @@ metadata:
   name: {{ .Values.cluster.leader.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
     app.kubernetes.io/component: leader
-    helm.sh/chart: {{ template "otoroshi.chart" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-  annotations:
   {{- with .Values.deployment.annotations }}
-  {{- toYaml . | nindent 4 }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   replicas: {{ .Values.cluster.leader.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "otoroshi.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: leader
   strategy:
   {{- with .Values.strategy }}
@@ -33,17 +27,32 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "otoroshi.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: leader
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       hostNetwork: false
+      {{- include "otoroshi.podSchedulingFields" . | nindent 6 }}
       containers:
       - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: otoroshi-leader
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.extraArgs }}
+        args:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         ports:
           - containerPort: {{ .Values.image.http }}
             name: "http"
@@ -202,6 +211,17 @@ spec:
               }
           - name: JAVA_OPTS
             value: {{ .Values.javaOpts | quote }}
+          {{- with .Values.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- with .Values.extraEnvFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.extraVolumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /ready
@@ -220,6 +240,10 @@ spec:
           {{- with .Values.resources }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+      {{- with .Values.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -227,23 +251,17 @@ metadata:
   name: {{ .Values.cluster.worker.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
     app.kubernetes.io/component: worker
-    helm.sh/chart: {{ template "otoroshi.chart" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-  annotations:
   {{- with .Values.deployment.annotations }}
-  {{- toYaml . | nindent 4 }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   replicas: {{ .Values.cluster.worker.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "otoroshi.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: worker
   strategy:
   {{- with .Values.strategy }}
@@ -252,17 +270,32 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "otoroshi.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: worker
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       hostNetwork: false
+      {{- include "otoroshi.podSchedulingFields" . | nindent 6 }}
       containers:
       - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: otoroshi-worker
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.extraArgs }}
+        args:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         ports:
           - containerPort: {{ .Values.image.http }}
             name: "http"
@@ -333,6 +366,17 @@ spec:
             value: "{{ .Values.loadbalancer.nodePort.https }}"
           - name: JAVA_OPTS
             value: {{ .Values.javaOpts | quote }}
+          {{- with .Values.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- with .Values.extraEnvFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.extraVolumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /ready
@@ -351,6 +395,10 @@ spec:
           {{- with .Values.resources }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+      {{- with .Values.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -358,13 +406,11 @@ metadata:
   name: {{ .Values.cluster.leaderApiServiceName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: leader
 spec:
   selector:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: leader
   ports:
   - port: {{ .Values.service.http }}
@@ -380,13 +426,11 @@ metadata:
   name: {{ .Values.cluster.leaderServiceName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: leader
 spec:
   selector:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: leader
   ports:
   - port: {{ .Values.service.http }}
@@ -402,13 +446,11 @@ metadata:
   name: {{ .Values.cluster.workerServiceName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
 spec:
   selector:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: worker
   ports:
   - port: {{ .Values.service.http }}
@@ -424,18 +466,27 @@ metadata:
   name: {{ .Values.cluster.leaderExternalServiceName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: leader
+  {{- with .Values.loadbalancer.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if .Values.loadbalancer.enabled }}
   type: LoadBalancer
+  {{- if .Values.loadbalancer.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.loadbalancer.loadBalancerClass | quote }}
+  {{- end }}
+  {{- with .Values.loadbalancer.sourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- else }}
   type: NodePort
   {{- end }}
   selector:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: leader
   ports:
   - port: {{ .Values.loadbalancer.http }}
@@ -451,18 +502,27 @@ metadata:
   name: {{ .Values.cluster.workerExternalServiceName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+  {{- with .Values.loadbalancer.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if .Values.loadbalancer.enabled }}
   type: LoadBalancer
+  {{- if .Values.loadbalancer.loadBalancerClass }}
+  loadBalancerClass: {{ .Values.loadbalancer.loadBalancerClass | quote }}
+  {{- end }}
+  {{- with .Values.loadbalancer.sourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- else }}
   type: NodePort
   {{- end }}
   selector:
-    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "otoroshi.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: worker
   ports:
   - port: {{ .Values.loadbalancer.http }}
