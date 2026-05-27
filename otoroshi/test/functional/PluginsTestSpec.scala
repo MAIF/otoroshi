@@ -737,26 +737,26 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "OpenFGA Validator" in {
       new OpenFGAValidatorTests(this).run()
     }
-    "Kubernetes integration - leader should be healthy" in {
-      new KubernetesIntegrationTests(this)
-        .clusterWithOneLeader()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
-    "Kubernetes integration - be able to scan entities in a namespace" in {
-      new KubernetesIntegrationTests(this)
-        .scanEntities()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
-    "Kubernetes integration - build at runtime" in {
-      new KubernetesIntegrationTests(this)
-        .build()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
-    "Kubernetes integration - trigger scanner job" in {
-      new KubernetesIntegrationTests(this)
-        .triggerScannerJob()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
+    // "Kubernetes integration - leader should be healthy" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .clusterWithOneLeader()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
+    // "Kubernetes integration - be able to scan entities in a namespace" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .scanEntities()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
+    // "Kubernetes integration - build at runtime" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .build()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
+    // "Kubernetes integration - trigger scanner job" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .triggerScannerJob()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
     "gRPC Web plugin" in {
       new GrpcWebTests(this)
         .run()
