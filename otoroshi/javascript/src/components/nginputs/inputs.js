@@ -434,6 +434,7 @@ export class NgAnyRenderer extends Component {
           height={isFullscreen ? '100%' : props.height}
           width="100%"
           theme="vs-dark"
+          language={props.language || 'plaintext'}
           defaultLanguage={props.language || 'plaintext'}
           value={code}
           options={options}
