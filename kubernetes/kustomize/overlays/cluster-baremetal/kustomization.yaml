@@ -9,6 +9,14 @@ resources:
 components:
   - ../../components/cluster-deployments
   - ../../components/initial-customization-cluster
+  # Opt-in add-ons — uncomment to enable.
+  # - ../../components/webhooks
+  # - ../../components/redis
+  # - ../../components/hpa
+  # - ../../components/coredns
+  # - ../../components/gateway-api
+  # - ../../components/pdb-cluster
+  # - ../../components/network-policy
 
 # deployment.yaml here is NOT a resource — it's a strategic-merge patch that
 # changes the cluster-deployments component's leader/worker Services from
@@ -16,12 +24,6 @@ components:
 # top-level readme.
 patches:
   - path: deployment.yaml
-  # Opt-in add-ons — uncomment to enable.
-  # - ../../components/webhooks
-  # - ../../components/redis
-  # - ../../components/hpa
-  # - ../../components/coredns
-  # - ../../components/gateway-api
 
 labels:
   - includeSelectors: false
