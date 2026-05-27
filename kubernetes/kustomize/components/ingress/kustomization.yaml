@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Ingress resource pointing the cluster's ingress controller at the in-cluster
+# `otoroshi-service`. Alternative to a LoadBalancer Service for clusters that
+# already have an ingress controller in front (ingress-nginx, traefik,
+# haproxy-ingress, …).
+#
+# Defaults assume the `oto.tools` domain shipped by `otoroshi-config`. Patch
+# `spec.rules[].host` in your overlay for a real domain.
+resources:
+  - ingress.yaml
