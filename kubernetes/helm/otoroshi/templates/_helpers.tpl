@@ -60,3 +60,62 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Pod-level scheduling and security fields, emitted under `spec.template.spec`.
+Empty values are skipped so the rendered manifest stays clean.
+*/}}
+{{- define "otoroshi.podSchedulingFields" -}}
+{{- with .Values.nodeSelector }}
+nodeSelector:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.tolerations }}
+tolerations:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.affinity }}
+affinity:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.topologySpreadConstraints }}
+topologySpreadConstraints:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- if .Values.priorityClassName }}
+priorityClassName: {{ .Values.priorityClassName | quote }}
+{{- end }}
+{{- with .Values.podSecurityContext }}
+securityContext:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{/*
+Resolve the chart-managed admin credentials, preserving values from any existing Secret
+so they stay stable across `helm upgrade`. Returns a dict with: password, clientId, clientSecret, otoroshiSecret.
+*/}}
+{{- define "otoroshi.adminCredentials" -}}
+{{- $secretName := printf "%s-admin-secret" .Values.name -}}
+{{- $existing := (lookup "v1" "Secret" .Release.Namespace $secretName) -}}
+{{- $password := .Values.env.password -}}
+{{- $clientId := .Values.env.clientId -}}
+{{- $clientSecret := .Values.env.clientSecret -}}
+{{- $otoroshiSecret := .Values.env.secret -}}
+{{- if and $existing $existing.data -}}
+  {{- if and (not $password) (hasKey $existing.data "password") }}{{- $password = (index $existing.data "password" | b64dec) -}}{{- end -}}
+  {{- if and (not $clientId) (hasKey $existing.data "clientId") }}{{- $clientId = (index $existing.data "clientId" | b64dec) -}}{{- end -}}
+  {{- if and (not $clientSecret) (hasKey $existing.data "clientSecret") }}{{- $clientSecret = (index $existing.data "clientSecret" | b64dec) -}}{{- end -}}
+  {{- if and (not $otoroshiSecret) (hasKey $existing.data "otoroshiSecret") }}{{- $otoroshiSecret = (index $existing.data "otoroshiSecret" | b64dec) -}}{{- end -}}
+{{- end -}}
+{{- if not $password }}{{- $password = randAlphaNum 32 -}}{{- end -}}
+{{- if not $clientId }}{{- $clientId = randAlphaNum 16 -}}{{- end -}}
+{{- if not $clientSecret }}{{- $clientSecret = randAlphaNum 32 -}}{{- end -}}
+{{- if not $otoroshiSecret }}{{- $otoroshiSecret = randAlphaNum 64 -}}{{- end -}}
+{{- $creds := dict "password" $password "clientId" $clientId "clientSecret" $clientSecret "otoroshiSecret" $otoroshiSecret -}}
+{{- $creds | toJson -}}
+{{- end }}
