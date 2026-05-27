@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Canonical single-mode Otoroshi Deployment + internal Service + service
+# Certificate. Shared by overlays/{simple, simple-baremetal}; the overlay only
+# needs to add its external exposure (LoadBalancer, NodePort, …) on top.
+resources:
+  - deployment.yaml
