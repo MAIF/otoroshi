@@ -2,6 +2,7 @@
 {{- $secretName := default (printf "%s-admin-secret" .Values.name) .Values.env.existingSecret -}}
 {{- $redisURL := default (printf "redis://%s-redis-master:6379" .Release.Name) .Values.env.redisURL -}}
 {{- $leaderApiFqdn := printf "%s.%s.svc.cluster.local" .Values.cluster.leaderApiServiceName .Release.Namespace -}}
+{{- $lbType := include "otoroshi.loadBalancerType" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -473,8 +474,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.loadbalancer.enabled }}
-  type: LoadBalancer
+  type: {{ $lbType }}
+  {{- if eq $lbType "LoadBalancer" }}
   {{- if .Values.loadbalancer.loadBalancerClass }}
   loadBalancerClass: {{ .Values.loadbalancer.loadBalancerClass | quote }}
   {{- end }}
@@ -482,8 +483,6 @@ spec:
   loadBalancerSourceRanges:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- else }}
-  type: NodePort
   {{- end }}
   selector:
     {{- include "otoroshi.selectorLabels" . | nindent 4 }}
@@ -492,9 +491,15 @@ spec:
   - port: {{ .Values.loadbalancer.http }}
     name: "http"
     targetPort: "http"
+    {{- if eq $lbType "NodePort" }}
+    nodePort: {{ .Values.loadbalancer.nodePort.http }}
+    {{- end }}
   - port: {{ .Values.loadbalancer.https }}
     name: "https"
     targetPort: "https"
+    {{- if eq $lbType "NodePort" }}
+    nodePort: {{ .Values.loadbalancer.nodePort.https }}
+    {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -509,8 +514,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.loadbalancer.enabled }}
-  type: LoadBalancer
+  type: {{ $lbType }}
+  {{- if eq $lbType "LoadBalancer" }}
   {{- if .Values.loadbalancer.loadBalancerClass }}
   loadBalancerClass: {{ .Values.loadbalancer.loadBalancerClass | quote }}
   {{- end }}
@@ -518,8 +523,6 @@ spec:
   loadBalancerSourceRanges:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- else }}
-  type: NodePort
   {{- end }}
   selector:
     {{- include "otoroshi.selectorLabels" . | nindent 4 }}
@@ -528,7 +531,13 @@ spec:
   - port: {{ .Values.loadbalancer.http }}
     name: "http"
     targetPort: "http"
+    {{- if eq $lbType "NodePort" }}
+    nodePort: {{ .Values.loadbalancer.nodePort.http }}
+    {{- end }}
   - port: {{ .Values.loadbalancer.https }}
     name: "https"
     targetPort: "https"
+    {{- if eq $lbType "NodePort" }}
+    nodePort: {{ .Values.loadbalancer.nodePort.https }}
+    {{- end }}
 {{- end }}
