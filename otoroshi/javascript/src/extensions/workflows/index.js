@@ -445,9 +445,10 @@ export function setupWorkflowsExtension(registerExtension) {
         return (
           <>
             <div className="modal-body">
-              <CodeInput
+              <MonacoInput
                 label="Input data"
-                mode="json"
+                language="json"
+                height={200}
                 value={this.state.data}
                 onChange={(e) => {
                   this.setState({ data: e });
@@ -477,9 +478,10 @@ export function setupWorkflowsExtension(registerExtension) {
                 </div>
               )}
               {this.state.result && (
-                <CodeInput
+                <MonacoInput
                   label="result"
-                  mode="json"
+                  language="json"
+                  height={200}
                   value={JSON.stringify(this.state.result, null, 2)}
                   onChange={(e) => ({})}
                 />
