@@ -59,10 +59,20 @@ Retrieve credentials:
 {{- end }}
 {{- if and .Values.redis.deploy .Values.redis.auth.enabled }}
 
-The bundled Redis subchart runs WITH authentication. The password lives in Secret "{{ .Release.Name }}-redis"
-(key `redis-password`) and is auto-wired into Otoroshi via the REDIS_PASSWORD env var. Read it with:
+The bundled Redis subchart (cloudpirates/redis) runs WITH authentication. The
+Secret "{{ .Release.Name }}-redis" holds both the password (`redis-password`
+key) and the full connection URL (`uri` key — `redis://default:<pwd>@<host>:6379`).
+Otoroshi is wired to consume the `uri` key directly via REDIS_URL — the Lettuce
+driver requires the password inside the URI, so a separate REDIS_PASSWORD env
+var would be ignored anyway.
+
+Read the password (e.g. for redis-cli):
 
     kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-redis -o jsonpath='{.data.redis-password}' | base64 -d
+
+Read the full connection URL:
+
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-redis -o jsonpath='{.data.uri}' | base64 -d
 {{- end }}
 
 ============================================================
