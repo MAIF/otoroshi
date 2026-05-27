@@ -7,11 +7,14 @@ resources:
   - ../../base
   - deployment.yaml
 
-# Opt-in components — uncomment any of them you need.
-# Available: ../../components/{webhooks,redis,hpa,coredns,gateway-api}
-# components:
-#   - ../../components/webhooks
-#   - ../../components/redis
+components:
+  - ../../components/initial-customization-cluster
+  # Opt-in add-ons — uncomment to enable.
+  # - ../../components/webhooks
+  # - ../../components/redis
+  # - ../../components/hpa
+  # - ../../components/coredns
+  # - ../../components/gateway-api
 
 secretGenerator:
   - name: otoroshi-admin-secret
@@ -28,6 +31,3 @@ configMapGenerator:
   - name: otoroshi-config
     literals:
       - domain=oto.tools
-  - name: otoroshi-initial-customization
-    files:
-      - initial-customization.json
