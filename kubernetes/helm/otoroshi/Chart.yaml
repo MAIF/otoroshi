@@ -1,4 +1,4 @@
-apiVersion: v3
+apiVersion: v2
 name: otoroshi
 description: An Otoroshi based Kubernetes ingress controller
 type: application
