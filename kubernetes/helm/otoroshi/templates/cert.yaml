@@ -5,9 +5,7 @@ metadata:
   name: {{ .Values.service.name }}-certificate
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
 spec:
   description: "certificate for {{ .Values.service.name }}"
   autoRenew: true
