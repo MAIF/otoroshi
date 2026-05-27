@@ -38,20 +38,19 @@ then open http://otoroshi.{{ .Values.env.domain }}:8080/ (with /etc/hosts → 12
 {{- if .Values.env.existingSecret }}
 Credentials are read from the user-provided Secret "{{ .Values.env.existingSecret }}" (keys: password, clientId, clientSecret, otoroshiSecret).
 {{- else }}
-{{- if eq .Values.env.password "password" }}
-WARNING: you are running with the default admin password "password". Override it via:
-
-    --set env.password=$(openssl rand -hex 24)
-
-or — RECOMMENDED — pre-create a Secret and reference it via env.existingSecret.
-{{- end }}
-{{- if eq .Values.env.secret "verysecretvaluethatyoumustoverwrite" }}
-WARNING: you are running with the default OTOROSHI_SECRET. Override env.secret immediately.
+{{- if not .Values.env.password }}
+The admin password was auto-generated on first install and stored in the Secret "{{ .Values.name }}-admin-secret".
+On subsequent `helm upgrade`s, the existing value is preserved (via Helm `lookup`).
+{{- else }}
+WARNING: env.password is set in values.yaml — anyone with read access to that file can see it.
+Prefer leaving env.password empty (auto-gen) or wiring env.existingSecret to a Secret you manage.
 {{- end }}
 
-The chart-managed Secret is "{{ .Values.name }}-admin-secret" (namespace "{{ .Release.Namespace }}"). Read it with:
+Retrieve credentials:
 
     kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.password}' | base64 -d
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.clientId}' | base64 -d
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.clientSecret}' | base64 -d
 {{- end }}
 
 ============================================================
