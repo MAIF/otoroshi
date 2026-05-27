@@ -66,6 +66,20 @@ export class MonacoInput extends Component {
       ...(this.props.monaco_config || {}),
     };
 
+    const editor = (
+      <MonacoEditor
+        height={this.props.height}
+        width="100%"
+        theme="vs-dark"
+        defaultLanguage={this.props.language || 'javascript'}
+        value={code}
+        options={options}
+        onChange={(newValue) => {
+          this.props.onChange(newValue);
+        }}
+      />
+    );
+
     if (this.props.editorOnly) {
       return editor;
     }
@@ -76,17 +90,7 @@ export class MonacoInput extends Component {
           {this.props.label}
         </label>
         <div className="col-sm-10">
-          <MonacoEditor
-            height={this.props.height}
-            width="100%"
-            theme="vs-dark"
-            defaultLanguage={this.props.language || 'javascript'}
-            value={code}
-            options={options}
-            onChange={(newValue) => {
-              this.props.onChange(newValue);
-            }}
-          />
+          {editor}
         </div>
       </div>
     );
