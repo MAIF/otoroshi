@@ -19,10 +19,14 @@ storage:
   backend: lettuce
 
 serviceAccount:
+  # When true (default), the chart creates a ServiceAccount.
+  # Set to false to reuse a pre-existing SA — its name must still match `name` below.
   create: true
   name: "otoroshi-admin-user"
   clusterRole: "otoroshi-admin-user"
   clusterRoleBinding: "otoroshi-admin-user"
+  # Annotations on the ServiceAccount (e.g., for IRSA / Workload Identity).
+  annotations: {}
 
 image:
   name: maif/otoroshi
@@ -36,12 +40,17 @@ deployment:
   annotations: {}
 
 service:
+  # ClusterIP service that exposes the Otoroshi data plane to in-cluster callers.
   name: otoroshi-service
+  # Alias ClusterIP service with the same selector — referenced as ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+  # so the admin / CRD-controller API has a dedicated DNS name (handy for webhooks, RBAC).
   apiName: otoroshi-api-service
   https: 8443
   http: 8080
 
 loadbalancer:
+  # When true, the external service is exposed as type: LoadBalancer.
+  # When false, it falls back to type: NodePort using the nodePort.* values below.
   enabled: true
   name: otoroshi-external-service
   https: 443
@@ -49,6 +58,12 @@ loadbalancer:
   nodePort:
     http: 31080
     https: 31443
+  # Annotations applied to the external Service (cloud-provider hints — AWS NLB, GCP Internal LB, etc.).
+  annotations: {}
+  # Restrict which client CIDRs can reach the LoadBalancer. Empty means open to the world.
+  sourceRanges: []
+  # Force a specific load balancer class (e.g., service.k8s.aws/nlb). Leave empty for the cluster default.
+  loadBalancerClass: ""
 
 env:
   storageRoot: otoroshi
@@ -57,13 +72,63 @@ env:
   # (expected keys: password, clientId, clientSecret, otoroshiSecret).
   # When empty, the chart creates its own Secret from the values below.
   existingSecret: ""
-  password: password
-  clientId: "admin-api-apikey-id"
-  clientSecret: "admin-api-apikey-secret"
-  secret: "verysecretvaluethatyoumustoverwrite"
+  # Each of the four credentials below is used as-is when non-empty. When empty, the chart
+  # auto-generates a random value AND uses `lookup` to keep the value stable across upgrades
+  # (existing Secret values are preserved). Leave empty for a secure first install.
+  password: ""
+  clientId: ""
+  clientSecret: ""
+  secret: ""
   # Redis connection URL. Leave empty to default to the bundled Redis subchart service.
   # Example: redis://redis.example.com:6379/0
   redisURL: ""
+
+# Extra env vars appended to the Otoroshi container.
+extraEnv: []
+# - name: OTOROSHI_FOO
+#   value: "bar"
+
+# Extra envFrom sources (configMap or secret references).
+extraEnvFrom: []
+# - secretRef:
+#     name: my-extra-secret
+
+# Extra volumes mounted on the pod (e.g., to inject a config file as described in the docs).
+extraVolumes: []
+# - name: oto-conf
+#   secret:
+#     secretName: otoroshi-config
+
+# Extra volumeMounts on the Otoroshi container.
+extraVolumeMounts: []
+# - name: oto-conf
+#   mountPath: /usr/app/otoroshi/conf
+#   readOnly: true
+
+# Extra command-line arguments for the container (e.g., -Dconfig.file=/usr/app/otoroshi/conf/oto.conf).
+extraArgs: []
+
+# Pod-level annotations (e.g., for Prometheus scraping, Vault injector).
+podAnnotations: {}
+
+# Extra labels on pods (do not override app.kubernetes.io/* labels).
+podLabels: {}
+
+# Pod scheduling.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+priorityClassName: ""
+
+# Pod-level security context (uid/gid, fsGroup, runAsNonRoot, …).
+podSecurityContext: {}
+# Container-level security context.
+securityContext: {}
+
+# imagePullSecrets for private registries.
+imagePullSecrets: []
+# - name: my-registry-creds
 
 # Extra JVM options. The container memory limit caps the heap via MaxRAMPercentage —
 # do not set -Xms/-Xmx unless you know what you're doing.
@@ -111,6 +176,22 @@ autoscaling:
 webhooks:
   validation: true
   sidecarInject: false
+
+# PodDisruptionBudget.
+pdb:
+  enabled: false
+  # Only one of minAvailable / maxUnavailable may be set. Default ensures one pod stays up.
+  minAvailable: 1
+  maxUnavailable: ""
+
+# NetworkPolicy. When enabled, allows ingress to the Otoroshi pods on the configured ports
+# from any namespace, plus egress everywhere. Tighten as needed via networkPolicy.extraIngress / extraEgress.
+networkPolicy:
+  enabled: false
+  # Extra ingress rules appended verbatim.
+  extraIngress: []
+  # Extra egress rules appended verbatim.
+  extraEgress: []
 
 # Cluster (Leader / Worker) mode.
 # When enabled, the chart renders two Deployments (leader + worker) and the corresponding
