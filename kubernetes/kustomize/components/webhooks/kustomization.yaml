@@ -3,3 +3,6 @@ kind: Component
 
 resources:
   - webhooks.yaml
+
+configurations:
+  - kustomizeconfig.yaml
