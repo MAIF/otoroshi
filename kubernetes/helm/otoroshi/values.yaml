@@ -1,13 +1,25 @@
 
 name: otoroshi
 
-replicas: 2
+# Number of Otoroshi replicas. `replicas` is kept for backward compatibility.
+replicaCount: 2
 terminationGracePeriodSeconds: 60
 
 global:
+  # DEPRECATED. Only kept so existing values files keep installing.
+  # New users should set storage.backend and redis.deploy explicitly.
+  # When prod=false (legacy), defaults below switch to inmemory + 1 replica + no Redis subchart
+  # — unless storage.backend / redis.deploy / replicaCount are set explicitly.
   prod: true
 
+# Otoroshi storage backend.
+# Allowed values: inmemory, lettuce, experimental-pg, postgres, cassandra, file, s3, http
+# When using lettuce, also set env.redisURL (or leave it empty to use the bundled Redis subchart).
+storage:
+  backend: lettuce
+
 serviceAccount:
+  create: true
   name: "otoroshi-admin-user"
   clusterRole: "otoroshi-admin-user"
   clusterRoleBinding: "otoroshi-admin-user"
@@ -40,12 +52,22 @@ loadbalancer:
 
 env:
   storageRoot: otoroshi
-  password: password
   domain: "oto.tools"
+  # When set, password / clientId / clientSecret / otoroshiSecret are read from this Secret
+  # (expected keys: password, clientId, clientSecret, otoroshiSecret).
+  # When empty, the chart creates its own Secret from the values below.
+  existingSecret: ""
+  password: password
   clientId: "admin-api-apikey-id"
   clientSecret: "admin-api-apikey-secret"
   secret: "verysecretvaluethatyoumustoverwrite"
-  redisURL: "redis://otoroshi-redis-master:6379"
+  # Redis connection URL. Leave empty to default to the bundled Redis subchart service.
+  # Example: redis://redis.example.com:6379/0
+  redisURL: ""
+
+# Extra JVM options. The container memory limit caps the heap via MaxRAMPercentage —
+# do not set -Xms/-Xmx unless you know what you're doing.
+javaOpts: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 resources:
   requests:
@@ -63,12 +85,12 @@ strategy:
 
 probes:
   readiness:
-    failureThreshold: 1          
+    failureThreshold: 1
     initialDelaySeconds: 60
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 2
-  liveness:  
+  liveness:
     failureThreshold: 3
     initialDelaySeconds: 60
     periodSeconds: 10
@@ -79,69 +101,55 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      targetAverageUtilization: 80
-  - type: Resource
-    resource:
-      name: memory
-      targetAverageUtilization: 80
-
-# This block overrides values for the bitnami/redis chart dependency
-# For the full set of configurable options, see:
-# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
-
-redis:
-  ## @param cluster.enabled Deploy Redis in cluster mode (master + slaves)
-  cluster:
-    enabled: false
-  ## @param sentinel.enabled Enable Redis Sentinel support
-  sentinel:
-    enabled: false
-    ## @param sentinel.usePassword Require password authentication on Sentinel instances
-    usePassword: false
-  ## @param usePassword Enable Redis AUTH for master and slaves
-  usePassword: false
-  ## @param auth.enabled Enable password authentication for Redis® (newer chart versions)
-  auth:
-    enabled: false
-  master:
-    persistence:
-      ## @param master.persistence.enabled Enable persistence on Redis(R) master nodes using Persistent Volume Claims
-      enabled: true
-      ## @param master.persistence.storageClass Persistent Volume storage class
-      ## If defined, storageClassName: <storageClass>
-      ## If set to "-", storageClassName: "", which disables dynamic provisioning
-      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
-      storageClass: ""
-      ## @param master.persistence.accessModes Persistent Volume access modes
-      accessModes:
-        - ReadWriteOnce
-      ## @param master.persistence.size Persistent Volume size
-      size: 8Gi
-      ## @param master.persistence.existingClaim Use an existing PVC which must be created manually before being bound
-      ## NOTE: Requires master.persistence.enabled: true
-      existingClaim: ""
-  replica:
-    persistence:
-      ## @param replica.persistence.enabled Enable persistence on Redis(R) replica nodes using Persistent Volume Claims
-      enabled: true
-      ## @param replica.persistence.storageClass Persistent Volume storage class
-      ## If defined, storageClassName: <storageClass>
-      ## If set to "-", storageClassName: "", which disables dynamic provisioning
-      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
-      storageClass: ""
-      ## @param replica.persistence.accessModes Persistent Volume access modes
-      accessModes:
-        - ReadWriteOnce
-      ## @param replica.persistence.size Persistent Volume size
-      size: 8Gi
-      ## @param replica.persistence.existingClaim Use an existing PVC which must be created manually before being bound
-      ## NOTE: Requires replica.persistence.enabled: true
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  # Additional v2 HPA metrics (External / Pods / Object), appended verbatim.
+  extraMetrics: []
+  # HPA scaling behavior (v2). Empty means use Kubernetes defaults.
+  behavior: {}
 
 webhooks:
   validation: true
   sidecarInject: false
 
+# Kubernetes Gateway API support.
+# Requires Gateway API CRDs (https://github.com/kubernetes-sigs/gateway-api/releases) installed on the cluster.
+gatewayApi:
+  enabled: false
+  controllerName: "otoroshi.io/gateway-controller"
+  httpListenerPort: 8080
+  httpsListenerPort: 8443
+  syncIntervalSeconds: 30
+
+# This block overrides values for the bitnami/redis chart dependency.
+# Set redis.deploy=false to skip deploying the bundled Redis and bring your own
+# (set env.redisURL accordingly).
+# For the full set of configurable options, see:
+# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
+redis:
+  # When true (default), the bundled bitnami/redis subchart is deployed.
+  deploy: true
+  cluster:
+    enabled: false
+  sentinel:
+    enabled: false
+    usePassword: false
+  usePassword: false
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 8Gi
+      existingClaim: ""
+  replica:
+    persistence:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 8Gi
+      existingClaim: ""
