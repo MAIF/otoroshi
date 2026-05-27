@@ -34,12 +34,76 @@ You can also create a `kustomization.yaml` file with a remote base
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
 
-You can also use Helm to deploy a simple otoroshi cluster on your kubernetes cluster
+### Helm
+
+The chart lives at [`kubernetes/helm/otoroshi/`](https://github.com/MAIF/otoroshi/tree/master/kubernetes/helm/otoroshi). It ships:
+
+- a single-pod **standalone mode** (default) or a **Leader / Worker cluster mode** (`cluster.enabled=true`);
+- a bundled **Redis subchart** that you can disable to bring your own (`redis.deploy=false`, set `env.redisURL`);
+- the Otoroshi **CRDs** and Kubernetes **Gateway API** integration (opt-in via `gatewayApi.enabled=true`);
+- optional **PodDisruptionBudget**, **NetworkPolicy**, **HPA**, validating / sidecar-injector **admission webhooks**, and a Helm **smoke test**.
+
+Quick install:
 
 ```sh
 helm repo add otoroshi https://maif.github.io/otoroshi/helm
 helm install my-otoroshi otoroshi/otoroshi
 ```
+
+Admin credentials (`password`, `clientId`, `clientSecret`, `OTOROSHI_SECRET`) are auto-generated on first install and stored in a Kubernetes `Secret`. They are preserved across `helm upgrade` via the Helm `lookup` function — read them back with:
+
+```sh
+kubectl -n <ns> get secret otoroshi-admin-secret -o jsonpath='{.data.password}' | base64 -d
+```
+
+Bring your own Secret instead (recommended for GitOps):
+
+```sh
+kubectl create secret generic my-otoroshi-creds \
+  --from-literal=password=$(openssl rand -hex 24) \
+  --from-literal=clientId=admin-api-apikey-id \
+  --from-literal=clientSecret=$(openssl rand -hex 32) \
+  --from-literal=otoroshiSecret=$(openssl rand -hex 32)
+
+helm install my-otoroshi otoroshi/otoroshi --set env.existingSecret=my-otoroshi-creds
+```
+
+Common overrides:
+
+```sh
+# External / managed Redis (skip bundled subchart)
+helm install my-otoroshi otoroshi/otoroshi \
+  --set redis.deploy=false \
+  --set env.redisURL=redis://redis.example.com:6379/0
+
+# Otoroshi cluster (Leader + Worker)
+helm install my-otoroshi otoroshi/otoroshi \
+  --set cluster.enabled=true \
+  --set cluster.leader.replicas=2 \
+  --set cluster.worker.replicas=3
+
+# Enable Kubernetes Gateway API support (install Gateway API CRDs separately)
+helm install my-otoroshi otoroshi/otoroshi --set gatewayApi.enabled=true
+
+# Cloud-provider LoadBalancer hints
+helm install my-otoroshi otoroshi/otoroshi \
+  --set 'loadbalancer.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type=nlb' \
+  --set 'loadbalancer.sourceRanges[0]=10.0.0.0/8'
+```
+
+:::warning
+Helm v3 only installs CRDs (under the chart's `crds/` directory) on the **first** `helm install`. When upgrading Otoroshi to a newer version, **re-apply the CRDs manually**:
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/MAIF/otoroshi/master/kubernetes/helm/otoroshi/crds/crds.yaml
+# or, via otoroshictl (includes any custom extension CRDs):
+otoroshictl resources crds | kubectl apply -f -
+```
+
+See the [updating rbac and crds](#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl) section below.
+:::
+
+For the full list of values (pod scheduling, security contexts, extraEnv, extra volumes, JAVA_OPTS, autoscaling, NetworkPolicy, …), see [`values.yaml`](https://github.com/MAIF/otoroshi/blob/master/kubernetes/helm/otoroshi/values.yaml).
 
 Below, you will find example of deployment. Do not hesitate to adapt them to your needs. Those descriptors have value placeholders that you will need to replace with actual values like 
 
