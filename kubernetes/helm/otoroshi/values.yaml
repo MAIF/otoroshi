@@ -49,21 +49,33 @@ service:
   http: 8080
 
 loadbalancer:
-  # When true, the external service is exposed as type: LoadBalancer.
-  # When false, it falls back to type: NodePort using the nodePort.* values below.
-  enabled: true
+  # Service type for the external Otoroshi service.
+  # Allowed values: LoadBalancer | NodePort | ClusterIP.
+  # - LoadBalancer (default): cloud / MetalLB provisions an external IP. Honors `annotations`,
+  #   `sourceRanges`, `loadBalancerClass`.
+  # - NodePort: exposes ports on every node — honors `nodePort.*` below.
+  # - ClusterIP: no external exposure; put your own Ingress / proxy in front.
+  # Leave empty to use the default (LoadBalancer, or NodePort if the deprecated `enabled: false` is set).
+  type: ""
   name: otoroshi-external-service
   https: 443
   http: 80
+  # NodePort values — only used when `type: NodePort`.
   nodePort:
     http: 31080
     https: 31443
   # Annotations applied to the external Service (cloud-provider hints — AWS NLB, GCP Internal LB, etc.).
   annotations: {}
-  # Restrict which client CIDRs can reach the LoadBalancer. Empty means open to the world.
+  # LoadBalancer-only: restrict which client CIDRs can reach the LoadBalancer. Empty means open to the world.
   sourceRanges: []
-  # Force a specific load balancer class (e.g., service.k8s.aws/nlb). Leave empty for the cluster default.
+  # LoadBalancer-only: force a specific load balancer class (e.g., service.k8s.aws/nlb).
+  # Leave empty for the cluster default.
   loadBalancerClass: ""
+  # DEPRECATED. Old boolean flag — kept ONLY for backward compatibility with values files
+  # that still set `loadbalancer.enabled: false`. When set, `type` is derived
+  # (enabled=true → LoadBalancer, enabled=false → NodePort) UNLESS `type` is also set
+  # explicitly (explicit `type` always wins). Migrate to `type`.
+  # enabled: ~
 
 env:
   storageRoot: otoroshi
