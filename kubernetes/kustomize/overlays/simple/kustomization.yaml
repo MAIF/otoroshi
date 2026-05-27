@@ -21,6 +21,8 @@ components:
   # - ../../components/hpa
   # - ../../components/coredns
   # - ../../components/gateway-api
+  # - ../../components/pdb-single
+  # - ../../components/network-policy
 
 # Recommended Kubernetes labelset applied to every resource (resource labels
 # and pod template labels, but NOT to .spec.selector — selectors are immutable
