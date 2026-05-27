@@ -96,6 +96,20 @@ imagePullSecrets:
 {{- end }}
 
 {{/*
+Resolve the external Service type. Honors `loadbalancer.type` first; falls back
+to the deprecated `loadbalancer.enabled` boolean (true → LoadBalancer, false → NodePort)
+for backward compatibility; defaults to LoadBalancer.
+*/}}
+{{- define "otoroshi.loadBalancerType" -}}
+{{- $t := "LoadBalancer" -}}
+{{- if hasKey .Values.loadbalancer "enabled" -}}
+  {{- if not .Values.loadbalancer.enabled -}}{{- $t = "NodePort" -}}{{- end -}}
+{{- end -}}
+{{- if .Values.loadbalancer.type -}}{{- $t = .Values.loadbalancer.type -}}{{- end -}}
+{{- $t -}}
+{{- end }}
+
+{{/*
 Resolve the chart-managed admin credentials, preserving values from any existing Secret
 so they stay stable across `helm upgrade`. Returns a dict with: password, clientId, clientSecret, otoroshiSecret.
 */}}
