@@ -100,9 +100,10 @@ Pod-template annotations that trigger a rolling restart when watched secrets cha
 Emits (when applicable):
   - checksum/admin-secret: hash of the rendered secret.yaml (chart-managed creds) OR
                            hash of the user-provided existingSecret's .data (via lookup).
-  - checksum/redis-password: hash of the bundled bitnami redis Secret's .data (via lookup).
-                             Only emitted on `helm upgrade` (lookup is empty on first install,
-                             which is fine since pods are being created fresh anyway).
+  - checksum/redis-secret: hash of the bundled cloudpirates/redis Secret's .data (via lookup) —
+                           captures rotations of the URI / password. Only emitted on
+                           `helm upgrade` (lookup is empty on first install, which is fine
+                           since pods are being created fresh anyway).
 The output is one annotation per line; the caller is responsible for the surrounding indent (nindent).
 */}}
 {{- define "otoroshi.checksumAnnotations" -}}
@@ -115,26 +116,64 @@ The output is one annotation per line; the caller is responsible for the surroun
 {{- else -}}
   {{- $annots = append $annots (printf "checksum/admin-secret: %s" (include (print .Template.BasePath "/secret.yaml") . | sha256sum)) -}}
 {{- end -}}
-{{- if and .Values.redis.deploy .Values.redis.auth.enabled (not .Values.env.redisPasswordExistingSecret.name) (not .Values.env.redisPassword) -}}
+{{- if and .Values.redis.deploy .Values.redis.auth.enabled (not .Values.env.redisURL) -}}
   {{- $redisSecretName := default (printf "%s-redis" .Release.Name) .Values.redis.auth.existingSecret -}}
   {{- $redisSecret := lookup "v1" "Secret" .Release.Namespace $redisSecretName -}}
   {{- if and $redisSecret $redisSecret.data -}}
-    {{- $annots = append $annots (printf "checksum/redis-password: %s" ($redisSecret.data | toJson | sha256sum)) -}}
+    {{- $annots = append $annots (printf "checksum/redis-secret: %s" ($redisSecret.data | toJson | sha256sum)) -}}
   {{- end -}}
 {{- end -}}
 {{- join "\n" $annots -}}
 {{- end }}
 
 {{/*
-Resolve the REDIS_PASSWORD env var entry for the Otoroshi container.
+Resolve the REDIS_URL env var entry for the Otoroshi container.
+
 Resolution order:
-  1. user-provided existing Secret (env.redisPasswordExistingSecret.name)
-  2. inline value (env.redisPassword)
-  3. bundled bitnami/redis subchart Secret when redis.deploy=true AND redis.auth.enabled=true
-       (or when user supplied redis.auth.existingSecret)
-  4. nothing — assumes passwordless Redis
-The output is a list item starting with `- name: REDIS_PASSWORD`, ready to be appended
-to a container `env:` block. Caller is responsible for the surrounding indent (use nindent).
+  1. env.redisURL non-empty → use it as an inline value (user passthrough — for
+     external/managed Redis, embed credentials in the URL itself; Otoroshi's
+     default Lettuce driver only reads the password from the URI, not from a
+     separate REDIS_PASSWORD env var).
+  2. redis.deploy=true AND redis.auth.enabled=true → sourced from the bundled
+     cloudpirates/redis Secret's `uri` key. The subchart computes the full URL
+     (`redis://default:<password>@<release>-redis.<ns>.svc:6379`) — this is
+     the recommended path because it solves both the service hostname and the
+     embedded-password requirement in one shot.
+  3. redis.deploy=true AND redis.auth.enabled=false → plain URL pointing at
+     the unauthenticated cloudpirates Service (`<release>-redis:6379`). Note:
+     auth=false leaves the data plane open to anyone in the cluster — only
+     for throwaway tests.
+  4. Neither set → no REDIS_URL is emitted; Otoroshi will fail to start.
+
+The output is a list item starting with `- name: REDIS_URL`. Caller controls indent.
+*/}}
+{{- define "otoroshi.redisURLEnv" -}}
+{{- if .Values.env.redisURL -}}
+- name: REDIS_URL
+  value: {{ .Values.env.redisURL | quote }}
+{{- else if and .Values.redis.deploy .Values.redis.auth.enabled -}}
+{{- $secretName := default (printf "%s-redis" .Release.Name) .Values.redis.auth.existingSecret -}}
+- name: REDIS_URL
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secretName }}
+      key: uri
+{{- else if .Values.redis.deploy -}}
+- name: REDIS_URL
+  value: {{ printf "redis://%s-redis:6379" .Release.Name | quote }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Resolve the REDIS_PASSWORD env var entry. ONLY emitted when the user
+explicitly sets `env.redisPassword` or `env.redisPasswordExistingSecret.name`
+— these are LEGACY knobs for non-Lettuce Redis drivers (Jedis, …). The
+default Lettuce driver IGNORES REDIS_PASSWORD and reads the password from
+the URI itself; for that path, embed the password in `env.redisURL` (or rely
+on the bundled subchart's Secret.uri — handled by otoroshi.redisURLEnv).
+
+The output is a list item starting with `- name: REDIS_PASSWORD`. Caller
+controls indent. Empty when neither knob is set.
 */}}
 {{- define "otoroshi.redisPasswordEnv" -}}
 {{- if .Values.env.redisPasswordExistingSecret.name -}}
@@ -146,14 +185,6 @@ to a container `env:` block. Caller is responsible for the surrounding indent (u
 {{- else if .Values.env.redisPassword -}}
 - name: REDIS_PASSWORD
   value: {{ .Values.env.redisPassword | quote }}
-{{- else if and .Values.redis.deploy .Values.redis.auth.enabled -}}
-{{- $secretName := default (printf "%s-redis" .Release.Name) .Values.redis.auth.existingSecret -}}
-{{- $secretKey := default "redis-password" .Values.redis.auth.existingSecretPasswordKey -}}
-- name: REDIS_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ $secretName }}
-      key:  {{ $secretKey }}
 {{- end -}}
 {{- end }}
 
