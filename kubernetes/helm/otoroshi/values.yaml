@@ -91,14 +91,25 @@ env:
   clientId: ""
   clientSecret: ""
   secret: ""
-  # Redis connection URL. Leave empty to default to the bundled Redis subchart service.
-  # Example: redis://redis.example.com:6379/0
+  # Redis connection URL.
+  #
+  # Leave empty to source REDIS_URL from the bundled cloudpirates/redis subchart:
+  # the chart's `<release>-redis` Secret has a `uri` key with the full URL
+  # (`redis://default:<password>@<release>-redis.<ns>.svc:6379`) which Otoroshi
+  # consumes via valueFrom. This is the recommended path because Otoroshi's
+  # default Lettuce driver only reads the password from the URI — a separate
+  # REDIS_PASSWORD env var is ignored.
+  #
+  # For external/managed Redis, set the full URL here with the password embedded:
+  #   redisURL: "redis://:mySecret@redis.example.com:6379/0"
+  # …or for TLS-enabled (Redis 6+):
+  #   redisURL: "rediss://:mySecret@redis.example.com:6380/0"
   redisURL: ""
-  # Redis password (read by Otoroshi as REDIS_PASSWORD). Resolution order:
-  # 1. `redisPasswordExistingSecret.name` set → read from that Secret (recommended for external Redis).
-  # 2. `redisPassword` non-empty → injected inline.
-  # 3. `redis.deploy=true` AND `redis.auth.enabled=true` (default) → read from the bundled subchart Secret.
-  # 4. None of the above → no REDIS_PASSWORD env var (assumes a passwordless Redis).
+
+  # LEGACY: REDIS_PASSWORD env var. Otoroshi's default Lettuce driver IGNORES
+  # this — embed the password in `env.redisURL` instead. These knobs are kept
+  # for the rare case where you swap APP_STORAGE to a non-Lettuce driver
+  # (Jedis, …) that does read `app.redis.password` from REDIS_PASSWORD.
   redisPassword: ""
   redisPasswordExistingSecret:
     name: ""
@@ -246,44 +257,51 @@ gatewayApi:
   httpsListenerPort: 8443
   syncIntervalSeconds: 30
 
-# This block overrides values for the bitnami/redis chart dependency.
+# This block overrides values for the cloudpirates/redis chart dependency.
 # Set redis.deploy=false to skip deploying the bundled Redis and bring your own
-# (set env.redisURL accordingly).
+# (set env.redisURL accordingly — with the password embedded in the URL).
 # For the full set of configurable options, see:
-# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
+# https://github.com/CloudPirates-io/helm-charts/blob/main/charts/redis/values.yaml
 redis:
-  # When true (default), the bundled bitnami/redis subchart is deployed.
+  # When true (default), the bundled cloudpirates/redis subchart is deployed.
   deploy: true
-  cluster:
-    enabled: false
+
+  # Redis topology. Allowed values:
+  #   standalone  — 1 instance (default; lowest footprint, sufficient for most installs)
+  #   replication — 1 master + N replicas (optionally with Sentinel)
+  #   cluster     — Redis Cluster (sharded; only if you actually need sharding)
+  architecture: standalone
+
+  # Only consulted when architecture=replication or cluster.
+  # replicaCount: 3
+
   sentinel:
+    # Only meaningful with architecture=replication.
     enabled: false
-  # SECURE BY DEFAULT: bitnami auto-generates a password on first install and persists
-  # it across `helm upgrade` via lookup. Otoroshi reads it via REDIS_PASSWORD env var
-  # (wired automatically by the chart).
+
+  # SECURE BY DEFAULT: cloudpirates auto-generates a 16-char password on first
+  # install and persists it across `helm upgrade` via a lookup of the existing
+  # Secret. Otoroshi consumes the full URL (with password embedded) from the
+  # Secret's `uri` key — no separate REDIS_PASSWORD wiring is needed (and
+  # wouldn't work anyway with the default Lettuce driver).
   #
-  # To use a pre-existing Redis password Secret, set:
+  # To use a pre-existing Secret, set:
   #   redis.auth.existingSecret: my-redis-secret
-  #   redis.auth.existingSecretPasswordKey: redis-password
+  # The Secret MUST contain a `uri` key with the full Redis URL
+  # (`redis://default:<password>@<host>:<port>`). If you only have a password,
+  # set redis.deploy=false and provide the full URL via env.redisURL instead.
   #
-  # To run Redis without auth (NOT RECOMMENDED — anyone in the cluster who can reach
-  # `redis-master:6379` can read/write Otoroshi's data plane state):
+  # To run Redis without auth (NOT RECOMMENDED — anyone in the cluster who can
+  # reach `<release>-redis:6379` can read/write Otoroshi's data plane state):
   #   redis.auth.enabled: false
   auth:
     enabled: true
-  master:
-    persistence:
-      enabled: true
-      storageClass: ""
-      accessModes:
-        - ReadWriteOnce
-      size: 8Gi
-      existingClaim: ""
-  replica:
-    persistence:
-      enabled: true
-      storageClass: ""
-      accessModes:
-        - ReadWriteOnce
-      size: 8Gi
-      existingClaim: ""
+
+  # Persistence for the Redis pod(s). cloudpirates uses a single top-level
+  # block (vs bitnami's master / replica split).
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
