@@ -4,10 +4,12 @@ kind: Kustomization
 namespace: otoroshi
 
 resources:
+  # External-facing Service (NodePort) lives in deployment.yaml.
   - ../../base
   - deployment.yaml
 
 components:
+  - ../../components/single-deployment
   - ../../components/initial-customization-single
   # Opt-in add-ons — uncomment to enable.
   # - ../../components/webhooks
@@ -15,6 +17,23 @@ components:
   # - ../../components/hpa
   # - ../../components/coredns
   # - ../../components/gateway-api
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/name: otoroshi
+      app.kubernetes.io/instance: simple-baremetal
+      app.kubernetes.io/version: "17.16.0"
+      app.kubernetes.io/part-of: otoroshi
+      app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: maif/otoroshi
+    newTag: 17.16.0-dev-jdk11
+
+replicas:
+  - name: otoroshi-deployment
+    count: 2
 
 secretGenerator:
   - name: otoroshi-admin-secret
