@@ -142,6 +142,7 @@ components:
 | [`gateway-api`](components/gateway-api/readme.md) | RBAC patch for `gateway.networking.k8s.io` | Use Otoroshi as a Gateway API controller (CRDs must be installed separately from upstream) |
 | [`pdb-single`](components/pdb-single/readme.md) / [`pdb-cluster`](components/pdb-cluster/readme.md) | PodDisruptionBudget | Survive node drains / cluster upgrades without losing all replicas |
 | [`network-policy`](components/network-policy/readme.md) | Default NetworkPolicy (permissive starting point) | Required by clusters with deny-by-default policies; tighten via overlay patches |
+| [`ingress`](components/ingress/readme.md) | `Ingress` to the in-cluster `otoroshi-service` | Alternative to LoadBalancer when an ingress controller (nginx, traefik, …) is already in front |
 
 ## Patch recipes
 
@@ -240,6 +241,68 @@ patches:
 
 For `topologySpreadConstraints`, `dnsConfig`, `hostAliases`, etc., same
 pattern — the Deployment is the canvas.
+
+## Kustomize CLI cheat-sheet
+
+These manifests target **`kubectl kustomize`** (the kustomize bundled inside
+`kubectl`) — currently v5.7.1 in kubectl 1.34.x. Everything also works with
+the standalone `kustomize` CLI (Krew install: `kubectl krew install
+kustomize`), with a couple of small differences:
+
+```sh
+# Preview the rendered manifests.
+kubectl kustomize overlays/simple
+
+# Same, with the standalone CLI.
+kustomize build overlays/simple
+
+# Apply (server-side) — the -k flag is shorthand for `kubectl kustomize | kubectl apply -f -`.
+kubectl apply -k overlays/simple
+
+# Modify the kustomization.yaml in place — only the standalone CLI has `edit`.
+kustomize edit set image       maif/otoroshi=maif/otoroshi:17.13.0      # bump tag
+kustomize edit set replicas    otoroshi-deployment=5                    # change count
+kustomize edit add component   ../../components/webhooks                # enable an add-on
+kustomize edit fix             # migrate deprecated kustomization fields (already done)
+
+# Validate against the OpenAPI schema of your cluster's K8s version
+# (run from kubernetes/kustomize/).
+kubectl kustomize overlays/simple | kubeconform -strict -ignore-missing-schemas
+```
+
+**`apiVersion` constraint**: stay on `kustomize.config.k8s.io/v1beta1` —
+kubectl-embedded kustomize (v5.7.1) explicitly rejects `/v1`. Standalone
+kustomize accepts both, but the kubectl path is the default user experience.
+
+**Hash suffix on generators**: every `secretGenerator` / `configMapGenerator`
+appends a content hash to the resource name (`otoroshi-admin-secret-abc123`).
+When you change a literal, the name changes, references are auto-rewritten,
+and pods roll. Disable per-generator with `options: { disableNameSuffixHash: true }` if you need a stable name (e.g. an external integration referencing the Secret).
+
+## Image tag
+
+The default `images:` entry in each overlay points at a **dev-quality** tag
+(`maif/otoroshi:17.16.0-dev-jdk11`) so that `kubectl kustomize` always
+produces a working render against `master`. **For production, switch to a
+release tag**:
+
+```yaml
+# overlays/your-overlay/kustomization.yaml
+images:
+  - name: maif/otoroshi
+    newTag: "17.13.0"                          # or a digest
+    # digest: sha256:abc123…                   # supply-chain pinning (overrides newTag)
+```
+
+Available release tags at https://hub.docker.com/r/maif/otoroshi/tags. For
+air-gapped or private registries, also set `newName`:
+
+```yaml
+images:
+  - name: maif/otoroshi
+    newName: registry.internal/mirror/otoroshi
+    newTag: "17.13.0"
+```
 
 ## Examples
 
