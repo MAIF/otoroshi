@@ -20,6 +20,19 @@ spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
       hostNetwork: false
+      # Soft pod anti-affinity — try to spread replicas across nodes, but
+      # don't block scheduling if it's not possible (small clusters, single
+      # nodepool, …). Drop this block or change to `requiredDuring…` for
+      # stricter placement.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    run: otoroshi-deployment
       containers:
       - image: maif/otoroshi:17.16.0-dev-jdk11
         imagePullPolicy: IfNotPresent
