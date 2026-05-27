@@ -5,13 +5,9 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-validation
-  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    app: otoroshi
-    component: otoroshi-validation-webhook
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otoroshi-validation-webhook
 webhooks:
   - name: otoroshi-admission-webhook.otoroshi.io
     rules:
@@ -44,13 +40,9 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-injector
-  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    app: otoroshi
-    component: otoroshi-validation-webhook
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otoroshi-sidecar-injector-webhook
 webhooks:
   - name: otoroshi-admission-webhook-injector.otoroshi.io
     rules:
