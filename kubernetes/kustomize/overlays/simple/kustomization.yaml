@@ -7,11 +7,17 @@ resources:
   - ../../base
   - deployment.yaml
 
-# Opt-in components — uncomment any of them you need.
-# Available: ../../components/{webhooks,redis,hpa,coredns,gateway-api}
-# components:
-#   - ../../components/webhooks
-#   - ../../components/redis
+components:
+  # Provides the otoroshi-initial-customization ConfigMap (mounted at
+  # /etc/otoroshi/initial-customization.json). Shared across the simple*
+  # overlays; cluster* overlays use initial-customization-cluster instead.
+  - ../../components/initial-customization-single
+  # Opt-in add-ons — uncomment to enable.
+  # - ../../components/webhooks
+  # - ../../components/redis
+  # - ../../components/hpa
+  # - ../../components/coredns
+  # - ../../components/gateway-api
 
 # Admin credentials. Override before deploying to anything other than a
 # throwaway cluster. For production, replace this generator with a
@@ -38,6 +44,3 @@ configMapGenerator:
   - name: otoroshi-config
     literals:
       - domain=oto.tools
-  - name: otoroshi-initial-customization
-    files:
-      - initial-customization.json
