@@ -277,6 +277,7 @@ export function ModalEditor({ node }) {
                 spread: true,
               }}
               mode="jsonOrPlaintext"
+              language="json"
               height="100%"
               value={getCodeInputValue()}
               onChange={handleCodeInputChange}
