@@ -24,6 +24,8 @@ export const ReturnedNode = {
             <NgAnyRenderer
               ngOptions={{ spread: true }}
               value={value}
+              height={300}
+              language="json"
               onChange={(e) => {
                 try {
                   props.onChange(JSON.parse(e));
@@ -52,6 +54,7 @@ export const ReturnedNode = {
         className="d-flex"
       >
         <NgAnyRenderer
+          language="json"
           ngOptions={{
             spread: true,
           }}
