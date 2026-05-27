@@ -4,10 +4,13 @@ kind: Kustomization
 namespace: otoroshi
 
 resources:
+  # External-facing Service (LoadBalancer) lives in deployment.yaml.
   - ../../base
   - deployment.yaml
 
 components:
+  # Otoroshi Deployment + internal Service + Certificate (single-mode).
+  - ../../components/single-deployment
   # Provides the otoroshi-initial-customization ConfigMap (mounted at
   # /etc/otoroshi/initial-customization.json). Shared across the simple*
   # overlays; cluster* overlays use initial-customization-cluster instead.
@@ -18,6 +21,28 @@ components:
   # - ../../components/hpa
   # - ../../components/coredns
   # - ../../components/gateway-api
+
+# Recommended Kubernetes labelset applied to every resource (resource labels
+# and pod template labels, but NOT to .spec.selector — selectors are immutable
+# on existing Deployments). Override `instance` per environment.
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/name: otoroshi
+      app.kubernetes.io/instance: simple
+      app.kubernetes.io/version: "17.16.0"
+      app.kubernetes.io/part-of: otoroshi
+      app.kubernetes.io/managed-by: kustomize
+
+# Image — bump with `kustomize edit set image maif/otoroshi=maif/otoroshi:NEW`
+images:
+  - name: maif/otoroshi
+    newTag: 17.16.0-dev-jdk11
+
+# Replicas — bump with `kustomize edit set replicas otoroshi-deployment=N`
+replicas:
+  - name: otoroshi-deployment
+    count: 2
 
 # Admin credentials. Override before deploying to anything other than a
 # throwaway cluster. For production, replace this generator with a
