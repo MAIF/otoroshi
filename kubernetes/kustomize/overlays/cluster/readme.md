@@ -59,7 +59,6 @@ components:
   - ../../components/redis
   - ../../components/pdb-cluster                     # separate PDB for leader + worker
   - ../../components/network-policy
-  - ../../components/observability
 ```
 
 HPA in cluster mode: the default `components/hpa` targets
