@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: otoroshi-pdb
+spec:
+  # Keep at least one Otoroshi pod up during voluntary disruptions
+  # (node drains, cluster upgrades). Switch to `minAvailable: 50%` if you
+  # always run ≥ 4 replicas and want a tighter floor.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
