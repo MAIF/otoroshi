@@ -1,15 +1,30 @@
-apiVersion: kustomize.config.k8s.io/v1beta1 
+apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: otoroshi
 
-bases:
-  - ../../base
-
 resources:
+  - ../../base
   - deployment.yaml
-  
-patchesStrategicMerge:
-  - deployment.yaml
-  
-# namePrefix: simple-baremetal-
+
+# Admin credentials. Override these literals before deploying to anything other
+# than a throwaway cluster. For production, replace this generator with a
+# `behavior: replace` one in a personal overlay, or feed values from a real
+# secret manager (External Secrets, SOPS, Vault, …).
+secretGenerator:
+  - name: otoroshi-admin-secret
+    literals:
+      - password=password
+      - clientId=admin-api-apikey-id
+      - clientSecret=admin-api-apikey-secret
+      - otoroshiSecret=verysecretvaluethatyoumustoverwrite
+
+# Non-secret configuration.
+configMapGenerator:
+  - name: otoroshi-config
+    literals:
+      - domain=oto.tools
+      - redisUrl=redis://redis-leader-service:6379/0
+  - name: otoroshi-initial-customization
+    files:
+      - initial-customization.json
