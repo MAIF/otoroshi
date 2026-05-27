@@ -1,0 +1,474 @@
+{{- if .Values.cluster.enabled }}
+{{- $secretName := default (printf "%s-admin-secret" .Values.name) .Values.env.existingSecret -}}
+{{- $redisURL := default (printf "redis://%s-redis-master:6379" .Release.Name) .Values.env.redisURL -}}
+{{- $leaderApiFqdn := printf "%s.%s.svc.cluster.local" .Values.cluster.leaderApiServiceName .Release.Namespace -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cluster.leader.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: leader
+    helm.sh/chart: {{ template "otoroshi.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+  annotations:
+  {{- with .Values.deployment.annotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.cluster.leader.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: leader
+  strategy:
+  {{- with .Values.strategy }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: leader
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      hostNetwork: false
+      containers:
+      - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: otoroshi-leader
+        ports:
+          - containerPort: {{ .Values.image.http }}
+            name: "http"
+            protocol: TCP
+          - containerPort: {{ .Values.image.https }}
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: {{ .Values.env.storageRoot }}
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: password
+          - name: APP_DOMAIN
+            value: {{ .Values.env.domain }}
+          - name: APP_STORAGE
+            value: {{ .Values.storage.backend | quote }}
+          - name: REDIS_URL
+            value: {{ $redisURL | quote }}
+          - name: CLUSTER_MODE
+            value: Leader
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: "true"
+          - name: CLUSTER_MTLS_ENABLED
+            value: {{ .Values.cluster.mtls.enabled | quote }}
+          - name: CLUSTER_MTLS_LOOSE
+            value: {{ .Values.cluster.mtls.loose | quote }}
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: {{ .Values.cluster.mtls.trustAll | quote }}
+          - name: CLUSTER_LEADER_URL
+            value: "https://{{ $leaderApiFqdn }}:{{ .Values.service.https }}"
+          - name: CLUSTER_LEADER_HOST
+            value: {{ $leaderApiFqdn }}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: {{ $leaderApiFqdn }}
+          - name: ADMIN_API_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientId
+          - name: CLUSTER_LEADER_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientId
+          - name: ADMIN_API_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientSecret
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientSecret
+          - name: OTOROSHI_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: otoroshiSecret
+          - name: HEALTH_LIMIT
+            value: "5000"
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: "true"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: "{{ .Values.loadbalancer.nodePort.http }}"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: "{{ .Values.loadbalancer.nodePort.https }}"
+          - name: OTOROSHI_INITIAL_CUSTOMIZATION
+            value: >
+              {
+                "config":{
+                  "tlsSettings": {
+                    "defaultDomain": "www.{{ .Values.env.domain }}",
+                    "randomIfNotFound": false
+                  },
+                  "scripts":{
+                    "enabled":true,
+                    "sinkRefs":[
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator",
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+                    ],
+                    "sinkConfig": {},
+                    "jobRefs":[
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"{{ if .Values.gatewayApi.enabled }},
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob"{{ end }}
+                    ],
+                    "jobConfig":{
+                      "KubernetesConfig": {
+                        "trust": false,
+                        "namespaces": [
+                          "*"
+                        ],
+                        "labels": {},
+                        "namespacesLabels": {},
+                        "ingressClasses": [
+                          "otoroshi"
+                        ],
+                        "defaultGroup": "default",
+                        "ingresses": false,
+                        "crds": true,
+                        "coreDnsIntegration": false,
+                        "coreDnsIntegrationDryRun": false,
+                        "kubeLeader": false,
+                        "restartDependantDeployments": false,
+                        "watch": false,
+                        "syncDaikokuApikeysOnly": false,
+                        "kubeSystemNamespace": "kube-system",
+                        "coreDnsConfigMapName": "coredns",
+                        "coreDnsDeploymentName": "coredns",
+                        "corednsPort": 53,
+                        "otoroshiServiceName": "{{ .Values.cluster.workerServiceName }}",
+                        "otoroshiNamespace": "{{ .Release.Namespace }}",
+                        "clusterDomain": "cluster.local",
+                        "syncIntervalSeconds": 60,
+                        "coreDnsEnv": null,
+                        "watchTimeoutSeconds": 60,
+                        "watchGracePeriodSeconds": 5,
+                        "mutatingWebhookName": "otoroshi-admission-webhook-injector",
+                        "validatingWebhookName": "otoroshi-admission-webhook-validation",{{ if .Values.gatewayApi.enabled }}
+                        "gatewayApi": true,
+                        "gatewayApiControllerName": "{{ .Values.gatewayApi.controllerName }}",
+                        "gatewayApiHttpListenerPort": {{ .Values.gatewayApi.httpListenerPort }},
+                        "gatewayApiHttpsListenerPort": {{ .Values.gatewayApi.httpsListenerPort }},
+                        "gatewayApiSyncIntervalSeconds": {{ .Values.gatewayApi.syncIntervalSeconds }},{{ end }}
+                        "templates": {
+                          "service-group": {},
+                          "service-descriptor": {},
+                          "apikeys": {},
+                          "global-config": {},
+                          "jwt-verifier": {},
+                          "tcp-service": {},
+                          "certificate": {},
+                          "auth-module": {},
+                          "script": {},
+                          "organizations": {},
+                          "teams": {},
+                          "webhooks": {
+                            "flags": {
+                              "requestCert": true,
+                              "originCheck": true,
+                              "tokensCheck": true,
+                              "displayEnv": false,
+                              "tlsTrace": false
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+          - name: JAVA_OPTS
+            value: {{ .Values.javaOpts | quote }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: {{ .Values.image.http }}
+          {{- with .Values.probes.readiness }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: {{ .Values.image.http }}
+          {{- with .Values.probes.liveness }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        resources:
+          {{- with .Values.resources }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cluster.worker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: worker
+    helm.sh/chart: {{ template "otoroshi.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+  annotations:
+  {{- with .Values.deployment.annotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.cluster.worker.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: worker
+  strategy:
+  {{- with .Values.strategy }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: worker
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      hostNetwork: false
+      containers:
+      - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: otoroshi-worker
+        ports:
+          - containerPort: {{ .Values.image.http }}
+            name: "http"
+            protocol: TCP
+          - containerPort: {{ .Values.image.https }}
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: {{ .Values.env.storageRoot }}
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: password
+          - name: APP_DOMAIN
+            value: {{ .Values.env.domain }}
+          - name: CLUSTER_MODE
+            value: Worker
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: "true"
+          - name: CLUSTER_MTLS_ENABLED
+            value: {{ .Values.cluster.mtls.enabled | quote }}
+          - name: CLUSTER_MTLS_LOOSE
+            value: {{ .Values.cluster.mtls.loose | quote }}
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: {{ .Values.cluster.mtls.trustAll | quote }}
+          - name: CLUSTER_LEADER_URL
+            value: "https://{{ $leaderApiFqdn }}:{{ .Values.service.https }}"
+          - name: CLUSTER_LEADER_HOST
+            value: {{ $leaderApiFqdn }}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: {{ $leaderApiFqdn }}
+          - name: ADMIN_API_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientId
+          - name: CLUSTER_LEADER_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientId
+          - name: ADMIN_API_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientSecret
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientSecret
+          - name: OTOROSHI_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: otoroshiSecret
+          - name: HEALTH_LIMIT
+            value: "5000"
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: "true"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTP
+            value: "{{ .Values.loadbalancer.nodePort.http }}"
+          - name: OTOROSHI_EXPOSED_PORTS_HTTPS
+            value: "{{ .Values.loadbalancer.nodePort.https }}"
+          - name: JAVA_OPTS
+            value: {{ .Values.javaOpts | quote }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: {{ .Values.image.http }}
+          {{- with .Values.probes.readiness }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: {{ .Values.image.http }}
+          {{- with .Values.probes.liveness }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        resources:
+          {{- with .Values.resources }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cluster.leaderApiServiceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: leader
+  ports:
+  - port: {{ .Values.service.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.service.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cluster.leaderServiceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: leader
+  ports:
+  - port: {{ .Values.service.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.service.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cluster.workerServiceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: worker
+  ports:
+  - port: {{ .Values.service.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.service.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cluster.leaderExternalServiceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+spec:
+  {{- if .Values.loadbalancer.enabled }}
+  type: LoadBalancer
+  {{- else }}
+  type: NodePort
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: leader
+  ports:
+  - port: {{ .Values.loadbalancer.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.loadbalancer.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cluster.workerExternalServiceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
+    meta.helm.sh/release-name: {{ .Release.Name }}
+spec:
+  {{- if .Values.loadbalancer.enabled }}
+  type: LoadBalancer
+  {{- else }}
+  type: NodePort
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: worker
+  ports:
+  - port: {{ .Values.loadbalancer.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.loadbalancer.https }}
+    name: "https"
+    targetPort: "https"
+{{- end }}
