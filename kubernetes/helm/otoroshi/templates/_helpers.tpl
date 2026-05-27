@@ -96,6 +96,38 @@ imagePullSecrets:
 {{- end }}
 
 {{/*
+Resolve the REDIS_PASSWORD env var entry for the Otoroshi container.
+Resolution order:
+  1. user-provided existing Secret (env.redisPasswordExistingSecret.name)
+  2. inline value (env.redisPassword)
+  3. bundled bitnami/redis subchart Secret when redis.deploy=true AND redis.auth.enabled=true
+       (or when user supplied redis.auth.existingSecret)
+  4. nothing — assumes passwordless Redis
+The output is a list item starting with `- name: REDIS_PASSWORD`, ready to be appended
+to a container `env:` block. Caller is responsible for the surrounding indent (use nindent).
+*/}}
+{{- define "otoroshi.redisPasswordEnv" -}}
+{{- if .Values.env.redisPasswordExistingSecret.name -}}
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.env.redisPasswordExistingSecret.name }}
+      key:  {{ default "redis-password" .Values.env.redisPasswordExistingSecret.key }}
+{{- else if .Values.env.redisPassword -}}
+- name: REDIS_PASSWORD
+  value: {{ .Values.env.redisPassword | quote }}
+{{- else if and .Values.redis.deploy .Values.redis.auth.enabled -}}
+{{- $secretName := default (printf "%s-redis" .Release.Name) .Values.redis.auth.existingSecret -}}
+{{- $secretKey := default "redis-password" .Values.redis.auth.existingSecretPasswordKey -}}
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ $secretName }}
+      key:  {{ $secretKey }}
+{{- end -}}
+{{- end }}
+
+{{/*
 Resolve the external Service type. Honors `loadbalancer.type` first; falls back
 to the deprecated `loadbalancer.enabled` boolean (true → LoadBalancer, false → NodePort)
 for backward compatibility; defaults to LoadBalancer.
