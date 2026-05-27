@@ -19,6 +19,6 @@ maintainers:
 icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
 dependencies:
   - name: redis
-    version: "21.2.9"
-    repository: "https://charts.bitnami.com/bitnami"
+    version: 0.29.2
+    repository: oci://registry-1.docker.io/cloudpirates
     condition: redis.deploy
