@@ -1,3 +1,5 @@
+{{- $secretName := default (printf "%s-admin-secret" .Values.name) .Values.env.existingSecret -}}
+{{- $redisURL := default (printf "redis://%s-redis-master:6379" .Release.Name) .Values.env.redisURL -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,12 +21,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ template "otoroshi.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  {{- if .Values.global.prod }}
-  replicas: {{ .Values.replicas }}
-  {{- end}}
-  {{- if not .Values.global.prod }}
-  replicas: 1
-  {{- end}}
+  replicas: {{ .Values.replicaCount | default .Values.replicas }}
   strategy:
   {{- with .Values.strategy }}
   {{- toYaml . | nindent 4 }}
@@ -53,27 +50,33 @@ spec:
           - name: APP_STORAGE_ROOT
             value: {{ .Values.env.storageRoot }}
           - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
-            value: {{ .Values.env.password }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: password
           - name: APP_DOMAIN
             value: {{ .Values.env.domain }}
           - name: APP_STORAGE
-            {{- if .Values.global.prod }}
-            value: lettuce
-            {{- end}}
-            {{- if not .Values.global.prod }}
-            value: inmemory
-            {{- end}}
+            value: {{ .Values.storage.backend | quote }}
           - name: REDIS_URL
-            # value: {{ .Values.env.redisURL }}
-            value: 'redis://{{ .Release.Name }}-redis-master:6379'
+            value: {{ $redisURL | quote }}
           - name: ADMIN_API_CLIENT_ID
-            value: {{ .Values.env.clientId }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientId
           - name: ADMIN_API_CLIENT_SECRET
-            value: {{ .Values.env.clientSecret }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: clientSecret
           - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
             value: otoroshi-api-service.{{ .Release.Namespace }}.svc.cluster.local
           - name: OTOROSHI_SECRET
-            value: {{ .Values.env.secret }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $secretName }}
+                key: otoroshiSecret
           - name: HEALTH_LIMIT
             value: "5000"
           - name: SSL_OUTSIDE_CLIENT_AUTH
@@ -100,7 +103,8 @@ spec:
                     ],
                     "sinkConfig": {},
                     "jobRefs":[
-                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"{{ if .Values.gatewayApi.enabled }},
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob"{{ end }}
                     ],
                     "jobConfig":{
                       "KubernetesConfig": {
@@ -134,7 +138,12 @@ spec:
                         "watchTimeoutSeconds": 60,
                         "watchGracePeriodSeconds": 5,
                         "mutatingWebhookName": "otoroshi-admission-webhook-injector",
-                        "validatingWebhookName": "otoroshi-admission-webhook-validation",
+                        "validatingWebhookName": "otoroshi-admission-webhook-validation",{{ if .Values.gatewayApi.enabled }}
+                        "gatewayApi": true,
+                        "gatewayApiControllerName": "{{ .Values.gatewayApi.controllerName }}",
+                        "gatewayApiHttpListenerPort": {{ .Values.gatewayApi.httpListenerPort }},
+                        "gatewayApiHttpsListenerPort": {{ .Values.gatewayApi.httpsListenerPort }},
+                        "gatewayApiSyncIntervalSeconds": {{ .Values.gatewayApi.syncIntervalSeconds }},{{ end }}
                         "templates": {
                           "service-group": {},
                           "service-descriptor": {},
@@ -163,7 +172,7 @@ spec:
                 }
               }
           - name: JAVA_OPTS
-            value: '-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
+            value: {{ .Values.javaOpts | quote }}
         readinessProbe:
           httpGet:
             path: /ready
@@ -182,7 +191,7 @@ spec:
           {{- with .Values.resources }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-        
+
 ---
 apiVersion: v1
 kind: Service
@@ -240,7 +249,7 @@ spec:
   type: LoadBalancer
   {{- end }}
   {{- if not .Values.loadbalancer.enabled }}
-  type: ClusterIP
+  type: NodePort
   {{- end }}
   selector:
     app.kubernetes.io/name: {{ template "otoroshi.name" . }}
