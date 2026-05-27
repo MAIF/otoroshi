@@ -24,11 +24,11 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` skipped / out of 
 
 ## Important
 
-- [ ] **7. `cert.yaml` (CR `proxy.otoroshi.io/v1 Certificate`) applied at install time** — needs Otoroshi running to process the CRD. Should be a `post-install` Helm hook, or be documented as eventually-consistent.
-- [ ] **8. CRDs limitation not documented** — Helm never upgrades `crds/` content (by design). No `NOTES.txt` mention; doc doesn't warn users.
-- [ ] **9. Cluster (Leader/Worker) mode absent** — `kustomize/overlays/cluster/` ships it, recommended in the docs, missing from Helm. Add a `cluster.enabled` mode.
-- [ ] **10. No `NOTES.txt`** — no admin URL, no default-credentials warning, no CRD-upgrade instructions.
-- [ ] **11. `rbac-gateway.yaml` partly duplicates `rbac.yaml`** core rules (different syntax style). Merge into one canonical `rbac.yaml` once 1a is fixed.
+- [x] **7. `cert.yaml` (CR `proxy.otoroshi.io/v1 Certificate`) applied at install time** — needs Otoroshi running to process the CRD. Should be a `post-install` Helm hook, or be documented as eventually-consistent. → **documented in NOTES.txt §4** (eventually consistent — applied as a regular resource; a Helm hook would orphan it on upgrade). `cert.yaml` was also updated to emit the correct SANs in cluster mode.
+- [x] **8. CRDs limitation not documented** — Helm never upgrades `crds/` content (by design). No `NOTES.txt` mention; doc doesn't warn users. → **documented in NOTES.txt §3** (manual `kubectl apply -f crds/` or `otoroshictl resources crds | kubectl apply -f -`).
+- [x] **9. Cluster (Leader/Worker) mode absent** — `kustomize/overlays/cluster/` ships it, recommended in the docs, missing from Helm. Add a `cluster.enabled` mode. → **added**: new `cluster.*` values block + `templates/deployment-cluster.yaml` that renders Leader + Worker Deployments and 5 Services (`leader-api`, `leader`, `worker`, `leader-external`, `worker-external`), gated on `cluster.enabled`. Single deployment, single-mode Services, and HPA are gated on `not cluster.enabled`. `webhooks.yaml` retargets the validating/sidecar-injector webhooks to `cluster.leaderApiServiceName` when in cluster mode. `cert.yaml` SANs adapt to cluster service names.
+- [x] **10. No `NOTES.txt`** — no admin URL, no default-credentials warning, no CRD-upgrade instructions. → **added** `templates/NOTES.txt` covering admin URL (adapts to single vs cluster mode), default-credentials warnings (conditional on values), CRD upgrade workflow, Certificate eventual-consistency note, conditional Gateway API and cluster mode sections.
+- [x] **11. `rbac-gateway.yaml` partly duplicates `rbac.yaml`** core rules (different syntax style). Merge into one canonical `rbac.yaml` once 1a is fixed. → **already resolved by 1a**.
 
 ---
 
@@ -49,8 +49,8 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` skipped / out of 
 
 ## Recommended order
 
-1. ✅ Block 1–6 (this PR): unblock install + plug obvious holes. **— DONE.**
-2. Block 7–11: cluster mode + post-install hooks + NOTES.txt + doc.
+1. ✅ Block 1–6: unblock install + plug obvious holes. **— DONE.**
+2. ✅ Block 7–11: cluster mode + post-install hooks + NOTES.txt + doc. **— DONE.**
 3. Block 12–21: full production-grade chart polish.
 
 ---
@@ -61,3 +61,13 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` skipped / out of 
 - `helm template … --set autoscaling.enabled=true --set gatewayApi.enabled=true` renders HPA as `autoscaling/v2`, correctly targets `otoroshi-deployment`, and adds the Gateway API job + config block.
 - `helm template … --set env.redisURL=redis://my-external:6379/0 --set env.existingSecret=my-creds` correctly routes credentials to `my-creds` and `REDIS_URL` to the external URL.
 - Bonus fix on the way: `LoadBalancer.enabled=false` branch was setting `type: ClusterIP` while keeping `nodePort` on the ports (incoherent). Switched to `type: NodePort` in that branch.
+
+---
+
+## Notes on the 7–11 batch (validation)
+
+- `helm lint otoroshi` → 0 chart(s) failed.
+- Default render (single mode): 1 Deployment + 3 Otoroshi Services (otoroshi-service, otoroshi-api-service, otoroshi-external-service) + 1 Certificate + 1 ValidatingWebhookConfiguration + RBAC + Secret + Redis subchart.
+- `helm template … --set cluster.enabled=true`: 2 Deployments (`otoroshi-leader-deployment` + `otoroshi-worker-deployment`) + 5 Otoroshi Services. `CLUSTER_MODE=Leader/Worker`, `CLUSTER_LEADER_URL` resolves to `otoroshi-leader-api-service.<ns>.svc.cluster.local:<service.https>`. Validating webhook retargets `otoroshi-leader-api-service`.
+- NOTES.txt adapts: in cluster mode it points users to `otoroshi-worker-external-service` for ingress and `otoroshi-leader-service` for the admin port-forward.
+- HPA is gated on `not cluster.enabled` for now (cluster-mode HPA would need per-deployment leader/worker config — left for later).
