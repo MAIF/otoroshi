@@ -27,15 +27,12 @@ import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.models._
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgRouteComposition, NgTarget}
 import otoroshi.next.plugins.EurekaServerSink
-import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.proxy.{BackOfficeRequest, ProxyEngine}
-import otoroshi.script.RequestHandler
+import otoroshi.next.proxy.BackOfficeRequest
 import otoroshi.security._
 import otoroshi.ssl._
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.infotoken.InfoTokenHelper
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
@@ -49,7 +46,7 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.duration._
-import scala.concurrent.{future, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class ServiceLike(entity: EntityLocationSupport, groups: Seq[String]) extends EntityLocationSupport {
