@@ -127,7 +127,7 @@ class PluginsDescription extends Component {
                       <a
                         className="btn btn-sm btn-primary"
                         target="_blank"
-                        href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html"
+                        href="https://www.otoroshi.io/docs/plugins/built-in-plugins"
                         _style={{
                           position: 'absolute',
                           right: 20,
@@ -205,7 +205,7 @@ class PluginsDescription extends Component {
                           <a
                             className="btn btn-sm btn-primary"
                             target="_blank"
-                            href="https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html"
+                            href="https://www.otoroshi.io/docs/plugins/built-in-plugins"
                             _style={{
                               position: 'absolute',
                               right: 20,
