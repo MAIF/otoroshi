@@ -75,7 +75,7 @@ class NewEngineJob extends Job {
       if (!enabled) {
         logger.info(s"You are using the legacy Otoroshi proxy engine !")
         logger.info(s"The new proxy engine is now ready for production :)")
-        logger.info(s"You can check the documentation at https://maif.github.io/otoroshi/manual/topics/engine.html")
+        logger.info(s"You can check the documentation at https://www.otoroshi.io/docs/topics/engine")
       }
     }
     ().future
