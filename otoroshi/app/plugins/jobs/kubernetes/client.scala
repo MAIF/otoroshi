@@ -45,7 +45,7 @@ object KubernetesClientNotifications {
            |
            |You have to create/update the rbac definition for you otoroshi cluster.
            |You can use otoroshictl from Cloud APIM to do it (https://cloud-apim.github.io/otoroshictl/).
-           |You can find the documentation on how to do it here: https://maif.github.io/otoroshi/manual/deploy/kubernetes.html#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
+           |You can find the documentation on how to do it here: https://www.otoroshi.io/docs/deploy/kubernetes#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
            |Basically something like `$$ otoroshictl resources rbac --namespace mynamespace | kubectl apply -f -` should be enough.
            |
            |""".stripMargin)
@@ -60,7 +60,7 @@ object KubernetesClientNotifications {
            |
            |You have to create/update the CRDs definition for you otoroshi cluster.
            |You can use otoroshictl from Cloud APIM to do it (https://cloud-apim.github.io/otoroshictl/).
-           |You can find the documentation on how to do it here: https://maif.github.io/otoroshi/manual/deploy/kubernetes.html#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
+           |You can find the documentation on how to do it here: https://www.otoroshi.io/docs/deploy/kubernetes#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
            |Basically something like `$$ otoroshictl resources crds | kubectl apply -f -` should be enough.
            |
            |""".stripMargin)
