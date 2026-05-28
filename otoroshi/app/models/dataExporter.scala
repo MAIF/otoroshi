@@ -51,7 +51,7 @@ object CustomDataExporterRefConfig {
       case Failure(e) => JsError(e.getMessage)
       case Success(v) => JsSuccess(v)
     }
-    override def writes(o: CustomDataExporterRefConfig): JsValue = Json.obj(
+    override def writes(o: CustomDataExporterRefConfig): JsValue             = Json.obj(
       "kind"   -> o.kind,
       "ref"    -> o.ref,
       "config" -> o.config
@@ -841,26 +841,26 @@ object DataExporterConfig {
   val format = new Format[DataExporterConfig] {
     override def writes(o: DataExporterConfig): JsValue = {
       o.location.jsonWithKey ++ Json.obj(
-        "type"          -> o.typ.name,
-        "enabled"       -> o.enabled,
-        "id"            -> o.id,
-        "name"          -> o.name,
-        "desc"          -> o.desc,
-        "metadata"      -> o.metadata,
-        "tags"          -> JsArray(o.tags.map(JsString.apply)),
-        "bufferSize"    -> o.bufferSize,
-        "jsonWorkers"   -> o.jsonWorkers,
-        "sendWorkers"   -> o.sendWorkers,
-        "groupSize"     -> o.groupSize,
-        "groupDuration" -> o.groupDuration.toMillis,
-        "projection"    -> o.projection,
-        "filtering"     -> Json.obj(
+        "type"            -> o.typ.name,
+        "enabled"         -> o.enabled,
+        "id"              -> o.id,
+        "name"            -> o.name,
+        "desc"            -> o.desc,
+        "metadata"        -> o.metadata,
+        "tags"            -> JsArray(o.tags.map(JsString.apply)),
+        "bufferSize"      -> o.bufferSize,
+        "jsonWorkers"     -> o.jsonWorkers,
+        "sendWorkers"     -> o.sendWorkers,
+        "groupSize"       -> o.groupSize,
+        "groupDuration"   -> o.groupDuration.toMillis,
+        "projection"      -> o.projection,
+        "filtering"       -> Json.obj(
           "include" -> JsArray(o.filtering.include),
           "exclude" -> JsArray(o.filtering.exclude)
         ),
         "customFilter"    -> o.customFilter.map(_.json).getOrElse(JsNull).asValue,
         "customTransform" -> o.customTransform.map(_.json).getOrElse(JsNull).asValue,
-        "config"        -> o.config.toJson
+        "config"          -> o.config.toJson
       )
     }
     override def reads(json: JsValue): JsResult[DataExporterConfig] = {
@@ -894,24 +894,24 @@ object DataExporterConfig {
             .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
             .filter(_.ref.trim.nonEmpty),
           config = expType match {
-            case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
-            case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
-            case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "splunk"        => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "datadog"       => DatadogCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "newrelic"      => NewRelicCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "workflow"      => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
-            case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
-            case "file"          =>
+            case "elastic"        => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
+            case "webhook"        => Webhook.format.reads((json \ "config").as[JsObject]).get
+            case "http"           => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "splunk"         => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "datadog"        => DatadogCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "newrelic"       => NewRelicCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "workflow"       => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "kafka"          => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
+            case "pulsar"         => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
+            case "file"           =>
               FileSettings(
                 path = (json \ "config" \ "path").as[String],
                 maxNumberOfFile = (json \ "config" \ "maxNumberOfFile").asOpt[Int].filter(_ > 0),
                 maxFileSize = (json \ "config" \ "maxFileSize").as[Long]
               )
-            case "s3"            =>
+            case "s3"             =>
               (json \ "config").as(S3ExporterSettings.format)
-            case "goreplays3"    =>
+            case "goreplays3"     =>
               GoReplayS3Settings(
                 (json \ "config" \ "s3").as(S3Configuration.format),
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -921,7 +921,7 @@ object DataExporterConfig {
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
               )
-            case "goreplayfile"  =>
+            case "goreplayfile"   =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -931,24 +931,24 @@ object DataExporterConfig {
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
               )
-            case "mailer"        => MailerSettings.format.reads((json \ "config").as[JsObject]).get
-            case "custom"        => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
-            case "console"       => ConsoleSettings()
-            case "metrics"       => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
-            case "custommetrics" => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
-            case "wasm"          => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "otlp-metrics"  => OtlpMetricsExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "otlp-logs"     => OtlpLogsExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "tcp"           => TCPExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "udp"           => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "jms"           => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "postgresql"    => PostgresExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "mailer"         => MailerSettings.format.reads((json \ "config").as[JsObject]).get
+            case "custom"         => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
+            case "console"        => ConsoleSettings()
+            case "metrics"        => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
+            case "custommetrics"  => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
+            case "wasm"           => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "otlp-metrics"   => OtlpMetricsExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "otlp-logs"      => OtlpLogsExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "tcp"            => TCPExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "udp"            => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "syslog"         => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "jms"            => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "postgresql"     => PostgresExporterSettings.format.reads((json \ "config").as[JsObject]).get
             case "user-analytics" =>
               otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings.format
                 .reads((json \ "config").as[JsObject])
                 .get
-            case v               => throw new RuntimeException(s"Bad config type: '${v}'")
+            case v                => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )
       } match {
@@ -1111,35 +1111,35 @@ object DataExporterConfigType {
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
-      case "kafka"         => Kafka
-      case "pulsar"        => Pulsar
-      case "elastic"       => Elastic
-      case "webhook"       => Webhook
-      case "http"          => Http
-      case "workflow"      => Workflow
-      case "splunk"        => Splunk
-      case "datadog"       => Datadog
-      case "newrelic"      => NewRelic
-      case "file"          => File
-      case "goreplayfile"  => GoReplayFile
-      case "goreplays3"    => GoReplayS3
-      case "s3"            => S3File
-      case "mailer"        => Mailer
-      case "none"          => None
-      case "custom"        => Custom
-      case "console"       => Console
-      case "metrics"       => Metrics
-      case "custommetrics" => CustomMetrics
-      case "wasm"          => Wasm
-      case "otlp-metrics"  => OtlpMetrics
-      case "otlp-logs"     => OtlpLogs
-      case "tcp"           => TCP
-      case "udp"           => UDP
-      case "syslog"        => Syslog
-      case "jms"           => JMS
-      case "postgresql"    => Postgres
+      case "kafka"          => Kafka
+      case "pulsar"         => Pulsar
+      case "elastic"        => Elastic
+      case "webhook"        => Webhook
+      case "http"           => Http
+      case "workflow"       => Workflow
+      case "splunk"         => Splunk
+      case "datadog"        => Datadog
+      case "newrelic"       => NewRelic
+      case "file"           => File
+      case "goreplayfile"   => GoReplayFile
+      case "goreplays3"     => GoReplayS3
+      case "s3"             => S3File
+      case "mailer"         => Mailer
+      case "none"           => None
+      case "custom"         => Custom
+      case "console"        => Console
+      case "metrics"        => Metrics
+      case "custommetrics"  => CustomMetrics
+      case "wasm"           => Wasm
+      case "otlp-metrics"   => OtlpMetrics
+      case "otlp-logs"      => OtlpLogs
+      case "tcp"            => TCP
+      case "udp"            => UDP
+      case "syslog"         => Syslog
+      case "jms"            => JMS
+      case "postgresql"     => Postgres
       case "user-analytics" => UserAnalytics
-      case _               => None
+      case _                => None
     }
   }
 }
@@ -1179,42 +1179,42 @@ case class DataExporterConfig(
 
   def exporter()(implicit ec: ExecutionContext, env: Env): DataExporter = {
     config match {
-      case c: KafkaConfig                 => new KafkaExporter(this)
-      case c: PulsarConfig                => new PulsarExporter(this)
-      case c: ElasticAnalyticsConfig      => new ElasticExporter(this)
-      case c: Webhook                     => new WebhookExporter(this)
-      case c: HttpCallSettings            => new HttpCallExporter(this)
-      case c: WorkflowCallSettings        => new WorkflowCallExporter(this)
-      case c: DatadogCallSettings         => new DatadogCallExporter(this)
-      case c: NewRelicCallSettings        => new NewRelicCallExporter(this)
-      case c: SplunkCallSettings          => new SplunkCallExporter(this)
-      case c: FileSettings                => new FileAppenderExporter(this)
-      case c: S3ExporterSettings          => new S3Exporter(this)
-      case c: GoReplayFileSettings        => new GoReplayFileAppenderExporter(this)
-      case c: GoReplayS3Settings          => new GoReplayS3Exporter(this)
-      case c: NoneMailerSettings          => new GenericMailerExporter(this)
-      case c: ConsoleMailerSettings       => new GenericMailerExporter(this)
-      case c: MailjetSettings             => new GenericMailerExporter(this)
-      case c: MailgunSettings             => new GenericMailerExporter(this)
-      case c: SendgridSettings            => new GenericMailerExporter(this)
-      case c: ScalewayTEMSettings         => new GenericMailerExporter(this)
-      case c: MailPaceSettings            => new GenericMailerExporter(this)
-      case c: GenericMailerSettings       => new GenericMailerExporter(this)
-      case c: ExporterRef                 => new CustomExporter(this)
-      case c: ConsoleSettings             => new ConsoleExporter(this)
-      case c: MetricsSettings             => new MetricsExporter(this)
-      case c: CustomMetricsSettings       => new CustomMetricsExporter(this)
-      case c: WasmExporterSettings        => new WasmExporter(this)
-      case c: OtlpMetricsExporterSettings => new OtlpMetricsExporter(this)
-      case c: OtlpLogsExporterSettings    => new OtlpLogExporter(this)
-      case c: TCPExporterSettings         => new TCPExporter(this)
-      case c: UDPExporterSettings         => new UDPExporter(this)
-      case c: SyslogExporterSettings      => new SyslogExporter(this)
-      case c: JMSExporterSettings         => new JMSExporter(this)
-      case c: PostgresExporterSettings    => new PostgresExporter(this)
+      case c: KafkaConfig                                                    => new KafkaExporter(this)
+      case c: PulsarConfig                                                   => new PulsarExporter(this)
+      case c: ElasticAnalyticsConfig                                         => new ElasticExporter(this)
+      case c: Webhook                                                        => new WebhookExporter(this)
+      case c: HttpCallSettings                                               => new HttpCallExporter(this)
+      case c: WorkflowCallSettings                                           => new WorkflowCallExporter(this)
+      case c: DatadogCallSettings                                            => new DatadogCallExporter(this)
+      case c: NewRelicCallSettings                                           => new NewRelicCallExporter(this)
+      case c: SplunkCallSettings                                             => new SplunkCallExporter(this)
+      case c: FileSettings                                                   => new FileAppenderExporter(this)
+      case c: S3ExporterSettings                                             => new S3Exporter(this)
+      case c: GoReplayFileSettings                                           => new GoReplayFileAppenderExporter(this)
+      case c: GoReplayS3Settings                                             => new GoReplayS3Exporter(this)
+      case c: NoneMailerSettings                                             => new GenericMailerExporter(this)
+      case c: ConsoleMailerSettings                                          => new GenericMailerExporter(this)
+      case c: MailjetSettings                                                => new GenericMailerExporter(this)
+      case c: MailgunSettings                                                => new GenericMailerExporter(this)
+      case c: SendgridSettings                                               => new GenericMailerExporter(this)
+      case c: ScalewayTEMSettings                                            => new GenericMailerExporter(this)
+      case c: MailPaceSettings                                               => new GenericMailerExporter(this)
+      case c: GenericMailerSettings                                          => new GenericMailerExporter(this)
+      case c: ExporterRef                                                    => new CustomExporter(this)
+      case c: ConsoleSettings                                                => new ConsoleExporter(this)
+      case c: MetricsSettings                                                => new MetricsExporter(this)
+      case c: CustomMetricsSettings                                          => new CustomMetricsExporter(this)
+      case c: WasmExporterSettings                                           => new WasmExporter(this)
+      case c: OtlpMetricsExporterSettings                                    => new OtlpMetricsExporter(this)
+      case c: OtlpLogsExporterSettings                                       => new OtlpLogExporter(this)
+      case c: TCPExporterSettings                                            => new TCPExporter(this)
+      case c: UDPExporterSettings                                            => new UDPExporter(this)
+      case c: SyslogExporterSettings                                         => new SyslogExporter(this)
+      case c: JMSExporterSettings                                            => new JMSExporter(this)
+      case c: PostgresExporterSettings                                       => new PostgresExporter(this)
       case c: otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings =>
         new otoroshi.next.analytics.exporter.UserAnalyticsExporter(this)
-      case _                              => throw new RuntimeException("unsupported exporter type")
+      case _                                                                 => throw new RuntimeException("unsupported exporter type")
     }
   }
 }

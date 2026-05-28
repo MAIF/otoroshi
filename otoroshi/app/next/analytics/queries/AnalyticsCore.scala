@@ -2,10 +2,7 @@ package otoroshi.next.analytics.queries
 
 import io.vertx.pgclient.PgPool
 import otoroshi.env.Env
-import otoroshi.next.analytics.exporter.{
-  UserAnalyticsExporterRegistry,
-  UserAnalyticsExporterSettings
-}
+import otoroshi.next.analytics.exporter.{UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -21,7 +18,7 @@ import scala.util.Try
 // ============================================================================
 
 sealed trait AnalyticsShape { def name: String }
-object AnalyticsShape {
+object AnalyticsShape       {
   case object Timeseries extends AnalyticsShape { val name = "timeseries" }
   case object TopN       extends AnalyticsShape { val name = "topN"       }
   case object Pie        extends AnalyticsShape { val name = "pie"        }
@@ -53,9 +50,9 @@ object Filters {
     val trimmed = s.trim
     if (trimmed == "now") Instant.now()
     else if (trimmed.startsWith("now-")) {
-      val rest    = trimmed.drop(4)
-      val numStr  = rest.takeWhile(_.isDigit)
-      val unit    = rest.dropWhile(_.isDigit)
+      val rest   = trimmed.drop(4)
+      val numStr = rest.takeWhile(_.isDigit)
+      val unit   = rest.dropWhile(_.isDigit)
       Try(numStr.toLong).toOption match {
         case None      => fallback
         case Some(num) =>
@@ -75,8 +72,8 @@ object Filters {
 
   def fromJson(json: JsValue): Filters = {
     val nowMinusHour = Instant.now().minusSeconds(3600)
-    val from = (json \ "from").asOpt[String].map(parseTime(_, nowMinusHour)).getOrElse(nowMinusHour)
-    val to   = (json \ "to").asOpt[String].map(parseTime(_, Instant.now())).getOrElse(Instant.now())
+    val from         = (json \ "from").asOpt[String].map(parseTime(_, nowMinusHour)).getOrElse(nowMinusHour)
+    val to           = (json \ "to").asOpt[String].map(parseTime(_, Instant.now())).getOrElse(Instant.now())
     Filters(
       from = from,
       to = to,
@@ -102,7 +99,8 @@ case class Bucket(name: String, seconds: Long) {
   /** PostgreSQL interval literal for generate_series step. */
   def intervalLiteral: String = s"INTERVAL '$seconds seconds'"
 
-  /** Build a series SQL fragment producing one TIMESTAMPTZ row per bucket
+  /**
+   * Build a series SQL fragment producing one TIMESTAMPTZ row per bucket
    *  between the `fromExpr` and `toExpr` parameters (themselves SQL expressions
    *  evaluating to TIMESTAMPTZ values, e.g. `$1::timestamptz`).
    */
@@ -129,7 +127,8 @@ object Bucket {
 
 object Bucketing {
 
-  /** Picks an appropriate bucket size based on the time range:
+  /**
+   * Picks an appropriate bucket size based on the time range:
    *   - ≤ 1h   → 1m
    *   - ≤ 24h  → 1h
    *   - ≤ 7d   → 6h
@@ -187,7 +186,7 @@ object FilterSql {
       frags += "err = ?"; values += java.lang.Boolean.valueOf(v)
     }
 
-    var idx = startIndex
+    var idx      = startIndex
     val numbered = frags.toList.map { f =>
       val out = f.replace("?", s"$$$idx")
       idx += 1
@@ -236,8 +235,8 @@ trait AnalyticsQuery {
   def description: String
   def shape: AnalyticsShape
   def defaultWidget: String
-  def params: Seq[QueryParam]      = Seq.empty
-  def supportsCompare: Boolean     = false
+  def params: Seq[QueryParam]  = Seq.empty
+  def supportsCompare: Boolean = false
 
   def execute(
       filters: Filters,
@@ -348,7 +347,7 @@ class QueryExecutor(registry: AnalyticsQueryRegistry, cache: QueryCache) {
                 )
                 Future.successful(Right(js))
 
-              case None    =>
+              case None =>
                 val started = System.currentTimeMillis()
                 val mainFu  = query.execute(filters, params, bucket, settings, pool)
 
@@ -391,7 +390,9 @@ class QueryExecutor(registry: AnalyticsQueryRegistry, cache: QueryCache) {
   }
 
   private def makeKey(queryId: String, f: Filters, params: JsObject, bucket: Bucket): String = {
-    val s = s"$queryId|${f.from}|${f.to}|${f.tenant.getOrElse("")}|${f.routeId.getOrElse("")}|${f.apiId.getOrElse("")}|${f.apikeyId.getOrElse("")}|${f.groupId.getOrElse("")}|${f.err.map(_.toString).getOrElse("")}|${bucket.name}|${params.stringify}"
+    val s  =
+      s"$queryId|${f.from}|${f.to}|${f.tenant.getOrElse("")}|${f.routeId.getOrElse("")}|${f.apiId.getOrElse("")}|${f.apikeyId
+        .getOrElse("")}|${f.groupId.getOrElse("")}|${f.err.map(_.toString).getOrElse("")}|${bucket.name}|${params.stringify}"
     val md = java.security.MessageDigest.getInstance("SHA-256").digest(s.getBytes("UTF-8"))
     md.map("%02x".format(_)).mkString
   }

@@ -5,11 +5,7 @@ import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
-import otoroshi.next.analytics.exporter.{
-  AnalyticsSchema,
-  UserAnalyticsExporterRegistry,
-  UserAnalyticsExporterSettings
-}
+import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
 import otoroshi.next.analytics.queries.{AnalyticsRuntime, Filters}
 import otoroshi.storage.drivers.reactivepg.pgimplicits._
 import otoroshi.utils.syntax.implicits._
@@ -29,12 +25,15 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   // ----- helpers -------------------------------------------------------------
 
-  private def requireSuperAdmin(ctx: ApiActionContext[_])(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
+  private def requireSuperAdmin(
+      ctx: ApiActionContext[_]
+  )(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     if (ctx.userIsSuperAdmin) f
     else Forbidden(Json.obj("error" -> "super admin only")).future
   }
 
-  /** Allow access if the caller is a super-admin OR has read access on the
+  /**
+   * Allow access if the caller is a super-admin OR has read access on the
    *  current tenant (resolved from the `Otoroshi-Tenant` header). The current
    *  tenant value is also returned so the caller can inject it into the
    *  query filters.
@@ -42,11 +41,11 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   private def requireTenantAccess(
       ctx: ApiActionContext[_]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
-    val tenant = ctx.currentTenant
+    val tenant    = ctx.currentTenant
     val canAccess =
       env.bypassUserRightsCheck ||
-        ctx.userIsSuperAdmin ||
-        ctx.backOfficeUser.toOption.flatten.exists(_.rights.canReadTenant(tenant))
+      ctx.userIsSuperAdmin ||
+      ctx.backOfficeUser.toOption.flatten.exists(_.rights.canReadTenant(tenant))
     if (canAccess) f(tenant.value)
     else Forbidden(Json.obj("error" -> s"no access to tenant '${tenant.value}'")).future
   }
@@ -162,9 +161,9 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           case None         =>
             NotFound(Json.obj("error" -> s"no user-analytics exporter with id '$id'")).future
           case Some(target) =>
-            val key = UserAnalyticsExporterSettings.ActiveMetadataKey
+            val key      = UserAnalyticsExporterSettings.ActiveMetadataKey
             val toUnflag = analyticsExporters.filter(_.id != id).map(_.metadata).count(_.get(key).contains("true"))
-            val updates = analyticsExporters.map { c =>
+            val updates  = analyticsExporters.map { c =>
               if (c.id == id) c.copy(metadata = c.metadata + (key -> "true"))
               else c.copy(metadata = c.metadata - key)
             }
@@ -197,21 +196,21 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     if (env.isDev) {
       requireSuperAdmin(ctx) {
         requireLeader {
-          val body = ctx.request.body
+          val body       = ctx.request.body
           val sourceJson = (body \ "source").asOpt[JsValue].getOrElse(Json.obj())
-          val batchSize = (body \ "batchSize").asOpt[Int].getOrElse(5000).max(100).min(50000)
-          val dryRun = (body \ "dryRun").asOpt[Boolean].getOrElse(false)
+          val batchSize  = (body \ "batchSize").asOpt[Int].getOrElse(5000).max(100).min(50000)
+          val dryRun     = (body \ "dryRun").asOpt[Boolean].getOrElse(false)
           otoroshi.next.analytics.migration.LegacyPgMigrator.parseSourceFromJson(sourceJson) match {
-            case Left(err) => BadRequest(Json.obj("error" -> err)).future
+            case Left(err)     => BadRequest(Json.obj("error" -> err)).future
             case Right(source) =>
               otoroshi.next.analytics.migration.LegacyPgMigrator
                 .migrate(source, batchSize, dryRun)
                 .map {
-                  case Left(err) =>
+                  case Left(err)     =>
                     err match {
                       case e if e.contains("no active") =>
                         PreconditionFailed(Json.obj("error" -> e))
-                      case e =>
+                      case e                            =>
                         InternalServerError(Json.obj("error" -> e))
                     }
                   case Right(result) => Ok(result.toJson)

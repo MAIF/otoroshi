@@ -16,7 +16,18 @@ import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models._
 import otoroshi.next.analytics.models.{UserAlert, UserDashboard}
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
-import otoroshi.next.plugins.api.{NgAccessValidator, NgBackendCall, NgNamedPlugin, NgPluginVisibility, NgPreRouting, NgRequestSink, NgRequestTransformer, NgRouteMatcher, NgTunnelHandler, NgWebsocketPlugin}
+import otoroshi.next.plugins.api.{
+  NgAccessValidator,
+  NgBackendCall,
+  NgNamedPlugin,
+  NgPluginVisibility,
+  NgPreRouting,
+  NgRequestSink,
+  NgRequestTransformer,
+  NgRouteMatcher,
+  NgTunnelHandler,
+  NgWebsocketPlugin
+}
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert

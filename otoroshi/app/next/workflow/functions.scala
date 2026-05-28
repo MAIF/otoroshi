@@ -982,7 +982,8 @@ class SystemCallFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("command"),
       "properties" -> Json.obj(
-        "command" -> Json.obj("type" -> "array", "items" -> Json.obj("type" -> "string"), "description" -> "The command to execute"),
+        "command" -> Json
+          .obj("type" -> "array", "items" -> Json.obj("type" -> "string"), "description" -> "The command to execute"),
         "async"   -> Json.obj("type" -> "boolean", "description" -> "Run the command in async mode")
       )
     )
@@ -1178,7 +1179,11 @@ class StoreGetAllFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("keys"),
       "properties" -> Json.obj(
-        "keys" -> Json.obj("type" -> "array", "items" -> Json.obj("type" -> "string"), "description" -> "The keys to get")
+        "keys" -> Json.obj(
+          "type"        -> "array",
+          "items"       -> Json.obj("type" -> "string"),
+          "description" -> "The keys to get"
+        )
       )
     )
   )

@@ -244,7 +244,7 @@ case class DistributedRedisThrottlingStrategyConfig(
     with NgPluginConfig {
   def id = "DistributedRedisThrottlingStrategyConfig"
 
-  override def json: JsValue =
+  override def json: JsValue                         =
     Json.obj("id" -> id, "quota" -> quota.json, "bucketKey" -> bucketKey)
 
   override def fmt: Format[ThrottlingStrategyConfig] =
@@ -262,7 +262,7 @@ object DistributedRedisThrottlingStrategyConfig {
       case Failure(exception) => JsError(exception.getMessage)
       case Success(value)     => JsSuccess(value)
     }
-    override def writes(o: DistributedRedisThrottlingStrategyConfig): JsValue            = o.json
+    override def writes(o: DistributedRedisThrottlingStrategyConfig): JsValue             = o.json
   }
 }
 
@@ -271,8 +271,11 @@ object DistributedRedisThrottlingStrategyConfig {
 // (atomic INCR + EXPIRE-if-fresh) inherited from the ThrottlingStrategy trait, but runs on a Redis
 // pool that is independent from the otoroshi storage backend, so distribution is guaranteed even
 // when the storage is in-memory, postgres, cassandra, etc.
-case class DistributedRedisThrottlingStrategy(bucketId: String, config: DistributedRedisThrottlingStrategyConfig, clientF: Function0[otoroshi.storage.RedisLike])
-    extends ThrottlingStrategy {
+case class DistributedRedisThrottlingStrategy(
+    bucketId: String,
+    config: DistributedRedisThrottlingStrategyConfig,
+    clientF: Function0[otoroshi.storage.RedisLike]
+) extends ThrottlingStrategy {
   def client(): otoroshi.storage.RedisLike = clientF()
 }
 
@@ -283,7 +286,7 @@ case class LuaDistributedRedisThrottlingStrategyConfig(
     with NgPluginConfig {
   def id = "LuaDistributedRedisThrottlingStrategyConfig"
 
-  override def json: JsValue =
+  override def json: JsValue                         =
     Json.obj("id" -> id, "quota" -> quota.json, "bucketKey" -> bucketKey)
 
   override def fmt: Format[ThrottlingStrategyConfig] =
@@ -301,7 +304,7 @@ object LuaDistributedRedisThrottlingStrategyConfig {
       case Failure(exception) => JsError(exception.getMessage)
       case Success(value)     => JsSuccess(value)
     }
-    override def writes(o: LuaDistributedRedisThrottlingStrategyConfig): JsValue            = o.json
+    override def writes(o: LuaDistributedRedisThrottlingStrategyConfig): JsValue             = o.json
   }
 }
 
@@ -382,13 +385,23 @@ case class LuaDistributedRedisThrottlingStrategy(
       case l: LettuceRedisStandaloneAndSentinels =>
         Some(
           l.redis
-            .eval[java.util.List[Object]](LuaDistributedRedisThrottlingStrategy.script, ScriptOutputType.MULTI, keys, args: _*)
+            .eval[java.util.List[Object]](
+              LuaDistributedRedisThrottlingStrategy.script,
+              ScriptOutputType.MULTI,
+              keys,
+              args: _*
+            )
             .toScala
         )
       case l: LettuceRedisCluster                =>
         Some(
           l.redis
-            .eval[java.util.List[Object]](LuaDistributedRedisThrottlingStrategy.script, ScriptOutputType.MULTI, keys, args: _*)
+            .eval[java.util.List[Object]](
+              LuaDistributedRedisThrottlingStrategy.script,
+              ScriptOutputType.MULTI,
+              keys,
+              args: _*
+            )
             .toScala
         )
       case _                                     => None
@@ -459,7 +472,8 @@ object FixedWindowStrategyConfig {
   }
 }
 
-case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConfig, env: Env) extends ThrottlingStrategy {
+case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConfig, env: Env)
+    extends ThrottlingStrategy {
 
   def client(): otoroshi.storage.RedisLike = env.datastores.redis
 
@@ -849,14 +863,14 @@ object ThrottlingStrategyConfig {
         case JsNull => JsError("null value")
         case value  =>
           value.selectAsOptString("id") match {
-            case Some("LocalTokensBucketStrategyConfig")        => LocalTokensBucketStrategyConfig.format.reads(value)
-            case Some("LegacyThrottlingStrategyConfig")         => LegacyThrottlingStrategyConfig.format.reads(value)
-            case Some("FixedWindowStrategyConfig")              => FixedWindowStrategyConfig.format.reads(value)
-            case Some("DistributedRedisThrottlingStrategyConfig") =>
+            case Some("LocalTokensBucketStrategyConfig")             => LocalTokensBucketStrategyConfig.format.reads(value)
+            case Some("LegacyThrottlingStrategyConfig")              => LegacyThrottlingStrategyConfig.format.reads(value)
+            case Some("FixedWindowStrategyConfig")                   => FixedWindowStrategyConfig.format.reads(value)
+            case Some("DistributedRedisThrottlingStrategyConfig")    =>
               DistributedRedisThrottlingStrategyConfig.format.reads(value)
             case Some("LuaDistributedRedisThrottlingStrategyConfig") =>
               LuaDistributedRedisThrottlingStrategyConfig.format.reads(value)
-            case _                                              => JsError("unknown type")
+            case _                                                   => JsError("unknown type")
           }
       }
     }
@@ -1144,7 +1158,7 @@ object ThrottlingStrategy {
     val conf = config.json
 
     config.id match {
-      case "LocalTokensBucketStrategyConfig" =>
+      case "LocalTokensBucketStrategyConfig"             =>
         LocalTokensBucketStrategy(
           key,
           LocalTokensBucketStrategyConfig.format
@@ -1152,7 +1166,7 @@ object ThrottlingStrategy {
             .getOrElse(LocalTokensBucketStrategyConfig()),
           env
         )
-      case "FixedWindowStrategyConfig"       =>
+      case "FixedWindowStrategyConfig"                   =>
         FixedWindowStrategy(
           key,
           FixedWindowStrategyConfig.format
@@ -1160,7 +1174,7 @@ object ThrottlingStrategy {
             .getOrElse(FixedWindowStrategyConfig()),
           env
         )
-      case "LegacyThrottlingStrategyConfig"  =>
+      case "LegacyThrottlingStrategyConfig"              =>
         LegacyThrottlingStrategy(
           key,
           LegacyThrottlingStrategyConfig.format
@@ -1168,7 +1182,7 @@ object ThrottlingStrategy {
             .getOrElse(LegacyThrottlingStrategyConfig()),
           env
         )
-      case "DistributedRedisThrottlingStrategyConfig" =>
+      case "DistributedRedisThrottlingStrategyConfig"    =>
         DistributedRedisThrottlingStrategy(
           key,
           DistributedRedisThrottlingStrategyConfig.format
@@ -1189,7 +1203,11 @@ object ThrottlingStrategy {
 
   def default(clientId: String)(implicit env: Env): ThrottlingStrategy =
     if (env.rateLimiter.distributedRedisSettings.enabled) {
-      DistributedRedisThrottlingStrategy(clientId, DistributedRedisThrottlingStrategyConfig(), () => env.rateLimiter.globalRateLimiterRedis)
+      DistributedRedisThrottlingStrategy(
+        clientId,
+        DistributedRedisThrottlingStrategyConfig(),
+        () => env.rateLimiter.globalRateLimiterRedis
+      )
     } else {
       LegacyThrottlingStrategy(clientId, LegacyThrottlingStrategyConfig(), env)
     }
@@ -1200,44 +1218,48 @@ class RateLimiter(_env: Env) {
   implicit val ec: ExecutionContext = _env.otoroshiExecutionContext
 
   private val distributedRedisId = "otoroshi-rate-limiter-distributed-redis"
-  private val strategies = new UnboundedTrieMap[String, ThrottlingStrategy]()
+  private val strategies         = new UnboundedTrieMap[String, ThrottlingStrategy]()
 
   lazy val distributedRedisSettings: RateLimiterDistributedRedisSettings = RateLimiterDistributedRedisSettings(
     enabled = _env.configuration
       .getOptionalWithFileSupport[Boolean]("otoroshi.rate-limiter.distributed-redis.enabled")
       .getOrElse(false),
     uris = (_env.configuration
-        .getOptionalWithFileSupport[Seq[String]]("otoroshi.rate-limiter.distributed-redis.uris").getOrElse(Seq.empty) ++
-        _env.configuration
-          .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.urisStr")
-          .map(_.split(";").map(_.trim).toSeq)
-          .getOrElse(Seq.empty)
-      )
+      .getOptionalWithFileSupport[Seq[String]]("otoroshi.rate-limiter.distributed-redis.uris")
+      .getOrElse(Seq.empty) ++
+      _env.configuration
+        .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.urisStr")
+        .map(_.split(";").map(_.trim).toSeq)
+        .getOrElse(Seq.empty))
   )
 
   def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uris match {
-    case uris if uris.nonEmpty && uris.length == 1 =>_env.statefulClientsManager.client(
-      distributedRedisId,
-      otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
-    )
-    case uris if uris.nonEmpty && uris.length > 1 =>_env.statefulClientsManager.client(
-      distributedRedisId,
-      otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
-    )
-    case _ => _env.datastores.redis
+    case uris if uris.nonEmpty && uris.length == 1 =>
+      _env.statefulClientsManager.client(
+        distributedRedisId,
+        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
+      )
+    case uris if uris.nonEmpty && uris.length > 1  =>
+      _env.statefulClientsManager.client(
+        distributedRedisId,
+        otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
+      )
+    case _                                         => _env.datastores.redis
   }
 
   def globalRateLimiterRedis: otoroshi.storage.RedisLike = {
     distributedRedisSettings.uris match {
-      case uris if uris.nonEmpty && uris.length == 1 && distributedRedisSettings.enabled => _env.statefulClientsManager.client(
-        distributedRedisId,
-        otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
-      )
-      case uris if uris.nonEmpty && uris.length > 1 && distributedRedisSettings.enabled => _env.statefulClientsManager.client(
-        distributedRedisId,
-        otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
-      )
-      case _ => _env.datastores.redis
+      case uris if uris.nonEmpty && uris.length == 1 && distributedRedisSettings.enabled =>
+        _env.statefulClientsManager.client(
+          distributedRedisId,
+          otoroshi.statefulclients.DistributedRateLimiterLettuceStatefulClientConfig(uris.head)
+        )
+      case uris if uris.nonEmpty && uris.length > 1 && distributedRedisSettings.enabled  =>
+        _env.statefulClientsManager.client(
+          distributedRedisId,
+          otoroshi.statefulclients.DistributedRateLimiterLettuceClusterStatefulClientConfig(uris)
+        )
+      case _                                                                             => _env.datastores.redis
     }
   }
 

@@ -202,40 +202,40 @@ export default (props) => {
                 {group.links
                   .filter((link) => !link.isProd || isProdView)
                   .map(({ to, icon, title, tooltip, tab, isProd }) => (
-                  <li
-                    className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
-                    key={title}
-                    aria-disabled={isOnNewAPIView}
-                    data-testid={`sidebar-tab-${tab}`}
-                  >
-                    <Link
-                      to={{
-                        pathname: to,
-                        search: location.search,
-                      }}
-                      {...(tooltip || {})}
-                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                        openedSidebar ? 'ms-1' : ''
-                      } m-0 ${isActive(tab)}`}
+                    <li
+                      className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
+                      key={title}
+                      aria-disabled={isOnNewAPIView}
+                      data-testid={`sidebar-tab-${tab}`}
                     >
-                      <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                        <i className={`fas ${icon}`} />
-                      </div>
-                      <div className="title"> {openedSidebar ? title : ''}</div>
+                      <Link
+                        to={{
+                          pathname: to,
+                          search: location.search,
+                        }}
+                        {...(tooltip || {})}
+                        className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                          openedSidebar ? 'ms-1' : ''
+                        } m-0 ${isActive(tab)}`}
+                      >
+                        <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                          <i className={`fas ${icon}`} />
+                        </div>
+                        <div className="title"> {openedSidebar ? title : ''}</div>
 
-                      {isProd && openedSidebar && (
-                        <span
-                          className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
-                          style={{
-                            color: '#fff',
-                          }}
-                        >
-                          PROD
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
+                        {isProd && openedSidebar && (
+                          <span
+                            className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
+                            style={{
+                              color: '#fff',
+                            }}
+                          >
+                            PROD
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
               </React.Fragment>
             ))}
           </>

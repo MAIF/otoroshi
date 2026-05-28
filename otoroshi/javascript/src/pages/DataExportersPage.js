@@ -67,8 +67,7 @@ function CustomDataExporterRefSection({ label, role, value, onChange }) {
 
   const pluginMeta =
     v.kind === 'plugin' && pluginList ? pluginList.find((p) => p.id === v.ref) : null;
-  const hasFormSchema =
-    pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
+  const hasFormSchema = pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
 
   const refSelectorByKind = {
     wasm: {
@@ -102,29 +101,35 @@ function CustomDataExporterRefSection({ label, role, value, onChange }) {
             ]}
             onChange={(kind) => onChange({ ...v, kind, ref: '' })}
           />
-          {v.kind === 'plugin' &&  <SelectInput
-            label="Plugin"
-            value={v.ref}
-            possibleValues={(pluginList || []).map((p) => ({
-              value: p.id,
-              label: p.name || p.id,
-            }))}
-            onChange={(ref) => onChange({ ...v, ref, config: {} })}
-          />}
-          {v.kind === 'workflow' && <SelectInput
-            label="Workflow"
-            value={v.ref}
-            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
-            transformer={(i) => ({ value: i.id, label: i.name })}
-            onChange={(ref) => onChange({ ...v, ref })}
-          />}
-          {v.kind === 'wasm' && <SelectInput
-            label="WASM plugin"
-            value={v.ref}
-            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
-            transformer={(i) => ({ value: i.id, label: i.name })}
-            onChange={(ref) => onChange({ ...v, ref })}
-          />}
+          {v.kind === 'plugin' && (
+            <SelectInput
+              label="Plugin"
+              value={v.ref}
+              possibleValues={(pluginList || []).map((p) => ({
+                value: p.id,
+                label: p.name || p.id,
+              }))}
+              onChange={(ref) => onChange({ ...v, ref, config: {} })}
+            />
+          )}
+          {v.kind === 'workflow' && (
+            <SelectInput
+              label="Workflow"
+              value={v.ref}
+              valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
+              transformer={(i) => ({ value: i.id, label: i.name })}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
+          {v.kind === 'wasm' && (
+            <SelectInput
+              label="WASM plugin"
+              value={v.ref}
+              valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+              transformer={(i) => ({ value: i.id, label: i.name })}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
           {hasFormSchema ? (
             <Form
               value={v.config || {}}
@@ -1090,9 +1095,13 @@ class UserAnalyticsActivationBlock extends Component {
               disabled={this.state.busy}
             >
               {this.state.busy ? (
-                <><i className="fas fa-spinner fa-spin" /> Promoting…</>
+                <>
+                  <i className="fas fa-spinner fa-spin" /> Promoting…
+                </>
               ) : (
-                <><i className="fas fa-star" /> Set as active analytics exporter</>
+                <>
+                  <i className="fas fa-star" /> Set as active analytics exporter
+                </>
               )}
             </button>
           )}

@@ -5,7 +5,7 @@ import { DesignerActions } from './DesignerActions';
 import ReportInformation from './ReportInformation';
 import moment from 'moment';
 import { NgAnyRenderer } from '../../components/nginputs';
-import {MonacoInput} from "../../components/inputs";
+import { MonacoInput } from '../../components/inputs';
 
 const Tab = ({ onClick, name, selected, isError }) => {
   return (

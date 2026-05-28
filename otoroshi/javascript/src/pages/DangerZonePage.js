@@ -2021,8 +2021,7 @@ class GlobalScripts extends Component {
 const GlobalPluginInformation = ({ plugin, open }) => {
   if (!open) return null;
 
-  const legacyPluginDocumentationUrl =
-    'https://www.otoroshi.io/docs/plugins/built-in-plugins';
+  const legacyPluginDocumentationUrl = 'https://www.otoroshi.io/docs/plugins/built-in-plugins';
 
   const getNgPluginDocumentationUrl = () => {
     return `https://www.otoroshi.io/docs/plugins/built-in-plugins#${

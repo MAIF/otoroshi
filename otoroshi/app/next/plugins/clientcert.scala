@@ -614,7 +614,7 @@ class NgRfc9440ClientCertHeader extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Headers)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
 
-  override def noJsForm: Boolean = true
+  override def noJsForm: Boolean              = true
   override def configFlow: Seq[String]        = Seq("send_chain")
   override def configSchema: Option[JsObject] = Some(
     Json.obj(
@@ -643,19 +643,19 @@ class NgRfc9440ClientCertHeader extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val stripped = stripIncoming(ctx.otoroshiRequest.headers)
     ctx.request.clientCertificateChain match {
-      case None                            => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
-      case Some(chain) if chain.isEmpty    => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
-      case Some(chain)                     =>
+      case None                         => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
+      case Some(chain) if chain.isEmpty => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
+      case Some(chain)                  =>
         val config        = ctx
           .cachedConfig(internalName)(NgRfc9440ClientCertHeaderConfig.format)
           .getOrElse(NgRfc9440ClientCertHeaderConfig())
         val leaf          = chain.head
         val intermediates = chain.drop(1)
         asByteSequence(leaf) match {
-          case None       => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
+          case None              => Right(ctx.otoroshiRequest.copy(headers = stripped)).future
           case Some(leafEncoded) =>
-            val withLeaf      = stripped + (LeafHeaderName -> leafEncoded)
-            val finalHeaders  =
+            val withLeaf     = stripped + (LeafHeaderName -> leafEncoded)
+            val finalHeaders =
               if (config.sendChain && intermediates.nonEmpty) {
                 val encodedChain = intermediates.flatMap(asByteSequence)
                 if (encodedChain.isEmpty) withLeaf

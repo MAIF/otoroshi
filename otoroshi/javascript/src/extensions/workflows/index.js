@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { WorkflowFunctions } from './WorkflowFunctions';
 import { WorkflowFunctionsDesigner } from './WorkflowFunctionsDesigner';
 import { WorkflowNewFunction } from './WorkflowNewFunction';
-import { MonacoInput } from "../../components/inputs";
+import { MonacoInput } from '../../components/inputs';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 

@@ -87,27 +87,27 @@ trait MailerSettings extends Exporter {
   def typ: String
   def to: Seq[EmailLocation]
   def asMailer(config: GlobalConfig, env: Env): Mailer
-  def genericSettings: Option[GenericMailerSettings] =
+  def genericSettings: Option[GenericMailerSettings]   =
     this match {
       case _: GenericMailerSettings => Some(this.asInstanceOf[GenericMailerSettings])
       case _                        => None
     }
-  def consoleSettings: Option[ConsoleMailerSettings] =
+  def consoleSettings: Option[ConsoleMailerSettings]   =
     this match {
       case _: ConsoleMailerSettings => Some(this.asInstanceOf[ConsoleMailerSettings])
       case _                        => None
     }
-  def mailgunSettings: Option[MailgunSettings]       =
+  def mailgunSettings: Option[MailgunSettings]         =
     this match {
       case _: MailgunSettings => Some(this.asInstanceOf[MailgunSettings])
       case _                  => None
     }
-  def mailjetSettings: Option[MailjetSettings]       =
+  def mailjetSettings: Option[MailjetSettings]         =
     this match {
       case _: MailjetSettings => Some(this.asInstanceOf[MailjetSettings])
       case _                  => None
     }
-  def sendgridSettings: Option[SendgridSettings]     =
+  def sendgridSettings: Option[SendgridSettings]       =
     this match {
       case _: SendgridSettings => Some(this.asInstanceOf[SendgridSettings])
       case _                   => None

@@ -330,7 +330,9 @@ export function MetricWidget({ data, options = {}, height }) {
         padding: 16,
       }}
     >
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'none' }}>{label}</div>
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'none' }}>
+        {label}
+      </div>
       <div style={{ fontSize: '2rem', color: color || 'var(--text)', fontWeight: 600 }}>
         {value == null ? '-' : fmt(value)}
       </div>
@@ -402,7 +404,11 @@ export function HeatmapWidget({ data, options = {}, height }) {
 
   // Find max for color scaling
   let max = 0;
-  values.forEach((row) => row.forEach((v) => { if (v > max) max = v; }));
+  values.forEach((row) =>
+    row.forEach((v) => {
+      if (v > max) max = v;
+    })
+  );
 
   const cellH = Math.max(8, Math.floor((h - 30) / rows));
   return (

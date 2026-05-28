@@ -47,7 +47,7 @@ object AlertCondition {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: AlertCondition): JsValue = Json.obj(
+    override def writes(o: AlertCondition): JsValue             = Json.obj(
       "query"     -> o.query,
       "params"    -> o.params,
       "filters"   -> o.filters,
@@ -82,24 +82,24 @@ case class UserAlert(
     combine: String,
     conditions: Seq[AlertCondition]
 ) extends EntityLocationSupport {
-  override def internalId: String                 = id
-  override def theDescription: String             = description
-  override def theMetadata: Map[String, String]   = metadata
-  override def theName: String                    = name
-  override def theTags: Seq[String]               = tags
-  override def json: JsValue                      = UserAlert.format.writes(this)
+  override def internalId: String               = id
+  override def theDescription: String           = description
+  override def theMetadata: Map[String, String] = metadata
+  override def theName: String                  = name
+  override def theTags: Seq[String]             = tags
+  override def json: JsValue                    = UserAlert.format.writes(this)
 }
 
 object UserAlert {
 
-  val DEFAULT_WINDOW_S       = 300L
-  val DEFAULT_EVAL_S         = 60L
-  val DEFAULT_COOLDOWN_S     = 600L
-  val DEFAULT_SEVERITY       = "warning"
-  val ALLOWED_SEVERITIES     = Set("info", "warning", "critical")
-  val ALLOWED_REDUCERS       = Set("avg", "max", "min", "sum", "last")
-  val ALLOWED_OPERATORS      = Set(">", ">=", "<", "<=", "==", "!=")
-  val ALLOWED_COMBINES       = Set("AND", "OR")
+  val DEFAULT_WINDOW_S   = 300L
+  val DEFAULT_EVAL_S     = 60L
+  val DEFAULT_COOLDOWN_S = 600L
+  val DEFAULT_SEVERITY   = "warning"
+  val ALLOWED_SEVERITIES = Set("info", "warning", "critical")
+  val ALLOWED_REDUCERS   = Set("avg", "max", "min", "sum", "last")
+  val ALLOWED_OPERATORS  = Set(">", ">=", "<", "<=", "==", "!=")
+  val ALLOWED_COMBINES   = Set("AND", "OR")
 
   val format: Format[UserAlert] = new Format[UserAlert] {
     override def reads(json: JsValue): JsResult[UserAlert] = Try {
@@ -112,8 +112,7 @@ object UserAlert {
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         windowSeconds = (json \ "windowSeconds").asOpt[Long].getOrElse(DEFAULT_WINDOW_S),
-        evaluationIntervalSeconds =
-          (json \ "evaluationIntervalSeconds").asOpt[Long].getOrElse(DEFAULT_EVAL_S),
+        evaluationIntervalSeconds = (json \ "evaluationIntervalSeconds").asOpt[Long].getOrElse(DEFAULT_EVAL_S),
         cooldownSeconds = (json \ "cooldownSeconds").asOpt[Long].getOrElse(DEFAULT_COOLDOWN_S),
         severity = (json \ "severity").asOpt[String].getOrElse(DEFAULT_SEVERITY),
         message = (json \ "message").asOpt[String].getOrElse(""),
@@ -127,7 +126,7 @@ object UserAlert {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: UserAlert): JsValue = o.location.jsonWithKey ++ Json.obj(
+    override def writes(o: UserAlert): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"                        -> o.id,
       "name"                      -> o.name,
       "description"               -> o.description,
@@ -185,9 +184,7 @@ trait UserAlertDataStore extends BasicStore[UserAlert] {
   }
 }
 
-class KvUserAlertDataStore(redisCli: RedisLike, _env: Env)
-    extends UserAlertDataStore
-    with RedisLikeStore[UserAlert] {
+class KvUserAlertDataStore(redisCli: RedisLike, _env: Env) extends UserAlertDataStore with RedisLikeStore[UserAlert] {
   override def fmt: Format[UserAlert]                  = UserAlert.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:user-alerts:$id"

@@ -105,10 +105,7 @@ class ServiceDescriptorsMigrationPopup extends Component {
               Service Descriptor
             </a>{' '}
             remaining in your database. For more information about that, please read{' '}
-            <a
-              href="https://www.otoroshi.io/docs/topics/deprecating-sd"
-              target="_blank"
-            >
+            <a href="https://www.otoroshi.io/docs/topics/deprecating-sd" target="_blank">
               the documentation
             </a>
           </p>
@@ -142,9 +139,7 @@ class AnonymousReportingEnabled extends Component {
           <p style={{ textAlign: 'justify' }}>
             It won't send sensitive or personnal data, just a bunch of statistics about your usage
             of otoroshi (see{' '}
-            <a href="https://www.otoroshi.io/docs/topics/anonymous-reporting">
-              the documentation
-            </a>
+            <a href="https://www.otoroshi.io/docs/topics/anonymous-reporting">the documentation</a>
             ).
           </p>
           <p style={{ textAlign: 'justify' }}>
@@ -412,12 +407,11 @@ class BackOfficeAppContainer extends Component {
             <div className="d-flex" style={{ position: 'relative' }}>
               {hoverMode && <div className="sidebar-spacer" />}
               <div
-                className={`sidebar ${!openedSidebar ? 'sidebar--closed' : ''} ${hoverMode ? 'sidebar--hover' : ''
-                  }`}
+                className={`sidebar ${!openedSidebar ? 'sidebar--closed' : ''} ${
+                  hoverMode ? 'sidebar--hover' : ''
+                }`}
                 id="sidebar"
-                onMouseEnter={
-                  hoverMode ? () => this.setState({ sidebarHovered: true }) : undefined
-                }
+                onMouseEnter={hoverMode ? () => this.setState({ sidebarHovered: true }) : undefined}
                 onMouseLeave={
                   hoverMode ? () => this.setState({ sidebarHovered: false }) : undefined
                 }

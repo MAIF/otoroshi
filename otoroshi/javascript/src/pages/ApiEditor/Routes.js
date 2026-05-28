@@ -471,7 +471,8 @@ export function Endpoints(props) {
                   search: location.search,
                 }}
               >
-                <i className="fas fa-plus-circle me-1" />Create new endpoint
+                <i className="fas fa-plus-circle me-1" />
+                Create new endpoint
               </Link>
               {props.injectTopBar}
             </div>

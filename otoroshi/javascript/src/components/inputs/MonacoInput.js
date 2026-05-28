@@ -38,8 +38,9 @@ export class MonacoInput extends Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ error, errorInfo });
     console.log({
-      error, errorInfo
-    })
+      error,
+      errorInfo,
+    });
   }
 
   render() {
@@ -49,7 +50,7 @@ export class MonacoInput extends Component {
 
     let code = this.state.value || this.props.value || '';
 
-    if (!(typeof code === "string")) {
+    if (!(typeof code === 'string')) {
       code = '';
     }
 
@@ -89,9 +90,7 @@ export class MonacoInput extends Component {
         <label htmlFor={`input-${this.props.label}`} className="col-sm-2 col-form-label">
           {this.props.label}
         </label>
-        <div className="col-sm-10">
-          {editor}
-        </div>
+        <div className="col-sm-10">{editor}</div>
       </div>
     );
   }

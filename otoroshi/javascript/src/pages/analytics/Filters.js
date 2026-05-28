@@ -53,13 +53,22 @@ export class Filters extends Component {
 
   loadOptions = () => {
     Promise.all([
-      nextClient.forEntity(nextClient.ENTITIES.ROUTES).findAll().catch(() => []),
+      nextClient
+        .forEntity(nextClient.ENTITIES.ROUTES)
+        .findAll()
+        .catch(() => []),
       nextClient
         .forEntityNextWithGroup('apis.otoroshi.io', nextClient.ENTITIES.APIS)
         .findAll()
         .catch(() => []),
-      nextClient.forEntity(nextClient.ENTITIES.APIKEYS).findAll().catch(() => []),
-      nextClient.forEntityNext(nextClient.ENTITIES.GROUPS).findAll().catch(() => []),
+      nextClient
+        .forEntity(nextClient.ENTITIES.APIKEYS)
+        .findAll()
+        .catch(() => []),
+      nextClient
+        .forEntityNext(nextClient.ENTITIES.GROUPS)
+        .findAll()
+        .catch(() => []),
     ]).then(([routes, apis, apikeys, groups]) => {
       this.setState({
         routes: Array.isArray(routes) ? routes : [],
@@ -190,7 +199,14 @@ export class Filters extends Component {
               })}
             </div>
 
-            <span style={{ color: 'var(--text-muted)', fontSize: 12, fontFamily: 'monospace', minWidth: 160 }}>
+            <span
+              style={{
+                color: 'var(--text-muted)',
+                fontSize: 12,
+                fontFamily: 'monospace',
+                minWidth: 160,
+              }}
+            >
               {this.props.lastRefreshAt ? this.formatRelative(this.props.lastRefreshAt) : '—'}
             </span>
 
@@ -299,7 +315,9 @@ export class Filters extends Component {
 
 function Field({ label, children }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', fontSize: 11, color: 'var(--text-muted)' }}>
+    <label
+      style={{ display: 'flex', flexDirection: 'column', fontSize: 11, color: 'var(--text-muted)' }}
+    >
       <span style={{ marginBottom: 2 }}>{label}</span>
       {children}
     </label>

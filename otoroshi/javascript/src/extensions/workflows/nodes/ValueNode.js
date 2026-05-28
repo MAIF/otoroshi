@@ -1,6 +1,6 @@
 import React from 'react';
 import { ValueToCheck } from '../operators/ValueToCheck';
-import {NgAnyRenderer, NgCodeRenderer} from '../../../components/nginputs';
+import { NgAnyRenderer, NgCodeRenderer } from '../../../components/nginputs';
 
 export const ValueNode = {
   label: 'fas fa-cube',

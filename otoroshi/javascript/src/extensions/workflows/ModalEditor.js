@@ -5,7 +5,7 @@ import CodeInput from '../../components/inputs/CodeInput';
 import { INFORMATION_FIELDS, splitInformationAndContent } from './WorkflowsDesigner';
 import { getNodeFromKind } from './models/Functions';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
-import {MonacoInput, TextInput} from '../../components/inputs';
+import { MonacoInput, TextInput } from '../../components/inputs';
 
 function setEnabled(state) {
   if (state?.enabled === undefined)

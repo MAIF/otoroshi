@@ -16,7 +16,14 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiDataStore, ApiSubscriptionDataStore, KvApiDataStore, KvApiSubscriptionDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import next.models.{
+  ApiDataStore,
+  ApiSubscriptionDataStore,
+  KvApiDataStore,
+  KvApiSubscriptionDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.api.OtoroshiEnvHolder
@@ -3096,7 +3103,7 @@ class SwappableInMemoryDataStores(
   private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
-  private lazy val _userAlertDataStore                                                =
+  private lazy val _userAlertDataStore                                               =
     new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 

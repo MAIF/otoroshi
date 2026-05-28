@@ -21,18 +21,46 @@ function tokenize(input) {
   const isWs = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\r';
   while (i < n) {
     const c = input[i];
-    if (isWs(c)) { i++; continue; }
-    if (c === '(') { tokens.push({ type: 'LPAREN' }); i++; continue; }
-    if (c === ')') { tokens.push({ type: 'RPAREN' }); i++; continue; }
-    if (c === '!') { tokens.push({ type: 'NOT' }); i++; continue; }
-    if (c === '&' && input[i + 1] === '&') { tokens.push({ type: 'AND' }); i += 2; continue; }
-    if (c === '|' && input[i + 1] === '|') { tokens.push({ type: 'OR' }); i += 2; continue; }
+    if (isWs(c)) {
+      i++;
+      continue;
+    }
+    if (c === '(') {
+      tokens.push({ type: 'LPAREN' });
+      i++;
+      continue;
+    }
+    if (c === ')') {
+      tokens.push({ type: 'RPAREN' });
+      i++;
+      continue;
+    }
+    if (c === '!') {
+      tokens.push({ type: 'NOT' });
+      i++;
+      continue;
+    }
+    if (c === '&' && input[i + 1] === '&') {
+      tokens.push({ type: 'AND' });
+      i += 2;
+      continue;
+    }
+    if (c === '|' && input[i + 1] === '|') {
+      tokens.push({ type: 'OR' });
+      i += 2;
+      continue;
+    }
     if (c === '"') {
       let s = '';
       i++;
       while (i < n && input[i] !== '"') {
-        if (input[i] === '\\' && i + 1 < n) { s += input[i + 1]; i += 2; }
-        else { s += input[i]; i++; }
+        if (input[i] === '\\' && i + 1 < n) {
+          s += input[i + 1];
+          i += 2;
+        } else {
+          s += input[i];
+          i++;
+        }
       }
       if (i >= n) throw new Error('Unterminated string literal');
       i++;
@@ -93,7 +121,13 @@ function parseExpression(input) {
     while (true) {
       const t = peek();
       if (!t) break;
-      if (t.type === 'AND') { pos++; const right = parseUnary(); const l = left; left = (line) => l(line) && right(line); continue; }
+      if (t.type === 'AND') {
+        pos++;
+        const right = parseUnary();
+        const l = left;
+        left = (line) => l(line) && right(line);
+        continue;
+      }
       if (t.type === 'STR' || t.type === 'NOT' || t.type === 'LPAREN') {
         const right = parseUnary();
         const l = left;
@@ -242,7 +276,8 @@ export class GlobalNodeEventStreamPage extends Component {
     const size = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_BUFFER_SIZE;
     this.setState((prev) => ({
       bufferSize: size,
-      events: prev.events.length > size ? prev.events.slice(prev.events.length - size) : prev.events,
+      events:
+        prev.events.length > size ? prev.events.slice(prev.events.length - size) : prev.events,
     }));
   };
 
@@ -323,7 +358,7 @@ export class GlobalNodeEventStreamPage extends Component {
           <input
             type="text"
             className="form-control"
-            placeholder='Match: foo && (bar || !baz)'
+            placeholder="Match: foo && (bar || !baz)"
             value={this.state.filter}
             onChange={(e) => this.setState({ filter: e.target.value })}
             style={inputStyle(matchError)}
@@ -332,7 +367,7 @@ export class GlobalNodeEventStreamPage extends Component {
           <input
             type="text"
             className="form-control"
-            placeholder='Exclude: foo || bar'
+            placeholder="Exclude: foo || bar"
             value={this.state.notFilter}
             onChange={(e) => this.setState({ notFilter: e.target.value })}
             style={inputStyle(excludeError)}
@@ -514,7 +549,11 @@ export class GlobalNodeEventStreamPage extends Component {
                 >
                   <i className="fas fa-chevron-down" />
                 </button>
-                <button type="button" className="btn btn-sm btn-secondary" onClick={this.closePanel}>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={this.closePanel}
+                >
                   <i className="fas fa-times" /> Close
                 </button>
               </div>

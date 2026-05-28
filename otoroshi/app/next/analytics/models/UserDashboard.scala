@@ -39,7 +39,7 @@ object Widget {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: Widget): JsValue = Json.obj(
+    override def writes(o: Widget): JsValue             = Json.obj(
       "id"      -> o.id,
       "title"   -> o.title,
       "query"   -> o.query,
@@ -63,33 +63,37 @@ case class UserDashboard(
     widgets: Seq[Widget],
     defaults: JsObject
 ) extends EntityLocationSupport {
-  override def internalId: String          = id
-  override def theDescription: String      = description
+  override def internalId: String               = id
+  override def theDescription: String           = description
   override def theMetadata: Map[String, String] = metadata
-  override def theName: String             = name
-  override def theTags: Seq[String]        = tags
-  override def json: JsValue               = UserDashboard.format.writes(this)
+  override def theName: String                  = name
+  override def theTags: Seq[String]             = tags
+  override def json: JsValue                    = UserDashboard.format.writes(this)
 }
 
 object UserDashboard {
-  val format: Format[UserDashboard] = new Format[UserDashboard] {
+  val format: Format[UserDashboard]                                  = new Format[UserDashboard] {
     override def reads(json: JsValue): JsResult[UserDashboard] = Try {
       UserDashboard(
         location = EntityLocation.readFromKey(json),
-        id = (json \ "id").asOpt[String].filterNot(_.isEmpty).getOrElse(IdGenerator.namedId("dashboard", IdGenerator.uuid)),
+        id = (json \ "id")
+          .asOpt[String]
+          .filterNot(_.isEmpty)
+          .getOrElse(IdGenerator.namedId("dashboard", IdGenerator.uuid)),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
-        widgets = (json \ "widgets").asOpt[Seq[JsValue]].getOrElse(Seq.empty).flatMap(j => Widget.format.reads(j).asOpt),
+        widgets =
+          (json \ "widgets").asOpt[Seq[JsValue]].getOrElse(Seq.empty).flatMap(j => Widget.format.reads(j).asOpt),
         defaults = (json \ "defaults").asOpt[JsObject].getOrElse(Json.obj())
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(s) => JsSuccess(s)
     }
-    override def writes(o: UserDashboard): JsValue = o.location.jsonWithKey ++ Json.obj(
+    override def writes(o: UserDashboard): JsValue             = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
       "description" -> o.description,
@@ -113,7 +117,6 @@ object UserDashboard {
   )
 }
 
-
 trait UserDashboardDataStore extends BasicStore[UserDashboard] {
   def template(env: Env): UserDashboard = {
     implicit val e = env
@@ -131,11 +134,10 @@ trait UserDashboardDataStore extends BasicStore[UserDashboard] {
 }
 
 class KvUserDashboardDataStore(redisCli: RedisLike, _env: Env)
-  extends UserDashboardDataStore
+    extends UserDashboardDataStore
     with RedisLikeStore[UserDashboard] {
   override def fmt: Format[UserDashboard]              = UserDashboard.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:user-dashboards:$id"
   override def extractId(value: UserDashboard): String = value.id
 }
-

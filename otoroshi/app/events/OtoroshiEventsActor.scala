@@ -205,18 +205,18 @@ trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
 
 // Plugin trait used by DataExporter custom filter step
 trait CustomDataExporterFilter extends NgPlugin {
-  override def pluginType: PluginType                      = PluginType.DataExporterType
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
-  override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterFilter)
+  override def pluginType: PluginType            = PluginType.DataExporterType
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.DataExporterFilter)
   def matchEvent(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
 trait CustomDataExporterTransformer extends NgPlugin {
-  override def pluginType: PluginType                      = PluginType.DataExporterType
-  override def visibility: NgPluginVisibility              = NgPluginVisibility.NgUserLand
-  override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Other)
-  override def steps: Seq[NgStep]                          = Seq(NgStep.DataExporterTransform)
+  override def pluginType: PluginType            = PluginType.DataExporterType
+  override def visibility: NgPluginVisibility    = NgPluginVisibility.NgUserLand
+  override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Other)
+  override def steps: Seq[NgStep]                = Seq(NgStep.DataExporterTransform)
   def project(evt: JsValue)(implicit ec: ExecutionContext, env: Env): Future[JsValue]
 }
 
@@ -274,9 +274,8 @@ object DataExporter {
         .applyOnIf(configUnsafe.customFilter.isDefined) { s =>
           s.mapAsync(1) { case (event, rawEvent) =>
             customFilterAsync(event).map(r => (event, rawEvent, r))
-          }
-          .collect {
-            case (event, rawEvent, true) => (event, rawEvent)
+          }.collect { case (event, rawEvent, true) =>
+            (event, rawEvent)
           }
         }
         .map { case (event, rawEvent) => (project(event), rawEvent) }
@@ -428,12 +427,12 @@ object DataExporter {
             case "workflow" =>
               env.metrics.withTimerAsync("run-wf-filter", display = false) {
                 env.adminExtensions.extension[WorkflowAdminExtension] match {
-                  case None =>
+                  case None            =>
                     logger.error(s"workflow extension not available for customFilter on exporter '${id}'")
                     FastFuture.successful(false)
                   case Some(extension) =>
                     extension.workflow(cfg.ref) match {
-                      case None =>
+                      case None           =>
                         logger.error(s"customFilter workflow '${cfg.ref}' not found on exporter '${id}'")
                         FastFuture.successful(false)
                       case Some(workflow) =>
@@ -444,7 +443,7 @@ object DataExporter {
                             Json.obj("event" -> event, "config" -> cfg.config),
                             TypedMap.empty,
                             workflow.functions,
-                            noRunEvent = true,
+                            noRunEvent = true
                           )
                           .map { result =>
                             if (result.hasError) {
@@ -516,12 +515,12 @@ object DataExporter {
             case "workflow" =>
               env.metrics.withTimerAsync("run-wf-project", display = false) {
                 env.adminExtensions.extension[WorkflowAdminExtension] match {
-                  case None =>
+                  case None            =>
                     logger.error(s"workflow extension not available for customTransform on exporter '${id}'")
                     FastFuture.successful(event)
                   case Some(extension) =>
                     extension.workflow(cfg.ref) match {
-                      case None =>
+                      case None           =>
                         logger.error(s"customTransform workflow '${cfg.ref}' not found on exporter '${id}'")
                         FastFuture.successful(event)
                       case Some(workflow) =>
@@ -532,7 +531,7 @@ object DataExporter {
                             Json.obj("event" -> event, "config" -> cfg.config),
                             TypedMap.empty,
                             workflow.functions,
-                            noRunEvent = true,
+                            noRunEvent = true
                           )
                           .map { result =>
                             if (result.hasError) {

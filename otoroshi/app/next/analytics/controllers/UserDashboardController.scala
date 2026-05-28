@@ -16,7 +16,9 @@ class UserDashboardController(ApiAction: ApiAction, cc: ControllerComponents)(im
 
   private val logger = Logger("otoroshi-user-dashboard-api")
 
-  private def requireSuperAdmin(ctx: ApiActionContext[_])(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
+  private def requireSuperAdmin(
+      ctx: ApiActionContext[_]
+  )(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     if (ctx.userIsSuperAdmin) f
     else Forbidden(Json.obj("error" -> "super admin only")).future
   }

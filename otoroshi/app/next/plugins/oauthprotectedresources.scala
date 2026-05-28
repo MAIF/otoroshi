@@ -189,7 +189,8 @@ object OAuthProtectedResourceMetadataConfig {
       OAuthProtectedResourceMetadataConfig(
         ref = json.select("ref").asOpt[String].filter(_.nonEmpty),
         resource = json.select("resource").asOpt[String].filter(_.nonEmpty),
-        authorizationServersOverride = json.select("authorization_servers_override").asOpt[Seq[String]].getOrElse(Seq.empty),
+        authorizationServersOverride =
+          json.select("authorization_servers_override").asOpt[Seq[String]].getOrElse(Seq.empty),
         jwksUri = json.select("jwks_uri").asOpt[String].filter(_.nonEmpty),
         scopesSupported = json.select("scopes_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
         bearerMethodsSupported = json.select("bearer_methods_supported").asOpt[Seq[String]].getOrElse(Seq("header")),
@@ -203,7 +204,8 @@ object OAuthProtectedResourceMetadataConfig {
           json.select("tls_client_certificate_bound_access_tokens").asOpt[Boolean].getOrElse(false),
         dpopSigningAlgValuesSupported =
           json.select("dpop_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
-        dpopBoundAccessTokensRequired = json.select("dpop_bound_access_tokens_required").asOpt[Boolean].getOrElse(false),
+        dpopBoundAccessTokensRequired =
+          json.select("dpop_bound_access_tokens_required").asOpt[Boolean].getOrElse(false),
         authorizationDetailsTypesSupported =
           json.select("authorization_details_types_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
         extraMetadata = json.select("extra_metadata").asOpt[JsObject].getOrElse(Json.obj()),
@@ -295,37 +297,37 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
       resourceId: String,
       authorizationServers: Seq[String]
   ): JsObject = {
-    val base = Json.obj("resource" -> resourceId)
-    val opt  = Seq[(String, JsValue)](
+    val base     = Json.obj("resource" -> resourceId)
+    val opt      = Seq[(String, JsValue)](
       "authorization_servers"                      -> (if (authorizationServers.nonEmpty)
-                                                         JsArray(authorizationServers.map(JsString.apply))
-                                                       else JsNull),
+                                    JsArray(authorizationServers.map(JsString.apply))
+                                  else JsNull),
       "jwks_uri"                                   -> config.jwksUri.map(JsString.apply).getOrElse(JsNull),
       "scopes_supported"                           -> (if (config.scopesSupported.nonEmpty)
-                                                         JsArray(config.scopesSupported.map(JsString.apply))
-                                                       else JsNull),
+                               JsArray(config.scopesSupported.map(JsString.apply))
+                             else JsNull),
       "bearer_methods_supported"                   -> (if (config.bearerMethodsSupported.nonEmpty)
-                                                         JsArray(config.bearerMethodsSupported.map(JsString.apply))
-                                                       else JsNull),
+                                       JsArray(config.bearerMethodsSupported.map(JsString.apply))
+                                     else JsNull),
       "resource_signing_alg_values_supported"      -> (if (config.resourceSigningAlgValuesSupported.nonEmpty)
-                                                         JsArray(
-                                                           config.resourceSigningAlgValuesSupported.map(JsString.apply)
-                                                         )
-                                                       else JsNull),
+                                                    JsArray(
+                                                      config.resourceSigningAlgValuesSupported.map(JsString.apply)
+                                                    )
+                                                  else JsNull),
       "resource_name"                              -> config.resourceName.map(JsString.apply).getOrElse(JsNull),
       "resource_documentation"                     -> config.resourceDocumentation.map(JsString.apply).getOrElse(JsNull),
       "resource_policy_uri"                        -> config.resourcePolicyUri.map(JsString.apply).getOrElse(JsNull),
       "resource_tos_uri"                           -> config.resourceTosUri.map(JsString.apply).getOrElse(JsNull),
       "tls_client_certificate_bound_access_tokens" -> JsBoolean(config.tlsClientCertificateBoundAccessTokens),
       "dpop_signing_alg_values_supported"          -> (if (config.dpopSigningAlgValuesSupported.nonEmpty)
-                                                         JsArray(config.dpopSigningAlgValuesSupported.map(JsString.apply))
-                                                       else JsNull),
+                                                JsArray(config.dpopSigningAlgValuesSupported.map(JsString.apply))
+                                              else JsNull),
       "dpop_bound_access_tokens_required"          -> JsBoolean(config.dpopBoundAccessTokensRequired),
       "authorization_details_types_supported"      -> (if (config.authorizationDetailsTypesSupported.nonEmpty)
-                                                         JsArray(
-                                                           config.authorizationDetailsTypesSupported.map(JsString.apply)
-                                                         )
-                                                       else JsNull)
+                                                    JsArray(
+                                                      config.authorizationDetailsTypesSupported.map(JsString.apply)
+                                                    )
+                                                  else JsNull)
     ).filterNot { case (_, v) => v == JsNull }
     val withOpts = opt.foldLeft(base) { case (acc, (k, v)) => acc + (k -> v) }
     // Extra metadata last so operators can override fields if they really need to.
@@ -338,7 +340,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
       config: OAuthProtectedResourceMetadataConfig
   )(implicit env: Env): Either[String, (Algorithm, String)] = {
     config.signingCertRef match {
-      case None         => Left("signed_metadata is enabled but no signing keypair was configured")
+      case None        => Left("signed_metadata is enabled but no signing keypair was configured")
       case Some(refId) =>
         env.proxyState.certificate(refId) match {
           case None       => Left(s"signing keypair '$refId' not found")
@@ -367,7 +369,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
       resourceId: String
   )(implicit env: Env): Either[String, String] = {
     resolveSigningAlgo(config).map { case (algo, kid) =>
-      val now = System.currentTimeMillis() / 1000L
+      val now     = System.currentTimeMillis() / 1000L
       // The JWT carries the metadata claims plus `iss` (the resource itself, per §3.1), `iat`, and `sub`=resource.
       val builder = JWT
         .create()
@@ -401,7 +403,11 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
+  )(implicit
+      env: Env,
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Either[NgProxyEngineError, BackendCallResponse]] = {
 
     val config = ctx
       .cachedConfig(internalName)(OAuthProtectedResourceMetadataConfig.format)

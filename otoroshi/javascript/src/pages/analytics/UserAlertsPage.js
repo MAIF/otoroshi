@@ -37,17 +37,10 @@ function AlertNav({ rawValue }) {
     <div className="row mb-3">
       <label className="col-xs-12 col-sm-2 col-form-label"></label>
       <div className="col-sm-10">
-        <Link
-          to={`/user-alert-events/${rawValue.id}`}
-          className="btn btn-secondary btn-sm"
-        >
+        <Link to={`/user-alert-events/${rawValue.id}`} className="btn btn-secondary btn-sm">
           <i className="fas fa-bell" /> View fired events
         </Link>
-        <Link
-          to="/user-alerts"
-          className="btn btn-secondary btn-sm"
-          style={{ marginLeft: 5 }}
-        >
+        <Link to="/user-alerts" className="btn btn-secondary btn-sm" style={{ marginLeft: 5 }}>
           <i className="fas fa-th-list" /> All alerts
         </Link>
       </div>
@@ -264,8 +257,7 @@ export class UserAlertsPage extends Component {
       });
   };
 
-  fetchItems = () =>
-    alerts.findAll().then((items) => (Array.isArray(items) ? items : []));
+  fetchItems = () => alerts.findAll().then((items) => (Array.isArray(items) ? items : []));
 
   createItem = (item) => alerts.create(item);
   updateItem = (item) => alerts.update(item);
@@ -290,10 +282,7 @@ export class UserAlertsPage extends Component {
             <code>{`{"alert": "UserAnalyticsAlert"}`}</code>.
           </div>
         </div>
-        <Link
-          to="/exporters/add?type=mailer&kind=alert-channel"
-          className="btn btn-sm btn-success"
-        >
+        <Link to="/exporters/add?type=mailer&kind=alert-channel" className="btn btn-sm btn-success">
           <i className="fas fa-plus" /> New data exporter
         </Link>
       </div>

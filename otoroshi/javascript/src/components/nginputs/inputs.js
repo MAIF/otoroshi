@@ -321,10 +321,7 @@ export function LabelAndInput(_props) {
   const helpId = uuid();
 
   return (
-    <div
-      className={`row ${margin} ${_props.readOnly ? 'ng-ro-line' : ''}`}
-      style={style}
-    >
+    <div className={`row ${margin} ${_props.readOnly ? 'ng-ro-line' : ''}`} style={style}>
       <label
         className={`col-xs-12 col-sm-${labelColumn} col-form-label ${
           _props.readOnly ? 'ng-ro-label' : ''

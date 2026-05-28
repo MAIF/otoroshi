@@ -683,7 +683,7 @@ object HttpSigKeyResolver {
       ec: ExecutionContext
   ): Future[Either[String, Either[Array[Byte], PublicKey]]] = {
     source match {
-      case HttpSigKeyCertRef(certId, _, _) =>
+      case HttpSigKeyCertRef(certId, _, _)     =>
         env.proxyState.certificate(certId) match {
           case None       => Future.successful(Left(s"unknown cert id '$certId'"))
           case Some(cert) =>
@@ -1014,7 +1014,9 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
-      ctx.cachedConfig(internalName)(HttpSignatureVerifyRequestConfig.format).getOrElse(HttpSignatureVerifyRequestConfig())
+      ctx
+        .cachedConfig(internalName)(HttpSignatureVerifyRequestConfig.format)
+        .getOrElse(HttpSignatureVerifyRequestConfig())
 
     // Per RFC 9421 §4.1 the Signature-Input / Signature headers carry structured-fields dictionary values.
     // Repeated header fields are equivalent to a single header field with values joined by ", ".
@@ -1182,8 +1184,8 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
                   if (!config.allowedAlgorithms.contains(alg)) loop(tail, s"algorithm '$alg' not in allowed_algorithms")
                   else
                     HttpSigKeyResolver.publicKey(head, alg, input.keyid).flatMap {
-                      case Left(err)      => loop(tail, err)
-                      case Right(keyMat)  =>
+                      case Left(err)     => loop(tail, err)
+                      case Right(keyMat) =>
                         HttpSigAlgorithms.verify(alg, baseBytes, sigBytes, keyMat) match {
                           case Right(_)  => Future.successful(Right(coveredNames.contains("content-digest")))
                           case Left(err) =>
@@ -1382,7 +1384,9 @@ class HttpSignatureSignResponse extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config =
-      ctx.cachedConfig(internalName)(HttpSignatureSignResponseConfig.format).getOrElse(HttpSignatureSignResponseConfig())
+      ctx
+        .cachedConfig(internalName)(HttpSignatureSignResponseConfig.format)
+        .getOrElse(HttpSignatureSignResponseConfig())
 
     config.key match {
       case None      =>

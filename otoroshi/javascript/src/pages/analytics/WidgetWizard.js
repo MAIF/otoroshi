@@ -126,7 +126,8 @@ export class WidgetWizard extends Component {
   }
 
   render() {
-    const { schema, loading, title, queryId, type, width, height, format, paramValues } = this.state;
+    const { schema, loading, title, queryId, type, width, height, format, paramValues } =
+      this.state;
     if (loading) {
       return (
         <div style={{ padding: 24, color: 'var(--text-muted)' }}>
@@ -256,7 +257,9 @@ function Field({ label, hint, children }) {
         {label}
       </label>
       {children}
-      {hint && <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>{hint}</small>}
+      {hint && (
+        <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: 2 }}>{hint}</small>
+      )}
     </div>
   );
 }

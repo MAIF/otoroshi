@@ -907,11 +907,7 @@ export class TopBar extends Component {
           <VersionButton />
         </li>
         <li>
-          <a
-            href="https://www.otoroshi.io/docs/"
-            target="_blank"
-            className="dropdown-item"
-          >
+          <a href="https://www.otoroshi.io/docs/" target="_blank" className="dropdown-item">
             <span className="fas fa-book" /> User manual
           </a>
         </li>
@@ -1322,11 +1318,7 @@ export class TopBar extends Component {
           </a>
         </li>
         <li>
-          <a
-            href="https://www.otoroshi.io/docs/"
-            target="_blank"
-            className="dropdown-item"
-          >
+          <a href="https://www.otoroshi.io/docs/" target="_blank" className="dropdown-item">
             <span className="fas fa-book" /> User manual
           </a>
         </li>

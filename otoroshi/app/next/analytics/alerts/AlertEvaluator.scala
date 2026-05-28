@@ -24,13 +24,15 @@ object AlertEvaluator {
 
   private val logger = Logger("otoroshi-user-analytics-alerts")
 
-  def evaluate(alert: UserAlert)(implicit env: Env, ec: ExecutionContext): Future[(Boolean, Seq[AlertConditionEval])] = {
+  def evaluate(
+      alert: UserAlert
+  )(implicit env: Env, ec: ExecutionContext): Future[(Boolean, Seq[AlertConditionEval])] = {
     if (alert.conditions.isEmpty) FastFuture.successful((false, Seq.empty))
     else {
       Future.sequence(alert.conditions.map(c => evaluateCondition(c, alert))).map { evals =>
         val firing = alert.combine.toUpperCase match {
-          case "OR"  => evals.exists(_.matched)
-          case _     => evals.forall(_.matched) // AND default
+          case "OR" => evals.exists(_.matched)
+          case _    => evals.forall(_.matched) // AND default
         }
         (firing, evals)
       }
@@ -124,13 +126,13 @@ object AlertEvaluator {
         (result.data \ "value").asOpt[Double]
 
       case AnalyticsShape.Timeseries =>
-        val singlePoints = (result.data \ "points").asOpt[Seq[JsValue]]
+        val singlePoints      = (result.data \ "points").asOpt[Seq[JsValue]]
         val firstSeriesPoints =
           (result.data \ "series").asOpt[Seq[JsValue]].flatMap(_.headOption).flatMap { s =>
             (s \ "points").asOpt[Seq[JsValue]]
           }
-        val points = singlePoints.orElse(firstSeriesPoints).getOrElse(Seq.empty)
-        val values = points.flatMap(p => (p \ "value").asOpt[Double])
+        val points            = singlePoints.orElse(firstSeriesPoints).getOrElse(Seq.empty)
+        val values            = points.flatMap(p => (p \ "value").asOpt[Double])
         reduceValues(values, reducer)
 
       case AnalyticsShape.TopN | AnalyticsShape.Pie =>

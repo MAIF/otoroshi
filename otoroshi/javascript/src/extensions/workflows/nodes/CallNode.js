@@ -1,5 +1,5 @@
 import React from 'react';
-import {NgAnyRenderer, NgCodeRenderer, NgSelectRenderer} from '../../../components/nginputs';
+import { NgAnyRenderer, NgCodeRenderer, NgSelectRenderer } from '../../../components/nginputs';
 import { Row } from '../../../components/Row';
 import { nodesCatalogSignal } from '../models/Functions';
 

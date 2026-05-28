@@ -7,7 +7,14 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiDataStore, ApiSubscriptionDataStore, KvApiDataStore, KvApiSubscriptionDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import next.models.{
+  ApiDataStore,
+  ApiSubscriptionDataStore,
+  KvApiDataStore,
+  KvApiSubscriptionDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -177,7 +184,7 @@ class InMemoryDataStores(
   private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
-  private lazy val _userAlertDataStore                                                =
+  private lazy val _userAlertDataStore                                               =
     new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 

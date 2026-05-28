@@ -765,8 +765,14 @@ export function ThrottlingStrategy({ value, onChange }) {
                 options: [
                   { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
                   { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
-                  { value: 'DistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy' },
-                  { value: 'LuaDistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy (using Lua scripts)' },
+                  {
+                    value: 'DistributedRedisThrottlingStrategyConfig',
+                    label: 'Distributed throttling strategy',
+                  },
+                  {
+                    value: 'LuaDistributedRedisThrottlingStrategyConfig',
+                    label: 'Distributed throttling strategy (using Lua scripts)',
+                  },
                   { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
                 ],
               },

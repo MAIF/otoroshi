@@ -204,7 +204,8 @@ object AnalyticsSchema {
     )
   }
 
-  /** Companion table that stores fired alert events ("alert log"). Lives in
+  /**
+   * Companion table that stores fired alert events ("alert log"). Lives in
    *  the same PG and lifecycle as the events table.
    */
   def firedAlertsTable(settings: UserAnalyticsExporterSettings): String =
@@ -247,9 +248,8 @@ object AnalyticsSchema {
     val withEventsIndexes = indexStatements(settings).foldLeft(createTable.map(_ => ())) { (acc, ddl) =>
       acc.flatMap(_ => pool.query(ddl).executeAsync().map(_ => ()))
     }
-    val withAlertsTable   = withEventsIndexes.flatMap(_ =>
-      pool.query(createFiredAlertsTableSql(settings)).executeAsync().map(_ => ())
-    )
+    val withAlertsTable   =
+      withEventsIndexes.flatMap(_ => pool.query(createFiredAlertsTableSql(settings)).executeAsync().map(_ => ()))
     firedAlertsIndexStatements(settings).foldLeft(withAlertsTable) { (acc, ddl) =>
       acc.flatMap(_ => pool.query(ddl).executeAsync().map(_ => ()))
     }
@@ -313,8 +313,8 @@ object EventDenormalizer {
     val apiId    = stripped.select("route").select("metadata").select("Otoroshi-Api-Ref").asOptString
     val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-    val identityType = stripped.select("identity").select("identityType").asOptString
-    val identityId   = stripped.select("identity").select("identity").asOptString
+    val identityType          = stripped.select("identity").select("identityType").asOptString
+    val identityId            = stripped.select("identity").select("identity").asOptString
     val (apikeyId, userEmail) = identityType match {
       case Some("APIKEY")     => (identityId, None)
       case Some("PRIVATEAPP") => (None, identityId)
@@ -365,7 +365,8 @@ object EventDenormalizer {
     )
   }
 
-  /** Converts a denormalized row to a Vert.x tuple ready to bind to the
+  /**
+   * Converts a denormalized row to a Vert.x tuple ready to bind to the
    *  `insertSql` 26 parameter slots in the right order.
    */
   def toTuple(r: Row): VertxTuple = VertxTuple.from(
@@ -399,7 +400,8 @@ object EventDenormalizer {
     )
   )
 
-  /** SQL `INSERT ... ON CONFLICT DO NOTHING` matching the 26-column layout
+  /**
+   * SQL `INSERT ... ON CONFLICT DO NOTHING` matching the 26-column layout
    *  produced by `extractColumns`/`toTuple`.
    */
   def insertSql(s: UserAnalyticsExporterSettings): String = {
@@ -421,20 +423,20 @@ object EventDenormalizer {
 object FiredAlertDenormalizer {
 
   def toTuple(event: JsValue): VertxTuple = {
-    val now = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
-    val id  = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
-    val ts  = event
+    val now            = java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC)
+    val id             = event.select("@id").asOptString.getOrElse(IdGenerator.uuid)
+    val ts             = event
       .select("@timestamp")
       .asOpt[Long]
       .map(ms => java.time.Instant.ofEpochMilli(ms).atOffset(java.time.ZoneOffset.UTC))
       .getOrElse(now)
-    val tenant     = event.select("tenant").asOptString.getOrElse("default")
-    val alertId    = event.select("alertId").asOptString.getOrElse("")
-    val alertName  = event.select("alertName").asOptString
-    val severity   = event.select("severity").asOptString
-    val message    = event.select("message").asOptString
-    val combineOp  = event.select("combine").asOptString
-    val windowSec  = event.select("windowSeconds").asOpt[Int]
+    val tenant         = event.select("tenant").asOptString.getOrElse("default")
+    val alertId        = event.select("alertId").asOptString.getOrElse("")
+    val alertName      = event.select("alertName").asOptString
+    val severity       = event.select("severity").asOptString
+    val message        = event.select("message").asOptString
+    val combineOp      = event.select("combine").asOptString
+    val windowSec      = event.select("windowSeconds").asOpt[Int]
     val conditionsJson = Json.stringify(event.select("conditions").asOpt[JsArray].getOrElse(JsArray()))
     VertxTuple.from(
       Array[AnyRef](
@@ -493,7 +495,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
     val typ = event.select("@type").asOptString
     typ.contains("GatewayEvent") ||
     (typ.contains("AlertEvent") &&
-      event.select("alertSubcategory").asOptString.contains("user-analytics"))
+    event.select("alertSubcategory").asOptString.contains("user-analytics"))
   }
 
   override def start(): Future[Unit] = {
@@ -544,8 +546,9 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
             val (gatewayEvents, alertEvents) = events.partition { e =>
               e.select("@type").asOptString.contains("GatewayEvent")
             }
-            val gatewayFu = if (gatewayEvents.isEmpty) FastFuture.successful(()) else sendGatewayEvents(pool, s, gatewayEvents)
-            val alertsFu  = if (alertEvents.isEmpty) FastFuture.successful(()) else sendAlertEvents(pool, s, alertEvents)
+            val gatewayFu                    =
+              if (gatewayEvents.isEmpty) FastFuture.successful(()) else sendGatewayEvents(pool, s, gatewayEvents)
+            val alertsFu                     = if (alertEvents.isEmpty) FastFuture.successful(()) else sendAlertEvents(pool, s, alertEvents)
             gatewayFu
               .flatMap(_ => alertsFu)
               .map(_ => ExportResult.ExportResultSuccess: ExportResult)

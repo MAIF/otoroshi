@@ -15,8 +15,8 @@ class Rfc9728MetadataTests(parent: PluginsTestSpec) {
   private val WellKnownPath = "/.well-known/oauth-protected-resource"
 
   def withOverrideOnly(): Unit = {
-    val resourceId   = "https://api.example.com/"
-    val asOverride   = Seq("https://issuer-a.example.com", "https://issuer-b.example.com")
+    val resourceId = "https://api.example.com/"
+    val asOverride = Seq("https://issuer-a.example.com", "https://issuer-b.example.com")
 
     val route = createRouteWithExternalTarget(
       Seq(
@@ -224,9 +224,9 @@ class Rfc9728MetadataTests(parent: PluginsTestSpec) {
   def withSignedMetadata(): Unit = {
     // Otoroshi auto-provisions the `otoroshi-jwt-signing` RSA keypair at startup, so we can use it directly
     // as the signing key without having to create a new cert in the test.
-    val resourceId   = "https://api.example.com/"
-    val asOverride   = Seq("https://issuer.example.com")
-    val jwksUri      = "https://api.example.com/.well-known/jwks.json"
+    val resourceId = "https://api.example.com/"
+    val asOverride = Seq("https://issuer.example.com")
+    val jwksUri    = "https://api.example.com/.well-known/jwks.json"
 
     val route = createRouteWithExternalTarget(
       Seq(

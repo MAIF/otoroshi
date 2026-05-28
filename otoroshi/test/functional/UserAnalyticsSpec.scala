@@ -25,8 +25,9 @@ class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
   // Test fixtures
   // ---------------------------------------------------------------------------
 
-  private val sampleEvent: JsObject = Json.parse(
-    """
+  private val sampleEvent: JsObject = Json
+    .parse(
+      """
       |{
       |  "@id": "event_42",
       |  "@timestamp": 1775637516194,
@@ -73,7 +74,8 @@ class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
       |  }
       |}
       |""".stripMargin
-  ).as[JsObject]
+    )
+    .as[JsObject]
 
   // ---------------------------------------------------------------------------
   // EventStripper
@@ -147,15 +149,15 @@ class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
     }
 
     "fall back to user_email when identityType=PRIVATEAPP" in {
-      val ev    = sampleEvent ++ Json.obj(
+      val ev   = sampleEvent ++ Json.obj(
         "identity" -> Json.obj(
           "identityType" -> "PRIVATEAPP",
           "identity"     -> "alice@example.com",
           "label"        -> "alice"
         )
       )
-      val s     = EventStripper.stripGatewayEvent(ev)
-      val srow  = EventDenormalizer.extractColumns(s)
+      val s    = EventStripper.stripGatewayEvent(ev)
+      val srow = EventDenormalizer.extractColumns(s)
       srow.userEmail.value mustBe "alice@example.com"
       srow.apikeyId mustBe None
     }
@@ -208,7 +210,7 @@ class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
         "group_id"  -> "group_x",
         "err"       -> true
       )
-      val f = Filters.fromJson(js)
+      val f  = Filters.fromJson(js)
       f.routeId.value mustBe "route_x"
       f.apiId.value mustBe "api_x"
       f.apikeyId.value mustBe "apikey_x"
@@ -216,7 +218,7 @@ class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
       f.err.value mustBe true
     }
     "default to last hour when from/to absent" in {
-      val f = Filters.fromJson(Json.obj())
+      val f            = Filters.fromJson(Json.obj())
       val rangeSeconds =
         java.time.Duration.between(f.from, f.to).getSeconds
       rangeSeconds must (be >= 3500L and be <= 3700L)
@@ -283,21 +285,21 @@ class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
       vals.size mustBe 2
     }
     "inject the tenant when set" in {
-      val now = Instant.now()
-      val f   = Filters(now.minusSeconds(60), now, tenant = Some("acme"))
+      val now           = Instant.now()
+      val f             = Filters(now.minusSeconds(60), now, tenant = Some("acme"))
       val (where, vals) = FilterSql.whereClause(f)
       where must include("tenant = $3")
       vals(2) mustBe "acme"
     }
     "inject group filter via ANY(group_ids)" in {
-      val now = Instant.now()
-      val f   = Filters(now.minusSeconds(60), now, groupId = Some("g1"))
+      val now        = Instant.now()
+      val f          = Filters(now.minusSeconds(60), now, groupId = Some("g1"))
       val (where, _) = FilterSql.whereClause(f)
       where must include("$3 = ANY(group_ids)")
     }
     "return placeholders in increasing order" in {
-      val now = Instant.now()
-      val f   = Filters(
+      val now           = Instant.now()
+      val f             = Filters(
         now.minusSeconds(60),
         now,
         routeId = Some("r"),

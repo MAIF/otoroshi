@@ -22,8 +22,7 @@ export const runQuery = (payload, signal) =>
     r.json().then((j) => ({ ok: r.ok, status: r.status, body: j }))
   );
 
-export const fetchSchema = () =>
-  fetchJson(`${analyticsBase}/_schema`).then((r) => r.json());
+export const fetchSchema = () => fetchJson(`${analyticsBase}/_schema`).then((r) => r.json());
 
 export const testConnection = (settings) =>
   fetchJson(`${analyticsBase}/_test-connection`, { method: 'POST', body: settings }).then((r) =>
@@ -31,7 +30,9 @@ export const testConnection = (settings) =>
   );
 
 export const setActiveExporter = (id) =>
-  fetchJson(`${analyticsBase}/_set-active-exporter/${id}`, { method: 'POST' }).then((r) => r.json());
+  fetchJson(`${analyticsBase}/_set-active-exporter/${id}`, { method: 'POST' }).then((r) =>
+    r.json()
+  );
 
 export const migrateLegacy = (payload) =>
   fetchJson(`${analyticsBase}/_migrate`, { method: 'POST', body: payload }).then((r) => r.json());

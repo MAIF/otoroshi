@@ -6,7 +6,14 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiDataStore, ApiSubscriptionDataStore, KvApiDataStore, KvApiSubscriptionDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import next.models.{
+  ApiDataStore,
+  ApiSubscriptionDataStore,
+  KvApiDataStore,
+  KvApiSubscriptionDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterMode, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
@@ -187,7 +194,7 @@ class GenericDataStores(
 
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
-  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  private lazy val _userDashboardDataStore = new KvUserDashboardDataStore(redis, env)
 
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 

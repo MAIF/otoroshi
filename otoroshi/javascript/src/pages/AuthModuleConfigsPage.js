@@ -34,7 +34,9 @@ export class AuthModuleConfigsPage extends Component {
         return (
           <span
             className={`badge ${cls || ''}`}
-            style={cls ? undefined : { backgroundColor: 'rgba(128, 128, 128, 0.25)', color: 'inherit' }}
+            style={
+              cls ? undefined : { backgroundColor: 'rgba(128, 128, 128, 0.25)', color: 'inherit' }
+            }
           >
             {item.type}
           </span>

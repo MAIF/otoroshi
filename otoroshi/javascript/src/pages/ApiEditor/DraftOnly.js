@@ -58,9 +58,7 @@ export function VersionBanner({ showAction = true }) {
           {isDraft ? 'DRAFT' : 'PRODUCTION'}
         </span>
         <span className="version-banner-text">
-          {isDraft
-            ? 'your edits go live once published'
-            : 'live config — edit through the draft'}
+          {isDraft ? 'your edits go live once published' : 'live config — edit through the draft'}
         </span>
       </div>
       {showAction && (
@@ -77,4 +75,3 @@ export function VersionBanner({ showAction = true }) {
     </div>
   );
 }
-

@@ -100,7 +100,8 @@ object JsonSchemaValidator {
       Right(())
     } else {
       Try {
-        val versionFlag  = Option(VersionFlag.fromId(config.specification)).flatMap(o => Option(o.orElse(null)))
+        val versionFlag  = Option(VersionFlag.fromId(config.specification))
+          .flatMap(o => Option(o.orElse(null)))
           .getOrElse(VersionFlag.V202012)
         val factory      = JsonSchemaFactory.getInstance(versionFlag)
         val schemaConfig = new SchemaValidatorsConfig()
@@ -167,7 +168,8 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
                 .left
             } else {
               JsonSchemaValidator.logger.warn(
-                s"request body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting request through: ${errors.mkString(", ")}"
+                s"request body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting request through: ${errors
+                  .mkString(", ")}"
               )
               ctx.otoroshiRequest.copy(body = Source.single(rawBody)).right
             }
@@ -229,7 +231,8 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
                 .left
             } else {
               JsonSchemaValidator.logger.warn(
-                s"response body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting response through: ${errors.mkString(", ")}"
+                s"response body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting response through: ${errors
+                  .mkString(", ")}"
               )
               ctx.otoroshiResponse.copy(body = Source.single(rawBody)).right
             }

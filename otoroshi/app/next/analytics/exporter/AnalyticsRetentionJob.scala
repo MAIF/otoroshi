@@ -71,7 +71,8 @@ class AnalyticsRetentionJob extends Job {
       .executeAsync()
       .map { rs =>
         logger.info(
-          s"[user-analytics-retention] deleted ${rs.rowCount()} events older than ${s.retentionDays} days from ${AnalyticsSchema.fullTable(s)}"
+          s"[user-analytics-retention] deleted ${rs
+            .rowCount()} events older than ${s.retentionDays} days from ${AnalyticsSchema.fullTable(s)}"
         )
       }
       .recover { case e: Throwable =>

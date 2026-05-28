@@ -24,29 +24,28 @@ class HttpSignatureVerifyRequestTests(parent: PluginsTestSpec) {
       method: String,
       url: String,
       hostHeader: String,
-      components: List[HttpSigStructuredFields.ComponentId] =
-        List(
-          HttpSigStructuredFields.ComponentId("@method", Nil),
-          HttpSigStructuredFields.ComponentId("@target-uri", Nil)
-        ),
+      components: List[HttpSigStructuredFields.ComponentId] = List(
+        HttpSigStructuredFields.ComponentId("@method", Nil),
+        HttpSigStructuredFields.ComponentId("@target-uri", Nil)
+      ),
       extraHeaders: Seq[(String, String)] = Seq.empty,
       includeAlg: Boolean = true,
       kid: String = keyid
   ): (String, String) = {
     val now    = System.currentTimeMillis() / 1000L
     val params = collection.mutable.ListBuffer.empty[(String, HttpSigStructuredFields.Param)]
-    params += ("created" -> HttpSigStructuredFields.ParamInt(now))
-    params += ("keyid"   -> HttpSigStructuredFields.ParamString(kid))
+    params += ("created"             -> HttpSigStructuredFields.ParamInt(now))
+    params += ("keyid"               -> HttpSigStructuredFields.ParamString(kid))
     if (includeAlg) params += ("alg" -> HttpSigStructuredFields.ParamString("hmac-sha256"))
-    val sigInput = HttpSigStructuredFields.SignatureInputValue(components, params.toList)
-    val msg      = SimpleSigMessage(
+    val sigInput       = HttpSigStructuredFields.SignatureInputValue(components, params.toList)
+    val msg            = SimpleSigMessage(
       method = method,
       fullUri = url,
       headers = Seq("Host" -> hostHeader) ++ extraHeaders,
       status = None
     )
-    val base     = HttpSigBase.build(msg, sigInput, None).right.get
-    val sigBytes =
+    val base           = HttpSigBase.build(msg, sigInput, None).right.get
+    val sigBytes       =
       HttpSigAlgorithms.sign("hmac-sha256", base.getBytes(StandardCharsets.UTF_8), Left(hmacSecret)).right.get
     val sigInputHeader = HttpSigStructuredFields.serializeSignatureInputDict(List("sig1" -> sigInput))
     val sigHeader      = HttpSigStructuredFields.serializeSignatureDict(List("sig1" -> sigBytes))
@@ -71,8 +70,8 @@ class HttpSignatureVerifyRequestTests(parent: PluginsTestSpec) {
       )
     ).futureValue
 
-    val host  = route.frontend.domains.head.domain
-    val url   = s"http://$host/api"
+    val host                        = route.frontend.domains.head.domain
+    val url                         = s"http://$host/api"
     val (sigInputHeader, sigHeader) = signRequest("GET", url, host)
 
     val resp = ws

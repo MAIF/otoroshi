@@ -286,19 +286,19 @@ sealed trait NgStep {
   def json: JsValue = name.json
 }
 object NgStep       {
-  case object Router            extends NgStep { def name: String = "Router"            }
-  case object Sink              extends NgStep { def name: String = "Sink"              }
-  case object PreRoute          extends NgStep { def name: String = "PreRoute"          }
-  case object ValidateAccess    extends NgStep { def name: String = "ValidateAccess"    }
-  case object TransformRequest  extends NgStep { def name: String = "TransformRequest"  }
-  case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
-  case object MatchRoute        extends NgStep { def name: String = "MatchRoute"        }
-  case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel"     }
-  case object HandlesRequest    extends NgStep { def name: String = "HandlesRequest"    }
-  case object CallBackend       extends NgStep { def name: String = "CallBackend"       }
-  case object Job               extends NgStep { def name: String = "Job"               }
-  case object DataExporterFilter extends NgStep { def name: String = "DataExporterFilter"               }
-  case object DataExporterTransform extends NgStep { def name: String = "DataExporterTransform"               }
+  case object Router                extends NgStep { def name: String = "Router"                }
+  case object Sink                  extends NgStep { def name: String = "Sink"                  }
+  case object PreRoute              extends NgStep { def name: String = "PreRoute"              }
+  case object ValidateAccess        extends NgStep { def name: String = "ValidateAccess"        }
+  case object TransformRequest      extends NgStep { def name: String = "TransformRequest"      }
+  case object TransformResponse     extends NgStep { def name: String = "TransformResponse"     }
+  case object MatchRoute            extends NgStep { def name: String = "MatchRoute"            }
+  case object HandlesTunnel         extends NgStep { def name: String = "HandlesTunnel"         }
+  case object HandlesRequest        extends NgStep { def name: String = "HandlesRequest"        }
+  case object CallBackend           extends NgStep { def name: String = "CallBackend"           }
+  case object Job                   extends NgStep { def name: String = "Job"                   }
+  case object DataExporterFilter    extends NgStep { def name: String = "DataExporterFilter"    }
+  case object DataExporterTransform extends NgStep { def name: String = "DataExporterTransform" }
 
   val all = Seq(
     Router,
@@ -314,20 +314,20 @@ object NgStep       {
   )
 
   def apply(value: String): Option[NgStep] = value match {
-    case "Router"            => Router.some
-    case "Sink"              => Sink.some
-    case "PreRoute"          => PreRoute.some
-    case "ValidateAccess"    => ValidateAccess.some
-    case "TransformRequest"  => TransformRequest.some
-    case "TransformResponse" => TransformResponse.some
-    case "MatchRoute"        => MatchRoute.some
-    case "HandlesTunnel"     => HandlesTunnel.some
-    case "HandlesRequest"    => HandlesRequest.some
-    case "CallBackend"       => CallBackend.some
-    case "Job"               => Job.some
-    case "DataExporterFilter" => DataExporterFilter.some
+    case "Router"                => Router.some
+    case "Sink"                  => Sink.some
+    case "PreRoute"              => PreRoute.some
+    case "ValidateAccess"        => ValidateAccess.some
+    case "TransformRequest"      => TransformRequest.some
+    case "TransformResponse"     => TransformResponse.some
+    case "MatchRoute"            => MatchRoute.some
+    case "HandlesTunnel"         => HandlesTunnel.some
+    case "HandlesRequest"        => HandlesRequest.some
+    case "CallBackend"           => CallBackend.some
+    case "Job"                   => Job.some
+    case "DataExporterFilter"    => DataExporterFilter.some
     case "DataExporterTransform" => DataExporterTransform.some
-    case _                   => None
+    case _                       => None
   }
 }
 

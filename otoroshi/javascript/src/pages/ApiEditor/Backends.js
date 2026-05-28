@@ -275,9 +275,7 @@ export function EditBackend(props) {
               });
             }}
             options={item.clients_backend_config}
-            optionsTransformer={(arr) =>
-              arr.map((item) => ({ label: item.name, value: item.id }))
-            }
+            optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
           />
         </Row>
       ),

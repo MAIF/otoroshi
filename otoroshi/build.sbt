@@ -191,14 +191,14 @@ libraryDependencies ++= Seq(
   // "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
   // "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
   // "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"          % "2.2.49" excludeAll (
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.49" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
     ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
   ),
-  "com.github.swagger-akka-http"     %% "swagger-scala-module" % "2.15.0" excludeAll (
+  "com.github.swagger-akka-http"    %% "swagger-scala-module"                 % "2.15.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),

@@ -156,7 +156,7 @@ export const RULES = [
     applies: (api) => routesOf(api).length > 0,
     failed: (api) =>
       routesOf(api).some(
-        (r) => ((r?.frontend?.methods || []).filter((m) => (m || '').length).length) === 0
+        (r) => (r?.frontend?.methods || []).filter((m) => (m || '').length).length === 0
       ),
   },
   {

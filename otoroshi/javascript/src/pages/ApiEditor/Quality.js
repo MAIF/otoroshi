@@ -73,9 +73,7 @@ export function Quality(props) {
                 className={`api-quality-cat api-quality-cat--clickable ${
                   categoryFilter === c.key ? 'api-quality-cat--active' : ''
                 }`}
-                onClick={() =>
-                  setCategoryFilter((prev) => (prev === c.key ? null : c.key))
-                }
+                onClick={() => setCategoryFilter((prev) => (prev === c.key ? null : c.key))}
               >
                 <div className="api-quality-cat-head">
                   <span className="api-quality-cat-name">{c.label}</span>

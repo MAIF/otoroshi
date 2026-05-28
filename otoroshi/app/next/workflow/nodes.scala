@@ -281,7 +281,10 @@ case class WhileNode(json: JsObject) extends Node {
             .obj("type" -> "boolean", "description" -> "The predicate defining if the node is run or not"),
           "node"       -> Json.obj("type" -> "object", "description" -> "the node to execute for each element in an array"),
           "max_budget" -> Json
-            .obj("type" -> "number", "description" -> "Maximum number of iterations before the loop is aborted (default 999)")
+            .obj(
+              "type"        -> "number",
+              "description" -> "Maximum number of iterations before the loop is aborted (default 999)"
+            )
         )
       )
     )
