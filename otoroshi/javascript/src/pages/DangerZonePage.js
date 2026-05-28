@@ -2022,10 +2022,10 @@ const GlobalPluginInformation = ({ plugin, open }) => {
   if (!open) return null;
 
   const legacyPluginDocumentationUrl =
-    'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
+    'https://www.otoroshi.io/docs/plugins/built-in-plugins';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
+    return `https://www.otoroshi.io/docs/plugins/built-in-plugins#${
       plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()
