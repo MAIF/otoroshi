@@ -106,7 +106,7 @@ class ServiceDescriptorsMigrationPopup extends Component {
             </a>{' '}
             remaining in your database. For more information about that, please read{' '}
             <a
-              href="https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html"
+              href="https://www.otoroshi.io/docs/topics/deprecating-sd"
               target="_blank"
             >
               the documentation
@@ -142,7 +142,7 @@ class AnonymousReportingEnabled extends Component {
           <p style={{ textAlign: 'justify' }}>
             It won't send sensitive or personnal data, just a bunch of statistics about your usage
             of otoroshi (see{' '}
-            <a href="https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html">
+            <a href="https://www.otoroshi.io/docs/topics/anonymous-reporting">
               the documentation
             </a>
             ).
