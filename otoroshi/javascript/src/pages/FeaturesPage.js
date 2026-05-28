@@ -44,6 +44,14 @@ export const graph = (env) => {
           icon: () => 'fa-hammer',
         },
         {
+          title: 'Node eventstream',
+          img: 'node-eventstream',
+          description: 'Show current otoroshi node eventstream',
+          display: () => true,
+          link: '/node/eventstream',
+          icon: () => 'fa-filter',
+        },
+        {
           title: 'Snow monkey',
           absoluteImg: '/assets/images/nihonzaru.svg',
           description: 'Create chaos in your routes and test your resilience',
