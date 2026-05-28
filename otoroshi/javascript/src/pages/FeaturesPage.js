@@ -72,7 +72,7 @@ export const graph = (env) => {
           img: 'manual',
           description: 'You have a question ? Read everything you need to know about otoroshi',
           display: () => true,
-          link: 'https://maif.github.io/otoroshi/manual/index.html',
+          link: 'https://www.otoroshi.io/docs/',
           icon: () => 'fa-book',
         },
       ],
