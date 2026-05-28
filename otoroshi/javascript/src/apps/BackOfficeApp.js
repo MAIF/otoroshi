@@ -10,6 +10,7 @@ import { UserAlertsPage } from '../pages/analytics/UserAlertsPage';
 import { UserAlertEventsPage } from '../pages/analytics/UserAlertEventsPage';
 import { DocumentationPage } from '../pages/DocumentationPage';
 import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
+import { GlobalNodeEventStreamPage } from '../pages/GlobalNodeEventStreamPage';
 import { ServiceHealthPage } from '../pages/ServiceHealthPage';
 import { ServiceEventsPage } from '../pages/ServiceEventsPage';
 import { ServiceLiveStatsPage } from '../pages/ServiceLiveStatsPage';
@@ -930,6 +931,10 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path="/events"
                         component={(props) => this.decorate(GlobalEventsPage, props)}
+                      />
+                      <Route
+                        path="/node/eventstream"
+                        component={(props) => this.decorate(GlobalNodeEventStreamPage, props)}
                       />
                       <Route
                         path="/snowmonkey"
