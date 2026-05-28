@@ -811,7 +811,7 @@ object KubernetesIngressSyncJob {
         env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html ##")
+        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"-------------------------------------------------------------------------")
         env.logger.warn("")
