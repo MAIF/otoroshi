@@ -908,7 +908,7 @@ export class TopBar extends Component {
         </li>
         <li>
           <a
-            href="https://maif.github.io/otoroshi/manual/index.html"
+            href="https://www.otoroshi.io/docs/"
             target="_blank"
             className="dropdown-item"
           >
@@ -1323,7 +1323,7 @@ export class TopBar extends Component {
         </li>
         <li>
           <a
-            href="https://maif.github.io/otoroshi/manual/index.html"
+            href="https://www.otoroshi.io/docs/"
             target="_blank"
             className="dropdown-item"
           >
