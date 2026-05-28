@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.16.0] - 2026-05-28
+
+
+https://github.com/MAIF/otoroshi/milestone/138?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.15.1...v17.16.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.16.0
+
+
+### Added 
+
+- Pluggable custom filter and project phase on data exporters (#2552 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- JSON validator plugins based on JSON Schemas (#2553 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- User defined Analytics dashboards and Alerts (#2555 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Better throttling strategy (#2395 fixed by [mathieuancelin](https://github.com/mathieuancelin), [Zwiterrion](https://github.com/Zwiterrion))
+- `OAuth2Caller`plugin can specify a target resource for the generated token (#2568 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- new `OAuth2Caller` plugin backed by an OAuth2 auth. module (#2569 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add Client-Cert HTTP Header Field plugin (RFC 9440) (#2570 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Add OAuth 2.0 Protected Resource Metadata plugin (RFC 9728) (#2571 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support Scaleway TEM as mailer (#2577 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support MailPace as mailer (#2578 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Node eventstream visualizer for simple use cases (#2585 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- change json schema gen library for better results (#2556 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- various documentation mismatches in workflow documentation (#2574 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Cleanup and update Otoroshi Helm Chart (#2582 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Cleanup and update Otoroshi Kustomize manifests (#2583 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- UppercaseOperator does `toLowercase()` (#2575 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- DivideOperator always returns 0 (#2576 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- monaco editor fails when no input value provided (#2580 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.15.1] - 2026-04-22
 
 
