@@ -137,7 +137,7 @@ class WorkflowBackend extends NgBackendCall {
                   } else {
                     Right(
                       BackendCallResponse(
-                        NgPluginHttpResponse.fromResult(Results.Ok(body.get).as("application/json")),
+                        NgPluginHttpResponse.fromResult(Results.Ok(respBody).as("application/json")),
                         None
                       )
                     )
