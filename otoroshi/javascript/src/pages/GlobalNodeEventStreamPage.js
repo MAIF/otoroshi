@@ -3,12 +3,14 @@ import MonacoEditor from '@monaco-editor/react';
 import moment from 'moment';
 
 const FLUSH_INTERVAL_MS = 250;
+const DEFAULT_BUFFER_SIZE = 10000;
 
 export class GlobalNodeEventStreamPage extends Component {
   state = {
     events: [],
     filter: '',
     notFilter: '',
+    bufferSize: DEFAULT_BUFFER_SIZE,
     selectedId: null,
     autoScroll: true,
   };
@@ -87,7 +89,21 @@ export class GlobalNodeEventStreamPage extends Component {
     if (this.buffer.length === 0) return;
     const batch = this.buffer;
     this.buffer = [];
-    this.setState((prev) => ({ events: prev.events.concat(batch) }));
+    this.setState((prev) => {
+      const next = prev.events.concat(batch);
+      const cap = prev.bufferSize;
+      const trimmed = next.length > cap ? next.slice(next.length - cap) : next;
+      return { events: trimmed };
+    });
+  };
+
+  onBufferSizeChange = (e) => {
+    const raw = parseInt(e.target.value, 10);
+    const size = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_BUFFER_SIZE;
+    this.setState((prev) => ({
+      bufferSize: size,
+      events: prev.events.length > size ? prev.events.slice(prev.events.length - size) : prev.events,
+    }));
   };
 
   onScroll = () => {
@@ -169,11 +185,32 @@ export class GlobalNodeEventStreamPage extends Component {
               fontSize: 13,
             }}
           >
-            shown <strong>{shown}</strong> / in memory <strong>{total}</strong>
+            shown <strong>{shown}</strong> / in memory <strong>{total}</strong> / cap{' '}
+            <strong>{this.state.bufferSize}</strong>
             {!this.state.autoScroll && (
               <span style={{ marginLeft: 12, color: '#f1b850' }}>auto-scroll paused</span>
             )}
           </div>
+          <label
+            style={{
+              color: 'var(--text, #ccc)',
+              fontFamily: 'monospace',
+              fontSize: 13,
+              marginBottom: 0,
+            }}
+          >
+            buffer
+          </label>
+          <input
+            type="number"
+            min={1}
+            step={100}
+            className="form-control"
+            value={this.state.bufferSize}
+            onChange={this.onBufferSizeChange}
+            style={{ width: 110 }}
+            title="Maximum events kept in memory; oldest get dropped when exceeded"
+          />
           <button type="button" className="btn btn-sm btn-danger" onClick={this.clear}>
             <i className="fas fa-trash" /> Clear
           </button>
