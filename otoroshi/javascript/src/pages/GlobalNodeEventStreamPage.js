@@ -206,10 +206,17 @@ export class GlobalNodeEventStreamPage extends Component {
       const data = JSON.parse(e.data);
       const ts = data['@timestamp'] || data.timestamp || Date.now();
       const id = this.nextId++;
+      const baseType = data['@type'] || 'event';
+      let displayType = baseType;
+      if (baseType === 'AuditEvent' && typeof data.audit === 'string') {
+        displayType = `${baseType} / ${data.audit}`;
+      } else if (baseType === 'AlertEvent' && typeof data.alert === 'string') {
+        displayType = `${baseType} / ${data.alert}`;
+      }
       this.buffer.push({
         id,
         ts: typeof ts === 'number' ? ts : new Date(ts).getTime(),
-        type: data['@type'] || 'event',
+        type: displayType,
         raw: data,
         line: JSON.stringify(data),
       });
