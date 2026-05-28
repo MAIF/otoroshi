@@ -483,7 +483,7 @@ export class HomePage extends Component {
           <div className="alert alert-warning mb-3 d-flex align-items-center" role="alert">
             You are using the legacy Otoroshi engine. The new engine is now ready for production.
             <a
-              href="https://maif.github.io/otoroshi/manual/next/engine.html"
+              href="https://www.otoroshi.io/docs/topics/engine"
               target="_blank"
               className="btn btn-sm btn-warning ms-auto"
             >
