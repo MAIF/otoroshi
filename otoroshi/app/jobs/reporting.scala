@@ -461,7 +461,7 @@ class AnonymousReportingJob extends Job {
   private def displayYouCanDisableLog(): Unit = {
     logger.info("Anonymous reporting is ENABLED. Thank you for your help !")
     logger.info(
-      "You can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html"
+      "You can find more about anonymous reporting at https://www.otoroshi.io/docs/topics/anonymous-reporting"
     )
   }
 
@@ -470,7 +470,7 @@ class AnonymousReportingJob extends Job {
       "Anonymous reporting is DISABLED. It would help us a lot to activate it (Features > Danger zone > Send anonymous reports)."
     )
     logger.info(
-      "You can find more about anonymous reporting at https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html"
+      "You can find more about anonymous reporting at https://www.otoroshi.io/docs/topics/anonymous-reporting"
     )
   }
 
