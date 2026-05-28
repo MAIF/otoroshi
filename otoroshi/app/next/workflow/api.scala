@@ -22,12 +22,22 @@ class WorkflowEngine(env: Env) {
   implicit val executorContext: ExecutionContext = env.otoroshiExecutionContext
 
   def run(
+           wfRef: String,
+           node: Node,
+           input: JsObject,
+           attrs: TypedMap,
+           functions: Map[String, JsObject],
+         ): Future[WorkflowResult] = {
+    run(wfRef, node, input, attrs, functions, noRunEvent = false)
+  }
+
+  def run(
       wfRef: String,
       node: Node,
       input: JsObject,
       attrs: TypedMap,
       functions: Map[String, JsObject] = Map.empty,
-      noRunEvent: Boolean = false,
+      noRunEvent: Boolean,
   ): Future[WorkflowResult] = {
     val wfRun = WorkflowRun(
       ULID.random(),
