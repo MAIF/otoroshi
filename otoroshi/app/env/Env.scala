@@ -925,11 +925,11 @@ class Env(
       logger.warn("You MUST change those values before deploying to production")
       logger.warn("You can change configuration by passing path values with config file or via runtime flags")
       logger.warn(
-        "    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-your-configuration-file"
+        "    https://www.otoroshi.io/docs/install/setup-otoroshi#setup-your-configuration-file"
       )
       logger.warn("You can change configuration by passing environment variables")
       logger.warn(
-        "    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#configuration-with-env-variables"
+        "    https://www.otoroshi.io/docs/install/setup-otoroshi#reference-configuration-for-env-variables"
       )
       logger.warn("")
       logger.warn("#########################################")
@@ -999,7 +999,7 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader           =>
         logger.error(
-          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "file" if clusterConfig.mode == ClusterMode.Leader              =>
@@ -1014,7 +1014,7 @@ class Env(
         new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader             =>
         logger.error(
-          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader           =>
@@ -1034,7 +1034,7 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"                                                       =>
         logger.error(
-          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "file"                                                          =>
@@ -1047,7 +1047,7 @@ class Env(
       case "cassandra"                                                     => new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo"                                                         =>
         logger.error(
-          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "redis-pool"                                                    => new RedisCPDataStores(configuration, environment, lifecycle, this)
