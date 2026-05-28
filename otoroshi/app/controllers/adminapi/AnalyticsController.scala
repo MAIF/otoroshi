@@ -1,28 +1,20 @@
 package otoroshi.controllers.adminapi
 
-import otoroshi.actions._
+import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import org.joda.time.DateTime
+import otoroshi.actions._
 import otoroshi.env.Env
 import otoroshi.events._
-import otoroshi.models.ServiceDescriptor
-import org.joda.time.DateTime
+import otoroshi.jobs.updates._
+import otoroshi.models.{RightsChecker, ServiceDescriptor}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{
-  AbstractController,
-  Action,
-  AnyContent,
-  AnyContentAsEmpty,
-  BodyParser,
-  BodyParsers,
-  ControllerComponents,
-  RequestHeader,
-  Result,
-  Results
-}
-import otoroshi.jobs.updates._
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.mvc._
+import reactor.core.publisher.Sinks
 import utils.EntityFiltering
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,6 +38,31 @@ case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
   }
 }
 
+object AnalyticsTmpListenerActor {
+  def props(sink: Sinks.Many[String], ctx: ApiActionContext[AnyContent], env: Env) = Props(new AnalyticsTmpListenerActor(sink, ctx, env))
+}
+
+class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[AnyContent], env: Env) extends Actor {
+
+  lazy val filter = ctx.request.getQueryString("filter")
+
+  override def receive: Receive = {
+    case evt: OtoroshiEvent =>
+      //println(s"forward event: ${evt.`@id`}")
+      val json = evt.toJson(env)
+      filter match {
+        case Some(value) => {
+          json.select("@type").asOptString match {
+            case Some(kind) if kind == value => sink.tryEmitNext(json.stringify)
+            case _ => ()
+          }
+        }
+        case _ => sink.tryEmitNext(json.stringify)
+      }
+    case _ =>
+  }
+}
+
 class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
     env: Env
 ) extends AbstractController(cc) {
@@ -54,6 +71,21 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-analytics-api")
+
+  def getNodeEventStream() = ApiAction.async { ctx =>
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      val hotSource: Sinks.Many[String] = Sinks.many().unicast().onBackpressureBuffer[String]()
+      val hotFlux = hotSource.asFlux()
+      val source: Source[String, _] = Source.fromPublisher(hotFlux)
+      val ref = env.analyticsActorSystem.actorOf(AnalyticsTmpListenerActor.props(hotSource, ctx, env))
+      //println("subscribing to eventStream")
+      env.analyticsActorSystem.eventStream.subscribe(ref, classOf[OtoroshiEvent])
+      Ok.chunked(source.map(e => s"data: ${e}\n\n".byteString).alsoTo(Sink.onComplete { _ =>
+        //println("unsubscribing from eventStream")
+        env.analyticsActorSystem.eventStream.unsubscribe(ref)
+      })).as("text/event-stream").vfuture
+    }
+  }
 
   def withEventStore(f: ApiActionContext[AnyContent] => Future[Result]): Action[AnyContent] = {
     withEventStoreAndParser[AnyContent](BodyParsers.utils.ignore(AnyContentAsEmpty: AnyContent))(f)
