@@ -5,6 +5,130 @@ import moment from 'moment';
 const FLUSH_INTERVAL_MS = 250;
 const DEFAULT_BUFFER_SIZE = 10000;
 
+// Expression grammar:
+//   expr   := or
+//   or     := and ('||' and)*
+//   and    := unary ( ('&&')? unary )*       // && is optional → implicit AND
+//   unary  := '!' unary | primary
+//   primary:= '(' expr ')' | STRING
+// STRING is a bare word (no whitespace, no ( ) ! " and no && ||) or a "double-quoted" string with \" and \\ escapes.
+// Predicate input is the JSON line (already lowercased by the caller).
+
+function tokenize(input) {
+  const tokens = [];
+  let i = 0;
+  const n = input.length;
+  const isWs = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\r';
+  while (i < n) {
+    const c = input[i];
+    if (isWs(c)) { i++; continue; }
+    if (c === '(') { tokens.push({ type: 'LPAREN' }); i++; continue; }
+    if (c === ')') { tokens.push({ type: 'RPAREN' }); i++; continue; }
+    if (c === '!') { tokens.push({ type: 'NOT' }); i++; continue; }
+    if (c === '&' && input[i + 1] === '&') { tokens.push({ type: 'AND' }); i += 2; continue; }
+    if (c === '|' && input[i + 1] === '|') { tokens.push({ type: 'OR' }); i += 2; continue; }
+    if (c === '"') {
+      let s = '';
+      i++;
+      while (i < n && input[i] !== '"') {
+        if (input[i] === '\\' && i + 1 < n) { s += input[i + 1]; i += 2; }
+        else { s += input[i]; i++; }
+      }
+      if (i >= n) throw new Error('Unterminated string literal');
+      i++;
+      tokens.push({ type: 'STR', value: s });
+      continue;
+    }
+    let s = '';
+    while (i < n) {
+      const ch = input[i];
+      if (isWs(ch) || ch === '(' || ch === ')' || ch === '!' || ch === '"') break;
+      if (ch === '&' && input[i + 1] === '&') break;
+      if (ch === '|' && input[i + 1] === '|') break;
+      s += ch;
+      i++;
+    }
+    if (s.length === 0) throw new Error(`Unexpected character at ${i}`);
+    tokens.push({ type: 'STR', value: s });
+  }
+  return tokens;
+}
+
+function parseExpression(input) {
+  const tokens = tokenize(input);
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const eat = (type) => {
+    const t = tokens[pos];
+    if (!t || t.type !== type) throw new Error(`Expected ${type}`);
+    pos++;
+    return t;
+  };
+  const parsePrimary = () => {
+    const t = peek();
+    if (!t) throw new Error('Unexpected end of input');
+    if (t.type === 'LPAREN') {
+      pos++;
+      const node = parseOr();
+      eat('RPAREN');
+      return node;
+    }
+    if (t.type === 'STR') {
+      pos++;
+      const needle = t.value.toLowerCase();
+      return (line) => line.includes(needle);
+    }
+    throw new Error(`Unexpected token ${t.type}`);
+  };
+  const parseUnary = () => {
+    if (peek() && peek().type === 'NOT') {
+      pos++;
+      const inner = parseUnary();
+      return (line) => !inner(line);
+    }
+    return parsePrimary();
+  };
+  const parseAnd = () => {
+    let left = parseUnary();
+    while (true) {
+      const t = peek();
+      if (!t) break;
+      if (t.type === 'AND') { pos++; const right = parseUnary(); const l = left; left = (line) => l(line) && right(line); continue; }
+      if (t.type === 'STR' || t.type === 'NOT' || t.type === 'LPAREN') {
+        const right = parseUnary();
+        const l = left;
+        left = (line) => l(line) && right(line);
+        continue;
+      }
+      break;
+    }
+    return left;
+  };
+  const parseOr = () => {
+    let left = parseAnd();
+    while (peek() && peek().type === 'OR') {
+      pos++;
+      const right = parseAnd();
+      const l = left;
+      left = (line) => l(line) || right(line);
+    }
+    return left;
+  };
+  const predicate = parseOr();
+  if (pos !== tokens.length) throw new Error(`Unexpected token ${tokens[pos].type}`);
+  return predicate;
+}
+
+function compileFilter(input) {
+  const trimmed = (input || '').trim();
+  if (!trimmed) return { predicate: null, error: null };
+  try {
+    return { predicate: parseExpression(trimmed), error: null };
+  } catch (err) {
+    return { predicate: null, error: err.message || String(err) };
+  }
+}
+
 export class GlobalNodeEventStreamPage extends Component {
   state = {
     events: [],
@@ -18,6 +142,15 @@ export class GlobalNodeEventStreamPage extends Component {
   buffer = [];
   nextId = 0;
   scrollerRef = React.createRef();
+  exprCache = { match: { input: null, compiled: null }, exclude: { input: null, compiled: null } };
+
+  getCompiledFilter = (kind, input) => {
+    const cache = this.exprCache[kind];
+    if (cache.input === input) return cache.compiled;
+    const compiled = compileFilter(input);
+    this.exprCache[kind] = { input, compiled };
+    return compiled;
+  };
 
   componentDidMount() {
     this.props.setTitle('Node Event Stream');
@@ -128,26 +261,45 @@ export class GlobalNodeEventStreamPage extends Component {
     this.setState({ selectedId: null });
   };
 
-  filteredEvents = () => {
-    const f = this.state.filter.trim().toLowerCase();
-    const nf = this.state.notFilter.trim().toLowerCase();
-    if (!f && !nf) return this.state.events;
+  stepSelected = (events, delta) => {
+    if (!events || events.length === 0) return;
+    const idx = events.findIndex((e) => e.id === this.state.selectedId);
+    if (idx < 0) return;
+    const nextIdx = idx + delta;
+    if (nextIdx < 0 || nextIdx >= events.length) return;
+    this.setState({ selectedId: events[nextIdx].id });
+  };
+
+  filteredEvents = (matchPred, excludePred) => {
+    if (!matchPred && !excludePred) return this.state.events;
     return this.state.events.filter((e) => {
       const line = e.line.toLowerCase();
-      if (f && !line.includes(f)) return false;
-      if (nf && line.includes(nf)) return false;
+      if (matchPred && !matchPred(line)) return false;
+      if (excludePred && excludePred(line)) return false;
       return true;
     });
   };
 
   render() {
-    const events = this.filteredEvents();
+    const matchCompiled = this.getCompiledFilter('match', this.state.filter);
+    const excludeCompiled = this.getCompiledFilter('exclude', this.state.notFilter);
+    const events = this.filteredEvents(matchCompiled.predicate, excludeCompiled.predicate);
     const total = this.state.events.length;
     const shown = events.length;
+    const matchError = matchCompiled.error;
+    const excludeError = excludeCompiled.error;
+    const inputStyle = (err) => ({
+      maxWidth: 320,
+      ...(err ? { borderColor: '#d9534f', boxShadow: '0 0 0 1px #d9534f' } : {}),
+    });
+    const syntaxHint = 'Syntax: foo && bar, foo || bar, !foo, ( ), "quoted str"';
     const selected =
       this.state.selectedId !== null
         ? this.state.events.find((e) => e.id === this.state.selectedId)
         : null;
+    const selectedIndex = selected ? events.findIndex((e) => e.id === selected.id) : -1;
+    const hasPrev = selectedIndex > 0;
+    const hasNext = selectedIndex >= 0 && selectedIndex < events.length - 1;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
@@ -164,18 +316,20 @@ export class GlobalNodeEventStreamPage extends Component {
           <input
             type="text"
             className="form-control"
-            placeholder="Match (substring on JSON)…"
+            placeholder='Match: foo && (bar || !baz)'
             value={this.state.filter}
             onChange={(e) => this.setState({ filter: e.target.value })}
-            style={{ maxWidth: 320 }}
+            style={inputStyle(matchError)}
+            title={matchError ? `Match: ${matchError}` : syntaxHint}
           />
           <input
             type="text"
             className="form-control"
-            placeholder="Exclude (substring on JSON)…"
+            placeholder='Exclude: foo || bar'
             value={this.state.notFilter}
             onChange={(e) => this.setState({ notFilter: e.target.value })}
-            style={{ maxWidth: 320 }}
+            style={inputStyle(excludeError)}
+            title={excludeError ? `Exclude: ${excludeError}` : syntaxHint}
           />
           <div
             style={{
@@ -332,6 +486,27 @@ export class GlobalNodeEventStreamPage extends Component {
                     {moment(selected.ts).format('YYYY-MM-DD HH:mm:ss.SSS')}
                   </span>
                 </div>
+                <span style={{ color: '#888', fontSize: 12 }}>
+                  {selectedIndex >= 0 ? `${selectedIndex + 1} / ${events.length}` : '— / —'}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => this.stepSelected(events, -1)}
+                  disabled={!hasPrev}
+                  title="Previous event (in current filter view)"
+                >
+                  <i className="fas fa-chevron-up" />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => this.stepSelected(events, 1)}
+                  disabled={!hasNext}
+                  title="Next event (in current filter view)"
+                >
+                  <i className="fas fa-chevron-down" />
+                </button>
                 <button type="button" className="btn btn-sm btn-secondary" onClick={this.closePanel}>
                   <i className="fas fa-times" /> Close
                 </button>
