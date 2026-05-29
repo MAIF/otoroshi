@@ -740,7 +740,7 @@ spec:
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
 metadata:
-  name: "plugins.proxy.otoroshi.io"
+  name: "workflows.proxy.otoroshi.io"
 spec:
   group: "proxy.otoroshi.io"
   names:
@@ -769,7 +769,7 @@ spec:
 apiVersion: "apiextensions.k8s.io/v1"
 kind: "CustomResourceDefinition"
 metadata:
-  name: "catalogs.proxy.otoroshi.io"
+  name: "remote-catalogs.proxy.otoroshi.io"
 spec:
   group: "proxy.otoroshi.io"
   names:
