@@ -30,8 +30,8 @@ import scala.util.{Failure, Success, Try}
 object BodyHelper {
   def extractBodyFrom(doc: JsValue): ByteString = extractBodyFromOpt(doc).getOrElse(ByteString.empty)
   def extractBodyFromOpt(doc: JsValue): Option[ByteString] = {
-    val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-    val bodyBase64  = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+    val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].filterNot(_.isEmpty).map(bytes => ByteString(bytes))
+    val bodyBase64  = doc.select("body_base64").asOpt[String].filterNot(_.trim.isEmpty).map(str => ByteString(str).decodeBase64)
 
     val bodyJson = doc
       .select("body_json")
@@ -45,6 +45,7 @@ object BodyHelper {
       .select("body_str")
       .asOpt[String]
       .orElse(doc.select("body").asOpt[String])
+      .filterNot(_.trim.isEmpty)
       .map(str => ByteString(str))
     bodyStr
       .orElse(bodyJson)

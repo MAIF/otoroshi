@@ -795,27 +795,40 @@ class HttpClientFunction extends WorkflowFunction {
         "type"  -> "number",
         "props" -> Json.obj("description" -> "The timeout in milliseconds")
       ),
-      "body"              -> Json
-        .obj("label" -> "Body", "type" -> "string", "props" -> Json.obj("description" -> "The body (string) to send")),
-      "body_str"          -> Json.obj(
-        "label" -> "String Body",
-        "type"  -> "string",
-        "props" -> Json.obj("description" -> "The body (string) to send")
+      "body"              -> Json.obj(
+        "label" -> "Body",
+        "type" -> "any",
+        "props" -> Json.obj(
+          "height" -> 100,
+          "description" -> "The body (string) to send"
+        )
       ),
+      // "body_str"          -> Json.obj(
+      //   "label" -> "String Body",
+      //   "type"  -> "string",
+      //   "props" -> Json.obj("description" -> "The body (string) to send")
+      // ),
       "body_json"         -> Json.obj(
         "label" -> "JSON Body",
-        "type"  -> "object",
-        "props" -> Json.obj("description" -> "The body (json) to send")
+        "type"  -> "any",
+        "props" -> Json.obj(
+          "language" -> "json",
+          "height" -> 100,
+          "description" -> "The body (json) to send"
+        )
       ),
-      "body_bytes"        -> Json.obj(
-        "label" -> "Bytes Body",
-        "type"  -> "array",
-        "props" -> Json.obj("description" -> "The body (bytes array) to send")
-      ),
+      //"body_bytes"        -> Json.obj(
+      //  "label" -> "Bytes Body",
+      //  "type"  -> "array",
+      //  "props" -> Json.obj("description" -> "The body (bytes array) to send")
+      //),
       "body_base64"       -> Json.obj(
         "label" -> "Base64 body",
-        "type"  -> "string",
-        "props" -> Json.obj("description" -> "The body (base64) to send")
+        "type"  -> "any",
+        "props" -> Json.obj(
+          "height" -> 100,
+          "description" -> "The body (base64) to send"
+        )
       ),
       "tls_config"        -> Json.obj(
         "label" -> "TLS Configuration",
@@ -839,7 +852,7 @@ class HttpClientFunction extends WorkflowFunction {
         "headers"           -> Json.obj("type" -> "object", "description" -> "The headers to send"),
         "timeout"           -> Json.obj("type" -> "number", "description" -> "The timeout in milliseconds"),
         "body"              -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
-        "body_str"          -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
+        //"body_str"          -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
         "body_json"         -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
         "body_bytes"        -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
         "body_base64"       -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
