@@ -10,7 +10,7 @@ test('search bar must return entity', async ({ browser }) => {
     await page.locator('#react-select-2-input').fill(' routes');
     await page.locator('#react-select-2-option-0').getByText('Routes').click();
 
-    expect(page).toHaveURL(/bo\/dashboard\/routes/);
+    await expect(page).toHaveURL(/bo\/dashboard\/routes/);
 
     await context.close()
 });
