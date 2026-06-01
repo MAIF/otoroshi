@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.16.1] - 2026-06-01
+
+
+https://github.com/MAIF/otoroshi/milestone/139?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.16.0...v17.16.1
+https://github.com/MAIF/otoroshi/releases/tag/v17.16.1
+
+
+
+### Changed 
+
+- Cleanup HTTP Client workflow node ui (#2588 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- Parsing of workflow backend response too strict (#2586 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- `OAuth2Caller` always tries to read `auth_ref` (#2587 fixed by [Zwiterrion](https://github.com/Zwiterrion))
+- MonacoEditor swallows scrollevents (#2589 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+* @Zwiterrion
+
 ## [17.16.0] - 2026-05-28
 
 
