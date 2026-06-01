@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
+export SBT_OPTS="${SBT_OPTS} -Xmx${OTOROSHI_TEST_XMX:-2048m} -Xss8M"
 
 LOCATION=`pwd`
 
@@ -30,9 +30,16 @@ build_server () {
   sbt ';clean;compile;dist;assembly'
 }
 
-compile_server () {
+compile_and_test () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;assembly'
+  TEST_STORE=inmemory sbt ';clean;compile;testOnly OtoroshiTests;testOnly functional.PluginsTestSpec'
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+}
+
+test_and_package () {
+  cd $LOCATION/otoroshi
+  TEST_STORE=inmemory sbt ';clean;compile;testOnly OtoroshiTests;testOnly functional.PluginsTestSpec;assembly'
+  rc=$?; if [ $rc != 0 ]; then exit $rc; fi
 }
 
 test_server () {
@@ -69,9 +76,7 @@ case "${1}" in
     build_ui
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_manual
-    compile_server
-    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    test_server
+    test_and_package
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     test_mtls
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
@@ -81,9 +86,7 @@ case "${1}" in
     build_ui
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_manual
-    compile_server
-    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
-    test_server
+    compile_and_test
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     ;;
   ui)

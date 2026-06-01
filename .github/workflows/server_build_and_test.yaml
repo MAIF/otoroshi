@@ -68,5 +68,7 @@ jobs:
       env:
         SBT_OPTS: -Dsbt.override.build.repos=true
         COURSIER_PARALLEL_DOWNLOAD_COUNT: '4'
+        OTOROSHI_TEST_PARALLELISM: '4'
+        OTOROSHI_TEST_XMX: 8g
       run: |
         sh ./scripts/build.sh test_all

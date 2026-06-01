@@ -242,7 +242,7 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.43.6" % Test,
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.44.1" % Test,
   "com.microsoft.playwright"         % "playwright"                           % "1.47.0" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
@@ -264,7 +264,13 @@ PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 // publishArtifact in (Compile, packageDoc) := false
 // scalafmtVersion in ThisBuild := "1.2.0"
 
-Test / parallelExecution := false
+val testParallelism: Option[String] =
+  sys.env.get("OTOROSHI_TEST_PARALLELISM").map(_.trim).filter(p => p.nonEmpty && p != "0")
+
+Test / parallelExecution := testParallelism.isDefined
+Test / testOptions ++= testParallelism.toSeq.map { p =>
+  Tests.Argument(TestFrameworks.ScalaTest, if (p == "auto") "-P" else s"-P$p")
+}
 IntegrationTest / testForkedParallel := false
 IntegrationTest / fork := true
 
