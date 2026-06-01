@@ -91,6 +91,7 @@ const sidebars = {
         'topics/circuit-breaker',
         'topics/durations',
         'topics/workflows',
+        'topics/workflows-input',
         'topics/workflows-editor',
         'topics/remote-catalogs',
         'topics/kubernetes-gateway-api',
