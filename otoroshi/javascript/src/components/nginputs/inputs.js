@@ -407,6 +407,9 @@ export class NgAnyRenderer extends Component {
       folding: true,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
+      scrollbar: {
+        alwaysConsumeMouseWheel: false
+      },
       ...(this.props.options || {}),
       ...(props.config || {}),
     };
