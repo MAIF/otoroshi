@@ -50,6 +50,7 @@ export const graph = (env) => {
           display: () => true,
           link: '/node/eventstream',
           icon: () => 'fa-filter',
+          // tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
         {
           title: 'Snow monkey',
@@ -255,6 +256,7 @@ export const graph = (env) => {
           display: () => env.userAdmin || env.tenantAdmin,
           link: '/user-dashboards',
           icon: () => 'fa-chart-line',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
         {
           title: 'User Alerts',
@@ -263,6 +265,7 @@ export const graph = (env) => {
           display: () => env.userAdmin || env.tenantAdmin,
           link: '/user-alerts',
           icon: () => 'fa-bell',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
         {
           title: 'Global Status',
