@@ -117,15 +117,15 @@ class WorkflowBackend extends NgBackendCall {
                 } else {
                   val respBody = res.returned.getOrElse(Json.obj())
                   val status   = respBody.select("status").asOpt[Int]
-                  val headers  = respBody.select("headers").asOpt[Map[String, String]]
+                  val headers  = respBody.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
                   val body     = BodyHelper.extractBodyFromOpt(respBody)
-                  if (status.isDefined && headers.isDefined && body.isDefined) {
-                    val heads = headers.get.getIgnoreCase("Content-Length") match {
+                  if (status.isDefined && body.isDefined) {
+                    val heads = headers.getIgnoreCase("Content-Length") match {
                       case None    =>
-                        headers.get - "Content-Type" - "content-type" ++ Map("Content-Length" -> s"${body.get.length}")
-                      case Some(_) => headers.get - "Content-Type" - "content-type"
+                        headers - "Content-Type" - "content-type" ++ Map("Content-Length" -> s"${body.get.length}")
+                      case Some(_) => headers - "Content-Type" - "content-type"
                     }
-                    val ctype = headers.get.getIgnoreCase("Content-Type").getOrElse("application/json")
+                    val ctype = headers.getIgnoreCase("Content-Type").getOrElse("application/json")
                     Right(
                       BackendCallResponse(
                         NgPluginHttpResponse.fromResult(
