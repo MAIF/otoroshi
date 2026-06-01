@@ -797,9 +797,9 @@ class HttpClientFunction extends WorkflowFunction {
       ),
       "body"              -> Json.obj(
         "label" -> "Body",
-        "type" -> "any",
+        "type"  -> "any",
         "props" -> Json.obj(
-          "height" -> 100,
+          "height"      -> 100,
           "description" -> "The body (string) to send"
         )
       ),
@@ -812,8 +812,8 @@ class HttpClientFunction extends WorkflowFunction {
         "label" -> "JSON Body",
         "type"  -> "any",
         "props" -> Json.obj(
-          "language" -> "json",
-          "height" -> 100,
+          "language"    -> "json",
+          "height"      -> 100,
           "description" -> "The body (json) to send"
         )
       ),
@@ -826,7 +826,7 @@ class HttpClientFunction extends WorkflowFunction {
         "label" -> "Base64 body",
         "type"  -> "any",
         "props" -> Json.obj(
-          "height" -> 100,
+          "height"      -> 100,
           "description" -> "The body (base64) to send"
         )
       ),

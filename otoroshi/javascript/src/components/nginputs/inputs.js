@@ -408,7 +408,7 @@ export class NgAnyRenderer extends Component {
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
       scrollbar: {
-        alwaysConsumeMouseWheel: false
+        alwaysConsumeMouseWheel: false,
       },
       ...(this.props.options || {}),
       ...(props.config || {}),
