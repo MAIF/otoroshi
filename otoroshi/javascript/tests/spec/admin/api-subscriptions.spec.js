@@ -532,14 +532,19 @@ test('apikey plan: throttling strategy from the plan propagates to the generated
         setup: (api, id) => ({
             domain: `subs-throttle-${id.slice(-8)}.oto.tools`,
             contextPath: '/v1',
-            clients: [{
-                id: "9f5c9b46-8631-4e1c-bd43-f115d2e44953",
-                name: "New client",
-                description: "New client description"
-            }]
         }),
     });
     trackedApis.add(apiId);
+
+    const seedRes = await putProdWithRetry(page, apiId, (prod) => ({
+        ...prod,
+        clients: [{
+            id: "9f5c9b46-8631-4e1c-bd43-f115d2e44953",
+            name: "New client",
+            description: "New client description",
+        }],
+    }));
+    expect(seedRes.status()).toBeLessThan(400);
 
     // Wait until proxyState reflects the seeded client, else the plans page loads
     // item.clients=[] and creating a plan ({...item, plans}) wipes the client.

@@ -430,8 +430,8 @@ class OAuth2Caller extends NgRequestTransformer {
           .getOrElse("")}"
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
-    val authMod      = env.proxyState
-      .authModule(config.authModRef.get)
+    val authMod      = config.authModRef
+      .flatMap(env.proxyState.authModule)
       .map(_.asInstanceOf[OAuth2ModuleConfig])
       .filter(_ => config.kind == OAuth2Kind.AuthModule)
     val url          = authMod.map(_.tokenUrl).getOrElse(config.url)
@@ -492,8 +492,8 @@ class OAuth2Caller extends NgRequestTransformer {
       config: OAuth2CallerConfig
   )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val ctype     = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
-    val authMod   = env.proxyState
-      .authModule(config.authModRef.get)
+    val authMod   = config.authModRef
+      .flatMap(env.proxyState.authModule)
       .map(_.asInstanceOf[OAuth2ModuleConfig])
       .filter(_ => config.kind == OAuth2Kind.AuthModule)
     val url       = authMod.map(_.tokenUrl).getOrElse(config.url)
