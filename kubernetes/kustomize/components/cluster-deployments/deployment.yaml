@@ -79,6 +79,14 @@ spec:
               secretKeyRef:
                 name: otoroshi-redis-secret
                 key: redisUrl
+          - name: OTOROSHI_INITIAL_ADMIN_LOGIN
+            valueFrom:
+              configMapKeyRef:
+                name: otoroshi-config
+                key: adminLogin
+                # If the key is absent from the ConfigMap, Otoroshi falls back
+                # to its built-in default login (admin@otoroshi.io).
+                optional: true
           - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
@@ -220,6 +228,14 @@ spec:
               configMapKeyRef:
                 name: otoroshi-config
                 key: domain
+          - name: OTOROSHI_INITIAL_ADMIN_LOGIN
+            valueFrom:
+              configMapKeyRef:
+                name: otoroshi-config
+                key: adminLogin
+                # If the key is absent from the ConfigMap, Otoroshi falls back
+                # to its built-in default login (admin@otoroshi.io).
+                optional: true
           - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
