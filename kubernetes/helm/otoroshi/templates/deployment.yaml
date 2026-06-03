@@ -65,6 +65,8 @@ spec:
         env:
           - name: APP_STORAGE_ROOT
             value: {{ .Values.env.storageRoot }}
+          - name: OTOROSHI_INITIAL_ADMIN_LOGIN
+            value: {{ .Values.env.adminLogin | default "admin@otoroshi.io" | quote }}
           - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
             valueFrom:
               secretKeyRef:
