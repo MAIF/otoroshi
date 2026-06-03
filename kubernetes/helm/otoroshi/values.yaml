@@ -84,6 +84,9 @@ env:
   # (expected keys: password, clientId, clientSecret, otoroshiSecret).
   # When empty, the chart creates its own Secret from the values below.
   existingSecret: ""
+  # Initial admin login (OTOROSHI_INITIAL_ADMIN_LOGIN). Used as-is when set.
+  # When empty, falls back to the default `admin@otoroshi.io`.
+  adminLogin: "admin@otoroshi.io"
   # Each of the four credentials below is used as-is when non-empty. When empty, the chart
   # auto-generates a random value AND uses `lookup` to keep the value stable across upgrades
   # (existing Secret values are preserved). Leave empty for a secure first install.
