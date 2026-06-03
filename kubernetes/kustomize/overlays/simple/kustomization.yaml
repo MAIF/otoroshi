@@ -71,3 +71,6 @@ configMapGenerator:
   - name: otoroshi-config
     literals:
       - domain=oto.tools
+      # Initial admin login (OTOROSHI_INITIAL_ADMIN_LOGIN). Override here, or
+      # remove to fall back to Otoroshi's built-in default (admin@otoroshi.io).
+      - adminLogin=admin@otoroshi.io
