@@ -1464,6 +1464,8 @@ class Env(
           val maybePassword                  = configuration.getOptionalWithFileSupport[String]("app.adminPassword")
           val passwordGenerated              = maybePassword.isEmpty
           val password                       = maybePassword.getOrElse(IdGenerator.token(32))
+          val hideAdminPassword              =
+            configuration.getOptionalWithFileSupport[Boolean]("app.hideInitialAdminPassword").getOrElse(false)
           val headers: Seq[(String, String)] = configuration
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
@@ -1577,7 +1579,7 @@ class Env(
 
                 val finalConfig = baseExport.customizeWith(initialCustomization)(this)
 
-                if (passwordGenerated) {
+                if (passwordGenerated && !hideAdminPassword) {
                   logger.info(
                     s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                   )
