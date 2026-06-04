@@ -1461,8 +1461,9 @@ class Env(
           logger.info(s"The main datastore seems to be empty, registering some basic services")
           val login                          =
             configuration.getOptionalWithFileSupport[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
-          val password                       =
-            configuration.getOptionalWithFileSupport[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
+          val maybePassword                  = configuration.getOptionalWithFileSupport[String]("app.adminPassword")
+          val passwordGenerated              = maybePassword.isEmpty
+          val password                       = maybePassword.getOrElse(IdGenerator.token(32))
           val headers: Seq[(String, String)] = configuration
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
@@ -1576,9 +1577,11 @@ class Env(
 
                 val finalConfig = baseExport.customizeWith(initialCustomization)(this)
 
-                logger.info(
-                  s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
-                )
+                if (passwordGenerated) {
+                  logger.info(
+                    s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                  )
+                }
 
                 datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
               }
