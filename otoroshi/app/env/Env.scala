@@ -55,7 +55,9 @@ import play.twirl.api.Html
 
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
 import java.rmi.registry.LocateRegistry
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
@@ -521,6 +523,13 @@ class Env(
   lazy val eventsName: String              = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
   lazy val storageRoot: String             =
     configuration.getOptionalWithFileSupport[String]("app.storageRoot").getOrElse("otoroshi")
+  lazy val hideInitialAdminPassword: Boolean        =
+    configuration.getOptionalWithFileSupport[Boolean]("app.hideInitialAdminPassword").getOrElse(false)
+  lazy val writeInitialAdminPasswordToFile: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("app.writeInitialAdminPasswordToFile").getOrElse(false)
+  lazy val initialAdminPasswordFile: String         = configuration
+    .getOptionalWithFileSupport[String]("app.initialAdminPasswordFile")
+    .getOrElse("/etc/otoroshi/initial_admin_password")
   lazy val useCache: Boolean               =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.cache.enabled").getOrElse(false)
   lazy val cacheTtl: Int                   =
@@ -1449,6 +1458,44 @@ class Env(
       .getInstance()
       .addConverter(new com.github.swagger.scala.converter.SwaggerScalaModelConverter())
 
+    // Writes the randomly generated initial admin password to a file with owner-only (0600) permissions,
+    // then logs where it can be read (à la GitLab '/etc/gitlab/initial_root_password').
+    def writeInitialAdminPasswordFile(password: String): Unit = {
+      val path = new File(initialAdminPasswordFile).toPath
+      try {
+        Option(path.getParent).foreach(parent => Files.createDirectories(parent))
+        Files.deleteIfExists(path)
+        val ownerOnly = PosixFilePermissions.fromString("rw-------")
+        try {
+          Files.createFile(path, PosixFilePermissions.asFileAttribute(ownerOnly))
+        } catch {
+          case _: UnsupportedOperationException => Files.createFile(path) // non posix filesystem (eg. windows)
+        }
+        Files.write(path, s"$password\n".getBytes(StandardCharsets.UTF_8))
+        logger.info(
+          s"The initial admin password has been written to '${path.toAbsolutePath}'. Read it to log into the Otoroshi admin console."
+        )
+      } catch {
+        case e: Throwable =>
+          logger.error(s"Unable to write the initial admin password to '$initialAdminPasswordFile'", e)
+      }
+    }
+
+    // On reboot, if the feature is enabled and the initial admin password file is still around, delete it.
+    def deleteInitialAdminPasswordFileIfNeeded(): Unit = {
+      if (writeInitialAdminPasswordToFile) {
+        val path = new File(initialAdminPasswordFile).toPath
+        try {
+          if (Files.deleteIfExists(path)) {
+            logger.info(s"The initial admin password file at '${path.toAbsolutePath}' has been deleted.")
+          }
+        } catch {
+          case e: Throwable =>
+            logger.error(s"Unable to delete the initial admin password file at '$initialAdminPasswordFile'", e)
+        }
+      }
+    }
+
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
@@ -1464,8 +1511,6 @@ class Env(
           val maybePassword                  = configuration.getOptionalWithFileSupport[String]("app.adminPassword")
           val passwordGenerated              = maybePassword.isEmpty
           val password                       = maybePassword.getOrElse(IdGenerator.token(32))
-          val hideAdminPassword              =
-            configuration.getOptionalWithFileSupport[Boolean]("app.hideInitialAdminPassword").getOrElse(false)
           val headers: Seq[(String, String)] = configuration
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
@@ -1579,10 +1624,15 @@ class Env(
 
                 val finalConfig = baseExport.customizeWith(initialCustomization)(this)
 
-                if (passwordGenerated && !hideAdminPassword) {
-                  logger.info(
-                    s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
-                  )
+                if (passwordGenerated) {
+                  if (writeInitialAdminPasswordToFile) {
+                    // when the password is written to a file, it is never printed in the logs
+                    writeInitialAdminPasswordFile(password)
+                  } else if (!hideInitialAdminPassword) {
+                    logger.info(
+                      s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                    )
+                  }
                 }
 
                 datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
@@ -1591,6 +1641,7 @@ class Env(
           }
         }
         case Success(false) if clusterConfig.mode != ClusterMode.Worker => {
+          deleteInitialAdminPasswordFileIfNeeded()
           datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).flatMap {
             case Some(adminService) if !adminApiExposedDomains.forall(d => adminService.hosts.contains(d))    => {
               adminService
