@@ -487,7 +487,7 @@ class NgErrorRewriter extends NgRequestTransformer {
         .flatMap(key => config.templates.get(key).map(v => (key, v)))
         .getOrElse((defaultCtype, defaultTemplate))
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val responseBody = template.replace("${error_id}", errorId).replace("${snowflake}", ctx.snowflake)
+        val responseBody = template.replace("${error_id}", errorId).replace("${snowflake}", ctx.snowflake).evaluateEl(ctx.attrs)
         val response     = ctx.otoroshiResponse.copy(
           status = ctx.otoroshiResponse.status,
           headers = Map(
