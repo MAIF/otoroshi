@@ -7,7 +7,7 @@ export default {
     templates: {
       label: "Templates",
       help:
-        "Error page templates, keyed by content-type (use 'default' as the catch-all). The matching one is picked by negotiating the client Accept header.",
+        "Error page templates. A key targets a status, a content-type, or both: 'default' (catch-all), '404' (per status), 'text/html' (per content-type), 'default-text/html' (per content-type, any status), '404-text/html' (status + content-type). The most specific key wins, negotiated against the client Accept header.",
       type: "object",
       itemRenderer: (props) => {
         const contentType = (props.entry && props.entry[0]) || "";
@@ -21,7 +21,7 @@ export default {
             <input
               type="text"
               className="form-control mb-1"
-              placeholder="Content-Type (e.g. text/html, application/json, default)"
+              placeholder="Key: default | 404 | text/html | 404-text/html | default-text/html"
               value={contentType}
               onChange={(e) => props.onChangeKey(e.target.value)}
             />

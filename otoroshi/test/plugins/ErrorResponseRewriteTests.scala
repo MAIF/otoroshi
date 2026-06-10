@@ -102,5 +102,60 @@ class ErrorResponseRewriteTests(parent: PluginsTestSpec) {
 
   deleteOtoroshiRoute(routeFallback).futureValue
 
+  // hierarchical keys: "<status>-<content-type>" beats "<content-type>", and "<content-type>" is negotiated
+  val routeKeys = createRouteWithExternalTarget(
+    Seq(
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[OverrideHost]
+      ),
+      NgPluginInstance(
+        plugin = NgPluginHelper.pluginId[NgErrorRewriter],
+        config = NgPluginInstanceConfig(
+          NgErrorRewriterConfig(
+            ranges = Seq(ResponseStatusRange(200, 299)),
+            templates = Map(
+              "200-application/json" -> "json-200",
+              "application/json"     -> "json-generic",
+              "text/html"            -> "html-generic",
+              "default"              -> "the-default"
+            ),
+            log = false,
+            export = false
+          ).json.as[JsObject]
+        )
+      )
+    )
+  ).futureValue
+
+  {
+    val resp = ws
+      .url(s"http://127.0.0.1:$port/api")
+      .withHttpHeaders(
+        "Host"   -> routeKeys.frontend.domains.head.domain,
+        "Accept" -> "application/json"
+      )
+      .get()
+      .futureValue
+
+    resp.status mustBe Status.OK
+    resp.body mustEqual "json-200"
+  }
+
+  {
+    val resp = ws
+      .url(s"http://127.0.0.1:$port/api")
+      .withHttpHeaders(
+        "Host"   -> routeKeys.frontend.domains.head.domain,
+        "Accept" -> "text/html"
+      )
+      .get()
+      .futureValue
+
+    resp.status mustBe Status.OK
+    resp.body mustEqual "html-generic"
+  }
+
+  deleteOtoroshiRoute(routeKeys).futureValue
+
   deleteOtoroshiRoute(route).futureValue
 }

@@ -413,6 +413,28 @@ case class NgErrorRewriterConfig(
 }
 
 object NgErrorRewriterConfig {
+
+  // Parse a template key into (status, content-type):
+  //   "default"             -> (None, None)            catch-all
+  //   "404"                 -> (Some(404), None)       per status
+  //   "text/html"           -> (None, Some(ct))        per content-type
+  //   "default-text/html"   -> (None, Some(ct))        per content-type (explicit "any status")
+  //   "404-text/html"       -> (Some(404), Some(ct))   per status and content-type
+  def parseTemplateKey(key: String): (Option[Int], Option[String]) = {
+    if (key == "default") (None, None)
+    else if (key.startsWith("default-")) (None, Some(key.substring("default-".length)))
+    else {
+      val dash = key.indexOf('-')
+      if (dash > 0 && key.substring(0, dash).forall(_.isDigit)) {
+        (Some(key.substring(0, dash).toInt), Some(key.substring(dash + 1)))
+      } else if (key.nonEmpty && key.forall(_.isDigit)) {
+        (Some(key.toInt), None)
+      } else {
+        (None, Some(key))
+      }
+    }
+  }
+
   val default = NgErrorRewriterConfig(
     ranges = Seq(
       ResponseStatusRange(500, 599)
@@ -583,11 +605,14 @@ class NgErrorRewriter extends NgRequestTransformer {
     }
   }
 
-  // Content-negotiated template selection:
-  //   1. a typed template (content-type key) the client explicitly accepts, in preference order
-  //   2. the "default" template for html-capable clients
-  //   3. the otoroshi error template (negotiated) when use_otoroshi_error_template is on
-  //   4. the "default" template, else a minimal text body
+  // Template keys can target a status, a content-type, or both (see NgErrorRewriterConfig.parseTemplateKey):
+  //   "default" | "<status>" | "<content-type>" | "<status>-<content-type>"
+  // Selection (most specific first), honoring the client Accept preference order:
+  //   1. for each accepted content-type (in preference order): "<status>-<ct>" then "<ct>"
+  //   2. the "<status>" html catch-all, for html-capable clients
+  //   3. the "default" template, for html-capable clients
+  //   4. the otoroshi error template (negotiated) when use_otoroshi_error_template is on
+  //   5. the "default" template, else a minimal text body
   private def renderBody(
       ctx: NgTransformerResponseContext,
       config: NgErrorRewriterConfig,
@@ -595,25 +620,36 @@ class NgErrorRewriter extends NgRequestTransformer {
       statusText: String,
       errorId: String
   )(implicit env: Env): (String, String) = {
-    // ignore the catch-all "*/*" range so a browser's trailing wildcard doesn't pin a typed template
-    val typedKey: Option[String] = ctx.request.acceptedTypes
+    val parsedKeys: Seq[(String, (Option[Int], Option[String]))] =
+      config.templates.keys.toSeq.map(k => (k, NgErrorRewriterConfig.parseTemplateKey(k)))
+    def render(rawKey: String): String                           =
+      renderTemplate(config.templates(rawKey), ctx, config, status, statusText, errorId)
+
+    // content-negotiated, in client preference order, status-specific preferred for a given content-type.
+    // ignore the catch-all "*/*" range so a browser's trailing wildcard doesn't pin a typed template.
+    val negotiated: Option[(String, String)] = ctx.request.acceptedTypes
       .filterNot(mr => mr.mediaType == "*" && mr.mediaSubType == "*")
-      .foldLeft(Option.empty[String]) { (acc, mr) =>
-        acc.orElse(config.templates.keys.filter(_ != "default").find(ct => mr.accepts(ct)))
+      .foldLeft(Option.empty[(String, String)]) { (acc, mr) =>
+        acc.orElse {
+          def find(wantStatus: Boolean): Option[(String, String)] = parsedKeys
+            .find { case (_, (st, ct)) =>
+              ct.exists(c => mr.accepts(c)) && (if (wantStatus) st.contains(status) else st.isEmpty)
+            }
+            .map { case (raw, (_, ct)) => (ct.get, render(raw)) }
+          find(wantStatus = true).orElse(find(wantStatus = false))
+        }
       }
-    typedKey.flatMap(k =>
-      config.templates.get(k).map(t => (k, renderTemplate(t, ctx, config, status, statusText, errorId)))
-    ) match {
-      case Some(result)                                                                     => result
-      case None if ctx.request.accepts("text/html") && config.templates.contains("default") =>
-        ("text/html", renderTemplate(config.templates("default"), ctx, config, status, statusText, errorId))
-      case None if config.useOtoroshiErrorTemplate                                          =>
-        renderOtoroshiTemplate(ctx, status, statusText, errorId)
-      case None                                                                             =>
-        config.templates
-          .get("default")
-          .map(t => ("text/html", renderTemplate(t, ctx, config, status, statusText, errorId)))
-          .getOrElse(("text/plain", s"error: $errorId"))
+
+    negotiated match {
+      case Some(result) => result
+      case None         =>
+        val htmlOk     = ctx.request.accepts("text/html")
+        val statusOnly = parsedKeys.collectFirst { case (raw, (Some(s), None)) if s == status => raw }
+        val defaultKey = parsedKeys.collectFirst { case (raw, (None, None)) => raw }
+        if (htmlOk && statusOnly.isDefined) ("text/html", render(statusOnly.get))
+        else if (htmlOk && defaultKey.isDefined) ("text/html", render(defaultKey.get))
+        else if (config.useOtoroshiErrorTemplate) renderOtoroshiTemplate(ctx, status, statusText, errorId)
+        else defaultKey.map(raw => ("text/html", render(raw))).getOrElse(("text/plain", s"error: $errorId"))
     }
   }
 }
