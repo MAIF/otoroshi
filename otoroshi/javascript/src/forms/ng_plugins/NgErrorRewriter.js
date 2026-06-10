@@ -1,29 +1,42 @@
 import React from "react";
-import CodeInput from "../../components/inputs/CodeInput";
+import { NgAnyRenderer } from "../../components/nginputs/inputs";
 
 export default {
   id: "cp:otoroshi.next.plugins.NgErrorRewriter",
   config_schema: {
     templates: {
       label: "Templates",
+      help:
+        "Error page templates, keyed by content-type (use 'default' as the catch-all). The matching one is picked by negotiating the client Accept header.",
       type: "object",
-      props: {
-        placeholderKey: "Content-Type (e.g. text/html, application/json)",
-      },
       itemRenderer: (props) => {
         const contentType = (props.entry && props.entry[0]) || "";
-        const mode = contentType.includes("json")
+        const language = contentType.includes("json")
           ? "json"
           : contentType.includes("xml")
           ? "xml"
           : "html";
         return (
-          <CodeInput
-            editorOnly
-            mode={mode}
-            value={props.value}
-            onChange={props.onChange}
-          />
+          <div style={{ width: "100%" }}>
+            <input
+              type="text"
+              className="form-control mb-1"
+              placeholder="Content-Type (e.g. text/html, application/json, default)"
+              value={contentType}
+              onChange={(e) => props.onChangeKey(e.target.value)}
+            />
+            <NgAnyRenderer
+              schema={{
+                props: {
+                  ngOptions: { spread: true },
+                  language,
+                  height: "200px",
+                },
+              }}
+              value={props.value}
+              onChange={(code) => props.onChangeValue(code)}
+            />
+          </div>
         );
       },
     },
