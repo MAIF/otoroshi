@@ -487,18 +487,22 @@ class NgErrorRewriter extends NgRequestTransformer {
         .flatMap(key => config.templates.get(key).map(v => (key, v)))
         .getOrElse((defaultCtype, defaultTemplate))
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val responseBody = template.replace("${error_id}", errorId)
+        val responseBody = template.replace("${error_id}", errorId).replace("${snowflake}", ctx.snowflake)
         val response     = ctx.otoroshiResponse.copy(
           status = ctx.otoroshiResponse.status,
           headers = Map(
             "content-type"   -> ctype.applyOnWithPredicate(_ == "default")(_ => "text/html"),
-            "content-length" -> responseBody.length.toString
+            "content-length" -> responseBody.length.toString,
+            "x-otoroshi-error-id" -> errorId,
+            "x-otoroshi-req-id" -> ctx.snowflake,
           ),
           cookies = Seq.empty,
           body = responseBody.byteString.chunks(16 * 1024)
         )
         val event        = ErrorRewriteReport(
+          env.snowflakeGenerator.nextIdStr(),
           errorId,
+          ctx.snowflake,
           NgPluginHttpRequest.fromRequest(ctx.request),
           ctx.otoroshiResponse,
           bodyRaw.utf8String,
@@ -520,7 +524,9 @@ class NgErrorRewriter extends NgRequestTransformer {
 }
 
 case class ErrorRewriteReport(
-    id: String,
+    eventId: String,
+    errorId: String,
+    requestId: String,
     request: NgPluginHttpRequest,
     rawResponse: NgPluginHttpResponse,
     rawResponseBody: String,
@@ -531,7 +537,7 @@ case class ErrorRewriteReport(
   private val timestamp = DateTime.now()
 
   override def `@type`: String               = "ErrorRewriteReport"
-  override def `@id`: String                 = id
+  override def `@id`: String                 = eventId
   override def `@timestamp`: DateTime        = timestamp
   override def `@service`: String            = "Otoroshi"
   override def `@serviceId`: String          = "--"
@@ -546,6 +552,8 @@ case class ErrorRewriteReport(
     "@serviceId"        -> `@serviceId`,
     "@service"          -> `@service`,
     "@env"              -> "prod",
+    "error_id"          -> errorId,
+    "request_id"        -> requestId,
     "request"           -> request.json,
     "original_response" -> (rawResponse.json.asObject ++ Json.obj("body" -> rawResponseBody)),
     "sent_response"     -> (response.json.asObject ++ Json.obj("body" -> responseBody))
