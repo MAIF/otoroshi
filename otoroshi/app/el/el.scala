@@ -314,27 +314,27 @@ object GlobalExpressionLanguage {
             case "service.subdomain" if service.isDefined                           => service.get.subdomain
             case "service.tld" if service.isDefined                                 => service.get.domain
             case "service.env" if service.isDefined                                 => service.get.env
-            case r"service.groups\['$field@(.*)':'$dv@(.*)'\]" if service.isDefined =>
-              Option(service.get.groups(field.toInt)).getOrElse(dv)
+            case r"service.groups\['$field@(.*)':'$dv@(.*)'\]"                      =>
+              service.flatMap(_.groups.lift(field.toInt)).getOrElse(dv)
             case r"service.groups\['$field@(.*)'\]" if service.isDefined            =>
               Option(service.get.groups(field.toInt)).getOrElse(s"no-group-$field")
             case "service.id" if service.isDefined                                  => service.get.id
             case "service.name" if service.isDefined                                => service.get.name
-            case r"service.metadata.$field@(.*):$dv@(.*)" if service.isDefined      =>
-              service.get.metadata.get(field).getOrElse(dv)
+            case r"service.metadata.$field@(.*):$dv@(.*)"                           =>
+              service.flatMap(_.metadata.get(field)).getOrElse(dv)
             case r"service.metadata.$field@(.*)" if service.isDefined               =>
               service.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
-            case r"route.domains\['$field@(.*)':'$dv@(.*)'\]" if route.isDefined =>
-              Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(dv)
+            case r"route.domains\['$field@(.*)':'$dv@(.*)'\]"                    =>
+              route.flatMap(_.frontend.domains.lift(field.toInt)).map(_.raw).getOrElse(dv)
             case r"route.domains\['$field@(.*)'\]" if route.isDefined            =>
               Option(route.get.frontend.domains(field.toInt)).map(_.raw).getOrElse(s"no-domain-$field")
             case "route.id" if route.isDefined                                   => route.get.id
             case "route.name" if route.isDefined                                 => route.get.name
             case "route.json.pretty" if route.isDefined                          => route.get.json.prettify
             case "route.json" if route.isDefined                                 => route.get.json.stringify
-            case r"route.metadata.$field@(.*):$dv@(.*)" if route.isDefined       =>
-              route.get.metadata.get(field).getOrElse(dv)
+            case r"route.metadata.$field@(.*):$dv@(.*)"                          =>
+              route.flatMap(_.metadata.get(field)).getOrElse(dv)
             case r"route.metadata.$field@(.*)" if route.isDefined                =>
               route.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
@@ -353,20 +353,20 @@ object GlobalExpressionLanguage {
             case "req.ip_address" if req.isDefined                                          => req.get.theIpAddress(env)
             case "req.secured" if req.isDefined                                             => req.get.theSecured(env).toString
             case "req.version" if req.isDefined                                             => req.get.version
-            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
-              req.get.headers.get(field).getOrElse(defaultValue)
+            case r"req.headers.$field@(.*):$defaultValue@(.*)"                              =>
+              req.flatMap(_.headers.get(field)).getOrElse(defaultValue)
             case r"req.headers.$field@(.*)" if req.isDefined                                =>
               req.get.headers.get(field).getOrElse(s"no-header-$field")
-            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined               =>
-              req.get.getQueryString(field).getOrElse(defaultValue)
+            case r"req.query.$field@(.*):$defaultValue@(.*)"                                =>
+              req.flatMap(_.getQueryString(field)).getOrElse(defaultValue)
             case r"req.query.$field@(.*)" if req.isDefined                                  =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
-            case r"req.cookies.$field@(.*):$defaultValue@(.*)" if req.isDefined             =>
-              req.get.cookies.get(field).map(_.value).getOrElse(defaultValue)
+            case r"req.cookies.$field@(.*):$defaultValue@(.*)"                              =>
+              req.flatMap(_.cookies.get(field)).map(_.value).getOrElse(defaultValue)
             case r"req.cookies.$field@(.*)" if req.isDefined                                =>
               req.get.cookies.get(field).map(_.value).getOrElse(s"no-query-$field")
-            case r"req.pathparams.$field@(.*):$defaultValue@(.*)" if matchedRoute.isDefined =>
-              matchedRoute.get.pathParams.get(field).getOrElse(defaultValue)
+            case r"req.pathparams.$field@(.*):$defaultValue@(.*)"                           =>
+              matchedRoute.flatMap(_.pathParams.get(field)).getOrElse(defaultValue)
             case r"req.pathparams.$field@(.*)" if matchedRoute.isDefined                    =>
               matchedRoute.get.pathParams.get(field).getOrElse(s"no-path-param-$field")
 
@@ -375,12 +375,12 @@ object GlobalExpressionLanguage {
             case "apikey.clientId" if apiKey.isDefined                              => apiKey.get.clientId
             case "apikey.json.pretty" if apiKey.isDefined                           => apiKey.get.lightJson.prettify
             case "apikey.json" if apiKey.isDefined                                  => apiKey.get.lightJson.stringify
-            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined        =>
-              apiKey.get.metadata.get(field).getOrElse(dv)
+            case r"apikey.metadata.$field@(.*):$dv@(.*)"                            =>
+              apiKey.flatMap(_.metadata.get(field)).getOrElse(dv)
             case r"apikey.metadata.$field@(.*)" if apiKey.isDefined                 =>
               apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
-            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]" if apiKey.isDefined     =>
-              Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
+            case r"apikey.tags\['$field@(.*)':'$dv@(.*)'\]"                         =>
+              apiKey.flatMap(_.tags.lift(field.toInt)).getOrElse(dv)
             case r"apikey.tags\['$field@(.*)'\]" if apiKey.isDefined                =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
             case r"apikey.json.pretty" if apiKey.isDefined                          =>
@@ -403,13 +403,16 @@ object GlobalExpressionLanguage {
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
             case r"token.$field@(.*):$dv@(.*)"                                      => context.getOrElse(field, dv)
             case r"token.$field@(.*)"                                               => context.getOrElse(field, s"no-token-$field")
-            case r"in_jwt.$field@(.*):$dv@(.*)" if matchedInputJwtToken.isDefined   => {
-              val json = matchedInputJwtToken.get
-              if (field.contains(".")) {
-                json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
-              } else {
-                json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
-              }
+            case r"in_jwt.$field@(.*):$dv@(.*)"                                     => {
+              matchedInputJwtToken
+                .flatMap { json =>
+                  if (field.contains(".")) {
+                    json.at(field).asOpt[JsValue].map(v => jsValueToString(v))
+                  } else {
+                    json.select(field).asOpt[JsValue].map(v => jsValueToString(v))
+                  }
+                }
+                .getOrElse(dv)
             }
             case r"in_jwt.$field@(.*)" if matchedInputJwtToken.isDefined            => {
               val json = matchedInputJwtToken.get
@@ -419,13 +422,16 @@ object GlobalExpressionLanguage {
                 json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(s"no-jwt-${field}")
               }
             }
-            case r"out_jwt.$field@(.*):$dv@(.*)" if matchedOutputJwtToken.isDefined => {
-              val json = matchedOutputJwtToken.get
-              if (field.contains(".")) {
-                json.at(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
-              } else {
-                json.select(field).asOpt[JsValue].map(v => jsValueToString(v)).getOrElse(dv)
-              }
+            case r"out_jwt.$field@(.*):$dv@(.*)"                                    => {
+              matchedOutputJwtToken
+                .flatMap { json =>
+                  if (field.contains(".")) {
+                    json.at(field).asOpt[JsValue].map(v => jsValueToString(v))
+                  } else {
+                    json.select(field).asOpt[JsValue].map(v => jsValueToString(v))
+                  }
+                }
+                .getOrElse(dv)
             }
             case r"out_jwt.$field@(.*)" if matchedOutputJwtToken.isDefined          => {
               val json = matchedOutputJwtToken.get
@@ -569,11 +575,11 @@ object GlobalExpressionLanguage {
               user.get.token.select("token_type").asOpt[String].getOrElse("no-token_type")
             case "user.tokens.expires_in" if user.isDefined                                      =>
               user.get.token.select("expires_in").asOpt[String].getOrElse("no-expires_in")
+            case r"user.tokens.$field@(.*):$dv@(.*)"                                             =>
+              user.flatMap(_.token.select(field).asOpt[String]).getOrElse(dv)
             case r"user.tokens.$field@(.*)" if user.isDefined                                    =>
               user.get.token.select(field).asOpt[String].getOrElse(s"no-${field}")
-            case r"user.tokens.$field@(.*):$dv@(.*)" if user.isDefined                           =>
-              user.get.token.select(field).asOpt[String].getOrElse(dv)
-            case r"user.metadata.$field@(.*):$dv@(.*)" if user.isDefined                         =>
+            case r"user.metadata.$field@(.*):$dv@(.*)"                                           =>
               user
                 .flatMap(_.otoroshiData)
                 .map(json =>
@@ -599,7 +605,7 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-meta-$field")
-            case r"user.profile.$field@(.*):$dv@(.*)" if user.isDefined                          =>
+            case r"user.profile.$field@(.*):$dv@(.*)"                                            =>
               user
                 .map(_.profile)
                 .map(json =>
@@ -651,7 +657,7 @@ object GlobalExpressionLanguage {
               Json.obj("kind" -> "apikey", "consumer" -> apiKey.get.lightJson).stringify
             case "consumer.json" if user.isDefined                                               =>
               Json.obj("kind" -> "user", "consumer" -> user.get.lightJson).stringify
-            case r"consumer.metadata.$field@(.*):$dv@(.*)" if user.isDefined || apiKey.isDefined =>
+            case r"consumer.metadata.$field@(.*):$dv@(.*)"                                       =>
               user
                 .flatMap(_.otoroshiData)
                 .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
