@@ -16,7 +16,7 @@ import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws.WSRequest
+import play.api.libs.ws.{WSRequest, WSResponse}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, PemHeaders}
 
 import scala.concurrent.Future
@@ -381,94 +381,93 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         }
       }
   }
+  // networking.k8s.io/v1beta1 (Ingress & IngressClass) was deprecated in Kubernetes 1.19 and
+  // removed in 1.22. We always query the stable networking.k8s.io/v1 endpoint first and only
+  // fall back to the legacy v1beta1 one when v1 is not served (404), i.e. on clusters older
+  // than 1.19. A 403 is an RBAC issue shared by both versions, so it does not trigger a fallback.
+  private def fetchIngressJson(v1Url: String, v1beta1Url: String, entityName: String): Future[Option[JsValue]] = {
+    def get(url: String): Future[WSResponse] =
+      client(url).addHttpHeaders("Accept" -> "application/json").get()
+
+    def handleLegacy(resp: WSResponse): Option[JsValue] = {
+      if (resp.status == 200) {
+        Some(resp.json)
+      } else if (resp.status == 403) {
+        KubernetesClientNotifications.registerForbiddenEntities(entityName)
+        resp.ignore()
+        None
+      } else if (resp.status == 404) {
+        KubernetesClientNotifications.registerMissionCustomResourceDefinition(entityName)
+        resp.ignore()
+        None
+      } else {
+        resp.ignore()
+        logger.error(s"bad http status while fetching $entityName (v1beta1): ${resp.status}")
+        None
+      }
+    }
+
+    get(v1Url).flatMap { resp =>
+      if (resp.status == 200) {
+        Some(resp.json).vfuture
+      } else if (resp.status == 403) {
+        KubernetesClientNotifications.registerForbiddenEntities(entityName)
+        resp.ignore()
+        None.vfuture
+      } else if (resp.status == 404) {
+        // v1 not served by this cluster: fall back to the legacy v1beta1 endpoint
+        resp.ignore()
+        get(v1beta1Url).map(handleLegacy)
+      } else {
+        resp.ignore()
+        logger.error(s"bad http status while fetching $entityName (v1): ${resp.status}")
+        None.vfuture
+      }
+    }
+  }
   def fetchIngressesAndFilterLabels(): Future[Seq[KubernetesIngress]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
-                KubernetesIngress(item)
-              })
-            } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else {
-              resp.ignore()
-              logger.error(s"bad http status while fetching ingresses: ${resp.status}")
-              Seq.empty
-            }
-          }
+    asyncSequence(config.namespaces.map { namespace => () =>
+      fetchIngressJson(
+        s"/apis/networking.k8s.io/v1/namespaces/$namespace/ingresses",
+        s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses",
+        "networking.k8s.io/ingresses"
+      ).map {
+        case Some(json) =>
+          filterLabels((json \ "items").as[JsArray].value.map { item =>
+            KubernetesIngress(item)
+          })
+        case None       => Seq.empty
+      }
     }).map(_.flatten)
   }
   def fetchIngresses(): Future[Seq[KubernetesIngress]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
-                KubernetesIngress(item)
-              }
-            } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else {
-              resp.ignore()
-              logger.error(s"bad http status while fetching ingresses: ${resp.status}")
-              Seq.empty
-            }
+    asyncSequence(config.namespaces.map { namespace => () =>
+      fetchIngressJson(
+        s"/apis/networking.k8s.io/v1/namespaces/$namespace/ingresses",
+        s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses",
+        "networking.k8s.io/ingresses"
+      ).map {
+        case Some(json) =>
+          (json \ "items").as[JsArray].value.map { item =>
+            KubernetesIngress(item)
           }
+        case None       => Seq.empty
+      }
     }).map(_.flatten)
   }
   def fetchIngressClasses(): Future[Seq[KubernetesIngressClass]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingressclasses")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
-                KubernetesIngressClass(item)
-              }
-            } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingressClasses")
-              resp.ignore()
-              Seq.empty
-            } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingressClasses")
-              resp.ignore()
-              Seq.empty
-            } else {
-              resp.ignore()
-              logger.error(s"bad http status while fetching ingresses-classes: ${resp.status}")
-              Seq.empty
-            }
+    asyncSequence(config.namespaces.map { namespace => () =>
+      fetchIngressJson(
+        s"/apis/networking.k8s.io/v1/namespaces/$namespace/ingressclasses",
+        s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingressclasses",
+        "networking.k8s.io/ingressClasses"
+      ).map {
+        case Some(json) =>
+          (json \ "items").as[JsArray].value.map { item =>
+            KubernetesIngressClass(item)
           }
+        case None       => Seq.empty
+      }
     }).map(_.flatten)
   }
   def fetchDeployments(): Future[Seq[KubernetesDeployment]] = {
