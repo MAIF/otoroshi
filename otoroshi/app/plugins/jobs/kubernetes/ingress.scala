@@ -1342,10 +1342,24 @@ object IngressSupport {
     val reader = new Reads[NetworkingV1beta1IngressBackend] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressBackend] =
         Try(
-          NetworkingV1beta1IngressBackend(
-            serviceName = (json \ "serviceName").as[String],
-            servicePort = (json \ "servicePort").as(IntOrString.reader)
-          )
+          (json \ "service").asOpt[JsValue] match {
+            // networking.k8s.io/v1 shape: { "service": { "name": "...", "port": { "number": 80 } | { "name": "http" } } }
+            case Some(service) =>
+              val port = service \ "port"
+              NetworkingV1beta1IngressBackend(
+                serviceName = (service \ "name").as[String],
+                servicePort = (port \ "number")
+                  .asOpt[Int]
+                  .map(n => IntOrString(n.some, None))
+                  .getOrElse(IntOrString(None, (port \ "name").asOpt[String]))
+              )
+            // legacy networking.k8s.io/v1beta1 shape: { "serviceName": "...", "servicePort": 80 | "http" }
+            case None          =>
+              NetworkingV1beta1IngressBackend(
+                serviceName = (json \ "serviceName").as[String],
+                servicePort = (json \ "servicePort").as(IntOrString.reader)
+              )
+          }
         ) match {
           case Failure(e) => JsError(e.getMessage)
           case Success(v) => JsSuccess(v)
