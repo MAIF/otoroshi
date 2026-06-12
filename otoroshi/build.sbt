@@ -5,6 +5,8 @@ organization := "fr.maif"
 version := "17.17.0-dev"
 scalaVersion := scalaLangVersion
 
+ThisBuild / evictionErrorLevel := Level.Warn
+
 inThisBuild(
   List(
     description := "Lightweight api management on top of a modern http reverse proxy",
@@ -50,23 +52,26 @@ inThisBuild(
 )
 
 lazy val root = (project in file("."))
-  .enablePlugins(PlayScala, PlayAkkaHttp2Support)
+  .enablePlugins(PlayScala)
   .disablePlugins(PlayFilters)
 
-// lazy val scalaLangVersion    = "2.13.10"
-lazy val scalaLangVersion        = "2.12.16"
+lazy val scalaLangVersion        = "3.8.3"
 lazy val metricsVersion          = "4.2.12"
 lazy val acme4jVersion           = "3.2.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
-lazy val playJsonVersion         = "2.9.3"
+lazy val playJsonVersion         = "3.0.6"
 lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "16.0.1"
 lazy val bouncyCastleVersion     = "1.77"
-lazy val pulsarVersion           = "2.8.1"
+lazy val pulsarVersion           = "2.10.0"
 lazy val openTelemetryVersion    = "1.28.0"
-lazy val jacksonVersion          = "2.13.4"
-lazy val akkaHttpVersion         = "10.2.10"
-lazy val akkaHttp2Version        = "10.2.10"
+lazy val jacksonVersion          = "2.21.3"
+lazy val jacksonAnnotationVersion = "2.21" // jackson-annotations is versioned at the minor level only
+
+lazy val pekkoVersion            = "1.6.0"
+lazy val pekkoHttpVersion        = "1.3.0"
+lazy val pekkoConnectorsS3Version = "1.3.0"
+lazy val pekkoConnectorsKafkaVersion = "1.1.0"
 lazy val reactorNettyVersion     = "1.1.18"
 lazy val nettyVersion            = "4.1.119.Final"
 lazy val excludesJackson         = Seq(
@@ -81,20 +86,41 @@ lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
 
-// BEWARE: akka-stream is a patched version bundled from the lib directory because of . see https://github.com/MAIF/akka/tree/fix-tls-1-3-hanshake-session-update
+// Pekko 1.6 upstream is used directly (no more patched akka-stream from the lib directory):
+// the TLS 1.3 handshake session fix has been part of Pekko since 1.1.0.
+
+// Pin every Pekko artifact to the same version to avoid mixed-version conflicts.
+dependencyOverrides ++= Seq(
+  "org.apache.pekko" %% "pekko-actor"                 % pekkoVersion,
+  "org.apache.pekko" %% "pekko-stream"                % pekkoVersion,
+  "org.apache.pekko" %% "pekko-slf4j"                 % pekkoVersion,
+  "org.apache.pekko" %% "pekko-actor-typed"           % pekkoVersion,
+  "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-protobuf-v3"           % pekkoVersion,
+  "org.apache.pekko" %% "pekko-http"                  % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-core"             % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-http-xml"              % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-parsing"               % pekkoHttpVersion,
+  "org.scala-lang.modules" %% "scala-xml"             % "2.3.0"
+)
 
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.softwaremill.macwire"        %% "macros"                               % "2.5.8"  % "provided",
-  "com.typesafe.play"               %% "play-json"                            % playJsonVersion,
-  "com.typesafe.play"               %% "play-json-joda"                       % playJsonVersion,
-  "com.github.etaty"                %% "rediscala"                            % "1.9.0",
-  "com.github.gphat"                %% "censorinus"                           % "2.1.16",
-  "com.typesafe.akka"               %% "akka-stream-kafka"                    % "2.0.7",
-  "com.lightbend.akka"              %% "akka-stream-alpakka-s3"               % "2.0.2",
-  "com.typesafe.akka"               %% "akka-http2-support"                   % akkaHttp2Version,
-  "com.typesafe.akka"               %% "akka-http-xml"                        % akkaHttp2Version,
+  "com.softwaremill.macwire"        %% "macros"                               % "2.6.7"  % "provided",
+  "org.playframework"               %% "play-json"                            % playJsonVersion,
+  "org.playframework"               %% "play-json-joda"                       % playJsonVersion,
+  "io.github.rediscala"             %% "rediscala"                            % "2.0.2",
+  ("com.github.gphat"               %% "censorinus"                           % "2.1.16").cross(CrossVersion.for3Use2_13),
+  "org.apache.pekko"                %% "pekko-actor"                          % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-stream"                         % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-slf4j"                          % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-actor-typed"                    % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-serialization-jackson"          % pekkoVersion,
+  "org.apache.pekko"                %% "pekko-http"                           % pekkoHttpVersion,
+  "org.apache.pekko"                %% "pekko-http-xml"                       % pekkoHttpVersion,
+  "org.apache.pekko"                %% "pekko-connectors-kafka"               % pekkoConnectorsKafkaVersion,
+  "org.apache.pekko"                %% "pekko-connectors-s3"                  % pekkoConnectorsS3Version,
   "com.spotify.metrics"              % "semantic-metrics-core"                % "1.1.11",
   "io.dropwizard.metrics"            % "metrics-jmx"                          % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                         % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
@@ -104,7 +130,6 @@ libraryDependencies ++= Seq(
   "com.auth0"                        % "jwks-rsa"                             % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"                     % "nimbus-jose-jwt"                      % "9.39.1",
   "de.svenkubiak"                    % "jBCrypt"                              % "0.4.3",
-  "com.propensive"                  %% "kaleidoscope-core"                    % "0.5.0",
   "io.github.classgraph"             % "classgraph"                           % "4.8.149" excludeAll (excludesJackson: _*),
   "com.comcast"                     %% "ip4s-core"                            % "3.2.0",
   "com.yubico"                       % "webauthn-server-core"                 % webAuthnVersion excludeAll (excludesJackson: _*),
@@ -114,11 +139,7 @@ libraryDependencies ++= Seq(
   "com.blueconic"                    % "browscap-java"                        % "1.4.3",
   "javax.xml.bind"                   % "jaxb-api"                             % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"                 % "jaxb-core"                            % "2.3.0.1",
-  if (scalaLangVersion.startsWith("2.12")) {
-    "com.github.blemale" %% "scaffeine" % "4.0.2"
-  } else {
-    "com.github.blemale" %% "scaffeine" % "5.2.1"
-  },
+  "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
   "org.shredzone.acme4j"             % "acme4j-client"                        % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   "io.lettuce"                       % "lettuce-core"                         % "6.8.1.RELEASE" excludeAll (excludesJackson: _*),
   "io.vertx"                         % "vertx-pg-client"                      % "4.5.22",
@@ -128,10 +149,7 @@ libraryDependencies ++= Seq(
   "com.cronutils"                    % "cron-utils"                           % "9.2.0",
   "commons-lang"                     % "commons-lang"                         % "2.6",
   "com.datastax.oss"                 % "java-driver-core"                     % "4.15.0" excludeAll (excludesJackson: _*),
-  "org.gnieh"                       %% "diffson-play-json"                    % "4.3.0" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
-  "org.scala-lang"                   % "scala-compiler"                       % scalaLangVersion,
-  "org.scala-lang"                   % "scala-library"                        % scalaLangVersion,
-  "org.scala-lang"                   % "scala-reflect"                        % scalaLangVersion,
+  "org.gnieh"                       %% "diffson-play-json"                    % "4.7.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
   "io.kubernetes"                    % "client-java"                          % kubernetesVersion excludeAll (excludesJackson: _*),
   "io.kubernetes"                    % "client-java-extended"                 % kubernetesVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson: _*),
@@ -139,7 +157,7 @@ libraryDependencies ++= Seq(
   "org.bouncycastle"                 % "bcprov-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                        % pulsarVersion excludeAll (excludesJackson: _*),
-  "com.clever-cloud.pulsar4s"       %% "pulsar4s-akka-streams"                % pulsarVersion excludeAll (excludesJackson: _*),
+  "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"               % pulsarVersion excludeAll (excludesJackson: _*),
   "org.jsoup"                        % "jsoup"                                % "1.15.3",
   "org.biscuitsec"                   % "biscuit"                              % "4.0.0",
   "org.opensaml"                     % "opensaml-core"                        % "4.0.1",
@@ -150,8 +168,8 @@ libraryDependencies ++= Seq(
   "org.typelevel"                   %% "squants"                              % "1.8.3" excludeAll (excludesJackson: _*),
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-core"                         % jacksonVersion,
-  "com.fasterxml.jackson.core"       % "jackson-annotations"                  % jacksonVersion,
-  "com.fasterxml.jackson.core"       % "jackson-databind"                     % s"${jacksonVersion}.2",
+  "com.fasterxml.jackson.core"       % "jackson-annotations"                  % jacksonAnnotationVersion,
+  "com.fasterxml.jackson.core"       % "jackson-databind"                     % jacksonVersion,
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"              % jacksonVersion,
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"              % jacksonVersion,
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"                % jacksonVersion,
@@ -174,11 +192,11 @@ libraryDependencies ++= Seq(
   "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "1.28.0-alpha" excludeAll (excludesJackson: _*),
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.326" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                            % "2.19.0",
-  "org.sangria-graphql"             %% "sangria"                              % "3.4.0",
+  "org.sangria-graphql"             %% "sangria"                              % "4.2.18",
   "org.bigtesting"                   % "routd"                                % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                            % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                % "1.0.4",
-  "fr.maif"                         %% "wasm4s"                               % "4.1.2" classifier "bundle",
+  "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.16.0",
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.40.0",
   // included in libs as jitpack is not stable at all
@@ -196,22 +214,11 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
-    ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
+    ExclusionRule(organization = "org.playframework", name = "play-json"),
   ),
-  "com.github.swagger-akka-http"    %% "swagger-scala-module"                 % "2.15.0" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
-    ExclusionRule(organization = "com.typesafe.play", name = "play-json"),
-  ),
-  // using a custom one right now as current build is broken
-  //   "org.extism.sdk"                   % "extism"                                    % "0.3.2",
-  if (scalaLangVersion.startsWith("2.12")) {
-    "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
-  } else {
-    "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
-  },
+  // swagger-scala-module dropped: no Scala 3 build and pulls Akka. We keep the Java swagger-core
+  // above; api.scala already has a fallback when the Scala converter is not registered.
+  "org.scala-lang.modules"          %% "scala-java8-compat"                   % "1.0.2",
   /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
     organization = "com.typesafe.play"
   )*/ // TODO - check if needed
@@ -228,7 +235,7 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
   "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.28.Final",
   // tests
-  "org.scalatestplus.play"          %% "scalatestplus-play"                   % "5.1.0"  % Test,
+  "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
   "com.networknt"                    % "json-schema-validator"                % "1.3.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
@@ -242,7 +249,7 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
-  "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.43.6" % Test,
+  "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.44.1" % Test,
   "com.microsoft.playwright"         % "playwright"                           % "1.47.0" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
@@ -259,6 +266,19 @@ scalacOptions ++= Seq(
 // resolvers += "jitpack" at "https://jitpack.io"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
+
+// Twirl 2.x still hardcodes `import scala.language.adhocExtensions` in generated template wrappers,
+// but the marker val was removed from scala.runtime.stdLibPatches.language in Scala 3.8. Stripping
+// the now-defunct import from the generated sources produces identical bytecode.
+Compile / TwirlKeys.compileTemplates := {
+  val generated = (Compile / TwirlKeys.compileTemplates).value
+  generated.foreach { f =>
+    val orig    = IO.read(f)
+    val patched = orig.replace("import scala.language.adhocExtensions", "")
+    if (patched != orig) IO.write(f, patched)
+  }
+  generated
+}
 
 // sources in (Compile, doc) := Seq.empty
 // publishArtifact in (Compile, packageDoc) := false
@@ -285,10 +305,10 @@ licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 // githubTokenSource := TokenSource.Environment("GITHUB_PACKAGES_TOKEN")
 
 // assembly
-mainClass in assembly := Some("play.core.server.ProdServerStart")
-test in assembly := {}
-assemblyJarName in assembly := "otoroshi.jar"
-fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
+assembly / mainClass := Some("play.core.server.ProdServerStart")
+assembly / test := {}
+assembly / assemblyJarName := "otoroshi.jar"
+assembly / fullClasspath += Attributed.blank(PlayKeys.playPackageAssets.value)
 assembly / assemblyMergeStrategy := { e =>
   e match {
     case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
@@ -347,7 +367,7 @@ assembly / assemblyMergeStrategy := { e =>
     case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
-    case path if path.contains("akka/stream")                           => MergeStrategy.first
+    case path if path.contains("pekko/stream")                          => MergeStrategy.first
     case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
     case PathList("javax", xs @ _*)                                     => MergeStrategy.first
     case x                                                              =>
@@ -358,15 +378,15 @@ assembly / assemblyMergeStrategy := { e =>
 
 lazy val packageAll = taskKey[Unit]("PackageAll")
 packageAll := {
-  (dist in Compile).value
-  (assembly in Compile).value
+  (Compile / dist).value
+  (Compile / assembly).value
 }
 
 import play.sbt.PlayImport.PlayKeys._
 
-packagedArtifacts in publish := {
-  val artifacts: Map[sbt.Artifact, java.io.File] = (packagedArtifacts in publishLocal).value
-  val assets: java.io.File                       = (playPackageAssets in Compile).value
+publish / packagedArtifacts := {
+  val artifacts: Map[sbt.Artifact, java.io.File] = (publishLocal / packagedArtifacts).value
+  val assets: java.io.File                       = (Compile / playPackageAssets).value
   artifacts + (Artifact(moduleName.value, "jar", "jar", "assets") -> assets)
 }
 
@@ -376,8 +396,8 @@ bashScriptExtraDefines += """
 addJava "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED"
 addJava "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 addJava "--add-opens=java.base/sun.net.www.protocol.file=ALL-UNNAMED"
-addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED" 
-addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED" 
+addJava "--add-exports=java.base/sun.security.x509=ALL-UNNAMED"
+addJava "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 addJava "-Dlog4j2.formatMsgNoLookups=true"
 """
 
