@@ -1,6 +1,6 @@
 package otoroshi.storage.drivers.lettuce
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.lettuce.core._
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.codec.RedisCodec

@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.http.scaladsl.model.HttpProtocols
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.HttpProtocols
+import org.apache.pekko.http.scaladsl.util.FastFuture.EnhancedFuture
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{AlwaysMatch, Canary}

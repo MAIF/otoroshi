@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env

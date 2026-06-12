@@ -1,13 +1,13 @@
 package otoroshi.storage.stores
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models._
 import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits._
 
 import scala.util.Success
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.storage.RedisLike
 import org.joda.time.DateTime
 import play.api.Logger

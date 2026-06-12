@@ -1,9 +1,9 @@
 package otoroshi.next.workflow
 
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import io.azam.ulidj.ULID
 import otoroshi.actions.{ApiAction, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}

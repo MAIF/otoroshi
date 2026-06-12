@@ -1,7 +1,7 @@
 package otoroshi.netty
 
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.nio.NioEventLoopGroup

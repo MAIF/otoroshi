@@ -1,6 +1,6 @@
 package otoroshi.statefulclients
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

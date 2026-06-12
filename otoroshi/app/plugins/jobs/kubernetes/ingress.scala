@@ -2,7 +2,7 @@ package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.cluster.ClusterMode
 import com.google.common.base.CaseFormat
 import otoroshi.env.Env

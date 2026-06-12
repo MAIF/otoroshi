@@ -1,7 +1,7 @@
 package otoroshi.utils.mailer
 
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
 import otoroshi.models.Exporter

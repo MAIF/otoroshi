@@ -1,8 +1,8 @@
 package otoroshi.next.extensions
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.Curve
 import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
 import otoroshi.api._

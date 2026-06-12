@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.controllers
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.actions.{ApiAction, ApiActionContext}

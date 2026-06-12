@@ -1,10 +1,10 @@
 package otoroshi.gateway
 
-import akka.actor.ActorRef
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComVersion, WeightedBestResponseTime}

@@ -1,7 +1,7 @@
 package otoroshi.metrics
 
-import akka.actor.Cancellable
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule

@@ -1,6 +1,6 @@
 package plugins
 
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins._

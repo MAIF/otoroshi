@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}

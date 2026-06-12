@@ -1,7 +1,7 @@
 package next.models
 
-import akka.http.scaladsl.model.Uri
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.api.WriteAction.{Create, Update}
 import otoroshi.api.{DeleteAction, WriteAction}

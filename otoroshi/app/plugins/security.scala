@@ -1,6 +1,6 @@
 package otoroshi.plugins.security
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}

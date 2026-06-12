@@ -1,13 +1,13 @@
 package otoroshi.events
 
-import akka.Done
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.{ContentType, ContentTypes}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption

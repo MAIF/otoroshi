@@ -1,7 +1,7 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import otoroshi.models._
 import org.joda.time.LocalTime

@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.catalogs.RemoteCatalogJob

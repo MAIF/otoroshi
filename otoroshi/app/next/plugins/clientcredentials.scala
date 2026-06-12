@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.biscuitsec.biscuit.datalog.SymbolTable

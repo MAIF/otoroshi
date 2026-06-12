@@ -1,10 +1,10 @@
 package otoroshi.netty
 
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
-import akka.http.scaladsl.model.{ContentType, HttpHeader, Uri}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelOption

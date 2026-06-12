@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.cache.types.UnboundedTrieMap

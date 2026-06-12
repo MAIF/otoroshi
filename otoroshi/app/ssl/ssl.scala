@@ -15,10 +15,10 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.{Materializer, TLSClientAuth}
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.{Materializer, TLSClientAuth}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings

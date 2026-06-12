@@ -2,10 +2,10 @@ package otoroshi.events.impl
 
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}

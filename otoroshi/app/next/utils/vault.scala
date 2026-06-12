@@ -1,8 +1,8 @@
 package otoroshi.next.utils
 
-import akka.Done
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder

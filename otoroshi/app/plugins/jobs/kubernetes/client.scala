@@ -3,10 +3,10 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern
-import akka.{Done, NotUsed}
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Concat, Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Concat, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime

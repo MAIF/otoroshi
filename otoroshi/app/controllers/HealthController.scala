@@ -1,7 +1,7 @@
 package otoroshi.controllers
 
 import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}

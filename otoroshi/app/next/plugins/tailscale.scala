@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -340,7 +340,7 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
                 url = ctx.otoroshiRequest.uri
                   .copy(
                     authority = ctx.otoroshiRequest.authority.copy(
-                      host = akka.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
+                      host = org.apache.pekko.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
                     )
                   )
                   .toString

@@ -1,22 +1,22 @@
 package otoroshi.utils.http
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
-import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
+import org.apache.pekko.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import com.typesafe.sslconfig.org.apache.pekko.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
@@ -1135,7 +1135,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort
-                // host = akka.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
+                // host = org.apache.pekko.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
               )
             )
           }
@@ -1144,7 +1144,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(addr)
+                host = org.apache.pekko.http.scaladsl.model.Uri.Host(addr)
               )
             )
           }
@@ -1152,7 +1152,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress))
+                host = org.apache.pekko.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress))
               )
             )
           }
@@ -1173,7 +1173,7 @@ case class AkkaWsClientRequest(
         val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
         val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
           case (Some(principal), Some(password)) => {
-            val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+            val auth = org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
             //val realmBuilder = new Realm.Builder(proxySettings.principal.orNull, proxySettings.password.orNull)
             //val scheme: Realm.AuthScheme = proxySettings.protocol.getOrElse("http").toLowerCase(java.util.Locale.ENGLISH) match {
             //  case "http" | "https" => Realm.AuthScheme.BASIC

@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors

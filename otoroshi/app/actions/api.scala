@@ -2,7 +2,7 @@ package otoroshi.actions
 
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets

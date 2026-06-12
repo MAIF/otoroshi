@@ -1,12 +1,12 @@
 package plugins
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import functional.PluginsTestSpec
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}

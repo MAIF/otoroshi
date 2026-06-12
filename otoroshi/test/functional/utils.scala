@@ -1,14 +1,14 @@
 package functional
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Scheduler}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ws, _}
-import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.{ws, _}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import io.netty.resolver.InetNameResolver
 import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
@@ -2148,7 +2148,7 @@ class WebsocketBackend(
     callback: String => Message = text => TextMessage(s"Echo: $text"),
     streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
 ) {
-  import akka.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
+  import org.apache.pekko.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
 
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit val mat: Materializer   = Materializer(system)

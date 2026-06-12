@@ -1,10 +1,10 @@
 package otoroshi.next.catalogs
 
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.Sink
-import akka.stream.{Attributes, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
 import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._

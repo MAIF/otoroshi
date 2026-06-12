@@ -3,9 +3,9 @@ package otoroshi.utils.clevercloud
 import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig

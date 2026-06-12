@@ -1,7 +1,7 @@
 package otoroshi.auth
 
 import java.util
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
 import org.apache.pulsar.client.api.PulsarClientException.AuthenticationException
 import otoroshi.auth.LdapAuthModuleConfig.fromJson

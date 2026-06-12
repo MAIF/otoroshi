@@ -1,9 +1,9 @@
 package otoroshi.next.plugins.wrappers
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.next.models.NgTarget

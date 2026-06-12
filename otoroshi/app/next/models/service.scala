@@ -1,6 +1,6 @@
 package otoroshi.next.models
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env._
 import otoroshi.models._
@@ -15,7 +15,7 @@ import scala.util._
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.ApikeyCalls
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 import otoroshi.actions.ApiActionContext
 
 case class NgMinimalRoute(

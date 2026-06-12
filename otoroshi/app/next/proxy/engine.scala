@@ -1,9 +1,9 @@
 package otoroshi.next.proxy
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage

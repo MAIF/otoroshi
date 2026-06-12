@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.Done
+import org.apache.pekko.Done
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.gateway.Errors

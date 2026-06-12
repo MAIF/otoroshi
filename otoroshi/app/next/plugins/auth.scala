@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}

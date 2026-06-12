@@ -1,6 +1,6 @@
 package otoroshi.wasm
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.otoroshi.wasm4s.scaladsl._
 import io.otoroshi.wasm4s.scaladsl.security.TlsConfig
 import org.extism.sdk.{HostFunction, HostUserData}

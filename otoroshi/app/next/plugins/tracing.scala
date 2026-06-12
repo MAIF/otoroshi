@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator

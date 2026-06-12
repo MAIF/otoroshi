@@ -4,14 +4,14 @@ import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.settings.ServerSettings
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.TLSProtocol.NegotiateNewSession
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
-import akka.stream.{IgnoreComplete, Materializer}
-import akka.util.ByteString
-import akka.{AwesomeIncomingConnection, Done, TcpUtils}
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.settings.ServerSettings
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.TLSProtocol.NegotiateNewSession
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
+import org.apache.pekko.stream.{IgnoreComplete, Materializer}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{AwesomeIncomingConnection, Done, TcpUtils}
 import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
@@ -833,7 +833,7 @@ class TcpProxy(
             flow = incomingConnection.flow.alsoTo(Sink.foreach { bs =>
               if (firstChunk.compareAndSet(false, true)) {
                 val packetString = bs.utf8String
-                val matcher      = akka.TcpUtils.domainNamePattern.matcher(packetString)
+                val matcher      = org.apache.pekko.TcpUtils.domainNamePattern.matcher(packetString)
                 while (matcher.find()) {
                   val matchResult: MatchResult = matcher.toMatchResult
                   val expression: String       = matchResult.group()

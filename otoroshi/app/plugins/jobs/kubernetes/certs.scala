@@ -1,8 +1,8 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script._

@@ -2,7 +2,7 @@ package functional
 
 import java.util.Date
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory

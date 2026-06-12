@@ -1,8 +1,8 @@
 package otoroshi.actions
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri.Path
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}

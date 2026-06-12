@@ -1,8 +1,8 @@
 package otoroshi.script
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime

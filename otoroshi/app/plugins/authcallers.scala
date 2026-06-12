@@ -1,8 +1,8 @@
 package otoroshi.plugins.authcallers
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.env.Env

@@ -1,8 +1,8 @@
 package otoroshi.api
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Framing, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Framing, Source}
+import org.apache.pekko.util.ByteString
 import next.models.{Api, ApiSubscription, RouteTemplate}
 import org.apache.commons.lang3.math.NumberUtils
 import org.joda.time.DateTime

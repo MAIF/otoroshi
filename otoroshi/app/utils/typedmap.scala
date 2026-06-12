@@ -1,6 +1,6 @@
 package otoroshi.utils
 
-import akka.http.scaladsl.model.DateTime
+import org.apache.pekko.http.scaladsl.model.DateTime
 import otoroshi.gateway.GwError
 import otoroshi.models._
 import otoroshi.next.models.{NgBackend, NgRoute, NgTarget}

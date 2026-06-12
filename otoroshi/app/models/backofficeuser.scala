@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import otoroshi.auth.{AuthModuleConfig, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime

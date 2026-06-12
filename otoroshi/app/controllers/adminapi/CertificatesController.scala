@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.utils.controllers.{
   ApiError,

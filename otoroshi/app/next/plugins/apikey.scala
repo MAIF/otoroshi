@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import otoroshi.env.Env

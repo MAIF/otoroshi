@@ -1,7 +1,7 @@
 package otoroshi.storage.drivers.lettuce
 
-import akka.actor.ActorSystem
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.util.ByteString
 import io.lettuce.core.api.async.RedisAsyncCommands
 import io.lettuce.core.api.reactive.RedisReactiveCommands
 import io.lettuce.core.cluster.RedisClusterClient

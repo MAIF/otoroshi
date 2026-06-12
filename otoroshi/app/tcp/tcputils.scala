@@ -1,15 +1,15 @@
-package akka
+package org.apache.pekko
 
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.{MatchResult, Pattern}
 
-import akka.actor.ActorSystem
-import akka.io.Inet.SocketOption
-import akka.stream.scaladsl.Tcp.{IncomingConnection, ServerBinding}
-import akka.stream.scaladsl.{BidiFlow, Flow, Sink, Source, TLS, Tcp}
-import akka.stream.{IgnoreComplete, TLSClosing, TLSProtocol}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.io.Inet.SocketOption
+import org.apache.pekko.stream.scaladsl.Tcp.{IncomingConnection, ServerBinding}
+import org.apache.pekko.stream.scaladsl.{BidiFlow, Flow, Sink, Source, TLS, Tcp}
+import org.apache.pekko.stream.{IgnoreComplete, TLSClosing, TLSProtocol}
+import org.apache.pekko.util.ByteString
 import javax.net.ssl.{SSLEngine, SSLSession}
 
 import scala.collection.immutable

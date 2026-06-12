@@ -2,15 +2,15 @@ package functional
 
 package functional
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest}
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.http.scaladsl.{Http, HttpExt}
-import akka.stream.{Materializer, ThrottleMode}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.{`Set-Cookie`, Host, HttpCookie, RawHeader}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
+import org.apache.pekko.stream.{Materializer, ThrottleMode}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.classic.{Level, Logger => LogbackLogger}
 import ch.qos.logback.core.AppenderBase

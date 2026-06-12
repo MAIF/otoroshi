@@ -1,9 +1,9 @@
 package otoroshi.plugins.workflow
 
 import java.util.concurrent.atomic.AtomicBoolean
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._

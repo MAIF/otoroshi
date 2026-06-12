@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.auth.OAuth2ModuleConfig

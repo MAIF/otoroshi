@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._

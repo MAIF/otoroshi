@@ -1,7 +1,7 @@
 package otoroshi.next.extensions
 
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.api.Resource
 import otoroshi.env.Env

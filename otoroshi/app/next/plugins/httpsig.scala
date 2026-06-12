@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.ContentType
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.ContentType
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.{ECKey, JWK, OctetKeyPair, RSAKey}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._

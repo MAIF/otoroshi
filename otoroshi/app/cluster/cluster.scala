@@ -1,18 +1,18 @@
 package otoroshi.cluster
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.ClientTransport
-import akka.http.scaladsl.model.{ContentTypes, Uri}
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.headers.CannedAcl
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.ClientTransport
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, Uri}
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
@@ -2557,15 +2557,15 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     debug(s"callLeaderAkka: ${attempt}")
     val alreadyReLaunched                                                                                           = new AtomicBoolean(false)
     val pushCancelSource                                                                                            = new AtomicReference[Cancellable]()
-    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
     val pushSource
-        : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-      Source.queue[akka.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue {
+        : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
+      Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue {
         q =>
           queueRef.set(q)
           q
       }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _]                                                      = pushSource
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource
 
     def handleOfferFailure(
         key: String,
@@ -2726,7 +2726,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             queueRef
               .get()
               .offer(
-                akka.http.scaladsl.model.ws.TextMessage
+                org.apache.pekko.http.scaladsl.model.ws.TextMessage
                   .Strict(ClusterMessageFromWorker(member, stats.json).json.prettify)
               )
               .andThen(handleOfferFailure("routes:global", stats))
@@ -2734,7 +2734,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               queueRef
                 .get()
                 .offer(
-                  akka.http.scaladsl.model.ws.TextMessage
+                  org.apache.pekko.http.scaladsl.model.ws.TextMessage
                     .Strict(ClusterMessageFromWorker(member, incr.json).json.prettify)
                 )
                 .andThen(handleOfferFailure(key, incr))
@@ -2772,7 +2772,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               case (Some(principal), Some(password)) =>
                 ClientTransport.httpsProxy(
                   proxyAddress,
-                  akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                  org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 )
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
@@ -2785,18 +2785,18 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       },
       clientFlow = Flow
         .fromSinkAndSource(
-          Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-            case akka.http.scaladsl.model.ws.TextMessage.Strict(data)       => onClusterState(data, false, false)
-            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+          Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(data)       => onClusterState(data, false, false)
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
               source.runFold("")(_ + _).map(data => onClusterState(data, true, false))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
               debug(s"uncompressing strict at level ${env.clusterConfig.compression}")
               data
                 .chunks(1024 * 32)
                 .via(config.gunzip())
                 .runFold(ByteString.empty)(_ ++ _)
                 .map(data => onClusterState(data.utf8String, false, true))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
               debug(s"uncompressing streamed at level ${env.clusterConfig.compression}")
               source.runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, true, true))
           },
@@ -2869,7 +2869,7 @@ class SwappableInMemoryDataStores(
     env: Env
 ) extends DataStores {
 
-  import akka.stream.Materializer
+  import org.apache.pekko.stream.Materializer
 
   import scala.concurrent.duration._
   import scala.util.hashing.MurmurHash3

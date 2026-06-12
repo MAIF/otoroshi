@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.google.common.hash.Hashing
 import org.joda.time.DateTime
 import otoroshi.env.Env

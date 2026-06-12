@@ -1,7 +1,7 @@
 package plugins
 
-import akka.Done
-import akka.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.stream.scaladsl.Source
 import com.dimafeng.testcontainers.GenericContainer
 import com.github.dockerjava.api.model.{Bind, ExposedPort, HostConfig, PortBinding, Ports, Volume}
 import functional.PluginsTestSpec

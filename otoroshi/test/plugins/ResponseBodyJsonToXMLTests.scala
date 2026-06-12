@@ -1,6 +1,6 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper

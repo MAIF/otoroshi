@@ -1,6 +1,6 @@
 package otoroshi.next.models
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env

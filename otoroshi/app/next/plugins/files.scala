@@ -1,12 +1,12 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.headers.`Last-Modified`
-import akka.stream.alpakka.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.{Attributes, Materializer}
-import akka.stream.alpakka.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Settings}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
+import org.apache.pekko.stream.connectors.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Settings}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._

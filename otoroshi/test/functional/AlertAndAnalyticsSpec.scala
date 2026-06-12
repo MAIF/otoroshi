@@ -1,7 +1,7 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ApiKey, GlobalConfig, ServiceGroupIdentifier, Webhook}
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType}

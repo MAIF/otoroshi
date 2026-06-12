@@ -1,14 +1,14 @@
 package otoroshi.gateway
 
-import akka.Done
+import org.apache.pekko.Done
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
-import akka.actor.{ActorRef, Scheduler}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorRef, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import otoroshi.env.{Env, SidecarConfig}
 import otoroshi.events._

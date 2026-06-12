@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors

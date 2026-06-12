@@ -1,7 +1,7 @@
 package otoroshi.script
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.GwError
 import otoroshi.models.ServiceDescriptor

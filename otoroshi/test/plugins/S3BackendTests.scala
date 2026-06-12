@@ -1,13 +1,13 @@
 package plugins
 
-import akka.http.scaladsl.model.ContentTypes
-import akka.stream.Attributes
-import akka.stream.alpakka.s3.AccessStyle.PathAccessStyle
-import akka.stream.alpakka.s3._
-import akka.stream.alpakka.s3.headers.CannedAcl
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.stream.Attributes
+import org.apache.pekko.stream.connectors.s3.AccessStyle.PathAccessStyle
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.dimafeng.testcontainers.GenericContainer
 import functional.PluginsTestSpec
 import org.testcontainers.containers.wait.strategy.Wait
