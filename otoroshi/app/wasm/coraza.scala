@@ -396,8 +396,8 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       configs <- datastores.corazaConfigsDatastore.findAll()
     } yield {
@@ -533,7 +533,7 @@ case class CorazaTrailEvent(
 
 class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env)
     extends CorazaImplementation {
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 

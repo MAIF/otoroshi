@@ -56,7 +56,7 @@ case class ProxyDone(
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-error-handler")
 
@@ -307,8 +307,8 @@ class GatewayRequestHandler(
 )(implicit env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
 
-  implicit lazy val ec        = env.otoroshiExecutionContext
-  implicit lazy val scheduler = env.otoroshiScheduler
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
   lazy val logger = Logger("otoroshi-http-handler")
   // lazy val debugLogger = Logger("otoroshi-http-handler-debug")

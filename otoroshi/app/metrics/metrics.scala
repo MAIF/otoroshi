@@ -59,8 +59,8 @@ object FakeHasMetrics extends HasMetrics {
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
-  private implicit val ev = env
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ev: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-metrics")
 

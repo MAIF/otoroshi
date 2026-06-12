@@ -114,7 +114,7 @@ object OcspResponder {
 // test command: openssl ocsp -issuer "ca.cer" -cert "*.oto.tools.cer" -text -urDynamicSSLEngineProviderl http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
 class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-certificates-ocsp")
 

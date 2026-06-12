@@ -192,8 +192,8 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       configs <- datastores.remoteCatalogsDatastore.findAllAndFillSecrets()
     } yield {
@@ -272,9 +272,9 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   )
 
   private def handleDeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     optBody match {
       case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
       case Some(body) =>
@@ -301,9 +301,9 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   }
 
   private def handleTest(optBody: Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     optBody match {
       case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
       case Some(body) =>
@@ -325,9 +325,9 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   }
 
   private def handleUndeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     optBody match {
       case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
       case Some(body) =>

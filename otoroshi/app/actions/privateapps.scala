@@ -29,7 +29,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     extends ActionBuilder[PrivateAppsActionContext, AnyContent]
     with ActionFunction[Request, PrivateAppsActionContext] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   override def invokeBlock[A](
       request: Request[A],

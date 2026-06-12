@@ -707,7 +707,7 @@ class TcpProxy(
 ) {
 
   private val log         = Logger("otoroshi-tcp-proxy")
-  private implicit val ec = system.dispatcher
+  private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
   private val provider    = new TcpEngineProvider()
 
   private def debugger(title: String): Sink[ByteString, Future[Done]] =
@@ -891,10 +891,10 @@ class RunningServers(env: Env) {
 
   import scala.concurrent.duration._
 
-  private implicit val system = env.otoroshiActorSystem
-  private implicit val ec     = env.otoroshiExecutionContext
-  private implicit val mat    = env.otoroshiMaterializer
-  private implicit val ev     = env
+  private implicit val system: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val ev: otoroshi.env.Env = env
   private val ref             = new AtomicReference[Cancellable]()
   private val running         = new AtomicBoolean(false)
   private val syncing         = new AtomicBoolean(false)

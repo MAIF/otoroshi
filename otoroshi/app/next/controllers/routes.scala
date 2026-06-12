@@ -21,8 +21,8 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     with BulkControllerHelper[NgRoute, JsValue]
     with CrudControllerHelper[NgRoute, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-routes-api")
 

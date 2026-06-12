@@ -38,10 +38,10 @@ import scala.util.{Failure, Success}
 
 class HttpHandler()(implicit env: Env) {
 
-  implicit lazy val currentEc           = env.otoroshiExecutionContext
-  implicit lazy val currentScheduler    = env.otoroshiScheduler
-  implicit lazy val currentSystem       = env.otoroshiActorSystem
-  implicit lazy val currentMaterializer = env.otoroshiMaterializer
+  implicit lazy val currentEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val currentScheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
+  implicit lazy val currentSystem: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
+  implicit lazy val currentMaterializer: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-http-handler")
 

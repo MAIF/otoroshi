@@ -1313,10 +1313,10 @@ object ClusterLeaderAgent {
 class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   import scala.concurrent.duration._
 
-  implicit lazy val ec    = env.otoroshiExecutionContext
-  implicit lazy val mat   = env.otoroshiMaterializer
-  implicit lazy val sched = env.otoroshiScheduler
-  implicit lazy val _env  = env
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit lazy val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
+  implicit lazy val _env: otoroshi.env.Env = env
 
   private val membershipRef   = new AtomicReference[Cancellable]()
   private val stateUpdaterRef = new AtomicReference[Cancellable]()
@@ -1486,9 +1486,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   import scala.concurrent.duration._
 
-  implicit lazy val ec    = env.otoroshiExecutionContext
-  implicit lazy val mat   = env.otoroshiMaterializer
-  implicit lazy val sched = env.otoroshiScheduler
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit lazy val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
   private val _modern = env.configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
 
@@ -2410,7 +2410,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def pushQuotas(): Unit = {
     try {
-      implicit val _env = env
+      implicit val _env: otoroshi.env.Env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
         val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
         val start         = System.currentTimeMillis()
@@ -3186,9 +3186,9 @@ class SwappableInMemoryDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -3228,9 +3228,9 @@ class SwappableInMemoryDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")

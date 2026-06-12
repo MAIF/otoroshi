@@ -770,7 +770,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
   import collection.JavaConverters._
   import otoroshi.utils.reactive.ReactiveStreamImplicits._
 
-  implicit val mat = env.otoroshiMaterializer
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger               = Logger("otoroshi-lettuce-redis")
   lazy val avoidCommandFailures =

@@ -136,7 +136,7 @@ class KubernetesGatewayApiControllerJob extends Job {
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (config.gatewayApiWatch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting gateway api watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -820,7 +820,7 @@ object KubernetesGatewayApiJob {
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(httpRoutes.toList)
       .mapAsync(1) { httpRoute =>
@@ -907,7 +907,7 @@ object KubernetesGatewayApiJob {
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(grpcRoutes.toList)
       .mapAsync(1) { grpcRoute =>
@@ -991,7 +991,7 @@ object KubernetesGatewayApiJob {
     if (toSave.nonEmpty) {
       logger.info(s"Saving ${toSave.size} Gateway API routes")
     }
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(toSave.toList)
       .mapAsync(1)(route =>
         route.save().recover { case e =>

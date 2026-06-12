@@ -28,8 +28,8 @@ class TryItController(
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val sourceBodyParser = BodyParser("TryItController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)

@@ -593,7 +593,7 @@ class NgProxyState(env: Env) {
   }
 
   def sync()(implicit ec: ExecutionContext): Future[Unit] = {
-    implicit val ev  = env
+    implicit val ev: otoroshi.env.Env = env
     val start        = System.currentTimeMillis()
     val gc           = env.datastores.globalConfigDataStore.latest()
     val config       = gc.plugins.config

@@ -401,7 +401,7 @@ case class NgErrorRewriterConfig(
     ranges: Seq[ResponseStatusRange],
     templates: Map[String, String],
     log: Boolean,
-    export: Boolean,
+    `export`: Boolean,
     maxBodySize: Long = 1048576L,
     useOtoroshiErrorTemplate: Boolean = true,
     preservedHeaders: Seq[String] = Seq.empty,
@@ -449,7 +449,7 @@ object NgErrorRewriterConfig {
         |</html>""".stripMargin
     ),
     log = true,
-    export = true,
+    `export` = true,
     maxBodySize = 1048576L,
     useOtoroshiErrorTemplate = true,
     preservedHeaders = Seq.empty,
@@ -460,7 +460,7 @@ object NgErrorRewriterConfig {
     override def reads(json: JsValue): JsResult[NgErrorRewriterConfig] = Try {
       NgErrorRewriterConfig(
         log = json.select("log").asOpt[Boolean].getOrElse(false),
-        export = json.select("export").asOpt[Boolean].getOrElse(false),
+        `export` = json.select("export").asOpt[Boolean].getOrElse(false),
         templates = json.select("templates").asOpt[Map[String, String]].getOrElse(Map.empty),
         ranges = json
           .select("ranges")
@@ -481,7 +481,7 @@ object NgErrorRewriterConfig {
       "ranges"                      -> JsArray(o.ranges.map(_.json)),
       "templates"                   -> o.templates,
       "log"                         -> o.log,
-      "export"                      -> o.export,
+      "export"                      -> o.`export`,
       "max_body_size"               -> o.maxBodySize,
       "use_otoroshi_error_template" -> o.useOtoroshiErrorTemplate,
       "preserved_headers"           -> o.preservedHeaders,
@@ -559,7 +559,7 @@ class NgErrorRewriter extends NgRequestTransformer {
           if (config.log) {
             logger.error(s"new error rewritten with id: ${errorId}, event: ${event.toJson(env).prettify}")
           }
-          if (config.export) {
+          if (config.`export`) {
             event.toAnalytics()
           }
           response.right

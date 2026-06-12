@@ -735,9 +735,8 @@ case class ScriptsState(compiling: Boolean, initialized: Boolean) {
 
 class ScriptManager(env: Env) {
 
-  private implicit val ec   = env.otoroshiExecutionContext
-  private implicit val _env = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val _env: otoroshi.env.Env = env
   private val cpScriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   private val logger       = Logger("otoroshi-script-manager")
   private val updateRef    = new AtomicReference[Cancellable]()

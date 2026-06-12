@@ -149,8 +149,8 @@ class BackOfficeController(
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val lat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val lat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val handler       = handlerRef.get()
   lazy val logger        = Logger("otoroshi-backoffice-api")

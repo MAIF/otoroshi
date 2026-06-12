@@ -1117,9 +1117,9 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
   }
 
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   private lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
 

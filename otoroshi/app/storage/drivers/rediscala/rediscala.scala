@@ -103,7 +103,7 @@ class RedisCPDataStores(
     env: Env
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientPool = {
-    implicit val ec          = redisDispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = redisDispatcher
     val members              = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.pool.members")
       .map(_.map { config =>
@@ -142,7 +142,7 @@ class RedisMCPDataStores(
     env: Env
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientMutablePool = {
-    implicit val ec                 = redisDispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = redisDispatcher
     val members                     = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.mpool.members")
       .map(_.map { config =>
@@ -181,7 +181,7 @@ class RedisLFDataStores(
     env: Env
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: RedisClientMasterSlaves = {
-    implicit val ec                  = redisDispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = redisDispatcher
     val master                       = RedisServer(
       host = configuration
         .getOptionalWithFileSupport[String]("app.redis.host")
@@ -242,7 +242,7 @@ class RedisSentinelDataStores(
     env: Env
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: SentinelMonitoredRedisClient = {
-    implicit val ec                       = redisDispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = redisDispatcher
     val members: Seq[(String, Int)]       = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.sentinels.members")
       .map(_.map { config =>
@@ -288,7 +288,7 @@ class RedisSentinelLFDataStores(
     env: Env
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
   lazy val redisCli: SentinelMonitoredRedisClientMasterSlaves = {
-    implicit val ec                                   = redisDispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = redisDispatcher
     val members: Seq[(String, Int)]                   = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.sentinels.lf.members")
       .map(_.map { config =>
@@ -329,7 +329,7 @@ class RedisClusterDataStores(
 ) extends AbstractRedisDataStores(configuration, environment, lifecycle, env) {
 
   lazy val redisCluster: RedisCluster = {
-    implicit val ec       = redisDispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = redisDispatcher
     val members           = configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.cluster.members")
       .map(_.map { config =>
@@ -575,9 +575,9 @@ abstract class AbstractRedisDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -614,9 +614,9 @@ abstract class AbstractRedisDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
@@ -670,7 +670,7 @@ abstract class AbstractRedisDataStores(
 class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: ExecutionContext, cluster: Boolean = false)
     extends RedisLike {
 
-  implicit val ec = executionContext
+  implicit val ec: scala.concurrent.ExecutionContext = executionContext
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover { case _ =>

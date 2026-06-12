@@ -29,8 +29,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 
   import otoroshi.cluster.ClusterMode.{Leader, Off, Worker}
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val sourceBodyParser = BodyParser("ClusterController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -531,8 +531,8 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
 
   private val ref = new AtomicReference[Cancellable]()
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   def debug(msg: String): Unit = {
     if (env.isDev) {

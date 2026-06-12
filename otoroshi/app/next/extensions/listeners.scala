@@ -323,8 +323,8 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
   }
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       listeners <- datastores.httpListenerDatastore.findAll()
     } yield {

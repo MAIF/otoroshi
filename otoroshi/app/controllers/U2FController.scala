@@ -37,7 +37,7 @@ class U2FController(
 )(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-u2f-controller")
 

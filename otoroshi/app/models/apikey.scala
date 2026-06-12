@@ -62,7 +62,7 @@ case class RemainingQuotas(
 
 object RemainingQuotas {
   val MaxValue: Long = 10000000L
-  implicit val fmt   = new Format[RemainingQuotas] {
+  implicit val fmt: play.api.libs.json.Format[RemainingQuotas] = new Format[RemainingQuotas] {
 
     override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
       RemainingQuotas(

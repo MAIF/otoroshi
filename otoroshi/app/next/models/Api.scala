@@ -1119,9 +1119,8 @@ object ApiSubscription {
       env: Env
   ): Future[Either[JsValue, ApiSubscription]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val e  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: otoroshi.env.Env = env
     def onError(error: String): Either[JsValue, ApiSubscription] = Json
       .obj(
         "error"            -> error,
@@ -1529,7 +1528,7 @@ case class Api(
   }
 
   private def buildDraftRoutes()(implicit env: Env): Future[Seq[RouteWithApi]] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     env.datastores.draftsDataStore
       .findById(id)
@@ -1688,7 +1687,7 @@ case class Api(
   }
 
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     val isRemovedOrDisabled = state == ApiRemoved || !enabled
 
@@ -1851,9 +1850,8 @@ object Api {
       env: Env
   ): Future[Either[JsValue, Api]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val e  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: otoroshi.env.Env = env
     oldEntity match {
       case None      =>
         // Create path: API must start in staging.

@@ -1023,7 +1023,7 @@ class ClientCredentialService extends RequestSink {
   private def handleBody(
       ctx: RequestSinkContext
   )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val charset      = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {

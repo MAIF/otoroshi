@@ -14,7 +14,7 @@ class NgPluginsController(
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   def categories() = ApiAction {
     val pluginsCategories = env.scriptManager.ngNames.distinct

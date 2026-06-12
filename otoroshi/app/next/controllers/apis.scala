@@ -41,8 +41,8 @@ import scala.concurrent.duration.FiniteDuration
 
 class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apis-controller")
 
@@ -401,7 +401,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         def getPlanDraftSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
             env: Env
         ): Future[Seq[JsValue]] = {
-          implicit val ec = env.otoroshiExecutionContext
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.draftsDataStore
             .streamedFindAndMat(
@@ -422,7 +422,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(implicit en
         def getPlanSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
             env: Env
         ): Future[Seq[ApiSubscription]] = {
-          implicit val ec = env.otoroshiExecutionContext
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.apiSubscriptionDataStore
             .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(ec, env.otoroshiMaterializer, env)

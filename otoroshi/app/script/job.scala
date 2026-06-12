@@ -278,9 +278,8 @@ case class RegisteredJobContext(
     ref: AtomicReference[Option[Cancellable]]
 ) {
 
-  private implicit val ec = actorSystem.dispatcher
-  private implicit val ev = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
+  private implicit val ev: otoroshi.env.Env = env
   private lazy val attrs = TypedMap.empty
   private lazy val randomLock = {
     val ref = new AtomicReference[String](IdGenerator.token(16))
@@ -630,9 +629,8 @@ class JobManager(env: Env) {
   private val scanRef                = new AtomicReference[Cancellable]()
   private val lockRef                = new AtomicReference[Cancellable]()
 
-  private[script] implicit val jobExecutor = jobActorSystem.dispatcher
-  private implicit val ev                  = env
-
+  private[script] implicit val jobExecutor: scala.concurrent.ExecutionContext = jobActorSystem.dispatcher
+  private implicit val ev: otoroshi.env.Env = env
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
     registeredLocks.putIfAbsent(jobId, (key, value))
@@ -787,7 +785,7 @@ class StalledJobsDetector extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 20.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:locks:jobs:*").flatMap { keys =>
       Source(keys.toList)
         .mapAsync(1) { key =>

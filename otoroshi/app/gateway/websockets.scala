@@ -52,10 +52,10 @@ class WebSocketHandler()(implicit env: Env) {
 
   type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
 
-  implicit lazy val currentEc           = env.otoroshiExecutionContext
-  implicit lazy val currentScheduler    = env.otoroshiScheduler
-  implicit lazy val currentSystem       = env.otoroshiActorSystem
-  implicit lazy val currentMaterializer = env.otoroshiMaterializer
+  implicit lazy val currentEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val currentScheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
+  implicit lazy val currentSystem: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
+  implicit lazy val currentMaterializer: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-websocket-handler")
 
@@ -806,10 +806,9 @@ class WebSocketProxyActor(
 
   import scala.concurrent.duration._
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
-  implicit val e   = env
-
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit val e: otoroshi.env.Env = env
   lazy val source = Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](50000, OverflowStrategy.dropTail)
   lazy val logger = Logger("otoroshi-websocket-handler-actor")
 
@@ -912,8 +911,8 @@ class WebSocketProxyActor(
       queueRef.set(materialized._2)
       connected.andThen {
         case Success(r) => {
-          implicit val ec  = env.otoroshiExecutionContext
-          implicit val mat = env.otoroshiMaterializer
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+          implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
           if (logger.isTraceEnabled)
             logger.trace(
               s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"

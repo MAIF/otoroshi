@@ -115,7 +115,7 @@ class ResponseCache extends RequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
     jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
       //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
       SchedulerHelper.runnable(
@@ -162,9 +162,9 @@ class ResponseCache extends RequestTransformer {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
       val possibleServices = services.filter(s =>
         s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")

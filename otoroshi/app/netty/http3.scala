@@ -37,8 +37,8 @@ class Http1RequestHandler(
     config: ReactorNettyServerConfig
 ) extends ChannelInboundHandlerAdapter {
 
-  private implicit val ec  = env.otoroshiExecutionContext
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   private val NOT_HANDLED          =
     Unpooled.wrappedBuffer(s"${Json.obj("error" -> "not handled")}\r\n".getBytes(CharsetUtil.US_ASCII))

@@ -365,7 +365,7 @@ case class JobErrorEvent(
 
 object Audit {
   def send[A <: AuditEvent](audit: A)(implicit env: Env): Unit = {
-    implicit val ec = env.analyticsExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
     audit.toAnalytics()
     audit.toEnrichedJson.map(e => env.datastores.auditDataStore.push(e))
   }

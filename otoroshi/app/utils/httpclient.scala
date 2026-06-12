@@ -1119,7 +1119,7 @@ case class AkkaWsClientRequest(
 )(implicit materializer: Materializer)
     extends WSRequest {
 
-  implicit val ec = client.ec
+  implicit val ec: scala.concurrent.ExecutionContext = client.ec
 
   override type Self = WSRequest
 

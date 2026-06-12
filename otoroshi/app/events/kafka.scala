@@ -54,7 +54,7 @@ case class SaslConfig(
 )
 
 object SaslConfig {
-  implicit val format = new Format[SaslConfig] { // Json.format[KafkaConfig]
+  implicit val format: play.api.libs.json.Format[SaslConfig] = new Format[SaslConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: SaslConfig): JsValue =
       Json.obj(
@@ -81,7 +81,7 @@ object SaslConfig {
 
 object KafkaConfig {
 
-  implicit val format = new Format[KafkaConfig] { // Json.format[KafkaConfig]
+  implicit val format: play.api.libs.json.Format[KafkaConfig] = new Format[KafkaConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: KafkaConfig): JsValue =
       Json.obj(
@@ -254,7 +254,7 @@ class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfi
 
 class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends Actor {
 
-  implicit val ec = env.analyticsExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   var config: Option[KafkaConfig]               = None
   var eventProducer: Option[KafkaEventProducer] = None
@@ -302,7 +302,7 @@ object KafkaWrapperActor {
 
 class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
 
-  implicit val ec = _env.analyticsExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = _env.analyticsExecutionContext
 
   lazy val logger = play.api.Logger("otoroshi-kafka-connector")
 

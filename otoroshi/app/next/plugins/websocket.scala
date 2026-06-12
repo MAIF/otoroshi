@@ -475,7 +475,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     if (message.isText) {
       message.str().flatMap { bodyStr =>
         Try(Json.parse(bodyStr)) match {
@@ -530,7 +530,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
       message: WebsocketMessage,
       functionName: Option[String]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val config       = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -697,7 +697,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
       workflowId: String,
       action: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     (if (message.isText) {
        message.str().map { str =>
          ctx.wasmJson.as[JsObject] ++ Json.obj(

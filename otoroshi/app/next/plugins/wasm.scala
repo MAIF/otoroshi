@@ -110,7 +110,7 @@ class WasmRouteMatcher extends NgRouteMatcher {
   override def steps: Seq[NgStep]                          = Seq(NgStep.MatchRoute)
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    implicit val ec = env.wasmIntegration.executionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.wasmIntegration.executionContext
     val config      = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -637,7 +637,7 @@ class WasmSink extends NgRequestSink {
   private def requestToWasmJson(
       body: Source[ByteString, _]
   )(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
       Writes.arrayWrites[Byte].writes(rawBody.toArray[Byte])
     }
@@ -746,7 +746,7 @@ class WasmRequestHandler extends RequestHandler {
       request: Request[Source[ByteString, _]]
   )(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     if (request.theHasBody) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       request.body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
         JsonHelpers.requestToJson(request, TypedMap.empty).asObject ++ Json.obj(
           "request_body_bytes" -> rawBody.toArray[Byte]

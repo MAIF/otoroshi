@@ -310,8 +310,7 @@ object AdminPreferences {
 
 class AdminPreferencesDatastore(env: Env) {
 
-  private implicit val ev = env
-
+  private implicit val ev: otoroshi.env.Env = env
   def computeKey(id: String): String = s"${env.storageRoot}:admins_prefs:${id}"
 
   def getPreferencesOrSetDefault(userId: String)(implicit ec: ExecutionContext): Future[AdminPreferences] = {

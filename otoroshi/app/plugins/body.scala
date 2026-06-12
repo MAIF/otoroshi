@@ -201,7 +201,7 @@ class BodyLogger extends RequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("body-logger-redis")
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "BodyLogger").isDefined) {
         val redis: RedisClientMasterSlaves = {

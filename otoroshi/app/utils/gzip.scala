@@ -82,7 +82,7 @@ case class GzipConfig(
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Result] = {
-    implicit val ec = mat.executionContext
+    implicit val ec: scala.concurrent.ExecutionContext = mat.executionContext
 
     if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
       if (mayCompress(request) && shouldCompress(result) && shouldGzip(request, result)) {

@@ -78,7 +78,7 @@ object TailscaleLocalApiClient {
 
 class TailscaleLocalApiClient(env: Env) {
 
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private lazy val doesMacOSDomainSocketExists = new File(socketAddress()).exists()
 
@@ -411,7 +411,7 @@ class TailscaleCertificatesFetcherJob extends Job {
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val domains      = env.proxyState
       .allRoutes()
       .filter(_.frontend.domains.exists(_.domainLowerCase.endsWith(s".${magicDNSSuffix.toLowerCase()}")))

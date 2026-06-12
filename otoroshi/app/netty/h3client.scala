@@ -595,7 +595,7 @@ case class NettyHttp3ClientWsRequest(
     stream().map(_.asInstanceOf[NettyHttp3ClientWsResponse].toStrict())(env.otoroshiExecutionContext)
   }
   override def stream(): Future[WSResponse] = {
-    implicit val ec = client.env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = client.env.otoroshiExecutionContext
     val uri         = new URI(url)
     val thePort     = uri.getPort match {
       case -1 =>

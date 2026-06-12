@@ -1236,7 +1236,7 @@ object HostFunctions {
       executionContext: ExecutionContext
   ): Array[HostFunction[_ <: HostUserData]] = {
 
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val functions =
       Logging.getFunctions(config) ++

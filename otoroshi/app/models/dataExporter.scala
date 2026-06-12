@@ -1222,8 +1222,8 @@ case class DataExporterConfig(
 object DataExporterConfigMigrationJob {
 
   def cleanupGlobalConfig(env: Env): Future[Unit] = {
-    implicit val ev = env
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     env.datastores.globalConfigDataStore.findById("global").map {
       case Some(config) =>
         env.datastores.globalConfigDataStore.set(
@@ -1241,9 +1241,9 @@ object DataExporterConfigMigrationJob {
 
   def saveExporters(configs: Seq[DataExporterConfig], env: Env): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(configs.toList)
       .mapAsync(1)(ex => {
@@ -1254,9 +1254,9 @@ object DataExporterConfigMigrationJob {
   }
   def extractExporters(env: Env): Future[Seq[DataExporterConfig]] = {
 
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val alertDataExporterConfigFiltering     = DataExporterConfigFiltering(
       include = Seq(Json.obj("@type" -> Json.obj("$regex" -> "Alert.*")))

@@ -29,8 +29,8 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-fs-api")
 
@@ -373,8 +373,8 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-fg-api")
 
@@ -675,8 +675,8 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     with CrudControllerHelper[ApiKey, JsValue]
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-apikeys-api")
 

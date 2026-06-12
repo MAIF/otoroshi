@@ -39,7 +39,7 @@ object DiscoveryHelper {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json      = bodyRaw.utf8String.parseJson.asObject
       val serviceId = json.select("serviceId").asOpt[String].orElse(serviceIdOpt).get

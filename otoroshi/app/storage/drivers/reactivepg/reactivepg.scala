@@ -254,7 +254,7 @@ class ReactivePgDataStores(
   }
 
   def runSchemaCreation(): Unit = {
-    implicit val ec = reactivePgActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
 
     // AWAIT: valid
@@ -303,7 +303,7 @@ class ReactivePgDataStores(
   }
 
   def setupCleanup(): Unit = {
-    implicit val ec = reactivePgActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     cancel.set(
       reactivePgActorSystem.scheduler.scheduleAtFixedRate(ttlJobInitialDelay, ttlJobInterval)(SchedulerHelper.runnable {
         try {
@@ -540,9 +540,9 @@ class ReactivePgDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -571,9 +571,9 @@ class ReactivePgDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     redis
       .keys(s"${env.storageRoot}:*")
       .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
@@ -626,7 +626,7 @@ class ReactivePgRedis(
 
   import collection.JavaConverters._
 
-  private implicit val ec = system.dispatcher
+  private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
 
   private implicit val logger = Logger("otoroshi-reactive-pg-kv")
 

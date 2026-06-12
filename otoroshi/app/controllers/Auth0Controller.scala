@@ -45,7 +45,7 @@ class AuthController(
 )(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = AuthController.logger
 

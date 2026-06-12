@@ -164,9 +164,9 @@ case class NgRequestContext(
 
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
-    implicit val ec       = env.otoroshiExecutionContext
-    implicit val ev       = env
-    implicit val mat      = env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val req               = request
     val currentReqHasBody = req.theHasBody
     val httpRequest       = otoRequest.get()

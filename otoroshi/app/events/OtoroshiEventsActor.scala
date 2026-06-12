@@ -79,8 +79,8 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger = Logger("otoroshi-events-actor-supervizer")
 
-  implicit val e  = env
-  implicit val ec = env.analyticsExecutionContext
+  implicit val e: otoroshi.env.Env = env
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
@@ -1776,7 +1776,7 @@ object Exporters {
     }
 
     def writeToS3AndDelete(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
         path.toFile.delete()
@@ -1791,8 +1791,8 @@ object Exporters {
         maxNumberOfFile: Option[Int],
         conf: S3Configuration
     ): Future[Unit] = {
-      implicit val ec  = env.otoroshiExecutionContext
-      implicit val mat = env.otoroshiMaterializer
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val url          =
         s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
       val wholeContent = Files.readString(path).byteString
@@ -1840,7 +1840,7 @@ object Exporters {
       (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       val file        = path.toFile
       if (!file.exists()) {
@@ -1869,7 +1869,7 @@ object Exporters {
     }
 
     def appendToCurrentFile(content: String, conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (_, path)   = computeKeyAndPath(conf)
       debug(s"appending events to file '${path}'")
       if (shouldWriteToS3(conf)) {

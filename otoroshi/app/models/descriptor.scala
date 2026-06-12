@@ -169,7 +169,7 @@ case class ApiDescriptor(exposeApi: Boolean = false, openApiDescriptorUrl: Optio
 }
 
 object ApiDescriptor {
-  implicit val format = Json.format[ApiDescriptor]
+  implicit val format: play.api.libs.json.OFormat[ApiDescriptor] = Json.format[ApiDescriptor]
 }
 
 case class BaseQuotas(
@@ -181,7 +181,7 @@ case class BaseQuotas(
 }
 
 object BaseQuotas {
-  implicit val format = Json.format[BaseQuotas]
+  implicit val format: play.api.libs.json.OFormat[BaseQuotas] = Json.format[BaseQuotas]
   val MaxValue: Long  = RemainingQuotas.MaxValue
 }
 
@@ -897,7 +897,7 @@ class CidrOfString(cdr: String) {
 }
 
 object IpFiltering {
-  implicit val format             = Json.format[IpFiltering]
+  implicit val format: play.api.libs.json.OFormat[IpFiltering] = Json.format[IpFiltering]
   private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
   private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {
@@ -930,7 +930,7 @@ case class HealthCheck(
 }
 
 object HealthCheck {
-  implicit val format = new Format[HealthCheck] {
+  implicit val format: play.api.libs.json.Format[HealthCheck] = new Format[HealthCheck] {
     override def reads(json: JsValue): JsResult[HealthCheck] = Try {
       HealthCheck(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
@@ -968,7 +968,7 @@ object CustomTimeouts {
 
   lazy val logger = Logger("otoroshi-custom-timeouts")
 
-  implicit val format = new Format[CustomTimeouts] {
+  implicit val format: play.api.libs.json.Format[CustomTimeouts] = new Format[CustomTimeouts] {
 
     override def reads(json: JsValue): JsResult[CustomTimeouts] =
       Try {
@@ -1103,7 +1103,7 @@ object ClientConfig {
 
   lazy val logger = Logger("otoroshi-client-config")
 
-  implicit val format = new Format[ClientConfig] {
+  implicit val format: play.api.libs.json.Format[ClientConfig] = new Format[ClientConfig] {
 
     override def reads(json: JsValue): JsResult[ClientConfig] =
       Try {
@@ -1170,7 +1170,7 @@ object Canary {
 
   lazy val logger = Logger("otoroshi-canary")
 
-  implicit val format = new Format[Canary] {
+  implicit val format: play.api.libs.json.Format[Canary] = new Format[Canary] {
     override def reads(json: JsValue): JsResult[Canary] =
       Try {
         Canary(
@@ -1218,7 +1218,7 @@ object RedirectionSettings {
 
   val validRedirectionCodes = Seq(301, 308, 302, 303, 307)
 
-  implicit val format = new Format[RedirectionSettings] {
+  implicit val format: play.api.libs.json.Format[RedirectionSettings] = new Format[RedirectionSettings] {
     override def reads(json: JsValue): JsResult[RedirectionSettings] =
       Try {
         RedirectionSettings(

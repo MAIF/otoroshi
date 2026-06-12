@@ -321,7 +321,7 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
         tokenCache.getIfPresent(tokenKey) match {
           case Some(token) => token.right[String].future
           case None        => {
-            implicit val ec  = _env.otoroshiExecutionContext
+            implicit val ec: scala.concurrent.ExecutionContext = _env.otoroshiExecutionContext
             val tenant       = configuration.getOptionalWithFileSupport[String](s"tenant").get
             //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
             val clientId     =
@@ -804,8 +804,8 @@ class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration,
 class KubernetesVault(name: String, configuration: Configuration, env: Env) extends Vault {
 
   private val logger        = Logger("otoroshi-kubernetes-vault")
-  private implicit val _env = env
-  private implicit val ec   = env.otoroshiExecutionContext
+  private implicit val _env: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val kubeConfig = {
     //env.configurationJson
@@ -1359,8 +1359,8 @@ class Vaults(env: Env) {
   // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
   private val vaults: TrieMap[String, Vault] = new UnboundedTrieMap[String, Vault]()
-  private implicit val _env                  = env
-  private implicit val ec                    = env.otoroshiExecutionContext
+  private implicit val _env: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   val enabled: Boolean =
     vaultConfig.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false)

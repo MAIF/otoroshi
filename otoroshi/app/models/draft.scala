@@ -78,7 +78,7 @@ object Draft {
       env: Env
   ): Future[Either[JsValue, Draft]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     entity.id
       .split("_")

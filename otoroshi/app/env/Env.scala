@@ -1102,7 +1102,7 @@ class Env(
   // ua.start()
   adminExtensions.start()
   lifecycle.addStopHook(() => {
-    implicit val ec = otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
     // healthCheckerActor ! PoisonPill
@@ -1406,7 +1406,7 @@ class Env(
   }
 
   timeout(300.millis).andThen { case _ =>
-    implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
 
     setupLoggers()
 
@@ -1733,7 +1733,7 @@ class Env(
 
   timeout(5000.millis).andThen {
     case _ if clusterConfig.mode != ClusterMode.Worker => {
-      implicit val ec = otoroshiExecutionContext
+      implicit val ec: scala.concurrent.ExecutionContext = otoroshiExecutionContext
       implicit val ev = this
       for {
         _ <- datastores.globalConfigDataStore.migrate()

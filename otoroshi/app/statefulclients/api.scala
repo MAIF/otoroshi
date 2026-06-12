@@ -32,7 +32,7 @@ class StatefulClientsManager(env: Env) {
   private val logger                                                     = Logger("otoroshi-stateful-clients-manager")
   private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] =
     new TrieMap[String, StatefulClientWrapper[_]]()
-  private implicit val ec                                                = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private implicit val ec: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
     statefulClients.get(id) match {

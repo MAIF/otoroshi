@@ -20,8 +20,8 @@ import scala.util.{Failure, Success, Try}
 
 class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   private val sourceBodyParser = BodyParser("PkiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)

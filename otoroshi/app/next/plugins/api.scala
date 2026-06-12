@@ -405,7 +405,7 @@ trait NgCachedConfigContext {
   def extractBody(
       request: NgPluginHttpRequest
   )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
         Some((b, request.contentType.getOrElse("application/octet-stream")))
@@ -432,7 +432,7 @@ trait NgCachedConfigContext {
   def extractBody(
       response: NgPluginHttpResponse
   )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       Some((b, response.contentType.getOrElse("application/octet-stream")))
     }
@@ -656,7 +656,7 @@ case class NgTransformerRequestContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.requestBody(otoroshiRequest).map { case (body, bodyBytesOut) =>
       (
         json.asObject ++ Json.obj(
@@ -709,7 +709,7 @@ case class NgTransformerResponseContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -766,7 +766,7 @@ case class NgTransformerErrorContext(
     "attrs"             -> attrs.json
   )
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -1025,7 +1025,7 @@ case class NgbBackendCallContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.requestBody(request).map { case (body, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -1515,8 +1515,8 @@ object WebsocketMessage {
     override def isBinary: Boolean = !data.isText
 
     override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
-      implicit val ec  = env.otoroshiExecutionContext
-      implicit val mat = env.otoroshiMaterializer
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       data match {
         case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => PlayWSTextMessage(text).vfuture
         case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
@@ -1674,7 +1674,7 @@ class YesWebsocketBackend extends NgWebsocketBackendPlugin {
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.request.getQueryString("fail") match {
       case Some("yes") =>
         NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "fail !"))).leftf

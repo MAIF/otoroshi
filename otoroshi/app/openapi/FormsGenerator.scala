@@ -39,13 +39,13 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
         )
       }
 
-      val enum = (prop._2 \ "enum").asOpt[Seq[String]]
-      if (enum.nonEmpty) {
+      val `enum` = (prop._2 \ "enum").asOpt[Seq[String]]
+      if (`enum`.nonEmpty) {
         informations = Json.obj(
           "type"  -> "select",
           "props" -> Json.obj(
             "label"   -> label,
-            "options" -> JsArray(enum.getOrElse(Seq.empty).map(JsString.apply))
+            "options" -> JsArray(`enum`.getOrElse(Seq.empty).map(JsString.apply))
           )
         )
       }
@@ -91,7 +91,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
                         )
                       case None                => informations
                     }
-                  else if ((informations \ "type").as[String] == "string" && enum.isEmpty) {
+                  else if ((informations \ "type").as[String] == "string" && `enum`.isEmpty) {
                     if (label == "body") {
                       Json.obj(
                         "type"  -> "code",

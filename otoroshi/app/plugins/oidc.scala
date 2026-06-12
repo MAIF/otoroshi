@@ -777,7 +777,7 @@ object OIDCThirdPartyApiKeyConfig {
 
   val cache: TrieMap[String, (Long, Boolean)] = new UnboundedTrieMap[String, (Long, Boolean)]()
 
-  implicit val format = new Format[OIDCThirdPartyApiKeyConfig] {
+  implicit val format: play.api.libs.json.Format[OIDCThirdPartyApiKeyConfig] = new Format[OIDCThirdPartyApiKeyConfig] {
 
     override def reads(json: JsValue): JsResult[OIDCThirdPartyApiKeyConfig] =
       Try {
@@ -832,7 +832,7 @@ object OIDCThirdPartyApiKeyConfig {
 
 object ThirdPartyApiKeyConfig {
 
-  implicit val format = new Format[ThirdPartyApiKeyConfig] {
+  implicit val format: play.api.libs.json.Format[ThirdPartyApiKeyConfig] = new Format[ThirdPartyApiKeyConfig] {
 
     override def reads(json: JsValue): JsResult[ThirdPartyApiKeyConfig] =
       Try {

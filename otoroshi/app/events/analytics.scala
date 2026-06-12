@@ -35,7 +35,7 @@ object AnalyticsActor {
 
 class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Actor {
 
-  implicit lazy val ec = env.analyticsExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   lazy val logger = Logger("otoroshi-analytics-actor")
 
@@ -103,8 +103,8 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger    = Logger("otoroshi-analytics-actor-supervizer")
 
-  implicit val e = env
-  implicit val ec  = env.analyticsExecutionContext
+  implicit val e: otoroshi.env.Env = env
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   val namesAndRefs: Map[ActorRef, Tuple2[String, DataExporterConfig]] = Map.empty
 
@@ -281,7 +281,7 @@ case class Identity(
 }
 
 object Identity {
-  implicit val format = new Format[Identity] {
+  implicit val format: play.api.libs.json.Format[Identity] = new Format[Identity] {
     override def writes(o: Identity): JsValue             = Json.obj(
       "identityType" -> o.identityType,
       "identity"     -> o.identity,
@@ -332,20 +332,20 @@ object Identity {
 case class Location(host: String, scheme: String, uri: String)
 
 object Location {
-  implicit val format = Json.format[Location]
+  implicit val format: play.api.libs.json.OFormat[Location] = Json.format[Location]
 }
 
 case class Header(key: String, value: String)
 
 object Header {
-  implicit val format                        = Json.format[Header]
+  implicit val format: play.api.libs.json.OFormat[Header] = Json.format[Header]
   def apply(tuple: (String, String)): Header = Header(tuple._1, tuple._2)
 }
 
 case class DataInOut(dataIn: Long, dataOut: Long)
 
 object DataInOut {
-  implicit val fmt = Json.format[DataInOut]
+  implicit val fmt: play.api.libs.json.OFormat[DataInOut] = Json.format[DataInOut]
 }
 
 case class OtoroshiViz(fromTo: String, from: String, to: String, fromLbl: String, toLbl: String) {
@@ -353,7 +353,7 @@ case class OtoroshiViz(fromTo: String, from: String, to: String, fromLbl: String
 }
 
 object OtoroshiViz {
-  implicit val format = Json.format[OtoroshiViz]
+  implicit val format: play.api.libs.json.OFormat[OtoroshiViz] = Json.format[OtoroshiViz]
 }
 
 case class GatewayEvent(
@@ -538,7 +538,7 @@ case class HealthCheckEvent(
 }
 
 object HealthCheckEvent {
-  implicit val format = Json.format[HealthCheckEvent]
+  implicit val format: play.api.libs.json.OFormat[HealthCheckEvent] = Json.format[HealthCheckEvent]
 }
 
 trait HealthCheckDataStore {

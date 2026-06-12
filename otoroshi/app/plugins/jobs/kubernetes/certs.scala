@@ -143,7 +143,7 @@ object KubernetesCertSyncJob {
 
       import otoroshi.ssl.SSLImplicits._
 
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       if (!jobRunning) {
         shouldRunNext.set(false)
         running.set(false)
@@ -299,7 +299,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {

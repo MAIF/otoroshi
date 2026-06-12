@@ -218,10 +218,9 @@ object AdminExtensions {
 
 class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
 
-  private implicit val ec  = env.otoroshiExecutionContext
-  private implicit val mat = env.otoroshiMaterializer
-  private implicit val ev  = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val ev: otoroshi.env.Env = env
   private val hasExtensions = _extensions.nonEmpty
 
   private val extensions: Seq[AdminExtension] = _extensions.filter(_.enabled)

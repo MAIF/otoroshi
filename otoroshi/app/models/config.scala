@@ -211,7 +211,7 @@ case class Webhook(
 }
 
 object Webhook {
-  implicit val format = new Format[Webhook] {
+  implicit val format: play.api.libs.json.Format[Webhook] = new Format[Webhook] {
     override def reads(json: JsValue): JsResult[Webhook] =
       Try {
         Webhook(
@@ -242,7 +242,7 @@ case class CleverCloudSettings(
 )
 
 object CleverCloudSettings {
-  implicit val format = Json.format[CleverCloudSettings]
+  implicit val format: play.api.libs.json.OFormat[CleverCloudSettings] = Json.format[CleverCloudSettings]
 }
 
 case class Proxies(

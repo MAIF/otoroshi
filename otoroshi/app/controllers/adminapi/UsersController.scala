@@ -21,7 +21,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val fakeBackOfficeUser = BackOfficeUser(
     randomId = IdGenerator.token,

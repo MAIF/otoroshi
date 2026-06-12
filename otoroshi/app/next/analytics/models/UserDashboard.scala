@@ -119,7 +119,7 @@ object UserDashboard {
 
 trait UserDashboardDataStore extends BasicStore[UserDashboard] {
   def template(env: Env): UserDashboard = {
-    implicit val e = env
+    implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

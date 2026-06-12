@@ -222,10 +222,9 @@ class TunnelAgent(env: Env) {
       waiting: Long
   ): Future[Unit] = {
 
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     logger.info(s"connecting tunnel '${tunnelId}' ...")
 
     val promise                                                                                                     = Promise[Unit]()
@@ -482,9 +481,8 @@ class TunnelManager(env: Env) {
   private val workerWs       = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-ws").getOrElse(true)
   private val logger         = Logger(s"otoroshi-tunnel-manager")
 
-  private implicit val ec = env.otoroshiExecutionContext
-  private implicit val ev = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val ev: otoroshi.env.Env = env
   def currentTunnels: Set[String] = tunnels.asMap().keySet.toSet
 
   private def whenEnabled(f: => Unit): Unit = {
@@ -641,10 +639,9 @@ class TunnelManager(env: Env) {
       secured: Boolean,
       member: MemberView
   ): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     val requestId: String = TunnelActor.genRequestId(env) // legit
     val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
 
@@ -676,9 +673,9 @@ class LeaderConnection(
 ) {
 
   private val logger           = Logger("otoroshi-tunnel-leader-connection")
-  private implicit val ec      = env.otoroshiExecutionContext
-  private implicit val mat     = env.otoroshiMaterializer
-  private implicit val factory = env.otoroshiActorSystem
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val factory: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
 
   private val useInternalPorts =
     env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-internal-ports").getOrElse(false)
@@ -905,9 +902,9 @@ class LeaderConnection(
 class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec      = env.otoroshiExecutionContext
-  implicit lazy val mat     = env.otoroshiMaterializer
-  implicit lazy val factory = env.otoroshiActorSystem
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit lazy val factory: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
 
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
 
@@ -1041,8 +1038,8 @@ object TunnelRelayActor {
 class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor {
 
   private val logger       = Logger("otoroshi-tunnel-relay-actor")
-  private implicit val ec  = env.otoroshiExecutionContext
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   def handleRequest(data: ByteString): Unit = Try {
     val request = Json.parse(data.toArray)

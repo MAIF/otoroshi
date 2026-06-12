@@ -1124,8 +1124,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
     import scala.concurrent.duration._
     Try {
       // TODO: blocking ec
-      implicit val ec = env.otoroshiExecutionContext
-      implicit val ev = env
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val ev: otoroshi.env.Env = env
       // AWAIT: valid
       Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
     } match {
@@ -2073,7 +2073,7 @@ object FakeKeyStore {
     val KeystoreType           = "JKS"
   }
 
-  private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private implicit val ec: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def generateKeyStore(host: String)(implicit env: Env): KeyStore = {
     val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)

@@ -119,7 +119,7 @@ class NgClientCredentials extends NgRequestSink {
   private def handleBody(
       ctx: NgRequestSinkContext
   )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val charset      = ctx.request.charset.getOrElse("UTF-8")
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {
@@ -548,7 +548,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
   private def handleBody(
       ctx: NgbBackendCallContext
   )(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val charset      = ctx.rawRequest.charset.getOrElse("UTF-8")
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       ctx.request.headers.get("Content-Type") match {

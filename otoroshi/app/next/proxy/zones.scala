@@ -77,7 +77,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       env: Env,
       report: NgExecutionReport
   ): Future[Either[NgProxyEngineError, Done]] = {
-    implicit val sched = env.otoroshiScheduler
+    implicit val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     Retry.retry(
       times = env.clusterConfig.worker.retries,
       delay = env.clusterConfig.retryDelay,

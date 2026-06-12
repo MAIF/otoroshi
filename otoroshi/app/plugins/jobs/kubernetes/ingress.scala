@@ -150,7 +150,7 @@ class KubernetesIngressControllerJob extends Job {
     }
     // TODO: should be dynamic
     if (config.watch) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val conf         = KubernetesConfig.theConfig(ctx)
       val client       = new KubernetesClient(conf, env)
       val source       =
@@ -209,7 +209,7 @@ class KubernetesIngressControllerJob extends Job {
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -633,7 +633,7 @@ object KubernetesIngressSyncJob {
 
   def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
-      implicit val mat             = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val syncedServiceDescriptors = new AtomicLong(0L)
       val _client                  = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
@@ -857,7 +857,7 @@ object KubernetesIngressToDescriptor {
       client: KubernetesClient,
       logger: Logger
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
         case (rule, path) => {
@@ -1005,7 +1005,7 @@ object KubernetesIngressToDescriptor {
       client: KubernetesClient,
       logger: Logger
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
         case (rule, path) => {

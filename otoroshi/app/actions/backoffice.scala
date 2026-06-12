@@ -76,7 +76,7 @@ class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     extends ActionBuilder[BackOfficeActionContext, AnyContent]
     with ActionFunction[Request, BackOfficeActionContext] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   override def invokeBlock[A](
       request: Request[A],
@@ -116,7 +116,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
     extends ActionBuilder[BackOfficeActionContextAuth, AnyContent]
     with ActionFunction[Request, BackOfficeActionContextAuth] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   // val checker = new AdminClearanceChecker()(env)
 

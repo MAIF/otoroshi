@@ -353,7 +353,7 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                                      = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
 
-    implicit val mat       = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val snowflake          = env.snowflakeGenerator.nextIdStr()
     val callDate           = DateTime.now()
     val requestTimestamp   = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -575,7 +575,7 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                       = NgExecutionReport(requestId, reporting)
 
     report.start("start-handling")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val snowflake        = env.snowflakeGenerator.nextIdStr()
     val callDate         = DateTime.now()
@@ -2252,7 +2252,7 @@ class ProxyEngine() extends RequestHandler {
         }
       }
 
-      implicit val scheduler = env.otoroshiScheduler
+      implicit val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
       FEither(
         env.circuitBeakersHolder
@@ -2494,7 +2494,7 @@ class ProxyEngine() extends RequestHandler {
         }
       }
 
-      implicit val scheduler = env.otoroshiScheduler
+      implicit val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
       FEither(
         env.circuitBeakersHolder
           .get(

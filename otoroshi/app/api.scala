@@ -83,9 +83,9 @@ object OtoroshiLoaderHelper {
 
     import scala.concurrent.duration._
 
-    implicit val ec        = components.env.otoroshiExecutionContext
-    implicit val scheduler = components.env.otoroshiScheduler
-    implicit val mat       = components.env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = components.env.otoroshiExecutionContext
+    implicit val scheduler: org.apache.pekko.actor.Scheduler = components.env.otoroshiScheduler
+    implicit val mat: org.apache.pekko.stream.Materializer = components.env.otoroshiMaterializer
 
     val failOnTimeout                        =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.failOnTimeout").getOrElse(false)

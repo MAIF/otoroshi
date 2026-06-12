@@ -87,7 +87,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
@@ -300,7 +300,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
   }
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)

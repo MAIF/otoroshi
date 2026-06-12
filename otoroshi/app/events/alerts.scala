@@ -342,7 +342,7 @@ case class OtoroshiExportAlert(
     `@env`: String,
     user: JsValue,
     event: AdminApiEvent,
-    export: JsValue,
+    `export`: JsValue,
     from: String,
     ua: String,
     `@timestamp`: DateTime = DateTime.now()
@@ -366,7 +366,7 @@ case class OtoroshiExportAlert(
       "alert"      -> "OtoroshiExportAlert",
       "user"       -> user,
       "event"      -> event.toJson,
-      "export"     -> export
+      "export"     -> `export`
     )
 }
 
@@ -1359,8 +1359,8 @@ class AlertsActor(implicit env: Env) extends Actor {
   import otoroshi.events.KafkaWrapper
   import otoroshi.utils.http.Implicits._
 
-  implicit val ec  = env.analyticsExecutionContext
-  implicit val mat = env.analyticsMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.analyticsMaterializer
 
   lazy val logger = Logger("otoroshi-alert-actor")
 

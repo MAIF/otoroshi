@@ -208,9 +208,8 @@ object WasmConfig {
 
 class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
-  implicit val ec = env.otoroshiExecutionContext
-  implicit val ev = env
-
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val ev: otoroshi.env.Env = env
   val logger: Logger                                        = Logger("otoroshi-wasm-integration")
   val materializer: Materializer                            = env.otoroshiMaterializer
   val executionContext: ExecutionContext                    = env.otoroshiExecutionContext

@@ -801,7 +801,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val `type`: String                    = config.`type`.getOrElse("event")
-  private implicit val mat                      = Materializer(system)
+  private implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
 
   if (config.applyTemplate) {
     init()
@@ -813,7 +813,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     if (ElasticWritesAnalytics.isInitialized(config)._1) {
       ()
     } else {
-      implicit val ec = env.otoroshiExecutionContext
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
       config.version match {
         case Some(versionRaw) => {
           val version = Version(versionRaw) match {
@@ -965,7 +965,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private val countUri                          =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
-  private implicit val mat                      = Materializer(system)
+  private implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
 
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
 

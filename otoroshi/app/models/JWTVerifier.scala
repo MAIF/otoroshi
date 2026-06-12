@@ -507,7 +507,7 @@ case class JWKSAlgoSettings(
       env: Env
   ): Future[Option[Algorithm]] = {
     import otoroshi.utils.http.Implicits._
-    implicit val s = env.otoroshiScheduler
+    implicit val s: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
     Retry
@@ -1996,7 +1996,7 @@ case class RefJwtVerifier(
   )(
       f: JwtInjection => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _              => {

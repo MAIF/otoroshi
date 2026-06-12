@@ -101,8 +101,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-client")
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   KubernetesClientNotifications.startIfNeeded(env)
 

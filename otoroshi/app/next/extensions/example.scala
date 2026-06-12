@@ -93,7 +93,7 @@ class FooAdminExtensionState(env: Env) {
 class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike {
 
   val redis       = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
-  implicit val ec = actorSystem.dispatcher
+  implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
 
   override def setCounter(key: String, value: Long): Future[Unit]               = redis.set(key, value.toString).map(_ => ())
   override def rawGet(key: String): Future[Option[Any]]                         = redis.rawGet(key)
@@ -224,8 +224,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
   )
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       foos <- datastores.fooDatastore.findAll()
     } yield {

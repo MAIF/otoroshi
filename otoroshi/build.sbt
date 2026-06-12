@@ -257,6 +257,9 @@ libraryDependencies ++= Seq(
 
 scalacOptions ++= Seq(
   "-feature",
+  // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
+  // migration, to keep the diff minimal instead of rewriting hundreds of call-sites
+  "-source:3.0-migration",
   "-language:higherKinds",
   "-language:implicitConversions",
   "-language:existentials",

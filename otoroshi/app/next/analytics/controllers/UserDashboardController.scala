@@ -12,7 +12,7 @@ import scala.concurrent.Future
 class UserDashboardController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-user-dashboard-api")
 

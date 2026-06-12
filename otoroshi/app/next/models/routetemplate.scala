@@ -70,8 +70,7 @@ object RouteTemplate {
 
 trait RouteTemplateDataStore extends BasicStore[RouteTemplate] {
   def template(env: Env): RouteTemplate = {
-    implicit val e = env
-
+    implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

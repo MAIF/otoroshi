@@ -291,9 +291,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkCreate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
@@ -374,9 +374,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkUpdate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
@@ -457,9 +457,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkPatch(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
@@ -582,9 +582,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkDelete(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     def actualDelete() = {
       val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -704,9 +704,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def create(ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val rawBody        = ctx.request.body.asObject
     val dev            = if (env.isDev) "_dev" else ""
@@ -777,9 +777,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def findAllEntities(ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val paginationPage: Int     = ctx.request.queryString
       .get("page")
@@ -979,9 +979,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def findEntityById(id: String, ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).map {
       case Left(error)                                                               =>
@@ -1020,9 +1020,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def updateEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val body: JsObject = if (isApikey) {
       ctx.request.body.asObject ++ Json.obj("client_id" -> id, "clientId" -> id)
@@ -1088,9 +1088,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def patchEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
       case Left(error)                                         =>
@@ -1157,9 +1157,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def deleteEntities(ids: Seq[String], ctx: ApiActionContext[_]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(ids.toList)
       .mapAsync(1) { _id =>
