@@ -431,7 +431,6 @@ case class NettyWsClientRequest(
         }
         //.httpResponseDecoder(spec => spec) // TODO: check if needed
         .headers { heads =>
-          import collection.JavaConverters._
           headers.foreach { case (name, values) =>
             heads.add(name, values.asJava)
           }

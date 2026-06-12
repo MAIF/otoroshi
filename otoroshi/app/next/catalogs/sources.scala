@@ -1955,7 +1955,7 @@ class CatalogSourceGit extends CatalogSource {
                 Seq(relativePath)
               }
             }
-            val entities: Seq[RemoteEntity] = resolved.flatMap { relativePath =>
+            val entities: Seq[RemoteEntity] = resolved.toSeq.flatMap { relativePath =>
               Try {
                 val relFile    = new File(basePath, relativePath)
                 val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)

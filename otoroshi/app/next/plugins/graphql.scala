@@ -1271,7 +1271,7 @@ class GraphQLProxy extends NgBackendCall {
             exceptionHandler = exceptionHandler,
             queryValidator = new QueryValidator() {
               override def validateQuery(schema: Schema[_, _], queryAst: Document): Vector[Violation] = {
-                val violations = QueryValidator.default.validateQuery(schema, queryAst)
+                val violations = QueryValidator.default.validateQuery(schema, queryAst, Map.empty, None)
                 if (violations.nonEmpty) {
                   throw ViolationsException(violations.map(_.errorMessage))
                 }

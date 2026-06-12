@@ -710,7 +710,7 @@ class ExternalEurekaTarget extends NgPreRouting {
                   .get()
                   .flatMap { res =>
                     if (res.status == 200) {
-                      val instances = (res.body.parseJson
+                      val instances = (res.body[String].parseJson
                         .as[JsObject] \ "application" \ "instance")
                         .as[JsArray]
                         .value.toSeq

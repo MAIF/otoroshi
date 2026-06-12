@@ -70,7 +70,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
         val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
         val newBodySource = Source.future(
           ctx.otoroshiResponse.body
-            .applyOnIf(isGzip)(_.via(GzipFlow.gunzip()))
+            .applyOnIf(isGzip)(src => src.via(GzipFlow.gunzip()))
             .runFold(ByteString.empty)(_ ++ _)
             .map { bodyRaw =>
               val body                = bodyRaw.utf8String
