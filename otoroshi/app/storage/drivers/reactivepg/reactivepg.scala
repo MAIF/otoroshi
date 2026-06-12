@@ -238,7 +238,7 @@ class ReactivePgDataStores(
   private lazy val schemaDotTable     = s"$schema.$table"
   private lazy val client             = PgPool.pool(connectOptions, poolOptions)
 
-  lazy val redis = new ReactivePgRedis(
+  lazy val redis: ReactivePgRedis = new ReactivePgRedis(
     client,
     reactivePgActorSystem,
     env,

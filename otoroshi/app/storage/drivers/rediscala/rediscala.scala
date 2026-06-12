@@ -123,7 +123,7 @@ class RedisCPDataStores(
       .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisClientPool = RedisClientPool(
       members
-    )(redisActorSystem)
+    )(using redisActorSystem)
     cli
   }
   lazy val _redis: RedisLike                          = new RedisCPStore(redisCli, env, redisActorSystem.dispatcher)
@@ -162,7 +162,7 @@ class RedisMCPDataStores(
       .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisClientMutablePool = RedisClientMutablePool(
       members
-    )(redisActorSystem)
+    )(using redisActorSystem)
     cli
   }
   lazy val _redis: RedisLike                          = new RedisMCPStore(redisCli, env, redisActorSystem.dispatcher)
@@ -223,7 +223,7 @@ class RedisLFDataStores(
     val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
       master,
       slaves
-    )(redisActorSystem)
+    )(using redisActorSystem)
     cli
   }
   lazy val _redis: RedisLike                          = new RedisLFStore(redisCli, env, redisActorSystem.dispatcher)
@@ -269,7 +269,7 @@ class RedisSentinelDataStores(
       password,
       db,
       name
-    )(redisActorSystem)
+    )(using redisActorSystem)
     cli
   }
   lazy val _redis: RedisLike                          = new RedisSentinelStore(redisCli, env, redisActorSystem.dispatcher)
@@ -309,7 +309,7 @@ class RedisSentinelLFDataStores(
     val cli: SentinelMonitoredRedisClientMasterSlaves = SentinelMonitoredRedisClientMasterSlaves(
       members,
       master
-    )(redisActorSystem)
+    )(using redisActorSystem)
     cli
   }
   lazy val _redis: RedisLike                          = new RedisSentinelLFStore(redisCli, env, redisActorSystem.dispatcher)
@@ -349,7 +349,7 @@ class RedisClusterDataStores(
       .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisCluster = RedisCluster(
       members
-    )(redisActorSystem)
+    )(using redisActorSystem)
     cli
   }
 
