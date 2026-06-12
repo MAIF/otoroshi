@@ -148,7 +148,7 @@ class TailscaleLocalApiClient(env: Env) {
   }
 
   private def callGet(uri: String): Future[ReactorResponse] = {
-    val rec: reactor.netty.http.client.HttpClient.ResponseReceiver[?] = client
+    val rec = (client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h =>
         h
@@ -157,7 +157,7 @@ class TailscaleLocalApiClient(env: Env) {
           .add("Authorization", s"Basic ${token()}")
       )
       .get()
-      .uri(uri)
+      .uri(uri)).asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
     (for {
       resp    <- ReactiveStreamUtils.MonoUtils.toFuture(rec.response())
       content <- ReactiveStreamUtils.MonoUtils.toFuture(rec.responseContent().aggregate().asString())
