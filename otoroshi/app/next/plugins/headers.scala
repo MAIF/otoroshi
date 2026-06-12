@@ -416,7 +416,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig())
     val additionalHeaders = {
-      config.headers.mapValues { value =>
+      config.headers.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -428,7 +428,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     }
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
@@ -458,7 +458,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues { value =>
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -470,7 +470,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
@@ -506,7 +506,7 @@ class MissingHeadersIn extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
       }
-      .mapValues { value =>
+      .mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -518,7 +518,7 @@ class MissingHeadersIn extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
@@ -553,7 +553,7 @@ class MissingHeadersOut extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
       }
-      .mapValues { value =>
+      .mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -565,7 +565,7 @@ class MissingHeadersOut extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
 }

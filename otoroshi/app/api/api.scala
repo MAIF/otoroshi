@@ -1253,7 +1253,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             defaultEntity
               .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
               .getOrElse(Json.obj())
-          val jsonValues: Map[String, JsValue] = values.mapValues {
+          val jsonValues: Map[String, JsValue] = values.mapValues{
             case str if str == "null"                                     => JsNull
             case str if str == "true"                                     => JsBoolean(true)
             case str if str == "false"                                    => JsBoolean(false)
@@ -1262,7 +1262,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
             case str if NumberUtils.isCreatable(str) && str.contains(".") => JsNumber(BigDecimal(str))
             case str if NumberUtils.isCreatable(str)                      => JsNumber(BigDecimal(str))
             case str                                                      => JsString(str)
-          }
+          }.toMap
           Right(jsonValues.toSeq.foldLeft(default) {
             case (obj, (key, value)) if key.contains(".") => {
               val pointer = if (key.startsWith("/")) s"${key.replace(".", "/")}" else s"/${key.replace(".", "/")}"

@@ -59,7 +59,7 @@ import java.util.zip.{Inflater, InflaterInputStream}
 import java.util.{Base64, UUID}
 import javax.xml.namespace.QName
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaSetConverter}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import java.util.zip.Deflater
 
@@ -829,9 +829,9 @@ case class SamlAuthModuleConfig(
     "usedNameIDAsEmail"             -> this.usedNameIDAsEmail,
     "emailAttributeName"            -> this.emailAttributeName,
     "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
       JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
-    })
+    }.toMap)
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {

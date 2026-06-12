@@ -254,9 +254,9 @@ case class GenericOauth2ModuleConfig(
       "otoroshiRightsField"           -> this.otoroshiRightsField,
       "allowedUsers"                  -> this.allowedUsers,
       "deniedUsers"                   -> this.deniedUsers,
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
-      })
+      }.toMap)
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"global-oauth-$id"

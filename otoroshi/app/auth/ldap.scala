@@ -332,9 +332,9 @@ case class LdapAuthModuleConfig(
       "allowedUsers"                  -> allowedUsers,
       "deniedUsers"                   -> deniedUsers,
       "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes).toMap),
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
         JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
-      })
+      }.toMap)
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)

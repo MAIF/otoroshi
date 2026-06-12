@@ -57,9 +57,9 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   import reactor.netty.http.HttpProtocol
   import reactor.netty.http.server._
 
-  implicit private val ec  = env.otoroshiExecutionContext
-  implicit private val mat = env.otoroshiMaterializer
-  implicit private val ev  = env
+  implicit private val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit private val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit private val ev: otoroshi.env.Env = env
 
   private val logger = Logger("otoroshi-experimental-netty-server")
 
