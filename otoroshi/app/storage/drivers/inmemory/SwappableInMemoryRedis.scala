@@ -620,9 +620,9 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  type MutableSeq[A] = scala.collection.mutable.MutableList[A]
+  type MutableSeq[A] = scala.collection.mutable.ListBuffer[A]
 
-  private def emptySeq(): MutableSeq[ByteString] = scala.collection.mutable.MutableList.empty[ByteString]
+  private def emptySeq(): MutableSeq[ByteString] = scala.collection.mutable.ListBuffer.empty[ByteString]
 
   override def llen(key: String): Future[Long] = {
     memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq()).size.toLong.future

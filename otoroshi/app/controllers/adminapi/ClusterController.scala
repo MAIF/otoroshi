@@ -510,7 +510,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
   }
 
   def stateWs() = WebSocket.acceptOrResult[play.api.http.websocket.Message, play.api.http.websocket.Message] { req =>
-    val action = ApiAction(ctx => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
+    val action = ApiAction((ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) => if (ctx.userIsSuperAdmin) NoContent else Unauthorized)
     action.apply(req).run().flatMap { result =>
       if (result.header.status == 204) {
         ActorFlow

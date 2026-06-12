@@ -648,7 +648,7 @@ object Exporters {
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
             } else {
               client.secure()
             }
@@ -930,7 +930,7 @@ object Exporters {
                   }
                   .build()
                 client
-                  .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                  .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
               } else {
                 client.secure()
               }

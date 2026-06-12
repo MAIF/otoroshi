@@ -382,7 +382,7 @@ case class NettyWsClientRequest(
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
               // TODO: if targetOpt.ipAddress, spec.sslContext(ctx).serverNames(new SNIHostName(targetOpt.theHost)))
             } else {
               client.secure()

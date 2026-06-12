@@ -67,7 +67,7 @@ case class NgMatchedRoute(
 }
 
 object NgTreeRouter {
-  def empty = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)
+  def empty = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), scala.collection.mutable.ListBuffer.empty)
   def build(routes: Seq[NgRoute]): NgTreeRouter = {
     val root = NgTreeRouter.empty
     routes.foreach { route =>
@@ -88,7 +88,7 @@ case class NgRouteDomainAndPathWrapper(route: NgRoute, domain: String, path: Str
 
 case class NgTreeRouter(
     tree: TrieMap[String, NgTreeNodePath],
-    wildcards: scala.collection.mutable.MutableList[NgRouteDomainAndPathWrapper]
+    wildcards: scala.collection.mutable.ListBuffer[NgRouteDomainAndPathWrapper]
 ) {
 
   def json: JsValue = Json.obj(
@@ -189,11 +189,11 @@ object NgTreeNodePath {
   }
 
   def empty: NgTreeNodePath =
-    NgTreeNodePath(scala.collection.mutable.MutableList.empty, new UnboundedTrieMap[String, NgTreeNodePath])
+    NgTreeNodePath(scala.collection.mutable.ListBuffer.empty, new UnboundedTrieMap[String, NgTreeNodePath])
 }
 
 case class NgTreeNodePath(
-    routes: scala.collection.mutable.MutableList[NgRoute],
+    routes: scala.collection.mutable.ListBuffer[NgRoute],
     tree: TrieMap[String, NgTreeNodePath]
 ) {
   lazy val wildcardCache                         =

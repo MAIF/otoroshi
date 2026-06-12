@@ -2197,7 +2197,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
@@ -2982,7 +2982,7 @@ class SwappableInMemoryDataStores(
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
@@ -3249,8 +3249,8 @@ class SwappableInMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -3319,7 +3319,7 @@ class SwappableInMemoryDataStores(
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.MutableList[ByteString]          =>
+      case list: scala.collection.mutable.ListBuffer[ByteString]          =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))

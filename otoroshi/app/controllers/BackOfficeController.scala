@@ -2078,7 +2078,7 @@ class BackOfficeController(
     } get
   }
 
-  def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
+  def toYaml = BackOfficeActionAuth(parse.json) { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.libs.json.JsValue]) =>
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 
@@ -2176,7 +2176,7 @@ class BackOfficeController(
     }
   }
 
-  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { ctx =>
+  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.libs.json.JsValue]) =>
     val body                                   = ctx.request.body
     val input                                  = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
     val matchExpressions: JsObject             = body.select("match").asOpt[JsObject].getOrElse(Json.obj())

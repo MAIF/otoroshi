@@ -151,7 +151,7 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
       case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString]) => "hash"
       case Some(_: TrieMap[String, ByteString])                                => "hash"
       case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString])      => "list"
-      case Some(_: scala.collection.mutable.MutableList[ByteString])           => "list"
+      case Some(_: scala.collection.mutable.ListBuffer[ByteString])           => "list"
       case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString])       => "set"
       case Some(_: scala.collection.mutable.HashSet[ByteString])               => "set"
       case _                                                                   => "none"

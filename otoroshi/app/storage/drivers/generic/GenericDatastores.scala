@@ -343,8 +343,8 @@ class GenericDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {

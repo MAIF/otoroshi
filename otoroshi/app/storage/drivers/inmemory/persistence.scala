@@ -128,7 +128,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
@@ -273,7 +273,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
@@ -531,7 +531,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
         list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
         Some(list)
       }
