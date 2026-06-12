@@ -101,7 +101,7 @@ object KafkaConfig {
     override def reads(json: JsValue): JsResult[KafkaConfig] =
       Try {
         KafkaConfig(
-          servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           keyPass = (json \ "keyPass").asOpt[String],
           keystore = (json \ "keystore").asOpt[String],
           truststore = (json \ "truststore").asOpt[String],

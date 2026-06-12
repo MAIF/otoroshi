@@ -535,7 +535,7 @@ object KubernetesGatewayApiJob {
             .select("loadBalancer")
             .select("ingress")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
           if (lbIngress.nonEmpty) {
             JsArray(lbIngress.flatMap { ingress =>
               val ip       = (ingress \ "ip").asOpt[String]

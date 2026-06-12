@@ -318,7 +318,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     new java.util.concurrent.CopyOnWriteArrayList[ByteString]
 
   override def llen(key: String): Future[Long] = {
-    val value = Option(store.get(key)).map(_.asInstanceOf[Seq[ByteString]]).getOrElse(Seq.empty[ByteString]).size.toLong
+    val value = Option(store.get(key)).map(_.asInstanceOf[Seq[ByteString]]).getOrElse(Seq.empty[ByteString]).toSeq.size.toLong
     FastFuture.successful(value)
   }
 

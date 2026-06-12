@@ -95,7 +95,7 @@ class TunnelPlugin extends NgBackendCall {
           .map { sc =>
             Cookies.decodeSetCookieHeader(sc)
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(_.wsCookie)
         if (logger.isDebugEnabled) logger.debug(s"response status '${result.header.status}'")
         Right(
@@ -169,10 +169,10 @@ class TunnelAgent(env: Env) {
                   val trustAll     =
                     conf.getOptionalWithFileSupport[Boolean]("tls.trustAll").getOrElse(false)
                   val certs        =
-                    conf.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty)
+                    conf.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty).toSeq
                   val trustedCerts = conf
                     .getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts")
-                    .getOrElse(Seq.empty)
+                    .getOrElse(Seq.empty).toSeq
                   MtlsConfig(
                     certs = certs,
                     trustedCerts = trustedCerts,
@@ -305,7 +305,7 @@ class TunnelAgent(env: Env) {
               )
             }
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
         val certs             = obj.select("client_cert_chain").asOpt[Seq[String]].map(_.map(_.trim.toCertificate))
         val body              = obj.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
           case None    => Source.empty[ByteString]
@@ -1106,7 +1106,7 @@ object TunnelActor {
       .map { c =>
         Cookies.decodeCookieHeader(c)
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
       Json.obj(
         "request_id" -> requestId,
@@ -1159,7 +1159,7 @@ object TunnelActor {
           )
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val body                               = response.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
       case None    => Source.empty[ByteString]
       case Some(b) => Source.single(b)

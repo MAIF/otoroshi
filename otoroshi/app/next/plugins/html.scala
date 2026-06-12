@@ -78,22 +78,22 @@ class NgHtmlPatcher extends NgRequestTransformer {
                 .select("appendHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_head").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val prependHead         = ctx.config
                 .select("prependHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_head").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val appendBody          = ctx.config
                 .select("appendBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_body").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val prependBody         = ctx.config
                 .select("prependBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_body").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val beforeHeadInjection = applyEl(prependHead.mkString(""), ctx)
               val afterHeadInjection  = applyEl(appendHead.mkString(""), ctx)
               val beforeBodyInjection = applyEl(prependBody.mkString(""), ctx)

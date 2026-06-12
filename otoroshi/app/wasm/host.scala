@@ -706,7 +706,7 @@ object DataStore extends AwaitCapable {
             .del(
               (data \ "keys")
                 .asOpt[Seq[String]]
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
                 .map(r => s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$r")
             )
           val out    = await(future)

@@ -813,7 +813,7 @@ object MappingSettings                                                          
         MappingSettings(
           (json \ "map").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           (json \ "values").asOpt[JsObject].getOrElse(Json.obj()),
-          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -2265,12 +2265,12 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
         .asOpt[JsArray]
         .map(_.value.map(_.as[String]))
         .orElse((json \ "id").asOpt[String].map(v => Seq(v)))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       Right[Throwable, RefJwtVerifier](
         RefJwtVerifier(
           ids = refs,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -2289,7 +2289,7 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
         LocalJwtVerifier(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -2386,7 +2386,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy

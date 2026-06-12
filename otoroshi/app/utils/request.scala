@@ -126,7 +126,7 @@ object RequestImplicits {
           // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
           }
         )
-        .getOrElse(Seq.empty[String])
+        .getOrElse(Seq.empty[String]).toSeq
     }
     @inline
     def clientCertChainPemString: String     = clientCertChainPem.mkString("\n")

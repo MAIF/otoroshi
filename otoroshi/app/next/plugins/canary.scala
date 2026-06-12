@@ -49,7 +49,7 @@ object NgCanarySettings {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => NgTarget.readFrom(e)))
-            .getOrElse(Seq.empty[NgTarget]),
+            .getOrElse(Seq.empty[NgTarget]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } match {
@@ -178,7 +178,7 @@ object TimeControlledCanaryModeConfig {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => NgTarget.readFrom(e)))
-            .getOrElse(Seq.empty[NgTarget]),
+            .getOrElse(Seq.empty[NgTarget]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } match {

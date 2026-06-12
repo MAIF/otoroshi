@@ -331,7 +331,7 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
           case "frontend.query"                  =>
             d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
           case "frontend.methods"                =>
-            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
+            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty).toSeq))
           case "frontend.stripPath"              => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
           case "frontend.exact"                  => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
           case "backend.rewrite"                 => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
@@ -926,7 +926,7 @@ object KubernetesIngressToDescriptor {
                                   .getOrElse(80)
                                 val endpointProtocol  =
                                   if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                                 addresses.map { address =>
                                   val serviceIp = (address \ "ip").as[String]
                                   Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
@@ -1074,7 +1074,7 @@ object KubernetesIngressToDescriptor {
                                   .getOrElse(80)
                                 val endpointProtocol  =
                                   if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                                 addresses.map { address =>
                                   val serviceIp = (address \ "ip").as[String]
                                   Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
@@ -1229,7 +1229,7 @@ object KubernetesIngressToDescriptor {
                       .map(v => (v \ "port").as[Int])
                       .getOrElse(80)
                     val endpointProtocol  = if (endpointPort == 443 || portName == "https") "https" else "http"
-                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
                       templateTarget.copy(
@@ -1461,8 +1461,8 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressSpec(
             backend = (json \ "backend").asOpt(NetworkingV1beta1IngressBackend.reader),
-            rules = (json \ "rules").asOpt(Reads.seq(NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty),
-            tls = (json \ "tls").asOpt(Reads.seq(NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty)
+            rules = (json \ "rules").asOpt(Reads.seq(NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty).toSeq,
+            tls = (json \ "tls").asOpt(Reads.seq(NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty).toSeq
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)

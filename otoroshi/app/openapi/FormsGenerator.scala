@@ -45,7 +45,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
           "type"  -> "select",
           "props" -> Json.obj(
             "label"   -> label,
-            "options" -> JsArray(`enum`.getOrElse(Seq.empty).map(JsString.apply))
+            "options" -> JsArray(`enum`.getOrElse(Seq.empty).toSeq.map(JsString.apply))
           )
         )
       }

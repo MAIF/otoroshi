@@ -154,7 +154,7 @@ object Projection {
         case (key, o @ JsObject(_)) if Operator.isOperator(o) => {
           o.value.head match {
             // case ("$spread", value) if key == "..." => {
-            //   val remove = value.select("without").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            //   val remove = value.select("without").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
             //   dest = dest ++ (
             //     if (remove.isEmpty)
             //       source.asOpt[JsObject].getOrElse(Json.obj())

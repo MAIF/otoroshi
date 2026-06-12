@@ -475,7 +475,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
           val cookies    = ctx.request.headers
             .get("Otoroshi-Relay-Routing-Cookies")
             .map(c => Cookies.decodeCookieHeader(c))
-            .getOrElse(Seq.empty[Cookie])
+            .getOrElse(Seq.empty[Cookie]).toSeq
           val certs      = ctx.request.headers.headers
             .filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))
             .map { case (key, value) => (key.replace("Otoroshi-Relay-Routing-Certs-", "").toInt, value) }

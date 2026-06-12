@@ -45,13 +45,13 @@ object NgHasAllowedUsersValidatorConfig {
     override def writes(o: NgHasAllowedUsersValidatorConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgHasAllowedUsersValidatorConfig] = Try {
       NgHasAllowedUsersValidatorConfig(
-        usernames = json.select("usernames").asOpt[Seq[String]].getOrElse(Seq.empty),
-        emails = json.select("emails").asOpt[Seq[String]].getOrElse(Seq.empty),
-        emailDomains = json.select("email_domains").asOpt[Seq[String]].getOrElse(Seq.empty),
-        metadataMatch = json.select("metadata_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        metadataNotMatch = json.select("metadata_not_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        profileMatch = json.select("profile_match").asOpt[Seq[String]].getOrElse(Seq.empty),
-        profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty)
+        usernames = json.select("usernames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        emails = json.select("emails").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        emailDomains = json.select("email_domains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        metadataMatch = json.select("metadata_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        metadataNotMatch = json.select("metadata_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        profileMatch = json.select("profile_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        profileNotMatch = json.select("profile_not_match").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

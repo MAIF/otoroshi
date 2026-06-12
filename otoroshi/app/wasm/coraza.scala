@@ -331,7 +331,7 @@ object CorazaWafConfig {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         inspectInputBody = (json \ "inspect_in_body").asOpt[Boolean].getOrElse(true),
         inspectOutputBody = (json \ "inspect_out_body").asOpt[Boolean].getOrElse(true),
         isBlockingMode = (json \ "is_blocking_mode").asOpt[Boolean].getOrElse(true),

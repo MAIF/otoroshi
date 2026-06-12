@@ -168,7 +168,7 @@ object RuleStateRecord {
     override def reads(json: JsValue): JsResult[RuleStateRecord] = Try {
       RuleStateRecord(
         date = (json \ "date").as[Long],
-        states = json.select("states").asOpt[Seq[RuleState]](RuleState.reads).getOrElse(Seq.empty)
+        states = json.select("states").asOpt[Seq[RuleState]](RuleState.reads).getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -418,7 +418,7 @@ object RulesRouteConfiguration {
       RulesRouteConfiguration(
         states = (json \ "states")
           .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format.reads))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

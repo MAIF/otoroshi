@@ -178,7 +178,7 @@ object HttpListener {
         description = (json \ "description").as[String],
         config = (json \ "config").as(HttpListenerConfig.format),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -241,8 +241,8 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
       .select("listeners_json")
       .asOpt[String]
       .flatMap(str => Json.parse(str).asOpt[Seq[JsObject]])
-      .getOrElse(Seq.empty)
-    val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
+    val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
     val listenerConfigs      = (listenerConfigsJson1 ++ listenerConfigsJson2).flatMap(obj =>
       HttpListenerConfig.format.reads(obj).asOpt.map(r => (obj, r))
     )

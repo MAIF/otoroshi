@@ -380,11 +380,11 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           singleSignOnUrl = (json \ "singleSignOnUrl").as[String],
           singleLogoutUrl = (json \ "singleLogoutUrl").asOpt[String].filter(_.nonEmpty),
           credentials = (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           issuer = (json \ "issuer").as[String],
           ssoProtocolBinding = (json \ "ssoProtocolBinding")
             .asOpt[String]
@@ -412,11 +412,11 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]

@@ -30,9 +30,9 @@ case class ResponseCacheFilterConfig(json: JsValue) {
   lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 case class ResponseCacheConfig(json: JsValue) {
@@ -139,7 +139,7 @@ class ResponseCache extends RequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),

@@ -305,7 +305,7 @@ object ZipBombBackendConfig {
         predicates = (json \ "predicates")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

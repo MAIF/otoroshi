@@ -307,11 +307,11 @@ object EventDenormalizer {
 
     val envStr   = stripped.select("@env").asOptString.getOrElse("")
     val tenant   = stripped.select("route").select("_loc").select("tenant").asOptString.getOrElse("default")
-    val teams    = stripped.select("route").select("_loc").select("teams").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val teams    = stripped.select("route").select("_loc").select("teams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val routeId  = stripped.select("route").select("id").asOptString
     val routeNm  = stripped.select("route").select("name").asOptString
     val apiId    = stripped.select("route").select("metadata").select("Otoroshi-Api-Ref").asOptString
-    val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val groupIds = stripped.select("route").select("groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
     val identityType          = stripped.select("identity").select("identityType").asOptString
     val identityId            = stripped.select("identity").select("identity").asOptString

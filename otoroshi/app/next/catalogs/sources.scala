@@ -143,7 +143,7 @@ object SourceUtils {
         .filter(p => matcher.matches(p) && isEntityFile(p.getFileName.toString))
         .map(_.toString)
         .toSeq
-    }.getOrElse(Seq.empty)
+    }.getOrElse(Seq.empty).toSeq
   }
 
   def resolveRemoteGlob(allFiles: Seq[String], basePath: String, globPattern: String): Seq[String] = {
@@ -188,7 +188,7 @@ class CatalogSourceFile extends CatalogSource {
     Json.obj("error" -> "file source does not support webhooks").leftf
 
   private def runPreCommand(catalog: RemoteCatalog): Either[String, Unit] = {
-    val preCommand = catalog.sourceConfig.select("pre_command").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val preCommand = catalog.sourceConfig.select("pre_command").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (preCommand.nonEmpty) {
       Try {
         var stdout        = ""
@@ -423,7 +423,7 @@ class CatalogSourceGithub extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val files = tree.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
@@ -533,7 +533,7 @@ class CatalogSourceGithub extends CatalogSource {
       .get()
       .flatMap { resp =>
         if (resp.status == 200) {
-          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
           (Right(repos): Either[JsValue, Seq[String]]).vfuture
         } else {
           val userUrl = s"$apiBase/users/$org/repos"
@@ -546,7 +546,7 @@ class CatalogSourceGithub extends CatalogSource {
             .map { resp2 =>
               if (resp2.status == 200) {
                 Right(
-                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
                 ): Either[JsValue, Seq[String]]
               } else {
                 Left(Json.obj("error" -> s"Cannot list repos for '$org'")): Either[JsValue, Seq[String]]
@@ -627,7 +627,7 @@ class CatalogSourceGithub extends CatalogSource {
     val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.github.com").stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -921,7 +921,7 @@ class CatalogSourceGitlab extends CatalogSource {
     val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
     val baseUrl      = catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://gitlab.com")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     if (isGroup(repoUrl)) {
@@ -1332,7 +1332,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       .map { resp =>
         if (resp.status == 200) {
           val json  = resp.json
-          val files = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap { item =>
+          val files = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             val itemName = itemPath.split("/").lastOption.getOrElse("")
@@ -1356,7 +1356,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
     val repoFullName = payload.select("repository").select("full_name").asOpt[String].getOrElse("")
-    val changes      = payload.select("push").select("changes").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    val changes      = payload.select("push").select("changes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
     val branches     = changes.flatMap(c => c.select("new").select("name").asOpt[String]).toSet
     val matched      = possibleCatalogs.filter { catalog =>
       catalog.sourceKind == "bitbucket" && {
@@ -1399,7 +1399,7 @@ class CatalogSourceBitbucket extends CatalogSource {
           val repos = resp.json
             .select("values")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .flatMap(_.select("slug").asOpt[String])
           Right(repos): Either[JsValue, Seq[String]]
         } else {
@@ -1485,7 +1485,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.bitbucket.org").stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -1599,7 +1599,7 @@ class CatalogSourceGiteaCompat(
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val files = tree.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
@@ -1700,7 +1700,7 @@ class CatalogSourceGiteaCompat(
       .get()
       .flatMap { resp =>
         if (resp.status == 200) {
-          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
           (Right(repos): Either[JsValue, Seq[String]]).vfuture
         } else {
           val userUrl = s"$baseUrl/api/v1/users/$org/repos"
@@ -1713,7 +1713,7 @@ class CatalogSourceGiteaCompat(
             .map { resp2 =>
               if (resp2.status == 200) {
                 Right(
-                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
                 ): Either[JsValue, Seq[String]]
               } else {
                 Left(Json.obj("error" -> s"Cannot list repos for '$org' on $sourceKind")): Either[JsValue, Seq[String]]
@@ -1797,7 +1797,7 @@ class CatalogSourceGiteaCompat(
     val baseUrl      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse(defaultBaseUrl).stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {

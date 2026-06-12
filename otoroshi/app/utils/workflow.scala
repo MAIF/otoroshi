@@ -40,7 +40,7 @@ object WorkFlowSpec                                                             
             value
           }
       )
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 }
 sealed trait WorkFlowRequest                                                                          {

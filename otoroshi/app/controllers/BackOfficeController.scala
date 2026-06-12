@@ -981,8 +981,8 @@ class BackOfficeController(
 
       val trust_all     = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
       val loose         = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
-      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val sessionCookieValues =
         (ctx.request.body \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
@@ -2181,9 +2181,9 @@ class BackOfficeController(
     val input                                  = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
     val matchExpressions: JsObject             = body.select("match").asOpt[JsObject].getOrElse(Json.obj())
     val matchIncludeExpressions: Seq[JsObject] =
-      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject]).toSeq
     val matchExcludeExpressions: Seq[JsObject] =
-      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject]).toSeq
     val projectionExpression: JsObject         = body.select("projection").asOpt[JsObject].getOrElse(Json.obj())
 
     val shouldInclude =

@@ -323,7 +323,7 @@ object NgIzanamiV1CanaryRoutingConfig {
           .select("routes")
           .asOpt[Seq[JsValue]]
           .map(_.map(NgIzanamiV1CanaryRoutingConfigRoute.format.reads).collect { case JsSuccess(e, _) => e })
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

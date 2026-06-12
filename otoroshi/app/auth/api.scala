@@ -365,7 +365,7 @@ object Form {
     override def reads(json: JsValue): JsResult[Form] = Try {
 
       Form(
-        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
+        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj())
       )
     } match {

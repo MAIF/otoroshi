@@ -54,7 +54,7 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
     val setCookie                      = resp.headers
       .get("Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
       .map(vs => vs.flatMap(v => Cookies.decodeSetCookieHeader(v)))
-      .getOrElse(Seq.empty[Cookie])
+      .getOrElse(Seq.empty[Cookie]).toSeq
     val headers: Seq[(String, String)] = resp.headers
       .filterNot(_._1 == "Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
       .filter(_._1.startsWith("Otoroshi-Relay-Routing-Response-Header-"))

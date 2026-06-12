@@ -122,7 +122,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
           serverUrls = (json \ "serverUrl").asOpt[String] match {
             case Some(url) => Seq(url)
-            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           },
           searchBase = (json \ "searchBase").as[String],
           userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
@@ -132,10 +132,10 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
             case None         =>
               (json \ "groupFilters")
                 .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
-                .getOrElse(Seq.empty[GroupFilter])
+                .getOrElse(Seq.empty[GroupFilter]).toSeq
           },
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
@@ -144,13 +144,13 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
-          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty),
-          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty),
+          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
             .map(_.mapValues(UserRights.readFromArray).toMap)
@@ -165,11 +165,11 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
@@ -210,7 +210,7 @@ object GroupRights {
         JsSuccess(
           GroupRights(
             userRights = (json \ "rights").asOpt[UserRights](UserRights.format).getOrElse(UserRights(Seq.empty)),
-            users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>

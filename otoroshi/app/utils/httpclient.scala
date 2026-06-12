@@ -158,11 +158,11 @@ object MtlsConfig {
             .asOpt[Seq[String]]
             .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           trustedCerts = (json \ "trustedCerts")
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           mtls = (json \ "mtls").asOpt[Boolean].orElse((json \ "tls").asOpt[Boolean]).getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trustAll").asOpt[Boolean].getOrElse(false)
@@ -1167,7 +1167,7 @@ case class AkkaWsClientRequest(
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
       .filter(p =>
-        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
       )
       .map { proxySettings =>
         val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
@@ -1484,7 +1484,7 @@ case class AkkaWsClientRequest(
 
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"

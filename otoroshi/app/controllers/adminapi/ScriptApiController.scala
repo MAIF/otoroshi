@@ -73,7 +73,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val excludedTypes: Seq[String] = ctx.request
         .getQueryString("excluded_types")
         .map(a => a.split(",").toList)
-        .getOrElse(Seq.empty[String])
+        .getOrElse(Seq.empty[String]).toSeq
 
       val cpTransformers  = typ match {
         case None                => transformersNames

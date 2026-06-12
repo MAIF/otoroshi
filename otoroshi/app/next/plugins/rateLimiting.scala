@@ -1226,11 +1226,11 @@ class RateLimiter(_env: Env) {
       .getOrElse(false),
     uris = (_env.configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.rate-limiter.distributed-redis.uris")
-      .getOrElse(Seq.empty) ++
+      .getOrElse(Seq.empty).toSeq ++
       _env.configuration
         .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.urisStr")
         .map(_.split(";").map(_.trim).toSeq)
-        .getOrElse(Seq.empty))
+        .getOrElse(Seq.empty).toSeq)
   )
 
   def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uris match {

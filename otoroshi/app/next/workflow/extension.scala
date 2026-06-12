@@ -79,8 +79,8 @@ object Orphans {
     )
     override def reads(json: JsValue): JsResult[Orphans] = Try {
       Orphans(
-        nodes = json.select("nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o)),
-        edges = (json \ "edges").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+        nodes = json.select("nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => Node.from(o)),
+        edges = (json \ "edges").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -146,7 +146,7 @@ object Workflow {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         job = (json \ "job")
           .asOpt[JsObject]
@@ -155,7 +155,7 @@ object Workflow {
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
         orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans()),
-        notes = (json \ "notes").asOpt(Reads.seq(Note.format)).getOrElse(Seq.empty)
+        notes = (json \ "notes").asOpt(Reads.seq(Note.format)).getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

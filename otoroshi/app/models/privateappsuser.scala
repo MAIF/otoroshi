@@ -152,7 +152,7 @@ object PrivateAppsUser {
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
             lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             location = otoroshi.models.EntityLocation.readFromKey(json)
           )
         )

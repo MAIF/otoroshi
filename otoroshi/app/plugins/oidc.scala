@@ -230,7 +230,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
                   c
                 }
               )
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           }
         }
       }
@@ -334,7 +334,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
                   c
                 }
               )
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           }
         }
       }
@@ -633,7 +633,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                   .asOpt[String]
                                   .filterNot(_.trim.isEmpty)
                                   .map(_.split(" ").toSeq)
-                                  .getOrElse(Seq.empty[String])
+                                  .getOrElse(Seq.empty[String]).toSeq
                                 val tokenRoles: Seq[String]                 = rolesPath
                                   .flatMap(p => findAt(tokenBody, p))
                                   .collect {
@@ -796,10 +796,10 @@ object OIDCThirdPartyApiKeyConfig {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(100L),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)

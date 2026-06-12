@@ -48,9 +48,9 @@ object BiscuitConf {
     override def reads(json: JsValue): JsResult[BiscuitConf] = Try {
       BiscuitConf(
         privkey = json.select("privkey").asOpt[String],
-        checks = json.select("checks").asOpt[Seq[String]].getOrElse(Seq.empty),
-        facts = json.select("facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-        rules = json.select("rules").asOpt[Seq[String]].getOrElse(Seq.empty)
+        checks = json.select("checks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        facts = json.select("facts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        rules = json.select("rules").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -284,7 +284,7 @@ class NgClientCredentials extends NgRequestSink {
               .foreach(r => authority_builder.add_rule(r))
 
             def fromApiKey(name: String): Seq[String] =
-              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty)
+              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty).toSeq
 
             fromApiKey("biscuit_checks")
               .map(Parser.check)
@@ -505,8 +505,8 @@ object NgClientCredentialTokenEndpointConfig {
         expiration = json.select("expiration").asOpt[Long].map(_.millis).getOrElse(1.hour),
         defaultKeyPair =
           json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning),
-        allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty),
-        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty)
+        allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Success(s) => JsSuccess(s)

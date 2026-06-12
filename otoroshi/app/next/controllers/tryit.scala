@@ -88,7 +88,7 @@ class TryItController(
       val path                     = jsonBody.select("path").asOpt[String].getOrElse("/")
       val _headers                 = jsonBody.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
       val cookies                  =
-        jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty)
+        jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty).toSeq
       val clientCert               = jsonBody.select("client_cert").asOpt[String]
       val bodyBase64               = jsonBody.select("base_64").asOpt[Boolean].getOrElse(false)
       val body: Option[ByteString] = jsonBody.select("body").asOpt[String].filter(_.nonEmpty).map { rb =>

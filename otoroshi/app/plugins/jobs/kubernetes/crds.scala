@@ -2106,20 +2106,20 @@ object KubernetesCRDsJob {
             val volumeSecrets       = (deployment.raw \ "spec" \ "template" \ "spec" \ "volumes")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter(item => (item \ "secret").isDefined)
               .map(item => (item \ "secret" \ "secretName").as[String])
 
             val envSecrets: Seq[String] = (deployment.raw \ "spec" \ "template" \ "spec" \ "containers")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.exists(v => (v \ "valueFrom" \ "secretKeyRef").isDefined)
               }
               .flatMap { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.map(v => (v \ "valueFrom" \ "secretKeyRef" \ "name").as[String])
               }
               .distinct

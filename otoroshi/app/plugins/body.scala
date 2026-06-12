@@ -30,17 +30,17 @@ case class BodyLoggerFilterConfig(json: JsValue) {
   lazy val statuses: Seq[Int]      = (json \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val notPaths: Seq[String]   = (json \ "not" \ "paths")
     .asOpt[Seq[String]]
-    .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
+    .getOrElse(Seq.empty).toSeq :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
 }
 
 case class BodyLoggerConfig(json: JsValue) {
@@ -213,7 +213,7 @@ class BodyLogger extends RequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),

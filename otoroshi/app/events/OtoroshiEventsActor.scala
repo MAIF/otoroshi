@@ -2034,7 +2034,7 @@ object Exporters {
           metrics = (json \ "metrics")
             .asOpt[Seq[JsValue]]
             .map(metrics => metrics.map(metric => MetricSettings.format.reads(metric).get))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -2210,7 +2210,7 @@ object Exporters {
             .select("metrics")
             .asOpt[Seq[JsValue]]
             .map(arr => arr.flatMap(v => MetricSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

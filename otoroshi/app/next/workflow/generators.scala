@@ -78,7 +78,7 @@ object WorkflowGenerators {
          |${(0 to leftPad).map(_ => " ").mkString("")}- required fields are: ${schema
         .select("required")
         .asOpt[Seq[String]]
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
         .map(v => s"**$v**")
         .mkString(", ")}""".stripMargin
     }

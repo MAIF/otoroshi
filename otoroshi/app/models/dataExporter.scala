@@ -148,7 +148,7 @@ object HttpCallSettings {
           .select("cookies")
           .asOpt[Seq[JsObject]]
           .map(_.map(o => JsonHelpers.cookieFromJson(o)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         body = json.select("body").asOptString.getOrElse(""),
         timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
         tlsConfig = json
@@ -874,7 +874,7 @@ object DataExporterConfig {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(5000),
           jsonWorkers = (json \ "jsonWorkers").asOpt[Int].getOrElse(1),
           sendWorkers = (json \ "sendWorkers").asOpt[Int].getOrElse(5),
@@ -882,8 +882,8 @@ object DataExporterConfig {
           groupDuration = (json \ "groupDuration").asOpt[Int].map(_.millis).getOrElse(30.seconds),
           projection = (json \ "projection").asOpt[JsObject].getOrElse(Json.obj()),
           filtering = DataExporterConfigFiltering(
-            include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
-            exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+            include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
+            exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           ),
           customFilter = (json \ "customFilter")
             .asOpt[JsObject]
@@ -919,7 +919,7 @@ object DataExporterConfig {
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
               )
             case "goreplayfile"   =>
               GoReplayFileSettings(
@@ -929,7 +929,7 @@ object DataExporterConfig {
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
               )
             case "mailer"         => MailerSettings.format.reads((json \ "config").as[JsObject]).get
             case "custom"         => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])

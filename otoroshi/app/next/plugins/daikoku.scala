@@ -34,7 +34,7 @@ object ExposeDaikokuPresetConfig {
     override def reads(json: JsValue): JsResult[ExposeDaikokuPresetConfig] = Try {
       ExposeDaikokuPresetConfig(
         authenticationRef = json.selectAsOptString("authentication_ref"),
-        exclude = (json \ "exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
+        exclude = (json \ "exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         headerName = json.selectAsOptString("header_name").orElse("Otoroshi-claim".some),
         addFields = json.select("add_fields").asOpt[Map[String, String]].map(m => AddFieldsSettings(m)),
         algo = AlgoSettings

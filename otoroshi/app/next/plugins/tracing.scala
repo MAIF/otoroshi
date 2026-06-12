@@ -216,7 +216,7 @@ class W3CTracing extends NgRequestTransformer {
 
   private val setter = new TextMapSetter[NgTransformerRequestContext] {
     override def set(carrier: NgTransformerRequestContext, key: String, value: String): Unit = {
-      val seq: Seq[(String, String)] = carrier.attrs.get(TraceKey).getOrElse(Seq.empty)
+      val seq: Seq[(String, String)] = carrier.attrs.get(TraceKey).getOrElse(Seq.empty).toSeq
       carrier.attrs.put(TraceKey -> (seq :+ (key, value)))
     }
   }

@@ -68,7 +68,7 @@ class HMACValidator extends NgAccessValidator {
 
     val algorithm            = params.getOrElse("algorithm", "HMAC-SHA256")
     val signature            = params("signature")
-    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
+    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String]).toSeq
     val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
 

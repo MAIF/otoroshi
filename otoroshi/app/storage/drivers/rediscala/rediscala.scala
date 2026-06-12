@@ -120,7 +120,7 @@ class RedisCPDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
+      .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisClientPool = RedisClientPool(
       members
     )(redisActorSystem)
@@ -159,7 +159,7 @@ class RedisMCPDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
+      .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisClientMutablePool = RedisClientMutablePool(
       members
     )(redisActorSystem)
@@ -219,7 +219,7 @@ class RedisLFDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
+      .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
       master,
       slaves
@@ -258,7 +258,7 @@ class RedisSentinelDataStores(
           .map(RedisMember.fromList)
           .map(_.map(m => (m.host, m.port)))
       }
-      .getOrElse(Seq.empty[(String, Int)])
+      .getOrElse(Seq.empty[(String, Int)]).toSeq
     val master                            = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.master").get
     val password                          = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.password")
     val db                                = configuration.getOptionalWithFileSupport[Int]("app.redis.sentinels.db")
@@ -304,7 +304,7 @@ class RedisSentinelLFDataStores(
           .map(RedisMember.fromList)
           .map(_.map(m => (m.host, m.port)))
       }
-      .getOrElse(Seq.empty[(String, Int)])
+      .getOrElse(Seq.empty[(String, Int)]).toSeq
     val master                                        = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.lf.master").get
     val cli: SentinelMonitoredRedisClientMasterSlaves = SentinelMonitoredRedisClientMasterSlaves(
       members,
@@ -346,7 +346,7 @@ class RedisClusterDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
+      .getOrElse(Seq.empty[RedisServer]).toSeq
     val cli: RedisCluster = RedisCluster(
       members
     )(redisActorSystem)

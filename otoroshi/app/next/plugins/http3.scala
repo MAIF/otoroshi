@@ -23,7 +23,7 @@ object Http3SwitchConfig   {
       Http3SwitchConfig(
         domain = json.select("domain").asOpt[String],
         ma = json.select("ma").asOpt[Int].getOrElse(3600),
-        protocols = json.select("protocols").asOpt[Seq[String]].getOrElse(Seq.empty)
+        protocols = json.select("protocols").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Success(s) => JsSuccess(s)

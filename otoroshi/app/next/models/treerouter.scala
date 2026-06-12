@@ -235,7 +235,7 @@ case class NgTreeNodePath(
   ): Option[NgMatchedRoutes] = {
     segments.headOption match {
       case None if routes.isEmpty => None
-      case None                   => NgMatchedRoutes(routes, path, pathParams, noMoreSegments = true).some
+      case None                   => NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = true).some
       case Some(head)             => {
         val mptree = tree
           .get(head)
@@ -268,8 +268,8 @@ case class NgTreeNodePath(
         mptree match {
           case None if endsWithSlash && routes.isEmpty              => None
           case None if endsWithSlash && routes.nonEmpty             =>
-            // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
-            NgMatchedRoutes(routes, path, pathParams, noMoreSegments = segments.tail.isEmpty).some
+            // NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+            NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = segments.tail.isEmpty).some
           case None if !endsWithSlash                               => {
             // here is one of the worst case scenario where the user wants to use '/api/999' to match calls on '/api/999-foo'
             segmentStartsWithCache.get(
@@ -288,8 +288,8 @@ case class NgTreeNodePath(
                 mSubTree match {
                   case None if routes.isEmpty => None
                   case None                   =>
-                    // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
-                    NgMatchedRoutes(routes, path, pathParams, noMoreSegments = false).some
+                    // NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
+                    NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
                   case Some(ptree)            =>
                     ptree
                       .applyOnIf(sw) { pt =>
@@ -314,7 +314,7 @@ case class NgTreeNodePath(
                         trailingSlashMeansExactSegments
                       ) match {
                       case None if routes.isEmpty => None
-                      case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
+                      case None                   => NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
                       case s                      => s
                     }
                 }
@@ -323,10 +323,10 @@ case class NgTreeNodePath(
           }
           case Some(ptree) if ptree.isEmpty && routes.isEmpty       => None
           case Some(ptree) if ptree.isEmpty && routes.nonEmpty      =>
-            NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+            NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree) if ptree.isLeaf && ptree.routes.isEmpty  => None
           case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty =>
-            NgMatchedRoutes(ptree.routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+            NgMatchedRoutes(ptree.routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree)                                          =>
             ptree.find(
               segments.tail,
@@ -337,7 +337,7 @@ case class NgTreeNodePath(
             ) match {
               case None if routes.isEmpty => None
               case None                   =>
-                NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+                NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
               case s                      => s
             }
         }

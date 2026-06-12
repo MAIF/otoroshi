@@ -167,7 +167,7 @@ object TcpRule {
           JsSuccess(
             TcpRule(
               domain = (json \ "domain").asOpt[String].getOrElse("*"),
-              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
+              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty).toSeq
             )
           )
         } recover { case e =>
@@ -241,9 +241,9 @@ object TcpService {
             tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
             sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
-            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
+            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty).toSeq,
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>

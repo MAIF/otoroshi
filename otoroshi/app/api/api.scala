@@ -1200,7 +1200,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       }
       case Some(body) if request.contentType.contains("application/json+oto-patch")        => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-          val values: Seq[JsObject]            = Json.parse(bodyRaw.utf8String).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val values: Seq[JsObject]            = Json.parse(bodyRaw.utf8String).asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val default                          =
             defaultEntity
               .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
@@ -1309,7 +1309,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //              })
 //              .toSeq
 //          )
-//          .getOrElse(Seq.empty[(String, String)])
+//          .getOrElse(Seq.empty[(String, String)]).toSeq
 //        val hasFilters = filters.nonEmpty
 //
 //        val reducedItems = if (hasFilters) {
@@ -1410,7 +1410,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //              })
 //              .toSeq
 //          )
-//          .getOrElse(Seq.empty[(String, Boolean)])
+//          .getOrElse(Seq.empty[(String, Boolean)]).toSeq
 //        val hasSorted = sorted.nonEmpty
 //        if (hasSorted) {
 //          JsArray(sorted.foldLeft(arr.value) {
@@ -1468,7 +1468,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //  }
 //
 //  private def projectedEntity(_entity: PaginatedContent, request: RequestHeader): Option[PaginatedContent] = {
-//    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+//    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
 //    val hasFields = fields.nonEmpty
 //    if (hasFields) {
 //      val content = _entity.content match {

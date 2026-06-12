@@ -172,8 +172,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             mtls = true,
             loose = config.trust,
             trustAll = config.trust,
-            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty),
-            trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
+            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty).toSeq,
+            trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty).toSeq
           )
         ),
         clientConfig

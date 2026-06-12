@@ -85,7 +85,7 @@ class LettuceDataStores(
     .orElse(
       configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
     )
-    .getOrElse(Seq.empty[String])
+    .getOrElse(Seq.empty[String]).toSeq
   lazy val startTLS               = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
   lazy val verifyPeers            =
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)

@@ -184,7 +184,7 @@ object EntityLocation {
               .map(e => Team.format.reads(e))
               .collect { case JsSuccess(team, _) => team.id }
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
 
         val teams = teamsAsStringList
           .map(teams => teams ++ teamsAsJsonArray)
@@ -335,7 +335,7 @@ object Tenant {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -384,7 +384,7 @@ object Team   {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

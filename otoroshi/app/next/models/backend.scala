@@ -190,7 +190,7 @@ object NgClientConfig {
           customTimeouts = (json \ "custom_timeouts")
             .asOpt[JsArray]
             .map(_.value.map(e => NgCustomTimeouts.format.reads(e).get))
-            .getOrElse(Seq.empty[NgCustomTimeouts])
+            .getOrElse(Seq.empty[NgCustomTimeouts]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage())
@@ -261,11 +261,11 @@ object NgTlsConfig {
             .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
             .orElse((json \ "cert_id").asOpt[String].map(v => Seq(v)))
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           trustedCerts = (json \ "trusted_certs")
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trust_all").asOpt[Boolean].getOrElse(false)
@@ -347,7 +347,7 @@ object NgBackend {
           targets = simpleTarget
             .map(st => Seq(st))
             .orElse(obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           root = root,
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
           loadBalancing = LoadBalancing.format
@@ -398,7 +398,7 @@ object NgMinimalBackend {
       case None      => empty
       case Some(obj) =>
         NgMinimalBackend(
-          targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty),
+          targets = obj.select("targets").asOpt[Seq[JsValue]].map(_.map(NgTarget.readFrom)).getOrElse(Seq.empty).toSeq,
           root = obj.select("root").asOpt[String].getOrElse("/"),
           rewrite = obj.select("rewrite").asOpt[Boolean].getOrElse(false),
           loadBalancing = LoadBalancing.format
@@ -551,7 +551,7 @@ object StoredNgBackend {
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         backend = NgBackend.readFromJson(json.select("backend").as[JsValue])
       )

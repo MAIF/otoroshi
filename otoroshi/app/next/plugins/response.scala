@@ -199,7 +199,7 @@ object MockResource {
           .select("schema")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockField.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         additionalData = json.select("additional_data").asOpt[JsObject]
       )
     } match {
@@ -251,12 +251,12 @@ object MockFormData {
           .select("resources")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockResource.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         endpoints = json
           .select("endpoints")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockEndpoint.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -285,7 +285,7 @@ object MockResponsesConfig {
           .select("responses")
           .asOpt[Seq[JsValue]]
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
         formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads)
       )
@@ -466,10 +466,10 @@ object NgErrorRewriterConfig {
           .select("ranges")
           .asOpt[JsArray]
           .map(arr => arr.value.map(item => ResponseStatusRange(item.select("from").asInt, item.select("to").asInt)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         maxBodySize = json.select("max_body_size").asOpt[Long].getOrElse(1048576L),
         useOtoroshiErrorTemplate = json.select("use_otoroshi_error_template").asOpt[Boolean].getOrElse(true),
-        preservedHeaders = json.select("preserved_headers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        preservedHeaders = json.select("preserved_headers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         additionalHeaders = json.select("additional_headers").asOpt[Map[String, String]].getOrElse(Map.empty),
         applyEl = json.select("apply_el").asOpt[Boolean].getOrElse(true)
       )

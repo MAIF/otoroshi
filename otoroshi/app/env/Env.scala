@@ -407,7 +407,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.transformersRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       transformersConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.transformersConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -424,7 +424,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.validatorRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       validatorConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.validatorConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -439,7 +439,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.preRouteRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       preRouteConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.preRouteConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -454,7 +454,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.sinkRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       sinkConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.sinkConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -469,7 +469,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.jobsRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       jobConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.jobsConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -630,7 +630,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.adminapi.exposedDomainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val adminApiDomains        = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.domains")
     .orElse(
@@ -638,7 +638,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.adminapi.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val privateAppsDomains     = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.privateapps.domains")
     .orElse(
@@ -646,7 +646,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.privateapps.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val backofficeDomains      = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.backoffice.domains")
     .orElse(
@@ -654,7 +654,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.backoffice.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
@@ -813,7 +813,7 @@ class Env(
   lazy val snowflakeSeed             = configuration.getOptionalWithFileSupport[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator        = IdGenerator(snowflakeSeed)
   lazy val redirections: Seq[String] =
-    configuration.getOptionalWithFileSupport[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String])
+    configuration.getOptionalWithFileSupport[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String]).toSeq
 
   lazy val crypto = ClaimCrypto(sharedKey)
 
@@ -872,18 +872,18 @@ class Env(
   }
 
   val confPackages: Seq[String] =
-    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
+    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty).toSeq ++
     configuration
       .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
       .map(v => v.split(",").map(_.trim).toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
 
   val blacklistedPlugins: Set[String] =
-    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty) ++
+    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty).toSeq ++
       configuration
         .getOptionalWithFileSupport[String]("otoroshi.plugins.blacklistedStr")
         .map(v => v.split(",").map(_.trim).toSeq)
-        .getOrElse(Seq.empty)).toSet
+        .getOrElse(Seq.empty).toSeq).toSet
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
@@ -1366,7 +1366,7 @@ class Env(
           (key, value.unwrapped().asInstanceOf[String])
         }.toSeq
       }
-      .getOrElse(Seq.empty) ++ {
+      .getOrElse(Seq.empty).toSeq ++ {
       sys.env.toSeq
         .filter {
           case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
@@ -1397,11 +1397,11 @@ class Env(
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
   val serverTrustedCAs: Seq[String] = {
-    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty)
+    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty).toSeq
     val localStr = configuration
       .getOptional[String]("otoroshi.ssl.trust.server_cas_str")
       .map(_.split(",").map(_.trim).toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     (local ++ localStr).distinct
   }
 
@@ -1423,18 +1423,18 @@ class Env(
       clusterAgent.startF()
     }
     val modernTlsProtocols: Seq[String] =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty).toSeq
     val protocolsJDK11: Seq[String]     =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty).toSeq
     val protocolsJDK8: Seq[String]      =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty).toSeq
 
     val cipherSuitesJDK8: Seq[String]      =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty).toSeq
     val cipherSuitesJDK11: Seq[String]     =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty).toSeq
     val cipherSuitesJDK11Plus: Seq[String] =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty).toSeq
 
     configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
@@ -1514,7 +1514,7 @@ class Env(
           val headers: Seq[(String, String)] = configuration
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
-            .getOrElse(Seq.empty[(String, String)])
+            .getOrElse(Seq.empty[(String, String)]).toSeq
           if (configuration.betterHas("app.importFrom")) {
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {

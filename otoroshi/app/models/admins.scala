@@ -103,7 +103,7 @@ object SimpleOtoroshiAdmin {
         typ =
           (json \ "type").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         rights = UserRights.readFromObject(json),
         adminEntityValidators = json
           .select("adminEntityValidators")
@@ -186,7 +186,7 @@ object WebAuthnOtoroshiAdmin {
         typ =
           (json \ "type").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         rights = UserRights.readFromObject(json),
         adminEntityValidators = json
           .select("adminEntityValidators")

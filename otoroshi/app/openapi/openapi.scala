@@ -327,7 +327,7 @@ class OpenApiGenerator(
 
     if (!result.contains(clazz.getName)) {
       val ctrInfo    = clazz.getDeclaredConstructorInfo.asScala.headOption
-      val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
+      val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty).toSeq
       val paramNames = params.map { param =>
         param.getName
       }

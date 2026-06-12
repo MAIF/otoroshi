@@ -365,7 +365,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
           )
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 
   override def bodyAsSource: Source[ByteString, _]    = _body
@@ -516,7 +516,7 @@ case class NettyHttp3ClientWsRequest(
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"

@@ -209,7 +209,7 @@ case class NettyWsClientRequest(
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"

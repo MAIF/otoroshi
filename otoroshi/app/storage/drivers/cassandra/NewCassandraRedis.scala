@@ -275,7 +275,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
       Try(rs.one().getList("lvalue", classOf[String])).toOption
         .flatMap(o => Option(o))
         .map(_.asScala.map(ByteString.apply).toSeq)
-        .getOrElse(Seq.empty[ByteString])
+        .getOrElse(Seq.empty[ByteString]).toSeq
     }
 
   private def getSetAt(key: String): Future[Set[ByteString]] =

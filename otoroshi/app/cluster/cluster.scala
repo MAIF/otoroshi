@@ -439,10 +439,10 @@ object ClusterConfig {
               val trustAll     =
                 configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.trustAll").getOrElse(false)
               val certs        =
-                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
+                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty).toSeq
               val trustedCerts = configuration
                 .getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.trustedCerts")
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               MtlsConfig(
                 certs = certs,
                 trustedCerts = trustedCerts,
@@ -458,8 +458,8 @@ object ClusterConfig {
       ),
       // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
-        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
-        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
+        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty).toSeq,
+        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty).toSeq,
         loose = configuration.getOptionalWithFileSupport[Boolean]("mtls.loose").getOrElse(false),
         trustAll = configuration.getOptionalWithFileSupport[Boolean]("mtls.trustAll").getOrElse(false),
         mtls = configuration.getOptionalWithFileSupport[Boolean]("mtls.enabled").getOrElse(false)
@@ -576,7 +576,7 @@ object ClusterConfig {
             configuration.getOptionalWithFileSupport[String]("worker.tenantsStr").map(_.split(",").toSeq.map(_.trim))
           )
           .map(_.map(TenantId.apply))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         swapStrategy = configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
           case Some("Merge") => SwapStrategy.Merge
           case _             => SwapStrategy.Replace
@@ -837,7 +837,7 @@ object MemberView {
             .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
             .getOrElse(ClusterMode.Off),
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj()),
-          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty),
+          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty).toSeq,
           httpsPort = (value \ "httpsPort").asOpt[Int].getOrElse(env.exposedHttpsPortInt),
           httpPort = (value \ "httpPort").asOpt[Int].getOrElse(env.exposedHttpPortInt),
           internalHttpsPort = (value \ "internalHttpsPort").asOpt[Int].getOrElse(env.httpsPort),

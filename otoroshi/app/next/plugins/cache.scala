@@ -156,16 +156,16 @@ object NgResponseCacheFilterConfig {
           .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
           .getOrElse(Seq(200)),
         methods = json.select("methods").asOpt[Seq[String]].getOrElse(Seq("GET")),
-        paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty),
+        paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         notStatuses = json
           .select("notStatuses")
           .asOpt[Seq[Int]]
           .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         notMethods = json
           .select("notMethods")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -262,7 +262,7 @@ class NgResponseCache extends NgRequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),

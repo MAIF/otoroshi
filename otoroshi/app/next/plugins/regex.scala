@@ -112,7 +112,7 @@ object RegexBodyRewriterConfig {
           .select("rules")
           .asOpt[Seq[JsObject]]
           .map(seq => seq.flatMap(r => RegexReplacementRule.format.reads(r).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         autoHrefPrefix = json.select("auto_href_prefix").asOpt[String],
         maxBodySize = json.select("max_body_size").asOpt[Long],
         charsetFallback = json.select("charset_fallback").asOpt[String].orElse(Some("UTF-8"))
@@ -523,7 +523,7 @@ object RegexHeadersRewriterConfig {
           .select("rules")
           .asOpt[Seq[JsObject]]
           .map(seq => seq.flatMap(r => RegexHeaderReplacementRule.format.reads(r).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

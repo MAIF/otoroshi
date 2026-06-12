@@ -168,7 +168,7 @@ object WasmConfig {
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(100),
         functionName = (json \ "functionName").asOpt[String].filter(_.nonEmpty),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
-        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         opa = (json \ "opa").asOpt[Boolean].getOrElse(false),

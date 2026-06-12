@@ -23,9 +23,9 @@ object GzipConfig {
       Try {
         GzipConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          whiteList = (json \ "whiteList").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blackList").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          whiteList = (json \ "whiteList").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blackList").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunkedThreshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compressionLevel").asOpt[Int].getOrElse(5)

@@ -606,7 +606,7 @@ case class NoopNode(json: JsObject) extends Node {
 
 case class WorkflowNode(json: JsObject) extends Node {
 
-  lazy val steps: Seq[Node] = json.select("steps").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o))
+  lazy val steps: Seq[Node] = json.select("steps").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => Node.from(o))
 
   override def subNodes: Seq[NodeLike]                    = steps
   override def documentationName: String                  = "workflow"
@@ -835,7 +835,7 @@ case class AssignNode(json: JsObject) extends Node {
     )
   )
   lazy val values: Seq[AssignOperation]                   =
-    json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => AssignOperation(o))
+    json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => AssignOperation(o))
 
   override def run(
       wfr: WorkflowRun,
@@ -859,7 +859,7 @@ case class AssignNode(json: JsObject) extends Node {
 
 case class ParallelFlowsNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    =
-    json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(v => Node.from(v))
+    json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(v => Node.from(v))
   override def documentationName: String                  = "parallel"
   override def documentationDisplayName: String           = "Parallel paths"
   override def documentationIcon: String                  = "fas fa-code-branch"
@@ -919,7 +919,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
       )
     )
   )
-  lazy val paths: Seq[JsObject]                           = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+  lazy val paths: Seq[JsObject]                           = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
   override def run(
       wfr: WorkflowRun,
       prefix: Seq[Int],
@@ -986,7 +986,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
 
 case class SwitchNode(json: JsObject) extends Node {
   override def subNodes: Seq[NodeLike]                    =
-    json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(v => Node.from(v))
+    json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(v => Node.from(v))
   override def documentationName: String                  = "switch"
   override def documentationDisplayName: String           = "Switch paths"
   override def documentationIcon: String                  = "fas fa-exchange-alt"
@@ -1051,7 +1051,7 @@ case class SwitchNode(json: JsObject) extends Node {
         id.some
       ).leftf
     } else {
-      val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+      val paths: Seq[JsObject] = json.select("paths").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
       paths.zipWithIndex.find { case (o, idx) =>
         WorkflowOperator.processOperators(o.select("predicate").asValue, wfr, env).asOptBoolean.getOrElse(false)
       } match {

@@ -78,12 +78,12 @@ object LetsEncryptSettings {
             .asOpt[Seq[String]]
             .map(_.map(_.trim).filter(_.nonEmpty))
             .filter(_.nonEmpty)
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           contacts = (json \ "contacts")
             .asOpt[Seq[String]]
             .map(_.map(_.trim).filter(_.nonEmpty))
             .filter(_.nonEmpty)
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           publicKey = (json \ "publicKey").asOpt[String].getOrElse(""),
           privateKey = (json \ "privateKey").asOpt[String].getOrElse("")
         )

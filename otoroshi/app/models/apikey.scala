@@ -492,7 +492,7 @@ object ApiKey {
                       id
                     }
                 }
-                .getOrElse(Seq.empty[EntityIdentifier])
+                .getOrElse(Seq.empty[EntityIdentifier]).toSeq
               val authorizedGroup: Seq[EntityIdentifier]    =
                 (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
               val authorizedEntities: Seq[EntityIdentifier] =
@@ -503,7 +503,7 @@ object ApiKey {
                       id
                     }
                   }
-                  .getOrElse(Seq.empty[EntityIdentifier])
+                  .getOrElse(Seq.empty[EntityIdentifier]).toSeq
               (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
             },
             enabled = enabled,
@@ -521,7 +521,7 @@ object ApiKey {
               .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
               .getOrElse(ApiKeyRotation()),
             validUntil = rawValidUntil,
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             metadata = (json \ "metadata")
               .asOpt[Map[String, String]]
               .map(m => m.filter(_._1.nonEmpty))

@@ -190,12 +190,12 @@ object OAuthProtectedResourceMetadataConfig {
         ref = json.select("ref").asOpt[String].filter(_.nonEmpty),
         resource = json.select("resource").asOpt[String].filter(_.nonEmpty),
         authorizationServersOverride =
-          json.select("authorization_servers_override").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("authorization_servers_override").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         jwksUri = json.select("jwks_uri").asOpt[String].filter(_.nonEmpty),
-        scopesSupported = json.select("scopes_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+        scopesSupported = json.select("scopes_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         bearerMethodsSupported = json.select("bearer_methods_supported").asOpt[Seq[String]].getOrElse(Seq("header")),
         resourceSigningAlgValuesSupported =
-          json.select("resource_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("resource_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         resourceName = json.select("resource_name").asOpt[String].filter(_.nonEmpty),
         resourceDocumentation = json.select("resource_documentation").asOpt[String].filter(_.nonEmpty),
         resourcePolicyUri = json.select("resource_policy_uri").asOpt[String].filter(_.nonEmpty),
@@ -203,11 +203,11 @@ object OAuthProtectedResourceMetadataConfig {
         tlsClientCertificateBoundAccessTokens =
           json.select("tls_client_certificate_bound_access_tokens").asOpt[Boolean].getOrElse(false),
         dpopSigningAlgValuesSupported =
-          json.select("dpop_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("dpop_signing_alg_values_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         dpopBoundAccessTokensRequired =
           json.select("dpop_bound_access_tokens_required").asOpt[Boolean].getOrElse(false),
         authorizationDetailsTypesSupported =
-          json.select("authorization_details_types_supported").asOpt[Seq[String]].getOrElse(Seq.empty),
+          json.select("authorization_details_types_supported").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         extraMetadata = json.select("extra_metadata").asOpt[JsObject].getOrElse(Json.obj()),
         signedMetadata = json.select("signed_metadata").asOpt[Boolean].getOrElse(false),
         signingCertRef = json.select("signing_cert_ref").asOpt[String].filter(_.nonEmpty),

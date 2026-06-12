@@ -269,9 +269,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCleanupNames =
-            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           openshiftDnsOperatorCleanupDomains =
-            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -298,7 +298,7 @@ object KubernetesConfig {
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(443, 8443)),
           gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
-          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
           gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
       }
@@ -385,9 +385,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCleanupNames =
-            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           openshiftDnsOperatorCleanupDomains =
-            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -414,7 +414,7 @@ object KubernetesConfig {
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(443, 8443)),
           gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
-          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
           gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
       }

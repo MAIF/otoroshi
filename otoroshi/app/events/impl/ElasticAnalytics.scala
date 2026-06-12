@@ -1698,7 +1698,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       val json = if (noraw.isEmpty) raw.resp else noraw.resp
       val pie  = (json \ "aggregations" \ "codes" \ "buckets")
         .asOpt[Seq[JsObject]]
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
         .map { o =>
           Json.obj(
             "name" -> s"${(o \ "key").as[JsValue]}",

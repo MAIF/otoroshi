@@ -82,11 +82,11 @@ object UserDashboard {
           .getOrElse(IdGenerator.namedId("dashboard", IdGenerator.uuid)),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         widgets =
-          (json \ "widgets").asOpt[Seq[JsValue]].getOrElse(Seq.empty).flatMap(j => Widget.format.reads(j).asOpt),
+          (json \ "widgets").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq.flatMap(j => Widget.format.reads(j).asOpt),
         defaults = (json \ "defaults").asOpt[JsObject].getOrElse(Json.obj())
       )
     } match {

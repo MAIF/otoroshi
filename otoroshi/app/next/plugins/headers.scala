@@ -34,7 +34,7 @@ object NgHeaderNamesConfig {
           .filter(_.nonEmpty)
           .orElse(json.select("headers").asOpt[Seq[String]].filter(_.nonEmpty))
           .orElse(json.select("names").asOpt[Seq[String]].filter(_.nonEmpty))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -120,7 +120,7 @@ object OverrideLocationHeaderConfig {
   val format                         = new Format[OverrideLocationHeaderConfig] {
     override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
       OverrideLocationHeaderConfig(
-        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
+        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

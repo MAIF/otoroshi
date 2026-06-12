@@ -1166,7 +1166,7 @@ class ReactivePgRedis(
       val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
       if (avoidJsonPath) {
         getArray(key).map(
-          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
         ) // awful but not supported in some cases like cockroachdb
       } else {
         queryOne(
@@ -1174,11 +1174,11 @@ class ReactivePgRedis(
           Seq(key)
         ) { row =>
           row.optJsArray("slice").map(_.value.map(v => v.asString.byteString))
-        }.map(_.getOrElse(Seq.empty)).recoverWith {
+        }.map(_.getOrElse(Seq.empty).toSeq).recoverWith {
           case ex: io.vertx.pgclient.PgException
               if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
             getArray(key).map(
-              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
             ) // awful but not supported in some cases like cockroachdb
           }
         }
@@ -1266,7 +1266,7 @@ class ReactivePgRedis(
         Seq(key)
       ) { row =>
         row.optJsObject("svalue").map(_.keys.toSeq.map(ByteString.apply))
-      }.map(_.getOrElse(Seq.empty))
+      }.map(_.getOrElse(Seq.empty).toSeq)
     }
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)

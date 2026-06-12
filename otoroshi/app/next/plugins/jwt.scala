@@ -78,7 +78,7 @@ object NgJwtVerificationConfig {
   val format = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
-        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
         customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
         customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),

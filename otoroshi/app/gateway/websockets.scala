@@ -715,7 +715,7 @@ object WebSocketProxyActor {
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
           .filter(p =>
             WSProxyServerUtils
-              .isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+              .isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
           )
           .map { proxySettings =>
             val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
@@ -884,7 +884,7 @@ class WebSocketProxyActor(
           .orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.services))
           .filter(p =>
             WSProxyServerUtils
-              .isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+              .isIgnoredForHost(Uri(url).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
           )
           .map { proxySettings =>
             val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)

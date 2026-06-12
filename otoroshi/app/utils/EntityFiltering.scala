@@ -30,7 +30,7 @@ object EntityFiltering {
               })
               .toSeq
           )
-          .getOrElse(Seq.empty[(String, String)])
+          .getOrElse(Seq.empty[(String, String)]).toSeq
         val hasFilters = filters.nonEmpty
 
         val reducedItems = if (hasFilters) {
@@ -179,7 +179,7 @@ object EntityFiltering {
               })
               .toSeq
           )
-          .getOrElse(Seq.empty[(String, Boolean)])
+          .getOrElse(Seq.empty[(String, Boolean)]).toSeq
         val hasSorted = sorted.nonEmpty
         if (hasSorted) {
           JsArray(sorted.foldLeft(arr.value) {
@@ -263,7 +263,7 @@ object EntityFiltering {
   }
 
   private def projectedEntity(_entity: PaginatedContent, request: RequestHeader): Option[PaginatedContent] = {
-    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
     val hasFields = fields.nonEmpty
     if (hasFields) {
       val content = _entity.content match {

@@ -133,11 +133,11 @@ object NgHasClientCertMatchingValidatorConfig {
     override def reads(json: JsValue): JsResult[NgHasClientCertMatchingValidatorConfig] = Try {
       NgHasClientCertMatchingValidatorConfig(
         mandatory = json.select("mandatory").asOptBoolean.getOrElse(true),
-        serialNumbers = json.select("serial_numbers").asOpt[Seq[String]].getOrElse(Seq.empty),
-        subjectDNs = json.select("subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        issuerDNs = json.select("issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty)
+        serialNumbers = json.select("serial_numbers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        subjectDNs = json.select("subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        issuerDNs = json.select("issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -355,7 +355,7 @@ object NgCertificateAsApikeyConfig {
         dailyQuota = json.select("daily_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
         monthlyQuota = json.select("monthly_quota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
         constrainedServicesOnly = json.select("constrained_services_only").asOpt[Boolean].getOrElse(false),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
       )
     } match {
@@ -496,15 +496,15 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
       ec: ExecutionContext
   ): Future[NgAccess] = {
     val allowedSerialNumbers   =
-      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val allowedSubjectDNs      =
-      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val allowedIssuerDNs       =
-      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedSubjectDNs =
-      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedIssuerDNs  =
-      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     if (
       certs.exists { cert =>
         allowedSerialNumbers.exists(_ == cert.getSerialNumber.toString(16)) ||

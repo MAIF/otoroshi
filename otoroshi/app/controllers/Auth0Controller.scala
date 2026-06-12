@@ -138,7 +138,7 @@ class AuthController(
                       .find(p =>
                         p._2
                           .asOpt[Seq[String]]
-                          .getOrElse(Seq.empty)
+                          .getOrElse(Seq.empty).toSeq
                           .exists(em => RegexPool.theRegex(em).map(e => e.matches(email)).getOrElse(email == em))
                       ) match {
                       case Some(auth) =>

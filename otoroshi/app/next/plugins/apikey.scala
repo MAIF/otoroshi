@@ -35,8 +35,8 @@ object NgLegacyApikeyCallConfig {
     ) ++ o.config.json.asObject
     override def reads(json: JsValue): JsResult[NgLegacyApikeyCallConfig] = Try {
       NgLegacyApikeyCallConfig(
-        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         config = NgApikeyCallsConfig.format.reads(json).asOpt.getOrElse(NgApikeyCallsConfig())
       )
     } match {
@@ -613,15 +613,15 @@ object NgApikeyMatcher {
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         noneMetaIn = (json \ "none_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         oneMetaIn = (json \ "one_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         allMetaIn = (json \ "all_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-        noneMetaKeysIn = (json \ "none_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        oneMetaKeyIn = (json \ "one_meta_key_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allMetaKeysIn = (json \ "all_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        noneMetaKeysIn = (json \ "none_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        oneMetaKeyIn = (json \ "one_meta_key_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allMetaKeysIn = (json \ "all_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     }
   }
@@ -900,7 +900,7 @@ object NgApikeyMandatoryTagsConfig {
     )
     override def reads(json: JsValue): JsResult[NgApikeyMandatoryTagsConfig] = Try {
       NgApikeyMandatoryTagsConfig(
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
