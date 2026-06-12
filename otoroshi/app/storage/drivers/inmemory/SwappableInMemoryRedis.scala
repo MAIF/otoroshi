@@ -339,7 +339,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     val seq    = Option(store.get(key)).map(_.asInstanceOf[java.util.List[ByteString]]).getOrElse(emptySeq())
     val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt)
-    FastFuture.successful(result)
+    FastFuture.successful(result.toSeq)
   }
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
@@ -641,7 +641,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
-    seq.slice(start.toInt, stop.toInt - start.toInt).future
+    seq.slice(start.toInt, stop.toInt - start.toInt).toSeq.future
   }
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {

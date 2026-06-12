@@ -245,7 +245,8 @@ object GraphQLFormats {
                   case JsSuccess(v, _) => Some(v)
                   case JsError(_)      => None
                 }
-                .toVector
+                .toVector,
+              interfaces = Vector.empty
             )
           )
         } recover { case e =>

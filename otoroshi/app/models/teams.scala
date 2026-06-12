@@ -124,7 +124,7 @@ object UserRight {
             .map { t =>
               TeamAccess(t.as[String])
             }
-            .distinct
+            .distinct.toSeq
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

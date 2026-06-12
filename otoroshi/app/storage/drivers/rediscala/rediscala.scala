@@ -267,6 +267,7 @@ class RedisSentinelDataStores(
       members,
       master,
       password,
+      None,
       db,
       name
     )(using redisActorSystem)

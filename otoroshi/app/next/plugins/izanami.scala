@@ -593,7 +593,7 @@ class IzanamiV2Proxy extends NgBackendCall {
       )
 
     val method   = ctx.request.method
-    val response = if (method == "GET") {
+    val response: scala.concurrent.Future[Either[otoroshi.next.proxy.NgProxyEngineError, play.api.libs.ws.WSResponse]] = if (method == "GET") {
       baseRequest.get().map(r => r.right)
     } else if (method == "POST") {
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
