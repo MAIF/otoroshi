@@ -144,7 +144,7 @@ object GraphQLFormats {
                     arguments = directive
                       .select("arguments")
                       .as[JsArray]
-                      .value
+                      .value.toSeq
                       .map(_.as[JsObject])
                       .map(argument => {
                         val name = argument.keys.head

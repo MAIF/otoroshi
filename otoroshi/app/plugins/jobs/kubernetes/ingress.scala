@@ -918,7 +918,7 @@ object KubernetesIngressToDescriptor {
                               subsets.flatMap { subset =>
                                 val endpointPort: Int = (subset \ "ports")
                                   .as[JsArray]
-                                  .value
+                                  .value.toSeq
                                   .find { port =>
                                     (port \ "name").as[String] == portName
                                   }
@@ -1066,7 +1066,7 @@ object KubernetesIngressToDescriptor {
                               subsets.flatMap { subset =>
                                 val endpointPort: Int = (subset \ "ports")
                                   .as[JsArray]
-                                  .value
+                                  .value.toSeq
                                   .find { port =>
                                     (port \ "name").as[String] == portName
                                   }
@@ -1222,7 +1222,7 @@ object KubernetesIngressToDescriptor {
                   subsets.flatMap { subset =>
                     val endpointPort: Int = (subset \ "ports")
                       .as[JsArray]
-                      .value
+                      .value.toSeq
                       .find { port =>
                         (port \ "name").as[String] == portName
                       }

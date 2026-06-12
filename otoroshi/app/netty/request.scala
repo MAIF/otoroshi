@@ -230,7 +230,7 @@ class ReactorNettyRequestHeader(
       Seq(
         ("Tls-Session-Info", s.toString)
       )
-    )): _*
+    )).toSeq: _*
   )
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
   lazy val target: RequestTarget        = new ReactorNettyRequestTarget(req)
@@ -419,7 +419,7 @@ class NettyRequestHeader(
       Seq(
         ("Tls-Session-Info", s.toString)
       )
-    )): _*
+    )).toSeq: _*
   )
   lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)
   lazy val target: RequestTarget        = new NettyRequestTarget(req)

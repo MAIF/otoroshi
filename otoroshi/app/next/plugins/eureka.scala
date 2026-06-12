@@ -713,7 +713,7 @@ class ExternalEurekaTarget extends NgPreRouting {
                       val instances = (res.body.parseJson
                         .as[JsObject] \ "application" \ "instance")
                         .as[JsArray]
-                        .value
+                        .value.toSeq
                         .map(instance => instance.as(EurekaInstance.format.reads))
                         .map(EurekaInstance.toTarget)
 

@@ -120,7 +120,7 @@ object UserRight {
           tenant = TenantAccess((json \ "tenant").as[String]),
           teams = (json \ "teams")
             .as[JsArray]
-            .value
+            .value.toSeq
             .map { t =>
               TeamAccess(t.as[String])
             }

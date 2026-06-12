@@ -2039,7 +2039,7 @@ class BackOfficeController(
     val types = ctx.request.body
       .select("types")
       .as[JsArray]
-      .value
+      .value.toSeq
       .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
       .flatMap {
         case JsSuccess(v, _) => Some(v)

@@ -152,7 +152,7 @@ object KubernetesConfig {
         val currentContextName    = (json \ "current-context").as[String]
         val currentContextUser    = (json \ "contexts")
           .as[JsArray]
-          .value
+          .value.toSeq
           .find(v => (v \ "name").as[String] == currentContextName)
           .get
           .\("context")
@@ -160,7 +160,7 @@ object KubernetesConfig {
           .as[String]
         val currentContextCluster = (json \ "contexts")
           .as[JsArray]
-          .value
+          .value.toSeq
           .find(v => (v \ "name").as[String] == currentContextName)
           .get
           .\("context")
@@ -170,7 +170,7 @@ object KubernetesConfig {
           trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
           endpoint = (json \ "clusters")
             .as[JsArray]
-            .value
+            .value.toSeq
             .find(v => (v \ "name").as[String] == currentContextCluster)
             .map { defaultUser =>
               (defaultUser \ "cluster" \ "server").as[String]

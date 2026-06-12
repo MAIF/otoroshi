@@ -873,7 +873,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(jwt)((a, b) => {
       val values: Set[String]         = (token \ b._1)
         .as[JsArray]
-        .value
+        .value.toSeq
         .collect {
           case JsNumber(nbr) => nbr.toString()
           case JsBoolean(b)  => b.toString

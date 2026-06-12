@@ -2117,14 +2117,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             val total_period = (service \ "doc_count").as[Float]
             val dates        = (service \ "date" \ "buckets")
               .as[JsArray]
-              .value
+              .value.toSeq
               .map(date => {
                 val timestamp = (date \ "key").as[Float]
                 val hrDate    = (date \ "key_as_string").as[String]
                 val total_day = (date \ "doc_count").as[Float]
                 val status    = (date \ "status" \ "buckets")
                   .as[JsArray]
-                  .value
+                  .value.toSeq
                   .map(h => {
                     val value      = (h \ "key").as[String]
                     val count      = (h \ "doc_count").as[Float]
