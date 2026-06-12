@@ -461,7 +461,7 @@ object NgTreeRouter_Test {
       sum.addAndGet(duration_ns)
       if (print) {
         val found = f_route.isDefined && f_route.map(_.route.name).contains(idx)
-        println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+        println((path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms"))
       }
     }
 
@@ -517,7 +517,7 @@ object NgTreeRouter_Test {
       if (print) {
         val found =
           f_routes.isDefined && f_routes.exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(idx)
-        println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+        println((path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms"))
       }
     }
 
@@ -604,7 +604,7 @@ object NgTreeRouter_Test {
         if (print) {
           val found = f_routes.isDefined && f_routes
             .exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(rpath)
-          println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+          println((path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms"))
         }
       }
     }

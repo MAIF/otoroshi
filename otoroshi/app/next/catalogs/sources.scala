@@ -333,9 +333,9 @@ class CatalogSourceHttp extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body.take(500)}")): Either[JsValue, String]
+          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body[String].take(500)}")): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -396,7 +396,7 @@ class CatalogSourceGithub extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -698,7 +698,7 @@ class CatalogSourceGitlab extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -1106,7 +1106,7 @@ class CatalogSourceConsulKv extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for key $key")): Either[JsValue, String]
         }
@@ -1301,7 +1301,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -1569,7 +1569,7 @@ class CatalogSourceGiteaCompat(
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }

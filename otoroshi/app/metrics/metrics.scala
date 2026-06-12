@@ -37,7 +37,7 @@ import java.util.{Timer => _, _}
 import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.{mapAsJavaMapConverter, mapAsScalaMapConverter}
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {
