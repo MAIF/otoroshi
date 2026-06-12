@@ -1,6 +1,5 @@
 package otoroshi.utils
 
-import scala.util.matching.Regex
 
 /**
  * Minimal drop-in replacement for the Scala 2 `kaleidoscope` 0.5.0 `r"..."` pattern interpolator.
@@ -30,11 +29,11 @@ object KaleidoscopeShim {
   }
 
   final class RegexExtractor(sc: StringContext) {
-    private val regex: Regex                             = KaleidoscopeShim.buildRegex(sc.parts)
+    private val regex: scala.util.matching.Regex                             = KaleidoscopeShim.buildRegex(sc.parts)
     def unapplySeq(input: String): Option[Seq[String]]  = regex.unapplySeq(input)
   }
 
-  private def buildRegex(parts: Seq[String]): Regex = {
+  private def buildRegex(parts: Seq[String]): scala.util.matching.Regex = {
     val it = parts.iterator
     val sb = new StringBuilder
     sb.append(it.next()) // first literal part (raw, may contain unescaped backslashes)

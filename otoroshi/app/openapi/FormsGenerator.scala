@@ -12,7 +12,7 @@ class FormsGenerator(spec: TrieMap[String, JsValue]) {
 
   def run(): Map[String, Form] = {
     // println(spec)
-    convertSchemasToForms(JsObject(spec).fields)
+    convertSchemasToForms(JsObject(spec).fields.toSeq)
   }
 
   def openapiPropertiesToForms(properties: JsObject, typeName: String): JsValue = {

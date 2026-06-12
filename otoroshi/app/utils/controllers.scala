@@ -1010,7 +1010,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             if (hasFields) {
               val out = writeEntity(v).as[JsObject]
               // TODO: support dotted notation ?
-              Ok(JsObject(out.value.filterKeys(f => fields.contains(f))))
+              Ok(JsObject(out.value.filterKeys(f => fields.contains(f)).toMap))
             } else {
               Ok(writeEntity(v))
             }
