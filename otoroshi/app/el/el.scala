@@ -9,7 +9,7 @@ import play.api.mvc.RequestHeader
 
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
-import kaleidoscope._
+import otoroshi.utils.KaleidoscopeShim._
 import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute

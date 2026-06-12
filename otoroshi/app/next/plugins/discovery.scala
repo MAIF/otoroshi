@@ -52,7 +52,7 @@ object NgDiscoverySelfRegistrationConfig {
 
 class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   override def name: String                                = "Global self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -84,7 +84,7 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
 class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   override def name: String                                = "Self registration endpoints (service discovery)"
   override def description: Option[String]                 =

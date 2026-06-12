@@ -185,7 +185,7 @@ object DiscoveryHelper {
 // MIGRATED
 class DiscoverySelfRegistrationSink extends RequestSink {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   override def name: String = "Global self registration endpoints (service discovery)"
 
@@ -239,7 +239,7 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 // MIGRATED
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 

@@ -1454,9 +1454,9 @@ class Env(
         }
       }
 
-    io.swagger.v3.core.converter.ModelConverters
-      .getInstance()
-      .addConverter(new com.github.swagger.scala.converter.SwaggerScalaModelConverter())
+    // swagger-scala-module has no Scala 3 build (and pulls Akka), so the Scala model converter is no
+    // longer registered. The Java swagger-core ModelConverters are still used in api.scala, which
+    // falls back to a generic object schema when Scala case-class introspection is unavailable.
 
     // Writes the randomly generated initial admin password to a file with owner-only (0600) permissions,
     // then logs where it can be read (à la GitLab '/etc/gitlab/initial_root_password').

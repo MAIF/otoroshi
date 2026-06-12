@@ -150,7 +150,7 @@ object WorkFlowTask {
 
 object WorkFlowEl {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   import collection.JavaConverters._
 

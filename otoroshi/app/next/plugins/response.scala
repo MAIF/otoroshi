@@ -343,7 +343,7 @@ class MockResponses extends NgBackendCall {
           None
       }
       .map(r => {
-        import kaleidoscope._
+        import otoroshi.utils.KaleidoscopeShim._
 
         val route    = r.routes.headOption.get
         val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)

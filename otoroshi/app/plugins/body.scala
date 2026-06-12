@@ -19,7 +19,7 @@ import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.json.JsonImplicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.future.Implicits._
-import kaleidoscope._
+import otoroshi.utils.KaleidoscopeShim._
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.RegexPool
 
