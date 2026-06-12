@@ -593,7 +593,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                 val possibleMoreTags: Seq[String]           = (tokenBody \ oidcAuth.apiKeyTagsField)
                                   .asOpt[JsArray]
                                   .getOrElse(JsArray())
-                                  .value
+                                  .value.toSeq
                                   .collect {
                                     case JsString(str)     => str
                                     case JsNumber(nbr)     => nbr.toString()

@@ -540,7 +540,7 @@ class GraphQLBackend extends NgBackendCall {
       .asInstanceOf[Int]
   }
 
-  def sliceArrayWithArgs(arr: scala.collection.IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
+  def sliceArrayWithArgs(arr: scala.collection.Seq[JsValue], c: AstDirectiveContext[Unit]) = {
     val limit  = extractLimit(c, arr.length.some)
     val offset = extractOffset(c)
     arr.slice(offset, limit)

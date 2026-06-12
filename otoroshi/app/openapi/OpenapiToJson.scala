@@ -43,10 +43,10 @@ class OpenapiToJson(spec: JsValue) {
       }
   }
 
-  def containsOnlyRef(values: IndexedSeq[JsValue]): Boolean =
+  def containsOnlyRef(values: scala.collection.IndexedSeq[JsValue]): Boolean =
     values.forall(p => (p \ "$ref").as[String] != nullType)
 
-  def containsNullAndRef(values: IndexedSeq[JsValue]): Boolean =
+  def containsNullAndRef(values: scala.collection.IndexedSeq[JsValue]): Boolean =
     values.exists(p => (p \ "$ref").as[String] == nullType) &&
     values.exists(p => (p \ "$ref").as[String] != nullType)
 
@@ -176,8 +176,8 @@ class OpenapiToJson(spec: JsValue) {
             key,
             path,
             (out \ "oneOf").asOpt[JsArray] match {
-              case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value.toSeq) => out
-              case Some(arr) if containsOnlyRef(arr.value.toSeq)                            =>
+              case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value) => out
+              case Some(arr) if containsOnlyRef(arr.value)                            =>
                 Json.obj("type" -> (getRef(data, (arr.value.head \ "$ref").as[String]) \ "type").as[String])
               case None if (out \ "enum").isDefined                                   =>
                 out

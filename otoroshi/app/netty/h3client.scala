@@ -240,7 +240,7 @@ class NettyHttp3Client(val env: Env) {
               .headers()
               .names()
               .asScala
-              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString)))
+              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString).toSeq))
               .toMap
             trailerPromise.trySuccess(trailerHeaders)
             ReferenceCountUtil.release(frame)
@@ -251,7 +251,7 @@ class NettyHttp3Client(val env: Env) {
               .headers()
               .names()
               .asScala
-              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString)))
+              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString).toSeq))
               .toMap
             promise.trySuccess(Http3Response(status, headers, hotFlux, trailerPromise.future))
             ReferenceCountUtil.release(frame)

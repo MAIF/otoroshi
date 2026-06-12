@@ -539,7 +539,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool
-      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty))
+      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty[org.extism.sdk.HostFunction[? <: org.extism.sdk.HostUserData]]))
       .flatMap { vm =>
         attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
         vm.finitialize {

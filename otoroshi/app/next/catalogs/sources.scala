@@ -66,7 +66,7 @@ object SourceUtils {
       allResources: Seq[Resource],
       resolveGlob: Option[String => Future[Either[JsValue, Seq[String]]]] = None
   )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val rawPaths = deployArray.value.flatMap(_.asOpt[String])
+    val rawPaths = deployArray.value.flatMap(_.asOpt[String]).toSeq
     rawPaths
       .mapAsync { path =>
         if (isGlobPattern(path) && resolveGlob.isDefined) {
