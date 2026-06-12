@@ -564,7 +564,7 @@ class HttpHandler()(implicit env: Env) {
               val rawResponse         = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
-                cookies = resp.safeCookies(env),
+                cookies = resp.safeCookies(env).toSeq,
                 body = () => resp.bodyAsSource
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
@@ -657,7 +657,7 @@ class HttpHandler()(implicit env: Env) {
                   val otoroshiResponse = otoroshi.script.HttpResponse(
                     status = resp.status,
                     headers = _headersOut.toMap,
-                    cookies = resp.safeCookies(env),
+                    cookies = resp.safeCookies(env).toSeq,
                     body = () => resp.bodyAsSource
                   )
                   descriptor

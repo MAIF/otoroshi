@@ -901,7 +901,7 @@ class HttpClientFunction extends WorkflowFunction {
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
-            "cookies"   -> JsArray(resp.safeCookies(env).map(_.json)),
+            "cookies"   -> JsArray(resp.safeCookies(env).toSeq.map(_.json)),
             "body_str"  -> body_str,
             "body_json" -> body_json
           )

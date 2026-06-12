@@ -187,7 +187,7 @@ class TryItController(
                   "status"       -> status,
                   "headers"      -> headers,
                   "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
-                  "cookies"      -> JsArray(resp.safeCookies(env).map(c => JsonHelpers.wsCookieToJson(c))),
+                  "cookies"      -> JsArray(resp.safeCookies(env).toSeq.map(c => JsonHelpers.wsCookieToJson(c))),
                   "report"       -> report,
                   "curl"         -> curl
                 )

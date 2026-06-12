@@ -3248,7 +3248,7 @@ class ProxyEngine() extends RequestHandler {
                   case _                              => hds
                 }
               },
-              cookies = response.safeCookies(env),
+              cookies = response.safeCookies(env).toSeq,
               body = fbody
             ),
             response.some

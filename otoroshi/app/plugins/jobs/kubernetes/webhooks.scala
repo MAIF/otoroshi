@@ -62,7 +62,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
       .future
   }
 
-  def error(uid: String, errors: Seq[(JsPath, Seq[JsonValidationError])]): Future[Result] = {
+  def error(uid: String, errors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]): Future[Result] = {
     Results
       .Ok(
         Json.obj(
