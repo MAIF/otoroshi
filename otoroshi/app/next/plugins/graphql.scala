@@ -912,7 +912,7 @@ class GraphQLBackend extends NgBackendCall {
       case (k, v)         => (k, String.valueOf(v))
     }
 
-    queryArgs.foldLeft(c.arg(urlArg))((u, value) =>
+    queryArgs.foldLeft(c.arg(urlArg): String)((u, value) =>
       GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
         case value._1 => value._2
         case v        => v

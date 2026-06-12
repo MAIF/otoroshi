@@ -69,7 +69,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
           ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
         val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
         val newBodySource = Source.future(
-          ctx.otoroshiResponse.body
+          (ctx.otoroshiResponse.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
             .applyOnIf(isGzip)(src => src.via(GzipFlow.gunzip()))
             .runFold(ByteString.empty)(_ ++ _)
             .map { bodyRaw =>

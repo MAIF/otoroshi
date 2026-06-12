@@ -3172,7 +3172,7 @@ class ProxyEngine() extends RequestHandler {
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
       val requestStreamStart                             = System.currentTimeMillis()
-      val theBody                                        = request.body
+      val theBody                                        = (request.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
         .applyOn { source =>
           source.alsoTo(Sink.onComplete { case _ =>
             val requestStreamDuration = System.currentTimeMillis() - requestStreamStart
@@ -3625,7 +3625,7 @@ class ProxyEngine() extends RequestHandler {
       }
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
-    val theBody = response.body
+    val theBody = (response.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
       .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { body =>
         body.map { chunk =>
           counterOut.addAndGet(chunk.size)
