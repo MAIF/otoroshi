@@ -367,7 +367,7 @@ object RouteScoreAtDateItem {
   def from(json: JsValue) = RouteScoreAtDateItem(
     groupId = json.select("group_id").as[String],
     routeId = json.select("id").as[String],
-    scores = json.select("sections").as[JsArray].value.map(RouteScoreByDateAndSection.from)
+    scores = json.select("sections").as[JsArray].value.toSeq.map(RouteScoreByDateAndSection.from)
   )
 }
 
@@ -381,7 +381,7 @@ case class RouteScoreAtDate(date: Long, routes: Seq[RouteScoreAtDateItem]) {
 object RouteScoreAtDate {
   def from(o: JsValue) = RouteScoreAtDate(
     date = o.select("date").as[Long],
-    routes = o.select("routes").as[JsArray].value.map(RouteScoreAtDateItem.from)
+    routes = o.select("routes").as[JsArray].value.toSeq.map(RouteScoreAtDateItem.from)
   )
 }
 

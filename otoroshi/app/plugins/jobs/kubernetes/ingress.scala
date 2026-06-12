@@ -874,7 +874,7 @@ object KubernetesIngressToDescriptor {
                 val serviceName                    = kubeService.name
                 val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
                     path.backend.servicePort match {
                       case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
                       case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -911,7 +911,7 @@ object KubernetesIngressToDescriptor {
                               case _              => Seq.empty
                             }
                           case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                             if (subsets.isEmpty) {
                               Seq.empty
                             } else {
@@ -1022,7 +1022,7 @@ object KubernetesIngressToDescriptor {
                 val serviceName                    = kubeService.name
                 val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
                     path.backend.servicePort match {
                       case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
                       case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1059,7 +1059,7 @@ object KubernetesIngressToDescriptor {
                               case _              => Seq.empty
                             }
                           case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                             if (subsets.isEmpty) {
                               Seq.empty
                             } else {
@@ -1162,7 +1162,7 @@ object KubernetesIngressToDescriptor {
     val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
     val serviceName                    = kubeService.name
     val serviceNamespace               = kubeService.namespace
-    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
       port match {
         case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
         case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1215,7 +1215,7 @@ object KubernetesIngressToDescriptor {
                   case _              => Seq.empty
                 }
               case Some(kubeEndpoint) => {
-                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                 if (subsets.isEmpty) {
                   Seq.empty
                 } else {

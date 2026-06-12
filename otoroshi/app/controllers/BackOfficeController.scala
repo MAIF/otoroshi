@@ -651,7 +651,7 @@ class BackOfficeController(
                     val id                 = (app \ "id").as[String]
                     val name               = (app \ "name").as[String]
                     val hosts: Seq[String] =
-                      (app \ "vhosts").as[JsArray].value.map(vhost => (vhost \ "fqdn").as[String])
+                      (app \ "vhosts").as[JsArray].value.toSeq.map(vhost => (vhost \ "fqdn").as[String])
                     val preferedHost       =
                       hosts.filterNot(h => h.contains("cleverapps.io")).headOption.getOrElse(hosts.head)
                     val service            =

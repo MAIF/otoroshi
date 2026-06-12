@@ -184,7 +184,7 @@ object KubernetesConfig {
             ),
           token = None,
           clientCert =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 defaultUser
                   .select("user")
@@ -193,7 +193,7 @@ object KubernetesConfig {
                   .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
             },
           clientCertKey =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 defaultUser
                   .select("user")
@@ -202,7 +202,7 @@ object KubernetesConfig {
                   .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
             },
           userPassword =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 for {
                   username <- (defaultUser \ "user" \ "username").asOpt[String]
@@ -210,7 +210,7 @@ object KubernetesConfig {
                 } yield s"$username:$password"
             },
           caCert =
-            (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map {
+            (json \ "clusters").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextCluster).map {
               defaultUser =>
                 {
                   val base64Cert = (defaultUser \ "cluster" \ "certificate-authority-data").as[String]

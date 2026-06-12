@@ -826,7 +826,7 @@ object HttpSigKeyResolver {
             else
               Try {
                 val obj  = Json.parse(resp.body).as[JsObject]
-                val arr  = (obj \ "keys").as[JsArray].value.toList
+                val arr  = (obj \ "keys").as[JsArray].value.toSeq.toList
                 val keys = arr.flatMap { k =>
                   val jwk = JWK.parse(Json.stringify(k))
                   Option(jwk.getKeyID).map(kid => kid -> jwk)

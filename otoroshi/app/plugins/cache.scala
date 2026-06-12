@@ -147,7 +147,7 @@ class ResponseCache extends RequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }

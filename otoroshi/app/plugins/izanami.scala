@@ -318,7 +318,7 @@ case class IzanamiCanaryRoutingConfig(
 object IzanamiCanaryRoutingConfig {
   def fromJson(json: JsValue): IzanamiCanaryRoutingConfig = {
     IzanamiCanaryRoutingConfig(
-      routes = json.select("routes").asArray.value.map { item =>
+      routes = json.select("routes").asArray.value.toSeq.map { item =>
         IzanamiCanaryRoutingConfigRoute(
           route = item.select("route").asString,
           default = item.select("default").asString,

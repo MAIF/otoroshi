@@ -1191,7 +1191,7 @@ class ClientCredentialService extends RequestSink {
               .foreach(r => authority_builder.add_rule(r))
 
             def fromApiKey(name: String): Seq[String] =
-              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty).toSeq
+              apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
 
             fromApiKey("biscuit_checks")
               .map(Parser.check)

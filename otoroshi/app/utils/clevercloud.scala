@@ -278,6 +278,6 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   def appEnv(orga: String, id: String)(implicit ec: ExecutionContext): Future[Map[String, String]] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/env").fast
-      .map(_.json.as[JsArray].value.map(obj => ((obj \ "name").as[String], (obj \ "value").as[String])).toMap)
+      .map(_.json.as[JsArray].value.toSeq.map(obj => ((obj \ "name").as[String], (obj \ "value").as[String])).toMap)
 
 }

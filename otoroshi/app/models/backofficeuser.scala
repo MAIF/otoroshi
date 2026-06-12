@@ -116,7 +116,7 @@ object BackOfficeUser {
               .asOpt[JsObject]
               .map { obj =>
                 obj.value.mapValues { arr =>
-                  arr.asArray.value
+                  arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
                     }

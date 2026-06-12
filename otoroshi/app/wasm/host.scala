@@ -403,7 +403,7 @@ object Http extends AwaitCapable {
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.plugins.Keys.PreExtractedRequestTargetsKey,
-      json => json.asArray.value.map(v => NgTarget.fmt.reads(v).get)
+      json => json.asArray.value.toSeq.map(v => NgTarget.fmt.reads(v).get)
     ),
     otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.mapValues(_.asString).toMap)
   )

@@ -107,7 +107,7 @@ class RBAC extends NgAccessValidator {
 
   private def tryParse(value: String): Seq[String] = {
     if (value.trim.startsWith("[") && value.trim.endsWith("]")) {
-      Try(Json.parse(value).asArray.value.map(_.asString)).getOrElse(Seq.empty).toSeq
+      Try(Json.parse(value).asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
     } else {
       value.split(",").map(_.trim)
     }
@@ -137,7 +137,7 @@ class RBAC extends NgAccessValidator {
   private def checkRightsFromApikey(apikey: ApiKey, config: RBACConfig): Boolean = {
     val rolesTags = apikey.tags.filter(_.startsWith(config.prefix)).map(_.replaceFirst(config.prefix, ""))
     val rolesMeta =
-      apikey.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty).toSeq
+      apikey.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
 
     val pathMatch = config.apikeyPath.flatMap(p => apikey.json.atPath(p).asOpt[JsValue]) match {
       case Some(JsString(value)) => {
@@ -156,7 +156,7 @@ class RBAC extends NgAccessValidator {
   private def checkRightsFromUser(user: PrivateAppsUser, config: RBACConfig): Boolean = {
     val rolesTags = user.tags.filter(_.startsWith(config.prefix)).map(_.replaceFirst(config.prefix, ""))
     val rolesMeta =
-      user.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty).toSeq
+      user.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
     val dataMatch = user.otoroshiData.exists { otodata =>
       otodata.select(config.roles).asOpt[JsValue] match {
         case Some(JsString(value)) => {

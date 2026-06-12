@@ -1265,7 +1265,7 @@ trait CrudControllerHelper[Entity <: EntityLocationSupport, Error] extends CrudH
 
   def deleteEntitiesAction() =
     ApiAction.async(cc.parsers.json) { ctx =>
-      val ids = (ctx.request.body \ "ids").as[JsArray].value.map(_.as[String])
+      val ids = (ctx.request.body \ "ids").as[JsArray].value.toSeq.map(_.as[String])
       deleteEntities(ids, ctx)
     }
 }

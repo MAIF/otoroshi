@@ -845,7 +845,7 @@ class GraphQLBackend extends NgBackendCall {
         c.ctx.field.toAst.fieldType match {
           case ListType(_, __) =>
             sliceArrayWithArgs(
-              Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value,
+              Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value.toSeq,
               c
             )
           case _               => c.arg(jsonDataArg)

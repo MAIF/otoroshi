@@ -2193,12 +2193,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
         val list = scala.collection.mutable.ListBuffer.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -2208,12 +2208,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -2978,12 +2978,12 @@ class SwappableInMemoryDataStores(
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
         val list = scala.collection.mutable.ListBuffer.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -2993,12 +2993,12 @@ class SwappableInMemoryDataStores(
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -3249,8 +3249,8 @@ class SwappableInMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {

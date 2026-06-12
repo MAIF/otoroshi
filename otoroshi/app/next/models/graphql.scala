@@ -110,7 +110,7 @@ object GraphQLFormats {
         val requiredField = fieldType.select("required").asOpt[Boolean].getOrElse(false)
         val fullFieldType = if (requiredField) NotNullType(NamedType(`type`)) else NamedType(`type`)
 
-        val directives = field.select("directives").as[JsArray].value.map(_.as[JsObject])
+        val directives = field.select("directives").as[JsArray].value.toSeq.map(_.as[JsObject])
 
         Try {
           JsSuccess(
