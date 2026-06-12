@@ -127,7 +127,7 @@ class RBAC extends NgAccessValidator {
               matches(tryParse(value), config)
             }
           }
-          case Some(JsArray(value))  => matches(value.map(_.asString), config)
+          case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
           case _                     => false
         })
       }
@@ -147,7 +147,7 @@ class RBAC extends NgAccessValidator {
           matches(tryParse(value), config)
         }
       }
-      case Some(JsArray(value))  => matches(value.map(_.asString), config)
+      case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
       case _                     => false
     }
     pathMatch || matches(rolesTags, config) || matches(rolesMeta, config)
@@ -166,7 +166,7 @@ class RBAC extends NgAccessValidator {
             matches(tryParse(value), config)
           }
         }
-        case Some(JsArray(value))  => matches(value.map(_.asString), config)
+        case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
         case _                     => false
       }
     }
@@ -178,7 +178,7 @@ class RBAC extends NgAccessValidator {
           matches(tryParse(value), config)
         }
       }
-      case Some(JsArray(value))  => matches(value.map(_.asString), config)
+      case Some(JsArray(value))  => matches(value.map(_.asString).toSeq, config)
       case _                     => false
     }
     pathMatch || dataMatch || matches(rolesTags, config) || matches(rolesMeta, config)

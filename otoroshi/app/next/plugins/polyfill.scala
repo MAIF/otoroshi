@@ -85,7 +85,7 @@ class PolyfillIoReplacer extends NgRequestTransformer {
               .exists(url => src.startsWith(url))
           }
         if (badSrcs.nonEmpty) {
-          sendAlert(ctx, htmlStr, badSrcs.map(_._1))
+          sendAlert(ctx, htmlStr, badSrcs.map(_._1).toSeq)
         }
         badSrcs.foreach { case (src, elem) =>
           val sourceUri = Uri(src)
@@ -148,7 +148,7 @@ class PolyfillIoDetector extends NgRequestTransformer {
               .exists(url => src.startsWith(url))
           )
         if (badSrcs.nonEmpty) {
-          sendAlert(ctx, htmlStr, badSrcs)
+          sendAlert(ctx, htmlStr, badSrcs.toSeq)
         }
         ctx.otoroshiResponse.copy(body = bodyRaw.chunks(16 * 32)).right
       }

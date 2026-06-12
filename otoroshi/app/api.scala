@@ -41,7 +41,7 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
-import play.core.server.{AkkaHttpServerComponents, ServerConfig}
+import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 
@@ -398,7 +398,7 @@ object OtoroshiEnvHolder {
 }
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
-    extends AkkaHttpServerComponents
+    extends PekkoHttpServerComponents
     with BuiltInComponents
     with AssetsComponents
     with AhcWSComponents

@@ -263,7 +263,7 @@ class ForwardTrafficHandler extends RequestHandler {
                 val res = Status(resp.status)
                   .chunked(resp.bodyAsSource)
                   .withHeaders(headersOut: _*)
-                  .withCookies(cookiesOut: _*)
+                  .withCookies(cookiesOut.toSeq: _*)
                 ctypeOut match {
                   case None      => res
                   case Some(ctp) => res.as(ctp)
@@ -280,7 +280,7 @@ class ForwardTrafficHandler extends RequestHandler {
                     )
                   )
                   .withHeaders(headersOut: _*)
-                  .withCookies(cookiesOut: _*)
+                  .withCookies(cookiesOut.toSeq: _*)
                 ctypeOut match {
                   case None      => res
                   case Some(ctp) => res.as(ctp)

@@ -51,7 +51,7 @@ class StateExporter extends Job {
     .some
 
   override def description: Option[String] =
-    s"""This job send an event containing the full otoroshi export every n seconds""".stripMargin.some
+    s"""This job send an event containing the full otoroshi `export` every n seconds""".stripMargin.some
 
   override def jobVisibility: JobVisibility = JobVisibility.UserLand
 
@@ -93,14 +93,14 @@ class StateExporter extends Job {
           }
         }
       case _     =>
-        env.datastores.globalConfigDataStore.fullExport().map { export =>
-          FullStateExport(UUID.randomUUID().toString, DateTime.now(), "json", export).toAnalytics()
+        env.datastores.globalConfigDataStore.fullExport().map { `export` =>
+          FullStateExport(UUID.randomUUID().toString, DateTime.now(), "json", `export`).toAnalytics()
         }
     }
   }
 }
 
-case class FullStateExport(id: String, timestamp: DateTime, format: String, export: JsValue) extends AnalyticEvent {
+case class FullStateExport(id: String, timestamp: DateTime, format: String, `export`: JsValue) extends AnalyticEvent {
 
   override def `@type`: String               = "FullStateExport"
   override def `@id`: String                 = id
@@ -119,6 +119,6 @@ case class FullStateExport(id: String, timestamp: DateTime, format: String, expo
     "@service"   -> `@service`,
     "@env"       -> "prod",
     "format"     -> format,
-    "export"     -> export
+    "export"     -> `export`
   )
 }

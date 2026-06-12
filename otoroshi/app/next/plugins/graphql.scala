@@ -677,7 +677,7 @@ class GraphQLBackend extends NgBackendCall {
             case d: Boolean       => JsBoolean(d)
             case Some(s: String)  => JsString(s)
             case Some(i: Int)     => JsNumber(i)
-            case Some(f: Float)   => JsNumber(f)
+            case Some(f: Float)   => JsNumber(f.toDouble)
             case Some(d: Boolean) => JsBoolean(d)
             case a                => JsString(String.valueOf(a))
           }))

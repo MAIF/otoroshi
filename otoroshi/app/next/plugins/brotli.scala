@@ -147,7 +147,7 @@ class BrotliResponseCompressor extends NgRequestTransformer {
   private def varyWith(rh: Map[String, String], headerValues: String*): (String, String) = {
     val newValue = rh.getIgnoreCase(VARY) match {
       case Some(existing) if existing.nonEmpty =>
-        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase)(collection.breakOut)
+        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase).toSet
         val newValuesToAdd           = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
         s"$existing${newValuesToAdd.map(v => s",$v").mkString}"
       case _                                   =>

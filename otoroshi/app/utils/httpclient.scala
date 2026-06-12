@@ -16,7 +16,7 @@ import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, Ou
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.org.apache.pekko.AkkaSSLConfig
+import com.typesafe.sslconfig.pekko.PekkoSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
@@ -679,7 +679,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
-  private[utils] val akkaSSLConfig: AkkaSSLConfig   = AkkaSSLConfig(system).withSettings(
+  private[utils] val akkaSSLConfig: PekkoSSLConfig   = PekkoSSLConfig(system).withSettings(
     config.ssl
       // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
@@ -689,7 +689,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       )
       .withDefault(false)
   )
-  private[utils] val akkaSSLLooseConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
+  private[utils] val akkaSSLLooseConfig: PekkoSSLConfig = PekkoSSLConfig(system).withSettings(
     config.ssl
       // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
@@ -735,7 +735,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
     // TODO: fix warning with
-    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/AkkaSSLConfig.scala#L83-L109
+    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/PekkoSSLConfig.scala#L83-L109
     // https://github.com/lightbend/ssl-config/blob/master/ssl-config-core/src/main/scala/com/typesafe/sslconfig/ssl/SSLContextBuilder.scala#L99-L127
     clientCerts match {
       case certs if (clientCerts ++ trustedCerts).isEmpty  => {

@@ -977,7 +977,7 @@ object ApiSubscription {
         .map(_.split(SUBSCRIPTION_METADATA_KEY))
         .getOrElse(Array.empty[String])
 
-    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key))
+    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key)).toMap
   }
 
   private def removeManagedTags(
