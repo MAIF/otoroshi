@@ -1270,7 +1270,7 @@ class GraphQLProxy extends NgBackendCall {
             root = initialData,
             exceptionHandler = exceptionHandler,
             queryValidator = new QueryValidator() {
-              override def validateQuery(schema: Schema[_, _], queryAst: Document): Vector[Violation] = {
+              override def validateQuery(schema: Schema[?, ?], queryAst: Document, variableValues: Map[String, sangria.execution.VariableValue], errorsLimit: Option[Int]): Vector[Violation] = {
                 val violations = QueryValidator.default.validateQuery(schema, queryAst, Map.empty, None)
                 if (violations.nonEmpty) {
                   throw ViolationsException(violations.map(_.errorMessage))

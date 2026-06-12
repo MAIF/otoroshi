@@ -132,6 +132,8 @@ case class NettyWsClientRequest(
   override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest                     =
     copy(body = evidence$1.transform(body))
   override def withMethod(method: String): WSRequest                                                     = copy(method = method)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
   override def get(): Future[WSResponse]                                                                 = copy(method = "GET").execute()
   override def delete(): Future[WSResponse]                                                              = copy(method = "DELETE").execute()
   override def head(): Future[WSResponse]                                                                = copy(method = "HEAD").execute()

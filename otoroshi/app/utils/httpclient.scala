@@ -1254,6 +1254,8 @@ case class AkkaWsClientRequest(
     copy(body = evidence$1.transform(body))
 
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
 
   def stream(): Future[WSResponse] = {
     val certs: Seq[Cert]        = targetOpt

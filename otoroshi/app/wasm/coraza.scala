@@ -26,7 +26,6 @@ import play.api.libs.typedmap.TypedKey
 import play.api.mvc
 import play.api.mvc.Results
 
-import scala.collection.Seq
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
@@ -539,7 +538,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool
-      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => scala.collection.immutable.Seq.empty[org.extism.sdk.HostFunction[? <: org.extism.sdk.HostUserData]]))
+      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty[org.extism.sdk.HostFunction[? <: org.extism.sdk.HostUserData]]))
       .flatMap { vm =>
         attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
         vm.finitialize {
