@@ -467,7 +467,7 @@ class GraphQLBackend extends NgBackendCall {
       case v: Boolean    => Right(JsBoolean(v))
       case v: Int        => Right(JsNumber(v))
       case v: Long       => Right(JsNumber(v))
-      case v: Float      => Right(JsNumber(v))
+      case v: Float      => Right(JsNumber(v.toDouble))
       case v: Double     => Right(JsNumber(v))
       case v: BigInt     => Right(JsNumber(v.intValue()))
       case v: BigDecimal => Right(JsNumber(v))
@@ -540,7 +540,7 @@ class GraphQLBackend extends NgBackendCall {
       .asInstanceOf[Int]
   }
 
-  def sliceArrayWithArgs(arr: IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
+  def sliceArrayWithArgs(arr: scala.collection.IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
     val limit  = extractLimit(c, arr.length.some)
     val offset = extractOffset(c)
     arr.slice(offset, limit)
@@ -673,7 +673,7 @@ class GraphQLBackend extends NgBackendCall {
           acc + (curr._1 -> (curr._2 match {
             case s: String        => JsString(s)
             case i: Int           => JsNumber(i)
-            case f: Float         => JsNumber(f)
+            case f: Float         => JsNumber(f.toDouble)
             case d: Boolean       => JsBoolean(d)
             case Some(s: String)  => JsString(s)
             case Some(i: Int)     => JsNumber(i)

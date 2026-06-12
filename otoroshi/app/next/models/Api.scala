@@ -971,11 +971,11 @@ object ApiSubscription {
 
   private def removeManagedMetadata(currentApikeyMetadata: Map[String, String]): Map[String, String] = {
     val managed_keys: Seq[String] =
-      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
+      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String]) ++
       currentApikeyMetadata
         .get(SUBSCRIPTION_METADATA_KEY)
         .map(_.split(SUBSCRIPTION_METADATA_KEY))
-        .getOrElse(Array.empty)
+        .getOrElse(Array.empty[String])
 
     currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key))
   }
@@ -985,8 +985,8 @@ object ApiSubscription {
       currentApikeyTags: Seq[String]
   ): Seq[String] = {
     val managed_keys: Seq[String] =
-      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
-      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty)
+      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String]) ++
+      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty[String])
 
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }
