@@ -1248,7 +1248,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       }
       case Some(body) if request.contentType.contains("application/x-www-form-urlencoded") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-          val values: Map[String, String]      = FormUrlEncodedParser.parse(bodyRaw.utf8String).mapValues(_.last)
+          val values: Map[String, String]      = FormUrlEncodedParser.parse(bodyRaw.utf8String).mapValues(_.last).toMap
           val default                          =
             defaultEntity
               .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
@@ -1293,7 +1293,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //      case arr @ JsArray(_) => {
 //        val prefix     = filterPrefix
 //        val filters    = request.queryString
-//          .mapValues(_.last)
+//          .mapValues(_.last).toMap
 //          .collect {
 //            case v if prefix.isEmpty                                  => v
 //            case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -1728,7 +1728,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   }
 
   // GET /apis/metrics
-  def metrics() = ApiAction { ctx =>
+  def metrics() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     val format      = ctx.request.getQueryString("format")
     val filter      = ctx.request.getQueryString("filter")
     val acceptsJson = ctx.request.accepts("application/json")
@@ -1741,7 +1741,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   }
 
   // GET /apis/entities
-  def entities() = ApiAction { ctx =>
+  def entities() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     if (ctx.request.getQueryString("schema").contains("false")) {
       Ok(
         Json.obj(
@@ -2305,7 +2305,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // GET /apis/:group/:version/:entity/_template
   def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      val templ = resource.access.template(version, ctx.request.queryString.mapValues(_.last), ctx.some)
+      val templ = resource.access.template(version, ctx.request.queryString.mapValues(_.last).toMap, ctx.some)
       if (templ == Json.obj()) {
         NotFound(Json.obj("error" -> "template not found !")).vfuture
       } else {
@@ -2587,7 +2587,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // Documentation resources
 
-  def openapiJson() = DocAction { ctx =>
+  def openapiJson() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     val body = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
@@ -2596,7 +2596,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Ok(body).as("application/json").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapiYaml() = DocAction { ctx =>
+  def openapiYaml() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     val body = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
@@ -2605,7 +2605,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Ok(Yaml.write(Json.parse(body))).as("application/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def openapi() = DocAction { ctx =>
+  def openapi() = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     val body     = otoroshi.api.OpenApi.generate(
       env,
       ctx.request.getQueryString("version"),
@@ -2689,7 +2689,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     Ok(body).as("text/html")
   }
 
-  def openapiUi = DocAction { ctx =>
+  def openapiUi = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     Ok(
       otoroshi.views.html.oto.openapiFrame(
         s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json?doc_secret=${ctx.sec}"
@@ -2756,11 +2756,11 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
     })
   }
 
-  def pluginsJson = DocAction { ctx =>
+  def pluginsJson = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     Ok(pluginsRaw()).withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 
-  def pluginsYaml = DocAction { ctx =>
+  def pluginsYaml = DocAction { (ctx: otoroshi.api.DocActionCtx[play.api.mvc.AnyContent]) =>
     Ok(Yaml.write(pluginsRaw())).as("text/yaml").withHeaders("Access-Control-Allow-Origin" -> "*")
   }
 }

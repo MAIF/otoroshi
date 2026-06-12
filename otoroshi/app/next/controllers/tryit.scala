@@ -180,7 +180,7 @@ class TryItController(
           respF.flatMap { resp =>
             val report: JsValue = env.proxyState.report(requestId).map(_.json).getOrElse(JsNull)
             val status          = resp.status
-            val headers         = resp.headers.mapValues(_.last)
+            val headers         = resp.headers.mapValues(_.last).toMap
             resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { respBodyRaw =>
               Ok(
                 Json.obj(

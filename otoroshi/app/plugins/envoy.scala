@@ -275,7 +275,7 @@ class EnvoyControlPlane extends RequestTransformer {
     def httpsListener(id: String, port: Int, services: Seq[ServiceDescriptor], certificates: Seq[Cert]): JsObject = {
 
       // TODO: try to group with wildcard certificates
-      val chains = services.flatMap(s => s.allHosts.map(h => (h, s))).groupBy(_._1).mapValues(_.map(_._2)).map {
+      val chains = services.flatMap(s => s.allHosts.map(h => (h, s))).groupBy(_._1).mapValues(_.map(_._2)).toMap.map {
         case (host, servs) =>
           val certs =
             certificates.filter(_.matchesDomain(host)).sortWith((c1, c2) => c1.allDomains.exists(_.contains("*")))

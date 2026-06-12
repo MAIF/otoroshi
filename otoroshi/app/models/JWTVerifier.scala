@@ -57,9 +57,9 @@ case class JwtInjection(
   def asJson: JsValue =
     Json.obj(
       "token"             -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
-      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
+      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply).toMap),
       "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
-      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
+      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply).toMap),
       "removeCookies"     -> JsArray(this.removeCookies.map(JsString.apply))
     )
 }
@@ -827,7 +827,7 @@ case class MappingSettings(
 )                                                                                          extends AsJson                      {
   override def asJson =
     Json.obj(
-      "map"    -> JsObject(map.mapValues(JsString.apply)),
+      "map"    -> JsObject(map.mapValues(JsString.apply).toMap),
       "values" -> values,
       "remove" -> JsArray(remove.map(JsString.apply))
     )
@@ -891,7 +891,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
   }
   def asVerification(algorithm: Algorithm, attrs: TypedMap)(implicit env: Env): Verification = {
     val verification = fields
-      .mapValues(_.evaluateEl(attrs))
+      .mapValues(_.evaluateEl(attrs)).toMap
       .foldLeft(
         JWT
           .require(algorithm)
@@ -1063,8 +1063,8 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
 
   override def asJson =
     Json.obj(
-      "fields"      -> JsObject(this.fields.mapValues(JsString.apply)),
-      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply))
+      "fields"      -> JsObject(this.fields.mapValues(JsString.apply).toMap),
+      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply).toMap)
     )
 }
 

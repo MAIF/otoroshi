@@ -226,7 +226,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
             doStartFlow(ctx, Json.parse(bodyRaw.utf8String).asObject, config, oauthConfig)
           }
         } else {
-          doStartFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json)), config, oauthConfig)
+          doStartFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json).toMap), config, oauthConfig)
         }
       }
       case None                                                                   =>
@@ -393,7 +393,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
             doEndFlow(ctx, Json.parse(bodyRaw.utf8String).asObject, config, oauthConfig)
           }
         } else {
-          doEndFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json)), config, oauthConfig)
+          doEndFlow(ctx, JsObject(ctx.request.queryParams.mapValues(_.json).toMap), config, oauthConfig)
         }
       }
       case None                                                                   =>

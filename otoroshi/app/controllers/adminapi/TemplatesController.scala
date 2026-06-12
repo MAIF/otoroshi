@@ -571,7 +571,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             }
             case Some(res) => {
               res.access
-                .template("v1", request.queryString.mapValues(_.last))
+                .template("v1", request.queryString.mapValues(_.last).toMap)
                 .as[JsObject]
                 .deepMerge(resource)
                 .vfuture

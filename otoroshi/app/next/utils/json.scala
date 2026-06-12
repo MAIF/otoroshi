@@ -80,7 +80,7 @@ object JsonHelpers {
     val pathparams: JsObject = JsObject(
       attrs
         .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
-        .map(_.pathParams.toMap.mapValues(_.json))
+        .map(_.pathParams.toMap.mapValues(_.json).toMap)
         .getOrElse(Map.empty[String, JsValue])
     )
     Json.obj(

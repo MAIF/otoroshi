@@ -170,7 +170,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     }
   }
 
-  def initiateStoredNgBackend() = ApiAction { ctx =>
+  def initiateStoredNgBackend() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     val defaultBackend = StoredNgBackend(
       location = EntityLocation.default,
       id = s"backend_${IdGenerator.uuid}",

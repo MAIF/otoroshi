@@ -189,7 +189,7 @@ class OAuth2Caller extends RequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(body.mapValues(JsString.apply))
+            val jsonBody         = JsObject(body.mapValues(JsString.apply).toMap)
             val token            = body.getOrElse("access_token", "--")
             val expires_in: Long = body.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime

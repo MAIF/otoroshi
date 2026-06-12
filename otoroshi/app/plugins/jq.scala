@@ -114,7 +114,7 @@ class JqBodyTransformer extends RequestTransformer {
           .applyOnWithOpt(ctx.apikey) { case (builder, user) =>
             builder.putArgJson("apikey", user.lightJson.stringify)
           }
-          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply)).stringify)
+          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply).toMap).stringify)
           .putArgJson(
             "headers",
             JsObject(ctx.request.headers.toSimpleMap.map { case (key, value) =>
@@ -180,7 +180,7 @@ class JqBodyTransformer extends RequestTransformer {
           .applyOnWithOpt(ctx.apikey) { case (builder, user) =>
             builder.putArgJson("apikey", user.lightJson.stringify)
           }
-          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply)).stringify)
+          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply).toMap).stringify)
           .putArgJson(
             "headers",
             JsObject(ctx.request.headers.toSimpleMap.map { case (key, value) =>

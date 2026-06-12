@@ -3242,7 +3242,7 @@ class ProxyEngine() extends RequestHandler {
           BackendCallResponse(
             NgPluginHttpResponse(
               status = response.status,
-              headers = response.headers.mapValues(_.last).applyOnIf(shouldHaveTrailers) { hds =>
+              headers = response.headers.mapValues(_.last).toMap.applyOnIf(shouldHaveTrailers) { hds =>
                 idOpt match {
                   case Some(id) if shouldHaveTrailers => hds ++ Map("otoroshi-netty-trailers" -> id)
                   case _                              => hds
@@ -3279,13 +3279,13 @@ class ProxyEngine() extends RequestHandler {
 
     val rawResponse      = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
     val otoroshiResponse = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
@@ -4013,7 +4013,7 @@ class ProxyEngine() extends RequestHandler {
           ),
           status = rawResponse.status,
           headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
-          headersOut = rawResponse.headers.mapValues(_.last).toSeq.map(Header.apply),
+          headersOut = rawResponse.headers.mapValues(_.last).toMap.toSeq.map(Header.apply),
           otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
           otoroshiHeadersOut = response.headers.toSeq.map(Header.apply),
           extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),

@@ -438,7 +438,7 @@ case class ApikeyAccessModeConfiguration(
       "rotation"                -> rotation.json,
       "validUntil"              -> validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
       "tags"                    -> JsArray(tags.map(JsString.apply)),
-      "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+      "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap)
     )
   }
 }

@@ -286,7 +286,7 @@ object Http extends AwaitCapable {
                 .execute()
                 .map { res =>
                   val body                         = res.bodyAsBytes.encodeBase64.utf8String
-                  val headers: Map[String, String] = res.headers.mapValues(_.head)
+                  val headers: Map[String, String] = res.headers.mapValues(_.head).toMap
                   Json.obj(
                     "status"      -> res.status,
                     "headers"     -> headers,
@@ -383,7 +383,7 @@ object Http extends AwaitCapable {
   lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.ResponseAddHeadersKey,
-      json => json.asObject.value.mapValues(_.asString).toSeq
+      json => json.asObject.value.mapValues(_.asString).toMap.toSeq
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.JwtInjectionKey,
@@ -405,7 +405,7 @@ object Http extends AwaitCapable {
       otoroshi.plugins.Keys.PreExtractedRequestTargetsKey,
       json => json.asArray.value.map(v => NgTarget.fmt.reads(v).get)
     ),
-    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.mapValues(_.asString))
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.mapValues(_.asString).toMap)
   )
     .map(s => (s.key.displayName, s))
     .collect { case (Some(k), s) =>

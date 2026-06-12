@@ -122,7 +122,7 @@ object BackOfficeUser {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }
               .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -147,7 +147,7 @@ object BackOfficeUser {
         "metadata"              -> o.metadata,
         "tags"                  -> JsArray(o.tags.map(JsString.apply)),
         "rights"                -> o.rights.json,
-        "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
+        "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
       )
   }
 }

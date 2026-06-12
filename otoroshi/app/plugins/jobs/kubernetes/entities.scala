@@ -170,7 +170,7 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   lazy val theType: String                         = (raw \ "type").as[String]
   lazy val base64Data: Map[String, String]         = (raw \ "data").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val data                                    = base64Data.mapValues(v => new String(OtoroshiClaim.decoder.decode(v)))
+  lazy val data                                    = base64Data.mapValues(v => new String(OtoroshiClaim.decoder.decode(v))).toMap
   lazy val stringData: Option[Map[String, String]] = (raw \ "stringData").asOpt[Map[String, String]]
   lazy val hasStringData: Boolean                  = stringData.isDefined
   def cert: KubernetesCertSecret                   = KubernetesCertSecret(raw)

@@ -122,7 +122,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -144,7 +144,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -175,7 +175,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -204,7 +204,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
           .Status(resp.status)(resp.json)
           .withHeaders(
             resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
               .toSeq: _*
           )
@@ -621,7 +621,7 @@ class IzanamiV2Proxy extends NgBackendCall {
           BackendCallResponse(
             NgPluginHttpResponse(
               resp.status,
-              resp.headers.mapValues(_.last),
+              resp.headers.mapValues(_.last).toMap,
               Seq.empty,
               ByteString(Json.stringify(resp.json)).chunks(16 * 1024)
             ),

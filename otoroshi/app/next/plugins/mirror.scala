@@ -114,7 +114,7 @@ case class NgMirroringEvent(
         "mirroredBody"            -> ctx.mirroredBody.get().utf8String,
         "mirroredResponse"        -> Json.obj(
           "status"  -> ctx.mirroredResp.get().status,
-          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last),
+          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last).toMap,
           "cookies" -> JsArray(
             ctx.mirroredResp
               .get()

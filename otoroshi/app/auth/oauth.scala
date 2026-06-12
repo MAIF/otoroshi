@@ -97,7 +97,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray))
+            .map(_.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights"),
@@ -115,7 +115,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }.toMap
             }
@@ -249,13 +249,13 @@ case class GenericOauth2ModuleConfig(
       "refreshTokens"                 -> this.refreshTokens,
       "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"                   -> superAdmins,
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json).toMap),
       "dataOverride"                  -> JsObject(dataOverride),
       "otoroshiRightsField"           -> this.otoroshiRightsField,
       "allowedUsers"                  -> this.allowedUsers,
       "deniedUsers"                   -> this.deniedUsers,
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+        JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
       })
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)

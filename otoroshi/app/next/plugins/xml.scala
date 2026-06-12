@@ -435,7 +435,7 @@ class SOAPAction extends NgBackendCall {
           .execute()
           .map { resp =>
             val headers = resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .toSeq
               .filterNot(_._1 == "Content-Type")
               .filterNot(_._1 == "Content-Length")

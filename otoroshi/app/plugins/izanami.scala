@@ -180,7 +180,7 @@ class IzanamiProxy extends RequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -202,7 +202,7 @@ class IzanamiProxy extends RequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -240,7 +240,7 @@ class IzanamiProxy extends RequestTransformer {
                 .Status(resp.status)(resp.json)
                 .withHeaders(
                   resp.headers
-                    .mapValues(_.last)
+                    .mapValues(_.last).toMap
                     .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                     .toSeq: _*
                 )
@@ -273,7 +273,7 @@ class IzanamiProxy extends RequestTransformer {
           .Status(resp.status)(resp.json)
           .withHeaders(
             resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
               .toSeq: _*
           )

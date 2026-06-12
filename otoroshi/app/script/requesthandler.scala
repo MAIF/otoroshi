@@ -143,7 +143,7 @@ class ForwardTrafficHandler extends RequestHandler {
             val clenOut                      =
               resp.headers.get("Content-Length").orElse(resp.headers.get("content-length")).map(_.last).map(_.toLong)
             val headersOut                   = resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .filterNot { case (key, _) =>
                 key.toLowerCase == "content-length"
               }
@@ -238,9 +238,9 @@ class ForwardTrafficHandler extends RequestHandler {
               data = DataInOut(0, 0),
               status = resp.status,
               headers = request.headers.toSimpleMap.toSeq.map(Header.apply),
-              headersOut = resp.headers.mapValues(_.last).toSeq.map(Header.apply),
+              headersOut = resp.headers.mapValues(_.last).toMap.toSeq.map(Header.apply),
               otoroshiHeadersIn = headers.map(Header.apply),
-              otoroshiHeadersOut = resp.headers.mapValues(_.last).toSeq.map(Header.apply),
+              otoroshiHeadersOut = resp.headers.mapValues(_.last).toMap.toSeq.map(Header.apply),
               extraInfos = None,
               responseChunked = false,
               identity = None,

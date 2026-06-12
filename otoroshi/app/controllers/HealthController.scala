@@ -205,7 +205,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def backofficeMetrics() = BackOfficeActionAuth { ctx =>
+  def backofficeMetrics() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
     HealthController.fetchMetrics("json".some, true, false, None)
   }
 

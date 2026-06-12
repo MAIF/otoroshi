@@ -127,7 +127,7 @@ object ElasticAnalyticsConfig {
         "type"          -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "user"          -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "password"      -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "headers"       -> JsObject(o.headers.mapValues(JsString.apply)),
+        "headers"       -> JsObject(o.headers.mapValues(JsString.apply).toMap),
         "indexSettings" -> o.indexSettings.json,
         "mtlsConfig"    -> o.mtlsConfig.json,
         "applyTemplate" -> o.applyTemplate,

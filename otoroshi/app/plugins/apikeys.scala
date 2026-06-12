@@ -411,7 +411,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
               val charset                  = ctx.request.charset.getOrElse("UTF-8")
               val urlEncodedString         = bodyRaw.utf8String
-              val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+              val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head).toMap
               val map: Map[String, String] = body ++ ctx.request.headers
                 .get("Authorization")
                 .filter(_.startsWith("Basic "))
@@ -751,7 +751,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
                 val charset          = ctx.request.charset.getOrElse("UTF-8")
                 val urlEncodedString = bodyRaw.utf8String
-                val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+                val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head).toMap
                 (
                   body.get("grant_type"),
                   body.get("client_id"),
@@ -1029,7 +1029,7 @@ class ClientCredentialService extends RequestSink {
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
           val urlEncodedString         = bodyRaw.utf8String
-          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head).toMap
           val map: Map[String, String] = body ++ ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))

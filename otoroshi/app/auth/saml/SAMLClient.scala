@@ -429,7 +429,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }.toMap
             }
@@ -830,7 +830,7 @@ case class SamlAuthModuleConfig(
     "emailAttributeName"            -> this.emailAttributeName,
     "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
     "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
-      JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+      JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
     })
   )
 

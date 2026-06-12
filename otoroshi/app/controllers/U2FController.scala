@@ -50,7 +50,7 @@ class U2FController(
     .registerModule(new Jdk8Module())
 
   def loginPage() =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.backoffice.u2flogin(env))
     }
 

@@ -1026,17 +1026,17 @@ class GatewayRequestHandler(
     }
 
   def forbidden() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       Forbidden(Json.obj("error" -> "forbidden"))
     }
 
   def adminApiNotExposed() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       NotFound(Json.obj("error" -> "resource not found"))
     }
 
   def redirectToHttps() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
       if (logger.isTraceEnabled)
@@ -1047,7 +1047,7 @@ class GatewayRequestHandler(
     }
 
   def redirectToMainDomain() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol
       if (logger.isDebugEnabled)

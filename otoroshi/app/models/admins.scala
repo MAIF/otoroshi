@@ -83,7 +83,7 @@ case class SimpleOtoroshiAdmin(
       "metadata"              -> metadata,
       "tags"                  -> JsArray(tags.map(JsString.apply)),
       "rights"                -> rights.json,
-      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
+      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
     )
 }
 
@@ -116,7 +116,7 @@ object SimpleOtoroshiAdmin {
                 }
                 .collect { case JsSuccess(v, _) =>
                   v
-                }
+                }.toSeq
             }.toMap
           }
           .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -161,7 +161,7 @@ case class WebAuthnOtoroshiAdmin(
       "metadata"              -> metadata,
       "tags"                  -> JsArray(tags.map(JsString.apply)),
       "rights"                -> rights.json,
-      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
+      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
     )
 }
 
@@ -199,7 +199,7 @@ object WebAuthnOtoroshiAdmin {
                 }
                 .collect { case JsSuccess(v, _) =>
                   v
-                }
+                }.toSeq
             }.toMap
           }
           .getOrElse(Map.empty[String, Seq[JsonValidator]])

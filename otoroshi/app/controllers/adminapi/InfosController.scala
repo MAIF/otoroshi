@@ -39,7 +39,7 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def version() = ApiAction { ctx =>
+  def version() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     Ok(env.otoroshiVersionSem.json)
   }
 }

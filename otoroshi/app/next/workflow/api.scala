@@ -591,7 +591,7 @@ object WorkflowOperator {
       }
     }
     case JsArray(arr)                                                                     => JsArray(arr.map(v => processOperators(v, wfr, env)))
-    case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)))
+    case JsObject(map)                                                                    => JsObject(map.mapValues(v => processOperators(v, wfr, env)).toMap)
     case JsString("${now}")                                                               => System.currentTimeMillis().json
     case JsString("${rand}")                                                              => JsNumber(Math.random())
     case JsString("${workflow_id}")                                                       => wfr.workflow_ref.json

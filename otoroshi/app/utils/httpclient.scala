@@ -943,7 +943,7 @@ case class AkkWsClientStreamedResponse(
 ) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers                        = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers                        = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     )
     val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
@@ -1017,7 +1017,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     ) /*++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))

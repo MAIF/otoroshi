@@ -109,7 +109,7 @@ class StaticResponse extends NgBackendCall {
             attrs = ctx.attrs,
             env = env
           )
-        )
+        ).toMap
       ),
       body
     ).future

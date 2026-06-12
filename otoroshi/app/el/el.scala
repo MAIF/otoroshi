@@ -660,7 +660,7 @@ object GlobalExpressionLanguage {
             case r"consumer.metadata.$field@(.*):$dv@(.*)"                                       =>
               user
                 .flatMap(_.otoroshiData)
-                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json).toMap)))
                 .map(json =>
                   json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
@@ -674,7 +674,7 @@ object GlobalExpressionLanguage {
             case r"consumer.metadata.$field@(.*)" if user.isDefined || apiKey.isDefined          =>
               user
                 .flatMap(_.otoroshiData)
-                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json).toMap)))
                 .map(json =>
                   json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()

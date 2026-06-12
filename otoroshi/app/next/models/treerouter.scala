@@ -92,7 +92,7 @@ case class NgTreeRouter(
 ) {
 
   def json: JsValue = Json.obj(
-    "tree"      -> JsObject(tree.toMap.mapValues(_.json)),
+    "tree"      -> JsObject(tree.toMap.mapValues(_.json).toMap),
     "wildcards" -> JsArray(wildcards.map(r => JsString(r.route.name)))
   )
 
@@ -224,7 +224,7 @@ case class NgTreeNodePath(
   def json: JsValue                                                    = Json.obj(
     "routes" -> routes.map(r => JsString(r.name)),
     "leaf"   -> isLeaf,
-    "tree"   -> JsObject(tree.toMap.mapValues(_.json))
+    "tree"   -> JsObject(tree.toMap.mapValues(_.json).toMap)
   )
   def find(
       segments: Seq[String],

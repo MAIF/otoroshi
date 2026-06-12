@@ -290,7 +290,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     executeAsync(s"SELECT mvalue from otoroshi.values where key = '$key';").map { rs =>
       Try(rs.one().getMap("mvalue", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.asScala.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.mapValues(ByteString.apply).toMap)
         .getOrElse(Map.empty[String, ByteString])
     }
 
@@ -317,7 +317,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     executeAsync(s"SELECT mvalue from otoroshi.values where key = '$key';").map { rs =>
       Try(rs.one().getMap("mvalue", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.asScala.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.mapValues(ByteString.apply).toMap)
     }
 
   override def flushall(): Future[Boolean] =

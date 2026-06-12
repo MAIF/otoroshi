@@ -125,7 +125,7 @@ class NgClientCredentials extends NgRequestSink {
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
           val urlEncodedString         = bodyRaw.utf8String
-          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head).toMap
           val map: Map[String, String] = body ++ ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))
@@ -554,7 +554,7 @@ class NgClientCredentialTokenEndpoint extends NgBackendCall {
       ctx.request.headers.get("Content-Type") match {
         case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
           val urlEncodedString         = bodyRaw.utf8String
-          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head).toMap
           val map: Map[String, String] = body ++ ctx.request.headers
             .get("Authorization")
             .filter(_.startsWith("Basic "))

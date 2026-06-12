@@ -80,7 +80,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
           deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray))
+            .map(_.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
@@ -104,7 +104,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }.toMap
             }
@@ -210,13 +210,13 @@ case class Oauth1ModuleConfig(
       "remoteValidators"              -> JsArray(remoteValidators.map(_.json)),
       "metadata"                      -> metadata,
       "tags"                          -> JsArray(tags.map(JsString.apply)),
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json).toMap),
       "httpMethod"                    -> httpMethod.name,
       "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "allowedUsers"                  -> allowedUsers,
       "deniedUsers"                   -> deniedUsers,
       "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
+        JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
       })
     )
 

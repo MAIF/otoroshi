@@ -14,7 +14,7 @@ object EntityFiltering {
       case arr @ JsArray(_) => {
         val prefix     = filterPrefix
         val filters    = request.queryString
-          .mapValues(_.last)
+          .mapValues(_.last).toMap
           .collect {
             case v if prefix.isEmpty                                  => v
             case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)

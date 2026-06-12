@@ -1481,7 +1481,7 @@ object KubernetesCRDsJob {
                      .resources()
                      .map(r => (r, r.access.allJson()))
                      .groupBy(_._1)
-                     .mapValues(_.map(_._2).flatten)
+                     .mapValues(_.map(_._2).flatten).toMap
                      .vfuture
 
       services           <- clientSupport.client.fetchServices()

@@ -905,63 +905,63 @@ class ScriptManager(env: Env) {
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName).toSeq
 
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName).toSeq
 
         val reqHandlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val tunnelHandlers: Seq[String] = (scanResult.getSubclasses(classOf[NgTunnelHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgTunnelHandler].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
           scanResult.getClassesImplementing(classOf[Job].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
           scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val ngPlugins: Seq[String] =
           (scanResult.getSubclasses(classOf[NgPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgPlugin].getName).asScala)
             .filterNot(predicate)
-            .map(_.getName) ++
+            .map(_.getName).toSeq ++
           (scanResult.getSubclasses(classOf[NgNamedPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgNamedPlugin].getName).asScala)
             .filterNot(predicate)
-            .map(_.getName)
+            .map(_.getName).toSeq
 
         val adminExts: Seq[String] = (scanResult.getSubclasses(classOf[AdminExtension].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AdminExtension].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val authModuleConfigs: Seq[String] = (scanResult.getSubclasses(classOf[AuthModule].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AuthModule].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         (
           requestTransformers,

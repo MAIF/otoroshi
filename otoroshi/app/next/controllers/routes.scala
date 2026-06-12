@@ -224,7 +224,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
   }
 
-  def domainsAndCertificates() = ApiAction { ctx =>
+  def domainsAndCertificates() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     import otoroshi.ssl.SSLImplicits._
 
     val routes           = env.proxyState.allRoutes()

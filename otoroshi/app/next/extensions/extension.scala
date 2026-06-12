@@ -612,7 +612,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
         source.asOpt[Map[String, Map[String, Seq[JsValue]]]].getOrElse(Map.empty[String, Map[String, Seq[JsValue]]])
       Source(
         extensions
-          .mapValues(_.toSeq)
+          .mapValues(_.toSeq).toMap
           .toSeq
           .flatMap { case (key, items) =>
             items.map(tuple => (key, tuple._1, tuple._2))

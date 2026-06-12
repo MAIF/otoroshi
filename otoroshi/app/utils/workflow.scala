@@ -402,7 +402,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
     applyEl(applyTransformation(requestSpec.select("url").as[JsValue], ctx, env).as[String], ctx, env)
   lazy val timeout: FiniteDuration                                     = requestSpec.select("timeout").asOpt[Long].getOrElse(10000L).millis
   def headers(ctx: WorkFlowTaskContext, env: Env): Map[String, String] =
-    requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).mapValues(v => applyEl(v, ctx, env))
+    requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).mapValues(v => applyEl(v, ctx, env)).toMap
   lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(MtlsConfig.format).getOrElse(MtlsConfig())
   def bodyOpt(ctx: WorkFlowTaskContext, env: Env): Option[ByteString]  =
     requestSpec.select("body").asOpt[JsValue].map { body =>

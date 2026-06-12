@@ -1372,7 +1372,7 @@ class GraphQLProxy extends NgBackendCall {
       .withBody(body)
       .execute()
     // .map { res =>
-    //   bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+    //   bodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
     // }
   }
 
@@ -1411,7 +1411,7 @@ class GraphQLProxy extends NgBackendCall {
         val operationName = body.select("operationName").asOpt[String]
         if (operationName.contains("IntrospectionQuery")) {
           callBackendApi(bodyRaw, config).map { res =>
-            sourceBodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+            sourceBodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
           }
         } else {
           val query = body.select("query").asString
@@ -1485,13 +1485,13 @@ class GraphQLProxy extends NgBackendCall {
                     } else {
                       sourceBodyResponse(
                         res.status,
-                        res.headers.mapValues(_.last),
+                        res.headers.mapValues(_.last).toMap,
                         res.bodyAsSource
                       ).vfuture
                     }
                   }
                   //callBackendApi(bodyRaw, config).map { res =>
-                  //  bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+                  //  bodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
                   //}
                 }
               }

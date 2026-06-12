@@ -330,7 +330,7 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head)
+                .mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
@@ -400,7 +400,7 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head)
+                .mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
@@ -416,7 +416,7 @@ class BackOfficeController(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def robotTxt =
-    Action { req =>
+    Action { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       if (logger.isDebugEnabled) logger.debug(s"Rendering robot.txt on ${req.theProtocol}://${req.theHost}/robot.txt")
       Ok("""User-agent: *
          |Disallow: /""".stripMargin)
@@ -572,7 +572,7 @@ class BackOfficeController(
     }
 
   def error(message: Option[String]) =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.oto.error(message.getOrElse("Error message"), env))
     }
 
@@ -1183,7 +1183,7 @@ class BackOfficeController(
     }
 
   def resetCircuitBreakers(id: String) =
-    BackOfficeActionAuth { ctx =>
+    BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
       env.circuitBeakersHolder.resetCircuitBreakersFor(id)
       Ok(Json.obj("done" -> true))
     }
@@ -1992,7 +1992,7 @@ class BackOfficeController(
       .map { res =>
         Results
           .Status(res.status)(res.body)
-          .withHeaders(res.headers.mapValues(_.last).toSeq.filterNot(_._1 == "Content-Type"): _*)
+          .withHeaders(res.headers.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type"): _*)
           .as(res.contentType)
       }
   }
@@ -2200,7 +2200,7 @@ class BackOfficeController(
     Ok(Json.obj("matches" -> matches, "projection" -> projected))
   }
 
-  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { ctx =>
+  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
     val rawRequest = ctx.request
     val route      = NgRoute.empty
     val target     = NgTarget.default

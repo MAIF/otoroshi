@@ -671,7 +671,7 @@ class Env(
           }
           .collect { case JsSuccess(v, _) =>
             v
-          }
+          }.toSeq
       }.toMap
     }
     .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -792,7 +792,7 @@ class Env(
   // lazy val ua = new UserAgentHelper(this)
 
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
-  lazy val metrics = new Metrics(this, lifecycle)
+  lazy val metrics: Metrics = new Metrics(this, lifecycle)
   lazy val pki     = new BouncyCastlePki(snowflakeGenerator, this)
 
   lazy val tunnelManager = new TunnelManager(this)

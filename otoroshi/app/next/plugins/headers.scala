@@ -386,7 +386,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
           attrs = ctx.attrs,
           env = env
         )
-      )
+      ).toMap
     Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }

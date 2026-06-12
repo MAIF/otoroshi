@@ -308,7 +308,7 @@ case class ApiKey(
       (within, rotation, quotas)
     }
   }
-  def metadataJson: JsValue                                                                               = JsObject(metadata.mapValues(JsString.apply))
+  def metadataJson: JsValue                                                                               = JsObject(metadata.mapValues(JsString.apply).toMap)
   def lightJson: JsObject                                                                                 =
     Json.obj(
       "clientId"   -> clientId,
@@ -456,7 +456,7 @@ object ApiKey {
         "rotation"                -> apk.rotation.json,
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
-        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap)
       )
     }
     override def reads(json: JsValue): JsResult[ApiKey] =

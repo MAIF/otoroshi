@@ -31,7 +31,7 @@ class NgPluginsController(
     Ok(JsArray(NgStep.all.map(_.json)))
   }
 
-  def form() = ApiAction { ctx =>
+  def form() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     (for {
       name <- ctx.request.getQueryString("name")
       form <- env.openApiSchema.asForms.get(name)
@@ -42,8 +42,8 @@ class NgPluginsController(
     }
   }
 
-  def forms() = ApiAction { ctx =>
-    val forms = new JsObject(env.openApiSchema.asForms.mapValues(_.json))
+  def forms() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
+    val forms = new JsObject(env.openApiSchema.asForms.mapValues(_.json).toMap)
     Ok(forms)
   }
 

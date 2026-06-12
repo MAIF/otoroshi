@@ -107,7 +107,7 @@ class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = req.fullPath()
-  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
+  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq).toMap
 }
 
 class ReactorNettyRequest(
@@ -295,7 +295,7 @@ class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = kUri.path.toString()
-  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
+  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq).toMap
 }
 
 class NettyRequest(
@@ -339,7 +339,7 @@ class NettyRequestHeader(
 ) extends RequestHeader {
 
   lazy val _cookies                     = Option(req.headers().get("Cookie"))
-    .map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).mapValues(_.toSeq))
+    .map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).mapValues(_.toSeq).toMap)
     .getOrElse(Map.empty[String, Seq[io.netty.handler.codec.http.cookie.DefaultCookie]])
 
   lazy val zeSession: Session = {

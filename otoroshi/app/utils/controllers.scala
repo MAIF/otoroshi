@@ -147,7 +147,7 @@ trait AdminApiHelper {
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     val prefix             = filterPrefix
     val filters            = ctx.request.queryString
-      .mapValues(_.last)
+      .mapValues(_.last).toMap
       .collect {
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -796,7 +796,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     val prefix             = filterPrefix
     val filters            = ctx.request.queryString
-      .mapValues(_.last)
+      .mapValues(_.last).toMap
       .collect {
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)

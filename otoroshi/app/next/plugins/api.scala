@@ -1058,7 +1058,7 @@ case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Opti
   def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
   def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
   def contentLength: Option[Long]          = rawResponse.map(_.contentLength).getOrElse(response.contentLength)
-  def headers: Map[String, Seq[String]]    = rawResponse.map(_.headers).getOrElse(response.headers.mapValues(v => Seq(v)))
+  def headers: Map[String, Seq[String]]    = rawResponse.map(_.headers).getOrElse(response.headers.mapValues(v => Seq(v)).toMap)
   def header(name: String): Option[String] =
     rawResponse.map(_.header(name)).getOrElse(response.headers.getIgnoreCase(name))
   def isChunked(): Option[Boolean]         = rawResponse.map(_.isChunked()).getOrElse(response.isChunked.some)

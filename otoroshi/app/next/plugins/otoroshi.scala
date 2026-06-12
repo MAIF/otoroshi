@@ -137,7 +137,7 @@ object NgOtoroshiInfoConfig {
       "version"     -> o.secComVersion.json,
       "ttl"         -> o.secComTtl.toSeconds,
       "header_name" -> o.headerName,
-      "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply))).getOrElse(JsNull).as[JsValue],
+      "add_fields"  -> o.addFields.map(v => JsObject(v.fields.mapValues(JsString.apply).toMap)).getOrElse(JsNull).as[JsValue],
       "projection"  -> o.projection,
       "algo"        -> o.algo.asJson
     )
@@ -368,7 +368,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
           logger.error(
             stateRespInvalid.errorMessage(
               ctx.response.map(_.status).getOrElse(ctx.rawResponse.status),
-              ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)
+              ctx.response.map(_.headers.mapValues(_.last).toMap).getOrElse(ctx.rawResponse.headers)
             )
           )
           val extraInfos    = ctx.attrs
@@ -378,7 +378,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
             extraInfos ++ Json.obj(
               "stateRespInvalid" -> stateRespInvalid.exchangePayload(
                 ctx.response.map(_.status).getOrElse(ctx.rawResponse.status),
-                ctx.response.map(_.headers.mapValues(_.last)).getOrElse(ctx.rawResponse.headers)
+                ctx.response.map(_.headers.mapValues(_.last).toMap).getOrElse(ctx.rawResponse.headers)
               )
             )
           ctx.attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
@@ -463,7 +463,7 @@ class OtoroshiInfos extends NgRequestTransformer {
               attrs = ctx.attrs,
               env = env
             )
-          )
+          ).toMap
         )
       )
     )
