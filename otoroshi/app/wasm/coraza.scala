@@ -339,7 +339,7 @@ object CorazaWafConfig {
           .asOpt[JsArray]
           .getOrElse(oldDirectives.getOrElse(Json.arr()))
           .value
-          .map(_.as[String]),
+          .map(_.as[String]).toSeq,
         poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2)
       )
     } match {
