@@ -76,11 +76,11 @@ object Match {
               value <- value.select("value").asOpt[JsValue];
               input <- obj.select(key).toOption
             ) yield value.equals(input)).getOrElse(false)
-          case (_, arr @ JsArray(_))  => arr.value.contains(value)
+          case (_, arr @ JsArray(_))  => arr.value.toSeq.contains(value)
           case _                      => false
         }
       case ("$all", JsArray(value))          =>
-        source.select(key).asOpt[JsArray].exists(arr => arr.value.intersect(value).toSet.size == value.size)
+        source.select(key).asOpt[JsArray].exists(arr => arr.value.toSeq.intersect(value).toSet.size == value.size)
       case ("$not", o @ JsObject(_))         => !matchesOperator(o, key, source)
       case ("$eq", value: JsValue)           => singleMatches(source.select(key).as[JsValue])(value)
       case ("$ne", value: JsValue)           => !singleMatches(source.select(key).as[JsValue])(value)

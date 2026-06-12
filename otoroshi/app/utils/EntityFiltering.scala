@@ -34,7 +34,7 @@ object EntityFiltering {
         val hasFilters = filters.nonEmpty
 
         val reducedItems = if (hasFilters) {
-          val items: Seq[JsValue] = arr.value.filter { elem =>
+          val items: Seq[JsValue] = arr.value.toSeq.filter { elem =>
             filters.forall {
               case (key, value) if key.startsWith("$") && key.contains(".") => {
                 elem.atPath(key).asOpt[JsValue].getOrElse(JsNull) match {
@@ -105,11 +105,11 @@ object EntityFiltering {
           }
           items
         } else {
-          arr.value
+          arr.value.toSeq
         }
 
         val filteredItems = if (filtered.nonEmpty) {
-          val items: Seq[JsValue] = reducedItems.filter { elem =>
+          val items: Seq[JsValue] = reducedItems.toSeq.filter { elem =>
             filtered.forall { case (key, maybeValues) =>
               val searched_values: Seq[String] =
                 if (maybeValues.contains("|")) maybeValues.split("\\|").toSeq else Seq(maybeValues)
@@ -182,7 +182,7 @@ object EntityFiltering {
           .getOrElse(Seq.empty[(String, Boolean)]).toSeq
         val hasSorted = sorted.nonEmpty
         if (hasSorted) {
-          JsArray(sorted.foldLeft(arr.value) {
+          JsArray(sorted.foldLeft(arr.value.toSeq) {
             case (sortedArray, sort) => {
 
               val out = if (sortedArray.isEmpty) {
@@ -249,7 +249,7 @@ object EntityFiltering {
             .getOrElse(Int.MaxValue)
         val paginationPosition      = (paginationPage - 1) * paginationPageSize
 
-        val content = arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)
+        val content = arr.value.toSeq.slice(paginationPosition, paginationPosition + paginationPageSize)
         PaginatedContent(
           pages = Math.ceil(arr.value.size.toFloat / paginationPageSize).toInt,
           content = JsArray(content)

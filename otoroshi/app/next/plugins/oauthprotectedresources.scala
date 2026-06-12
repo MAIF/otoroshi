@@ -384,7 +384,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
         case (k, JsNumber(v))                     => builder.withClaim(k, java.lang.Long.valueOf(v.toLong)); ()
         case (k, arr: JsArray)                    =>
           // auth0-jwt only takes typed arrays; serialize anything else as a stringified JSON payload to keep fidelity.
-          val items = arr.value
+          val items = arr.value.toSeq
           if (items.forall(_.isInstanceOf[JsString])) {
             builder.withArrayClaim(k, items.map(_.as[String]).toArray)
           } else {

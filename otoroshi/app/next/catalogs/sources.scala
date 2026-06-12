@@ -33,7 +33,7 @@ object SourceUtils {
   }
 
   private def isStringArray(value: JsValue): Option[JsArray] = value match {
-    case arr: JsArray if arr.value.nonEmpty && arr.value.forall(_.isInstanceOf[JsString]) => Some(arr)
+    case arr: JsArray if arr.value.nonEmpty && arr.value.toSeq.forall(_.isInstanceOf[JsString]) => Some(arr)
     case _                                                                                => None
   }
 

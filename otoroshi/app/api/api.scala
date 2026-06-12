@@ -1355,7 +1355,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //          }
 //          items
 //        } else {
-//          arr.value
+//          arr.value.toSeq
 //        }
 //
 //        val filteredItems = if (filtered.nonEmpty) {
@@ -1413,7 +1413,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //          .getOrElse(Seq.empty[(String, Boolean)]).toSeq
 //        val hasSorted = sorted.nonEmpty
 //        if (hasSorted) {
-//          JsArray(sorted.foldLeft(arr.value) {
+//          JsArray(sorted.foldLeft(arr.value.toSeq) {
 //            case (sortedArray, sort) => {
 //              val out = sortedArray
 //                .sortBy { r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2) }(
@@ -1454,7 +1454,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //            .getOrElse(Int.MaxValue)
 //        val paginationPosition      = (paginationPage - 1) * paginationPageSize
 //
-//        val content = arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)
+//        val content = arr.value.toSeq.slice(paginationPosition, paginationPosition + paginationPageSize)
 //        PaginatedContent(
 //          pages = Math.ceil(arr.value.size.toFloat / paginationPageSize).toInt,
 //          content = JsArray(content)

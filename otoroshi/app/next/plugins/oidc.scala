@@ -205,13 +205,13 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
           .collect { case JsSuccess(c, _) =>
             c
-          }
+          }.toSeq
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig): Future[Boolean] = {
@@ -297,13 +297,13 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
           .collect { case JsSuccess(c, _) =>
             c
-          }
+          }.toSeq
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig, ref: AtomicReference[ApiKey]): Future[Unit] = {

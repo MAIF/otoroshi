@@ -2543,7 +2543,7 @@ object ClientCertificateValidator {
       )
   }
 
-  def fromJson(json: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], ClientCertificateValidator] =
+  def fromJson(json: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], ClientCertificateValidator] =
     ClientCertificateValidator.fmt.reads(json).asEither
 
   def fromJsons(value: JsValue): ClientCertificateValidator =

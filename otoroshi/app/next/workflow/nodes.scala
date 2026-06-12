@@ -1331,7 +1331,7 @@ case class MapNode(json: JsObject) extends Node {
       values match {
         case arr: JsArray => {
           if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
-          Source(arr.value.toList.zipWithIndex)
+          Source(arr.value.toSeq.toList.zipWithIndex)
             .mapAsync(1) { case (item, idx) =>
               wfr.memory.set("foreach_value", item)
               node
@@ -1432,7 +1432,7 @@ case class FlatMapNode(json: JsObject) extends Node {
       values match {
         case arr: JsArray => {
           if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
-          Source(arr.value.toList.zipWithIndex)
+          Source(arr.value.toSeq.toList.zipWithIndex)
             .mapAsync(1) { case (item, idx) =>
               wfr.memory.set("foreach_value", item)
               node
@@ -1539,7 +1539,7 @@ case class FilterNode(json: JsObject) extends Node {
       values match {
         case arr: JsArray => {
           if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
-          Source(arr.value.toList.zipWithIndex)
+          Source(arr.value.toSeq.toList.zipWithIndex)
             .mapAsync(1) { case (item, idx) =>
               wfr.memory.set("foreach_value", item)
               node

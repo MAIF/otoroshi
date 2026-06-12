@@ -3154,7 +3154,7 @@ class ArrayDelOperator extends WorkflowOperator {
       }
     }
     value match {
-      case arr @ JsArray(_) => JsArray(arr.value.zipWithIndex.filterNot(_._2 == idx).map(_._1))
+      case arr @ JsArray(_) => JsArray(arr.value.toSeq.zipWithIndex.filterNot(_._2 == idx).map(_._1))
       case _                => JsNull
     }
   }

@@ -223,7 +223,7 @@ object TcpService {
       }
     }
 
-  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], TcpService] =
+  def fromJsonSafe(value: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], TcpService] =
     fmt.reads(value).asEither
 
   val fmt: Format[TcpService] = new Format[TcpService] {

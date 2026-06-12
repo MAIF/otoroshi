@@ -176,8 +176,8 @@ class OpenapiToJson(spec: JsValue) {
             key,
             path,
             (out \ "oneOf").asOpt[JsArray] match {
-              case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value) => out
-              case Some(arr) if containsOnlyRef(arr.value)                            =>
+              case Some(arr) if arr.value.length > 2 || containsNullAndRef(arr.value.toSeq) => out
+              case Some(arr) if containsOnlyRef(arr.value.toSeq)                            =>
                 Json.obj("type" -> (getRef(data, (arr.value.head \ "$ref").as[String]) \ "type").as[String])
               case None if (out \ "enum").isDefined                                   =>
                 out
