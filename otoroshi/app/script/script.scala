@@ -1580,7 +1580,7 @@ object Script {
         throw e
       }
     }
-  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], Script] = _fmt.reads(value).asEither
+  def fromJsonSafe(value: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], Script] = _fmt.reads(value).asEither
 }
 
 trait ScriptDataStore extends BasicStore[Script] {

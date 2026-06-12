@@ -138,7 +138,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
     new MetricFamilySamples(sample.name, Type.COUNTER, "", util.Arrays.asList(sample))
   }
 
-  override def collect: util.List[MetricFamilySamples] = {
+  override def collect(): util.List[MetricFamilySamples] = {
     val mfSamplesMap = new util.HashMap[String, MetricFamilySamples]
 
     registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry.getKey, entry.getValue)))

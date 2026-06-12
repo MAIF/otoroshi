@@ -669,7 +669,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         val toDate   = to.map(f => new DateTime(f.toLong))
 
         val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
-          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]))
+          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]).toSeq)
           case None           => env.datastores.serviceDescriptorDataStore.findAll()
         }
 

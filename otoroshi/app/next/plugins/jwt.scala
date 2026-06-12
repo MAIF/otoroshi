@@ -50,7 +50,6 @@ import java.security.KeyPair
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.util.{Date, UUID}
 import javax.crypto.{Cipher, KeyGenerator}
-import scala.collection.parallel.immutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}

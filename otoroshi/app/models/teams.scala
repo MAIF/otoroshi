@@ -85,8 +85,7 @@ object UserRights {
 
   def readFromArray(arr: JsArray): UserRights = {
     UserRights(
-      arr.value
-        .map { ur =>
+      arr.value.toSeq        .map { ur =>
           UserRight.format.reads(ur).asOpt
         }
         .collect { case Some(ur) =>

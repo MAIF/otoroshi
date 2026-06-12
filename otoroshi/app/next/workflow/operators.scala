@@ -123,7 +123,7 @@ class ContainsIgnoreCaseOperator extends WorkflowOperator {
         case v @ JsNumber(_)  => Seq(v.toString())
         case v @ JsBoolean(_) => Seq(v.toString())
         case JsArray(values)  =>
-          values.collect {
+          values.toSeq.collect {
             case JsString(str)    => str
             case v @ JsNumber(_)  => v.toString()
             case v @ JsBoolean(_) => v.toString()

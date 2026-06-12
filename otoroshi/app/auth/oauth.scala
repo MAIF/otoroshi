@@ -588,7 +588,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   def extractOtoroshiRights(profile: JsValue, default: Option[UserRights]): UserRights = {
     val rights: Seq[JsValue] = (profile \ authConfig.otoroshiRightsField).asOpt[JsValue] match {
       case Some(JsArray(values))   =>
-        values.flatMap {
+        values.toSeq.flatMap {
           case JsArray(value)    => value
           case obj @ JsObject(_) => Seq(obj)
           case _                 => Seq.empty
