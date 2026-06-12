@@ -148,7 +148,7 @@ class TailscaleLocalApiClient(env: Env) {
   }
 
   private def callGet(uri: String): Future[ReactorResponse] = {
-    val rec = client
+    val rec: reactor.netty.http.client.HttpClient.ResponseReceiver[?] = client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h =>
         h

@@ -890,7 +890,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             resp.ignore()
             ().right
           } else {
-            resp.body.left
+            resp.body[String].left
           }
         } match {
           case Success(r) => r

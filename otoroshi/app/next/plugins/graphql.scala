@@ -848,7 +848,7 @@ class GraphQLBackend extends NgBackendCall {
               Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value.toSeq,
               c
             )
-          case _               => c.arg(jsonDataArg)
+          case _               => Json.parse(c.arg(jsonDataArg).getOrElse("null"))
         }
     }
   }
