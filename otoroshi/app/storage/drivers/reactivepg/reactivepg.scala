@@ -628,7 +628,7 @@ class ReactivePgRedis(
 
   private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
 
-  private implicit val logger = Logger("otoroshi-reactive-pg-kv")
+  private implicit val logger: play.api.Logger = Logger("otoroshi-reactive-pg-kv")
 
   private val debugQueries = env.configuration.betterGetOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
