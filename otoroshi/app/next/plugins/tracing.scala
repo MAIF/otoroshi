@@ -29,7 +29,7 @@ import play.api.mvc.Result
 import java.util.concurrent.TimeUnit
 import java.{lang, util}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asJavaIterableConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object NoopSpanExporter {

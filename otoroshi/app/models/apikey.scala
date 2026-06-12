@@ -43,7 +43,7 @@ import otoroshi.utils.syntax.implicits.{
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(

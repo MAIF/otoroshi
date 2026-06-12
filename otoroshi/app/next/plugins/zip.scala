@@ -20,7 +20,7 @@ import java.util.zip.ZipFile
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.enumerationAsScalaIteratorConverter
+import scala.jdk.CollectionConverters._
 import scala.util._
 
 case class ZipFileBackendConfig(

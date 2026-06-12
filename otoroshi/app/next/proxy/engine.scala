@@ -305,7 +305,7 @@ class ProxyEngine() extends RequestHandler {
       defaultRouting: Request[Source[ByteString, _]] => Future[Result],
       forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+    implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
@@ -322,7 +322,7 @@ class ProxyEngine() extends RequestHandler {
       defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
       forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+    implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false

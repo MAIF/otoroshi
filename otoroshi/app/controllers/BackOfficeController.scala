@@ -217,7 +217,7 @@ class BackOfficeController(
   //       Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
   //     case Right(raw_engine) => {
   //       val engine          = raw_engine.asInstanceOf[ProxyEngine]
-  //       implicit val global = env.datastores.globalConfigDataStore.latest()
+  //       implicit val global: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
   //       val raw_request     = ctx.request
   //       val host            = env.adminApiExposedHost
   //       val request         = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)

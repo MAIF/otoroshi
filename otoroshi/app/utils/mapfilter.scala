@@ -8,7 +8,7 @@ import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
 import play.api.libs.json._
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 
 sealed trait Operator[T] {
   def apply(source: JsValue, key: String): T

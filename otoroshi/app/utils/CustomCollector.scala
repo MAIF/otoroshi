@@ -8,7 +8,7 @@ import io.prometheus.client.dropwizard.samplebuilder.{DefaultSampleBuilder, Samp
 
 import java.util
 import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 
 class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegistry)
     extends io.prometheus.client.Collector

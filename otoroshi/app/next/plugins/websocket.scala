@@ -23,7 +23,7 @@ import reactor.core.publisher.Sinks
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util._
 
 sealed trait RejectStrategy {

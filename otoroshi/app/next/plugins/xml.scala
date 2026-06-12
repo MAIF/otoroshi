@@ -13,7 +13,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginConfig {

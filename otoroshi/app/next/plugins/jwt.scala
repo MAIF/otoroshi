@@ -52,7 +52,7 @@ import java.util.{Date, UUID}
 import javax.crypto.{Cipher, KeyGenerator}
 import scala.collection.parallel.immutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 case class NgJwtVerificationConfig(

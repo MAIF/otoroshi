@@ -8,7 +8,7 @@ import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object WorkflowOperatorsInitializer {
