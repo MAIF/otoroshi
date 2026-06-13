@@ -170,7 +170,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
   }
 
   def callReadyz(container: GenericContainer, token: String) = {
-    println("callReadyz", token)
+    println(("callReadyz", token))
 
     val pureNettyClient = getNettyClient(container)
 
@@ -178,12 +178,12 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
     pureNettyClient
       .headers(h => h.set("Authorization", s"Bearer $token"))
       .get()
-      .uri("/readyz")
+      .uri("/readyz").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
       .responseSingle { (res, content) =>
         // Need to return a Mono
         content.asString().map { body =>
           val status = res.status().code()
-          println(s"readyz response: status=$status, body=$body")
+          println((s"readyz response: status=$status, body=$body"))
 
           if (status == 200 && body == "ok") {
             println("✓ readyz check passed")
@@ -340,7 +340,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       println(s"Stderr: $stderr")
 
       if (getResult.getExitCode != 0) {
-        println(s"Command failed, retrying... ($attemptsLeft left)")
+        println((s"Command failed, retrying... ($attemptsLeft left)"))
         Thread.sleep(2000)
         check(attemptsLeft - 1)
       } else if (output.isEmpty || !output.contains("Running") || output.contains("Init")) {
@@ -369,7 +369,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
           .withRequestTimeout(1.second)
           .get()
           .map(r => {
-            println(s"Status: ${r.status}, Body: ${r.body}")
+            println((s"Status: ${r.status}, Body: ${r.body[String]}"))
             r.status mustBe play.mvc.Http.Status.OK
             r.status
           })

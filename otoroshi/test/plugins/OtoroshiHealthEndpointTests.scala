@@ -30,7 +30,7 @@ class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("method") mustEqual "GET"
+    Json.parse(resp.body[String]).selectAsString("method") mustEqual "GET"
   }
 
   {
@@ -43,10 +43,10 @@ class OtoroshiHealthEndpointTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("otoroshi") mustEqual "healthy"
-    Json.parse(resp.body).selectAsString("datastore") mustEqual "healthy"
+    Json.parse(resp.body[String]).selectAsString("otoroshi") mustEqual "healthy"
+    Json.parse(resp.body[String]).selectAsString("datastore") mustEqual "healthy"
 
-    val keys = Json.parse(resp.body).as[JsObject].keys
+    val keys = Json.parse(resp.body[String]).as[JsObject].keys
 
     keys.contains("proxy")
     keys.contains("storage")

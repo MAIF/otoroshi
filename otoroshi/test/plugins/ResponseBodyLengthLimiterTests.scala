@@ -117,8 +117,8 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    println(resp.body)
-    resp.body mustBe "Hello"
+    println(resp.body[String])
+    resp.body[String] mustBe "Hello"
     deleteOtoroshiRoute(route).futureValue
   }
 }

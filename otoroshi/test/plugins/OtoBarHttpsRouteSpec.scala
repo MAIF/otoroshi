@@ -296,7 +296,7 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
 
     pureNettyClient
       .get()
-      .uri("/foo")
+      .uri("/foo").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext { response =>
         val code = response.status().code()

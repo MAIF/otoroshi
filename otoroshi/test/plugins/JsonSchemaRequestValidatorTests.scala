@@ -53,7 +53,7 @@ class JsonSchemaRequestValidatorTests(parent: PluginsTestSpec) {
       .post(Json.stringify(Json.obj("name" -> "Alice"))) // missing required "age"
       .futureValue
     call.status mustBe Status.UNPROCESSABLE_ENTITY
-    val body  = Json.parse(call.body)
+    val body  = Json.parse(call.body[String])
     (body \ "error").asOpt[String] mustBe Some("request body does not match the json schema")
     (body \ "validation_errors").asOpt[Seq[String]].exists(_.nonEmpty) mustBe true
     deleteOtoroshiRoute(route).futureValue

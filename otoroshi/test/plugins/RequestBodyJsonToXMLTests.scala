@@ -48,7 +48,7 @@ class RequestBodyJsonToXMLTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
 
-  val rawXml   = ByteString(Json.parse(resp.body).selectAsString("body"))
+  val rawXml   = ByteString(Json.parse(resp.body[String]).selectAsString("body"))
   val cleanXml = rawXml.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
   val xml      = scala.xml.XML.loadString(cleanXml)
 

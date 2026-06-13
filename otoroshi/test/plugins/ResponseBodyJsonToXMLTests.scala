@@ -40,7 +40,7 @@ class ResponseBodyJsonToXMLTests(parent: PluginsTestSpec) {
   resp.status mustBe Status.OK
 
   val cleanXml =
-    ByteString(s"<request>${resp.body}</request>").utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
+    ByteString(s"<request>${resp.body[String]}</request>").utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
   val xml      = scala.xml.XML.loadString(cleanXml)
 
   val item = xml.head.asInstanceOf[Elem]

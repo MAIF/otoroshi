@@ -151,7 +151,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
         )
       )
       .futureValue
-    Json.parse(tokenResponse.body).selectAsString("access_token")
+    Json.parse(tokenResponse.body[String]).selectAsString("access_token")
   }
 
   def createKeycloakClient(keycloakUrl: String, adminToken: String, clientConfig: String): Unit = {
@@ -247,7 +247,7 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
       .futureValue
 
     response.status mustBe 200
-    val accessToken = Json.parse(response.body).selectAsString("access_token")
+    val accessToken = Json.parse(response.body[String]).selectAsString("access_token")
     accessToken.isEmpty mustBe false
   }
 
@@ -258,9 +258,9 @@ class OAuth2CallerTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    println(resp.body)
+    println(resp.body[String])
     resp.status mustBe 200
-    resp.body.contains("GET") mustBe true
+    resp.body[String].contains("GET") mustBe true
   }
 
   val keycloakContainer = startKeycloakContainer()

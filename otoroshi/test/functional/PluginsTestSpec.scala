@@ -12,13 +12,13 @@ import scala.concurrent.duration.DurationInt
 
 class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
 
-  implicit lazy val mat = otoroshiComponents.materializer
-  implicit lazy val env = otoroshiComponents.env
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = otoroshiComponents.materializer
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
   def configurationSpec: Configuration = Configuration.empty
 
   val logger          = Logger("otoroshi-tests-plugins")
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

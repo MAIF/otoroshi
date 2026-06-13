@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "analytics.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(

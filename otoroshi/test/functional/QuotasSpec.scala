@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "quotas.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -142,7 +142,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       resp3.status mustBe 200
       // resp4.status mustBe 200
       resp5.status mustBe 429
-      resp5.body.contains("") mustBe true
+      resp5.body[String].contains("") mustBe true
     }
 
     "prevent too many calls per month" in {
@@ -167,7 +167,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       resp3.status mustBe 200
       // resp4.status mustBe 200
       resp5.status mustBe 429
-      resp5.body.contains("") mustBe true
+      resp5.body[String].contains("") mustBe true
     }
 
     "stop servers" in {

@@ -1,5 +1,6 @@
 package functional
 
+import scala.jdk.CollectionConverters._
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.pekko.{Done, NotUsed}
@@ -41,9 +42,9 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
     "support websockets" in {
 
-      implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat    = Materializer(system)
-      implicit val http   = Http()(system)
+      implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+      implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+      implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http()(system)
 
       val service = ServiceDescriptor(
         id = "ws-test",

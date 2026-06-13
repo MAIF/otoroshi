@@ -389,7 +389,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
     val promise = Promise[ResponseData]()
     pureNettyClient
       .get()
-      .uri("/")
+      .uri("/").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext(response => {
         val headers = scala.collection.mutable.Map[String, String]()

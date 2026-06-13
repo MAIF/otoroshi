@@ -22,8 +22,8 @@ import scala.concurrent.ExecutionContext
 
 class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
   override def getTestConfiguration(configuration: Configuration) =
     Configuration(
@@ -618,6 +618,9 @@ object Attrs {
 }
 
 class Transformer1 extends NgRequestTransformer {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isTransformRequestAsync                     = false
@@ -639,6 +642,9 @@ class Transformer1 extends NgRequestTransformer {
 }
 
 class Transformer2 extends NgRequestTransformer {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isTransformRequestAsync                     = false
@@ -663,6 +669,9 @@ class Transformer2 extends NgRequestTransformer {
 }
 
 class Transformer3 extends NgRequestTransformer {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def multiInstance: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
   override def isTransformRequestAsync                     = false
@@ -680,6 +689,9 @@ class Transformer3 extends NgRequestTransformer {
 }
 
 class Validator1 extends NgAccessValidator {
+  override def visibility: NgPluginVisibility = NgPluginVisibility.NgInternal
+  override def categories: Seq[NgPluginCategory] = Seq.empty
+  override def steps: Seq[NgStep] = Seq.empty
   override def isAccessAsync = false
 
   override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = {

@@ -426,7 +426,7 @@ class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
       val promise = Promise[Int]()
       pureNettyClient
         .get()
-        .uri("/foo")
+        .uri("/foo").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
         .response()
         .doOnNext(response => promise.success(response.status().code()))
         .doOnError(error => promise.failure(error))

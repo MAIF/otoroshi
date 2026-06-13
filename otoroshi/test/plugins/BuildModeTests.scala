@@ -29,7 +29,7 @@ class BuildModeTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.SERVICE_UNAVAILABLE
-  resp.body.contains("Service under construction") mustBe true
+  resp.body[String].contains("Service under construction") mustBe true
 
   deleteOtoroshiRoute(route).futureValue
 }

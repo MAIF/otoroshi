@@ -1,18 +1,18 @@
 package tools
 
+import scala.jdk.CollectionConverters._
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json.{JsArray, JsObject, Json}
 import java.nio.file.Files
 import java.io.File
-import collection.JavaConverters._
 
 object ConfigurationCleanup {
   def cleanup(path: String, newpath: String): Unit = {
@@ -65,8 +65,8 @@ object ConfigurationCleanup {
 }
 
 class ConfigurationCleanupSpec
-    extends WordSpec
-    with MustMatchers
+    extends org.scalatest.wordspec.AnyWordSpec
+    with org.scalatest.matchers.must.Matchers
     with OptionValues
     with ScalaFutures
     with IntegrationPatience {

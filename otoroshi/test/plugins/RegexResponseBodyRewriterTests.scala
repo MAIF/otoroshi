@@ -50,7 +50,7 @@ class RegexResponseBodyRewriterTests(parent: PluginsTestSpec) {
     .post(Json.obj("foo" -> "bar"))
     .futureValue
 
-  Json.parse(resp.body) mustBe Json.obj("bar" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("bar" -> "bar")
 
   resp.status mustBe Status.OK
   deleteOtoroshiRoute(route).futureValue

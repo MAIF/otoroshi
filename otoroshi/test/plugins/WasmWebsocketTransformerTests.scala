@@ -1,5 +1,6 @@
 package plugins
 
+import scala.jdk.CollectionConverters._
 import org.apache.pekko.http.scaladsl.model.headers.Host
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}

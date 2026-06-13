@@ -34,7 +34,7 @@ class JQTransformResponseTests(parent: PluginsTestSpec) {
     .futureValue
 
   call.status mustBe Status.OK
-  Json.parse(call.body) mustBe Json.obj("username" -> "Julien")
+  Json.parse(call.body[String]) mustBe Json.obj("username" -> "Julien")
 
   deleteOtoroshiRoute(route).futureValue
 }

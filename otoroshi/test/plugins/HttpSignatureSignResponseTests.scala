@@ -85,7 +85,7 @@ class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
     val digestRaw   = getOutHeader(resp, "Content-Digest").get
 
     // Content-Digest must cover the actual response body.
-    HttpSigContentDigest.verify(digestRaw, resp.body.getBytes(StandardCharsets.UTF_8)).isRight mustBe true
+    HttpSigContentDigest.verify(digestRaw, resp.body[String].getBytes(StandardCharsets.UTF_8)).isRight mustBe true
 
     val inputs         = HttpSigStructuredFields.parseSignatureInputDict(sigInputRaw).right.get
     val sigs           = HttpSigStructuredFields.parseSignatureDict(sigRaw).right.get.toMap

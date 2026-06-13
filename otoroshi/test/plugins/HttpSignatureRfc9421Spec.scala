@@ -1,6 +1,6 @@
 package plugins
 
-import org.scalatest.{MustMatchers, WordSpec}
+
 import otoroshi.next.plugins._
 
 import java.nio.charset.StandardCharsets
@@ -11,7 +11,7 @@ import java.util.Base64
 // The reference vector below is RFC 9421 §B.2.5 — "Signing a Request using hmac-sha256" — which is the only
 // vector with a fully-deterministic outcome (HMAC is symmetric, so we can re-compute and compare bytes).
 // Asymmetric vectors involve a random k value and cannot be re-derived; for those we round-trip sign-then-verify.
-class HttpSignatureRfc9421Spec extends WordSpec with MustMatchers {
+class HttpSignatureRfc9421Spec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers {
 
   // -- B.2.5 fixture --------------------------------------------------------------------------------------------------
 

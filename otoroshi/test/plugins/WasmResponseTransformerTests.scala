@@ -46,7 +46,7 @@ class WasmResponseTransformerTests(parent: PluginsTestSpec) {
     .futureValue
 
   getOutHeader(resp, "otoroshi_wasm_plugin_id").contains("OTOROSHI_WASM_RESPONSE_TRANSFORMER") mustBe true
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
   resp.status mustBe Status.OK
 
   deleteOtoroshiRoute(route).futureValue

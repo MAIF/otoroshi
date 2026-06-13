@@ -45,7 +45,7 @@ class ZipBackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
 
   val notFoundFile = ws
     .url(s"http://127.0.0.1:$port/")

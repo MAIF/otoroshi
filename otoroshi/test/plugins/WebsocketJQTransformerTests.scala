@@ -22,7 +22,7 @@ import scala.concurrent.{Future, Promise}
 class WebsocketJQTransformerTests(parent: PluginsTestSpec) {
   import parent._
 
-  implicit val system        = ActorSystem("otoroshi-websocket-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-websocket-test")
   implicit val http: HttpExt = Http()(system)
 
   val backend = new WebsocketBackend(

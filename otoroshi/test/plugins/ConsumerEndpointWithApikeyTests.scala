@@ -49,9 +49,9 @@ class ConsumerEndpointWithApikeyTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
 
-  Json.parse(resp.body).selectAsString("access_type") mustEqual "apikey"
-  Json.parse(resp.body).selectAsString("clientId") mustEqual apikey.clientId
-  Json.parse(resp.body).selectAsString("clientName") mustEqual apikey.clientName
+  Json.parse(resp.body[String]).selectAsString("access_type") mustEqual "apikey"
+  Json.parse(resp.body[String]).selectAsString("clientId") mustEqual apikey.clientId
+  Json.parse(resp.body[String]).selectAsString("clientName") mustEqual apikey.clientName
 
   deleteOtoroshiApiKey(apikey).futureValue
   deleteOtoroshiRoute(route).futureValue
