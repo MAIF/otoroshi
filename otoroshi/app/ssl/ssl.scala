@@ -15,10 +15,10 @@ import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.{Materializer, TLSClientAuth}
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.{Materializer, TLSClientAuth}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
@@ -306,7 +306,7 @@ case class Cert(
       subject = (meta \ "subjectDN").as[String],
       from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
       to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-      sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty)
+      sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     )
   }
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
@@ -568,7 +568,7 @@ object Cert {
             .orElse((json \ "domain").asOpt[String].map(v => s"Certificate for $v"))
             .getOrElse("none"),
           domain = (json \ "domain").as[String],
-          sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty),
+          sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chain = (json \ "chain").as[String],
           caRef = (json \ "caRef").asOpt[String],
           password = (json \ "password").asOpt[String].filter(_.trim.nonEmpty),
@@ -586,7 +586,7 @@ object Cert {
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -1003,7 +1003,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )(env, ec)
     env.configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("otoroshi.ssl.initialCerts")
-      .getOrElse(Seq.empty[Configuration])
+      .getOrElse(Seq.empty[Configuration]).toSeq
       .zipWithIndex
       .foreach { case (conf, idx) =>
         importOneCert(
@@ -1124,8 +1124,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
     import scala.concurrent.duration._
     Try {
       // TODO: blocking ec
-      implicit val ec = env.otoroshiExecutionContext
-      implicit val ev = env
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val ev: otoroshi.env.Env = env
       // AWAIT: valid
       Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
     } match {
@@ -1501,14 +1501,14 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1540,14 +1540,14 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1562,14 +1562,14 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -2010,7 +2010,7 @@ object CertificateData {
       "client"          -> client,
       "subAltNames"     -> JsArray(altNames.map(JsString.apply)),
       "cExtensions"     -> JsArray(
-        Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+        Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).toSeq.map { oid =>
           val ext: String =
             Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
           Json.obj(
@@ -2020,7 +2020,7 @@ object CertificateData {
         }
       ),
       "ncExtensions"    -> JsArray(
-        Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+        Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).toSeq.map { oid =>
           val ext: String =
             Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
           Json.obj(
@@ -2073,7 +2073,7 @@ object FakeKeyStore {
     val KeystoreType           = "JKS"
   }
 
-  private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private implicit val ec: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def generateKeyStore(host: String)(implicit env: Env): KeyStore = {
     val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)
@@ -2515,7 +2515,7 @@ object ClientCertificateValidator {
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
             proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -2543,7 +2543,7 @@ object ClientCertificateValidator {
       )
   }
 
-  def fromJson(json: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], ClientCertificateValidator] =
+  def fromJson(json: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], ClientCertificateValidator] =
     ClientCertificateValidator.fmt.reads(json).asEither
 
   def fromJsons(value: JsValue): ClientCertificateValidator =

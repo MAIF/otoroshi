@@ -1,11 +1,11 @@
 package otoroshi.storage.drivers.cassandra
 
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import next.models.{
   ApiDataStore,
@@ -247,9 +247,9 @@ class CassandraDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -288,9 +288,9 @@ class CassandraDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
@@ -309,8 +309,8 @@ class CassandraDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {

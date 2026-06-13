@@ -4,9 +4,9 @@ import java.io.{ByteArrayInputStream, StringReader}
 import java.math.BigInteger
 import java.security._
 import java.security.cert.{CertificateFactory, X509Certificate}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name

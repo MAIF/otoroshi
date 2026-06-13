@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq._
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._

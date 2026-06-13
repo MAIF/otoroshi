@@ -1,6 +1,6 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -39,7 +39,7 @@ class DefaultRequestBodyTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsObject("body") mustEqual Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]).selectAsObject("body") mustEqual Json.obj("foo" -> "bar")
 
   val resp2 = ws
     .url(s"http://127.0.0.1:$port/api")
@@ -50,7 +50,7 @@ class DefaultRequestBodyTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp2.status mustBe Status.OK
-  Json.parse(resp2.body).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
+  Json.parse(resp2.body[String]).selectAsObject("body") mustEqual Json.obj("body_from_client" -> true)
 
   deleteOtoroshiRoute(localRoute).futureValue
 }

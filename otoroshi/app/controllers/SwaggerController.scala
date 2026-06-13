@@ -10,7 +10,7 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
   def openapi = assetsBuilder.at("openapi.json")
 
   def openapiUi =
-    Action { req =>
+    Action { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       Ok(
         otoroshi.views.html.oto.openapiFrame(
           s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/apis/openapi.json"

@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
@@ -13,7 +13,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginConfig {
@@ -435,7 +435,7 @@ class SOAPAction extends NgBackendCall {
           .execute()
           .map { resp =>
             val headers = resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .toSeq
               .filterNot(_._1 == "Content-Type")
               .filterNot(_._1 == "Content-Length")
@@ -445,12 +445,12 @@ class SOAPAction extends NgBackendCall {
               resp.contentType.contains("text/xml") || resp.contentType.contains("application/xml") || resp.contentType
                 .contains("application/xml+soap")
             ) {
-              val xmlBody  = scala.xml.XML.loadString(resp.body)
+              val xmlBody  = scala.xml.XML.loadString(resp.body[String])
               val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
               val headerz  = headers :+ ("Content-Length" -> jsonBody.length.toString)
-              val status   = if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
+              val status   = if (resp.body[String].contains(":Fault>") && resp.body[String].contains(":Client")) {
                 400
-              } else if (resp.body.contains(":Fault>")) {
+              } else if (resp.body[String].contains(":Fault>")) {
                 500
               } else {
                 200
@@ -472,24 +472,24 @@ class SOAPAction extends NgBackendCall {
                   )
               }
             } else {
-              val headerz = headers :+ ("Content-Length" -> resp.body.length.toString)
-              if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
+              val headerz = headers :+ ("Content-Length" -> resp.body[String].length.toString)
+              if (resp.body[String].contains(":Fault>") && resp.body[String].contains(":Client")) {
                 inMemoryBodyResponse(
                   400,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  resp.body.byteString
+                  resp.body[String].byteString
                 )
-              } else if (resp.body.contains(":Fault>")) {
+              } else if (resp.body[String].contains(":Fault>")) {
                 inMemoryBodyResponse(
                   500,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  resp.body.byteString
+                  resp.body[String].byteString
                 )
               } else {
                 inMemoryBodyResponse(
                   200,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
-                  resp.body.byteString
+                  resp.body[String].byteString
                 )
               }
             }

@@ -36,7 +36,7 @@ case class PulsarConfig(
 }
 
 object PulsarConfig {
-  implicit val format = new Format[PulsarConfig] {
+  implicit val format: play.api.libs.json.Format[PulsarConfig] = new Format[PulsarConfig] {
     override def writes(o: PulsarConfig): JsValue =
       Json.obj(
         "uri"                   -> o.uri,

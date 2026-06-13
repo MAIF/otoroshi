@@ -1,9 +1,9 @@
 package otoroshi.next.workflow
 
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import io.azam.ulidj.ULID
 import otoroshi.actions.{ApiAction, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
@@ -79,8 +79,8 @@ object Orphans {
     )
     override def reads(json: JsValue): JsResult[Orphans] = Try {
       Orphans(
-        nodes = json.select("nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => Node.from(o)),
-        edges = (json \ "edges").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+        nodes = json.select("nodes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => Node.from(o)),
+        edges = (json \ "edges").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -146,7 +146,7 @@ object Workflow {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         config = (json \ "config").asOpt[JsObject].getOrElse(Json.obj()),
         job = (json \ "job")
           .asOpt[JsObject]
@@ -155,7 +155,7 @@ object Workflow {
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
         orphans = (json \ "orphans").asOpt[Orphans](Orphans.format.reads).getOrElse(Orphans()),
-        notes = (json \ "notes").asOpt(Reads.seq(Note.format)).getOrElse(Seq.empty)
+        notes = (json \ "notes").asOpt(Reads.seq(Note.format)).getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -177,9 +177,9 @@ class KvWorkflowConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLi
 
 class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: Env) {
 
-  implicit val ec  = _env.otoroshiExecutionContext
-  implicit val mat = _env.otoroshiMaterializer
-  implicit val env = _env
+  implicit val ec: scala.concurrent.ExecutionContext = _env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = _env.otoroshiMaterializer
+  implicit val env: otoroshi.env.Env = _env
 
   def fromJsonSafe(value: JsValue): JsResult[PausedWorkflowSession] = fmt.reads(value)
   def fmt: Format[PausedWorkflowSession]                            = PausedWorkflowSession.format
@@ -279,8 +279,8 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       configs <- datastores.workflowsDatastore.findAllAndFillSecrets()
     } yield {
@@ -466,7 +466,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   def workflow(id: String): Option[Workflow] = states.workflow(id)
 
   def handleWorkflowDebug(): Flow[Message, Message, NotUsed] = {
-    implicit val ec                     = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     val hotSource: Sinks.Many[JsObject] = Sinks.many().unicast().onBackpressureBuffer[JsObject]()
     val hotFlux: Flux[JsObject]         = hotSource.asFlux()
     val debugger                        = new WorkflowDebugger()
@@ -529,9 +529,9 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       user: Option[BackOfficeUser],
       body: Option[Source[ByteString, _]]
   ): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     (body match {
       case None             => Results.Ok(Json.obj("done" -> false, "error" -> "no body")).vfuture
       case Some(bodySource) =>
@@ -598,8 +598,8 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
 class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   def handleWorkflowDebug() = WebSocket.acceptOrResult[Message, Message] { request =>
     request.session.get("bousr") match {

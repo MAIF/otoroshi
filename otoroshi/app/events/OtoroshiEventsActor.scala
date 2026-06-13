@@ -1,13 +1,13 @@
 package otoroshi.events
 
-import akka.Done
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.model.{ContentType, ContentTypes}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.model.{ContentType, ContentTypes}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Attributes, OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import io.netty.channel.ChannelOption
@@ -79,8 +79,8 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger = Logger("otoroshi-events-actor-supervizer")
 
-  implicit val e  = env
-  implicit val ec = env.analyticsExecutionContext
+  implicit val e: otoroshi.env.Env = env
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   val dataExporters: TrieMap[String, DataExporter] = new UnboundedTrieMap[String, DataExporter]()
   val lastUpdate                                   = new AtomicReference[Long](0L)
@@ -648,7 +648,7 @@ object Exporters {
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
             } else {
               client.secure()
             }
@@ -930,7 +930,7 @@ object Exporters {
                   }
                   .build()
                 client
-                  .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                  .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
               } else {
                 client.secure()
               }
@@ -1776,7 +1776,7 @@ object Exporters {
     }
 
     def writeToS3AndDelete(conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       writeToS3WithKeyAndPath(key, path, maxNumberOfFile, conf).map { _ =>
         path.toFile.delete()
@@ -1791,8 +1791,8 @@ object Exporters {
         maxNumberOfFile: Option[Int],
         conf: S3Configuration
     ): Future[Unit] = {
-      implicit val ec  = env.otoroshiExecutionContext
-      implicit val mat = env.otoroshiMaterializer
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val url          =
         s"${conf.endpoint}/${key}?v4=${conf.v4auth}&region=${conf.region}&acl=${conf.acl.value}&bucket=${conf.bucket}"
       val wholeContent = Files.readString(path).byteString
@@ -1840,7 +1840,7 @@ object Exporters {
       (lastS3Write.get() + conf.writeEvery.toMillis) < System.currentTimeMillis()
 
     def ensureFileCreationAndRolling(conf: S3Configuration, maxFileSize: Long, maxNumberOfFile: Option[Int]): File = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (key, path) = computeKeyAndPath(conf)
       val file        = path.toFile
       if (!file.exists()) {
@@ -1869,7 +1869,7 @@ object Exporters {
     }
 
     def appendToCurrentFile(content: String, conf: S3Configuration, maxNumberOfFile: Option[Int]): Future[Unit] = {
-      implicit val ec = FileWriting.blockingEc
+      implicit val ec: scala.concurrent.ExecutionContext = FileWriting.blockingEc
       val (_, path)   = computeKeyAndPath(conf)
       debug(s"appending events to file '${path}'")
       if (shouldWriteToS3(conf)) {
@@ -2034,7 +2034,7 @@ object Exporters {
           metrics = (json \ "metrics")
             .asOpt[Seq[JsValue]]
             .map(metrics => metrics.map(metric => MetricSettings.format.reads(metric).get))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -2210,7 +2210,7 @@ object Exporters {
             .select("metrics")
             .asOpt[Seq[JsValue]]
             .map(arr => arr.flatMap(v => MetricSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

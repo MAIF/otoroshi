@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -52,10 +52,10 @@ object NgCorsSettings {
     override def reads(json: JsValue): JsResult[NgCorsSettings] = Try {
       NgCorsSettings(
         allowOrigin = (json \ "allow_origin").asOpt[String].getOrElse("*"),
-        exposeHeaders = (json \ "expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allowHeaders = (json \ "allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allowMethods = (json \ "allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        exposeHeaders = (json \ "expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allowHeaders = (json \ "allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allowMethods = (json \ "allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         maxAge = (json \ "max_age").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
         allowCredentials = (json \ "allow_credentials").asOpt[Boolean].getOrElse(true)
       )

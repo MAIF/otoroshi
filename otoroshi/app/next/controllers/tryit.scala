@@ -1,8 +1,8 @@
 package otoroshi.next.controllers
 
-import akka.kafka.ConsumerSettings
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.kafka.ConsumerSettings
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.BackOfficeActionAuth
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, KafkaSettings}
@@ -28,8 +28,8 @@ class TryItController(
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val sourceBodyParser = BodyParser("TryItController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -46,7 +46,7 @@ class TryItController(
                 val seconds = (jsonBody \ "timeout").asOpt[Int].getOrElse(15)
 
                 val race =
-                  akka.pattern.after(new DurationInt(seconds).seconds, using = env.otoroshiActorSystem.scheduler)(
+                  org.apache.pekko.pattern.after(new DurationInt(seconds).seconds, using = env.otoroshiActorSystem.scheduler)(
                     Future.successful(BadRequest(Json.obj("error" -> "Failed to connect to kafka")))
                   )
                 Future.firstCompletedOf(
@@ -88,7 +88,7 @@ class TryItController(
       val path                     = jsonBody.select("path").asOpt[String].getOrElse("/")
       val _headers                 = jsonBody.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
       val cookies                  =
-        jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty)
+        jsonBody.select("cookies").asOpt[Seq[JsObject]].map(_.map(JsonHelpers.cookieFromJson)).getOrElse(Seq.empty).toSeq
       val clientCert               = jsonBody.select("client_cert").asOpt[String]
       val bodyBase64               = jsonBody.select("base_64").asOpt[Boolean].getOrElse(false)
       val body: Option[ByteString] = jsonBody.select("body").asOpt[String].filter(_.nonEmpty).map { rb =>
@@ -180,14 +180,14 @@ class TryItController(
           respF.flatMap { resp =>
             val report: JsValue = env.proxyState.report(requestId).map(_.json).getOrElse(JsNull)
             val status          = resp.status
-            val headers         = resp.headers.mapValues(_.last)
+            val headers         = resp.headers.mapValues(_.last).toMap
             resp.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { respBodyRaw =>
               Ok(
                 Json.obj(
                   "status"       -> status,
                   "headers"      -> headers,
                   "body_base_64" -> respBodyRaw.encodeBase64.utf8String,
-                  "cookies"      -> JsArray(resp.safeCookies(env).map(c => JsonHelpers.wsCookieToJson(c))),
+                  "cookies"      -> JsArray(resp.safeCookies(env).toSeq.map(c => JsonHelpers.wsCookieToJson(c))),
                   "report"       -> report,
                   "curl"         -> curl
                 )

@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import otoroshi.auth.{AuthModuleConfig, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
@@ -109,20 +109,20 @@ object BackOfficeUser {
             expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             lastRefresh = (json \ "lastRefresh").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             rights = UserRights.readFromObject(json),
             adminEntityValidators = json
               .select("adminEntityValidators")
               .asOpt[JsObject]
               .map { obj =>
                 obj.value.mapValues { arr =>
-                  arr.asArray.value
+                  arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }
               .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -147,7 +147,7 @@ object BackOfficeUser {
         "metadata"              -> o.metadata,
         "tags"                  -> JsArray(o.tags.map(JsString.apply)),
         "rights"                -> o.rights.json,
-        "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
+        "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
       )
   }
 }

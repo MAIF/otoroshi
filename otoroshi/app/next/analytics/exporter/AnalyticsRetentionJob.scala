@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.exporter
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.env.Env
@@ -78,6 +78,6 @@ class AnalyticsRetentionJob extends Job {
       .recover { case e: Throwable =>
         logger.error(s"[user-analytics-retention] error while cleaning up ${AnalyticsSchema.fullTable(s)}", e)
       }
-      .map(_ => pool.close())
+      .map(_ => pool.close((_: io.vertx.core.AsyncResult[Void]) => ()))
   }
 }

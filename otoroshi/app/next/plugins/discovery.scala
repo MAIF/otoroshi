@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.Target
 import otoroshi.next.plugins.api._
@@ -23,7 +23,7 @@ case class NgDiscoverySelfRegistrationConfig(
 
   def legacy: SelfRegistrationConfig = SelfRegistrationConfig(raw)
 
-  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val targetTemplate: JsObject        = raw
     .select("targetTemplate")
     .asOpt[JsObject]
@@ -52,7 +52,7 @@ object NgDiscoverySelfRegistrationConfig {
 
 class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   override def name: String                                = "Global self registration endpoints (service discovery)"
   override def description: Option[String]                 =
@@ -84,7 +84,7 @@ class NgDiscoverySelfRegistrationSink extends NgRequestSink {
 
 class NgDiscoverySelfRegistrationTransformer extends NgRequestTransformer {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   override def name: String                                = "Self registration endpoints (service discovery)"
   override def description: Option[String]                 =

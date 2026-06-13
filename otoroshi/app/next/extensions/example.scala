@@ -1,8 +1,8 @@
 package otoroshi.next.extensions
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.Curve
 import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
 import otoroshi.api._
@@ -54,7 +54,7 @@ object Foo {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -93,7 +93,7 @@ class FooAdminExtensionState(env: Env) {
 class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike {
 
   val redis       = new otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis(false, env, actorSystem)
-  implicit val ec = actorSystem.dispatcher
+  implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
 
   override def setCounter(key: String, value: Long): Future[Unit]               = redis.set(key, value.toString).map(_ => ())
   override def rawGet(key: String): Future[Option[Any]]                         = redis.rawGet(key)
@@ -151,7 +151,7 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
       case Some(_: java.util.concurrent.ConcurrentHashMap[String, ByteString]) => "hash"
       case Some(_: TrieMap[String, ByteString])                                => "hash"
       case Some(_: java.util.concurrent.CopyOnWriteArrayList[ByteString])      => "list"
-      case Some(_: scala.collection.mutable.MutableList[ByteString])           => "list"
+      case Some(_: scala.collection.mutable.ListBuffer[ByteString])           => "list"
       case Some(_: java.util.concurrent.CopyOnWriteArraySet[ByteString])       => "set"
       case Some(_: scala.collection.mutable.HashSet[ByteString])               => "set"
       case _                                                                   => "none"
@@ -224,8 +224,8 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
   )
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       foos <- datastores.fooDatastore.findAll()
     } yield {

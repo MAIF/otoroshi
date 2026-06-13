@@ -1,11 +1,11 @@
 package otoroshi.storage.drivers.reactivepg
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.{JsonArray, JsonObject}
@@ -238,7 +238,7 @@ class ReactivePgDataStores(
   private lazy val schemaDotTable     = s"$schema.$table"
   private lazy val client             = PgPool.pool(connectOptions, poolOptions)
 
-  lazy val redis = new ReactivePgRedis(
+  lazy val redis: ReactivePgRedis = new ReactivePgRedis(
     client,
     reactivePgActorSystem,
     env,
@@ -254,7 +254,7 @@ class ReactivePgDataStores(
   }
 
   def runSchemaCreation(): Unit = {
-    implicit val ec = reactivePgActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
 
     // AWAIT: valid
@@ -303,7 +303,7 @@ class ReactivePgDataStores(
   }
 
   def setupCleanup(): Unit = {
-    implicit val ec = reactivePgActorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = reactivePgActorSystem.dispatcher
     cancel.set(
       reactivePgActorSystem.scheduler.scheduleAtFixedRate(ttlJobInitialDelay, ttlJobInterval)(SchedulerHelper.runnable {
         try {
@@ -540,9 +540,9 @@ class ReactivePgDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -571,9 +571,9 @@ class ReactivePgDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     redis
       .keys(s"${env.storageRoot}:*")
       .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
@@ -595,8 +595,8 @@ class ReactivePgDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -626,9 +626,9 @@ class ReactivePgRedis(
 
   import collection.JavaConverters._
 
-  private implicit val ec = system.dispatcher
+  private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
 
-  private implicit val logger = Logger("otoroshi-reactive-pg-kv")
+  private implicit val logger: play.api.Logger = Logger("otoroshi-reactive-pg-kv")
 
   private val debugQueries = env.configuration.betterGetOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
@@ -1131,7 +1131,7 @@ class ReactivePgRedis(
         s"select lvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;",
         Seq(key)
       ) { row =>
-        row.optJsArray("lvalue").map(_.value.map(e => e.asString.byteString))
+        row.optJsArray("lvalue").map(_.value.map(e => e.asString.byteString).toSeq)
       }
     }
 
@@ -1166,7 +1166,7 @@ class ReactivePgRedis(
       val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
       if (avoidJsonPath) {
         getArray(key).map(
-          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
         ) // awful but not supported in some cases like cockroachdb
       } else {
         queryOne(
@@ -1174,11 +1174,11 @@ class ReactivePgRedis(
           Seq(key)
         ) { row =>
           row.optJsArray("slice").map(_.value.map(v => v.asString.byteString))
-        }.map(_.getOrElse(Seq.empty)).recoverWith {
+        }.map(_.getOrElse(Seq.empty).toSeq).recoverWith {
           case ex: io.vertx.pgclient.PgException
               if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
             getArray(key).map(
-              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
             ) // awful but not supported in some cases like cockroachdb
           }
         }
@@ -1266,7 +1266,7 @@ class ReactivePgRedis(
         Seq(key)
       ) { row =>
         row.optJsObject("svalue").map(_.keys.toSeq.map(ByteString.apply))
-      }.map(_.getOrElse(Seq.empty))
+      }.map(_.getOrElse(Seq.empty).toSeq)
     }
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)

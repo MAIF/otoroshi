@@ -1,6 +1,6 @@
 package otoroshi.wasm
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.otoroshi.wasm4s.scaladsl._
 import io.otoroshi.wasm4s.scaladsl.security.TlsConfig
 import org.extism.sdk.{HostFunction, HostUserData}
@@ -168,7 +168,7 @@ object WasmConfig {
         memoryPages = (json \ "memoryPages").asOpt[Int].getOrElse(100),
         functionName = (json \ "functionName").asOpt[String].filter(_.nonEmpty),
         config = (json \ "config").asOpt[Map[String, String]].getOrElse(Map.empty),
-        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowedHosts = (json \ "allowedHosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         allowedPaths = (json \ "allowedPaths").asOpt[Map[String, String]].getOrElse(Map.empty),
         wasi = (json \ "wasi").asOpt[Boolean].getOrElse(false),
         opa = (json \ "opa").asOpt[Boolean].getOrElse(false),
@@ -208,9 +208,8 @@ object WasmConfig {
 
 class OtoroshiWasmIntegrationContext(env: Env) extends WasmIntegrationContext {
 
-  implicit val ec = env.otoroshiExecutionContext
-  implicit val ev = env
-
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val ev: otoroshi.env.Env = env
   val logger: Logger                                        = Logger("otoroshi-wasm-integration")
   val materializer: Materializer                            = env.otoroshiMaterializer
   val executionContext: ExecutionContext                    = env.otoroshiExecutionContext

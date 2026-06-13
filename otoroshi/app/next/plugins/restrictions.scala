@@ -86,19 +86,19 @@ object NgRestrictions {
             .map(_.value.map(p => NgRestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
               rp
             })
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           forbidden = (json \ "forbidden")
             .asOpt[JsArray]
             .map(_.value.map(p => NgRestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
               rp
             })
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           notFound = (json \ "not_found")
             .asOpt[JsArray]
             .map(_.value.map(p => NgRestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
               rp
             })
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

@@ -108,7 +108,7 @@ object UserAlert {
         id = (json \ "id").asOpt[String].filterNot(_.isEmpty).getOrElse(IdGenerator.namedId("alert", IdGenerator.uuid)),
         name = (json \ "name").asOpt[String].getOrElse(""),
         description = (json \ "description").asOpt[String].getOrElse(""),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         windowSeconds = (json \ "windowSeconds").asOpt[Long].getOrElse(DEFAULT_WINDOW_S),
@@ -119,7 +119,7 @@ object UserAlert {
         combine = (json \ "combine").asOpt[String].getOrElse("AND"),
         conditions = (json \ "conditions")
           .asOpt[Seq[JsValue]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .flatMap(j => AlertCondition.format.reads(j).asOpt)
       )
     } match {
@@ -170,7 +170,7 @@ object UserAlert {
 
 trait UserAlertDataStore extends BasicStore[UserAlert] {
   def template(env: Env): UserAlert = {
-    implicit val e = env
+    implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.github.blemale.scaffeine.Scaffeine
 import com.jayway.jsonpath.PathNotFoundException
@@ -220,7 +220,7 @@ object GraphQLBackendConfig {
     override def reads(json: JsValue): JsResult[GraphQLBackendConfig] = Try {
       GraphQLBackendConfig(
         schema = json.select("schema").as[String],
-        permissions = json.select("permissions").asOpt[Seq[String]].getOrElse(Seq.empty),
+        permissions = json.select("permissions").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         initialData = json.select("initial_data").asOpt[JsObject],
         maxDepth = json.select("max_depth").asOpt[Int].getOrElse(15)
       )
@@ -467,7 +467,7 @@ class GraphQLBackend extends NgBackendCall {
       case v: Boolean    => Right(JsBoolean(v))
       case v: Int        => Right(JsNumber(v))
       case v: Long       => Right(JsNumber(v))
-      case v: Float      => Right(JsNumber(v))
+      case v: Float      => Right(JsNumber(v.toDouble))
       case v: Double     => Right(JsNumber(v))
       case v: BigInt     => Right(JsNumber(v.intValue()))
       case v: BigDecimal => Right(JsNumber(v))
@@ -540,7 +540,7 @@ class GraphQLBackend extends NgBackendCall {
       .asInstanceOf[Int]
   }
 
-  def sliceArrayWithArgs(arr: IndexedSeq[JsValue], c: AstDirectiveContext[Unit]) = {
+  def sliceArrayWithArgs(arr: scala.collection.Seq[JsValue], c: AstDirectiveContext[Unit]) = {
     val limit  = extractLimit(c, arr.length.some)
     val offset = extractOffset(c)
     arr.slice(offset, limit)
@@ -673,11 +673,11 @@ class GraphQLBackend extends NgBackendCall {
           acc + (curr._1 -> (curr._2 match {
             case s: String        => JsString(s)
             case i: Int           => JsNumber(i)
-            case f: Float         => JsNumber(f)
+            case f: Float         => JsNumber(f.toDouble)
             case d: Boolean       => JsBoolean(d)
             case Some(s: String)  => JsString(s)
             case Some(i: Int)     => JsNumber(i)
-            case Some(f: Float)   => JsNumber(f)
+            case Some(f: Float)   => JsNumber(f.toDouble)
             case Some(d: Boolean) => JsBoolean(d)
             case a                => JsString(String.valueOf(a))
           }))
@@ -750,7 +750,7 @@ class GraphQLBackend extends NgBackendCall {
         memoryPages = wasmMemoryPages.getOrElse(100),
         functionName = wasmFunctionName,
         config = Map.empty,
-        allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
+        allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty).toSeq,
         wasi = wasmWasi,
         authorizations = WasmAuthorizations(
           proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
@@ -845,10 +845,10 @@ class GraphQLBackend extends NgBackendCall {
         c.ctx.field.toAst.fieldType match {
           case ListType(_, __) =>
             sliceArrayWithArgs(
-              Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value,
+              Json.parse(c.arg(jsonDataArg).getOrElse("[]")).as[JsArray].value.toSeq,
               c
             )
-          case _               => c.arg(jsonDataArg)
+          case _               => Json.parse(c.arg(jsonDataArg).getOrElse("null"))
         }
     }
   }
@@ -912,7 +912,7 @@ class GraphQLBackend extends NgBackendCall {
       case (k, v)         => (k, String.valueOf(v))
     }
 
-    queryArgs.foldLeft(c.arg(urlArg))((u, value) =>
+    queryArgs.foldLeft(c.arg(urlArg): String)((u, value) =>
       GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
         case value._1 => value._2
         case v        => v
@@ -1270,8 +1270,8 @@ class GraphQLProxy extends NgBackendCall {
             root = initialData,
             exceptionHandler = exceptionHandler,
             queryValidator = new QueryValidator() {
-              override def validateQuery(schema: Schema[_, _], queryAst: Document): Vector[Violation] = {
-                val violations = QueryValidator.default.validateQuery(schema, queryAst)
+              override def validateQuery(schema: Schema[?, ?], queryAst: Document, variableValues: Map[String, sangria.execution.VariableValue], errorsLimit: Option[Int]): Vector[Violation] = {
+                val violations = QueryValidator.default.validateQuery(schema, queryAst, Map.empty, None)
                 if (violations.nonEmpty) {
                   throw ViolationsException(violations.map(_.errorMessage))
                 }
@@ -1372,7 +1372,7 @@ class GraphQLProxy extends NgBackendCall {
       .withBody(body)
       .execute()
     // .map { res =>
-    //   bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+    //   bodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
     // }
   }
 
@@ -1411,7 +1411,7 @@ class GraphQLProxy extends NgBackendCall {
         val operationName = body.select("operationName").asOpt[String]
         if (operationName.contains("IntrospectionQuery")) {
           callBackendApi(bodyRaw, config).map { res =>
-            sourceBodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+            sourceBodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
           }
         } else {
           val query = body.select("query").asString
@@ -1485,13 +1485,13 @@ class GraphQLProxy extends NgBackendCall {
                     } else {
                       sourceBodyResponse(
                         res.status,
-                        res.headers.mapValues(_.last),
+                        res.headers.mapValues(_.last).toMap,
                         res.bodyAsSource
                       ).vfuture
                     }
                   }
                   //callBackendApi(bodyRaw, config).map { res =>
-                  //  bodyResponse(res.status, res.headers.mapValues(_.last), res.bodyAsSource)
+                  //  bodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
                   //}
                 }
               }

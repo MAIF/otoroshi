@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
@@ -32,9 +32,9 @@ object GrpcWebConfig {
     override def reads(json: JsValue): JsResult[GrpcWebConfig] =
       Try {
         GrpcWebConfig(
-          allowServices = json.select("allow_services").asOpt[Seq[String]].getOrElse(Seq.empty),
-          allowMethods = json.select("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty),
-          blockedMethods = json.select("blocked_methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+          allowServices = json.select("allow_services").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          allowMethods = json.select("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          blockedMethods = json.select("blocked_methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e)    => JsError(e.getMessage)

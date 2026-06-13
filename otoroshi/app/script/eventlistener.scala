@@ -1,7 +1,7 @@
 package otoroshi.script
 
 import java.util.concurrent.atomic.AtomicReference
-import akka.actor.{Actor, ActorRef, Props}
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}

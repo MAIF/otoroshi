@@ -1,10 +1,10 @@
 package otoroshi.next.plugins
 
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.{DateTime, DateTimeZone}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -156,16 +156,16 @@ object NgResponseCacheFilterConfig {
           .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
           .getOrElse(Seq(200)),
         methods = json.select("methods").asOpt[Seq[String]].getOrElse(Seq("GET")),
-        paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty),
+        paths = json.select("paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         notStatuses = json
           .select("notStatuses")
           .asOpt[Seq[Int]]
           .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         notMethods = json
           .select("notMethods")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -249,7 +249,7 @@ class NgResponseCache extends NgRequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
@@ -262,7 +262,7 @@ class NgResponseCache extends NgRequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),
@@ -270,7 +270,7 @@ class NgResponseCache extends NgRequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }
@@ -477,9 +477,9 @@ class NgResponseCacheCleanupJob extends Job {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val functions    = env.proxyState.allRoutes().map { route =>
       (route, route.plugins.getPluginByClass[NgResponseCache])
     } collect { case (route, Some(plugin)) =>

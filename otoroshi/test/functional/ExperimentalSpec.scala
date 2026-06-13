@@ -1,12 +1,13 @@
+import scala.jdk.CollectionConverters._
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.{Done, NotUsed}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
 import otoroshi.models._
@@ -32,9 +33,9 @@ class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) e
 
   s"[$name] Otoroshi" should {
 
-    implicit val system = ActorSystem("otoroshi-test")
-    implicit val mat    = Materializer(system)
-    implicit val http   = Http()(system)
+    implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+    implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+    implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http()(system)
 
     "warm up" in {
       startOtoroshi()

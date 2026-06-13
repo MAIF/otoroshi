@@ -3,10 +3,10 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern
-import akka.{Done, NotUsed}
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Concat, Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Concat, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
@@ -101,8 +101,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-client")
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   KubernetesClientNotifications.startIfNeeded(env)
 
@@ -172,8 +172,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             mtls = true,
             loose = config.trust,
             trustAll = config.trust,
-            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty),
-            trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
+            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty).toSeq,
+            trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty).toSeq
           )
         ),
         clientConfig
@@ -228,7 +228,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
+          filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map { item =>
             KubernetesNamespace(item)
           })
         } else if (resp.status == 403) {
@@ -257,7 +257,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesService(item)
               }
             } else if (resp.status == 403) {
@@ -337,7 +337,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesEndpoint(item)
               }
             } else if (resp.status == 403) {
@@ -433,7 +433,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         "networking.k8s.io/ingresses"
       ).map {
         case Some(json) =>
-          filterLabels((json \ "items").as[JsArray].value.map { item =>
+          filterLabels((json \ "items").as[JsArray].value.toSeq.map { item =>
             KubernetesIngress(item)
           })
         case None       => Seq.empty
@@ -448,7 +448,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         "networking.k8s.io/ingresses"
       ).map {
         case Some(json) =>
-          (json \ "items").as[JsArray].value.map { item =>
+          (json \ "items").as[JsArray].value.toSeq.map { item =>
             KubernetesIngress(item)
           }
         case None       => Seq.empty
@@ -463,7 +463,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         "networking.k8s.io/ingressClasses"
       ).map {
         case Some(json) =>
-          (json \ "items").as[JsArray].value.map { item =>
+          (json \ "items").as[JsArray].value.toSeq.map { item =>
             KubernetesIngressClass(item)
           }
         case None       => Seq.empty
@@ -481,7 +481,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesDeployment(item)
               }
             } else if (resp.status == 403) {
@@ -511,7 +511,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesPod(item)
               }
             } else if (resp.status == 403) {
@@ -547,7 +547,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesSecret(item)
               }
             } else if (resp.status == 403) {
@@ -577,7 +577,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesSecret(item)
               })
             } else if (resp.status == 403) {
@@ -711,7 +711,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         .map { resp =>
           Try {
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)))
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(v => KubernetesOtoroshiResource(v)))
                 .map { item =>
                   val spec                      = (item.raw \ "spec").as[JsValue]
                   val (failed, err, customSpec) = Try(customize(spec, item)) match {
@@ -890,7 +890,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             resp.ignore()
             ().right
           } else {
-            resp.body.left
+            resp.body[String].left
           }
         } match {
           case Success(r) => r
@@ -1441,7 +1441,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          (resp.json \ "items").as[JsArray].value.map(item => KubernetesGatewayClass(item)).toSeq
+          (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesGatewayClass(item)).toSeq
         } else if (resp.status == 403) {
           KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gatewayclasses")
           resp.ignore()
@@ -1472,7 +1472,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGateway(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesGateway(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gateways")
               resp.ignore()
@@ -1504,7 +1504,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesHTTPRoute(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesHTTPRoute(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/httproutes")
               resp.ignore()
@@ -1536,7 +1536,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGRPCRoute(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesGRPCRoute(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/grpcroutes")
               resp.ignore()
@@ -1567,7 +1567,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .map { resp =>
             if (resp.status == 200) {
               filterLabels(
-                (resp.json \ "items").as[JsArray].value.map(item => KubernetesReferenceGrant(item)).toSeq
+                (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesReferenceGrant(item)).toSeq
               )
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/referencegrants")
@@ -1599,7 +1599,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .map { resp =>
             if (resp.status == 200) {
               filterLabels(
-                (resp.json \ "items").as[JsArray].value.map(item => KubernetesBackendTLSPolicy(item)).toSeq
+                (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesBackendTLSPolicy(item)).toSeq
               )
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/backendtlspolicies")
@@ -1630,7 +1630,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesPlugin(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesPlugin(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("proxy.otoroshi.io/plugins")
               resp.ignore()
@@ -1660,7 +1660,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map(item => KubernetesEndpointSlice(item)).toSeq
+              (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesEndpointSlice(item)).toSeq
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("discovery.k8s.io/endpointslices")
               resp.ignore()

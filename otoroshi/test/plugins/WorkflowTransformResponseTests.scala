@@ -63,7 +63,7 @@ class WorkflowTransformResponseTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.NOT_FOUND
   getOutHeader(resp, "foo") mustBe Some("bar")
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
 
   deleteOtoroshiWorkflow(workflow).futureValue
   deleteOtoroshiRoute(route).futureValue

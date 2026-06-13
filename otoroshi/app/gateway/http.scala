@@ -1,10 +1,10 @@
 package otoroshi.gateway
 
-import akka.actor.ActorRef
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
@@ -38,10 +38,10 @@ import scala.util.{Failure, Success}
 
 class HttpHandler()(implicit env: Env) {
 
-  implicit lazy val currentEc           = env.otoroshiExecutionContext
-  implicit lazy val currentScheduler    = env.otoroshiScheduler
-  implicit lazy val currentSystem       = env.otoroshiActorSystem
-  implicit lazy val currentMaterializer = env.otoroshiMaterializer
+  implicit lazy val currentEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val currentScheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
+  implicit lazy val currentSystem: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
+  implicit lazy val currentMaterializer: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-http-handler")
 
@@ -556,15 +556,15 @@ class HttpHandler()(implicit env: Env) {
               val isUp                                  = true
               val (resp, remainingQuotas)               = tuple
               // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-              val headers                               = resp.headers.mapValues(_.head)
+              val headers                               = resp.headers.mapValues(_.head).toMap
               val _headersForOut: Seq[(String, String)] =
                 resp.headers.toSeq.flatMap(c =>
                   c._2.map(v => (c._1, v))
-                ) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
+                ) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head).toMap
               val rawResponse         = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
-                cookies = resp.safeCookies(env),
+                cookies = resp.safeCookies(env).toSeq,
                 body = () => resp.bodyAsSource
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
@@ -594,7 +594,7 @@ class HttpHandler()(implicit env: Env) {
                       attrs = attrs
                     )
                   } else if (isUp) {
-                    logger.error(stateRespInvalid.errorMessage(resp.status, resp.headers.mapValues(_.last)))
+                    logger.error(stateRespInvalid.errorMessage(resp.status, resp.headers.mapValues(_.last).toMap))
                     val extraInfos    = attrs
                       .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
                       .map(_.as[JsObject])
@@ -602,7 +602,7 @@ class HttpHandler()(implicit env: Env) {
                     val newExtraInfos =
                       extraInfos ++ Json.obj(
                         "stateRespInvalid" -> stateRespInvalid
-                          .exchangePayload(resp.status, resp.headers.mapValues(_.last))
+                          .exchangePayload(resp.status, resp.headers.mapValues(_.last).toMap)
                       )
                     attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
                     Errors.craftResponseResult(
@@ -657,7 +657,7 @@ class HttpHandler()(implicit env: Env) {
                   val otoroshiResponse = otoroshi.script.HttpResponse(
                     status = resp.status,
                     headers = _headersOut.toMap,
-                    cookies = resp.safeCookies(env),
+                    cookies = resp.safeCookies(env).toSeq,
                     body = () => resp.bodyAsSource
                   )
                   descriptor
@@ -716,7 +716,7 @@ class HttpHandler()(implicit env: Env) {
                                   httpResponse.status,
                                   isChunked,
                                   upstreamLatency,
-                                  headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                                  headersOut = resp.headers.mapValues(_.head).toMap.toSeq.map(Header.apply),
                                   otoroshiHeadersOut = headersOut.map(Header.apply),
                                   otoroshiHeadersIn = headersIn.map(Header.apply)
                                 )
@@ -737,7 +737,7 @@ class HttpHandler()(implicit env: Env) {
                                   httpResponse.status,
                                   isChunked,
                                   upstreamLatency,
-                                  headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                                  headersOut = resp.headers.mapValues(_.head).toMap.toSeq.map(Header.apply),
                                   otoroshiHeadersOut = headersOut.map(Header.apply),
                                   otoroshiHeadersIn = headersIn.map(Header.apply)
                                 )
@@ -899,7 +899,7 @@ class HttpHandler()(implicit env: Env) {
                                     httpResponse.status,
                                     isChunked,
                                     upstreamLatency,
-                                    headersOut = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                                    headersOut = resp.headers.mapValues(_.head).toMap.toSeq.map(Header.apply),
                                     otoroshiHeadersOut = headersOut.map(Header.apply),
                                     otoroshiHeadersIn = headersIn.map(Header.apply)
                                   )

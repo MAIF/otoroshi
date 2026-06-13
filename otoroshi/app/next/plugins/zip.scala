@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Source, StreamConverters}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
+import org.apache.pekko.util.ByteString
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -20,7 +20,7 @@ import java.util.zip.ZipFile
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.enumerationAsScalaIteratorConverter
+import scala.jdk.CollectionConverters._
 import scala.util._
 
 case class ZipFileBackendConfig(
@@ -305,7 +305,7 @@ object ZipBombBackendConfig {
         predicates = (json \ "predicates")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

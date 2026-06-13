@@ -3,11 +3,11 @@ package otoroshi.storage.drivers.cassandra
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{TimeUnit, _}
 import java.util.regex.Pattern
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.codahale.metrics._
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
@@ -275,7 +275,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
       Try(rs.one().getList("lvalue", classOf[String])).toOption
         .flatMap(o => Option(o))
         .map(_.asScala.map(ByteString.apply).toSeq)
-        .getOrElse(Seq.empty[ByteString])
+        .getOrElse(Seq.empty[ByteString]).toSeq
     }
 
   private def getSetAt(key: String): Future[Set[ByteString]] =
@@ -290,7 +290,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     executeAsync(s"SELECT mvalue from otoroshi.values where key = '$key';").map { rs =>
       Try(rs.one().getMap("mvalue", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.asScala.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.mapValues(ByteString.apply).toMap)
         .getOrElse(Map.empty[String, ByteString])
     }
 
@@ -317,7 +317,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     executeAsync(s"SELECT mvalue from otoroshi.values where key = '$key';").map { rs =>
       Try(rs.one().getMap("mvalue", classOf[String], classOf[String])).toOption
         .flatMap(o => Option(o))
-        .map(_.asScala.toMap.mapValues(ByteString.apply))
+        .map(_.asScala.toMap.mapValues(ByteString.apply).toMap)
     }
 
   override def flushall(): Future[Boolean] =

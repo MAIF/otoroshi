@@ -1,6 +1,6 @@
 package otoroshi.next.workflow
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -325,7 +325,7 @@ class SendMailFunction extends WorkflowFunction {
     val config                 = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
     val from: EmailLocation    = EmailLocation.format.reads(args.select("from").asValue).get
     val to: Seq[EmailLocation] =
-      args.select("to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+      args.select("to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty).toSeq
     val subject                = args.select("subject").asString
     val html                   = args.select("html").asString
 
@@ -731,7 +731,7 @@ class LogFunction extends WorkflowFunction {
 
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val message = args.select("message").asOptString.getOrElse("no message")
-    val params  = args.select("params").asOpt[Seq[JsValue]].getOrElse(Seq.empty).map(_.stringify).mkString(" ")
+    val params  = args.select("params").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq.map(_.stringify).mkString(" ")
     LogFunction.logger.info(message + " " + params)
     JsNull.rightf
   }
@@ -901,7 +901,7 @@ class HttpClientFunction extends WorkflowFunction {
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
-            "cookies"   -> JsArray(resp.safeCookies(env).map(_.json)),
+            "cookies"   -> JsArray(resp.safeCookies(env).toSeq.map(_.json)),
             "body_str"  -> body_str,
             "body_json" -> body_json
           )
@@ -1015,7 +1015,7 @@ class SystemCallFunction extends WorkflowFunction {
     try {
       var stdout        = ""
       var stderr        = ""
-      val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val async         = args.select("async").asOpt[Boolean].getOrElse(false)
       val processLogger = ProcessLogger(
         out => {
@@ -1164,7 +1164,7 @@ class StoreDelFunction extends WorkflowFunction {
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     env.datastores.rawDataStore.del(keys).map { r =>
       Right(r.json)
     }
@@ -1210,7 +1210,7 @@ class StoreGetAllFunction extends WorkflowFunction {
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     Future
       .sequence(keys.map(key => env.datastores.rawDataStore.get(key)))
       .map(values =>
@@ -1409,7 +1409,7 @@ class StoreMgetFunction extends WorkflowFunction {
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     env.datastores.rawDataStore.mget(keys).map { seq =>
       Right(JsArray(seq.collect { case Some(bs) => bs.utf8String.json }))
     }

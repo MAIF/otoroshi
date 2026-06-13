@@ -2,14 +2,14 @@ package functional
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import otoroshi.next.models._
 import play.api.Configuration
 
 import scala.util.Failure
 import otoroshi.utils.TypedMap
 
-class NgTreeRouterSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class NgTreeRouterSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues with ScalaFutures with IntegrationPatience {
   "NgTreeRouter" should {
     "find routes fast" in {
       NgTreeRouter_Test.testFindRoutes()
@@ -18,8 +18,8 @@ class NgTreeRouterSpec extends WordSpec with MustMatchers with OptionValues with
 }
 
 class NgTreeRouterPathParamsSpec
-    extends WordSpec
-    with MustMatchers
+    extends org.scalatest.wordspec.AnyWordSpec
+    with org.scalatest.matchers.must.Matchers
     with OptionValues
     with ScalaFutures
     with IntegrationPatience {
@@ -31,8 +31,8 @@ class NgTreeRouterPathParamsSpec
 }
 
 //class NgTreeRouterRealLifeSpec
-//    extends WordSpec
-//    with MustMatchers
+//    extends org.scalatest.wordspec.AnyWordSpec
+//    with org.scalatest.matchers.must.Matchers
 //    with OptionValues
 //    with ScalaFutures
 //    with IntegrationPatience {
@@ -44,8 +44,8 @@ class NgTreeRouterPathParamsSpec
 //}
 
 class NgTreeRouterWildcardSpec
-    extends WordSpec
-    with MustMatchers
+    extends org.scalatest.wordspec.AnyWordSpec
+    with org.scalatest.matchers.must.Matchers
     with OptionValues
     with ScalaFutures
     with IntegrationPatience {
@@ -114,7 +114,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
         .map { route =>
           val router       = NgTreeRouter.build(route.toRoutes.debug(r => println(r.size)))
           val attrs        = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")
-          implicit val env = otoroshiComponents.env
+          implicit val env: otoroshi.env.Env = otoroshiComponents.env
 
           router
             .find("api.oto.tools", "/api/services", true)

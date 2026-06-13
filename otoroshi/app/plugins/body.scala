@@ -1,11 +1,11 @@
 package otoroshi.plugins.loggers
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.events._
@@ -19,7 +19,7 @@ import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.json.JsonImplicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.future.Implicits._
-import kaleidoscope._
+import otoroshi.utils.KaleidoscopeShim._
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.RegexPool
 
@@ -30,17 +30,17 @@ case class BodyLoggerFilterConfig(json: JsValue) {
   lazy val statuses: Seq[Int]      = (json \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val notPaths: Seq[String]   = (json \ "not" \ "paths")
     .asOpt[Seq[String]]
-    .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
+    .getOrElse(Seq.empty).toSeq :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
 }
 
 case class BodyLoggerConfig(json: JsValue) {
@@ -201,7 +201,7 @@ class BodyLogger extends RequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("body-logger-redis")
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
     env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "BodyLogger").isDefined) {
         val redis: RedisClientMasterSlaves = {
@@ -213,7 +213,7 @@ class BodyLogger extends RequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "BodyLogger" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),
@@ -221,7 +221,7 @@ class BodyLogger extends RequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }

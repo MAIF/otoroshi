@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.models._
@@ -62,7 +62,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
       .future
   }
 
-  def error(uid: String, errors: Seq[(JsPath, Seq[JsonValidationError])]): Future[Result] = {
+  def error(uid: String, errors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]): Future[Result] = {
     Results
       .Ok(
         Json.obj(
@@ -87,7 +87,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
@@ -300,7 +300,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
   }
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json: JsValue = ctx.request.contentType match {
         case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)

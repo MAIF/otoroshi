@@ -33,7 +33,7 @@ class ConsumerEndpointWithoutApikeyTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("access_type") mustEqual "public"
+  Json.parse(resp.body[String]).selectAsString("access_type") mustEqual "public"
 
   deleteOtoroshiRoute(route).futureValue
 }

@@ -1,12 +1,12 @@
 package otoroshi.script
 
-import akka.Done
-import akka.actor.Cancellable
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.google.common.hash.Hashing
 import io.github.classgraph.ClassgraphUtils
 import otoroshi.auth.AuthModule
@@ -735,9 +735,8 @@ case class ScriptsState(compiling: Boolean, initialized: Boolean) {
 
 class ScriptManager(env: Env) {
 
-  private implicit val ec   = env.otoroshiExecutionContext
-  private implicit val _env = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val _env: otoroshi.env.Env = env
   private val cpScriptExec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   private val logger       = Logger("otoroshi-script-manager")
   private val updateRef    = new AtomicReference[Cancellable]()
@@ -782,7 +781,7 @@ class ScriptManager(env: Env) {
       //   "java.*",
       //   "javax.*",
       //   "aix.*",
-      //   "akka.*",
+      //   "org.apache.pekko.*",
       //   "cats.*",
       //   "ch.qos.logback.*",
       //   "com.auth0.*",
@@ -906,63 +905,63 @@ class ScriptManager(env: Env) {
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName).toSeq
 
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName).toSeq
 
         val reqHandlers: Seq[String] = (scanResult.getSubclasses(classOf[RequestHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestHandler].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val tunnelHandlers: Seq[String] = (scanResult.getSubclasses(classOf[NgTunnelHandler].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgTunnelHandler].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
           scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
           scanResult.getClassesImplementing(classOf[Job].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
           scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val ngPlugins: Seq[String] =
           (scanResult.getSubclasses(classOf[NgPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgPlugin].getName).asScala)
             .filterNot(predicate)
-            .map(_.getName) ++
+            .map(_.getName).toSeq ++
           (scanResult.getSubclasses(classOf[NgNamedPlugin].getName).asScala ++
           scanResult.getClassesImplementing(classOf[NgNamedPlugin].getName).asScala)
             .filterNot(predicate)
-            .map(_.getName)
+            .map(_.getName).toSeq
 
         val adminExts: Seq[String] = (scanResult.getSubclasses(classOf[AdminExtension].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AdminExtension].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         val authModuleConfigs: Seq[String] = (scanResult.getSubclasses(classOf[AuthModule].getName).asScala ++
           scanResult.getClassesImplementing(classOf[AuthModule].getName).asScala)
           .filterNot(predicate)
-          .map(_.getName)
+          .map(_.getName).toSeq
 
         (
           requestTransformers,
@@ -1561,7 +1560,7 @@ object Script {
           desc = (json \ "desc").as[String],
           code = (json \ "code").as[String],
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           `type` = scriptType
         )
       } map { case sd =>
@@ -1581,7 +1580,7 @@ object Script {
         throw e
       }
     }
-  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], Script] = _fmt.reads(value).asEither
+  def fromJsonSafe(value: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], Script] = _fmt.reads(value).asEither
 }
 
 trait ScriptDataStore extends BasicStore[Script] {
@@ -1590,7 +1589,7 @@ trait ScriptDataStore extends BasicStore[Script] {
       id = IdGenerator.namedId("script", env),
       name = "New request transformer",
       desc = "New request transformer",
-      code = """import akka.stream.Materializer
+      code = """import org.apache.pekko.stream.Materializer
              |import otoroshi.env.Env
              |import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
              |import otoroshi.script._

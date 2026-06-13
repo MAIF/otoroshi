@@ -1,14 +1,15 @@
 package functional
 
+import scala.jdk.CollectionConverters._
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.{Done, NotUsed}
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.headers.Host
-import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.headers.Host
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
@@ -41,9 +42,9 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
     "support websockets" in {
 
-      implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat    = Materializer(system)
-      implicit val http   = Http()(system)
+      implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+      implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+      implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http()(system)
 
       val service = ServiceDescriptor(
         id = "ws-test",

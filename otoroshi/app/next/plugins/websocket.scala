@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import com.networknt.schema.SpecVersion.VersionFlag
 import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
@@ -23,7 +23,7 @@ import reactor.core.publisher.Sinks
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util._
 
 sealed trait RejectStrategy {
@@ -475,7 +475,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     if (message.isText) {
       message.str().flatMap { bodyStr =>
         Try(Json.parse(bodyStr)) match {
@@ -530,7 +530,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
       message: WebsocketMessage,
       functionName: Option[String]
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val config       = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -697,7 +697,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
       workflowId: String,
       action: String
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     (if (message.isText) {
        message.str().map { str =>
          ctx.wasmJson.as[JsObject] ++ Json.obj(

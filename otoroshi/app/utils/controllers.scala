@@ -1,7 +1,7 @@
 package otoroshi.utils.controllers
 
-import akka.stream.scaladsl.{Framing, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.{Framing, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
@@ -147,7 +147,7 @@ trait AdminApiHelper {
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     val prefix             = filterPrefix
     val filters            = ctx.request.queryString
-      .mapValues(_.last)
+      .mapValues(_.last).toMap
       .collect {
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -291,9 +291,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkCreate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
@@ -374,9 +374,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkUpdate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
@@ -457,9 +457,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkPatch(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
@@ -582,9 +582,9 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def bulkDelete(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     def actualDelete() = {
       val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -704,9 +704,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def create(ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val rawBody        = ctx.request.body.asObject
     val dev            = if (env.isDev) "_dev" else ""
@@ -777,9 +777,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def findAllEntities(ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val paginationPage: Int     = ctx.request.queryString
       .get("page")
@@ -796,14 +796,14 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     val prefix             = filterPrefix
     val filters            = ctx.request.queryString
-      .mapValues(_.last)
+      .mapValues(_.last).toMap
       .collect {
         case v if prefix.isEmpty                                  => v
         case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
       }
       .filterNot(a => a._1 == "page" || a._1 == "pageSize" || a._1 == "fields")
     val hasFilters         = filters.nonEmpty
-    val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
     val hasFields          = fields.nonEmpty
     val filtered           = ctx.request
       .getQueryString("filtered")
@@ -815,7 +815,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           })
           .toSeq
       )
-      .getOrElse(Seq.empty[(String, String)])
+      .getOrElse(Seq.empty[(String, String)]).toSeq
 
     def sortFinalItems(values: Seq[JsValue]): Seq[JsValue] = {
       val sorted    = ctx.request
@@ -828,7 +828,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             })
             .toSeq
         )
-        .getOrElse(Seq.empty[(String, Boolean)])
+        .getOrElse(Seq.empty[(String, Boolean)]).toSeq
       val hasSorted = sorted.nonEmpty
 
       if (hasSorted) {
@@ -979,9 +979,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def findEntityById(id: String, ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).map {
       case Left(error)                                                               =>
@@ -1005,12 +1005,12 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 metadata
               )
             )
-            val fields    = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+            val fields    = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
             val hasFields = fields.nonEmpty
             if (hasFields) {
               val out = writeEntity(v).as[JsObject]
               // TODO: support dotted notation ?
-              Ok(JsObject(out.value.filterKeys(f => fields.contains(f))))
+              Ok(JsObject(out.value.filterKeys(f => fields.contains(f)).toMap))
             } else {
               Ok(writeEntity(v))
             }
@@ -1020,9 +1020,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def updateEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val body: JsObject = if (isApikey) {
       ctx.request.body.asObject ++ Json.obj("client_id" -> id, "clientId" -> id)
@@ -1088,9 +1088,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def patchEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     findByIdOps(processId(id, ctx), ctx.request).flatMap {
       case Left(error)                                         =>
@@ -1157,9 +1157,9 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
 
   def deleteEntities(ids: Seq[String], ctx: ApiActionContext[_]): Future[Result] = {
 
-    implicit val implEnv = env
-    implicit val implEc  = env.otoroshiExecutionContext
-    implicit val implMat = env.otoroshiMaterializer
+    implicit val implEnv: otoroshi.env.Env = env
+    implicit val implEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val implMat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(ids.toList)
       .mapAsync(1) { _id =>
@@ -1265,7 +1265,7 @@ trait CrudControllerHelper[Entity <: EntityLocationSupport, Error] extends CrudH
 
   def deleteEntitiesAction() =
     ApiAction.async(cc.parsers.json) { ctx =>
-      val ids = (ctx.request.body \ "ids").as[JsArray].value.map(_.as[String])
+      val ids = (ctx.request.body \ "ids").as[JsArray].value.toSeq.map(_.as[String])
       deleteEntities(ids, ctx)
     }
 }

@@ -1,8 +1,8 @@
 package plugins
 
-import akka.Done
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest}
-import akka.stream.scaladsl.Source
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.{HttpHeader, HttpRequest}
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
@@ -389,7 +389,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
     val promise = Promise[ResponseData]()
     pureNettyClient
       .get()
-      .uri("/")
+      .uri("/").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
       .response()
       .doOnNext(response => {
         val headers = scala.collection.mutable.Map[String, String]()

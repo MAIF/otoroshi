@@ -1,9 +1,9 @@
 package otoroshi.ssl
 
 import java.security.cert.X509Certificate
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers
 import org.bouncycastle.asn1.x509.{CRLReason, Extension, Extensions, SubjectPublicKeyInfo}
@@ -114,7 +114,7 @@ object OcspResponder {
 // test command: openssl ocsp -issuer "ca.cer" -cert "*.oto.tools.cer" -text -urDynamicSSLEngineProviderl http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
 class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-certificates-ocsp")
 

@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.utils.controllers.{
   ApiError,
@@ -25,8 +25,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
     with BulkControllerHelper[Cert, JsValue]
     with CrudControllerHelper[Cert, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-certificates-api")
 

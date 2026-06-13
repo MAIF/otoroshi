@@ -1,8 +1,8 @@
 package otoroshi.wasm
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import org.extism.sdk._
 import org.joda.time.DateTime
@@ -286,7 +286,7 @@ object Http extends AwaitCapable {
                 .execute()
                 .map { res =>
                   val body                         = res.bodyAsBytes.encodeBase64.utf8String
-                  val headers: Map[String, String] = res.headers.mapValues(_.head)
+                  val headers: Map[String, String] = res.headers.mapValues(_.head).toMap
                   Json.obj(
                     "status"      -> res.status,
                     "headers"     -> headers,
@@ -383,7 +383,7 @@ object Http extends AwaitCapable {
   lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.ResponseAddHeadersKey,
-      json => json.asObject.value.mapValues(_.asString).toSeq
+      json => json.asObject.value.mapValues(_.asString).toMap.toSeq
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.JwtInjectionKey,
@@ -403,9 +403,9 @@ object Http extends AwaitCapable {
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.plugins.Keys.PreExtractedRequestTargetsKey,
-      json => json.asArray.value.map(v => NgTarget.fmt.reads(v).get)
+      json => json.asArray.value.toSeq.map(v => NgTarget.fmt.reads(v).get)
     ),
-    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.mapValues(_.asString))
+    otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ElCtxKey, json => json.asObject.value.mapValues(_.asString).toMap)
   )
     .map(s => (s.key.displayName, s))
     .collect { case (Some(k), s) =>
@@ -706,7 +706,7 @@ object DataStore extends AwaitCapable {
             .del(
               (data \ "keys")
                 .asOpt[Seq[String]]
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
                 .map(r => s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$r")
             )
           val out    = await(future)
@@ -1236,7 +1236,7 @@ object HostFunctions {
       executionContext: ExecutionContext
   ): Array[HostFunction[_ <: HostUserData]] = {
 
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val functions =
       Logging.getFunctions(config) ++

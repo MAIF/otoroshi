@@ -1,18 +1,18 @@
 package otoroshi.cluster
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.ClientTransport
-import akka.http.scaladsl.model.{ContentTypes, Uri}
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.headers.CannedAcl
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.ClientTransport
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, Uri}
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.{Compression, Flow, Framing, Keep, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Attributes, Materializer, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
@@ -439,10 +439,10 @@ object ClusterConfig {
               val trustAll     =
                 configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.trustAll").getOrElse(false)
               val certs        =
-                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
+                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty).toSeq
               val trustedCerts = configuration
                 .getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.trustedCerts")
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               MtlsConfig(
                 certs = certs,
                 trustedCerts = trustedCerts,
@@ -458,8 +458,8 @@ object ClusterConfig {
       ),
       // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
-        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
-        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
+        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty).toSeq,
+        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty).toSeq,
         loose = configuration.getOptionalWithFileSupport[Boolean]("mtls.loose").getOrElse(false),
         trustAll = configuration.getOptionalWithFileSupport[Boolean]("mtls.trustAll").getOrElse(false),
         mtls = configuration.getOptionalWithFileSupport[Boolean]("mtls.enabled").getOrElse(false)
@@ -576,7 +576,7 @@ object ClusterConfig {
             configuration.getOptionalWithFileSupport[String]("worker.tenantsStr").map(_.split(",").toSeq.map(_.trim))
           )
           .map(_.map(TenantId.apply))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         swapStrategy = configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
           case Some("Merge") => SwapStrategy.Merge
           case _             => SwapStrategy.Replace
@@ -837,7 +837,7 @@ object MemberView {
             .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
             .getOrElse(ClusterMode.Off),
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj()),
-          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty),
+          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty).toSeq,
           httpsPort = (value \ "httpsPort").asOpt[Int].getOrElse(env.exposedHttpsPortInt),
           httpPort = (value \ "httpPort").asOpt[Int].getOrElse(env.exposedHttpPortInt),
           internalHttpsPort = (value \ "internalHttpsPort").asOpt[Int].getOrElse(env.httpsPort),
@@ -1313,10 +1313,10 @@ object ClusterLeaderAgent {
 class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   import scala.concurrent.duration._
 
-  implicit lazy val ec    = env.otoroshiExecutionContext
-  implicit lazy val mat   = env.otoroshiMaterializer
-  implicit lazy val sched = env.otoroshiScheduler
-  implicit lazy val _env  = env
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit lazy val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
+  implicit lazy val _env: otoroshi.env.Env = env
 
   private val membershipRef   = new AtomicReference[Cancellable]()
   private val stateUpdaterRef = new AtomicReference[Cancellable]()
@@ -1486,9 +1486,9 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   import scala.concurrent.duration._
 
-  implicit lazy val ec    = env.otoroshiExecutionContext
-  implicit lazy val mat   = env.otoroshiMaterializer
-  implicit lazy val sched = env.otoroshiScheduler
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit lazy val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
   private val _modern = env.configuration.betterGetOptional[Boolean]("otoroshi.cluster.worker.modern").getOrElse(false)
 
@@ -2193,12 +2193,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -2208,12 +2208,12 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -2410,7 +2410,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def pushQuotas(): Unit = {
     try {
-      implicit val _env = env
+      implicit val _env: otoroshi.env.Env = env
       if (isPushingQuotas.compareAndSet(false, true)) {
         val oldQuotasIncr = quotaIncrs.getAndSet(new UnboundedTrieMap[String, ClusterLeaderUpdateMessage]())
         val start         = System.currentTimeMillis()
@@ -2557,15 +2557,15 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     debug(s"callLeaderAkka: ${attempt}")
     val alreadyReLaunched                                                                                           = new AtomicBoolean(false)
     val pushCancelSource                                                                                            = new AtomicReference[Cancellable]()
-    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
     val pushSource
-        : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-      Source.queue[akka.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue {
+        : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
+      Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](1024 * 10, OverflowStrategy.dropHead).mapMaterializedValue {
         q =>
           queueRef.set(q)
           q
       }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _]                                                      = pushSource
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource
 
     def handleOfferFailure(
         key: String,
@@ -2726,7 +2726,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             queueRef
               .get()
               .offer(
-                akka.http.scaladsl.model.ws.TextMessage
+                org.apache.pekko.http.scaladsl.model.ws.TextMessage
                   .Strict(ClusterMessageFromWorker(member, stats.json).json.prettify)
               )
               .andThen(handleOfferFailure("routes:global", stats))
@@ -2734,7 +2734,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               queueRef
                 .get()
                 .offer(
-                  akka.http.scaladsl.model.ws.TextMessage
+                  org.apache.pekko.http.scaladsl.model.ws.TextMessage
                     .Strict(ClusterMessageFromWorker(member, incr.json).json.prettify)
                 )
                 .andThen(handleOfferFailure(key, incr))
@@ -2772,7 +2772,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               case (Some(principal), Some(password)) =>
                 ClientTransport.httpsProxy(
                   proxyAddress,
-                  akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                  org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 )
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
@@ -2785,18 +2785,18 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       },
       clientFlow = Flow
         .fromSinkAndSource(
-          Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-            case akka.http.scaladsl.model.ws.TextMessage.Strict(data)       => onClusterState(data, false, false)
-            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+          Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(data)       => onClusterState(data, false, false)
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
               source.runFold("")(_ + _).map(data => onClusterState(data, true, false))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     =>
               debug(s"uncompressing strict at level ${env.clusterConfig.compression}")
               data
                 .chunks(1024 * 32)
                 .via(config.gunzip())
                 .runFold(ByteString.empty)(_ ++ _)
                 .map(data => onClusterState(data.utf8String, false, true))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
               debug(s"uncompressing streamed at level ${env.clusterConfig.compression}")
               source.runFold(ByteString.empty)(_ ++ _).map(data => onClusterState(data.utf8String, true, true))
           },
@@ -2869,7 +2869,7 @@ class SwappableInMemoryDataStores(
     env: Env
 ) extends DataStores {
 
-  import akka.stream.Materializer
+  import org.apache.pekko.stream.Materializer
 
   import scala.concurrent.duration._
   import scala.util.hashing.MurmurHash3
@@ -2978,12 +2978,12 @@ class SwappableInMemoryDataStores(
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -2993,12 +2993,12 @@ class SwappableInMemoryDataStores(
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -3186,9 +3186,9 @@ class SwappableInMemoryDataStores(
 
   override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     FastFuture.successful(
       Source
@@ -3228,9 +3228,9 @@ class SwappableInMemoryDataStores(
 
   override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev  = env
-    implicit val ecc = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
@@ -3249,8 +3249,8 @@ class SwappableInMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -3319,7 +3319,7 @@ class SwappableInMemoryDataStores(
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
       case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.MutableList[ByteString]          =>
+      case list: scala.collection.mutable.ListBuffer[ByteString]          =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
       case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))

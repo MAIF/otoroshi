@@ -1,6 +1,6 @@
 package functional
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events._
@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 
 class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
 
   lazy val serviceHost = "api.oto.tools"
   lazy val elasticUrl  = "http://127.0.0.1:9200"

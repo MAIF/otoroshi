@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.otoroshi.wasm4s.scaladsl.WasmoSettings
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
@@ -127,7 +127,7 @@ object ElasticAnalyticsConfig {
         "type"          -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "user"          -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
         "password"      -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-        "headers"       -> JsObject(o.headers.mapValues(JsString.apply)),
+        "headers"       -> JsObject(o.headers.mapValues(JsString.apply).toMap),
         "indexSettings" -> o.indexSettings.json,
         "mtlsConfig"    -> o.mtlsConfig.json,
         "applyTemplate" -> o.applyTemplate,
@@ -138,8 +138,8 @@ object ElasticAnalyticsConfig {
     override def reads(json: JsValue)              =
       Try {
         val clusterUriValue: Seq[String] =
-          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty)
-        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty)
+          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty).toSeq
+        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         val uris: Seq[String]            = (clusterUriValue ++ urisValue).flatMap { uri =>
           if (uri.contains(",")) {
             uri.split(",").map(_.trim)
@@ -211,7 +211,7 @@ case class Webhook(
 }
 
 object Webhook {
-  implicit val format = new Format[Webhook] {
+  implicit val format: play.api.libs.json.Format[Webhook] = new Format[Webhook] {
     override def reads(json: JsValue): JsResult[Webhook] =
       Try {
         Webhook(
@@ -242,7 +242,7 @@ case class CleverCloudSettings(
 )
 
 object CleverCloudSettings {
-  implicit val format = Json.format[CleverCloudSettings]
+  implicit val format: play.api.libs.json.OFormat[CleverCloudSettings] = Json.format[CleverCloudSettings]
 }
 
 case class Proxies(
@@ -328,17 +328,17 @@ object GlobalScripts {
       Try {
         JsSuccess(
           GlobalScripts(
-            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
-            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             transformersConfig = (json \ "transformersConfig").asOpt[JsValue].getOrElse(Json.obj()),
             validatorConfig = (json \ "validatorConfig").asOpt[JsValue].getOrElse(Json.obj()),
             preRouteConfig = (json \ "preRouteConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             sinkConfig = (json \ "sinkConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             jobConfig = (json \ "jobConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty)
+            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -465,7 +465,7 @@ object AutoCert {
           replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(false),
           caRef = (json \ "caRef").asOpt[String],
           allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq("*")),
-          notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty)
+          notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -509,7 +509,7 @@ object TlsSettings {
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
-          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
           clientAuth = (json \ "clientAuth")
             .asOpt[String]
@@ -933,14 +933,14 @@ object GlobalConfig {
             }*/
           },
           analyticsWebhooks =
-            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
+            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
           alertsWebhooks =
-            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),
+            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
           elasticWritesConfigs = (json \ "elasticWritesConfigs")
             .asOpt[Seq[ElasticAnalyticsConfig]](Reads.seq(ElasticAnalyticsConfig.format))
-            .getOrElse(Seq.empty[ElasticAnalyticsConfig]),
-          alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            .getOrElse(Seq.empty[ElasticAnalyticsConfig]).toSeq,
+          alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           maxWebhookSize = (json \ "maxWebhookSize").asOpt[Int].getOrElse(100),
           middleFingers = (json \ "middleFingers").asOpt[Boolean].getOrElse(false),
           maxLogsSize = (json \ "maxLogsSize").asOpt[Int].getOrElse(10000),
@@ -1031,7 +1031,7 @@ object GlobalConfig {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)

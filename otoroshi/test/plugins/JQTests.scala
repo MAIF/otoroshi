@@ -1,6 +1,6 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins._
@@ -41,7 +41,7 @@ class JQTests(parent: PluginsTestSpec) {
     .futureValue
 
   call.status mustBe Status.OK
-  Json.parse(call.body) mustBe Json.obj("username" -> "Julien")
+  Json.parse(call.body[String]) mustBe Json.obj("username" -> "Julien")
 
   deleteOtoroshiRoute(route).futureValue
 }

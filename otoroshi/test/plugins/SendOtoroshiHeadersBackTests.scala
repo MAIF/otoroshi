@@ -53,7 +53,7 @@ class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  val body = Json.parse(resp.body).as[JsValue]
+  val body = Json.parse(resp.body[String]).as[JsValue]
 
   resp.header(env.Headers.OtoroshiRequestId) mustBe defined
   resp.header(env.Headers.OtoroshiRequestTimestamp) mustBe defined

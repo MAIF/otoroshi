@@ -18,8 +18,8 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     with BulkControllerHelper[StoredNgBackend, JsValue]
     with CrudControllerHelper[StoredNgBackend, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-backends-api")
 
@@ -170,7 +170,7 @@ class NgBackendsController(val ApiAction: ApiAction, val cc: ControllerComponent
     }
   }
 
-  def initiateStoredNgBackend() = ApiAction { ctx =>
+  def initiateStoredNgBackend() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     val defaultBackend = StoredNgBackend(
       location = EntityLocation.default,
       id = s"backend_${IdGenerator.uuid}",

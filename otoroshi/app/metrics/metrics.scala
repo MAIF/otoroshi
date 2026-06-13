@@ -1,7 +1,7 @@
 package otoroshi.metrics
 
-import akka.actor.Cancellable
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
@@ -37,7 +37,7 @@ import java.util.{Timer => _, _}
 import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.{mapAsJavaMapConverter, mapAsScalaMapConverter}
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {
@@ -59,8 +59,8 @@ object FakeHasMetrics extends HasMetrics {
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
-  private implicit val ev = env
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ev: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-metrics")
 

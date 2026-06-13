@@ -1,7 +1,7 @@
 package plugins
 
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -45,7 +45,7 @@ class ZipBackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
 
   val notFoundFile = ws
     .url(s"http://127.0.0.1:$port/")

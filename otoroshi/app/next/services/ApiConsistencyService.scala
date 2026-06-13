@@ -22,7 +22,7 @@ object ApiConsistencyService {
 
     val apiHasChanged = oldApi != newApi
 
-    println("api has changed", apiHasChanged)
+    println(("api has changed", apiHasChanged))
 
     if (apiHasChanged) {
       val deletedPlans = oldById.keySet.diff(newById.keySet).map(oldById)
@@ -52,7 +52,7 @@ object ApiConsistencyService {
       env: Env,
       ec: ExecutionContext
   ): Future[Api] = {
-    println("delete plan", plan.name)
+    println(("delete plan", plan.name))
 
     (if (isDraft)
        batchSubscriptionsUpdates[Draft](
@@ -128,7 +128,7 @@ object ApiConsistencyService {
       env: Env,
       ec: ExecutionContext
   ): Future[Api] = {
-    println("update plan", plan.name)
+    println(("update plan", plan.name))
 
     if (isDraft) {
       batchSubscriptionsUpdates[Draft](

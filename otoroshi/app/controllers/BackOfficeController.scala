@@ -1,10 +1,10 @@
 package otoroshi.controllers
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -149,8 +149,8 @@ class BackOfficeController(
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val lat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val lat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val handler       = handlerRef.get()
   lazy val logger        = Logger("otoroshi-backoffice-api")
@@ -217,7 +217,7 @@ class BackOfficeController(
   //       Results.InternalServerError(Json.obj("error" -> "admin_api_error", "error_description" -> err)).vfuture
   //     case Right(raw_engine) => {
   //       val engine          = raw_engine.asInstanceOf[ProxyEngine]
-  //       implicit val global = env.datastores.globalConfigDataStore.latest()
+  //       implicit val global: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
   //       val raw_request     = ctx.request
   //       val host            = env.adminApiExposedHost
   //       val request         = new BackOfficeRequest(raw_request, host, apikey, ctx.user, env)
@@ -330,7 +330,7 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head)
+                .mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
@@ -400,7 +400,7 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head)
+                .mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
@@ -416,7 +416,7 @@ class BackOfficeController(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def robotTxt =
-    Action { req =>
+    Action { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       if (logger.isDebugEnabled) logger.debug(s"Rendering robot.txt on ${req.theProtocol}://${req.theHost}/robot.txt")
       Ok("""User-agent: *
          |Disallow: /""".stripMargin)
@@ -572,7 +572,7 @@ class BackOfficeController(
     }
 
   def error(message: Option[String]) =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.oto.error(message.getOrElse("Error message"), env))
     }
 
@@ -651,7 +651,7 @@ class BackOfficeController(
                     val id                 = (app \ "id").as[String]
                     val name               = (app \ "name").as[String]
                     val hosts: Seq[String] =
-                      (app \ "vhosts").as[JsArray].value.map(vhost => (vhost \ "fqdn").as[String])
+                      (app \ "vhosts").as[JsArray].value.toSeq.map(vhost => (vhost \ "fqdn").as[String])
                     val preferedHost       =
                       hosts.filterNot(h => h.contains("cleverapps.io")).headOption.getOrElse(hosts.head)
                     val service            =
@@ -981,8 +981,8 @@ class BackOfficeController(
 
       val trust_all     = ctx.request.body.select("trust_all").asOptBoolean.getOrElse(false)
       val loose         = ctx.request.body.select("loose").asOptBoolean.getOrElse(false)
-      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val trusted_certs = ctx.request.body.select("trusted_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+      val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val sessionCookieValues =
         (ctx.request.body \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
@@ -1183,7 +1183,7 @@ class BackOfficeController(
     }
 
   def resetCircuitBreakers(id: String) =
-    BackOfficeActionAuth { ctx =>
+    BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
       env.circuitBeakersHolder.resetCircuitBreakersFor(id)
       Ok(Json.obj("done" -> true))
     }
@@ -1992,7 +1992,7 @@ class BackOfficeController(
       .map { res =>
         Results
           .Status(res.status)(res.body)
-          .withHeaders(res.headers.mapValues(_.last).toSeq.filterNot(_._1 == "Content-Type"): _*)
+          .withHeaders(res.headers.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type"): _*)
           .as(res.contentType)
       }
   }
@@ -2039,7 +2039,7 @@ class BackOfficeController(
     val types = ctx.request.body
       .select("types")
       .as[JsArray]
-      .value
+      .value.toSeq
       .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
       .flatMap {
         case JsSuccess(v, _) => Some(v)
@@ -2078,7 +2078,7 @@ class BackOfficeController(
     } get
   }
 
-  def toYaml = BackOfficeActionAuth(parse.json) { ctx =>
+  def toYaml = BackOfficeActionAuth(parse.json) { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.libs.json.JsValue]) =>
     Ok(Yaml.write(ctx.request.body)).as("application/yaml")
   }
 
@@ -2176,14 +2176,14 @@ class BackOfficeController(
     }
   }
 
-  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { ctx =>
+  def testFilteringAndProjection() = BackOfficeActionAuth(parse.json) { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.libs.json.JsValue]) =>
     val body                                   = ctx.request.body
     val input                                  = body.select("input").asOpt[JsValue].getOrElse(Json.obj())
     val matchExpressions: JsObject             = body.select("match").asOpt[JsObject].getOrElse(Json.obj())
     val matchIncludeExpressions: Seq[JsObject] =
-      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+      matchExpressions.select("include").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject]).toSeq
     val matchExcludeExpressions: Seq[JsObject] =
-      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject])
+      matchExpressions.select("exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty[JsObject]).toSeq
     val projectionExpression: JsObject         = body.select("projection").asOpt[JsObject].getOrElse(Json.obj())
 
     val shouldInclude =
@@ -2200,7 +2200,7 @@ class BackOfficeController(
     Ok(Json.obj("matches" -> matches, "projection" -> projected))
   }
 
-  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { ctx =>
+  def testFilteringAndProjectionInputDoc() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
     val rawRequest = ctx.request
     val route      = NgRoute.empty
     val target     = NgTarget.default

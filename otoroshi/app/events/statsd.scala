@@ -3,7 +3,7 @@ package otoroshi.events
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import akka.actor.{Actor, ActorSystem, Cancellable, Props}
+import org.apache.pekko.actor.{Actor, ActorSystem, Cancellable, Props}
 import com.codahale.metrics.{Counter, Gauge, Reporter}
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import otoroshi.env.Env
@@ -121,7 +121,7 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
 
 class StatsdActor(env: Env) extends Actor {
 
-  implicit val ec = env.analyticsExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   var config: Option[StatsdConfig]           = None
   var statsdclient: Option[StatsDClient]     = None
@@ -205,8 +205,8 @@ object StatsdActor {
 
 class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporter with Closeable {
 
-  implicit val e  = env
-  implicit val ec = env.analyticsExecutionContext
+  implicit val e: otoroshi.env.Env = env
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   private val cancellable = new AtomicReference[Option[Cancellable]](None)
 

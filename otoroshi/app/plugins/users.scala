@@ -1,6 +1,6 @@
 package otoroshi.plugins.users
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.JsonPathUtils
@@ -64,19 +64,19 @@ class HasAllowedUsersValidator extends AccessValidator {
           .orElse((context.config \ "HasAllowedUsersValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedUsernames    =
-          (config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedEmails       =
-          (config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedEmailDomains =
-          (config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val metadataMatch       =
-          (config \ "metadataMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "metadataMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val metadataNotMatch    =
-          (config \ "metadataNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "metadataNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val profileMatch        =
-          (config \ "profileMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "profileMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val profileNotMatch     =
-          (config \ "profileNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "profileNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val userMetaRaw         = user.otoroshiData.getOrElse(Json.obj())
         if (
           allowedUsernames.contains(user.name) ||

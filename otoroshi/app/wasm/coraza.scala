@@ -1,9 +1,9 @@
 package otoroshi.wasm.proxywasm
 
-import akka.NotUsed
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
@@ -26,7 +26,6 @@ import play.api.libs.typedmap.TypedKey
 import play.api.mvc
 import play.api.mvc.Results
 
-import scala.collection.Seq
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util._
@@ -331,7 +330,7 @@ object CorazaWafConfig {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         inspectInputBody = (json \ "inspect_in_body").asOpt[Boolean].getOrElse(true),
         inspectOutputBody = (json \ "inspect_out_body").asOpt[Boolean].getOrElse(true),
         isBlockingMode = (json \ "is_blocking_mode").asOpt[Boolean].getOrElse(true),
@@ -340,7 +339,7 @@ object CorazaWafConfig {
           .asOpt[JsArray]
           .getOrElse(oldDirectives.getOrElse(Json.arr()))
           .value
-          .map(_.as[String]),
+          .map(_.as[String]).toSeq,
         poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2)
       )
     } match {
@@ -396,8 +395,8 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       configs <- datastores.corazaConfigsDatastore.findAll()
     } yield {
@@ -429,7 +428,7 @@ class CorazaWafAdminExtension(val env: Env) extends AdminExtension {
             json => json.select("id").asString,
             () => "id",
             tmpl = (v, p, _ctx) => CorazaWafConfig.template().json,
-            stateAll = () => states.allConfigs(),
+            stateAll = () => states.allConfigs().toSeq,
             stateOne = id => states.config(id),
             stateUpdate = values => states.updateConfigs(values)
           )
@@ -533,13 +532,13 @@ case class CorazaTrailEvent(
 
 class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: String, env: Env)
     extends CorazaImplementation {
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool
-      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty))
+      .getPooledVm(WasmVmInitOptions(importDefaultHostFunctions = false, resetMemory = false, _ => Seq.empty[org.extism.sdk.HostFunction[? <: org.extism.sdk.HostUserData]]))
       .flatMap { vm =>
         attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.CorazaWasmVmKey -> vm)
         vm.finitialize {

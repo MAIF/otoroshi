@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.utils.syntax.implicits._
@@ -28,7 +28,7 @@ object QueryTransformerConfig {
     )
     override def reads(json: JsValue): JsResult[QueryTransformerConfig] = Try {
       QueryTransformerConfig(
-        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty),
+        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         rename = json.select("rename").asOpt[Map[String, String]].getOrElse(Map.empty),
         add = json.select("add").asOpt[Map[String, String]].getOrElse(Map.empty)
       )

@@ -1,9 +1,9 @@
 package otoroshi.utils.letsencrypt
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.shredzone.acme4j._
 import org.shredzone.acme4j.challenge._
 import org.shredzone.acme4j.util._
@@ -78,12 +78,12 @@ object LetsEncryptSettings {
             .asOpt[Seq[String]]
             .map(_.map(_.trim).filter(_.nonEmpty))
             .filter(_.nonEmpty)
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           contacts = (json \ "contacts")
             .asOpt[Seq[String]]
             .map(_.map(_.trim).filter(_.nonEmpty))
             .filter(_.nonEmpty)
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           publicKey = (json \ "publicKey").asOpt[String].getOrElse(""),
           privateKey = (json \ "privateKey").asOpt[String].getOrElse("")
         )

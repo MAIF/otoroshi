@@ -1,6 +1,6 @@
 package otoroshi.statefulclients
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -32,7 +32,7 @@ class StatefulClientsManager(env: Env) {
   private val logger                                                     = Logger("otoroshi-stateful-clients-manager")
   private val statefulClients: TrieMap[String, StatefulClientWrapper[_]] =
     new TrieMap[String, StatefulClientWrapper[_]]()
-  private implicit val ec                                                = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  private implicit val ec: scala.concurrent.ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   def client[T](id: String, config: StatefulClientConfig[T]): T = synchronized {
     statefulClients.get(id) match {
@@ -88,14 +88,14 @@ class StatefulClientsManager(env: Env) {
       .select("otoroshi")
       .select("stateful-clients")
       .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val staticJsonConfigs = env.configurationJson
       .select("otoroshi")
       .select("stateful-clients-json")
       .asOpt[String]
       .flatMap(str => str.parseJson.asOpt[Seq[JsObject]])
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val dynConfigs        = env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
@@ -103,7 +103,7 @@ class StatefulClientsManager(env: Env) {
       .config
       .select("stateful-clients")
       .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val configs           = staticConfigs ++ staticJsonConfigs ++ dynConfigs
     configs.flatMap { config =>

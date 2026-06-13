@@ -1,10 +1,10 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.{AuthModuleConfig, ErrorReason, GenericOauth2Module, GenericOauth2ModuleConfig, OAuth2ModuleConfig}
 import otoroshi.cluster.{Cluster, ClusterMode}
 import otoroshi.env.Env
@@ -205,13 +205,13 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
           .collect { case JsSuccess(c, _) =>
             c
-          }
+          }.toSeq
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig): Future[Boolean] = {
@@ -297,13 +297,13 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
           .collect { case JsSuccess(c, _) =>
             c
-          }
+          }.toSeq
       }
 
       def checkOneConfig(config: ThirdPartyApiKeyConfig, ref: AtomicReference[ApiKey]): Future[Unit] = {

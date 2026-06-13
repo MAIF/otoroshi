@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.nixxcode.jvmbrotli.common.BrotliLoader
 import com.nixxcode.jvmbrotli.enc.Encoder
 import otoroshi.env.Env
@@ -33,8 +33,8 @@ object NgBrotliConfig {
     override def reads(json: JsValue): JsResult[NgBrotliConfig] =
       Try {
         NgBrotliConfig(
-          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "buffer_size").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunked_threshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compression_level").asOpt[Int].getOrElse(5)
@@ -147,7 +147,7 @@ class BrotliResponseCompressor extends NgRequestTransformer {
   private def varyWith(rh: Map[String, String], headerValues: String*): (String, String) = {
     val newValue = rh.getIgnoreCase(VARY) match {
       case Some(existing) if existing.nonEmpty =>
-        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase)(collection.breakOut)
+        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase).toSet
         val newValuesToAdd           = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
         s"$existing${newValuesToAdd.map(v => s",$v").mkString}"
       case _                                   =>

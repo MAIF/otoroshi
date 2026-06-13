@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.Scaffeine
@@ -50,9 +50,8 @@ import java.security.KeyPair
 import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.util.{Date, UUID}
 import javax.crypto.{Cipher, KeyGenerator}
-import scala.collection.parallel.immutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 case class NgJwtVerificationConfig(
@@ -78,7 +77,7 @@ object NgJwtVerificationConfig {
   val format = new Format[NgJwtVerificationConfig] {
     override def reads(json: JsValue): JsResult[NgJwtVerificationConfig] = Try {
       NgJwtVerificationConfig(
-        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        verifiers = json.select("verifiers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         customResponse = json.select("custom_response").asOpt[Boolean].getOrElse(false),
         customResponseStatus = json.select("custom_response_status").asOpt[Int].getOrElse(401),
         customResponseHeaders = json.select("custom_response_headers").asOpt[Map[String, String]].getOrElse(Map.empty),

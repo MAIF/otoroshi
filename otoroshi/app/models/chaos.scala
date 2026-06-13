@@ -138,7 +138,7 @@ object BadResponsesFaultConfig {
         JsSuccess(
           // BadResponsesFaultConfig(
           //   ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
-          //   responses = (json \ "responses").asOpt(Reads.seq(BadResponse.fmt)).getOrElse(Seq.empty)
+          //   responses = (json \ "responses").asOpt(Reads.seq(BadResponse.fmt)).getOrElse(Seq.empty).toSeq
           // )
           BadResponsesFaultConfig(
             ratio = (json \ "ratio").as[Double],
@@ -310,7 +310,7 @@ object SnowMonkeyConfig {
           outageDurationTo = (json \ "outageDurationTo")
             .asOpt[FiniteDuration](durationFmt)
             .getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
-          targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty),
+          targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chaosConfig = (json \ "chaosConfig")
             .asOpt[ChaosConfig](ChaosConfig._fmt)
             .getOrElse(ChaosConfig(true, None, None, None, None))

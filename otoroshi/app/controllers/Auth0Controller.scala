@@ -1,7 +1,7 @@
 package otoroshi.controllers
 
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction, PrivateAppsActionContext}
@@ -45,7 +45,7 @@ class AuthController(
 )(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = AuthController.logger
 
@@ -138,7 +138,7 @@ class AuthController(
                       .find(p =>
                         p._2
                           .asOpt[Seq[String]]
-                          .getOrElse(Seq.empty)
+                          .getOrElse(Seq.empty).toSeq
                           .exists(em => RegexPool.theRegex(em).map(e => e.matches(email)).getOrElse(email == em))
                       ) match {
                       case Some(auth) =>
@@ -607,12 +607,12 @@ class AuthController(
               case Some(body) if body.get("RelayState").exists(_.nonEmpty) =>
                 // val queryParams =
                 //   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-                // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+                // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head).toMap
                 val params: Map[String, String] = {
                   try {
                     val decoded =
                       JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
-                    decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
+                    decoded.getClaims.asScala.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
                   } catch {
                     case t: Throwable =>
                       logger.error("error while verifying relay_state", t)
@@ -722,11 +722,11 @@ class AuthController(
           if (body.get("RelayState").exists(_.nonEmpty)) {
             // val queryParams =
             //   body("RelayState").head.split("&").map { qParam => (qParam.split("=")(0), qParam.split("=")(1)) }
-            // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head)
+            // val params      = queryParams.groupBy(_._1).mapValues(_.map(_._2).head).toMap
             val params: Map[String, String] = {
               try {
                 val decoded = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
-                decoded.getClaims.asScala.mapValues(_.asString()).filter(_._2 != null).toMap
+                decoded.getClaims.asScala.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
               } catch {
                 case t: Throwable =>
                   logger.error("error while verifying relay_state", t)
@@ -973,7 +973,7 @@ class AuthController(
     }
 
   def auth0error(error: Option[String], error_description: Option[String]) =
-    BackOfficeAction { ctx =>
+    BackOfficeAction { (ctx: otoroshi.actions.BackOfficeActionContext[play.api.mvc.AnyContent]) =>
       val errorId = IdGenerator.token(16)
       logger.error(
         s"[AUTH0 ERROR] error_id: $errorId => ${error.getOrElse("--")} : ${error_description.getOrElse("--")}"

@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.el.{GlobalExpressionLanguage, HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.env.Env
@@ -34,7 +34,7 @@ object NgHeaderNamesConfig {
           .filter(_.nonEmpty)
           .orElse(json.select("headers").asOpt[Seq[String]].filter(_.nonEmpty))
           .orElse(json.select("names").asOpt[Seq[String]].filter(_.nonEmpty))
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -120,7 +120,7 @@ object OverrideLocationHeaderConfig {
   val format                         = new Format[OverrideLocationHeaderConfig] {
     override def reads(json: JsValue): JsResult[OverrideLocationHeaderConfig] = Try {
       OverrideLocationHeaderConfig(
-        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty)
+        matchingHostnames = json.select("matching_hostnames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -386,7 +386,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
           attrs = ctx.attrs,
           env = env
         )
-      )
+      ).toMap
     Right(ctx.otoroshiRequest.copy(headers = newHeaders))
   }
 }
@@ -416,7 +416,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig())
     val additionalHeaders = {
-      config.headers.mapValues { value =>
+      config.headers.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -428,7 +428,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     }
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
@@ -458,7 +458,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues { value =>
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -470,7 +470,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
@@ -506,7 +506,7 @@ class MissingHeadersIn extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
       }
-      .mapValues { value =>
+      .mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -518,7 +518,7 @@ class MissingHeadersIn extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ additionalHeaders))
   }
 }
@@ -553,7 +553,7 @@ class MissingHeadersOut extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
       }
-      .mapValues { value =>
+      .mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -565,7 +565,7 @@ class MissingHeadersOut extends NgRequestTransformer {
           ctx.attrs,
           env
         )
-      }
+      }.toMap
     Right(ctx.otoroshiResponse.copy(headers = ctx.otoroshiResponse.headers ++ additionalHeaders))
   }
 }

@@ -1,10 +1,10 @@
 package otoroshi.plugins.envoy
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -275,7 +275,7 @@ class EnvoyControlPlane extends RequestTransformer {
     def httpsListener(id: String, port: Int, services: Seq[ServiceDescriptor], certificates: Seq[Cert]): JsObject = {
 
       // TODO: try to group with wildcard certificates
-      val chains = services.flatMap(s => s.allHosts.map(h => (h, s))).groupBy(_._1).mapValues(_.map(_._2)).map {
+      val chains = services.flatMap(s => s.allHosts.map(h => (h, s))).groupBy(_._1).mapValues(_.map(_._2)).toMap.map {
         case (host, servs) =>
           val certs =
             certificates.filter(_.matchesDomain(host)).sortWith((c1, c2) => c1.allDomains.exists(_.contains("*")))

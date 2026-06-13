@@ -1,10 +1,10 @@
 package otoroshi.netty
 
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
-import akka.http.scaladsl.model.{ContentType, HttpHeader, Uri}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelOption
@@ -132,6 +132,8 @@ case class NettyWsClientRequest(
   override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest                     =
     copy(body = evidence$1.transform(body))
   override def withMethod(method: String): WSRequest                                                     = copy(method = method)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
   override def get(): Future[WSResponse]                                                                 = copy(method = "GET").execute()
   override def delete(): Future[WSResponse]                                                              = copy(method = "DELETE").execute()
   override def head(): Future[WSResponse]                                                                = copy(method = "HEAD").execute()
@@ -209,7 +211,7 @@ case class NettyWsClientRequest(
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"
@@ -382,7 +384,7 @@ case class NettyWsClientRequest(
                 }
                 .build()
               client
-                .secure((spec: SslProvider.SslContextSpec) => spec.sslContext(ctx))
+                .secure((spec: SslProvider.SslContextSpec) => { spec.sslContext(ctx); () })
               // TODO: if targetOpt.ipAddress, spec.sslContext(ctx).serverNames(new SNIHostName(targetOpt.theHost)))
             } else {
               client.secure()
@@ -431,7 +433,6 @@ case class NettyWsClientRequest(
         }
         //.httpResponseDecoder(spec => spec) // TODO: check if needed
         .headers { heads =>
-          import collection.JavaConverters._
           headers.foreach { case (name, values) =>
             heads.add(name, values.asJava)
           }

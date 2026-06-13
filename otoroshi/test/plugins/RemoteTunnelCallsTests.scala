@@ -1,6 +1,6 @@
 package plugins
 
-import akka.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{PluginsTestSpec, TargetService}
 import otoroshi.api.Otoroshi

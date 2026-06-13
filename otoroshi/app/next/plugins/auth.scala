@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}
@@ -46,8 +46,8 @@ object NgLegacyAuthModuleCallConfig {
     ) ++ o.config.json.asObject
     override def reads(json: JsValue): JsResult[NgLegacyAuthModuleCallConfig] = Try {
       NgLegacyAuthModuleCallConfig(
-        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         config = NgAuthModuleConfig.format.reads(json).asOpt.getOrElse(NgAuthModuleConfig())
       )
     } match {
@@ -146,7 +146,7 @@ object NgMultiAuthModuleConfig {
           .select("auth_modules")
           .asOpt[Seq[String]]
           .orElse(json.select("modules").asOpt[Seq[String]])
-          .getOrElse(Seq.empty[String])
+          .getOrElse(Seq.empty[String]).toSeq
           .filter(_.nonEmpty),
         passWithApikey = json
           .select("pass_with_apikey")
@@ -525,7 +525,7 @@ object NgAuthModuleExpectedUserConfig {
   val format = new Format[NgAuthModuleExpectedUserConfig] {
     override def reads(json: JsValue): JsResult[NgAuthModuleExpectedUserConfig] = Try {
       NgAuthModuleExpectedUserConfig(
-        onlyFrom = json.select("only_from").asOpt[Seq[String]].getOrElse(Seq.empty)
+        onlyFrom = json.select("only_from").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

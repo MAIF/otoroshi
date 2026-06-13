@@ -1,8 +1,8 @@
 package otoroshi.script
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.joda.time.DateTime
@@ -143,7 +143,7 @@ class ForwardTrafficHandler extends RequestHandler {
             val clenOut                      =
               resp.headers.get("Content-Length").orElse(resp.headers.get("content-length")).map(_.last).map(_.toLong)
             val headersOut                   = resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .filterNot { case (key, _) =>
                 key.toLowerCase == "content-length"
               }
@@ -238,9 +238,9 @@ class ForwardTrafficHandler extends RequestHandler {
               data = DataInOut(0, 0),
               status = resp.status,
               headers = request.headers.toSimpleMap.toSeq.map(Header.apply),
-              headersOut = resp.headers.mapValues(_.last).toSeq.map(Header.apply),
+              headersOut = resp.headers.mapValues(_.last).toMap.toSeq.map(Header.apply),
               otoroshiHeadersIn = headers.map(Header.apply),
-              otoroshiHeadersOut = resp.headers.mapValues(_.last).toSeq.map(Header.apply),
+              otoroshiHeadersOut = resp.headers.mapValues(_.last).toMap.toSeq.map(Header.apply),
               extraInfos = None,
               responseChunked = false,
               identity = None,
@@ -263,7 +263,7 @@ class ForwardTrafficHandler extends RequestHandler {
                 val res = Status(resp.status)
                   .chunked(resp.bodyAsSource)
                   .withHeaders(headersOut: _*)
-                  .withCookies(cookiesOut: _*)
+                  .withCookies(cookiesOut.toSeq: _*)
                 ctypeOut match {
                   case None      => res
                   case Some(ctp) => res.as(ctp)
@@ -280,7 +280,7 @@ class ForwardTrafficHandler extends RequestHandler {
                     )
                   )
                   .withHeaders(headersOut: _*)
-                  .withCookies(cookiesOut: _*)
+                  .withCookies(cookiesOut.toSeq: _*)
                 ctypeOut match {
                   case None      => res
                   case Some(ctp) => res.as(ctp)

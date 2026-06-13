@@ -23,8 +23,8 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
     with BulkControllerHelper[ClientCertificateValidator, JsValue]
     with CrudControllerHelper[ClientCertificateValidator, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   override def singularName: String = "client-validator"
 

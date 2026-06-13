@@ -14,7 +14,7 @@ object EntityFiltering {
       case arr @ JsArray(_) => {
         val prefix     = filterPrefix
         val filters    = request.queryString
-          .mapValues(_.last)
+          .mapValues(_.last).toMap
           .collect {
             case v if prefix.isEmpty                                  => v
             case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -30,11 +30,11 @@ object EntityFiltering {
               })
               .toSeq
           )
-          .getOrElse(Seq.empty[(String, String)])
+          .getOrElse(Seq.empty[(String, String)]).toSeq
         val hasFilters = filters.nonEmpty
 
         val reducedItems = if (hasFilters) {
-          val items: Seq[JsValue] = arr.value.filter { elem =>
+          val items: Seq[JsValue] = arr.value.toSeq.filter { elem =>
             filters.forall {
               case (key, value) if key.startsWith("$") && key.contains(".") => {
                 elem.atPath(key).asOpt[JsValue].getOrElse(JsNull) match {
@@ -105,11 +105,11 @@ object EntityFiltering {
           }
           items
         } else {
-          arr.value
+          arr.value.toSeq
         }
 
         val filteredItems = if (filtered.nonEmpty) {
-          val items: Seq[JsValue] = reducedItems.filter { elem =>
+          val items: Seq[JsValue] = reducedItems.toSeq.filter { elem =>
             filtered.forall { case (key, maybeValues) =>
               val searched_values: Seq[String] =
                 if (maybeValues.contains("|")) maybeValues.split("\\|").toSeq else Seq(maybeValues)
@@ -179,10 +179,10 @@ object EntityFiltering {
               })
               .toSeq
           )
-          .getOrElse(Seq.empty[(String, Boolean)])
+          .getOrElse(Seq.empty[(String, Boolean)]).toSeq
         val hasSorted = sorted.nonEmpty
         if (hasSorted) {
-          JsArray(sorted.foldLeft(arr.value) {
+          JsArray(sorted.foldLeft(arr.value.toSeq) {
             case (sortedArray, sort) => {
 
               val out = if (sortedArray.isEmpty) {
@@ -249,7 +249,7 @@ object EntityFiltering {
             .getOrElse(Int.MaxValue)
         val paginationPosition      = (paginationPage - 1) * paginationPageSize
 
-        val content = arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)
+        val content = arr.value.toSeq.slice(paginationPosition, paginationPosition + paginationPageSize)
         PaginatedContent(
           pages = Math.ceil(arr.value.size.toFloat / paginationPageSize).toInt,
           content = JsArray(content)
@@ -263,7 +263,7 @@ object EntityFiltering {
   }
 
   private def projectedEntity(_entity: PaginatedContent, request: RequestHeader): Option[PaginatedContent] = {
-    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
     val hasFields = fields.nonEmpty
     if (hasFields) {
       val content = _entity.content match {

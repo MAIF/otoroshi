@@ -1,6 +1,6 @@
 package otoroshi.auth
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.nimbusds.jose.util.X509CertUtils
@@ -59,7 +59,7 @@ import java.util.zip.{Inflater, InflaterInputStream}
 import java.util.{Base64, UUID}
 import javax.xml.namespace.QName
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaSetConverter}
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import java.util.zip.Deflater
 
@@ -380,11 +380,11 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           singleSignOnUrl = (json \ "singleSignOnUrl").as[String],
           singleLogoutUrl = (json \ "singleLogoutUrl").asOpt[String].filter(_.nonEmpty),
           credentials = (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           issuer = (json \ "issuer").as[String],
           ssoProtocolBinding = (json \ "ssoProtocolBinding")
             .asOpt[String]
@@ -412,24 +412,24 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
               o.value.mapValues { obj =>
                 obj.asObject.value.mapValues { arr =>
-                  arr.asArray.value
+                  arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }.toMap
             }
@@ -829,9 +829,9 @@ case class SamlAuthModuleConfig(
     "usedNameIDAsEmail"             -> this.usedNameIDAsEmail,
     "emailAttributeName"            -> this.emailAttributeName,
     "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
-      JsObject(o.mapValues(v => JsArray(v.map(_.json))))
-    })
+    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
+      JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
+    }.toMap)
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {

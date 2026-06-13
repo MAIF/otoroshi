@@ -1,14 +1,14 @@
 package plugins
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{JsonTransformConfig, OverrideHost, XmlToJsonResponse}
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.{JsObject, Json}
-import akka.http.scaladsl.model.headers.`Content-Type`
-import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaTypes}
+import org.apache.pekko.http.scaladsl.model.headers.`Content-Type`
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpCharsets, MediaTypes}
 
 class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
   import parent._
@@ -23,7 +23,7 @@ class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
         )
       )
     ),
-    responseHeaders = List(`Content-Type`(ContentType(MediaTypes.`text/xml`, HttpCharsets.`UTF-8`))),
+    responseHeaders = List(org.apache.pekko.http.scaladsl.model.headers.RawHeader("Content-Type", "text/xml; charset=UTF-8")),
     stringResult = _ => {
       ByteString(
         """
@@ -50,11 +50,11 @@ class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  Json.parse(resp.body).selectAsOptObject("book").isDefined mustBe true
-  Json.parse(resp.body).selectAsObject("book").selectAsString("category") mustBe "web"
-  Json.parse(resp.body).selectAsObject("book").selectAsString("cover") mustBe "paperback"
-  Json.parse(resp.body).selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
-  Json.parse(resp.body).selectAsObject("book").selectAsString("author") mustBe "Erik T. Ray"
+  Json.parse(resp.body[String]).selectAsOptObject("book").isDefined mustBe true
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsString("category") mustBe "web"
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsString("cover") mustBe "paperback"
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsString("author") mustBe "Erik T. Ray"
 
   deleteOtoroshiRoute(route).futureValue
 }

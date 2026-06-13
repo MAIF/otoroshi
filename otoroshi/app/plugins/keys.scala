@@ -1,7 +1,7 @@
 package otoroshi.plugins
 
-import akka.Done
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.util.ByteString
 import next.models.{Api, ApiDocumentationPlan}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError

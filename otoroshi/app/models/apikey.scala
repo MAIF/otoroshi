@@ -1,9 +1,9 @@
 package otoroshi.models
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
@@ -43,7 +43,7 @@ import otoroshi.utils.syntax.implicits.{
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
@@ -62,7 +62,7 @@ case class RemainingQuotas(
 
 object RemainingQuotas {
   val MaxValue: Long = 10000000L
-  implicit val fmt   = new Format[RemainingQuotas] {
+  implicit val fmt: play.api.libs.json.Format[RemainingQuotas] = new Format[RemainingQuotas] {
 
     override def reads(json: JsValue): JsResult[RemainingQuotas] = Try {
       RemainingQuotas(
@@ -308,7 +308,7 @@ case class ApiKey(
       (within, rotation, quotas)
     }
   }
-  def metadataJson: JsValue                                                                               = JsObject(metadata.mapValues(JsString.apply))
+  def metadataJson: JsValue                                                                               = JsObject(metadata.mapValues(JsString.apply).toMap)
   def lightJson: JsObject                                                                                 =
     Json.obj(
       "clientId"   -> clientId,
@@ -456,7 +456,7 @@ object ApiKey {
         "rotation"                -> apk.rotation.json,
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
-        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap)
       )
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
@@ -492,7 +492,7 @@ object ApiKey {
                       id
                     }
                 }
-                .getOrElse(Seq.empty[EntityIdentifier])
+                .getOrElse(Seq.empty[EntityIdentifier]).toSeq
               val authorizedGroup: Seq[EntityIdentifier]    =
                 (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
               val authorizedEntities: Seq[EntityIdentifier] =
@@ -503,7 +503,7 @@ object ApiKey {
                       id
                     }
                   }
-                  .getOrElse(Seq.empty[EntityIdentifier])
+                  .getOrElse(Seq.empty[EntityIdentifier]).toSeq
               (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
             },
             enabled = enabled,
@@ -521,7 +521,7 @@ object ApiKey {
               .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
               .getOrElse(ApiKeyRotation()),
             validUntil = rawValidUntil,
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             metadata = (json \ "metadata")
               .asOpt[Map[String, String]]
               .map(m => m.filter(_._1.nonEmpty))

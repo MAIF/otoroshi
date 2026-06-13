@@ -43,7 +43,7 @@ object MandatoryConsumerPresetConfig {
     override def reads(json: JsValue): JsResult[MandatoryConsumerPresetConfig] = Try {
       MandatoryConsumerPresetConfig(
         ref = json.select("ref").asOpt[String],
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

@@ -9,7 +9,7 @@ import play.api.mvc.RequestHeader
 
 import scala.util.Try
 import otoroshi.utils.http.RequestImplicits._
-import kaleidoscope._
+import otoroshi.utils.KaleidoscopeShim._
 import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
@@ -660,7 +660,7 @@ object GlobalExpressionLanguage {
             case r"consumer.metadata.$field@(.*):$dv@(.*)"                                       =>
               user
                 .flatMap(_.otoroshiData)
-                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json).toMap)))
                 .map(json =>
                   json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()
@@ -674,7 +674,7 @@ object GlobalExpressionLanguage {
             case r"consumer.metadata.$field@(.*)" if user.isDefined || apiKey.isDefined          =>
               user
                 .flatMap(_.otoroshiData)
-                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json))))
+                .orElse(apiKey.map(v => JsObject(v.metadata.mapValues(_.json).toMap)))
                 .map(json =>
                   json.at(field).asOpt[JsValue] match {
                     case Some(JsNumber(number)) => number.toString()

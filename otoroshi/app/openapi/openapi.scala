@@ -1,6 +1,6 @@
 package otoroshi.openapi
 
-import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
+import org.apache.pekko.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import io.github.classgraph._
 import otoroshi.env.Env
 import otoroshi.models.Entity
@@ -92,9 +92,9 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
   def write(): Unit = {
     val config = Json.obj(
       "banned"                -> JsArray(banned.map(JsString.apply)),
-      "descriptions"          -> JsObject(descriptions.mapValues(JsString.apply)),
-      // "old_descriptions" -> JsObject(old_descriptions.mapValues(JsString.apply)),
-      // "old_examples" -> JsObject(old_examples.mapValues(JsString.apply)),
+      "descriptions"          -> JsObject(descriptions.mapValues(JsString.apply).toMap),
+      // "old_descriptions" -> JsObject(old_descriptions.mapValues(JsString.apply).toMap),
+      // "old_examples" -> JsObject(old_examples.mapValues(JsString.apply).toMap),
       "bulkControllerMethods" -> JsArray(bulkControllerMethods.map(JsString.apply)),
       "crudControllerMethods" -> JsArray(crudControllerMethods.map(JsString.apply)),
       "add_schemas"           -> add_schemas,
@@ -108,12 +108,12 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
     }
 
     val descs       = descriptions
-      .mapValues(JsString.apply)
+      .mapValues(JsString.apply).toMap
       .toSeq
       .sortWith((a, b) => a._1.compareTo(b._1) < 0)
       .map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}")
       .mkString(",\n")
-    // val olddescs = old_descriptions.mapValues(JsString.apply).toSeq.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}").mkString(",\n")
+    // val olddescs = old_descriptions.mapValues(JsString.apply).toMap.toSeq.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}").mkString(",\n")
     //   "banned": ${JsArray(banned.map(JsString.apply)).prettify},
     val fileContent = s"""{
   "banned": [\n    ${banned.map(JsString.apply).map(_.stringify).mkString(",\n    ")}\n  ],
@@ -327,7 +327,7 @@ class OpenApiGenerator(
 
     if (!result.contains(clazz.getName)) {
       val ctrInfo    = clazz.getDeclaredConstructorInfo.asScala.headOption
-      val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
+      val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty).toSeq
       val paramNames = params.map { param =>
         param.getName
       }
@@ -398,7 +398,7 @@ class OpenApiGenerator(
           case "play.api.libs.json.JsValue"                       => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsObject"                      => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsArray"                       => Json.obj("type" -> "array").some
-          case "akka.http.scaladsl.model.HttpProtocol"            =>
+          case "org.apache.pekko.http.scaladsl.model.HttpProtocol"            =>
             Json
               .obj(
                 "type" -> "string",
@@ -1175,7 +1175,7 @@ class OpenApiGenerator(
       val cfg = OpenApiGeneratorConfig(
         config.filePath,
         config.raw.asObject ++ Json.obj(
-          "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply))
+          "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply).toMap)
           // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
         )
       )
@@ -1267,8 +1267,8 @@ class OpenApiGenerator(
       OpenApiGeneratorConfig(
         config.filePath,
         config.raw.asObject ++ Json.obj(
-          "old_descriptions" -> JsObject(descriptions.mapValues(JsString.apply)),
-          "old_examples"     -> JsObject(examples.mapValues(JsString.apply))
+          "old_descriptions" -> JsObject(descriptions.mapValues(JsString.apply).toMap),
+          "old_examples"     -> JsObject(examples.mapValues(JsString.apply).toMap)
         )
       ).write()
     } else {

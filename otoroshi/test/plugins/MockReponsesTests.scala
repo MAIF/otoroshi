@@ -51,7 +51,7 @@ class MockReponsesTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+    Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
   }
 
   {
@@ -64,7 +64,7 @@ class MockReponsesTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.CREATED
-    Json.parse(resp.body) mustBe Json.obj("message" -> "done")
+    Json.parse(resp.body[String]) mustBe Json.obj("message" -> "done")
   }
 
   deleteOtoroshiRoute(route).futureValue

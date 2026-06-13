@@ -2,10 +2,10 @@ package otoroshi.events.impl
 
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.{ActorMaterializer, Materializer}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}
@@ -801,7 +801,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private def urlFromPath(path: String): String = ElasticUtils.urlFromPath(path, config)
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val `type`: String                    = config.`type`.getOrElse("event")
-  private implicit val mat                      = Materializer(system)
+  private implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
 
   if (config.applyTemplate) {
     init()
@@ -813,7 +813,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     if (ElasticWritesAnalytics.isInitialized(config)._1) {
       ()
     } else {
-      implicit val ec = env.otoroshiExecutionContext
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
       config.version match {
         case Some(versionRaw) => {
           val version = Version(versionRaw) match {
@@ -965,7 +965,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_search") else urlFromPath(s"/$index/_search")
   private val countUri                          =
     if (config.indexSettings.clientSide) urlFromPath(s"/$index*/_count") else urlFromPath(s"/$index/_count")
-  private implicit val mat                      = Materializer(system)
+  private implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
 
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
 
@@ -1698,7 +1698,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       val json = if (noraw.isEmpty) raw.resp else noraw.resp
       val pie  = (json \ "aggregations" \ "codes" \ "buckets")
         .asOpt[Seq[JsObject]]
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
         .map { o =>
           Json.obj(
             "name" -> s"${(o \ "key").as[JsValue]}",
@@ -2117,14 +2117,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             val total_period = (service \ "doc_count").as[Float]
             val dates        = (service \ "date" \ "buckets")
               .as[JsArray]
-              .value
+              .value.toSeq
               .map(date => {
                 val timestamp = (date \ "key").as[Float]
                 val hrDate    = (date \ "key_as_string").as[String]
                 val total_day = (date \ "doc_count").as[Float]
                 val status    = (date \ "status" \ "buckets")
                   .as[JsArray]
-                  .value
+                  .value.toSeq
                   .map(h => {
                     val value      = (h \ "key").as[String]
                     val count      = (h \ "doc_count").as[Float]

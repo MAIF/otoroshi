@@ -1,6 +1,6 @@
 package otoroshi.next.catalogs
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
 import otoroshi.next.proxy.NgProxyEngineError
@@ -97,7 +97,7 @@ class RemoteCatalogDeploySingle extends NgBackendCall {
 }
 
 case class RemoteCatalogDeployManyConfig(json: JsValue = Json.obj()) extends NgPluginConfig {
-  lazy val catalogRefs: Seq[String] = json.select("catalog_refs").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val catalogRefs: Seq[String] = json.select("catalog_refs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 object RemoteCatalogDeployManyConfig {
@@ -162,7 +162,7 @@ class RemoteCatalogDeployMany extends NgBackendCall {
           val items = bodyBytesOpt
             .flatMap(bytes => Try(Json.parse(bytes.toArray)).toOption)
             .flatMap(_.asOpt[Seq[JsObject]])
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
           items
             .filter(item => config.catalogRefs.contains(item.select("id").asOpt[String].getOrElse("")))
             .mapAsync { item =>
@@ -190,7 +190,7 @@ class RemoteCatalogDeployMany extends NgBackendCall {
 }
 
 case class RemoteCatalogDeployWebhookConfig(json: JsValue = Json.obj()) extends NgPluginConfig {
-  lazy val catalogRefs: Seq[String] = json.select("catalog_refs").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val catalogRefs: Seq[String] = json.select("catalog_refs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val sourceType: String       = json.select("source_type").asOpt[String].getOrElse("github")
 }
 

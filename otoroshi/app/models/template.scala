@@ -99,7 +99,7 @@ object ErrorTemplate {
           name = json.select("name").asOpt[String].getOrElse(serviceId),
           description = json.select("description").asOpt[String].getOrElse(serviceId),
           metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+          tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           template40x = json.select("template40x").asString,
           template50x = json.select("template50x").asString,
           templateBuild = json.select("templateBuild").asString,

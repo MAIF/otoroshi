@@ -13,7 +13,7 @@ import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 
 class UserProfileEndpointTests(parent: PluginsTestSpec) {
 
@@ -81,7 +81,7 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
   page.fill("input[name='password']", "password")
   page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,
@@ -99,10 +99,10 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  println(callWithUser.body)
+  println(callWithUser.body[String])
 
   callWithUser.status mustBe 200
-  Json.parse(callWithUser.body).selectAsString("email").contains("user@oto.tools") mustBe true
+  Json.parse(callWithUser.body[String]).selectAsString("email").contains("user@oto.tools") mustBe true
 
   browser.close()
   playwright.close()

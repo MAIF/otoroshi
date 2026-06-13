@@ -1,8 +1,8 @@
 package otoroshi.next.utils
 
-import akka.Done
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.handlers.AsyncHandler
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
@@ -321,7 +321,7 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
         tokenCache.getIfPresent(tokenKey) match {
           case Some(token) => token.right[String].future
           case None        => {
-            implicit val ec  = _env.otoroshiExecutionContext
+            implicit val ec: scala.concurrent.ExecutionContext = _env.otoroshiExecutionContext
             val tenant       = configuration.getOptionalWithFileSupport[String](s"tenant").get
             //env.configuration.getOptionalWithFileSupport[String](s"otoroshi.vaults.${name}.tenant").get
             val clientId     =
@@ -723,7 +723,7 @@ object CloudShellCredentials {
       input.readLine()
       val content                   = input.lines.collect(Collectors.joining("\n"))
       input.close()
-      val messageArray: Seq[String] = Json.parse(content).asOpt[Seq[String]].getOrElse(Seq.empty)
+      val messageArray: Seq[String] = Json.parse(content).asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       messageArray.apply(ACCESS_TOKEN_INDEX)
     } finally {
       socket.close()
@@ -804,8 +804,8 @@ class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration,
 class KubernetesVault(name: String, configuration: Configuration, env: Env) extends Vault {
 
   private val logger        = Logger("otoroshi-kubernetes-vault")
-  private implicit val _env = env
-  private implicit val ec   = env.otoroshiExecutionContext
+  private implicit val _env: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val kubeConfig = {
     //env.configurationJson
@@ -1011,7 +1011,7 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
           val sources = response.json
             .select("propertySources")
             .asOpt[Seq[JsValue]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map(_.select("source").asOpt[JsObject].getOrElse(Json.obj()))
           val source  = sources.foldRight(Json.obj())((s, next) => s.deepMerge(next))
           source.atPointer(pointer).asOpt[JsValue] match {
@@ -1359,8 +1359,8 @@ class Vaults(env: Env) {
   // Scaffeine().expireAfterWrite(secretsTtl).maximumSize(cachedSecrets).build[String, CachedVaultSecret]()
   private val expressionReplacer             = ReplaceAllWith("\\$\\{vault://([^}]*)\\}")
   private val vaults: TrieMap[String, Vault] = new UnboundedTrieMap[String, Vault]()
-  private implicit val _env                  = env
-  private implicit val ec                    = env.otoroshiExecutionContext
+  private implicit val _env: otoroshi.env.Env = env
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   val enabled: Boolean =
     vaultConfig.getOptionalWithFileSupport[Boolean]("enabled").getOrElse(false)

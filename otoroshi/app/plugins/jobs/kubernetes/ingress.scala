@@ -2,7 +2,7 @@ package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.cluster.ClusterMode
 import com.google.common.base.CaseFormat
 import otoroshi.env.Env
@@ -150,7 +150,7 @@ class KubernetesIngressControllerJob extends Job {
     }
     // TODO: should be dynamic
     if (config.watch) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val conf         = KubernetesConfig.theConfig(ctx)
       val client       = new KubernetesClient(conf, env)
       val source       =
@@ -209,7 +209,7 @@ class KubernetesIngressControllerJob extends Job {
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -331,7 +331,7 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
           case "frontend.query"                  =>
             d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
           case "frontend.methods"                =>
-            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
+            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty).toSeq))
           case "frontend.stripPath"              => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
           case "frontend.exact"                  => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
           case "backend.rewrite"                 => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
@@ -633,7 +633,7 @@ object KubernetesIngressSyncJob {
 
   def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
-      implicit val mat             = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val syncedServiceDescriptors = new AtomicLong(0L)
       val _client                  = new KubernetesClient(_conf, env)
       if (running.compareAndSet(false, true)) {
@@ -857,7 +857,7 @@ object KubernetesIngressToDescriptor {
       client: KubernetesClient,
       logger: Logger
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
         case (rule, path) => {
@@ -874,7 +874,7 @@ object KubernetesIngressToDescriptor {
                 val serviceName                    = kubeService.name
                 val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
                     path.backend.servicePort match {
                       case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
                       case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -911,14 +911,14 @@ object KubernetesIngressToDescriptor {
                               case _              => Seq.empty
                             }
                           case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                             if (subsets.isEmpty) {
                               Seq.empty
                             } else {
                               subsets.flatMap { subset =>
                                 val endpointPort: Int = (subset \ "ports")
                                   .as[JsArray]
-                                  .value
+                                  .value.toSeq
                                   .find { port =>
                                     (port \ "name").as[String] == portName
                                   }
@@ -926,7 +926,7 @@ object KubernetesIngressToDescriptor {
                                   .getOrElse(80)
                                 val endpointProtocol  =
                                   if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                                 addresses.map { address =>
                                   val serviceIp = (address \ "ip").as[String]
                                   Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
@@ -1005,7 +1005,7 @@ object KubernetesIngressToDescriptor {
       client: KubernetesClient,
       logger: Logger
   )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
         case (rule, path) => {
@@ -1022,7 +1022,7 @@ object KubernetesIngressToDescriptor {
                 val serviceName                    = kubeService.name
                 val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] =
-                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+                  (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
                     path.backend.servicePort match {
                       case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
                       case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1059,14 +1059,14 @@ object KubernetesIngressToDescriptor {
                               case _              => Seq.empty
                             }
                           case Some(kubeEndpoint) => {
-                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                            val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                             if (subsets.isEmpty) {
                               Seq.empty
                             } else {
                               subsets.flatMap { subset =>
                                 val endpointPort: Int = (subset \ "ports")
                                   .as[JsArray]
-                                  .value
+                                  .value.toSeq
                                   .find { port =>
                                     (port \ "name").as[String] == portName
                                   }
@@ -1074,7 +1074,7 @@ object KubernetesIngressToDescriptor {
                                   .getOrElse(80)
                                 val endpointProtocol  =
                                   if (endpointPort == 443 || portName == "https") "https" else "http"
-                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                                val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                                 addresses.map { address =>
                                   val serviceIp = (address \ "ip").as[String]
                                   Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
@@ -1162,7 +1162,7 @@ object KubernetesIngressToDescriptor {
     val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
     val serviceName                    = kubeService.name
     val serviceNamespace               = kubeService.namespace
-    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
       port match {
         case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
         case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1215,21 +1215,21 @@ object KubernetesIngressToDescriptor {
                   case _              => Seq.empty
                 }
               case Some(kubeEndpoint) => {
-                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value.toSeq
                 if (subsets.isEmpty) {
                   Seq.empty
                 } else {
                   subsets.flatMap { subset =>
                     val endpointPort: Int = (subset \ "ports")
                       .as[JsArray]
-                      .value
+                      .value.toSeq
                       .find { port =>
                         (port \ "name").as[String] == portName
                       }
                       .map(v => (v \ "port").as[Int])
                       .getOrElse(80)
                     val endpointProtocol  = if (endpointPort == 443 || portName == "https") "https" else "http"
-                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
                       templateTarget.copy(
@@ -1461,8 +1461,8 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressSpec(
             backend = (json \ "backend").asOpt(NetworkingV1beta1IngressBackend.reader),
-            rules = (json \ "rules").asOpt(Reads.seq(NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty),
-            tls = (json \ "tls").asOpt(Reads.seq(NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty)
+            rules = (json \ "rules").asOpt(Reads.seq(NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty).toSeq,
+            tls = (json \ "tls").asOpt(Reads.seq(NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty).toSeq
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)

@@ -37,7 +37,7 @@ class RequestBodyEchoTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsString("f") mustEqual "b"
+    Json.parse(resp.body[String]).selectAsString("f") mustEqual "b"
   }
 
   {

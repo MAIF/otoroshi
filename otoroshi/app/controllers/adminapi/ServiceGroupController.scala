@@ -25,8 +25,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
     with BulkControllerHelper[ServiceGroup, JsValue]
     with CrudControllerHelper[ServiceGroup, JsValue] {
 
-  implicit val ec  = env.otoroshiExecutionContext
-  implicit val mat = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   override def singularName: String = "service-group"
 

@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.netty.incubator.codec.http3.Http3
 import otoroshi.env.Env
 import otoroshi.netty.ReactorNettyServerConfig
@@ -23,7 +23,7 @@ object Http3SwitchConfig   {
       Http3SwitchConfig(
         domain = json.select("domain").asOpt[String],
         ma = json.select("ma").asOpt[Int].getOrElse(3600),
-        protocols = json.select("protocols").asOpt[Seq[String]].getOrElse(Seq.empty)
+        protocols = json.select("protocols").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Success(s) => JsSuccess(s)

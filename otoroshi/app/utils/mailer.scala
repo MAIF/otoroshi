@@ -1,7 +1,7 @@
 package otoroshi.utils.mailer
 
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
 import otoroshi.models.Exporter
@@ -164,7 +164,7 @@ object MailgunSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -191,7 +191,7 @@ object MailjetSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -216,7 +216,7 @@ object SendgridSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -241,7 +241,7 @@ object MailPaceSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -270,7 +270,7 @@ object ScalewayTEMSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -297,7 +297,7 @@ object GenericMailerSettings {
             to = (json \ "to")
               .asOpt[Seq[JsValue]]
               .map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>

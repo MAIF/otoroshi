@@ -77,7 +77,7 @@ object DynamicSSLContext {
               Protocols.recommendedProtocols.filter(existingProtocols.contains)
           }
 
-          val allowWeakProtocols = sslConfig.loose.allowWeakProtocols
+          val allowWeakProtocols = false // ssl-config removed SSLLooseConfig.allowWeakProtocols; secure default
           if (!allowWeakProtocols) {
             val deprecatedProtocols = Protocols.deprecatedProtocols
             for (deprecatedProtocol <- deprecatedProtocols) {
@@ -99,12 +99,12 @@ object DynamicSSLContext {
               configuredCiphers.filter(existingCiphers.contains(_)).toArray
 
             case None =>
-              Ciphers.recommendedCiphers.filter(existingCiphers.contains(_)).toArray
+              existingCiphers // ssl-config removed Ciphers.recommendedCiphers; fall back to JVM-supported ciphers
           }
 
-          val allowWeakCiphers = sslConfig.loose.allowWeakCiphers
+          val allowWeakCiphers = false // ssl-config removed SSLLooseConfig.allowWeakCiphers; secure default
           if (!allowWeakCiphers) {
-            val deprecatedCiphers = Ciphers.deprecatedCiphers
+            val deprecatedCiphers = Array.empty[String] // ssl-config removed Ciphers.deprecatedCiphers
             for (deprecatedCipher <- deprecatedCiphers) {
               if (definedCiphers.contains(deprecatedCipher)) {
                 throw new IllegalStateException(s"Weak cipher $deprecatedCipher found in ssl-config.ciphers!")

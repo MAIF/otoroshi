@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
@@ -36,8 +36,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     with CrudControllerHelper[ServiceDescriptor, JsValue]
     with AdminApiHelper {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val sourceBodyParser = BodyParser("ServicesController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
@@ -236,11 +236,11 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           val actualTargets = JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}")))
           val newTargets    = patchJson(body, actualTargets)
             .as[JsArray]
-            .value
+            .value.toSeq
             .map(_.as[String])
             .map(s => s.split("://"))
             .map(arr => Target(scheme = arr(0), host = arr(1)))
-          val newDesc       = desc.copy(targets = newTargets)
+          val newDesc       = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(
@@ -290,7 +290,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
                 desc.targets :+ tgt
             case None         => desc.targets
           }
-          val newDesc    = desc.copy(targets = newTargets)
+          val newDesc    = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(
@@ -340,7 +340,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
                 desc.targets
             case None         => desc.targets
           }
-          val newDesc    = desc.copy(targets = newTargets)
+          val newDesc    = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(

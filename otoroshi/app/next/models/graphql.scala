@@ -110,7 +110,7 @@ object GraphQLFormats {
         val requiredField = fieldType.select("required").asOpt[Boolean].getOrElse(false)
         val fullFieldType = if (requiredField) NotNullType(NamedType(`type`)) else NamedType(`type`)
 
-        val directives = field.select("directives").as[JsArray].value.map(_.as[JsObject])
+        val directives = field.select("directives").as[JsArray].value.toSeq.map(_.as[JsObject])
 
         Try {
           JsSuccess(
@@ -144,7 +144,7 @@ object GraphQLFormats {
                     arguments = directive
                       .select("arguments")
                       .as[JsArray]
-                      .value
+                      .value.toSeq
                       .map(_.as[JsObject])
                       .map(argument => {
                         val name = argument.keys.head
@@ -245,7 +245,8 @@ object GraphQLFormats {
                   case JsSuccess(v, _) => Some(v)
                   case JsError(_)      => None
                 }
-                .toVector
+                .toVector,
+              interfaces = Vector.empty
             )
           )
         } recover { case e =>

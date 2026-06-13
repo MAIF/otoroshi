@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import io.netty.channel.unix.DomainSocketAddress
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -78,7 +78,7 @@ object TailscaleLocalApiClient {
 
 class TailscaleLocalApiClient(env: Env) {
 
-  private implicit val ec = env.otoroshiExecutionContext
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private lazy val doesMacOSDomainSocketExists = new File(socketAddress()).exists()
 
@@ -148,7 +148,7 @@ class TailscaleLocalApiClient(env: Env) {
   }
 
   private def callGet(uri: String): Future[ReactorResponse] = {
-    val rec = client
+    val rec = (client
       .responseTimeout(java.time.Duration.ofMillis(2000))
       .headers(h =>
         h
@@ -157,7 +157,7 @@ class TailscaleLocalApiClient(env: Env) {
           .add("Authorization", s"Basic ${token()}")
       )
       .get()
-      .uri(uri)
+      .uri(uri)).asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
     (for {
       resp    <- ReactiveStreamUtils.MonoUtils.toFuture(rec.response())
       content <- ReactiveStreamUtils.MonoUtils.toFuture(rec.responseContent().aggregate().asString())
@@ -340,7 +340,7 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
                 url = ctx.otoroshiRequest.uri
                   .copy(
                     authority = ctx.otoroshiRequest.authority.copy(
-                      host = akka.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
+                      host = org.apache.pekko.http.scaladsl.model.Uri.Host.apply(peer.dnsname)
                     )
                   )
                   .toString
@@ -411,7 +411,7 @@ class TailscaleCertificatesFetcherJob extends Job {
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val domains      = env.proxyState
       .allRoutes()
       .filter(_.frontend.domains.exists(_.domainLowerCase.endsWith(s".${magicDNSSuffix.toLowerCase()}")))

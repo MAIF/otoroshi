@@ -1,11 +1,11 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import kaleidoscope._
+import otoroshi.utils.KaleidoscopeShim._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.NgTarget
@@ -710,10 +710,10 @@ class ExternalEurekaTarget extends NgPreRouting {
                   .get()
                   .flatMap { res =>
                     if (res.status == 200) {
-                      val instances = (res.body.parseJson
+                      val instances = (res.body[String].parseJson
                         .as[JsObject] \ "application" \ "instance")
                         .as[JsArray]
-                        .value
+                        .value.toSeq
                         .map(instance => instance.as(EurekaInstance.format.reads))
                         .map(EurekaInstance.toTarget)
 

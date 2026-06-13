@@ -8,7 +8,7 @@ import io.prometheus.client.dropwizard.samplebuilder.{DefaultSampleBuilder, Samp
 
 import java.util
 import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 
 class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegistry)
     extends io.prometheus.client.Collector
@@ -138,7 +138,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
     new MetricFamilySamples(sample.name, Type.COUNTER, "", util.Arrays.asList(sample))
   }
 
-  override def collect: util.List[MetricFamilySamples] = {
+  override def collect(): util.List[MetricFamilySamples] = {
     val mfSamplesMap = new util.HashMap[String, MetricFamilySamples]
 
     registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry.getKey, entry.getValue)))

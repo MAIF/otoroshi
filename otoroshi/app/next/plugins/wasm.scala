@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl._
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -60,7 +60,7 @@ object AttrsHelper {
   def updateAttrs(attrs: TypedMap, from: JsValue): Unit = try {
     from.select("attrs").asOpt[JsObject].foreach { attrsJson =>
       val setAttrs   = attrsJson.select("set").asOpt[JsObject].getOrElse(Json.obj())
-      val delAttrs   = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val delAttrs   = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val clearAttrs = attrsJson.select("clear").asOpt[Boolean].getOrElse(false)
       if (clearAttrs) {
         attrs.clear()
@@ -110,7 +110,7 @@ class WasmRouteMatcher extends NgRouteMatcher {
   override def steps: Seq[NgStep]                          = Seq(NgStep.MatchRoute)
 
   override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
-    implicit val ec = env.wasmIntegration.executionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.wasmIntegration.executionContext
     val config      = ctx
       .cachedConfig(internalName)(WasmConfig.format)
       .getOrElse(WasmConfig())
@@ -475,7 +475,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
                 if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                   val status      = response.select("status").asOpt[Int].getOrElse(500)
                   val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty).toSeq
                   val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
                   val body        = BodyHelper.extractBodyFrom(response)
                   Left(
@@ -565,7 +565,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
                 if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                   val status      = response.select("status").asOpt[Int].getOrElse(500)
                   val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty).toSeq
                   val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
                   val body        = BodyHelper.extractBodyFrom(response)
                   Left(
@@ -637,7 +637,7 @@ class WasmSink extends NgRequestSink {
   private def requestToWasmJson(
       body: Source[ByteString, _]
   )(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
       Writes.arrayWrites[Byte].writes(rawBody.toArray[Byte])
     }
@@ -739,14 +739,14 @@ class WasmRequestHandler extends RequestHandler {
       .select(configRoot.get)
       .asOpt[JsObject]
       .map(v => v.value.keys.toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 
   private def requestToWasmJson(
       request: Request[Source[ByteString, _]]
   )(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     if (request.theHasBody) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       request.body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
         JsonHelpers.requestToJson(request, TypedMap.empty).asObject ++ Json.obj(
           "request_body_bytes" -> rawBody.toArray[Byte]
@@ -804,7 +804,7 @@ class WasmRequestHandler extends RequestHandler {
                       val contentLength: Option[Long]  = headers.getIgnoreCase("Content-Length").map(_.toLong)
                       val contentType: Option[String]  = headers.getIgnoreCase("Content-Type")
                       val status: Int                  = (response \ "status").asOpt[Int].getOrElse(200)
-                      val cookies: Seq[WSCookie]       = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty)
+                      val cookies: Seq[WSCookie]       = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty).toSeq
                       val body: Source[ByteString, _]  =
                         response.select("body").asOpt[String].map(b => ByteString(b)) match {
                           case None    => ByteString.empty.singleSource

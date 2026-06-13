@@ -1,8 +1,8 @@
 package otoroshi.next.catalogs
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
@@ -121,7 +121,7 @@ object RemoteCatalog {
         name = (json \ "name").as[String],
         description = (json \ "description").asOpt[String].getOrElse("--"),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
         sourceKind = (json \ "source_kind").asOpt[String].getOrElse("http"),
         sourceConfig = (json \ "source_config").asOpt[JsObject].getOrElse(Json.obj()),
@@ -192,8 +192,8 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   override def stop(): Unit = ()
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       configs <- datastores.remoteCatalogsDatastore.findAllAndFillSecrets()
     } yield {
@@ -272,15 +272,15 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   )
 
   private def handleDeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     optBody match {
       case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
       case Some(body) =>
         body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
           val payload  = bodyRaw.utf8String.parseJson
-          val catalogs = payload.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val catalogs = payload.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           catalogs
             .mapAsync { item =>
               val catalogId = item.select("id").asString
@@ -301,9 +301,9 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   }
 
   private def handleTest(optBody: Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     optBody match {
       case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
       case Some(body) =>
@@ -325,15 +325,15 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
   }
 
   private def handleUndeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     optBody match {
       case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
       case Some(body) =>
         body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
           val payload  = bodyRaw.utf8String.parseJson
-          val catalogs = payload.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val catalogs = payload.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           catalogs
             .mapAsync { item =>
               val catalogId = item.select("id").asString

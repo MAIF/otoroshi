@@ -4,9 +4,9 @@ import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.{IOResult, Materializer}
-import akka.stream.scaladsl.FileIO
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.{IOResult, Materializer}
+import org.apache.pekko.stream.scaladsl.FileIO
 import com.maxmind.geoip2.DatabaseReader
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}

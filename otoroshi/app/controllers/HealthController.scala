@@ -1,7 +1,7 @@
 package otoroshi.controllers
 
 import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
@@ -164,8 +164,8 @@ object HealthController {
 class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOfficeActionAuth)(implicit env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-health-api")
 
@@ -205,7 +205,7 @@ class HealthController(cc: ControllerComponents, BackOfficeActionAuth: BackOffic
     }
   }
 
-  def backofficeMetrics() = BackOfficeActionAuth { ctx =>
+  def backofficeMetrics() = BackOfficeActionAuth { (ctx: otoroshi.actions.BackOfficeActionContextAuth[play.api.mvc.AnyContent]) =>
     HealthController.fetchMetrics("json".some, true, false, None)
   }
 
