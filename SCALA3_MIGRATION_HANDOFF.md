@@ -50,13 +50,13 @@ Smoke test performed: back‑office login page renders, admin API works with aut
 3. **EL engine + kaleidoscope shim — `app/utils/KaleidoscopeShim.scala`** ⚠️ **(test this)**
    `kaleidoscope` (macro, Scala 2.12 only) was replaced by a small non‑macro shim that re‑implements the old `r"...$name@(regex)"` pattern interpolator with `String` captures. The **Expression Language** (`app/el/el.scala`, ~106 patterns) and a few plugins use it. **The EL engine has thin test coverage** → functionally test expressions like `${date(...)}`, `${req.headers.X}`, `${req.pathparams...}`, `${env...}`, `${config...}`, etc.
 
-4. **Open‑charset JSON media type hack — `app/utils/akka.scala`** ⚠️
+4. **Open‑charset JSON media type hack — `app/utils/akka.scala`** **⚠️ IMPORTANT** check if there is a better way no in pekko http (I remember there is)
    This reflectively patches Pekko‑HTTP's internal media‑type registry. The mangled field name was updated to the Pekko package (`org$apache$pekko$http$impl$util$ObjectRegistry$$_registry`). It is **fragile** and only runs when `otoroshi.options.enable-json-media-type-with-open-charset=true` (which **is set in the dev `reStart` options**). If the internal field name is wrong, it throws at startup with that option on. Verify, or consider replacing with the proper Pekko `ParserSettings` API later.
 
 5. **TCP / TLS termination + SNI — `app/tcp/tcp.scala`, `app/tcp/tcputils.scala`** ⚠️ **(test this)**
    Moved from `package akka` to `package org.apache.pekko`, now using upstream Pekko `Tcp().bindWithTls(...)`. The manual SNI extraction / BiDi‑TLS path (`bindTlsWithSSLEngineAndSNI`) compiles but should be **functionally tested** (TCP services with TLS, SNI routing, mTLS).
 
-6. **`swagger-scala-module` dropped** (no Scala 3 build, pulled Akka).
+6. **`swagger-scala-module` dropped** (no Scala 3 build, pulled Akka). **⚠️ IMPORTANT**
    - `Env.scala`: the `SwaggerScalaModelConverter` registration was removed → admin‑API JSON schemas are **less precise** (a generic fallback already existed in `api.scala`).
    - `TemplatesController.templateSpec` used `scala.reflect.runtime.universe` (no runtime universe in Scala 3) → **rewritten with Java reflection**. The dotted event‑field list it returns may differ slightly from before. Verify the "event type fields" endpoint if you use it.
 
@@ -109,21 +109,12 @@ Smoke test performed: back‑office login page renders, admin API works with aut
 
 - [ ] **Run the test suites** (compile is green; execution not done).
 - [ ] **`sbt assembly`** → `otoroshi.jar` was **not** attempted. The `assemblyMergeStrategy` was only minimally adapted (`akka/stream` → `pekko/stream`); new dependency conflicts may need extra merge rules.
-- [ ] **Commit the `test/` changes** (101 files, currently uncommitted in the working tree — left for your review per your preference).
 - [ ] **(Optional) Clean migration warnings**: drop `-source:3.0-migration` and fix the Scala‑2 syntax properly (mostly lambda parens) to get "pure" Scala 3. ~250 warnings in app, ~70 in test.
-- [ ] **Review the 3 decisions** in §3.1 / §3.2 / §3.6 (SSL, rediscala username, swagger).
-- [ ] **If you push this branch** and it already exists on the remote: the `app/` history was rewritten (to remove commit co‑authors), so use `git push --force-with-lease`.
-- [ ] Two untracked files at the repo root (`OTHER_PLAN.md`, `PROMPT_MIGRATION_SCALA3.md`) were **not** created or touched by me — left as‑is.
-
+- [ ] rewrite doc about JDK17, versions, etc
+- [ ] upgrade remaining libraries to the most recent version
 ---
 
-## 6. Git / commit state
-
-- `app/` migration is in **28 commits** on the branch (Phase 1 → Phase 4), grouped by phase. SHAs were rewritten once to strip `Co-Authored-By` lines (content unchanged).
-- `test/` migration is **uncommitted** in the working tree (101 files).
-- Only `otoroshi/test/**` is modified for the test step; nothing else.
-
-## 7. Reference
+## 6. Reference
 
 - Build files: `otoroshi/build.sbt`, `otoroshi/project/{plugins.sbt,build.properties}`.
 - Original plan: `MIGRATION_SCALA3_PLAN.md` (repo root).
