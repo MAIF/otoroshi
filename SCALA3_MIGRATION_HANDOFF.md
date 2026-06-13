@@ -120,3 +120,9 @@ Smoke test performed: back‑office login page renders, admin API works with aut
 - Original plan: `MIGRATION_SCALA3_PLAN.md` (repo root).
 - Dev run: `cd otoroshi && sbt ~reStart` (port 9999/9998; uses the experimental Netty server; admin password `password`, domain `oto.tools`, file storage — see `reStart / javaOptions` in `build.sbt`).
 - akka→pekko rename rules applied to code: `akka.` → `org.apache.pekko.`, alpakka → `org.apache.pekko.stream.connectors`, akka.kafka → `org.apache.pekko.kafka`; config `akka { }` → `pekko { }`, `${akka.*}` → `${pekko.*}`, `play.server.akka` → `play.server.pekko`. Otoroshi's own `*Akka*` identifiers, `enforce-akka` config key, `OTOROSHI_AKKA_*` env vars and the `Otoroshi-akka` user‑agent string were **intentionally left unchanged**.
+
+## 7. Local publish to test ecosystem
+
+```sh
+sbt ';set Compile / packageDoc / publishArtifact := false ;publishLocal;publishM2'
+```
