@@ -138,22 +138,22 @@ object GlobalExpressionLanguage {
             // specific date notation
             case str if str.startsWith("date(")    =>
               str match {
-                case r"date\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
-                  DateTime.parse(date).plusMillis(field.toInt).toString()
                 case r"date\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
                   DateTime.parse(date).plusMillis(field.toInt).toString(format)
                 case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_ms"                  =>
                   DateTime.parse(date).plusMillis(field.toInt).getMillis.toString
                 case r"date\($date@(.*)\).plus_ms\($field@(.*)\).epoch_sec"                 =>
                   TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).plusMillis(field.toInt).getMillis).toString
-                case r"date\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
-                  DateTime.parse(date).minusMillis(field.toInt).toString()
+                case r"date\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
+                  DateTime.parse(date).plusMillis(field.toInt).toString()
                 case r"date\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
                   DateTime.parse(date).minusMillis(field.toInt).toString(format)
                 case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_ms"                 =>
                   DateTime.parse(date).minusMillis(field.toInt).getMillis.toString
                 case r"date\($date@(.*)\).minus_ms\($field@(.*)\).epoch_sec"                =>
                   TimeUnit.MILLISECONDS.toSeconds(DateTime.parse(date).minusMillis(field.toInt).getMillis).toString
+                case r"date\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
+                  DateTime.parse(date).minusMillis(field.toInt).toString()
                 case r"date\($date@(.*)\).format\('$format@(.*)'\)"                         => DateTime.parse(date).toString(format)
                 case r"date\($date@(.*)\).epoch_ms"                                         => DateTime.parse(date).getMillis.toString
                 case r"date\($date@(.*)\).epoch_sec"                                        =>
@@ -162,13 +162,6 @@ object GlobalExpressionLanguage {
             // date from EL notation
             case str if str.startsWith("date_el(") =>
               str match {
-                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
-                  DateTime
-                    .parse(
-                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
-                    )
-                    .plusMillis(field.toInt)
-                    .toString()
                 case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\).format\('$format@(.*)'\)"  =>
                   DateTime
                     .parse(
@@ -207,12 +200,12 @@ object GlobalExpressionLanguage {
                         .getMillis
                     )
                     .toString
-                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
+                case r"date_el\($date@(.*)\).plus_ms\($field@(.*)\)"                           =>
                   DateTime
                     .parse(
                       apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
                     )
-                    .minusMillis(field.toInt)
+                    .plusMillis(field.toInt)
                     .toString()
                 case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\).format\('$format@(.*)'\)" =>
                   DateTime
@@ -252,6 +245,13 @@ object GlobalExpressionLanguage {
                         .getMillis
                     )
                     .toString
+                case r"date_el\($date@(.*)\).minus_ms\($field@(.*)\)"                          =>
+                  DateTime
+                    .parse(
+                      apply(s"""$${${date.trim}}""", req, service, route, apiKey, user, context, attrs, env, plan, api)
+                    )
+                    .minusMillis(field.toInt)
+                    .toString()
                 case r"date_el\($date@(.*)\).format\('$format@(.*)'\)"                         =>
                   DateTime
                     .parse(
@@ -444,10 +444,10 @@ object GlobalExpressionLanguage {
             case "in_raw_jwt" if matchedRawInputToken.isDefined                     => matchedRawInputToken.get
             case "out_raw_jwt" if matchedRawOutputToken.isDefined                   => matchedRawOutputToken.get
 
-            case r"apikeyjwt.$field@(.*)" if field.contains(".")              => {
+            case r"apikeyjwt.$field@(.*)" if field.startsWith("$.")           => {
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
-                .flatMap(_.at(field).strConvert())
+                .flatMap(_.atPath(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
             case r"apikeyjwt.$field@(.*)" if field.contains("/")              => {
@@ -456,10 +456,10 @@ object GlobalExpressionLanguage {
                 .flatMap(_.atPointer(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
-            case r"apikeyjwt.$field@(.*)" if field.startsWith("$.")           => {
+            case r"apikeyjwt.$field@(.*)" if field.contains(".")              => {
               attrs
                 .get(otoroshi.plugins.Keys.ApiKeyJwtKey)
-                .flatMap(_.atPath(field).strConvert())
+                .flatMap(_.at(field).strConvert())
                 .getOrElse(s"no-path-at-$field")
             }
             case r"apikeyjwt.$field@(.*)"                                     => {
@@ -519,7 +519,6 @@ object GlobalExpressionLanguage {
             case r"ctx.$field@(.*)\|ctx.$field2@(.*)"                                            =>
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-ctx-$field-$field2")
             case r"ctx.$field@(.*):$dv@(.*)"                                                     => context.getOrElse(field, dv)
-            case r"ctx.$field@(.*)"                                                              => context.getOrElse(field, s"no-ctx-$field")
             case r"ctx.useragent.$field@(.*)" if userAgentDetails.isDefined                      =>
               val lookup: JsLookupResult = userAgentDetails.get.\(field)
               lookup
@@ -536,6 +535,7 @@ object GlobalExpressionLanguage {
                 .orElse(lookup.asOpt[Double].map(_.toString))
                 .orElse(lookup.asOpt[Boolean].map(_.toString))
                 .getOrElse(s"no-ctx-$field")
+            case r"ctx.$field@(.*)"                                                              => context.getOrElse(field, s"no-ctx-$field")
             case r"vault://$path@(.*)"                                                           =>
               Await.result(
                 env.vaults.fillSecretsAsync("el-exp", s"vault://$path")(env.otoroshiExecutionContext),
