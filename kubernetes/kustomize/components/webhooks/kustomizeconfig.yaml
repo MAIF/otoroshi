@@ -1,0 +1,11 @@
+# Tell kustomize that `webhooks[].clientConfig.service.namespace` is a
+# namespace reference that should follow the overlay's `namespace:` field.
+# Without this, deploying to any namespace other than `otoroshi` leaves the
+# webhooks pointing at a non-existent service.
+namespace:
+  - path: webhooks/clientConfig/service/namespace
+    group: admissionregistration.k8s.io
+    kind: ValidatingWebhookConfiguration
+  - path: webhooks/clientConfig/service/namespace
+    group: admissionregistration.k8s.io
+    kind: MutatingWebhookConfiguration

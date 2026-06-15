@@ -1,0 +1,24 @@
+---
+title: Fetch and Start Otoroshi
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import { version } from '@site/version';
+
+:::tip Prerequisites
+If you already have an up and running Otoroshi instance, you can skip the following instructions.
+:::
+
+Let's start by downloading the latest Otoroshi.
+
+<CodeBlock language="sh">
+{`curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v${version}/otoroshi.jar'`}
+</CodeBlock>
+
+then you can start Otoroshi:
+
+```sh
+java -Dotoroshi.adminPassword=password -jar otoroshi.jar
+```
+
+Now you can log into Otoroshi at [http://otoroshi.oto.tools:8080](http://otoroshi.oto.tools:8080) with `admin@otoroshi.io/password`

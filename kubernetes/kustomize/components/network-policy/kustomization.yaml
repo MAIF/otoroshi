@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Default NetworkPolicy for Otoroshi pods. Permissive by design — meant as
+# a starting point that's safe to enable without breaking anything. Override
+# the ingress/egress rules in your overlay (with `patches:`) to tighten it
+# down for production. See readme.md for examples.
+#
+# The pod selector targets `app.kubernetes.io/name: otoroshi`, which is set
+# by the overlays' `labels:` block and matches every Otoroshi pod (single,
+# leader, worker).
+resources:
+  - network-policy.yaml

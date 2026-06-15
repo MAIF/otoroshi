@@ -1,9 +1,9 @@
 package otoroshi.storage.stores
 
 import otoroshi.env.Env
-import otoroshi.models._
-import play.api.libs.json.Format
+import otoroshi.models.*
 import otoroshi.storage.{RedisLike, RedisLikeStore}
+import play.api.libs.json.Format
 
 class KvGlobalJwtVerifierDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalJwtVerifierDataStore

@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Two PodDisruptionBudgets — one for the Otoroshi Leader pods, one for the
+# Worker pods. Both target the workload labels shipped by
+# `components/cluster-deployments` and by the `cluster-baremetal-daemonset`
+# overlay's DaemonSets.
+#
+# Use `components/pdb-single` for single-pod setups.
+resources:
+  - pdb.yaml

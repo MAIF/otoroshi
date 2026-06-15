@@ -1,9 +1,9 @@
 package otoroshi.utils.xml
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.util._
-import scala.xml._
+import scala.util.*
+import scala.xml.*
 
 // vendoring of project https://github.com/3tty0n/play-json-xml for scala 2.13 compat
 // licence Apache V2
@@ -108,14 +108,30 @@ object Xml {
         xml.Null
       else {
         val lastAttribute =
-          new UnprefixedAttribute(attrs.last._1.replaceAll("@", ""), attrs.last._2.toString(), xml.Null)
+          new UnprefixedAttribute(
+            attrs.last._1.replaceAll("@", ""),
+            extractAttributeValue(attrs.last._2),
+            xml.Null
+          )
         attrs
           .slice(0, attrs.length - 1)
           .reverse
           .foldLeft(lastAttribute) { case (attr, attribute) =>
-            new UnprefixedAttribute(attribute._1.replaceAll("@", ""), attribute._2.toString(), attr)
+            new UnprefixedAttribute(
+              attribute._1.replaceAll("@", ""),
+              extractAttributeValue(attribute._2),
+              attr
+            )
           }
       }
+    }
+
+    def extractAttributeValue(jsValue: JsValue): String = jsValue match {
+      case JsString(s)  => s
+      case JsNumber(n)  => n.toString()
+      case JsBoolean(b) => b.toString
+      case JsNull       => "null"
+      case _            => jsValue.toString()
     }
 
     def nestedToXml(name: String, json: JsValue): NodeSeq = json match {
@@ -126,23 +142,19 @@ object Xml {
         val value      = fields.toList.find(p => p._1 == "$")
 
         if (value.isEmpty)
-          XmlNode(name, children, getAttributes(attributes))
+          new XmlNode(name, children, getAttributes(attributes))
         else
-          XmlElemWithAttributes(name, value.get._2.toString(), getAttributes(attributes))
+          new XmlElemWithAttributes(name, value.get._2.toString(), getAttributes(attributes))
       case JsArray(xs)      =>
-        XmlNode(name, xs.flatMap { v => toXml(v) }, xml.Null)
+        new XmlNode(name, xs.flatMap { v => toXml(v) }, xml.Null)
       case JsNumber(v)      =>
-        XmlElem(name, v.toString())
+        new XmlElem(name, v.toString())
       case JsBoolean(v)     =>
-        XmlElem(name, v.toString)
+        new XmlElem(name, v.toString)
       case JsString(v)      =>
-        XmlElem(name, v)
+        new XmlElem(name, v)
       case JsNull           =>
-        XmlElem(name, "null")
-      case JsTrue           =>
-        XmlElem(name, "true")
-      case JsFalse          =>
-        XmlElem(name, "false")
+        new XmlElem(name, "null")
     }
 
     json match {

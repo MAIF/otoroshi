@@ -1,6 +1,6 @@
 import React from 'react';
 import { ValueToCheck } from '../operators/ValueToCheck';
-import { NgCodeRenderer } from '../../../components/nginputs';
+import { NgAnyRenderer, NgCodeRenderer } from '../../../components/nginputs';
 
 export const ValueNode = {
   label: 'fas fa-cube',
@@ -8,7 +8,7 @@ export const ValueNode = {
   kind: 'value',
   sources: ['output'],
   form_schema: {
-    value: ValueToCheck('Value', false),
+    value: ValueToCheck('Value'),
   },
   flow: ['value'],
   nodeRenderer: (props) => {
@@ -25,7 +25,7 @@ export const ValueNode = {
           overflow: 'hidden',
         }}
       >
-        <NgCodeRenderer
+        {/*<NgCodeRenderer
           ngOptions={{ spread: true }}
           rawSchema={{
             props: {
@@ -40,6 +40,18 @@ export const ValueNode = {
             },
           }}
           value={props.data?.content?.value}
+        />*/}
+        <NgAnyRenderer
+          language="json"
+          ngOptions={{
+            spread: true,
+          }}
+          options={{
+            fontSize: 11,
+            readOnly: true,
+          }}
+          value={props.data?.content?.value}
+          onChange={() => {}}
         />
       </div>
     );

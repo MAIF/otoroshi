@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otoroshi-default
+spec:
+  # Applies to every Otoroshi pod (single, leader, worker — all carry the
+  # app.kubernetes.io/name=otoroshi label injected by the overlay).
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: otoroshi
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Open ingress on the four ports Otoroshi serves. Lock down with a
+    # `from:` clause in your overlay if you want to restrict source pods or
+    # namespaces (see readme).
+    - ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8443
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+  egress:
+    # Cluster DNS (kube-dns / CoreDNS).
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Everything else (Redis, kube-apiserver, upstream backends, OCSP, …).
+    # Tighten in your overlay if you want a deny-by-default egress posture.
+    - {}

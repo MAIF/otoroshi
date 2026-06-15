@@ -1,7 +1,7 @@
 import React, { Component, useState } from 'react';
 import { Button } from './Button';
 
-function Header({ onClose, title }) {
+export function Header({ onClose, title }) {
   return (
     <label style={{ fontSize: '1.15rem' }}>
       <i className="fas fa-times me-3" onClick={onClose} style={{ cursor: 'pointer' }} />

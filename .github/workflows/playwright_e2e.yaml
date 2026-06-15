@@ -1,0 +1,221 @@
+name: Playwright E2E
+
+on:
+  push:
+    paths:
+      - 'otoroshi/**'
+      - '.github/workflows/playwright_e2e.yaml'
+  pull_request:
+    paths:
+      - 'otoroshi/**'
+      - '.github/workflows/playwright_e2e.yaml'
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      # Otoroshi bootstrap config
+      OTOROSHI_HTTP_PORT: '9999'
+      OTOROSHI_DOMAIN: 'oto.tools'
+      OTOROSHI_INITIAL_ADMIN_LOGIN: 'admin@otoroshi.io'
+      OTOROSHI_INITIAL_ADMIN_PASSWORD: 'password'
+      ADMIN_API_CLIENT_ID: 'admin-api-apikey-id'
+      ADMIN_API_CLIENT_SECRET: 'admin-api-apikey-secret'
+      # Disable the anonymous-reporting opt-in popup: on a fresh instance it
+      # renders asynchronously after login and overlays the whole BO, making
+      # its modal intercept every click. Off => backend reports should_enable,
+      # so BackOfficeApp never triggers the popup at all.
+      OTOROSHI_ANONYMOUS_REPORTING_ENABLED: 'false'
+      # Refresh proxyState every 2s (default 10s) so the admin API reflects writes quickly in tests.
+      OTOROSHI_NEXT_STATE_SYNC_INTERVAL: '2000'
+      # Playwright config
+      PW_AUTH_TTL_MIN: '0'
+      CI: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1.1.5
+
+      - uses: coursier/cache-action@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+          cache-dependency-path: otoroshi/javascript/yarn.lock
+
+      - name: Install JS dependencies
+        working-directory: otoroshi/javascript
+        run: yarn install --frozen-lockfile
+
+      - name: Build UI bundles
+        working-directory: otoroshi/javascript
+        run: yarn build
+
+      - name: Configure sbt repositories (mirror Maven Central via Google)
+        run: |
+          mkdir -p ~/.sbt
+          cat > ~/.sbt/repositories <<'EOF'
+          [repositories]
+            local
+            local-preloaded-ivy: file:///${sbt.preloaded-${sbt.global.base-${user.home}/.sbt}/preloaded/}, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext]
+            local-preloaded: file:///${sbt.preloaded-${sbt.global.base-${user.home}/.sbt}/preloaded/}
+            maven-central-google: https://maven-central.storage-download.googleapis.com/maven2/
+            maven-central
+            typesafe-ivy-releases: https://repo.typesafe.com/typesafe/ivy-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
+            sbt-plugin-releases: https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+            sonatype-snapshots: https://oss.sonatype.org/content/repositories/snapshots
+          EOF
+
+      - name: Redirect repo1.maven.org to Google mirror (Coursier)
+        run: |
+          mkdir -p ~/.config/coursier
+          cat > ~/.config/coursier/mirror.properties <<'EOF'
+          central.from=https://repo1.maven.org/maven2
+          central.to=https://maven-central.storage-download.googleapis.com/maven2
+          EOF
+
+      - name: Build Otoroshi server (dist)
+        working-directory: otoroshi
+        env:
+          COURSIER_PARALLEL_DOWNLOAD_COUNT: '4'
+        run: sbt -Dsbt.override.build.repos=true ';clean;compile;dist'
+
+      - name: Unpack server distribution
+        working-directory: otoroshi/target/universal
+        run: |
+          ZIP=$(ls otoroshi-*.zip | head -n1)
+          echo "Unpacking $ZIP"
+          unzip -q "$ZIP"
+          DIR=$(basename "$ZIP" .zip)
+          echo "OTOROSHI_DIST=$PWD/$DIR" >> $GITHUB_ENV
+
+      - name: Start Otoroshi
+        run: |
+          mkdir -p "$RUNNER_TEMP/otoroshi-logs"
+          nohup "$OTOROSHI_DIST/bin/otoroshi" \
+            > "$RUNNER_TEMP/otoroshi-logs/otoroshi.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/otoroshi-logs/otoroshi.pid"
+          echo "Otoroshi started, pid=$(cat $RUNNER_TEMP/otoroshi-logs/otoroshi.pid)"
+
+      - name: Wait for Otoroshi to be ready
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS "http://otoroshi.oto.tools:${OTOROSHI_HTTP_PORT}/health" >/dev/null 2>&1; then
+              echo "Otoroshi is up after ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Otoroshi did not become ready in time"
+          tail -n 200 "$RUNNER_TEMP/otoroshi-logs/otoroshi.log" || true
+          exit 1
+
+      - name: Bootstrap test tenant, team and tester admin
+        env:
+          API: "http://otoroshi-api.oto.tools:9999/api"
+          AUTH: "admin-api-apikey-id:admin-api-apikey-secret"
+        run: |
+          set -euo pipefail
+
+          echo "--> creating tester tenant"
+          curl -fsS -u "$AUTH" -H 'Content-Type: application/json' \
+            -X POST "$API/tenants" \
+            -d '{
+              "id": "tester",
+              "name": "Tester Organization",
+              "description": "Tenant used by e2e tests",
+              "metadata": {},
+              "tags": []
+            }' || echo "tenant may already exist"
+
+          echo "--> creating tester team"
+          curl -fsS -u "$AUTH" -H 'Content-Type: application/json' \
+            -X POST "$API/teams" \
+            -d '{
+              "id": "tester-team",
+              "tenant": "tester",
+              "name": "Tester Team",
+              "description": "Team used by e2e tests",
+              "metadata": {},
+              "tags": []
+            }' || echo "team may already exist"
+
+          echo "--> creating tester admin user"
+          curl -fsS -u "$AUTH" -H 'Content-Type: application/json' \
+            -X POST "$API/admins/simple" \
+            -d '{
+              "username": "tester@otoroshi.io",
+              "password": "password",
+              "label": "Tester"
+            }' || echo "tester admin may already exist"
+
+      - name: Resolve Playwright version
+        id: playwright-version
+        working-directory: otoroshi/javascript
+        run: echo "version=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        working-directory: otoroshi/javascript
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+            # Browser binaries restored from cache; OS-level libs aren't, so
+            # install just those (they live on the runner, not in the cache).
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: Run Playwright tests
+        working-directory: otoroshi/javascript
+        run: npx playwright test --reporter=line
+
+      - name: Stop Otoroshi
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/otoroshi-logs/otoroshi.pid" ]; then
+            kill "$(cat $RUNNER_TEMP/otoroshi-logs/otoroshi.pid)" || true
+          fi
+
+      - name: Upload Otoroshi logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otoroshi-logs
+          path: ${{ runner.temp }}/otoroshi-logs
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: otoroshi/javascript/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: otoroshi/javascript/test-results
+          if-no-files-found: ignore

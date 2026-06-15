@@ -122,9 +122,9 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     "initiale state" in {
       val result = getScore()
 
-      result.select("groups").as[JsArray].value mustBe empty
-      result.select("scores").as[JsObject].select("dynamic_values_by_routes").as[JsArray].value mustBe empty
-      result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value mustBe empty
+      result.select("groups").as[JsArray].value.toSeq mustBe empty
+      result.select("scores").as[JsObject].select("dynamic_values_by_routes").as[JsArray].value.toSeq mustBe empty
+      result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.toSeq mustBe empty
     }
 
     // create an empty group without routes called TEMPLATE_WITHOUT_CHANGE_OR_DATES
@@ -140,9 +140,9 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     "get score for the first group" in {
       val result = getScore()
 
-      result.select("groups").as[JsArray].value.length mustBe 1
-      result.select("scores").as[JsObject].select("dynamic_values_by_routes").as[JsArray].value mustBe empty
-      result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value mustBe empty
+      result.select("groups").as[JsArray].value.toSeq.length mustBe 1
+      result.select("scores").as[JsObject].select("dynamic_values_by_routes").as[JsArray].value.toSeq mustBe empty
+      result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.toSeq mustBe empty
     }
 
     // create an group with the apdmin api route called LESS_OLD_GROUP at LESS_OLD_DATE
@@ -179,10 +179,10 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     "second group score equals to 600" in {
       val result = getScore()
 
-      result.select("groups").as[JsArray].value.length mustBe 2
+      result.select("groups").as[JsArray].value.toSeq.length mustBe 2
 
       val scoreByRoute                 =
-        result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.map(RouteScoreAtDate.from)
+        result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.toSeq.map(RouteScoreAtDate.from)
       val groupScore: RouteScoreAtDate = scoreByRoute.head
 
       groupScore.routes.head.scores.length mustBe 4
@@ -236,10 +236,10 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
     "get new score" in {
       val result = getScore()
 
-      result.select("groups").as[JsArray].value.length mustBe 2
+      result.select("groups").as[JsArray].value.toSeq.length mustBe 2
 
       val scoreByRoute =
-        result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.map(RouteScoreAtDate.from)
+        result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.toSeq.map(RouteScoreAtDate.from)
 
       scoreByRoute.length mustBe 2
 
@@ -301,7 +301,7 @@ class GreenScoreTestSpec(name: String, configurationSpec: => Configuration) exte
       val result = getScore()
 
       val scoreByRoute =
-        result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.map(RouteScoreAtDate.from)
+        result.select("scores").as[JsObject].select("score_by_route").as[JsArray].value.toSeq.map(RouteScoreAtDate.from)
 
       val oldScore = scoreByRoute.find(p => p.date == OLD_DATE).get
       oldScore.routes.length mustBe 2

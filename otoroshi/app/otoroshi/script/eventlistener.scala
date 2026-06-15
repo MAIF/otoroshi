@@ -1,11 +1,12 @@
 package otoroshi.script
 
-import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import play.api.Logger
+
+import java.util.concurrent.atomic.AtomicReference
 
 object InternalEventListenerActor {
   val logger: Logger                                          = Logger("otoroshi-plugins-internal-eventlistener-actor")

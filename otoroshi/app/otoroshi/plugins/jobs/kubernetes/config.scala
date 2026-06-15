@@ -1,17 +1,17 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.io.File
-import java.nio.file.Files
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import otoroshi.env.Env
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.yaml.Yaml
-import play.api.libs.json._
+import play.api.libs.json.*
 
+import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.Base64
 import scala.concurrent.ExecutionContext
 import scala.util.Try
@@ -75,11 +75,19 @@ case class KubernetesConfig(
     triggerKey: Option[String],
     triggerHost: Option[String],
     triggerPath: Option[String],
-    templates: JsObject
+    templates: JsObject,
+    gatewayApi: Boolean,
+    gatewayApiWatch: Boolean,
+    gatewayApiControllerName: String,
+    gatewayApiHttpListenerPort: Seq[Int],
+    gatewayApiHttpsListenerPort: Seq[Int],
+    gatewayApiSyncIntervalSeconds: Long,
+    gatewayApiAddresses: Seq[JsObject],
+    gatewayApiGatewayServiceName: Option[String]
 )
 
 object KubernetesConfig {
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
   def theConfig(ctx: ContextWithConfig)(using env: Env, ec: ExecutionContext): KubernetesConfig = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val conf         = ctx
@@ -140,7 +148,7 @@ object KubernetesConfig {
         val currentContextName    = (json \ "current-context").as[String]
         val currentContextUser    = (json \ "contexts")
           .as[JsArray]
-          .value
+          .value.toSeq
           .find(v => (v \ "name").as[String] == currentContextName)
           .get
           .\("context")
@@ -148,7 +156,7 @@ object KubernetesConfig {
           .as[String]
         val currentContextCluster = (json \ "contexts")
           .as[JsArray]
-          .value
+          .value.toSeq
           .find(v => (v \ "name").as[String] == currentContextName)
           .get
           .\("context")
@@ -158,7 +166,7 @@ object KubernetesConfig {
           trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
           endpoint = (json \ "clusters")
             .as[JsArray]
-            .value
+            .value.toSeq
             .find(v => (v \ "name").as[String] == currentContextCluster)
             .map { defaultUser =>
               (defaultUser \ "cluster" \ "server").as[String]
@@ -172,7 +180,7 @@ object KubernetesConfig {
             ),
           token = None,
           clientCert =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 defaultUser
                   .select("user")
@@ -181,7 +189,7 @@ object KubernetesConfig {
                   .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
             },
           clientCertKey =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 defaultUser
                   .select("user")
@@ -190,7 +198,7 @@ object KubernetesConfig {
                   .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
             },
           userPassword =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 for {
                   username <- (defaultUser \ "user" \ "username").asOpt[String]
@@ -198,7 +206,7 @@ object KubernetesConfig {
                 } yield s"$username:$password"
             },
           caCert =
-            (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map {
+            (json \ "clusters").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextCluster).map {
               defaultUser =>
                 {
                   val base64Cert = (defaultUser \ "cluster" \ "certificate-authority-data").as[String]
@@ -257,9 +265,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCleanupNames =
-            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           openshiftDnsOperatorCleanupDomains =
-            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -267,7 +275,27 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
-          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L)
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
+          gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
+          gatewayApiWatch = (conf \ "gatewayApiWatch").asOpt[Boolean].getOrElse(true),
+          gatewayApiControllerName = (conf \ "gatewayApiControllerName")
+            .asOpt[String]
+            .getOrElse("otoroshi.io/gateway-controller"),
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(80, 8080)),
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(443, 8443)),
+          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
+          gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
       case None             =>
         KubernetesConfig(
@@ -352,9 +380,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCleanupNames =
-            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           openshiftDnsOperatorCleanupDomains =
-            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -362,7 +390,27 @@ object KubernetesConfig {
           kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           connectionTimeout = conf.select("connectionTimeout").asOpt[Long].getOrElse(5000L),
           idleTimeout = conf.select("idleTimeout").asOpt[Long].getOrElse(30000L),
-          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L)
+          callAndStreamTimeout = conf.select("callAndStreamTimeout").asOpt[Long].getOrElse(30000L),
+          gatewayApi = (conf \ "gatewayApi").asOpt[Boolean].getOrElse(false),
+          gatewayApiWatch = (conf \ "gatewayApiWatch").asOpt[Boolean].getOrElse(true),
+          gatewayApiControllerName = (conf \ "gatewayApiControllerName")
+            .asOpt[String]
+            .getOrElse("otoroshi.io/gateway-controller"),
+          gatewayApiHttpListenerPort = (conf \ "gatewayApiHttpListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(80, 8080)),
+          gatewayApiHttpsListenerPort = (conf \ "gatewayApiHttpsListenerPort")
+            .asOpt[Int]
+            .map(v => Seq(v))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[String].map(_.split(",").map(_.trim.toInt).toSeq))
+            .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
+            .getOrElse(Seq(443, 8443)),
+          gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
+          gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
     }
   }
@@ -415,6 +463,14 @@ object KubernetesConfig {
         "connectionTimeout"                    -> 5000,
         "idleTimeout"                          -> 30000,
         "callAndStreamTimeout"                 -> 30000,
+        "gatewayApi"                           -> false,
+        "gatewayApiWatch"                      -> true,
+        "gatewayApiControllerName"             -> "otoroshi.io/gateway-controller",
+        "gatewayApiHttpListenerPort"           -> Seq(80, 8080),
+        "gatewayApiHttpsListenerPort"          -> Seq(443, 8443),
+        "gatewayApiSyncIntervalSeconds"        -> 60,
+        "gatewayApiAddresses"                  -> Json.arr(),
+        "gatewayApiGatewayServiceName"         -> "",
         "templates"                            -> Json.obj(
           "service-group"      -> Json.obj(),
           "service-descriptor" -> Json.obj(),
@@ -494,6 +550,14 @@ object KubernetesConfig {
       "kubeDnsOperatorCoreDnsNamespace",
       "kubeDnsOperatorCoreDnsName",
       "kubeDnsOperatorCoreDnsPort",
+      ">>>Gateway API",
+      "gatewayApi",
+      "gatewayApiControllerName",
+      "gatewayApiHttpListenerPort",
+      "gatewayApiHttpsListenerPort",
+      "gatewayApiSyncIntervalSeconds",
+      "gatewayApiAddresses",
+      "gatewayApiGatewayServiceName",
       ">>>client settings",
       "connectionTimeout",
       "idleTimeout",
@@ -783,6 +847,50 @@ object KubernetesConfig {
       "Kube dns port number",
       "Kube dns port number".some,
       more = Json.obj("placeholder" -> "5353")
+    )
+
+    ++ makeFormField("gatewayApi", "bool", "Enable Gateway API", "Enable Kubernetes Gateway API controller".some)
+    ++ makeFormField(
+      "gatewayApiControllerName",
+      "string",
+      "Controller name",
+      "The controller name used in GatewayClass resources".some,
+      more = Json.obj("placeholder" -> "otoroshi.io/gateway-controller")
+    )
+    ++ makeFormField(
+      "gatewayApiHttpListenerPort",
+      "number",
+      "HTTP listener port",
+      "The HTTP port that Otoroshi actually listens on (for Gateway listener validation)".some,
+      more = Json.obj("placeholder" -> "8080")
+    )
+    ++ makeFormField(
+      "gatewayApiHttpsListenerPort",
+      "number",
+      "HTTPS listener port",
+      "The HTTPS port that Otoroshi actually listens on (for Gateway listener validation)".some,
+      more = Json.obj("placeholder" -> "8443")
+    )
+    ++ makeFormField(
+      "gatewayApiSyncIntervalSeconds",
+      "number",
+      "Sync interval",
+      "Number of seconds between Gateway API syncs".some,
+      more = Json.obj("suffix" -> "seconds")
+    )
+    ++ makeFormField(
+      "gatewayApiGatewayServiceName",
+      "string",
+      "Gateway service name",
+      "Kubernetes Service name to resolve for Gateway status addresses. If empty, uses otoroshiServiceName".some,
+      more = Json.obj("placeholder" -> "otoroshi-gateway-service")
+    )
+    ++ makeFormField(
+      "gatewayApiAddresses",
+      "string",
+      "Static addresses (JSON)",
+      "Static addresses for Gateway status (overrides service resolution). JSON array of {type,value} objects".some,
+      more = Json.obj("placeholder" -> """[{"type":"IPAddress","value":"1.2.3.4"}]""")
     )
   )
 }

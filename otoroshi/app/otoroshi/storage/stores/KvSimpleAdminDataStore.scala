@@ -1,19 +1,18 @@
 package otoroshi.storage.stores
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import otoroshi.env.Env
-import otoroshi.models._
-import play.api.libs.json._
-import otoroshi.utils.json.JsonImplicits._
-
-import scala.util.Success
 import org.apache.pekko.util.ByteString
-import otoroshi.storage.RedisLike
 import org.joda.time.DateTime
+import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.storage.RedisLike
+import otoroshi.utils.json.JsonImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdminDataStore {
 

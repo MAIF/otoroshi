@@ -21,7 +21,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.http.{ManualResolveTransport, MtlsConfig}
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.HttpEntity
 import play.api.http.websocket.*
 import play.api.libs.json.*
@@ -96,6 +96,7 @@ class TunnelPlugin() extends NgBackendCall {
           .map(cookieEncoder.decodeSetCookieHeader)
           .getOrElse(Seq.empty)
           .map(_.wsCookie)
+        if (logger.isDebugEnabled) logger.debug(s"response status '${result.header.status}'")
         Right(
           BackendCallResponse(
             NgPluginHttpResponse(
@@ -121,6 +122,7 @@ class TunnelAgent(env: Env) {
     env.configuration.getOptional[Configuration]("otoroshi.tunnels").map { config =>
       val genabled = config.getOptional[Boolean]("enabled").getOrElse(false)
       if (genabled) {
+        logger.debug("trying to register tunnels")
         config.subKeys
           .map { key =>
             (key, config.getOpt[Configuration](key))
@@ -166,10 +168,10 @@ class TunnelAgent(env: Env) {
                   val trustAll     =
                     conf.getOptionalWithFileSupport[Boolean]("tls.trustAll").getOrElse(false)
                   val certs        =
-                    conf.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty)
+                    conf.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty).toSeq
                   val trustedCerts = conf
                     .getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts")
-                    .getOrElse(Seq.empty)
+                    .getOrElse(Seq.empty).toSeq
                   MtlsConfig(
                     certs = certs,
                     trustedCerts = trustedCerts,
@@ -307,7 +309,7 @@ class TunnelAgent(env: Env) {
               )
             }
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
         val certs             = obj.select("client_cert_chain").asOpt[Seq[String]].map(_.map(_.trim.toCertificate))
         val body              = obj.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
           case None    => Source.empty[ByteString]
@@ -359,6 +361,7 @@ class TunnelAgent(env: Env) {
     )
     val port    = target.thePort
     val start   = System.currentTimeMillis()
+    logger.debug(s"connecting to ${uri}, port - ${port} - target ${target}")
     val (fu, _) = env.Ws.ws(
       request = WebSocketRequest(
         uri = uri,
@@ -547,6 +550,9 @@ class TunnelManager(env: Env) {
   }
 
   def sendRequest(tunnelId: String, request: NgPluginHttpRequest, addr: String, secured: Boolean): Future[Result] = {
+    logger.debug(s"[sendRequest]: tunnelsEnabled=${tunnelsEnabled}")
+    logger.debug(s"[sendRequest]: tunnels length=${tunnels.asMap().size}")
+
     if (tunnelsEnabled) {
       tunnels.getIfPresent(tunnelId) match {
         case None          =>
@@ -1153,7 +1159,7 @@ object TunnelActor {
           )
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val body                               = response.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
       case None    => Source.empty[ByteString]
       case Some(b) => Source.single(b)

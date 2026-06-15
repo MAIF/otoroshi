@@ -1,9 +1,10 @@
 package functional
+import play.api.libs.ws.DefaultBodyReadables.*
 
-import org.apache.pekko.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
 import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import play.api.Configuration
 
@@ -148,7 +149,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 400
-      resp.body.contains("no apikey") mustBe true
+      resp.body[String].contains("no apikey") mustBe true
 
       deleteOtoroshiService(privateByDefaultService).futureValue
     }
@@ -165,7 +166,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 400
-      resp.body.contains("no apikey") mustBe true
+      resp.body[String].contains("no apikey") mustBe true
 
       deleteOtoroshiService(privateByPatternService).futureValue
     }
@@ -182,7 +183,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 400
-      resp.body.contains("no apikey") mustBe true
+      resp.body[String].contains("no apikey") mustBe true
 
       deleteOtoroshiService(notPublicByPatternService).futureValue
     }
@@ -201,7 +202,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -219,7 +220,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -237,7 +238,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -255,7 +256,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -273,7 +274,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -291,7 +292,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -310,7 +311,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -328,7 +329,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 401
-      resp.body.contains("bad apikey") mustBe true
+      resp.body[String].contains("bad apikey") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -346,7 +347,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -364,7 +365,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -382,7 +383,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends Oto
         .futureValue
 
       resp.status mustBe 200
-      resp.body == basicTestExpectedBody mustBe true
+      resp.body[String] == basicTestExpectedBody mustBe true
 
       deleteOtoroshiService(service).futureValue
     }

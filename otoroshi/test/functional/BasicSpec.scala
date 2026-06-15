@@ -1,22 +1,18 @@
 package functional
 
-import java.util.Date
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.joda.time.DateTime
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
-import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
-import play.api.libs.ws.DefaultBodyReadables.readableAsString
+import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
 import otoroshi.security.IdGenerator
+import play.api.Configuration
+import play.api.libs.json.Json
+import play.api.libs.ws.DefaultBodyReadables.readableAsString
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Try}
 
 class BasicSpec() extends OtoroshiSpec {
@@ -91,7 +87,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse1.status mustBe 200
-      basicTestResponse1.body mustBe basicTestExpectedBody
+      basicTestResponse1.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 1
     }
 
@@ -121,7 +117,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 2
     }
 
@@ -138,7 +134,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("Service in maintenance mode") mustBe true
+      basicTestResponse2.body[String].contains("Service in maintenance mode") mustBe true
       callCounter.get() mustBe 2
 
       updateOtoroshiService(initialDescriptor.copy(maintenanceMode = false)).futureValue
@@ -152,7 +148,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 3
     }
 
@@ -169,7 +165,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("Service under construction") mustBe true
+      basicTestResponse2.body[String].contains("Service under construction") mustBe true
       callCounter.get() mustBe 3
 
       updateOtoroshiService(initialDescriptor.copy(buildMode = false)).futureValue
@@ -183,7 +179,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 4
     }
 
@@ -215,7 +211,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 5
     }
 
@@ -294,7 +290,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -348,7 +344,7 @@ class BasicSpec() extends OtoroshiSpec {
 
       resp1.status mustBe 404
       resp2.status mustBe 200
-      resp2.body mustBe body
+      resp2.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -911,7 +907,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body2
+      resp1.body[String] mustBe body2
 
       Future
           .traverse(allBotUserAgents.toList) { ua =>
@@ -994,7 +990,7 @@ class BasicSpec() extends OtoroshiSpec {
       resp1.status mustBe 404
       resp2.status mustBe 404
       resp3.status mustBe 200
-      resp3.body mustBe body
+      resp3.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1039,7 +1035,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1084,7 +1080,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1142,11 +1138,11 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
       resp2.status mustBe 200
-      resp3.body mustBe body
+      resp3.body[String] mustBe body
       resp3.status mustBe 200
-      resp3.body mustBe body
+      resp3.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1193,7 +1189,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1201,7 +1197,7 @@ class BasicSpec() extends OtoroshiSpec {
 
     // FIXME there seem to be a side effect between the above test and this one, therefore we use a different subdomain
     "Validate sec. communication in V2" in {
-      import java.util.{Base64 => JavaBase64}
+      import java.util.Base64 as JavaBase64
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
       val server  = TargetService
@@ -1257,7 +1253,7 @@ class BasicSpec() extends OtoroshiSpec {
           .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1305,7 +1301,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 502
-      resp1.body.contains("Backend server does not seems to be secured. Cancelling request !") mustBe true
+      resp1.body[String].contains("Backend server does not seems to be secured. Cancelling request !") mustBe true
 
       deleteOtoroshiService(service).futureValue
       server.stop()

@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.Done
-import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.PreRoutingError
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.nio.charset.StandardCharsets
@@ -36,8 +36,8 @@ object NgLegacyApikeyCallConfig {
     ) ++ o.config.json.asObject
     override def reads(json: JsValue): JsResult[NgLegacyApikeyCallConfig] = Try {
       NgLegacyApikeyCallConfig(
-        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         config = NgApikeyCallsConfig.format.reads(json).asOpt.getOrElse(NgApikeyCallsConfig())
       )
     } match {
@@ -227,9 +227,11 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
             )
             .map {
               case Left(result)
-                  if result.header.status == 400 && result.header.headers
+                  if result.header.status == 400 && (result.header.headers
                     .get(env.Headers.OtoroshiErrorMsg)
-                    .contains("no apikey") =>
+                    .contains("no apikey") || result.header.headers
+                    .get(env.Headers.OtoroshiErrorMsg)
+                    .contains("invalid apikey tuple")) =>
                 NgAccess.NgAllowed
               case Left(result)  =>
                 NgAccess.NgDenied(result)
@@ -284,12 +286,23 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
               ctx.otoroshiRequest.copy(url = newUrl).right
             case ApikeyLocationKind.Cookie =>
               ctx.otoroshiRequest.copy(cookies = ctx.otoroshiRequest.cookies.filterNot(_.name == location.name)).right
-            case _ => ctx.otoroshiRequest.right
+            case _                         => ctx.otoroshiRequest.right
           }
         case _                                             => ctx.otoroshiRequest.right
       }
     } else {
-      ctx.otoroshiRequest.right
+      var headers: Map[String, String] = Map.empty
+      if (config.extractors.customHeaders.clientIdHeaderName.isEmpty) {
+        ctx.request.headers.get(env.Headers.OtoroshiClientId).foreach { cid =>
+          headers = headers + (env.Headers.OtoroshiClientId -> cid)
+        }
+      }
+      if (config.extractors.customHeaders.clientSecretHeaderName.isEmpty) {
+        ctx.request.headers.get(env.Headers.OtoroshiClientSecret).foreach { csec =>
+          headers = headers + (env.Headers.OtoroshiClientSecret -> csec)
+        }
+      }
+      ctx.otoroshiRequest.copy(headers = ctx.otoroshiRequest.headers ++ headers).right
     }
   }
 }
@@ -396,8 +409,16 @@ case class NgApikeyExtractorCustomHeaders(
   )
   def json: JsValue                             = Json.obj(
     "enabled"                   -> enabled,
-    "client_id_header_name"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "client_secret_header_name" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    "client_id_header_name"     -> clientIdHeaderName
+      .filterNot(_.trim.isEmpty)
+      .map(JsString.apply)
+      .getOrElse(JsNull)
+      .as[JsValue],
+    "client_secret_header_name" -> clientSecretHeaderName
+      .filterNot(_.trim.isEmpty)
+      .map(JsString.apply)
+      .getOrElse(JsNull)
+      .as[JsValue]
   )
 }
 
@@ -591,15 +612,15 @@ object NgApikeyMatcher {
     override def reads(json: JsValue): JsResult[NgApikeyMatcher] = JsonHelpers.reader {
       NgApikeyMatcher(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        noneTagIn = (json \ "none_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        oneTagIn = (json \ "one_tag_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allTagsIn = (json \ "all_tags_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         noneMetaIn = (json \ "none_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         oneMetaIn = (json \ "one_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
         allMetaIn = (json \ "all_meta_in").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-        noneMetaKeysIn = (json \ "none_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        oneMetaKeyIn = (json \ "one_meta_key_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allMetaKeysIn = (json \ "all_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        noneMetaKeysIn = (json \ "none_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        oneMetaKeyIn = (json \ "one_meta_key_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allMetaKeysIn = (json \ "all_meta_keys_in").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     }
   }
@@ -786,7 +807,7 @@ class ApikeyAuthModule extends NgPreRouting {
   }
 
   def validApikey(apikey: ApiKey, routing: ApiKeyRouteMatcher): Boolean = {
-    import otoroshi.models.SeqImplicits._
+    import otoroshi.models.SeqImplicits.given
 
     val matchOnRole: Boolean   = Option(routing.oneTagIn)
       .filter(_.nonEmpty)
@@ -873,7 +894,7 @@ object NgApikeyMandatoryTagsConfig {
     )
     override def reads(json: JsValue): JsResult[NgApikeyMandatoryTagsConfig] = Try {
       NgApikeyMandatoryTagsConfig(
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

@@ -1,4 +1,5 @@
 package functional
+import play.api.libs.ws.DefaultBodyReadables.*
 
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ServiceDescriptor, Target}
@@ -87,7 +88,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
           )
           .get()
           .futureValue
-        (r.status, r.body, r.cookie("otoroshi-canary").map(_.value).getOrElse("--"))
+        (r.status, r.body[String], r.cookie("otoroshi-canary").map(_.value).getOrElse("--"))
       }
 
       (0 until 100).foreach { _ =>
@@ -167,7 +168,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
           )
           .get()
           .futureValue
-        (r.status, r.body, r.cookie("otoroshi-canary").map(_.value).getOrElse("--"))
+        (r.status, r.body[String], r.cookie("otoroshi-canary").map(_.value).getOrElse("--"))
       }
 
       def callServer(id: String) = {
@@ -179,8 +180,8 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
           )
           .get()
           .futureValue
-        //println(r.body)
-        (r.status, r.body, r.cookie("otoroshi-canary").map(_.value).getOrElse("--"))
+        //println(r.body[String])
+        (r.status, r.body[String], r.cookie("otoroshi-canary").map(_.value).getOrElse("--"))
       }
 
       val (_, _, firstId) = firstCallServer()

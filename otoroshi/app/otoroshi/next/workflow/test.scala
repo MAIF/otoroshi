@@ -3,7 +3,7 @@ package otoroshi.next.workflow
 import io.azam.ulidj.ULID
 import otoroshi.env.Env
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.Json
 
 import java.io.File

@@ -12,15 +12,42 @@ import {
 import { Separator } from './Separator';
 
 import deepSet from 'set-value';
+import { ReactSelectOverride } from './inputs/ReactSelectOverride';
 // import _ from 'lodash';
 
-class RestrictionPath extends Component {
+export class RestrictionPath extends Component {
+  state = { values: [] };
+
+  componentDidMount() {
+    const v = this.props.value[this.props.idx];
+    if (v?.authorized_entity?.kind) {
+      this.updateValues(v?.authorized_entity?.kind);
+    }
+  }
+
   changeTheValue = (key, value) => {
     const arrayValue = [...this.props.value];
     const item = arrayValue[this.props.idx];
     const newItem = deepSet(item, key, value);
     arrayValue[this.props.idx] = newItem;
     this.props.onChange(arrayValue);
+  };
+
+  updateValues = (kind) => {
+    fetch(`/bo/api/apikeys/${this.props.apikey.clientId}/authorized_entities?kind=${kind}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        authorized_entities:
+          this.props.apikey.authorized_entities || this.props.apikey.authorizedEntities,
+      }),
+    })
+      .then((r) => r.json())
+      .then((values) => this.setState({ values }));
   };
 
   render() {
@@ -30,7 +57,7 @@ class RestrictionPath extends Component {
         <div className="col-sm-10 d-flex">
           <input
             className="form-control"
-            style={{ width: '30%' }}
+            style={{ width: '20%' }}
             placeholder="Http Method"
             type="text"
             value={this.props.itemValue.method}
@@ -38,12 +65,51 @@ class RestrictionPath extends Component {
           />
           <input
             className="form-control"
-            style={{ width: '70%' }}
+            style={{ width: '30%' }}
             placeholder="Http Path"
             type="text"
             value={this.props.itemValue.path}
             onChange={(e) => this.changeTheValue('path', e.target.value)}
           />
+          <ReactSelectOverride
+            style={{ width: '20%' }}
+            value={this.props.value[this.props.idx].authorized_entity?.kind}
+            onChange={(e) => {
+              const arrayValue = [...this.props.value];
+              const item = arrayValue[this.props.idx];
+              if (e === 'any') {
+                delete item.authorized_entity;
+              } else {
+                item.authorized_entity = item.authorized_entity || {};
+                item.authorized_entity.kind = e;
+                this.updateValues(e);
+              }
+              arrayValue[this.props.idx] = item;
+              this.props.onChange(arrayValue);
+            }}
+            options={[
+              { label: 'Any', value: 'any' },
+              { label: 'Route', value: 'route' },
+              { label: 'API', value: 'api' },
+              { label: 'Service group', value: 'group' },
+            ]}
+          />
+          {this.props.value[this.props.idx].authorized_entity?.kind && (
+            <div style={{ width: '30%' }}>
+              <ReactSelectOverride
+                value={this.props.value[this.props.idx].authorized_entity?.id}
+                onChange={(e) => {
+                  const arrayValue = [...this.props.value];
+                  const item = arrayValue[this.props.idx];
+                  item.authorized_entity = item.authorized_entity || {};
+                  item.authorized_entity.id = e;
+                  arrayValue[this.props.idx] = item;
+                  this.props.onChange(arrayValue);
+                }}
+                options={this.state.values}
+              />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -75,6 +141,7 @@ export class Restrictions extends Component {
           label="Allowed"
           value={value.allowed}
           help="Allowed paths"
+          apikey={this.props.rawValue}
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
           onChange={(v) => this.changeTheValue('allowed', v)}
@@ -83,6 +150,7 @@ export class Restrictions extends Component {
           label="Forbidden"
           value={value.forbidden}
           help="Forbidden paths"
+          apikey={this.props.rawValue}
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
           onChange={(v) => this.changeTheValue('forbidden', v)}
@@ -91,6 +159,7 @@ export class Restrictions extends Component {
           label="Not Found"
           value={value.notFound}
           help="Not found paths"
+          apikey={this.props.rawValue}
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
           onChange={(v) => this.changeTheValue('notFound', v)}

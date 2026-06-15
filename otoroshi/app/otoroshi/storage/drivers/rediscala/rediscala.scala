@@ -1,30 +1,38 @@
 package otoroshi.storage.drivers.rediscala
 
+import com.typesafe.config.ConfigFactory
+import next.models.{
+  ApiSubscriptionDataStore,
+  ApiDataStore,
+  KvApiSubscriptionDataStore,
+  KvApiDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.typesafe.config.ConfigFactory
-import next.models.{ApiConsumerSubscriptionDataStore, ApiDataStore, KvApiConsumerSubscriptionDataStore, KvApiDataStore}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore}
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage._
-import otoroshi.storage.stores._
+import otoroshi.storage.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
-import redis._
+import redis.*
 import redis.util.CRC16
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -112,8 +120,8 @@ class RedisCPDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientPool                  = RedisClientPool(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisClientPool = RedisClientPool(
       members
     )(using redisActorSystem)
     cli
@@ -151,8 +159,8 @@ class RedisMCPDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientMutablePool           = RedisClientMutablePool(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisClientMutablePool = RedisClientMutablePool(
       members
     )(using redisActorSystem)
     cli
@@ -211,8 +219,8 @@ class RedisLFDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientMasterSlaves          = RedisClientMasterSlaves(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
       master,
       slaves
     )(using redisActorSystem)
@@ -296,7 +304,7 @@ class RedisSentinelLFDataStores(
           .map(RedisMember.fromList)
           .map(_.map(m => (m.host, m.port)))
       }
-      .getOrElse(Seq.empty[(String, Int)])
+      .getOrElse(Seq.empty[(String, Int)]).toSeq
     val master                                        = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.lf.master").get
     val cli: SentinelMonitoredRedisClientMasterSlaves = SentinelMonitoredRedisClientMasterSlaves(
       members,
@@ -338,8 +346,8 @@ class RedisClusterDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisCluster                     = RedisCluster(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisCluster = RedisCluster(
       members
     )(using redisActorSystem)
     cli
@@ -473,8 +481,18 @@ abstract class AbstractRedisDataStores(
   private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiConsumerSubscriptionDataStore                              = new KvApiConsumerSubscriptionDataStore(redis, env)
-  override def apiConsumerSubscriptionDataStore: ApiConsumerSubscriptionDataStore = _apiConsumerSubscriptionDataStore
+  private lazy val _apiSubscriptionDataStore                      = new KvApiSubscriptionDataStore(redis, env)
+  override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
+
+  private lazy val _routeTemplateDataStore                      = new KvRouteTemplateDataStore(redis, env)
+  override def routeTemplateDataStore: KvRouteTemplateDataStore = _routeTemplateDataStore
+
+  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
+
+  private lazy val _userAlertDataStore                                               =
+    new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
+  override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
   def adminPreferencesDatastore: AdminPreferencesDatastore = _adminPreferencesDatastore

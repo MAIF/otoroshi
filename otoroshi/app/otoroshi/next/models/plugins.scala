@@ -2,13 +2,16 @@ package otoroshi.next.models
 
 import otoroshi.env.Env
 import otoroshi.netty.NettyRequestKeys
+import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.extensions.HttpListenerNames
+import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.{OverrideHost, WasmJob}
-import otoroshi.next.plugins.api._
+import otoroshi.next.proxy.{NgExecutionReport, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.workflow.WorkflowJob
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.TypedMap
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
@@ -94,9 +97,9 @@ object NgPluginInstance {
       plugin = obj.select("plugin").asString,
       debug = obj.select("debug").asOpt[Boolean].getOrElse(false),
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
-      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
-      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
-      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty),
+      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj())),
       pluginIndex = obj.select("plugin_index").asOpt(using PluginIndex.format)
     )
@@ -151,18 +154,6 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
   def nonEmpty: Boolean = slots.nonEmpty
 
   def add(plugin: NgPluginInstance): NgPlugins = copy(slots = slots :+ plugin)
-
-  def remove(pluginId: String): NgPlugins = copy(slots = slots.filterNot(_.plugin == pluginId))
-
-  def togglePluginState(pluginId: String, enabled: Boolean): NgPlugins = copy(slots =
-    slots.map(slot =>
-      if (slot.plugin == pluginId) {
-        slot.copy(enabled = enabled)
-      } else {
-        slot
-      }
-    )
-  )
 
   def json: JsValue = JsArray(slots.map(_.json))
 
@@ -338,17 +329,19 @@ object NgPlugins {
       case None      => NgPlugins(Seq.empty)
       case Some(arr) =>
         NgPlugins(
-          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty)
+          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty).toSeq
         )
     }
   }
 }
 
 case class NgContextualPlugins(
+    route: NgRoute,
     plugins: NgPlugins,
     global_plugins: NgPlugins,
     request: RequestHeader,
     nextPluginsMerge: Boolean,
+    attrs: TypedMap,
     _env: Env,
     _ec: ExecutionContext
 ) {
@@ -359,7 +352,21 @@ case class NgContextualPlugins(
   lazy val currentListener: String =
     request.attrs.get(NettyRequestKeys.ListenerIdKey).getOrElse(HttpListenerNames.Standard)
 
-  lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots).zipWithIndex
+  lazy val (enabledPlugins, disabledPlugins) = (global_plugins.slots ++ plugins.slots)
+    .map(inst => (inst, inst.getPlugin[NgPresetPlugin]))
+    .flatMap {
+      case (slot, Some(preset)) if slot.enabled =>
+        preset.expand(
+          NgPresetPluginContext(
+            request = request,
+            config = slot.config.raw,
+            attrs = attrs,
+            route = route
+          )
+        )
+      case (slot, _)                            => Seq(slot)
+    }
+    .zipWithIndex
     .map { case (plugin, idx) => plugin.copy(instanceId = idx) }
     .partition(_.enabled)
 
@@ -376,6 +383,7 @@ case class NgContextualPlugins(
   lazy val (allPlugins, filteredPlugins) = currentListenerPLugin
     .filterNot(_.plugin.endsWith(classOf[WasmJob].getName))
     .filterNot(_.plugin.endsWith(classOf[WorkflowJob].getName))
+    .filterNot(_.plugin.endsWith(classOf[RemoteCatalogJob].getName))
     .partition(_.matches(request))
 
   lazy val requestSinkPlugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgRequestSink]] = {
@@ -498,7 +506,6 @@ case class NgContextualPlugins(
                   (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(Seq(wrap, plug)))
                 case NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins) =>
                   (false, coll.init :+ NgPluginWrapper.NgMergedPreRoutingPluginWrapper(plugins :+ plug))
-                case _                                                        => (true, coll :+ plug)
               }
             } else {
               (false, coll :+ plug)
@@ -536,7 +543,6 @@ case class NgContextualPlugins(
                   (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(Seq(wrap, plug)))
                 case NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins) =>
                   (false, coll.init :+ NgPluginWrapper.NgMergedAccessValidatorPluginWrapper(plugins :+ plug))
-                case _                                                             => (true, coll :+ plug)
               }
             } else {
               (false, coll :+ plug)
@@ -631,6 +637,8 @@ object NgContextualPlugins {
       global_plugins = NgPlugins.empty,
       request = request,
       nextPluginsMerge = true,
+      attrs = TypedMap.empty,
+      route = NgRoute.empty,
       _env = env,
       _ec = ec
     )

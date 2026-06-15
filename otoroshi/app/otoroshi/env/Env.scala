@@ -1,72 +1,73 @@
 package otoroshi.env
 
-import org.apache.pekko.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
-import org.apache.pekko.http.scaladsl.util.FastFuture._
-import org.apache.pekko.stream.Materializer
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import io.netty.util.internal.PlatformDependent
 import io.otoroshi.wasm4s.scaladsl.WasmIntegration
-import otoroshi.metrics.{HasMetrics, Metrics}
+import org.apache.pekko.actor.{ActorRef, ActorSystem, Cancellable, PoisonPill, Scheduler}
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{AuthModuleConfig, PrivateAppsSessionManager, SessionCookieValues}
-import otoroshi.cluster._
-import otoroshi.events._
+import otoroshi.cluster.*
+import otoroshi.events.*
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
-import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
-import otoroshi.models._
+import otoroshi.metrics.{HasMetrics, Metrics}
+import otoroshi.models.*
 import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
+import otoroshi.next.plugins.RateLimiter
 import otoroshi.next.proxy.NgProxyState
 import otoroshi.next.tunnel.{TunnelAgent, TunnelManager}
 import otoroshi.next.utils.Vaults
-import otoroshi.openapi.ClassGraphScanner
+import otoroshi.openapi.{ClassGraphScanner, OpenApiSchema}
 import otoroshi.script.plugins.Plugins
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.security.{ClaimCrypto, IdGenerator}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
-import otoroshi.storage.{DataStores, DataStoresBuilder}
-import otoroshi.storage.drivers.cassandra._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.drivers.lettuce._
+import otoroshi.statefulclients.StatefulClientsManager
+import otoroshi.storage.drivers.cassandra.*
+import otoroshi.storage.drivers.inmemory.*
+import otoroshi.storage.drivers.lettuce.*
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
-import otoroshi.storage.drivers.rediscala._
-import otoroshi.tcp.TcpService
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import otoroshi.storage.drivers.rediscala.*
+import otoroshi.storage.{DataStores, DataStoresBuilder}
+import otoroshi.tcp.{RunningServers, TcpService}
+import otoroshi.utils.JsonValidator
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.{BetterSyntax, given}
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
-import play.api._
+import play.api.*
 import play.api.http.{HttpConfiguration, HttpRequestHandler}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
-import play.api.libs.ws._
-import play.api.libs.ws.ahc._
+import play.api.libs.ws.*
+import play.api.libs.ws.ahc.*
 import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
 import play.twirl.api.Html
 
 import java.io.File
 import java.lang.management.ManagementFactory
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
 import java.rmi.registry.LocateRegistry
-import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{Executors, TimeUnit}
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
-import scala.concurrent.duration._
+import scala.annotation.nowarn
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}
-import org.apache.pekko.actor.ActorRef
-import otoroshi.openapi.OpenApiSchema
-import otoroshi.tcp.RunningServers
 
 case class RoutingInfo(id: String, name: String)
 
@@ -383,6 +384,12 @@ class Env(
   lazy val metricsAccessKey: Option[String] =
     configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
+  lazy val docResourcesSecret: Option[String] =
+    configuration.getOptionalWithFileSupport[String]("otoroshi.doc-resources.accessKey")
+
+  lazy val trailingSlashMeansExactSegments: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.router.trailingSlashMeansExactSegments").getOrElse(true)
+
   lazy val metricsEvery: FiniteDuration =
     configuration
       .getOptionalWithFileSupport[Long]("otoroshi.metrics.every")
@@ -399,7 +406,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.transformersRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       transformersConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.transformersConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -416,7 +423,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.validatorRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       validatorConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.validatorConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -431,7 +438,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.preRouteRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       preRouteConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.preRouteConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -446,7 +453,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.sinkRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       sinkConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.sinkConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -461,7 +468,7 @@ class Env(
             .getOptionalWithFileSupport[String]("otoroshi.scripts.static.jobsRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
-        .getOrElse(Seq.empty[String]),
+        .getOrElse(Seq.empty[String]).toSeq,
       jobConfig = configuration
         .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.jobsConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
@@ -515,6 +522,13 @@ class Env(
   lazy val eventsName: String              = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
   lazy val storageRoot: String             =
     configuration.getOptionalWithFileSupport[String]("app.storageRoot").getOrElse("otoroshi")
+  lazy val hideInitialAdminPassword: Boolean        =
+    configuration.getOptionalWithFileSupport[Boolean]("app.hideInitialAdminPassword").getOrElse(false)
+  lazy val writeInitialAdminPasswordToFile: Boolean =
+    configuration.getOptionalWithFileSupport[Boolean]("app.writeInitialAdminPasswordToFile").getOrElse(false)
+  lazy val initialAdminPasswordFile: String         = configuration
+    .getOptionalWithFileSupport[String]("app.initialAdminPasswordFile")
+    .getOrElse("/etc/otoroshi/initial_admin_password")
   lazy val useCache: Boolean               =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.cache.enabled").getOrElse(false)
   lazy val cacheTtl: Int                   =
@@ -605,6 +619,9 @@ class Env(
   lazy val backOfficeHost: String      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost: String     = composeMainUrl(privateAppsSubDomain)
 
+  lazy val backOfficePath = "/bo/dashboard"
+  lazy val backOfficeUrl  = s"$exposedRootScheme://$backOfficeHost$bestExposedPort$backOfficePath"
+
   lazy val adminApiExposedDomains: Seq[String] = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.adminapi.exposedDomains")
     .orElse(
@@ -636,7 +653,7 @@ class Env(
         .getOptionalWithFileSupport[String]("app.backoffice.domainsStr")
         .map(ds => ds.split(",").toSeq.map(_.trim))
     )
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 
   lazy val procNbr: Int = Runtime.getRuntime.availableProcessors()
 
@@ -646,8 +663,8 @@ class Env(
     .select("entity_validators")
     .asOpt[JsObject]
     .map { obj =>
-      obj.value.view.mapValues { arr =>
-        arr.asArray.value
+      obj.value.mapValues { arr =>
+        arr.asArray.value.toSeq
           .map { item =>
             JsonValidator.format.reads(item)
           }
@@ -695,7 +712,7 @@ class Env(
       )
     )(using otoroshiMaterializer)
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = ahcClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -745,7 +762,7 @@ class Env(
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
     internalAhcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = wsClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -863,18 +880,18 @@ class Env(
   }
 
   val confPackages: Seq[String] =
-    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
+    configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty).toSeq ++
     configuration
       .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
       .map(v => v.split(",").map(_.trim).toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
 
   val blacklistedPlugins: Set[String] =
-    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty) ++
+    (configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.blacklisted").getOrElse(Seq.empty).toSeq ++
       configuration
         .getOptionalWithFileSupport[String]("otoroshi.plugins.blacklistedStr")
         .map(v => v.split(",").map(_.trim).toSeq)
-        .getOrElse(Seq.empty)).toSet
+        .getOrElse(Seq.empty).toSeq).toSet
 
   logger.info(s"Otoroshi version $otoroshiVersion")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
@@ -925,11 +942,11 @@ class Env(
       logger.warn("You MUST change those values before deploying to production")
       logger.warn("You can change configuration by passing path values with config file or via runtime flags")
       logger.warn(
-        "    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-your-configuration-file"
+        "    https://www.otoroshi.io/docs/install/setup-otoroshi#setup-your-configuration-file"
       )
       logger.warn("You can change configuration by passing environment variables")
       logger.warn(
-        "    https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#configuration-with-env-variables"
+        "    https://www.otoroshi.io/docs/install/setup-otoroshi#reference-configuration-for-env-variables"
       )
       logger.warn("")
       logger.warn("#########################################")
@@ -940,6 +957,8 @@ class Env(
   displayDefaultValuesWarning()
 
   lazy val datastoreKind: String = configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce")
+  // legacy rediscala stack stays around (deprecated in favour of lettuce); intentional usage
+  @nowarn("cat=deprecation")
   lazy val datastores: DataStores = {
     configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("lettuce") match {
       case _ if clusterConfig.mode == ClusterMode.Worker                   =>
@@ -996,7 +1015,7 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader           =>
         logger.error(
-          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "file" if clusterConfig.mode == ClusterMode.Leader              =>
@@ -1011,7 +1030,7 @@ class Env(
         new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader             =>
         logger.error(
-          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader           =>
@@ -1031,7 +1050,7 @@ class Env(
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"                                                       =>
         logger.error(
-          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "LevelDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "file"                                                          =>
@@ -1044,7 +1063,7 @@ class Env(
       case "cassandra"                                                     => new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo"                                                         =>
         logger.error(
-          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://maif.github.io/otoroshi/manual/install/setup-otoroshi.html#setup-the-database"
+          "MongoDB datastore is not supported anymore, supported datastores are listed here: https://www.otoroshi.io/docs/install/setup-otoroshi#setup-the-database"
         )
         sys.exit(1)
       case "redis-pool"                                                    => new RedisCPDataStores(configuration, environment, lifecycle, this)
@@ -1101,6 +1120,7 @@ class Env(
     Option(ahcStats.get()).foreach(_.cancel())
     Option(internalAhcStats.get()).foreach(_.cancel())
     jobManager.stop()
+    statefulClientsManager.stop()
     scriptManager.stop()
     clusterAgent.stop()
     clusterLeaderAgent.stop()
@@ -1110,7 +1130,32 @@ class Env(
     // FastFuture.successful(())
   })
 
-  lazy val port: Int = getHttpPort.getOrElse(
+  lazy val confJwksIncludeAlgorithms                               =
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jwks.include-algorithms").getOrElse(true)
+  lazy val confJwksRsaAlgorithms: Seq[com.nimbusds.jose.Algorithm] =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.jwks.rsa-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(
+        Seq(
+          com.nimbusds.jose.JWSAlgorithm.RS256,
+          com.nimbusds.jose.JWSAlgorithm.RS384,
+          com.nimbusds.jose.JWSAlgorithm.RS512
+        )
+      )
+  lazy val confJwksEsAlgorithms: Seq[com.nimbusds.jose.Algorithm]  =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.jwks.es-algorithms")
+      .map(_.split(",").map(_.trim).map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)).toSeq)
+      .getOrElse(
+        Seq(
+          com.nimbusds.jose.JWSAlgorithm.ES256,
+          com.nimbusds.jose.JWSAlgorithm.ES384,
+          com.nimbusds.jose.JWSAlgorithm.ES512
+        )
+      )
+
+  lazy val port = getHttpPort.getOrElse(
     configuration
       .getOptionalWithFileSupport[Int]("play.server.http.port")
       .orElse(configuration.getOptionalWithFileSupport[Int]("http.port"))
@@ -1169,6 +1214,10 @@ class Env(
   }
 
   lazy val proxyState = new NgProxyState(this)
+
+  lazy val rateLimiter = new RateLimiter(this)
+
+  lazy val statefulClientsManager = new StatefulClientsManager(this)
 
   lazy val http2ClientProxyEnabled: Boolean = configuration
     .getOptionalWithFileSupport[Boolean]("otoroshi.next.experimental.http2-client-proxy.enabled")
@@ -1255,7 +1304,8 @@ class Env(
     localHost = s"127.0.0.1:$port",
     forceHttps = false,
     additionalHeaders = Map(
-      "Host" -> backOfficeDescriptorHostHeader
+      "Host"            -> backOfficeDescriptorHostHeader,
+      "X-Forwarded-For" -> backOfficeDescriptorHostHeader
     ),
     publicPatterns = Seq("/health", "/metrics"),
     removeHeadersIn = Seq.empty,
@@ -1273,7 +1323,7 @@ class Env(
     name = backofficeRoute.name
   )
 
-  lazy val otoroshiVersion    = "17.6.0-dev"
+  lazy val otoroshiVersion    = "17.17.0-dev"
   lazy val otoroshiVersionSem = Version(otoroshiVersion)
   lazy val checkForUpdates    = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
@@ -1318,7 +1368,7 @@ class Env(
           (key, value.unwrapped().asInstanceOf[String])
         }.toSeq
       }
-      .getOrElse(Seq.empty) ++ {
+      .getOrElse(Seq.empty).toSeq ++ {
       sys.env.toSeq
         .filter {
           case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
@@ -1348,6 +1398,15 @@ class Env(
     version <- Option(System.getProperty("os.version"))
   } yield OS(name, version, arch)).getOrElse(OS.default)
 
+  val serverTrustedCAs: Seq[String] = {
+    val local    = configuration.getOptional[Seq[String]]("otoroshi.ssl.trust.server_cas").getOrElse(Seq.empty).toSeq
+    val localStr = configuration
+      .getOptional[String]("otoroshi.ssl.trust.server_cas_str")
+      .map(_.split(",").map(_.trim).toSeq)
+      .getOrElse(Seq.empty).toSeq
+    (local ++ localStr).distinct
+  }
+
   timeout(300.millis).andThen { case _ =>
     given ec: ExecutionContext = otoroshiExecutionContext // internalActorSystem.dispatcher
 
@@ -1365,20 +1424,19 @@ class Env(
       logger.info(s"Running Otoroshi Worker agent !")
       clusterAgent.startF()
     }
-
     val modernTlsProtocols: Seq[String] =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.modernProtocols").getOrElse(Seq.empty).toSeq
     val protocolsJDK11: Seq[String]     =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK11").getOrElse(Seq.empty).toSeq
     val protocolsJDK8: Seq[String]      =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocolsJDK8").getOrElse(Seq.empty).toSeq
 
     val cipherSuitesJDK8: Seq[String]      =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK8").getOrElse(Seq.empty).toSeq
     val cipherSuitesJDK11: Seq[String]     =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11").getOrElse(Seq.empty).toSeq
     val cipherSuitesJDK11Plus: Seq[String] =
-      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty)
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11Plus").getOrElse(Seq.empty).toSeq
 
     configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
@@ -1398,6 +1456,48 @@ class Env(
         }
       }
 
+    // swagger-scala-module has no Scala 3 build (and pulls Akka), so the Scala model converter is no
+    // longer registered. The Java swagger-core ModelConverters are still used in api.scala, which
+    // falls back to a generic object schema when Scala case-class introspection is unavailable.
+
+    // Writes the randomly generated initial admin password to a file with owner-only (0600) permissions,
+    // then logs where it can be read (à la GitLab '/etc/gitlab/initial_root_password').
+    def writeInitialAdminPasswordFile(password: String): Unit = {
+      val path = new File(initialAdminPasswordFile).toPath
+      try {
+        Option(path.getParent).foreach(parent => Files.createDirectories(parent))
+        Files.deleteIfExists(path)
+        val ownerOnly = PosixFilePermissions.fromString("rw-------")
+        try {
+          Files.createFile(path, PosixFilePermissions.asFileAttribute(ownerOnly))
+        } catch {
+          case _: UnsupportedOperationException => Files.createFile(path) // non posix filesystem (eg. windows)
+        }
+        Files.write(path, s"$password\n".getBytes(StandardCharsets.UTF_8))
+        logger.info(
+          s"The initial admin password has been written to '${path.toAbsolutePath}'. Read it to log into the Otoroshi admin console."
+        )
+      } catch {
+        case e: Throwable =>
+          logger.error(s"Unable to write the initial admin password to '$initialAdminPasswordFile'", e)
+      }
+    }
+
+    // On reboot, if the feature is enabled and the initial admin password file is still around, delete it.
+    def deleteInitialAdminPasswordFileIfNeeded(): Unit = {
+      if (writeInitialAdminPasswordToFile) {
+        val path = new File(initialAdminPasswordFile).toPath
+        try {
+          if (Files.deleteIfExists(path)) {
+            logger.info(s"The initial admin password file at '${path.toAbsolutePath}' has been deleted.")
+          }
+        } catch {
+          case e: Throwable =>
+            logger.error(s"Unable to delete the initial admin password file at '$initialAdminPasswordFile'", e)
+        }
+      }
+    }
+
     configuration.betterHas("app.importFrom")
     datastores.globalConfigDataStore
       .isOtoroshiEmpty()
@@ -1409,12 +1509,13 @@ class Env(
           logger.info(s"The main datastore seems to be empty, registering some basic services")
           val login                          =
             configuration.getOptionalWithFileSupport[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
-          val password                       =
-            configuration.getOptionalWithFileSupport[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
+          val maybePassword                  = configuration.getOptionalWithFileSupport[String]("app.adminPassword")
+          val passwordGenerated              = maybePassword.isEmpty
+          val password                       = maybePassword.getOrElse(IdGenerator.token(32))
           val headers: Seq[(String, String)] = configuration
             .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
             .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
-            .getOrElse(Seq.empty[(String, String)])
+            .getOrElse(Seq.empty[(String, String)]).toSeq
           if (configuration.betterHas("app.importFrom")) {
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") =>
@@ -1522,9 +1623,16 @@ class Env(
 
                 val finalConfig = baseExport.customizeWith(initialCustomization)(using this)
 
-                logger.info(
-                  s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
-                )
+                if (passwordGenerated) {
+                  if (writeInitialAdminPasswordToFile) {
+                    // when the password is written to a file, it is never printed in the logs
+                    writeInitialAdminPasswordFile(password)
+                  } else if (!hideInitialAdminPassword) {
+                    logger.info(
+                      s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                    )
+                  }
+                }
 
                 datastores.globalConfigDataStore.fullImport(finalConfig.json)(using ec, this)
             }
@@ -1606,7 +1714,11 @@ class Env(
 
   timeout(1000.millis).andThen { case _ =>
     jobManager.start()
+    statefulClientsManager.start()
     otoroshiEventsActor ! StartExporters
+    otoroshi.next.analytics.queries.AnalyticsRuntime.init(
+      otoroshi.next.analytics.queries.CoreQueries.all
+    )(using this)
   }(using otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {

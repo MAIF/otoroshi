@@ -1,14 +1,14 @@
 package otoroshi.netty
 
+import io.netty.buffer.{ByteBuf, Unpooled}
+import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, EventLoopGroup}
+import io.netty.handler.codec.http.*
+import io.netty.handler.codec.http.websocketx.*
+import io.netty.handler.logging.LogLevel
+import io.netty.handler.ssl.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.ByteString
-import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext, EventLoopGroup}
-import io.netty.handler.codec.http._
-import io.netty.handler.codec.http.websocketx._
-import io.netty.handler.logging.LogLevel
-import io.netty.handler.ssl._
 import org.reactivestreams.{Processor, Publisher}
 import otoroshi.env.Env
 import otoroshi.next.extensions.HttpListenerNames
@@ -16,12 +16,12 @@ import otoroshi.next.proxy.ProxyEngine
 import otoroshi.script.RequestHandler
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.websocket.Message
 import play.api.http.{HttpChunk, HttpEntity, HttpRequestHandler}
 import play.api.libs.crypto.CookieSignerProvider
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.{Logger, Logging}
 import play.core.server.common.WebSocketFlowHandler
 import play.core.server.common.WebSocketFlowHandler.{MessageType, RawMessage}
@@ -34,7 +34,7 @@ import java.security.{Provider, SecureRandom}
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.BiFunction
-import javax.net.ssl._
+import javax.net.ssl.*
 import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.{Failure, Success, Try}
@@ -56,7 +56,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
   import reactor.core.publisher.Flux
   import reactor.netty.http.HttpProtocol
-  import reactor.netty.http.server._
+  import reactor.netty.http.server.*
 
   implicit private val ec: ExecutionContext = env.otoroshiExecutionContext
   implicit private val mat: Materializer    = env.otoroshiMaterializer
@@ -102,7 +102,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
     result.header.headers.map { case (key, value) =>
       if (key != "otoroshi-netty-trailers") headers.add(key, value)
     }
-    if (bresponse.contentType.contains("application/grpc")) {
+    if (bresponse.contentType.exists(_.contains("application/grpc"))) {
       headers.add(HttpHeaderNames.TRAILER, "grpc-status, grpc-message")
     }
     bresponse.contentType.foreach(ct => headers.add("Content-Type", ct))
@@ -174,7 +174,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       }
       .chunkedTransfer(bresponse.chunked)
       .trailerHeaders(theaders => {
-        import scala.jdk.CollectionConverters._
+        import scala.jdk.CollectionConverters.given
         result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
           otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
             case Left(future)    =>
@@ -233,7 +233,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
   }
 
   private def messageToFrame(message: Message): WebSocketFrame = {
-    import io.netty.handler.codec.http.websocketx._
+    import io.netty.handler.codec.http.websocketx.*
     def byteStringToByteBuf(bytes: ByteString): ByteBuf = {
       if (bytes.isEmpty) {
         Unpooled.EMPTY_BUFFER
@@ -441,7 +441,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       val (groupHttp, groupHttps) = createEventLoops(config.id == HttpListenerNames.Experimental)
       // val (groupHttp: EventLoopGroup, groupHttps: EventLoopGroup) = createEventLoops()
 
-      if (config.id == "classic") {
+      if (config.id == HttpListenerNames.Experimental) {
         if (config.http3.enabled) logger.info(s"  https://${config.host}:${config.http3.port} (HTTP/3)")
         logger.info(s"  https://${config.host}:${config.httpsPort} (HTTP/1.1, HTTP/2)")
         logger.info(s"  http://${config.host}:${config.httpPort}  (HTTP/1.1, HTTP/2 H2C)")

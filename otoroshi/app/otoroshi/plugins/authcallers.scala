@@ -3,18 +3,19 @@ package otoroshi.plugins.authcallers
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
+import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.{Result, Results}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
@@ -29,12 +30,15 @@ sealed trait OAuth2Kind {
 }
 
 object OAuth2Kind {
-  case object ClientCredentials extends OAuth2Kind { def name: String = "client_credentials" }
-  case object Password          extends OAuth2Kind { def name: String = "password"           }
+  case object ClientCredentials     extends OAuth2Kind { def name: String = "client_credentials"       }
+  case object Password              extends OAuth2Kind { def name: String = "password"                 }
+  case object PasswordWithBasicAuth extends OAuth2Kind { def name: String = "password_with_basic_auth" }
+  case object AuthModule            extends OAuth2Kind { def name: String = "auth_module"              }
 }
 
 case class OAuth2CallerConfig(
     kind: OAuth2Kind,
+    authModRef: Option[String],
     url: String,
     method: String,
     headerName: String,
@@ -57,10 +61,13 @@ object OAuth2CallerConfig {
         .select("kind")
         .asOpt[String]
         .map {
-          case "client_credentials" => OAuth2Kind.ClientCredentials
-          case _                    => OAuth2Kind.Password
+          case "client_credentials"       => OAuth2Kind.ClientCredentials
+          case "auth_module"              => OAuth2Kind.AuthModule
+          case "password_with_basic_auth" => OAuth2Kind.PasswordWithBasicAuth
+          case _                          => OAuth2Kind.Password
         }
         .getOrElse(OAuth2Kind.ClientCredentials),
+      authModRef = json.select("authModRef").asOpt[String],
       url = json.select("url").asOpt[String].getOrElse("https://127.0.0.1:8080/oauth/token"),
       method = json.select("method").asOpt[String].getOrElse("POST"),
       headerName = json.select("headerName").asOpt[String].getOrElse("Authorization"),
@@ -123,7 +130,7 @@ class OAuth2Caller extends RequestTransformer {
       mat: Materializer
   ): Future[Either[(String, Int), String]] = {
     val body: String = config.kind match {
-      case OAuth2Kind.ClientCredentials if config.jsonPayload =>
+      case OAuth2Kind.ClientCredentials if config.jsonPayload   =>
         Json
           .obj(
             "client_id"     -> config.clientId,
@@ -133,7 +140,7 @@ class OAuth2Caller extends RequestTransformer {
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
           .stringify
-      case OAuth2Kind.Password if config.jsonPayload          =>
+      case OAuth2Kind.Password if config.jsonPayload            =>
         val user: String     = config.user.getOrElse("--")
         val password: String = config.password.getOrElse("--")
         Json
@@ -147,20 +154,33 @@ class OAuth2Caller extends RequestTransformer {
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Json.obj("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Json.obj("audience" -> audience) }
           .stringify
-      case OAuth2Kind.ClientCredentials                       =>
+      case OAuth2Kind.ClientCredentials                         =>
         s"client_id=${config.clientId}&client_secret=${config.clientSecret}&grant_type=client_credentials${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
-      case OAuth2Kind.Password                                =>
+      case OAuth2Kind.AuthModule if config.authModRef.isDefined =>
+        val authMod = env.proxyState.authModule(config.authModRef.get).get.asInstanceOf[OAuth2ModuleConfig]
+        s"client_id=${authMod.clientId}&client_secret=${authMod.clientSecret}&grant_type=client_credentials&scope=${authMod.scope}"
+      case OAuth2Kind.Password                                  =>
         s"client_id=${config.clientId}&client_secret=${config.clientSecret}&grant_type=password&username=${config.user
           .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
           .map(s => s"&scope=$s")
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.PasswordWithBasicAuth                     =>
+        s"grant_type=password&username=${config.user
+          .getOrElse("--")}&password=${config.password.getOrElse("--")}${config.scope
+          .map(s => s"&scope=$s")
+          .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}"
+      case OAuth2Kind.AuthModule                                => ""
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
+    val authMod      = env.proxyState.authModule(config.authModRef.get).map(_.asInstanceOf[OAuth2ModuleConfig])
+    val url          = authMod.map(_.tokenUrl).getOrElse(config.url)
+    val tlsConfig    = authMod.map(_.mtlsConfig).getOrElse(config.tlsConfig)
+    val method       = authMod.map(_ => "POST").getOrElse(config.method)
     env.MtlsWs
-      .url(config.url, config.tlsConfig)
-      .withMethod(config.method)
+      .url(url, tlsConfig)
+      .withMethod(method)
       .withHttpHeaders("Content-Type" -> ctype)
       .withBody(body)
       .execute()

@@ -1,29 +1,29 @@
 package otoroshi.models
 
+import com.google.common.hash.Hashing
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import com.google.common.hash.Hashing
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.events.Exporters._
-import otoroshi.events._
+import otoroshi.events.*
+import otoroshi.events.Exporters.*
 import otoroshi.events.pulsar.PulsarConfig
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.storage.drivers.inmemory.S3Configuration
 import otoroshi.utils.TypedMap
-import otoroshi.utils.mailer._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.mailer.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.given
 import play.api.libs.ws.WSCookie
-import play.api.libs.ws.WSBodyWritables._
 
 import java.nio.charset.StandardCharsets
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -37,6 +37,30 @@ case object NoneExporter extends Exporter {
 object Exporter {}
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
+
+case class CustomDataExporterRefConfig(kind: String, ref: String, config: JsObject = Json.obj()) {
+  def json: JsValue = CustomDataExporterRefConfig.format.writes(this)
+}
+
+object CustomDataExporterRefConfig {
+  val format: Format[CustomDataExporterRefConfig] = new Format[CustomDataExporterRefConfig] {
+    override def reads(json: JsValue): JsResult[CustomDataExporterRefConfig] = Try {
+      CustomDataExporterRefConfig(
+        kind = json.select("kind").asOptString.map(_.toLowerCase).getOrElse("plugin"),
+        ref = json.select("ref").asOptString.getOrElse(""),
+        config = json.select("config").asOpt[JsObject].getOrElse(Json.obj())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(v) => JsSuccess(v)
+    }
+    override def writes(o: CustomDataExporterRefConfig): JsValue             = Json.obj(
+      "kind"   -> o.kind,
+      "ref"    -> o.ref,
+      "config" -> o.config
+    )
+  }
+}
 
 case class FileSettings(path: String, maxNumberOfFile: Option[Int], maxFileSize: Long = 10L * 1024L * 1024L)
     extends Exporter {
@@ -127,7 +151,7 @@ object HttpCallSettings {
           .select("cookies")
           .asOpt[Seq[JsObject]]
           .map(_.map(o => JsonHelpers.cookieFromJson(o)))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         body = json.select("body").asOptString.getOrElse(""),
         timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
         tlsConfig = json
@@ -318,6 +342,215 @@ case class SplunkCallSettings(
       .recover { case t: Throwable =>
         ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
       }
+  }
+}
+
+object DatadogCallSettings {
+  val format = new Format[DatadogCallSettings] {
+    override def reads(json: JsValue): JsResult[DatadogCallSettings] = Try {
+      DatadogCallSettings(
+        url = json.select("url").asOptString.getOrElse("https://http-intake.logs.datadoghq.eu/api/v2/logs"),
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
+        token = json.select("token").asOptString,
+        ddsource = json.select("ddsource").asOptString,
+        ddtags = json.select("ddtags").asOptString,
+        service = json.select("service").asOptString,
+        hostname = json.select("hostname").asOptString,
+        tlsConfig = json
+          .select("tls_config")
+          .asOpt[JsObject]
+          .flatMap(v => NgTlsConfig.format.reads(v).asOpt)
+          .getOrElse(NgTlsConfig())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: DatadogCallSettings): JsValue             = o.toJson
+  }
+}
+
+case class DatadogCallSettings(
+    url: String,
+    headers: Map[String, String],
+    token: Option[String],
+    ddsource: Option[String],
+    ddtags: Option[String],
+    service: Option[String],
+    hostname: Option[String],
+    timeout: FiniteDuration,
+    tlsConfig: NgTlsConfig
+) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json
+      .obj(
+        "token"      -> token,
+        "url"        -> url,
+        "headers"    -> headers,
+        "timeout"    -> timeout.toMillis,
+        "tls_config" -> tlsConfig.json
+      )
+      .applyOnWithOpt(token) { case (obj, token) =>
+        obj ++ Json.obj("token" -> token)
+      }
+      .applyOnWithOpt(ddsource) { case (obj, ddsource) =>
+        obj ++ Json.obj("ddsource" -> ddsource)
+      }
+      .applyOnWithOpt(ddtags) { case (obj, ddtags) =>
+        obj ++ Json.obj("ddtags" -> ddtags)
+      }
+      .applyOnWithOpt(service) { case (obj, service) =>
+        obj ++ Json.obj("service" -> service)
+      }
+      .applyOnWithOpt(hostname) { case (obj, hostname) =>
+        obj ++ Json.obj("hostname" -> hostname)
+      }
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[ExportResult] = {
+    env.MtlsWs
+      .url(url, tlsConfig.legacy)
+      .withRequestTimeout(timeout)
+      .withMethod("POST")
+      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
+        headers :+ ("DD-API-KEY" -> token)
+      }*)
+      .withBody(
+        JsArray(
+          events
+            .map { evt =>
+              Json
+                .obj(
+                  //"time"       -> scala.math.BigDecimal(System.currentTimeMillis.toDouble / 1000.0).toString,
+                  "hostname" -> hostname.getOrElse(env.clusterConfig.name).json,
+                  "ddsource" -> ddsource.getOrElse("otoroshi").json,
+                  "ddtags"   -> ddtags.getOrElse("").json,
+                  "service"  -> service.orElse(evt.at("route.name").asOptString).getOrElse("--").json,
+                  "message"  -> evt.stringify
+                )
+            }
+        )
+      )
+      .execute()
+      .map { resp =>
+        val status = resp.status
+        if (resp.status > 199 && resp.status < 299) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
+        }
+      }
+      .recover { case t: Throwable =>
+        ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
+      }
+  }
+}
+
+case class NewRelicCallSettings(
+    url: String,
+    headers: Map[String, String],
+    token: Option[String],
+    logtype: Option[String],
+    service: Option[String],
+    hostname: Option[String],
+    timeout: FiniteDuration,
+    tlsConfig: NgTlsConfig
+) extends Exporter {
+
+  override def toJson: JsValue = {
+    Json
+      .obj(
+        "token"      -> token,
+        "url"        -> url,
+        "headers"    -> headers,
+        "timeout"    -> timeout.toMillis,
+        "tls_config" -> tlsConfig.json
+      )
+      .applyOnWithOpt(token) { case (obj, token) =>
+        obj ++ Json.obj("token" -> token)
+      }
+      .applyOnWithOpt(logtype) { case (obj, logtype) =>
+        obj ++ Json.obj("logtype" -> logtype)
+      }
+      .applyOnWithOpt(service) { case (obj, service) =>
+        obj ++ Json.obj("service" -> service)
+      }
+      .applyOnWithOpt(hostname) { case (obj, hostname) =>
+        obj ++ Json.obj("hostname" -> hostname)
+      }
+  }
+
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[ExportResult] = {
+    env.MtlsWs
+      .url(url, tlsConfig.legacy)
+      .withRequestTimeout(timeout)
+      .withMethod("POST")
+      .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
+        headers :+ ("Api-Key" -> token)
+      }*)
+      .withBody(
+        JsArray(
+          events
+            .map { evt =>
+              Json.obj(
+                "common" -> Json.obj(
+                  "service"  -> service.getOrElse("otoroshi").json,
+                  "logtype"  -> logtype.orElse(evt.select("@type").asOptString).getOrElse("accesslogs").json,
+                  "hostname" -> evt.at("to.host").asOptString.getOrElse("--").json
+                ),
+                "logs"   -> Json.obj(
+                  "timestamp" -> (System.currentTimeMillis() / 1000).json,
+                  "message"   -> evt.stringify
+                )
+              )
+            }
+        )
+      )
+      .execute()
+      .map { resp =>
+        val status = resp.status
+        if (resp.status > 199 && resp.status < 299) {
+          ExportResult.ExportResultSuccess
+        } else {
+          ExportResult.ExportResultFailure(s"bad status code: ${status} - ${resp.body}")
+        }
+      }
+      .recover { case t: Throwable =>
+        ExportResult.ExportResultFailure(s"caught exception on http call: ${t.getMessage}")
+      }
+  }
+}
+
+object NewRelicCallSettings {
+  val format = new Format[NewRelicCallSettings] {
+    override def reads(json: JsValue): JsResult[NewRelicCallSettings] = Try {
+      NewRelicCallSettings(
+        url = json.select("url").asOptString.getOrElse("https://log-api.eu.newrelic.com/log/v1"),
+        headers = json.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        timeout = json.select("timeout").asOptLong.map(_.millis).getOrElse(60.seconds),
+        token = json.select("token").asOptString,
+        logtype = json.select("logtype").asOptString,
+        service = json.select("service").asOptString,
+        hostname = json.select("hostname").asOptString,
+        tlsConfig = json
+          .select("tls_config")
+          .asOpt[JsObject]
+          .flatMap(v => NgTlsConfig.format.reads(v).asOpt)
+          .getOrElse(NgTlsConfig())
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+    override def writes(o: NewRelicCallSettings): JsValue             = o.toJson
   }
 }
 
@@ -538,9 +771,62 @@ object JMSExporterSettings {
   }
 }
 
+case class PostgresExporterSettings(
+    uri: Option[String] = None,
+    host: String = "localhost",
+    port: Int = 5432,
+    database: String = "otoroshi",
+    user: String = "otoroshi",
+    password: String = "otoroshi",
+    schema: String = "otoroshi",
+    table: String = "otoroshi_events",
+    poolSize: Int = 5,
+    ssl: Boolean = false,
+    retentionDays: Int = 0
+) extends Exporter {
+  override def toJson: JsValue = PostgresExporterSettings.format.writes(this)
+}
+
+object PostgresExporterSettings {
+  val format = new Format[PostgresExporterSettings] {
+    override def reads(json: JsValue): JsResult[PostgresExporterSettings] = Try {
+      PostgresExporterSettings(
+        uri = json.select("uri").asOptString.filterNot(_.isEmpty),
+        host = json.select("host").asOptString.getOrElse("localhost"),
+        port = json.select("port").asOptInt.getOrElse(5432),
+        database = json.select("database").asOptString.getOrElse("otoroshi"),
+        user = json.select("user").asOptString.getOrElse("otoroshi"),
+        password = json.select("password").asOptString.getOrElse("otoroshi"),
+        schema = json.select("schema").asOptString.getOrElse("otoroshi"),
+        table = json.select("table").asOptString.getOrElse("otoroshi_events"),
+        poolSize = json.select("pool_size").asOptInt.getOrElse(5),
+        ssl = json.select("ssl").asOptBoolean.getOrElse(false),
+        retentionDays = json.select("retention_days").asOptInt.getOrElse(0)
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(s) => JsSuccess(s)
+    }
+
+    override def writes(o: PostgresExporterSettings): JsValue = Json.obj(
+      "uri"            -> o.uri.map(v => JsString(v)).getOrElse(JsNull).asValue,
+      "host"           -> o.host,
+      "port"           -> o.port,
+      "database"       -> o.database,
+      "user"           -> o.user,
+      "password"       -> o.password,
+      "schema"         -> o.schema,
+      "table"          -> o.table,
+      "pool_size"      -> o.poolSize,
+      "ssl"            -> o.ssl,
+      "retention_days" -> o.retentionDays
+    )
+  }
+}
+
 object DataExporterConfig {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private val log = Logger("otoroshi-data-exporter-config")
 
@@ -556,27 +842,30 @@ object DataExporterConfig {
   val format: Format[DataExporterConfig] = new Format[DataExporterConfig] {
     override def writes(o: DataExporterConfig): JsValue = {
       o.location.jsonWithKey ++ Json.obj(
-        "type"          -> o.typ.name,
-        "enabled"       -> o.enabled,
-        "id"            -> o.id,
-        "name"          -> o.name,
-        "desc"          -> o.desc,
-        "metadata"      -> o.metadata,
-        "tags"          -> JsArray(o.tags.map(JsString.apply)),
-        "bufferSize"    -> o.bufferSize,
-        "jsonWorkers"   -> o.jsonWorkers,
-        "sendWorkers"   -> o.sendWorkers,
-        "groupSize"     -> o.groupSize,
-        "groupDuration" -> o.groupDuration.toMillis,
-        "projection"    -> o.projection,
-        "filtering"     -> Json.obj(
+        "type"            -> o.typ.name,
+        "enabled"         -> o.enabled,
+        "id"              -> o.id,
+        "name"            -> o.name,
+        "desc"            -> o.desc,
+        "metadata"        -> o.metadata,
+        "tags"            -> JsArray(o.tags.map(JsString.apply)),
+        "bufferSize"      -> o.bufferSize,
+        "jsonWorkers"     -> o.jsonWorkers,
+        "sendWorkers"     -> o.sendWorkers,
+        "groupSize"       -> o.groupSize,
+        "groupDuration"   -> o.groupDuration.toMillis,
+        "projection"      -> o.projection,
+        "filtering"       -> Json.obj(
           "include" -> JsArray(o.filtering.include),
           "exclude" -> JsArray(o.filtering.exclude)
         ),
-        "config"        -> o.config.toJson
+        "customFilter"    -> o.customFilter.map(_.json).getOrElse(JsNull).asValue,
+        "customTransform" -> o.customTransform.map(_.json).getOrElse(JsNull).asValue,
+        "config"          -> o.config.toJson
       )
     }
-    override def reads(json: JsValue): JsResult[DataExporterConfig] =
+    override def reads(json: JsValue): JsResult[DataExporterConfig] = {
+      val expType = (json \ "type").as[String]
       Try {
         DataExporterConfig(
           typ = DataExporterConfigType.parse((json \ "type").as[String]),
@@ -586,7 +875,7 @@ object DataExporterConfig {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(5000),
           jsonWorkers = (json \ "jsonWorkers").asOpt[Int].getOrElse(1),
           sendWorkers = (json \ "sendWorkers").asOpt[Int].getOrElse(5),
@@ -594,18 +883,28 @@ object DataExporterConfig {
           groupDuration = (json \ "groupDuration").asOpt[Int].map(_.millis).getOrElse(30.seconds),
           projection = (json \ "projection").asOpt[JsObject].getOrElse(Json.obj()),
           filtering = DataExporterConfigFiltering(
-            include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
-            exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+            include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
+            exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           ),
-          config = (json \ "type").as[String] match {
-            case "elastic"       => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
-            case "webhook"       => Webhook.format.reads((json \ "config").as[JsObject]).get
-            case "http"          => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "splunk"        => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "workflow"      => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
-            case "kafka"         => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
-            case "pulsar"        => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
-            case "file"          =>
+          customFilter = (json \ "customFilter")
+            .asOpt[JsObject]
+            .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
+            .filter(_.ref.trim.nonEmpty),
+          customTransform = (json \ "customTransform")
+            .asOpt[JsObject]
+            .flatMap(o => CustomDataExporterRefConfig.format.reads(o).asOpt)
+            .filter(_.ref.trim.nonEmpty),
+          config = expType match {
+            case "elastic"        => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject]).get
+            case "webhook"        => Webhook.format.reads((json \ "config").as[JsObject]).get
+            case "http"           => HttpCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "splunk"         => SplunkCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "datadog"        => DatadogCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "newrelic"       => NewRelicCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "workflow"       => WorkflowCallSettings.format.reads((json \ "config").as[JsObject]).get
+            case "kafka"          => KafkaConfig.format.reads((json \ "config").as[JsObject]).get
+            case "pulsar"         => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
+            case "file"           =>
               FileSettings(
                 path = (json \ "config" \ "path").as[String],
                 maxNumberOfFile = (json \ "config" \ "maxNumberOfFile").asOpt[Int].filter(_ > 0),
@@ -621,9 +920,9 @@ object DataExporterConfig {
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
               )
-            case "goreplayfile"  =>
+            case "goreplayfile"   =>
               GoReplayFileSettings(
                 (json \ "config" \ "path").as[String],
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
@@ -631,29 +930,36 @@ object DataExporterConfig {
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendRequest").asOpt[Boolean].getOrElse(false),
                 (json \ "config" \ "preferBackendResponse").asOpt[Boolean].getOrElse(false),
-                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                (json \ "config" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
               )
-            case "mailer"        => MailerSettings.format.reads((json \ "config").as[JsObject]).get
-            case "custom"        => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
-            case "console"       => ConsoleSettings()
-            case "metrics"       => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
-            case "custommetrics" => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
-            case "wasm"          => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "otlp-metrics"  => OtlpMetricsExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "otlp-logs"     => OtlpLogsExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "tcp"           => TCPExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "udp"           => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "syslog"        => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case "jms"           => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
-            case v               => throw new RuntimeException(s"Bad config type: '$v'")
+            case "mailer"         => MailerSettings.format.reads((json \ "config").as[JsObject]).get
+            case "custom"         => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
+            case "console"        => ConsoleSettings()
+            case "metrics"        => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
+            case "custommetrics"  => CustomMetricsSettings.format.reads((json \ "config").as[JsObject]).get
+            case "wasm"           => WasmExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "otlp-metrics"   => OtlpMetricsExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "otlp-logs"      => OtlpLogsExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "tcp"            => TCPExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "udp"            => UDPExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "syslog"         => SyslogExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "jms"            => JMSExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "postgresql"     => PostgresExporterSettings.format.reads((json \ "config").as[JsObject]).get
+            case "user-analytics" =>
+              otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings.format
+                .reads((json \ "config").as[JsObject])
+                .get
+            case v                => throw new RuntimeException(s"Bad config type: '${v}'")
           }
         )
       } match {
         case Failure(e) =>
+          log.error(s"exporter type was: '${expType}' - ${json.prettify}")
           e.printStackTrace()
           JsError(e.getMessage)
         case Success(e) => JsSuccess(e)
       }
+    }
   }
 }
 
@@ -699,6 +1005,14 @@ case object DataExporterConfigTypeHttp extends DataExporterConfigType {
 
 case object DataExporterConfigTypeSplunk extends DataExporterConfigType {
   def name: String = "splunk"
+}
+
+case object DataExporterConfigTypeDatadog extends DataExporterConfigType {
+  def name: String = "datadog"
+}
+
+case object DataExporterConfigTypeNewRelic extends DataExporterConfigType {
+  def name: String = "newrelic"
 }
 
 case object DataExporterConfigTypeWorkflow extends DataExporterConfigType {
@@ -757,6 +1071,14 @@ case object DataExporterConfigTypeOtlpMetrics extends DataExporterConfigType {
   def name: String = "otlp-metrics"
 }
 
+case object DataExporterConfigTypePostgres extends DataExporterConfigType {
+  def name: String = "postgresql"
+}
+
+case object DataExporterConfigTypeUserAnalytics extends DataExporterConfigType {
+  def name: String = "user-analytics"
+}
+
 object DataExporterConfigType {
 
   val Kafka         = DataExporterConfigTypeKafka
@@ -765,6 +1087,8 @@ object DataExporterConfigType {
   val Webhook       = DataExporterConfigTypeWebhook
   val Http          = DataExporterConfigTypeHttp
   val Splunk        = DataExporterConfigTypeSplunk
+  val Datadog       = DataExporterConfigTypeDatadog
+  val NewRelic      = DataExporterConfigTypeNewRelic
   val Workflow      = DataExporterConfigTypeWorkflow
   val File          = DataExporterConfigTypeFile
   val GoReplayFile  = DataExporterConfigTypeGoReplayFile
@@ -783,34 +1107,40 @@ object DataExporterConfigType {
   val UDP           = DataExporterConfigTypeUDP
   val Syslog        = DataExporterConfigTypeSyslog
   val JMS           = DataExporterConfigTypeJMS
+  val Postgres      = DataExporterConfigTypePostgres
+  val UserAnalytics = DataExporterConfigTypeUserAnalytics
 
   def parse(str: String): DataExporterConfigType = {
     str.toLowerCase() match {
-      case "kafka"         => Kafka
-      case "pulsar"        => Pulsar
-      case "elastic"       => Elastic
-      case "webhook"       => Webhook
-      case "http"          => Http
-      case "workflow"      => Workflow
-      case "splunk"        => Splunk
-      case "file"          => File
-      case "goreplayfile"  => GoReplayFile
-      case "goreplays3"    => GoReplayS3
-      case "s3"            => S3File
-      case "mailer"        => Mailer
-      case "none"          => None
-      case "custom"        => Custom
-      case "console"       => Console
-      case "metrics"       => Metrics
-      case "custommetrics" => CustomMetrics
-      case "wasm"          => Wasm
-      case "otlp-metrics"  => OtlpMetrics
-      case "otlp-logs"     => OtlpLogs
-      case "tcp"           => TCP
-      case "udp"           => UDP
-      case "syslog"        => Syslog
-      case "jms"           => JMS
-      case _               => None
+      case "kafka"          => Kafka
+      case "pulsar"         => Pulsar
+      case "elastic"        => Elastic
+      case "webhook"        => Webhook
+      case "http"           => Http
+      case "workflow"       => Workflow
+      case "splunk"         => Splunk
+      case "datadog"        => Datadog
+      case "newrelic"       => NewRelic
+      case "file"           => File
+      case "goreplayfile"   => GoReplayFile
+      case "goreplays3"     => GoReplayS3
+      case "s3"             => S3File
+      case "mailer"         => Mailer
+      case "none"           => None
+      case "custom"         => Custom
+      case "console"        => Console
+      case "metrics"        => Metrics
+      case "custommetrics"  => CustomMetrics
+      case "wasm"           => Wasm
+      case "otlp-metrics"   => OtlpMetrics
+      case "otlp-logs"      => OtlpLogs
+      case "tcp"            => TCP
+      case "udp"            => UDP
+      case "syslog"         => Syslog
+      case "jms"            => JMS
+      case "postgresql"     => Postgres
+      case "user-analytics" => UserAnalytics
+      case _                => None
     }
   }
 }
@@ -831,6 +1161,8 @@ case class DataExporterConfig(
     groupDuration: FiniteDuration = 30.seconds,
     filtering: DataExporterConfigFiltering,
     projection: JsObject,
+    customFilter: Option[CustomDataExporterRefConfig] = None,
+    customTransform: Option[CustomDataExporterRefConfig] = None,
     config: Exporter
 ) extends EntityLocationSupport {
 
@@ -848,35 +1180,40 @@ case class DataExporterConfig(
 
   def exporter()(using ec: ExecutionContext, env: Env): DataExporter = {
     config match {
-      case c: KafkaConfig                 => new KafkaExporter(this)
-      case c: PulsarConfig                => new PulsarExporter(this)
-      case c: ElasticAnalyticsConfig      => new ElasticExporter(this)
-      case c: Webhook                     => new WebhookExporter(this)
-      case c: HttpCallSettings            => new HttpCallExporter(this)
-      case c: WorkflowCallSettings        => new WorkflowCallExporter(this)
-      case c: SplunkCallSettings          => new SplunkCallExporter(this)
-      case c: FileSettings                => new FileAppenderExporter(this)
-      case c: S3ExporterSettings          => new S3Exporter(this)
-      case c: GoReplayFileSettings        => new GoReplayFileAppenderExporter(this)
-      case c: GoReplayS3Settings          => new GoReplayS3Exporter(this)
-      case c: NoneMailerSettings          => new GenericMailerExporter(this)
-      case c: ConsoleMailerSettings       => new GenericMailerExporter(this)
-      case c: MailjetSettings             => new GenericMailerExporter(this)
-      case c: MailgunSettings             => new GenericMailerExporter(this)
-      case c: SendgridSettings            => new GenericMailerExporter(this)
-      case c: GenericMailerSettings       => new GenericMailerExporter(this)
-      case c: ExporterRef                 => new CustomExporter(this)
-      case c: ConsoleSettings             => new ConsoleExporter(this)
-      case c: MetricsSettings             => new MetricsExporter(this)
-      case c: CustomMetricsSettings       => new CustomMetricsExporter(this)
-      case c: WasmExporterSettings        => new WasmExporter(this)
-      case c: OtlpMetricsExporterSettings => new OtlpMetricsExporter(this)
-      case c: OtlpLogsExporterSettings    => new OtlpLogExporter(this)
-      case c: TCPExporterSettings         => new TCPExporter(this)
-      case c: UDPExporterSettings         => new UDPExporter(this)
-      case c: SyslogExporterSettings      => new SyslogExporter(this)
-      case c: JMSExporterSettings         => new JMSExporter(this)
-      case _                              => throw new RuntimeException("unsupported exporter type")
+      case c: KafkaConfig                                                    => new KafkaExporter(this)
+      case c: PulsarConfig                                                   => new PulsarExporter(this)
+      case c: ElasticAnalyticsConfig                                         => new ElasticExporter(this)
+      case c: Webhook                                                        => new WebhookExporter(this)
+      case c: HttpCallSettings                                               => new HttpCallExporter(this)
+      case c: WorkflowCallSettings                                           => new WorkflowCallExporter(this)
+      case c: DatadogCallSettings                                            => new DatadogCallExporter(this)
+      case c: NewRelicCallSettings                                           => new NewRelicCallExporter(this)
+      case c: SplunkCallSettings                                             => new SplunkCallExporter(this)
+      case c: FileSettings                                                   => new FileAppenderExporter(this)
+      case c: S3ExporterSettings                                             => new S3Exporter(this)
+      case c: GoReplayFileSettings                                           => new GoReplayFileAppenderExporter(this)
+      case c: GoReplayS3Settings                                             => new GoReplayS3Exporter(this)
+      case c: NoneMailerSettings                                             => new GenericMailerExporter(this)
+      case c: ConsoleMailerSettings                                          => new GenericMailerExporter(this)
+      case c: MailjetSettings                                                => new GenericMailerExporter(this)
+      case c: MailgunSettings                                                => new GenericMailerExporter(this)
+      case c: SendgridSettings                                               => new GenericMailerExporter(this)
+      case c: GenericMailerSettings                                          => new GenericMailerExporter(this)
+      case c: ExporterRef                                                    => new CustomExporter(this)
+      case c: ConsoleSettings                                                => new ConsoleExporter(this)
+      case c: MetricsSettings                                                => new MetricsExporter(this)
+      case c: CustomMetricsSettings                                          => new CustomMetricsExporter(this)
+      case c: WasmExporterSettings                                           => new WasmExporter(this)
+      case c: OtlpMetricsExporterSettings                                    => new OtlpMetricsExporter(this)
+      case c: OtlpLogsExporterSettings                                       => new OtlpLogExporter(this)
+      case c: TCPExporterSettings                                            => new TCPExporter(this)
+      case c: UDPExporterSettings                                            => new UDPExporter(this)
+      case c: SyslogExporterSettings                                         => new SyslogExporter(this)
+      case c: JMSExporterSettings                                            => new JMSExporter(this)
+      case c: PostgresExporterSettings                                       => new PostgresExporter(this)
+      case c: otoroshi.next.analytics.exporter.UserAnalyticsExporterSettings =>
+        new otoroshi.next.analytics.exporter.UserAnalyticsExporter(this)
+      case _                                                                 => throw new RuntimeException("unsupported exporter type")
     }
   }
 }

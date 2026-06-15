@@ -1,19 +1,18 @@
 package otoroshi.loader
 
-import com.softwaremill.macwire._
-import otoroshi.controllers.adminapi.InfosApiController
+import com.softwaremill.macwire.*
 import controllers.{Assets, AssetsComponents}
-import otoroshi.netty.ReactorNettyServer
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
-import otoroshi.api.{GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
-import otoroshi.controllers._
-import otoroshi.controllers.adminapi._
+import otoroshi.api.{DocAction, GenericApiController, OtoroshiEnvHolder, OtoroshiLoaderHelper}
+import otoroshi.controllers.*
+import otoroshi.controllers.adminapi.*
 import otoroshi.env.Env
-import otoroshi.gateway._
-import otoroshi.loader.modules._
+import otoroshi.gateway.*
+import otoroshi.loader.modules.*
+import otoroshi.netty.ReactorNettyServer
+import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
-import otoroshi.next.controllers.adminapi._
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
 import play.api.ApplicationLoader.Context
@@ -37,7 +36,6 @@ class OtoroshiLoader extends ApplicationLoader {
     }
     val components = new OtoroshiComponentsInstances(context, None, None, false)
     OtoroshiLoaderHelper.initOpenTelemetryLogger(context.initialConfiguration, components.env)
-    otoroshi.utils.CustomizePekkoMediaTypesParser.hook(components.env)
     components.handlerRef.set(components.httpRequestHandler)
     components.env.handlerRef.set(components.httpRequestHandler)
     components.env.beforeListening()
@@ -145,10 +143,17 @@ package object modules {
     lazy val tunnelController: TunnelController                           = wire[TunnelController]
     lazy val entitiesController: EntitiesController                       = wire[EntitiesController]
     lazy val errorTemplatesController: ErrorTemplatesController           = wire[ErrorTemplatesController]
+    lazy val docAction: DocAction                                         = wire[DocAction]
     lazy val genericApiController: GenericApiController                   = wire[GenericApiController]
     lazy val infosApiController: InfosApiController                       = wire[InfosApiController]
     lazy val apisController: ApisController                               = wire[ApisController]
     lazy val workflowsController: WorkflowsController                     = wire[WorkflowsController]
+    lazy val nextAnalyticsController: otoroshi.next.analytics.controllers.AnalyticsController =
+      wire[otoroshi.next.analytics.controllers.AnalyticsController]
+    lazy val userDashboardController: otoroshi.next.analytics.controllers.UserDashboardController =
+      wire[otoroshi.next.analytics.controllers.UserDashboardController]
+    lazy val alertEventsController: otoroshi.next.analytics.controllers.AlertEventsController =
+      wire[otoroshi.next.analytics.controllers.AlertEventsController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

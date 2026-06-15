@@ -4,12 +4,12 @@ import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.next.proxy.{ProxyEngine, ProxyEngineConfig}
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 object NewEngine {
@@ -73,7 +73,7 @@ class NewEngineJob extends Job {
       if (!enabled) {
         logger.info(s"You are using the legacy Otoroshi proxy engine !")
         logger.info(s"The new proxy engine is now ready for production :)")
-        logger.info(s"You can check the documentation at https://maif.github.io/otoroshi/manual/topics/engine.html")
+        logger.info(s"You can check the documentation at https://www.otoroshi.io/docs/topics/engine")
       }
     }
     ().future

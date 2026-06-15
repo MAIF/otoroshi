@@ -13,15 +13,15 @@ import otoroshi.next.utils.FOption
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 import play.api.mvc.Results.{NotFound, Ok}
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 object OtoroshiEventListener {
   def props(ext: GreenScoreExtension, env: Env): Props = Props(new OtoroshiEventListener(ext, env))

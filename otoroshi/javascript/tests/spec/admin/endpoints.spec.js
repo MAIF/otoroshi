@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test')
+import { test, expect } from '@playwright/test'
 
 let context
 
@@ -205,72 +205,87 @@ test('Should be able to get public keys in keys field', async () => {
         .then(rawKeys => expect(rawKeys.keys).toBeDefined())
 })
 
+const adminApiHeaders = {
+    'Content-Type': 'application/json',
+    'Otoroshi-Client-Id': 'admin-api-apikey-id',
+    'Otoroshi-Client-Secret': 'admin-api-apikey-secret'
+}
+
+const VERIFIER_ID = 'jwt_verifier_dev_d8408081-57cc-4fca-a4b3-5c9be2d7fcfb'
+const ROUTE_ID = 'route_c1a2868ca-0b26-4028-acae-420c1da8cb02'
+
+// Best-effort cleanup of the deterministic ids this test creates. Ignores
+// 404 ("already gone") so stale state from a previous failed run is wiped
+// without making the test itself fail on the cleanup call.
+async function cleanupJwtVerifierFixtures() {
+    await fetch(`http://otoroshi-api.oto.tools:9999/apis/security.otoroshi.io/v1/jwt-verifiers/${VERIFIER_ID}`, {
+        method: 'DELETE',
+        headers: adminApiHeaders
+    }).catch(() => { })
+
+    await fetch(`http://otoroshi-api.oto.tools:9999/apis/proxy.otoroshi.io/v1/routes/${ROUTE_ID}`, {
+        method: 'DELETE',
+        headers: adminApiHeaders
+    }).catch(() => { })
+}
+
 test('Should be able to create a JWT verifier with || and ::', async () => {
-    await fetch('http://otoroshi-api.oto.tools:9999/apis/security.otoroshi.io/v1/jwt-verifiers', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Otoroshi-Client-Id': 'admin-api-apikey-id',
-            'Otoroshi-Client-Secret': 'admin-api-apikey-secret'
-        },
-        body: JSON.stringify(verifier)
-    })
+    // Wipe leftovers from a previous failed run before we start.
+    await cleanupJwtVerifierFixtures()
 
-    await fetch('http://otoroshi-api.oto.tools:9999/apis/proxy.otoroshi.io/v1/routes', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Otoroshi-Client-Id': 'admin-api-apikey-id',
-            'Otoroshi-Client-Secret': 'admin-api-apikey-secret'
-        },
-        body: JSON.stringify(route)
-    })
-
-    const cookies = await context.cookies();
-
-    await fetch('http://verifier.oto.tools:9999', {
-        cookies,
-        headers: {
-            Accept: 'application/json',
-            foo: 'in-foo-header',
-            'Authorization': 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJmaXJzdCI6ImZpcnN0LWZyb20tdG9rZW4iLCJ0d28iOiJ0d28tZnJvbS10b2tlbiIsImlhdCI6MTUxNjIzOTAyMiwiZm9vIjoiZm9vLWZyb20tdG9rZW4ifQ.4jMP321LPwIc2wzFfwTo5k0RgZ1wlSPOeZOdHlIzxnjlgPIhNjrL_TElLM_Y673v2NhIVq1fMJap3XXl_iNSzQ'
-            /*
-            {
-                "first": "first-from-token",
-                "two": "two-from-token",
-                "iat": 1516239022,
-                "foo": "foo-from-token"
-            } */
-        }
-    })
-        .then(r => r.json())
-        .then(response => {
-            const token = response.headers.authorization
-            const payload = JSON.parse(atob(token.split('.')[1]))
-
-            expect(payload.newValue).toBe("foobar")
-            expect(payload.bar).toBeTruthy()
-            expect(payload.foo).toBeUndefined()
-
-            expect(payload['get-value-from-token']).toBe("first-from-token")
-            expect(payload['get-value-from-header']).toBe("first-from-token")
-            expect(payload['get-default-value']).toBe("not-found")
+    try {
+        const verifierRes = await fetch('http://otoroshi-api.oto.tools:9999/apis/security.otoroshi.io/v1/jwt-verifiers', {
+            method: 'POST',
+            headers: adminApiHeaders,
+            body: JSON.stringify(verifier)
         })
+        expect(verifierRes.status, `verifier creation failed: ${await verifierRes.text().catch(() => '')}`).toBeLessThan(400)
 
-    await fetch('http://otoroshi-api.oto.tools:9999/apis/security.otoroshi.io/v1/jwt-verifiers/jwt_verifier_dev_d8408081-57cc-4fca-a4b3-5c9be2d7fcfb', {
-        method: 'DELETE',
-        headers: {
-            'Otoroshi-Client-Id': 'admin-api-apikey-id',
-            'Otoroshi-Client-Secret': 'admin-api-apikey-secret'
-        }
-    })
+        const routeRes = await fetch('http://otoroshi-api.oto.tools:9999/apis/proxy.otoroshi.io/v1/routes', {
+            method: 'POST',
+            headers: adminApiHeaders,
+            body: JSON.stringify(route)
+        })
+        expect(routeRes.status, `route creation failed: ${await routeRes.text().catch(() => '')}`).toBeLessThan(400)
 
+        const cookies = await context.cookies();
 
-    await fetch('http://otoroshi-api.oto.tools:9999/apis/proxy.otoroshi.io/v1/routes/route_c1a2868ca-0b26-4028-acae-420c1da8cb02', {
-        method: 'DELETE',
-        headers: {
-            'Otoroshi-Client-Id': 'admin-api-apikey-id',
-            'Otoroshi-Client-Secret': 'admin-api-apikey-secret'
-        }
-    })
+        // Otoroshi's proxy route cache refreshes asynchronously after a route
+        // POST. Poll the gateway until it serves before driving the assertions.
+        const callGateway = () => fetch('http://verifier.oto.tools:9999', {
+            cookies,
+            headers: {
+                Accept: 'application/json',
+                foo: 'in-foo-header',
+                'Authorization': 'Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJmaXJzdCI6ImZpcnN0LWZyb20tdG9rZW4iLCJ0d28iOiJ0d28tZnJvbS10b2tlbiIsImlhdCI6MTUxNjIzOTAyMiwiZm9vIjoiZm9vLWZyb20tdG9rZW4ifQ.4jMP321LPwIc2wzFfwTo5k0RgZ1wlSPOeZOdHlIzxnjlgPIhNjrL_TElLM_Y673v2NhIVq1fMJap3XXl_iNSzQ'
+                /*
+                {
+                    "first": "first-from-token",
+                    "two": "two-from-token",
+                    "iat": 1516239022,
+                    "foo": "foo-from-token"
+                } */
+            }
+        })
+        await expect
+            .poll(async () => (await callGateway()).status, { timeout: 15_000, intervals: [500, 1000, 2000] })
+            .toBeLessThan(400)
+        const proxied = await callGateway()
+        expect(proxied.status, `gateway call failed`).toBeLessThan(400)
+        const response = await proxied.json()
+        expect(response.headers, `request.otoroshi.io echo missing headers: ${JSON.stringify(response)}`).toBeDefined()
+        const token = response.headers.authorization
+        expect(token, `expected echoed Authorization header on response`).toBeDefined()
+        const payload = JSON.parse(atob(token.split('.')[1]))
+
+        expect(payload.newValue).toBe("foobar")
+        expect(payload.bar).toBeTruthy()
+        expect(payload.foo).toBeUndefined()
+
+        expect(payload['get-value-from-token']).toBe("first-from-token")
+        expect(payload['get-value-from-header']).toBe("first-from-token")
+        expect(payload['get-default-value']).toBe("not-found")
+    } finally {
+        await cleanupJwtVerifierFixtures()
+    }
 })

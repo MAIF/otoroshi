@@ -2,18 +2,18 @@ package otoroshi.next.extensions
 
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
+import otoroshi.actions.ApiActionContext
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{BackOfficeUser, EntityLocation, EntityLocationSupport}
-import otoroshi.netty._
+import otoroshi.netty.*
 import otoroshi.ssl.ClientAuth
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
-import otoroshi.actions.ApiActionContext
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -140,8 +140,9 @@ case class HttpListener(
         .applyOnIf(config.http2)(seq => seq :+ "h2")
         .applyOnIf(config.h2c)(seq => seq :+ "h2c")
         .applyOnIf(config.http3)(seq => seq :+ "h3")
-      HttpListener.logger.info(s"starting $kind http listener '$id' on ${if (config.tls) "https"
-      else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}")
+      val msg         = s"starting ${kind} http listener '${id}' on ${if (config.tls) "https"
+      else "http"}://${config.host}:(${config.port}/${config.exposedPort}) - ${protocols.mkString("/")}"
+      HttpListener.logger.info(msg)
       val nettyConfig = toNettyConfig(env)
       val server      = new ReactorNettyServer(nettyConfig, env).start(env.handlerRef.get())
       cache(server)
@@ -177,7 +178,7 @@ object HttpListener {
         description = (json \ "description").as[String],
         config = (json \ "config").as(using HttpListenerConfig.format),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -240,8 +241,8 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
       .select("listeners_json")
       .asOpt[String]
       .flatMap(str => Json.parse(str).asOpt[Seq[JsObject]])
-      .getOrElse(Seq.empty)
-    val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
+    val listenerConfigsJson2 = root.select("listeners").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
     val listenerConfigs      = (listenerConfigsJson1 ++ listenerConfigsJson2).flatMap(obj =>
       HttpListenerConfig.format.reads(obj).asOpt.map(r => (obj, r))
     )

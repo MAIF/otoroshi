@@ -3,17 +3,9 @@ package otoroshi.next.plugins
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, JwtInjection, PrivateAppsUser}
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgAccessContext,
-  NgAccessValidator,
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep
-}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,8 +41,8 @@ object RBACConfig {
     )
     override def reads(json: JsValue): JsResult[RBACConfig] = Try {
       RBACConfig(
-        allow = json.select("allow").asOpt[Seq[String]].getOrElse(Seq.empty),
-        deny = json.select("deny").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allow = json.select("allow").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        deny = json.select("deny").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         allowAll = json.select("allow_all").asOpt[Boolean].getOrElse(false),
         denyAll = json.select("deny_all").asOpt[Boolean].getOrElse(false),
         jwtPath = json.select("jwt_path").asOpt[String],
@@ -93,7 +85,7 @@ class RBAC extends NgAccessValidator {
         }
       }
       val isDenied  = if (config.deny.isEmpty) {
-        true
+        false
       } else {
         if (config.denyAll) {
           config.deny.forall(role => roles.contains(role))
@@ -118,7 +110,7 @@ class RBAC extends NgAccessValidator {
       case None        => false
       case Some(token) =>
         val jsonToken = token.getPayload.fromBase64.parseJson
-        val roles     = jsonToken.select(config.roles).asOpt[Seq[String]].getOrElse(Seq.empty)
+        val roles     = jsonToken.select(config.roles).asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         matches(roles, config) || (config.jwtPath.flatMap(p => jsonToken.atPath(p).asOpt[JsValue]) match {
           case Some(JsString(value)) =>
             if (matches(Seq(value), config)) {
@@ -135,7 +127,8 @@ class RBAC extends NgAccessValidator {
   private def checkRightsFromApikey(apikey: ApiKey, config: RBACConfig): Boolean = {
     val rolesTags = apikey.tags.filter(_.startsWith(config.prefix)).map(_.replaceFirst(config.prefix, ""))
     val rolesMeta =
-      apikey.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+      apikey.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
+
     val pathMatch = config.apikeyPath.flatMap(p => apikey.json.atPath(p).asOpt[JsValue]) match {
       case Some(JsString(value)) =>
         if (matches(Seq(value), config)) {
@@ -152,7 +145,7 @@ class RBAC extends NgAccessValidator {
   private def checkRightsFromUser(user: PrivateAppsUser, config: RBACConfig): Boolean = {
     val rolesTags = user.tags.filter(_.startsWith(config.prefix)).map(_.replaceFirst(config.prefix, ""))
     val rolesMeta =
-      user.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.map(_.asString)).getOrElse(Seq.empty)
+      user.metadata.get(config.roles).map(str => Json.parse(str).asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
     val dataMatch = user.otoroshiData.exists { otodata =>
       otodata.select(config.roles).asOpt[JsValue] match {
         case Some(JsString(value)) =>

@@ -3,9 +3,9 @@ package otoroshi.next.plugins
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,7 +25,7 @@ object NgGenericListConfig {
     override def reads(json: JsValue): JsResult[NgGenericListConfig] = Try {
       NgGenericListConfig(
         expression = json.select("expression").asOpt[String].filterNot(_.isBlank),
-        values = json.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
+        values = json.select("values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

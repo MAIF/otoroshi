@@ -1,7 +1,7 @@
 package reactor.netty.http.server
 
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.*
 import reactor.core.publisher.Mono
 import reactor.netty.{Connection, ConnectionObserver}
 

@@ -7,7 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.File
 import java.nio.file.Files
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.given
 
 object ConfigurationCleanup {
   def cleanup(path: String, newpath: String): Unit = {

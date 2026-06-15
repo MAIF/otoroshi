@@ -9,14 +9,14 @@ import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.ssl.{Cert, CertificateData, P12Helper, PemCertificate}
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
+import play.api.mvc.*
 
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env) extends AbstractController(cc) {

@@ -1,0 +1,277 @@
+.hp-root {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 0 3rem;
+}
+
+.hp-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  font-size: 1.5rem;
+  opacity: .4;
+}
+
+// ---------------------------------------------------------------------------
+// Section titles
+// ---------------------------------------------------------------------------
+
+.hp-section {
+  margin-top: 1.5rem;
+}
+
+.hp-section-title {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text);
+  opacity: .45;
+  margin-bottom: .5rem;
+  font-weight: 700;
+}
+
+// ---------------------------------------------------------------------------
+// Entity tiles grid
+// ---------------------------------------------------------------------------
+
+.hp-entity-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .6rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.otoroshi-tile {
+  grid-column: span 1;
+  grid-row: span 3;
+
+
+  padding: .85rem 1rem;
+  background: var(--bg-color_level3);
+  border-radius: .5rem;
+  border: 1px solid transparent;
+  transition: border-color .12s, transform .12s;
+  cursor: pointer;
+  color: var(--text);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  position: relative;
+
+  &:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+    color: var(--text);
+  }
+}
+
+.otoroshi-tile-header {
+  margin-top: auto;
+  text-align: center;
+
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+// .otoroshi-tile-header h3 {
+//   color: var(--text);
+//   text-transform: uppercase;
+//   letter-spacing: 0.03em;
+// }
+
+.hp-entity-link,
+.otoroshi-tile a {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  border-radius: 50%;
+  height: 38px;
+  width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.otoroshi-tile img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+}
+
+.hp-entity-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  background: var(--bg-color_level3);
+  border-radius: .5rem;
+  border: 1px solid transparent;
+  transition: border-color .12s, transform .12s;
+  cursor: pointer;
+  color: var(--text);
+  text-decoration: none !important;
+
+  &:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+    color: var(--text);
+  }
+}
+
+.hp-entity-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: .4rem;
+  font-size: .95rem;
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+.hp-entity-tile-body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.hp-entity-tile-count {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hp-entity-tile-label {
+  font-size: .7rem;
+  color: var(--text);
+  opacity: .5;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+// ---------------------------------------------------------------------------
+// API States pie chart card
+// ---------------------------------------------------------------------------
+
+.hp-api-states-card {
+  background: var(--bg-color_level3);
+  border-radius: .5rem;
+}
+
+.hp-api-states-chart {
+  width: 400px;
+  flex-shrink: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Metric cards
+// ---------------------------------------------------------------------------
+
+.hp-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .6rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.hp-metric {
+  background: var(--bg-color_level3);
+  border-radius: .5rem;
+  padding: .75rem .85rem 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hp-metric-header {
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin-bottom: .25rem;
+}
+
+.hp-metric-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.hp-metric-unit {
+  font-size: .75rem;
+  font-weight: 400;
+  opacity: .5;
+  margin-left: .15rem;
+}
+
+.hp-metric-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text);
+  opacity: .4;
+  white-space: nowrap;
+}
+
+.hp-metric-graph {
+  margin: 0 -.85rem 0;
+  line-height: 0;
+  opacity: .55;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 50px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cluster tiles
+// ---------------------------------------------------------------------------
+
+.hp-cluster-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.hp-cluster-tile {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1rem;
+  background: var(--bg-color_level3);
+  border-radius: .5rem;
+  color: var(--text);
+  text-decoration: none !important;
+  border: 1px solid transparent;
+  transition: border-color .12s;
+  min-width: 240px;
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--text);
+  }
+}
+
+.hp-cluster-icon {
+  font-size: 1.1rem;
+  opacity: .5;
+}
+
+.hp-cluster-value {
+  font-size: 1rem;
+  font-weight: 600;
+}

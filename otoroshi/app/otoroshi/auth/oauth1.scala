@@ -4,16 +4,16 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import play.api.Logger
-import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.WSResponse
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.Results.{Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
@@ -75,9 +75,9 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .asOpt[String]
             .getOrElse("http://otoroshi.oto.tools:9999/backoffice/auth0/callback"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
             .map(_.view.mapValues(UserRights.readFromArray).toMap)
@@ -87,18 +87,18 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
-              o.value.view.mapValues { obj =>
-                obj.asObject.value.view.mapValues { arr =>
-                  arr.asArray.value
+              o.value.mapValues { obj =>
+                obj.asObject.value.mapValues { arr =>
+                  arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
                     }
@@ -304,7 +304,7 @@ object Oauth1AuthModule {
 }
 
 case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
-  import Oauth1AuthModule._
+  import Oauth1AuthModule.*
 
   def this() = this(Oauth1AuthModule.defaultConfig)
 
@@ -348,7 +348,8 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
             val redirect    = request
               .getQueryString("redirect")
               .filter(redirect =>
-                request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+                request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+                request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
               )
               .map(redirectBase64Encoded =>
                 new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)

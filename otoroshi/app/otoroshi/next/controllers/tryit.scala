@@ -11,18 +11,18 @@ import otoroshi.next.models.{NgRoute, NgRouteComposition, NgTarget, NgTlsConfig}
 import otoroshi.next.plugins.ForceHttpsTraffic
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.utils.http.ResponseImplicits.EnhancedWSResponse
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.WSBodyWritables.*
+import play.api.mvc
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import play.api.mvc
 
 class TryItController(
     BackOfficeActionAuth: BackOfficeActionAuth,

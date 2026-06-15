@@ -1,0 +1,191 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-leader-service
+  labels:
+    app: otoroshi
+    component: redis
+    role: leader
+spec:
+  ports:
+    - port: 6379
+      name: redis
+  selector:
+    app: otoroshi
+    component: redis
+    role: leader
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-follower-service
+  labels:
+    app: otoroshi
+    component: redis
+    role: follower
+spec:
+  ports:
+    - port: 6379
+      name: redis
+  selector:
+    app: otoroshi
+    component: redis
+    role: follower
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-leader-deployment
+  labels:
+    app: otoroshi
+    component: redis
+    role: leader
+spec:
+  selector:
+    matchLabels:
+      app: otoroshi
+      component: redis
+      role: leader
+  serviceName: redis-leader-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: otoroshi
+        component: redis
+        role: leader
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          # `--requirepass` enables AUTH on every command. Pass the password via
+          # the env var to avoid putting it in `kubectl describe pod` output.
+          command:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-password
+                  key: password
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"
+            initialDelaySeconds: 20
+            periodSeconds: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: otoroshi
+          component: redis
+          role: leader
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Mi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-follower-deployment
+  labels:
+    app: otoroshi
+    component: redis
+    role: follower
+spec:
+  selector:
+    matchLabels:
+      app: otoroshi
+      component: redis
+      role: follower
+  serviceName: redis-follower-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: otoroshi
+        component: redis
+        role: follower
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          # `--masterauth` lets the follower authenticate to the leader.
+          # `--replicaof` is the modern alias for `--slaveof`.
+          command:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            - --masterauth
+            - $(REDIS_PASSWORD)
+            - --replicaof
+            - redis-leader-service
+            - "6379"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-password
+                  key: password
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping"
+            initialDelaySeconds: 20
+            periodSeconds: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: otoroshi
+          component: redis
+          role: follower
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Mi

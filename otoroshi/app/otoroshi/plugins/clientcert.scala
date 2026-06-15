@@ -1,20 +1,19 @@
 package otoroshi.plugins.clientcert
 
-import java.security.cert.X509Certificate
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
 import otoroshi.utils.http.{DN, MtlsConfig}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
-import otoroshi.utils.http.MtlsConfig
 
+import java.security.cert.X509Certificate
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -140,15 +139,15 @@ class HasClientCertMatchingValidator extends AccessValidator {
           .orElse((context.globalConfig \ "HasClientCertMatchingValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedSerialNumbers   =
-          (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedSubjectDNs      =
-          (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedIssuerDNs       =
-          (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val regexAllowedSubjectDNs =
-          (config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val regexAllowedIssuerDNs  =
-          (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         if (
           certs.exists(cert => allowedSerialNumbers.contains(cert.sn)) ||
           certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.subject.stringify))) ||
@@ -255,15 +254,15 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
 
   private def validate(certs: Seq[X509Certificate], values: JsValue): Boolean = {
     val allowedSerialNumbers   =
-      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val allowedSubjectDNs      =
-      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "subjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val allowedIssuerDNs       =
-      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "issuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedSubjectDNs =
-      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "regexSubjectDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     val regexAllowedIssuerDNs  =
-      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+      (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
     if (
       certs.exists(cert => allowedSerialNumbers.contains(cert.getSerialNumber.toString(16))) ||
       certs

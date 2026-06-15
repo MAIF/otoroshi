@@ -1,20 +1,18 @@
 package otoroshi.controllers
 
-import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
+import otoroshi.actions.{ApiAction, BackOfficeActionAuth, UnAuthApiAction}
 import otoroshi.cluster.{ClusterMode, MemberView}
 import otoroshi.env.Env
-import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
-import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results}
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 object HealthController {
 

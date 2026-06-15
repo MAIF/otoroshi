@@ -5,18 +5,23 @@ metadata:
   name: {{ .Values.service.name }}-certificate
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
 spec:
   description: "certificate for {{ .Values.service.name }}"
   autoRenew: true
   csr:
     issuer: CN=Otoroshi Root
-    hosts: 
+    hosts:
+    {{- if .Values.cluster.enabled }}
+    - {{ .Values.cluster.leaderApiServiceName }}
+    - {{ .Values.cluster.leaderApiServiceName }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.cluster.leaderServiceName }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.cluster.workerServiceName }}.{{ .Release.Namespace }}.svc.cluster.local
+    {{- else }}
     - {{ .Values.service.name }}
     - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
     - {{ .Values.service.apiName }}.{{ .Release.Namespace }}.svc.cluster.local
+    {{- end }}
     - otoroshi.{{ .Values.env.domain }}
     - otoroshi-api.{{ .Values.env.domain }}
     - privateapps.{{ .Values.env.domain }}

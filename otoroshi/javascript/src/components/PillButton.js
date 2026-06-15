@@ -8,17 +8,25 @@ export function PillButton({
   rightText,
   onRightClick,
   style = {},
+  containerStyle = {},
   className = '',
   pillButtonStyle = {},
 }) {
   return (
-    <div className={`d-flex justify-content-center ${className}`}>
+    <div
+      className={`d-flex justify-content-center ${className}`}
+      style={{
+        maxWidth: 1000,
+        ...containerStyle,
+      }}
+    >
       <div
         className="p-1"
         style={{
           borderRadius: '24px',
-          backgroundColor: 'var(--bg-color_level2)',
-          color: 'var(--color_level2)',
+          // backgroundColor: 'var(--bg-color_level3)',
+          border: '1px solid var(--input-border)',
+          color: 'var(--color_level3)',
           position: 'relative',
           width: 'fit-content',
           ...style,
@@ -28,7 +36,7 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
-          style={rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
+          style={pillButtonStyle}
           onClick={() => (onLeftClick ? onLeftClick() : onChange(true))}
         >
           {leftText}
@@ -36,7 +44,7 @@ export function PillButton({
         <button
           className="pill-mode"
           type="button"
-          style={!rightEnabled ? { ...pillButtonStyle, color: '#FFF' } : { ...pillButtonStyle }}
+          style={pillButtonStyle}
           onClick={() => (onRightClick ? onRightClick() : onChange(false))}
         >
           {rightText}

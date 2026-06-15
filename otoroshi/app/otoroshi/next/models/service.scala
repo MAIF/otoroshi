@@ -1,22 +1,20 @@
 package otoroshi.next.models
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import otoroshi.api.OtoroshiEnvHolder
-import otoroshi.env._
-import otoroshi.models._
-import otoroshi.security.IdGenerator
-import otoroshi.storage._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util._
-import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins.OverrideHost
-import otoroshi.next.plugins.ApikeyCalls
 import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.actions.ApiActionContext
+import otoroshi.api.OtoroshiEnvHolder
+import otoroshi.env.*
+import otoroshi.models.*
+import otoroshi.next.plugins.{ApikeyCalls, OverrideHost}
+import otoroshi.next.plugins.api.NgPluginHelper
+import otoroshi.security.IdGenerator
+import otoroshi.storage.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.*
 
 case class NgMinimalRoute(
     frontend: NgFrontend,
@@ -149,7 +147,7 @@ object NgRouteComposition {
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         capture = json.select("capture").asOpt[Boolean].getOrElse(false),
@@ -184,7 +182,7 @@ object NgRouteComposition {
       val name                        = json.select("info").select("title").as[String]
       val description                 = json.select("info").select("description").asOpt[String].getOrElse("")
       val version                     = json.select("info").select("version").asOpt[String].getOrElse("")
-      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
+      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { server =>
         val serverUrl    = server.select("url").asString
         val serverUri    = Uri(serverUrl)
         val serverDomain = serverUri.authority.host.toString()

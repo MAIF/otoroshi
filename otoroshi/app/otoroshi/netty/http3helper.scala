@@ -1,7 +1,7 @@
 package io.netty.incubator.codec.http3
 
 import io.netty.buffer.ByteBufAllocator
-import io.netty.handler.codec.http.{FullHttpRequest, HttpHeaders, HttpMessage, HttpRequest, HttpVersion}
+import io.netty.handler.codec.http.*
 
 object Http3ConversionUtil {
   def addHttp3ToHttpHeaders(

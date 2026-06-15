@@ -1,7 +1,6 @@
 package otoroshi.next.plugins
 
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import kaleidoscope.*
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
@@ -119,6 +118,64 @@ object EurekaApp {
       case Failure(ex)    => JsError(ex.getMessage)
       case Success(value) => JsSuccess(value)
     }
+  }
+}
+
+// Path extractors for the eureka URL routes (replacing kaleidoscope `r"..."`).
+// Dots are kept unescaped to mirror kaleidoscope's verbatim regex semantics.
+private object EurekaAppInstanceStatus {
+  private val pattern = """/eureka/apps/(.*)/(.*)/status""".r
+  def unapply(s: String): Option[(String, String)] = s match {
+    case pattern(a, i) => Some((a, i))
+    case _             => None
+  }
+}
+
+private object EurekaAppInstanceMetadata {
+  private val pattern = """/eureka/apps/(.*)/(.*)/metadata""".r
+  def unapply(s: String): Option[(String, String)] = s match {
+    case pattern(a, i) => Some((a, i))
+    case _             => None
+  }
+}
+
+private object EurekaAppPath {
+  private val pattern = """/eureka/apps/(.*)""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(a) => Some(a)
+    case _          => None
+  }
+}
+
+private object EurekaAppInstancePath {
+  private val pattern = """/eureka/apps/(.*)/(.*)""".r
+  def unapply(s: String): Option[(String, String)] = s match {
+    case pattern(a, i) => Some((a, i))
+    case _             => None
+  }
+}
+
+private object EurekaInstancePath {
+  private val pattern = """/eureka/instances/(.*)""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(i) => Some(i)
+    case _          => None
+  }
+}
+
+private object EurekaVip {
+  private val pattern = """/eureka/vips/(.*)""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(v) => Some(v)
+    case _          => None
+  }
+}
+
+private object EurekaSvip {
+  private val pattern = """/eureka/svips/(.*)""".r
+  def unapply(s: String): Option[String] = s match {
+    case pattern(v) => Some(v)
+    case _          => None
   }
 }
 
@@ -492,30 +549,30 @@ class EurekaServerSink extends NgBackendCall {
     val config   = ctx.cachedConfig(internalName)(EurekaServerConfig.format).getOrElse(EurekaServerConfig())
 
     (ctx.request.method, ctx.request.path) match {
-      case ("PUT", r"/eureka/apps/$appId(.*)/$instanceId(.*)/status")   =>
-        takeInstanceOutOfService(pluginId, appId.s, instanceId.s, ctx.rawRequest.getQueryString("value"))
-      case ("PUT", r"/eureka/apps/$appId(.*)/$instanceId(.*)/metadata") =>
-        putMetadata(pluginId, appId.s, instanceId.s, ctx.request.queryString)
-      case ("GET", r"/eureka/apps/$appId(.*)")                           =>
-        if (s"${appId.s}".isEmpty)
+      case ("PUT", EurekaAppInstanceStatus(appId, instanceId))   =>
+        takeInstanceOutOfService(pluginId, appId, instanceId, ctx.rawRequest.getQueryString("value"))
+      case ("PUT", EurekaAppInstanceMetadata(appId, instanceId)) =>
+        putMetadata(pluginId, appId, instanceId, ctx.request.queryString)
+      case ("GET", EurekaAppPath(appId))                             =>
+        if (s"$appId".isEmpty)
           getApps(pluginId)
         else
-          getAppWithId(pluginId, appId.s)
-      case ("GET", r"/eureka/apps/$appId(.*)/$instanceId(.*)") =>
-        getAppWithIdAndInstanceId(pluginId, appId.s, instanceId.s)
-      case ("GET", r"/eureka/instances/$instanceId(.*)") =>
-        getInstanceWithId(pluginId, instanceId.s)
-      case ("GET", r"/eureka/vips/$vipAddress(.*)") =>
-        getInstancesUnderVipAddress(pluginId, vipAddress.s)
-      case ("GET", r"/eureka/svips/$svipAddress(.*)") =>
-        getInstancesUnderSecureVipAddress(pluginId, svipAddress.s)
-      case ("POST", r"/eureka/apps/$appId(.*)")                          =>
-        createApp(pluginId, appId.s, ctx.request.hasBody, body, config.evictionTimeout)
-      case ("DELETE", r"/eureka/apps/$appId(.*)/$instanceId(.*)")       =>
-        deleteAppWithId(pluginId, appId.s, instanceId.s)
-      case ("PUT", r"/eureka/apps/$appId(.*)/$instanceId(.*)") =>
-        checkHeartbeat(pluginId, appId.s, instanceId.s, config.evictionTimeout)
-      case _                                                              => notFoundResponse()
+          getAppWithId(pluginId, appId)
+      case ("GET", EurekaAppInstancePath(appId, instanceId))         =>
+        getAppWithIdAndInstanceId(pluginId, appId, instanceId)
+      case ("GET", EurekaInstancePath(instanceId))                   =>
+        getInstanceWithId(pluginId, instanceId)
+      case ("GET", EurekaVip(vipAddress))                        =>
+        getInstancesUnderVipAddress(pluginId, vipAddress)
+      case ("GET", EurekaSvip(svipAddress))                      =>
+        getInstancesUnderSecureVipAddress(pluginId, svipAddress)
+      case ("POST", EurekaAppPath(appId))                            =>
+        createApp(pluginId, appId, ctx.request.hasBody, body, config.evictionTimeout)
+      case ("DELETE", EurekaAppInstancePath(appId, instanceId))      =>
+        deleteAppWithId(pluginId, appId, instanceId)
+      case ("PUT", EurekaAppInstancePath(appId, instanceId))         =>
+        checkHeartbeat(pluginId, appId, instanceId, config.evictionTimeout)
+      case _                                                     => notFoundResponse()
     }
   }
 }

@@ -2,14 +2,13 @@ package otoroshi.next.controllers
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import otoroshi.next.plugins.api._
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.libs.json.*
+import play.api.mvc
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class NgPluginsController(
     ApiAction: ApiAction,

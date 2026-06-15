@@ -10,13 +10,13 @@ export const ArrayDropOperator = {
       type: 'number',
       label: 'N',
       props: {
-        description: 'The number of elements to drop'
-      }
+        description: 'The number of elements to drop',
+      },
     },
     ...FromMemory({ isArray: true }),
     value: ValueToCheck('Value to Append'),
     array: {
-      type: 'json',
+      type: 'any',
       label: 'Target Array',
       visible: (props) => !props?.fromMemory,
     },

@@ -2,7 +2,7 @@ package otoroshi.events.pulsar
 
 import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
-import play.api.libs.json.{Format, JsError, JsNull, JsResult, JsString, JsSuccess, JsValue, Json}
+import play.api.libs.json.*
 
 import scala.util.{Failure, Success, Try}
 

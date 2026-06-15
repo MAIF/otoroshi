@@ -5,10 +5,10 @@ import otoroshi.actions.ApiActionContext
 import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
-import otoroshi.next.plugins.{NgLegacyApikeyCall, _}
-import otoroshi.next.plugins.api._
-import otoroshi.next.plugins.wrappers._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
+import otoroshi.next.plugins.wrappers.*
+import otoroshi.next.plugins.*
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError
 import otoroshi.next.proxy.{NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
@@ -17,13 +17,13 @@ import otoroshi.script.{NamedPlugin, PluginType}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.gzip.GzipConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{RegexPool, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -74,10 +74,10 @@ case class NgRoute(
   )
 
   // lazy val boundListeners: Seq[String] = metadata.get("Bound-Listeners").map {
-  //   case value if value.trim.startsWith("[") && value.trim.endsWith("]") => Json.parse(value).asOpt[Seq[String]].getOrElse(Seq.empty)
+  //   case value if value.trim.startsWith("[") && value.trim.endsWith("]") => Json.parse(value).asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   //   case value if value.contains(",") => value.split(",").toSeq.map(_.trim)
   //   case value => Seq(value)
-  // }.getOrElse(Seq.empty).map(_.toLowerCase())
+  // }.getOrElse(Seq.empty).toSeq.map(_.toLowerCase())
 
   lazy val notBoundToListener = boundListeners.isEmpty
 
@@ -215,6 +215,7 @@ case class NgRoute(
     }
   }
 
+  lazy val apiRef: Option[String]               = metadata.get("Otoroshi-Api-Ref")
   lazy val userFacing: Boolean                  = metadata.get("otoroshi-core-user-facing").contains("true")
   lazy val useAhcClient: Boolean                = !useAkkaHttpClient && !useNettyClient
   lazy val useAkkaHttpClient: Boolean           = metadata.get("otoroshi-core-use-pekko-http-client").contains("true")
@@ -231,28 +232,28 @@ case class NgRoute(
     .get("otoroshi-deployment-providers")
     .filter(_.nonEmpty)
     .map(_.split(",").map(_.trim).toSeq)
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val hasDeploymentProviders: Boolean    = deploymentProviders.nonEmpty
   lazy val deploymentRegions: Seq[String]     = metadata
     .get("otoroshi-deployment-regions")
     .filter(_.nonEmpty)
     .map(_.split(",").map(_.trim).toSeq)
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val hasDeploymentRegions: Boolean      = deploymentRegions.nonEmpty
   lazy val deploymentZones: Seq[String]       = metadata
     .get("otoroshi-deployment-zones")
     .filter(_.nonEmpty)
     .map(_.split(",").map(_.trim).toSeq)
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val hasDeploymentZones: Boolean        = deploymentZones.nonEmpty
   lazy val deploymentDatacenters: Seq[String] =
-    metadata.get("otoroshi-deployment-dcs").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+    metadata.get("otoroshi-deployment-dcs").filter(_.nonEmpty).map(_.split(",").map(_.trim).toSeq).getOrElse(Seq.empty).toSeq
   lazy val hasDeploymentDatacenters: Boolean  = deploymentDatacenters.nonEmpty
   lazy val deploymentRacks: Seq[String]       = metadata
     .get("otoroshi-deployment-racks")
     .filter(_.nonEmpty)
     .map(_.split(",").map(_.trim).toSeq)
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val hasDeploymentRacks: Boolean        = deploymentRacks.nonEmpty
 
   lazy val legacy: ServiceDescriptor = serviceDescriptor
@@ -346,8 +347,8 @@ case class NgRoute(
         .getOrElse(SecComInfoTokenVersion.Latest),
       secComExcludedPatterns = {
         (
-          plugins.getPluginByClass[OtoroshiChallenge].map(_.exclude).getOrElse(Seq.empty) ++
-          plugins.getPluginByClass[OtoroshiInfos].map(_.exclude).getOrElse(Seq.empty)
+          plugins.getPluginByClass[OtoroshiChallenge].map(_.exclude).getOrElse(Seq.empty).toSeq ++
+          plugins.getPluginByClass[OtoroshiInfos].map(_.exclude).getOrElse(Seq.empty).toSeq
         ).distinct
       },
       // not needed because of the next line // secComSettings: AlgoSettings = HSAlgoSettings(512, "secret", false)
@@ -387,7 +388,7 @@ case class NgRoute(
         .getPluginByClass[AuthModule]
         .map(_.exclude)
         .orElse(plugins.getPluginByClass[NgLegacyAuthModuleCall].map(_.exclude))
-        .getOrElse(Seq.empty),
+        .getOrElse(Seq.empty).toSeq,
       // ///////////////////////////////////////////////////////////
       publicPatterns = {
         val notLegacy = !metadata.get("otoroshi-core-legacy").contains("true")
@@ -407,7 +408,7 @@ case class NgRoute(
           plugins
             .getPluginByClass[NgLegacyApikeyCall]
             .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.publicPatterns))
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
         }
       },
       privatePatterns = {
@@ -420,7 +421,7 @@ case class NgRoute(
               .getPluginByClass[NgLegacyApikeyCall]
               .flatMap(p => NgLegacyApikeyCallConfig.format.reads(p.config.raw).asOpt.map(_.privatePatterns))
           )
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       },
       additionalHeaders = plugins
         .getPluginByClass[AdditionalHeadersIn]
@@ -441,11 +442,11 @@ case class NgRoute(
       removeHeadersIn = plugins
         .getPluginByClass[RemoveHeadersIn]
         .flatMap(p => NgHeaderNamesConfig.format.reads(p.config.raw).asOpt.map(_.names))
-        .getOrElse(Seq.empty),
+        .getOrElse(Seq.empty).toSeq,
       removeHeadersOut = plugins
         .getPluginByClass[RemoveHeadersOut]
         .flatMap(p => NgHeaderNamesConfig.format.reads(p.config.raw).asOpt.map(_.names))
-        .getOrElse(Seq.empty),
+        .getOrElse(Seq.empty).toSeq,
       headersVerification = plugins
         .getPluginByClass[HeadersValidation]
         .flatMap(p => NgHeaderValuesConfig.format.reads(p.config.raw).asOpt.map(_.headers))
@@ -460,11 +461,11 @@ case class NgRoute(
             whitelist = plugins
               .getPluginByClass[IpAddressAllowedList]
               .flatMap(p => NgIpAddressesConfig.format.reads(p.config.raw).asOpt.map(_.addresses))
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             blacklist = plugins
               .getPluginByClass[IpAddressBlockList]
               .flatMap(p => NgIpAddressesConfig.format.reads(p.config.raw).asOpt.map(_.addresses))
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         } else {
           IpFiltering()
@@ -594,7 +595,7 @@ case class NgRoute(
         val nottrig: Seq[String] = __ctx.attrs
           .get(Keys.ContextualPluginsKey)
           .map(_.tpwoErrors.map(_.instance.plugin))
-          .getOrElse(Seq.empty[String])
+          .getOrElse(Seq.empty[String]).toSeq
         sequence = sequence.copy(
           plugins = sequence.plugins :+ item.copy(
             stop = System.currentTimeMillis(),
@@ -717,11 +718,11 @@ case class NgRoute(
     }
   }
 
-  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, request: RequestHeader)(using
+  def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, attrs: TypedMap, request: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): NgContextualPlugins = {
-    NgContextualPlugins(plugins, global_plugins, request, nextPluginsMerge, env, ec)
+    NgContextualPlugins(this, plugins, global_plugins, request, nextPluginsMerge, attrs, env, ec)
   }
 }
 
@@ -850,14 +851,14 @@ object NgRoute {
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         debugFlow = json.select("debug_flow").asOpt[Boolean].getOrElse(false),
         capture = json.select("capture").asOpt[Boolean].getOrElse(false),
         exportReporting = json.select("export_reporting").asOpt[Boolean].getOrElse(false),
         groups = json.select("groups").asOpt[Seq[String]].getOrElse(Seq("default")),
-        boundListeners = json.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty),
+        boundListeners = json.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         frontend = NgFrontend.readFrom(json.select("frontend")),
         backend = ref match {
           case None    => NgBackend.readFrom(json.select("backend"))

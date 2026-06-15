@@ -4,8 +4,8 @@ import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject}
 
@@ -55,7 +55,7 @@ class ServiceDescriptorUsageWarning extends Job {
         env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html ##")
+        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"-------------------------------------------------------------------------")
         env.logger.warn("")

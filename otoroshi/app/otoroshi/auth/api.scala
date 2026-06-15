@@ -3,17 +3,17 @@ package otoroshi.auth
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.models.{UserRights, _}
+import otoroshi.models.*
 import otoroshi.next.models.{NgRoute, NgTlsConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
-import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws.{WSProxyServer, WSBodyWritables}
-import play.api.libs.ws.WSBodyWritables._
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
+import play.api.libs.ws.{WSBodyWritables, WSProxyServer}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
@@ -34,7 +34,7 @@ case class RemoteUserValidatorSettings(
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, JsValue]] = {
-    import WSBodyWritables._
+    import WSBodyWritables.given
     env.MtlsWs
       .url(url, tlsSettings.legacy)
       .withRequestTimeout(timeout)
@@ -367,7 +367,7 @@ object Form {
     override def reads(json: JsValue): JsResult[Form] = Try {
 
       Form(
-        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
+        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj())
       )
     } match {
@@ -390,6 +390,7 @@ case class AuthModuleConfigFormat(env: Env) extends Format[AuthModuleConfig] {
       case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
       case "oauth1"        => Oauth1ModuleConfig._fmt.reads(json)
       case "wasm"          => WasmAuthModuleConfig.format.reads(json)
+      case "workflow"      => WorkflowAuthModuleConfig.format.reads(json)
       case ref             =>
         env.datastores.authConfigsDataStore
           .templates()(using env)

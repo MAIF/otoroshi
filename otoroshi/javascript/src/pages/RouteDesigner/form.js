@@ -339,6 +339,9 @@ export const schemas = {
             'PowerOfTwoRandomChoices',
             'Random',
             'Sticky',
+            'HeaderHash',
+            'CookieHash',
+            'QueryHash',
             'IpAddressHash',
             'BestResponseTime',
             'WeightedBestResponseTime',
@@ -357,6 +360,45 @@ export const schemas = {
         },
         props: {
           label: 'ratio',
+        },
+      },
+      'load_balancing.header_name': {
+        type: 'string',
+        display: (obj) => {
+          if (!obj.load_balancing) {
+            return false;
+          } else {
+            return obj.load_balancing.type === 'HeaderHash';
+          }
+        },
+        props: {
+          label: 'Header name',
+        },
+      },
+      'load_balancing.cookie_name': {
+        type: 'string',
+        display: (obj) => {
+          if (!obj.load_balancing) {
+            return false;
+          } else {
+            return obj.load_balancing.type === 'CookieHash';
+          }
+        },
+        props: {
+          label: 'Cookie name',
+        },
+      },
+      'load_balancing.query_name': {
+        type: 'string',
+        display: (obj) => {
+          if (!obj.load_balancing) {
+            return false;
+          } else {
+            return obj.load_balancing.type === 'QueryHash';
+          }
+        },
+        props: {
+          label: 'Query param name',
         },
       },
       'health_check.enabled': {
@@ -505,6 +547,9 @@ export const schemas = {
       '>>>Loadbalancing',
       'load_balancing.type',
       'load_balancing.ratio',
+      'load_balancing.header_name',
+      'load_balancing.cookie_name',
+      'load_balancing.query_name',
       '>>>Client Settings',
       'client.backoff_factor',
       'client.retries',

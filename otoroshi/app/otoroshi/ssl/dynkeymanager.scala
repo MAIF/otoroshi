@@ -1,17 +1,17 @@
 package otoroshi.ssl
 
-import com.github.blemale.scaffeine._
+import com.github.blemale.scaffeine.*
 import otoroshi.env.Env
 import otoroshi.models.{GlobalConfig, TlsSettings}
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 
 import java.net.Socket
 import java.security.cert.X509Certificate
 import java.security.{Principal, PrivateKey}
-import javax.net.ssl._
-import scala.concurrent.duration._
+import javax.net.ssl.*
+import scala.concurrent.duration.*
 import scala.util.Try
 
 object KeyManagerCompatibility {

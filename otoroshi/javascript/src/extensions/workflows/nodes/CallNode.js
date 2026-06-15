@@ -1,5 +1,5 @@
 import React from 'react';
-import { NgCodeRenderer, NgSelectRenderer } from '../../../components/nginputs';
+import { NgAnyRenderer, NgCodeRenderer, NgSelectRenderer } from '../../../components/nginputs';
 import { Row } from '../../../components/Row';
 import { nodesCatalogSignal } from '../models/Functions';
 
@@ -9,7 +9,9 @@ export const CallNode = {
   form_schema: {
     function: {
       renderer: (props) => {
-        const functions = Object.values(nodesCatalogSignal.value.nodes).filter(node => node.category === 'functions')
+        const functions = Object.values(nodesCatalogSignal.value.nodes).filter(
+          (node) => node.category === 'functions'
+        );
         return (
           <Row title="Select a function to execute">
             <NgSelectRenderer
@@ -29,7 +31,7 @@ export const CallNode = {
       renderer: (props) => {
         return (
           <Row title="Arguments">
-            <NgCodeRenderer
+            {/*<NgCodeRenderer
               ngOptions={{ spread: true }}
               rawSchema={{
                 props: {
@@ -46,6 +48,24 @@ export const CallNode = {
               value={props.value}
               onChange={(e) => {
                 props.onChange(JSON.parse(e));
+              }}
+            />*/}
+            <NgAnyRenderer
+              language="json"
+              height="10rem"
+              ngOptions={{
+                spread: true,
+              }}
+              options={{
+                fontSize: 11,
+              }}
+              value={props.value}
+              onChange={(e) => {
+                try {
+                  props.onChange(JSON.parse(e));
+                } catch (e) {
+                  console.error(e);
+                }
               }}
             />
           </Row>

@@ -2,19 +2,11 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api.{
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginHttpResponse,
-  NgPluginVisibility,
-  NgRequestTransformer,
-  NgStep,
-  NgTransformerResponseContext
-}
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,9 +45,9 @@ object NgGzipConfig {
     override def reads(json: JsValue): JsResult[NgGzipConfig] =
       Try {
         NgGzipConfig(
-          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "buffer_size").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunked_threshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compression_level").asOpt[Int].getOrElse(5)

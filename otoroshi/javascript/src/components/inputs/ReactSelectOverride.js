@@ -103,7 +103,7 @@ export class ReactSelectOverride extends React.Component {
         styles={{
           control: (baseStyles) => ({
             ...baseStyles,
-            border: '1px solid var(--bg-color_level3)',
+            border: '1px solid var(--border-color)',
             color: 'var(--text)',
             backgroundColor: 'var(--bg-color_level2)',
             boxShadow: 'none',

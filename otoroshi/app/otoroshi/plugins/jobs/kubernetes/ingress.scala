@@ -1,41 +1,32 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import org.apache.pekko.stream.Materializer
-
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import otoroshi.cluster.ClusterMode
 import com.google.common.base.CaseFormat
-import otoroshi.env.Env
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
-import otoroshi.models._
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
-import otoroshi.next.models.{
-  NgBackend,
-  NgClientConfig,
-  NgDomainAndPath,
-  NgFrontend,
-  NgPluginInstance,
-  NgRoute,
-  NgTarget
-}
+import otoroshi.cluster.ClusterMode
+import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
-import otoroshi.script._
-import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{Result, Results}
+import otoroshi.script.*
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.utils.{RegexPool, TypedMap}
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.{Result, Results}
 
-import scala.concurrent.duration._
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -332,7 +323,7 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
           case "frontend.query"                  =>
             d.copy(frontend = d.frontend.copy(query = value.parseJson.asOpt[Map[String, String]].getOrElse(Map.empty)))
           case "frontend.methods"                =>
-            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty)))
+            d.copy(frontend = d.frontend.copy(methods = value.parseJson.asOpt[Seq[String]].getOrElse(Seq.empty).toSeq))
           case "frontend.stripPath"              => d.copy(frontend = d.frontend.copy(stripPath = value.toBoolean))
           case "frontend.exact"                  => d.copy(frontend = d.frontend.copy(exact = value.toBoolean))
           case "backend.rewrite"                 => d.copy(backend = d.backend.copy(rewrite = value.toBoolean))
@@ -807,7 +798,7 @@ object KubernetesIngressSyncJob {
         env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html ##")
+        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"-------------------------------------------------------------------------")
         env.logger.warn("")
@@ -1150,7 +1141,7 @@ object KubernetesIngressToDescriptor {
     val serviceType                    = (kubeService.raw \ "spec" \ "type").as[String]
     val serviceName                    = kubeService.name
     val serviceNamespace               = kubeService.namespace
-    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+    val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.toSeq.find { value =>
       port match {
         case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
         case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
@@ -1210,14 +1201,14 @@ object KubernetesIngressToDescriptor {
                   subsets.toSeq.flatMap { subset =>
                     val endpointPort: Int = (subset \ "ports")
                       .as[JsArray]
-                      .value
+                      .value.toSeq
                       .find { port =>
                         (port \ "name").as[String] == portName
                       }
                       .map(v => (v \ "port").as[Int])
                       .getOrElse(80)
                     val endpointProtocol  = if (endpointPort == 443 || portName == "https") "https" else "http"
-                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                    val addresses         = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
                       templateTarget.copy(
@@ -1328,10 +1319,24 @@ object IngressSupport {
     val reader: Reads[NetworkingV1beta1IngressBackend] = new Reads[NetworkingV1beta1IngressBackend] {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressBackend] =
         Try(
-          NetworkingV1beta1IngressBackend(
-            serviceName = (json \ "serviceName").as[String],
-            servicePort = (json \ "servicePort").as(using IntOrString.reader)
-          )
+          (json \ "service").asOpt[JsValue] match {
+            // networking.k8s.io/v1 shape: { "service": { "name": "...", "port": { "number": 80 } | { "name": "http" } } }
+            case Some(service) =>
+              val port = service \ "port"
+              NetworkingV1beta1IngressBackend(
+                serviceName = (service \ "name").as[String],
+                servicePort = (port \ "number")
+                  .asOpt[Int]
+                  .map(n => IntOrString(n.some, None))
+                  .getOrElse(IntOrString(None, (port \ "name").asOpt[String]))
+              )
+            // legacy networking.k8s.io/v1beta1 shape: { "serviceName": "...", "servicePort": 80 | "http" }
+            case None          =>
+              NetworkingV1beta1IngressBackend(
+                serviceName = (json \ "serviceName").as[String],
+                servicePort = (json \ "servicePort").as(IntOrString.reader)
+              )
+          }
         ) match {
           case Failure(e) => JsError(e.getMessage)
           case Success(v) => JsSuccess(v)

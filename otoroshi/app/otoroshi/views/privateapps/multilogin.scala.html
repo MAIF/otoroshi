@@ -1,4 +1,4 @@
-@(_env: otoroshi.env.Env, auths: String, redirect: Option[String], route: String)
+@(_env: otoroshi.env.Env, auths: String, redirect: Option[String], route: String, hash: Option[String])
 
 <!DOCTYPE html>
 <html lang="en">
@@ -30,6 +30,7 @@
                 Otoroshi.multiLogin({
                     auths: '@Html(auths)',
                     redirect: '@redirect',
+                    hash: '@hash',
                     route: '@route',
                     otoroshiLogo: '@(_env.otoroshiLogo)'
                 }, document.getElementById("app"));

@@ -4,11 +4,11 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -221,7 +221,7 @@ object RemoveCookiesInConfig {
   val format: Format[RemoveCookiesInConfig] = new Format[RemoveCookiesInConfig] {
     override def reads(json: JsValue): JsResult[RemoveCookiesInConfig] = Try {
       RemoveCookiesInConfig(
-        names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty)
+        names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -428,7 +428,7 @@ class CookiesValidation extends NgAccessValidator {
       ctx.cachedConfig(internalName)(CookiesValidationConfig.format.reads(_)).getOrElse(CookiesValidationConfig())
     val validationCookies = config.cookies
     val cookies           = ctx.request.cookies.map { cookie =>
-      (cookie.name, cookie.name)
+      (cookie.name, cookie.value)
     }.toMap
     if (
       validationCookies.forall { case (key, value) =>

@@ -3,13 +3,13 @@ package otoroshi.next.plugins
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import scala.concurrent.ExecutionContext
-import scala.util._
+import scala.util.*
 
 case class QueryTransformerConfig(
     remove: Seq[String] = Seq.empty,
@@ -28,7 +28,7 @@ object QueryTransformerConfig {
     )
     override def reads(json: JsValue): JsResult[QueryTransformerConfig] = Try {
       QueryTransformerConfig(
-        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty),
+        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         rename = json.select("rename").asOpt[Map[String, String]].getOrElse(Map.empty),
         add = json.select("add").asOpt[Map[String, String]].getOrElse(Map.empty)
       )

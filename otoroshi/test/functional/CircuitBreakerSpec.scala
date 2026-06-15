@@ -1,15 +1,16 @@
 package functional
+import play.api.libs.ws.DefaultBodyReadables.*
 
-import java.util.concurrent.atomic.AtomicInteger
-import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import otoroshi.models.{ClientConfig, ServiceDescriptor, Target}
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.models.{ClientConfig, ServiceDescriptor, Target}
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Configuration
 
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.duration.*
 
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -151,7 +152,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val basicTestResponse1 = callServer()
 
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("the connection to backend service was refused") mustBe true
+      basicTestResponse1.body[String].contains("the connection to backend service was refused") mustBe true
 
       callServer()
       callServer()
@@ -159,7 +160,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse2 = callServer()
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("the backend service seems a little bit overwhelmed") mustBe true
+      basicTestResponse2.body[String].contains("the backend service seems a little bit overwhelmed") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -199,7 +200,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse1 = callServer()
       basicTestResponse1.status mustBe 502
-      basicTestResponse1.body.contains("the connection to backend service was refused") mustBe true
+      basicTestResponse1.body[String].contains("the connection to backend service was refused") mustBe true
 
       callServer()
       callServer()
@@ -207,13 +208,13 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse2 = callServer()
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("the backend service seems a little bit overwhelmed") mustBe true
+      basicTestResponse2.body[String].contains("the backend service seems a little bit overwhelmed") mustBe true
 
       awaitF(1.seconds).futureValue
 
       val basicTestResponse3 = callServer()
       basicTestResponse3.status mustBe 502
-      basicTestResponse3.body.contains("the connection to backend service was refused") mustBe true
+      basicTestResponse3.body[String].contains("the connection to backend service was refused") mustBe true
 
       deleteOtoroshiService(service).futureValue
     }
@@ -263,7 +264,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
 
       val basicTestResponse1 = callServer()
       basicTestResponse1.status mustBe 504
-      basicTestResponse1.body.contains(
+      basicTestResponse1.body[String].contains(
         "Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding"
       ) mustBe true
 
@@ -319,7 +320,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) exte
       val basicTestResponse1 = callServer()
 
       basicTestResponse1.status mustBe 504
-      basicTestResponse1.body.contains(
+      basicTestResponse1.body[String].contains(
         "Something went wrong, the backend service does not respond quickly enough, you should try later. Thanks for your understanding"
       ) mustBe true
 

@@ -8,7 +8,7 @@ import otoroshi.models.ServiceDescriptor
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.CompilingPreRouting.funit
 import otoroshi.utils.TypedMap
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.twirl.api.Html
 
@@ -65,10 +65,10 @@ object PreRoutingRef {
             refs = (json \ "refs")
               .asOpt[Seq[String]]
               .orElse((json \ "ref").asOpt[String].map(r => Seq(r)))
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
-            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>

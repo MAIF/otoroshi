@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - statefulsets.yaml
+
+# The Redis password — used both by the Redis StatefulSets (`--requirepass`)
+# and embedded into the `otoroshi-redis-secret.redisUrl` override below.
+# Override this Secret's value before deploying to anything other than a
+# throwaway cluster.
+secretGenerator:
+  - name: redis-password
+    literals:
+      - password=changeMePleaseTheRedisDefaultPassword
+
+# Override the placeholder otoroshi-redis-secret declared in the overlay so
+# Otoroshi connects with the password embedded in the URL (Lettuce only reads
+# the password from the URI, not from a separate REDIS_PASSWORD env var).
+# When you change the password literal above, change it here too.
+  - name: otoroshi-redis-secret
+    behavior: replace
+    literals:
+      - redisUrl=redis://:changeMePleaseTheRedisDefaultPassword@redis-leader-service:6379/0

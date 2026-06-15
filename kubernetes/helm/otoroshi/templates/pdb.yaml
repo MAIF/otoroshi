@@ -1,0 +1,58 @@
+{{- if .Values.pdb.enabled }}
+{{- if .Values.cluster.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.cluster.leader.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: leader
+spec:
+  {{- if .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "otoroshi.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: leader
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.cluster.worker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  {{- if .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "otoroshi.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+{{- else }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otoroshi.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "otoroshi.selectorLabels" . | nindent 6 }}
+{{- end }}
+{{- end }}

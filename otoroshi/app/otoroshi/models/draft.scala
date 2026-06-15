@@ -1,13 +1,13 @@
 package otoroshi.models
 
-import next.models.Api
+import next.models.ApiSubscription
 import otoroshi.actions.ApiAction
 import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.env.Env
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,7 +58,7 @@ object Draft {
         content = (json \ "content").asOpt[JsValue].getOrElse(Json.obj()),
         kind = (json \ "kind").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    =>
@@ -69,50 +69,34 @@ object Draft {
   }
 
   def writeValidator(
-      newDraft: Draft,
-      _body: JsValue,
+      entity: Draft,
+      body: JsValue,
       oldEntity: Option[(Draft, JsValue)],
-      _singularName: String,
-      _id: Option[String],
+      singularName: String,
+      id: Option[String],
       action: WriteAction,
       env: Env
   ): Future[Either[JsValue, Draft]] = {
-    given ec: ExecutionContext = env.otoroshiExecutionContext
 
-    val kind = newDraft.content.selectAsOptString("kind").getOrElse("route")
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
-    kind match {
-      case "api" | "apis.otoroshi.io/Api" =>
-        Api.format.reads(newDraft.content) match {
-          case JsSuccess(api, _) =>
-            Api
-              .writeValidator(
-                api,
-                Json.obj(),
-                oldEntity.map(oldDraft => (Api.format.reads(oldDraft._1.content).get, Json.obj())),
-                _singularName,
-                _id,
-                action,
-                env
-              )
-              .flatMap {
-                case Left(value)   => value.leftf
-                case Right(newApi) => newDraft.copy(content = newApi.json).rightf
+    entity.id
+      .split("_")
+      .headOption
+      .map {
+        case "api-subscription" =>
+          ApiSubscription.format.reads(entity.content) match {
+            case JsSuccess(value, _) =>
+              ApiSubscription.validate(value.apiRef, value, action, isDraft = true)(using env).map {
+                case Left(r)  => JsString(r).left
+                case Right(r) => entity.right
               }
-          case JsError(_)        => newDraft.rightf
-        }
-      case _                              => newDraft.rightf
-    }
+            case JsError(errors)     => JsString(errors.toString()).leftf
+          }
+        case _                  => entity.rightf
+      }
+      .getOrElse(entity.rightf)
   }
-
-//  def deleteValidator(entity: Draft,
-//                        body: JsValue,
-//                        singularName: String,
-//                        id: String,
-//                        action: DeleteAction,
-//                        env: Env):  Future[Either[JsValue, Unit]] = {
-//    ???
-//  }
 }
 
 trait DraftDataStore extends BasicStore[Draft] {

@@ -10,16 +10,20 @@ export const JumpNode = {
   form_schema: {
     predicate: {
       renderer: (props) => {
-        const { predicate } = props.rootValue
+        const { predicate } = props.rootValue;
 
-        return <OperatorSelector
-          predicate={predicate}
-          handleOperatorChange={newOperator => props.rootOnChange({
-            ...props.rootValue,
-            ...newOperator
-          })}
-        />
-      }
-    }
-  }
-}
+        return (
+          <OperatorSelector
+            predicate={predicate}
+            handleOperatorChange={(newOperator) =>
+              props.rootOnChange({
+                ...props.rootValue,
+                ...newOperator,
+              })
+            }
+          />
+        );
+      },
+    },
+  },
+};

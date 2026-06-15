@@ -1,9 +1,17 @@
+import { JwtVerifierLauncher } from '../wizards/JwtVerifierLauncher';
+
 export default {
   id: 'cp:otoroshi.next.plugins.NgJwtUserExtractor',
   config_schema: {
     verifier: {
-      type: 'string',
       label: 'JWT verifier id',
+      type: 'JwtVerifierWizard',
+      props: {
+        componentLauncher: JwtVerifierLauncher,
+        componentsProps: {
+          allowedNewStrategy: 'Generate',
+        },
+      },
     },
     strict: {
       type: 'bool',

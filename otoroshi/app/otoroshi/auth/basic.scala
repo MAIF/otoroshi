@@ -1,30 +1,32 @@
 package otoroshi.auth
 
-import java.security.SecureRandom
-import java.util.{Base64, Optional}
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.http.scaladsl.util.FastFuture
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
-import com.yubico.webauthn._
-import com.yubico.webauthn.data._
-import otoroshi.controllers.{routes, LocalCredentialRepository}
-import otoroshi.env.Env
-import otoroshi.models._
+import com.yubico.webauthn.*
+import com.yubico.webauthn.data.*
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
-import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import otoroshi.controllers.{LocalCredentialRepository, routes}
+import otoroshi.env.Env
+import otoroshi.models.*
+import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
+import otoroshi.utils.syntax.implicits.given
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
+import java.util.{Base64, Optional}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -79,7 +81,7 @@ object BasicAuthUser {
           "tags"                  -> o.tags,
           "webauthn"              -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
           "rights"                -> o.rights.json,
-          "adminEntityValidators" -> o.adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json)))
+          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
         )
       override def reads(json: JsValue)     =
         Try {
@@ -90,7 +92,7 @@ object BasicAuthUser {
               email = (json \ "email").as[String],
               webauthn = (json \ "webauthn").asOpt(using WebAuthnDetails.fmt),
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-              tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+              tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
               rights = UserRights.readFromObject(json),
               adminEntityValidators = json
                 .select("adminEntityValidators")
@@ -150,19 +152,19 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
           users = (json \ "users").asOpt(using Reads.seq(using BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq,
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       )
     } recover { case e =>
@@ -256,7 +258,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
     authConfig.users
       .find(u => u.email == username)
-      .filter(u => BCrypt.checkpw(password, u.password)) match {
+      .filter(u => BCryptHelper.checkpw(password, u.password)) match {
       case Some(user) =>
         PrivateAppsUser(
           randomId = IdGenerator.token(64),
@@ -285,7 +287,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
     authConfig.users
       .find(u => u.email == username)
-      .filter(u => BCrypt.checkpw(password, u.password)) match {
+      .filter(u => BCryptHelper.checkpw(password, u.password)) match {
       case Some(user) =>
         BackOfficeUser(
           randomId = IdGenerator.token(64),
@@ -322,7 +324,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     val redirect                    = request
       .getQueryString("redirect")
       .filter(redirect =>
-        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=$redirect"))
+        request.getQueryString("hash").contains(env.sign(s"desc=${descriptor.id}&redirect=${redirect}")) ||
+        request.getQueryString("hash").contains(env.sign(s"route=${descriptor.id}&redirect=${redirect}"))
       )
       .map(redirectBase64Encoded =>
         new String(Base64.getUrlDecoder.decode(redirectBase64Encoded), StandardCharsets.UTF_8)
@@ -431,7 +434,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                 case true  =>
                   authConfig.users
                     .find(u => u.email == username)
-                    .filter(u => BCrypt.checkpw(password, u.password)) match {
+                    .filter(u => BCryptHelper.checkpw(password, u.password)) match {
                     case Some(user) =>
                       PrivateAppsUser(
                         randomId = IdGenerator.token(64),
@@ -560,17 +563,19 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
   private val random        = new SecureRandom()
-  private val jsonMapper    = new ObjectMapper()
+  private val jsonMapper: ObjectMapper = JsonMapper
+    .builder()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-    .setSerializationInclusion(Include.NON_ABSENT)
-    .registerModule(new Jdk8Module())
+    .defaultPropertyInclusion(JsonInclude.Value.empty().withValueInclusion(Include.NON_ABSENT))
+    .addModule(new Jdk8Module())
+    .build()
 
   def webAuthnLoginStart(
       body: JsValue,
       descriptor: ServiceDescriptor
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     val usernameOpt             = (body \ "username").asOpt[String]
     val passwordOpt             = (body \ "password").asOpt[String]
@@ -636,7 +641,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     val usernameOpt             = (body \ "username").asOpt[String]
     val passwordOpt             = (body \ "password").asOpt[String]
@@ -703,7 +708,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       descriptor: ServiceDescriptor
   )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     val json                    = body
     val webauthn                = (json \ "webauthn").as[JsObject]
@@ -784,7 +789,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     val json                    = body
     val webauthn                = (json \ "webauthn").as[JsObject]
@@ -865,7 +870,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     val username                = (body \ "username").as[String]
     val label                   = (body \ "label").as[String]
@@ -933,7 +938,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.given
 
     val json                    = body
     val responseJson            = Json.stringify((json \ "webauthn").as[JsValue])

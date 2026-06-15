@@ -1,19 +1,19 @@
 package otoroshi.plugins.metrics
 
-import java.io.StringWriter
+import io.prometheus.client.exporter.common.TextFormat
+import io.prometheus.client.{Collector, CollectorRegistry}
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
-import io.prometheus.client.{Collector, CollectorRegistry}
-import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.string.Implicits._
+import otoroshi.utils.future.Implicits.given
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.string.Implicits.given
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
 
+import java.io.StringWriter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -279,7 +279,7 @@ class PrometheusEndpoint extends RequestSink {
 // DEPRECATED
 class PrometheusServiceMetrics extends RequestTransformer {
 
-  import io.prometheus.client._
+  import io.prometheus.client.*
 
   private lazy val requestCounterGlobal = PrometheusSupport.register(
     Counter

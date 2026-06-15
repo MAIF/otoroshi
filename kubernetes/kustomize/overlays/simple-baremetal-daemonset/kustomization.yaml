@@ -1,15 +1,54 @@
-apiVersion: kustomize.config.k8s.io/v1beta1 
+apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: otoroshi
 
-bases:
-  - ../../base
-
 resources:
+  - ../../base
   - deployment.yaml
-  
-patchesStrategicMerge:
-  - deployment.yaml
-  
-# namePrefix: daemonset-baremetal-
+
+components:
+  - ../../components/initial-customization-single
+  # Opt-in add-ons — uncomment to enable.
+  # - ../../components/webhooks
+  # - ../../components/redis
+  # - ../../components/hpa
+  # - ../../components/coredns
+  # - ../../components/gateway-api
+  # - ../../components/pdb-single
+  # - ../../components/network-policy
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/name: otoroshi
+      app.kubernetes.io/instance: simple-baremetal-daemonset
+      app.kubernetes.io/version: "17.16.0"
+      app.kubernetes.io/part-of: otoroshi
+      app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: maif/otoroshi
+    newTag: 17.16.0-dev-jdk11
+
+# (no `replicas:` block — this overlay uses a DaemonSet, which has one pod per
+#  matching node and ignores `replicas`.)
+
+secretGenerator:
+  - name: otoroshi-admin-secret
+    literals:
+      - password=password
+      - clientId=admin-api-apikey-id
+      - clientSecret=admin-api-apikey-secret
+      - otoroshiSecret=verysecretvaluethatyoumustoverwrite
+  - name: otoroshi-redis-secret
+    literals:
+      - redisUrl=redis://redis-leader-service:6379/0
+
+configMapGenerator:
+  - name: otoroshi-config
+    literals:
+      - domain=oto.tools
+      # Initial admin login (OTOROSHI_INITIAL_ADMIN_LOGIN). Override here, or
+      # remove to fall back to Otoroshi's built-in default (admin@otoroshi.io).
+      - adminLogin=admin@otoroshi.io

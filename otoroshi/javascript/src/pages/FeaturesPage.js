@@ -3,8 +3,25 @@ import { Link } from 'react-router-dom';
 import _ from 'lodash';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 
+function mergeByTitle(items) {
+  const map = new Map();
+  for (const item of items) {
+    if (!map.has(item.title)) {
+      map.set(item.title, {
+        ...item,
+        features: [...(item.features || [])],
+      });
+    } else {
+      const existing = map.get(item.title);
+      existing.features.push(...(item.features || []));
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 export const graph = (env) => {
-  return [
+  const links = [
     {
       title: 'Tooling',
       description: 'Some tools to help you with otoroshi',
@@ -27,6 +44,15 @@ export const graph = (env) => {
           icon: () => 'fa-hammer',
         },
         {
+          title: 'Node eventstream',
+          img: 'node-eventstream',
+          description: 'Show current otoroshi node eventstream',
+          display: () => true,
+          link: '/node/eventstream',
+          icon: () => 'fa-filter',
+          // tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
+        },
+        {
           title: 'Snow monkey',
           absoluteImg: '/assets/images/nihonzaru.svg',
           description: 'Create chaos in your routes and test your resilience',
@@ -47,7 +73,7 @@ export const graph = (env) => {
           img: 'manual',
           description: 'You have a question ? Read everything you need to know about otoroshi',
           display: () => true,
-          link: 'https://maif.github.io/otoroshi/manual/index.html',
+          link: 'https://www.otoroshi.io/docs/',
           icon: () => 'fa-book',
         },
       ],
@@ -65,8 +91,8 @@ export const graph = (env) => {
           link: '/services',
         },
         {
-          title: 'Routes',
-          description: 'All your routes',
+          title: 'HTTP Routes',
+          description: 'All your HTTP routes',
           img: 'routes',
           display: () => true,
           icon: () => 'fa-road',
@@ -168,6 +194,13 @@ export const graph = (env) => {
           link: '/error-templates',
         },
         {
+          title: 'Route Templates',
+          description: 'All your route templates',
+          img: 'error',
+          icon: () => 'fa-bomb',
+          link: '/route-templates',
+        },
+        {
           title: 'Scripts',
           description: 'All your live scripts',
           img: 'scripts',
@@ -215,6 +248,24 @@ export const graph = (env) => {
           display: () => env.userAdmin || env.tenantAdmin,
           link: '/stats',
           icon: () => 'fa-signal',
+        },
+        {
+          title: 'User Analytics',
+          description: 'Custom dashboards backed by a dedicated PostgreSQL exporter',
+          img: 'analytics',
+          display: () => env.userAdmin || env.tenantAdmin,
+          link: '/user-dashboards',
+          icon: () => 'fa-chart-line',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
+        },
+        {
+          title: 'User Alerts',
+          description: 'Threshold-based alerts on user-analytics queries',
+          img: 'alerts',
+          display: () => env.userAdmin || env.tenantAdmin,
+          link: '/user-alerts',
+          icon: () => 'fa-bell',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
         {
           title: 'Global Status',
@@ -373,6 +424,7 @@ export const graph = (env) => {
     },
     ...Otoroshi.extensions().flatMap((ext) => ext.categories || []),
   ];
+  return mergeByTitle(links);
 };
 
 const AutoLink = (props) => {

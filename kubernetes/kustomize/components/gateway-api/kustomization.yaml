@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Extend the base ClusterRole `otoroshi-admin-user` with the Gateway API
+# permissions Otoroshi needs to read upstream `gateway.networking.k8s.io`
+# resources and update their `/status` subresources.
+#
+# The Gateway API CRDs themselves (Gateway, HTTPRoute, GRPCRoute, …) must be
+# installed separately from the upstream project:
+#   kubectl apply -f \
+#     https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+#
+# After enabling this component, also add the controller job to your overlay's
+# initial-customization.json:
+#   "scripts.jobRefs": [
+#     ...,
+#     "cp:otoroshi.plugins.jobs.kubernetes.KubernetesGatewayApiControllerJob"
+#   ]
+patches:
+  - target:
+      kind: ClusterRole
+      name: otoroshi-admin-user
+    path: rbac-patch.yaml

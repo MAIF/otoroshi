@@ -1,16 +1,16 @@
 package functional
+import play.api.libs.ws.DefaultBodyReadables.*
+
+import com.typesafe.config.ConfigFactory
+import org.apache.pekko.actor.ActorSystem
+import org.scalatest.concurrent.IntegrationPatience
+import org.scalatestplus.play.PlaySpec
+import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
+import play.api.Configuration
 
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicInteger
-
-import org.apache.pekko.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
-import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
-import play.api.Configuration
-
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -141,7 +141,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       resp3.status mustBe 200
       // resp4.status mustBe 200
       resp5.status mustBe 429
-      resp5.body.contains("") mustBe true
+      resp5.body[String].contains("") mustBe true
     }
 
     "prevent too many calls per month" in {
@@ -166,7 +166,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       resp3.status mustBe 200
       // resp4.status mustBe 200
       resp5.status mustBe 429
-      resp5.body.contains("") mustBe true
+      resp5.body[String].contains("") mustBe true
     }
 
     "stop servers" in {

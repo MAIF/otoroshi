@@ -1,0 +1,22 @@
+- op: add
+  path: /rules/-
+  value:
+    apiGroups: [gateway.networking.k8s.io]
+    resources:
+      - gatewayclasses
+      - gateways
+      - httproutes
+      - grpcroutes
+      - referencegrants
+      - backendtlspolicies
+    verbs: [get, list, watch]
+- op: add
+  path: /rules/-
+  value:
+    apiGroups: [gateway.networking.k8s.io]
+    resources:
+      - gatewayclasses/status
+      - gateways/status
+      - httproutes/status
+      - grpcroutes/status
+    verbs: [get, update, patch]

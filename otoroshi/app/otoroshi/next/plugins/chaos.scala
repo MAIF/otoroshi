@@ -1,14 +1,14 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.Scaffeine
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.gateway.{SnowMonkey, SnowMonkeyContext}
-import otoroshi.models._
-import otoroshi.next.plugins.api._
+import otoroshi.models.*
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
 

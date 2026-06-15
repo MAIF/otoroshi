@@ -1,8 +1,9 @@
 package otoroshi.greenscore
 
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+
 import scala.util.{Failure, Success, Try}
 
 case class RuleId(value: String)
@@ -143,7 +144,7 @@ object Rule {
       JsSuccess(
         json
           .as[JsArray]
-          .value
+          .value.toSeq
           .map(item =>
             Rule(
               id = RuleId(item.select("id").as[String]),
@@ -189,7 +190,7 @@ object RuleState {
       JsSuccess(
         json
           .as[JsArray]
-          .value
+          .value.toSeq
           .map(item =>
             RuleState(
               id = RuleId(item.select("id").as[String]),

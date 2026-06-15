@@ -6,13 +6,12 @@ export default {
   config_schema: {
     only_from: {
       label: 'Only from',
-      type: 'AuthenticationWizard',
+      type: 'array-select',
       props: {
-        componentLauncher: SelectorWizardLauncher,
-        componentsProps: {
-          entityName: 'Authentication configuration',
-          entityField: 'authentication',
-          findById: findAuthConfigById,
+        optionsFrom: '/bo/api/proxy/api/auths',
+        optionsTransformer: {
+          label: 'name',
+          value: 'id',
         },
       },
     },

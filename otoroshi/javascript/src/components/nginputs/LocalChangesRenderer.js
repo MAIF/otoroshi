@@ -1,10 +1,11 @@
 import React from 'react';
-import { Button } from '../Button';
 
 export class LocalChangesRenderer extends React.Component {
   state = {
     folded: true,
   };
+
+  toggle = () => this.setState({ folded: !this.state.folded });
 
   render() {
     const { validation, itemProps, onChange } = this.props;
@@ -18,11 +19,17 @@ export class LocalChangesRenderer extends React.Component {
 
     return (
       <div
-        style={{
-          position: 'relative',
-          minHeight: 120,
-        }}
+        className={`ng-v2-block ${folded ? 'ng-v2-block--folded' : 'ng-v2-block--open'}`}
+        style={{ position: 'relative', minHeight: 120 }}
       >
+        <button
+          type="button"
+          className="ng-v2-toggle"
+          title={folded ? 'Edit' : 'Collapse'}
+          onClick={this.toggle}
+        >
+          <i className={`fas ${folded ? 'fa-pen' : 'fa-chevron-up'}`} />
+        </button>
         <Renderer
           validation={validation}
           {...itemProps}
@@ -34,25 +41,6 @@ export class LocalChangesRenderer extends React.Component {
           rawSchema={schema}
           rawFlow={flow}
         />
-        {folded && (
-          <Button
-            type="info"
-            className="btn-sm"
-            style={{
-              position: 'absolute',
-              top: 12,
-              // bottom: 0,
-              margin: 'auto',
-              right: 12,
-              // height: 32,
-            }}
-            onClick={() => {
-              this.setState({ folded: false });
-            }}
-          >
-            Change
-          </Button>
-        )}
       </div>
     );
   }

@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import org.apache.pekko.Done
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.mvc.Results
 
@@ -58,7 +58,7 @@ class GlobalMaintenanceMode extends NgPreRouting {
   override def preRoute(
       ctx: NgPreRoutingContext
   )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
-    if (ctx.route.id != env.backOfficeServiceId && env.datastores.globalConfigDataStore.latest().maintenanceMode) {
+    if (ctx.route.id != env.backOfficeServiceId) {
       Errors
         .craftResponseResult(
           "Service in maintenance mode",

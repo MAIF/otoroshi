@@ -1,0 +1,24 @@
+diff --git a/conformance/utils/http/http.go b/conformance/utils/http/http.go
+index 2668b079..eec07e3b 100644
+--- a/conformance/utils/http/http.go
++++ b/conformance/utils/http/http.go
+@@ -200,6 +200,19 @@ func MakeRequest(t *testing.T, expected *ExpectedResponse, gwAddr, protocol, sch
+ // [HTTP spec]: https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
+ func CalculateHost(t *testing.T, gwAddr, scheme string) string {
+ 	host, port, err := net.SplitHostPort(gwAddr) // note: this will strip brackets of an IPv6 address
++  if strings.ToLower(scheme) == "http" && port == "80" {
++		return "127.0.0.1:9880"
++	}
++	if strings.ToLower(scheme) == "https" && port == "443" {
++		return "127.0.0.1:9843"
++	}
++	if strings.ToLower(scheme) == "http" {
++		return "127.0.0.1:9880"
++	}
++	if strings.ToLower(scheme) == "https" {
++		return "127.0.0.1:9843"
++	}
++
+ 	if err != nil && strings.Contains(err.Error(), "too many colons in address") {
+ 		// This is an IPv6 address; assume it's valid ipv6
+ 		// Assume caller won't add a port without brackets

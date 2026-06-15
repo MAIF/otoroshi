@@ -1,19 +1,19 @@
 package otoroshi.next.extensions
 
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import com.nimbusds.jose.jwk.Curve
-import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator
-import otoroshi.api._
+import otoroshi.api.*
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.storage._
+import otoroshi.models.*
+import otoroshi.storage.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 import play.api.{Configuration, Environment, Logger}
 import storage.drivers.generic.{GenericDataStores, GenericRedisLike, GenericRedisLikeBuilder}
@@ -54,7 +54,7 @@ object Foo {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -209,7 +209,7 @@ class FooAdminExtension(val env: Env) extends AdminExtension {
 
   override def description: Option[String] = "Foo".some
 
-  override def enabled: Boolean = env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
+  override def enabled: Boolean = false //env.isDev || configuration.getOptional[Boolean]("enabled").getOrElse(false)
 
   override def start(): Unit = {
     "start example extension".debugPrintln

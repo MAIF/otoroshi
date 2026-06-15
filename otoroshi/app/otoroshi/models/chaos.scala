@@ -1,14 +1,13 @@
 package otoroshi.models
 
-import java.util.concurrent.TimeUnit
-
+import org.joda.time.{DateTime, LocalTime}
 import otoroshi.env.Env
 import otoroshi.models.SnowMonkeyConfig.logger
-import org.joda.time.{DateTime, LocalTime}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.concurrent.duration.{FiniteDuration, _}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -310,7 +309,7 @@ object SnowMonkeyConfig {
           outageDurationTo = (json \ "outageDurationTo")
             .asOpt[FiniteDuration](using durationFmt)
             .getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
-          targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty),
+          targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chaosConfig = (json \ "chaosConfig")
             .asOpt[ChaosConfig](using ChaosConfig._fmt)
             .getOrElse(ChaosConfig(enabled = true, None, None, None, None))

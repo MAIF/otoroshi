@@ -5,10 +5,12 @@ import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
+import scala.collection.immutable
+import scala.util.Try
 
 object WorkflowOperatorsInitializer {
   def initDefaults(): Unit = {
@@ -52,6 +54,8 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$basic_auth", new BasicAuthOperator())
     WorkflowOperator.registerOperator("$now", new NowOperator())
     WorkflowOperator.registerOperator("$not", new NotOperator())
+    WorkflowOperator.registerOperator("$and", new AndOperator())
+    WorkflowOperator.registerOperator("$or", new OrOperator())
     WorkflowOperator.registerOperator("$parse_datetime", new ParseDateTimeOperator())
     WorkflowOperator.registerOperator("$parse_date", new ParseDateOperator())
     WorkflowOperator.registerOperator("$parse_time", new ParseTimeOperator())
@@ -59,6 +63,7 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$subtract", new SubtractOperator())
     WorkflowOperator.registerOperator("$multiply", new MultiplyOperator())
     WorkflowOperator.registerOperator("$divide", new DivideOperator())
+    WorkflowOperator.registerOperator("$remainder", new RemainderOperator())
     WorkflowOperator.registerOperator("$incr", new IncrementOperator())
     WorkflowOperator.registerOperator("$decr", new DecrementOperator())
     WorkflowOperator.registerOperator("$str_upper_case", new UppercaseOperator())
@@ -70,25 +75,322 @@ object WorkflowOperatorsInitializer {
     WorkflowOperator.registerOperator("$str_replace", new StringReplaceOperator())
     WorkflowOperator.registerOperator("$str_replace_all", new StringReplaceAllOperator())
     WorkflowOperator.registerOperator("$jq", new JqOperator())
+    WorkflowOperator.registerOperator("$round", new RoundOperator())
+    WorkflowOperator.registerOperator("$parse_number", new ParseNumberOperator())
+    WorkflowOperator.registerOperator("$first_truthy", new FirstTruthyOperator())
+    WorkflowOperator.registerOperator("$contains_ignore_case", new ContainsIgnoreCaseOperator())
+  }
+}
+
+class ContainsIgnoreCaseOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$contains_ignore_case"
+  override def documentationDescription: String           =
+    "This operator return if a string contains another string case insensitive style"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "value"     -> Json.obj("type" -> "string", "description" -> "value to check"),
+        "container" -> Json.obj("type" -> "string", "description" -> "container value")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$contains_ignore_case" -> Json.obj(
+        "value"     -> "hello",
+        "container" -> "Hello World !"
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "value"     -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Value"
+      ),
+      "container" -> Json.obj(
+        "type"  -> "string",
+        "label" -> "Container"
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val all                      = !opts.select("mode").asOptString.contains("contains_any")
+    val opt =
+      opts.select("value").asOpt[JsValue].orElse(opts.select("values").asOpt[JsValue]).map {
+        case JsString(str)    => Seq(str)
+        case v @ JsNumber(_)  => Seq(v.toString())
+        case v @ JsBoolean(_) => Seq(v.toString())
+        case JsArray(values)  =>
+          values.toSeq.collect {
+            case JsString(str)    => str
+            case v @ JsNumber(_)  => v.toString()
+            case v @ JsBoolean(_) => v.toString()
+          }
+        case _                => Seq.empty[String]
+      }
+    opt
+      .map { values =>
+        val predicate = (value: String) => {
+          opts.select("container").asValue match {
+            case JsString(str) => str.toLowerCase().contains(value.toLowerCase())
+            case JsObject(map) =>
+              map.exists { case (key, _) =>
+                key.toLowerCase() == value.toLowerCase()
+              }
+            case JsArray(seq)  =>
+              seq.exists {
+                case JsString(str) => str.toLowerCase() == value.toLowerCase()
+                case _             => false
+              }
+            case _             => false
+          }
+        }
+        if (all) {
+          values.forall(predicate).json
+        } else {
+          values.exists(predicate).json
+        }
+      }
+      .getOrElse(false.json)
+  }
+}
+
+class FirstTruthyOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$first_truthy"
+  override def documentationDescription: String           = "This operator return the first truthy value from an array of value"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "values" -> Json.obj("type" -> "array", "description" -> "values to check")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$first_truthy" -> Json.obj(
+        "values" -> Json.arr(JsNull, false, "hello")
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Values"
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val values = opts.select("values").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
+    values.find(v => IsTruthyOperator.isTruthy(v)).getOrElse(JsNull)
+  }
+}
+
+class AndOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$and"
+  override def documentationDescription: String           = "This operator makes a boolean and"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "a" -> Json.obj("type" -> "boolean", "description" -> "the first value"),
+        "b" -> Json.obj("type" -> "boolean", "description" -> "the second value")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$and" -> Json.obj(
+        "a" -> true,
+        "b" -> true
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "a" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "A",
+        "props" -> Json.obj(
+          "description" -> "The first value"
+        )
+      ),
+      "b" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "B",
+        "props" -> Json.obj(
+          "description" -> "The second value"
+        )
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts
+      .select("values")
+      .asOpt[Seq[JsValue]]
+      .map { values =>
+        if (values.size >= 2) {
+          val head = values.head
+          values.tail.foldLeft(head) { case (a, b) =>
+            (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+          }
+        } else {
+          false.json
+        }
+      }
+      .getOrElse {
+        val a = opts.select("a").asValue
+        val b = opts.select("b").asValue
+        (IsTruthyOperator.isTruthy(a) && IsTruthyOperator.isTruthy(b)).json
+      }
+  }
+}
+
+class OrOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$or"
+  override def documentationDescription: String           = "This operator makes a boolean or"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "a" -> Json.obj("type" -> "boolean", "description" -> "the first value"),
+        "b" -> Json.obj("type" -> "boolean", "description" -> "the second value")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$or" -> Json.obj(
+        "a" -> true,
+        "b" -> true
+      )
+    )
+  )
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "a" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "A",
+        "props" -> Json.obj(
+          "description" -> "The first value"
+        )
+      ),
+      "b" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "B",
+        "props" -> Json.obj(
+          "description" -> "The second value"
+        )
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts
+      .select("values")
+      .asOpt[Seq[JsValue]]
+      .map { values =>
+        if (values.size >= 2) {
+          val head = values.head
+          values.tail.foldLeft(head) { case (a, b) =>
+            (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+          }
+        } else {
+          false.json
+        }
+      }
+      .getOrElse {
+        val a = opts.select("a").asValue
+        val b = opts.select("b").asValue
+        (IsTruthyOperator.isTruthy(a) || IsTruthyOperator.isTruthy(b)).json
+      }
+  }
+}
+
+class ParseNumberOperator extends WorkflowOperator {
+
+  override def documentationName: String                  = "$parse_number"
+  override def documentationDescription: String           = "This operator parse a number from a string"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "value" -> Json.obj("type" -> "string", "description" -> "value to parse")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$parse_number" -> Json.obj(
+        "value" -> "4.2"
+      )
+    )
+  )
+
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "value" -> Json.obj(
+        "type"  -> "number",
+        "label" -> "Value"
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val valueStr = opts.select("value").asOptString.getOrElse("0").trim
+    if (valueStr.isEmpty) {
+      JsNumber(0)
+    } else if (valueStr.contains(".")) {
+      JsNumber(valueStr.toDouble)
+    } else {
+      JsNumber(valueStr.toLong)
+    }
   }
 }
 
 class MergeObjectsOperator extends WorkflowOperator {
 
-  override def documentationName: String = "$merge_objects"
-  override def documentationDescription: String = "This operator merges objects together"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "properties" -> Json.obj(
-      "deep" -> Json.obj("type" -> "boolean", "description" -> "Deep merge"),
-      "values" -> Json.obj("type" -> "array", "description" -> "An array of values to merge"),
+  override def documentationName: String                  = "$merge_objects"
+  override def documentationDescription: String           = "This operator merges objects together"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "properties" -> Json.obj(
+        "deep"   -> Json.obj("type" -> "boolean", "description" -> "Deep merge"),
+        "values" -> Json.obj("type" -> "array", "description" -> "An array of values to merge")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$merge_object" -> Json.obj(
-      "values" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz")),
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$merge_objects" -> Json.obj(
+        "values" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "baz"))
+      )
     )
-  ))
+  )
+
+  override def documentationFormSchema: Option[JsObject] = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"  -> "any",
+        "label" -> "Values",
+        "props" -> Json.obj(
+          "height"      -> "120px",
+          "mode"        -> "jsonOrPlaintext",
+          "description" -> "The values field needs to be an array."
+        )
+      ),
+      "deep"   -> Json.obj(
+        "type"  -> "boolean",
+        "label" -> "Deep merge"
+      )
+    )
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: Seq[JsObject] = opts.select("values").asOpt[Seq[JsObject]] match {
       case Some(v) => v
@@ -96,12 +398,13 @@ class MergeObjectsOperator extends WorkflowOperator {
         val name = opts.select("name").asString
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
-          case None                          => Seq.empty
-          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case None                        => Seq.empty
+          case Some(value) if path.isEmpty => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case Some(value)                 => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
         }
       }
     }
+
     if (opts.select("deep").asOptBoolean.getOrElse(false)) {
       value.foldLeft(Json.obj())(_ ++ _)
     } else {
@@ -111,24 +414,28 @@ class MergeObjectsOperator extends WorkflowOperator {
 }
 
 class MapRenameOperator extends WorkflowOperator {
-  override def documentationName: String = "$map_rename"
-  override def documentationDescription: String = "This operator renames a key in a map"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("map", "old_key", "new_key"),
-    "properties" -> Json.obj(
-      "map" -> Json.obj("type" -> "object", "description" -> "The map to rename a key in"),
-      "old_key" -> Json.obj("type" -> "string", "description" -> "The old key"),
-      "new_key" -> Json.obj("type" -> "string", "description" -> "The new key"),
+  override def documentationName: String                  = "$map_rename"
+  override def documentationDescription: String           = "This operator renames a key in a map"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("map", "old_key", "new_key"),
+      "properties" -> Json.obj(
+        "map"     -> Json.obj("type" -> "object", "description" -> "The map to rename a key in"),
+        "old_key" -> Json.obj("type" -> "string", "description" -> "The old key"),
+        "new_key" -> Json.obj("type" -> "string", "description" -> "The new key")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$map_rename" -> Json.obj(
-      "map" -> Json.obj(),
-      "old_key" -> "old_key",
-      "new_key" -> "new_key",
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$map_rename" -> Json.obj(
+        "map"     -> Json.obj(),
+        "old_key" -> "old_key",
+        "new_key" -> "new_key"
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
@@ -138,7 +445,7 @@ class MapRenameOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                                 => value.at(path.get).asValue
         }
       }
     }
@@ -147,11 +454,10 @@ class MapRenameOperator extends WorkflowOperator {
         val old_key = opts.select("old_key").asString
         val new_key = opts.select("new_key").asString
         obj.get(old_key) match {
-          case None => JsObject(obj - old_key)
-          case Some(old_value) => {
-            val map = obj - old_key + (new_key -> old_value)
+          case None            => JsObject(obj)
+          case Some(old_value) =>
+            val map = obj.view.filterKeys(_ != old_key).toMap + (new_key -> old_value)
             JsObject(map)
-          }
         }
       }
       case _             => JsNull
@@ -160,20 +466,24 @@ class MapRenameOperator extends WorkflowOperator {
 }
 
 class MapLengthOperator extends WorkflowOperator {
-  override def documentationName: String = "$map_length"
-  override def documentationDescription: String = "This operator returns the length of a map"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("map"),
-    "properties" -> Json.obj(
-      "map" -> Json.obj("type" -> "object", "description" -> "The map to get the length of"),
+  override def documentationName: String                  = "$map_length"
+  override def documentationDescription: String           = "This operator returns the length of a map"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("map"),
+      "properties" -> Json.obj(
+        "map" -> Json.obj("type" -> "object", "description" -> "The map to get the length of")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$map_length" -> Json.obj(
-      "map" -> Json.obj()
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$map_length" -> Json.obj(
+        "map" -> Json.obj()
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
@@ -183,7 +493,7 @@ class MapLengthOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                                 => value.at(path.get).asValue
         }
       }
     }
@@ -195,20 +505,24 @@ class MapLengthOperator extends WorkflowOperator {
 }
 
 class MapIsEmptyOperator extends WorkflowOperator {
-  override def documentationName: String = "$map_is_empty"
-  override def documentationDescription: String = "This operator checks if a map is empty"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("map"),
-    "properties" -> Json.obj(
-      "map" -> Json.obj("type" -> "object", "description" -> "The map to check"),
+  override def documentationName: String                  = "$map_is_empty"
+  override def documentationDescription: String           = "This operator checks if a map is empty"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("map"),
+      "properties" -> Json.obj(
+        "map" -> Json.obj("type" -> "object", "description" -> "The map to check")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$map_is_empty" -> Json.obj(
-      "map" -> Json.obj()
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$map_is_empty" -> Json.obj(
+        "map" -> Json.obj()
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
@@ -218,7 +532,7 @@ class MapIsEmptyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                             => value.at(path.get).asValue
         }
       }
     }
@@ -230,20 +544,24 @@ class MapIsEmptyOperator extends WorkflowOperator {
 }
 
 class ArrayIsEmptyOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_is_empty"
-  override def documentationDescription: String = "This operator checks if an array is empty"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to check"),
+  override def documentationName: String                  = "$array_is_empty"
+  override def documentationDescription: String           = "This operator checks if an array is empty"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to check")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_is_empty" -> Json.obj(
-      "array" -> Seq("my_value", "other_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_is_empty" -> Json.obj(
+        "array" -> Seq("my_value", "other_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -253,7 +571,7 @@ class ArrayIsEmptyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -265,20 +583,24 @@ class ArrayIsEmptyOperator extends WorkflowOperator {
 }
 
 class ArrayDistinctOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_distinct"
-  override def documentationDescription: String = "This operator removes duplicate elements from an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to remove duplicates from"),
+  override def documentationName: String                  = "$array_distinct"
+  override def documentationDescription: String           = "This operator removes duplicate elements from an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to remove duplicates from")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_distinct" -> Json.obj(
-      "array" -> Seq("my_value", "other_value", "my_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_distinct" -> Json.obj(
+        "array" -> Seq("my_value", "other_value", "my_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -288,7 +610,7 @@ class ArrayDistinctOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -300,20 +622,24 @@ class ArrayDistinctOperator extends WorkflowOperator {
 }
 
 class ArrayReverseOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_reverse"
-  override def documentationDescription: String = "This operator reverses an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to reverse"),
+  override def documentationName: String                  = "$array_reverse"
+  override def documentationDescription: String           = "This operator reverses an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to reverse")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_reverse" -> Json.obj(
-      "array" -> Seq("my_value", "other_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_reverse" -> Json.obj(
+        "array" -> Seq("my_value", "other_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -323,7 +649,7 @@ class ArrayReverseOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -335,22 +661,26 @@ class ArrayReverseOperator extends WorkflowOperator {
 }
 
 class ArrayTakeOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_take"
-  override def documentationDescription: String = "This operator takes the first n elements of an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array", "n"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to take elements from"),
-      "n"     -> Json.obj("type" -> "integer", "description" -> "The number of elements to take"),
+  override def documentationName: String                  = "$array_take"
+  override def documentationDescription: String           = "This operator takes the first n elements of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array", "n"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to take elements from"),
+        "n"     -> Json.obj("type" -> "integer", "description" -> "The number of elements to take")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_take" -> Json.obj(
-      "array" -> Seq("my_value", "other_value"),
-      "n"     -> 1
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_take" -> Json.obj(
+        "array" -> Seq("my_value", "other_value"),
+        "n"     -> 1
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -360,7 +690,7 @@ class ArrayTakeOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -372,22 +702,26 @@ class ArrayTakeOperator extends WorkflowOperator {
 }
 
 class ArrayDropOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_drop"
-  override def documentationDescription: String = "This operator drops the first n elements of an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array", "n"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to drop elements from"),
-      "n"     -> Json.obj("type" -> "integer", "description" -> "The number of elements to drop"),
+  override def documentationName: String                  = "$array_drop"
+  override def documentationDescription: String           = "This operator drops the first n elements of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array", "n"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to drop elements from"),
+        "n"     -> Json.obj("type" -> "integer", "description" -> "The number of elements to drop")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_drop" -> Json.obj(
-      "array" -> Seq("my_value", "other_value"),
-      "n"     -> 1
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_drop" -> Json.obj(
+        "array" -> Seq("my_value", "other_value"),
+        "n"     -> 1
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -397,7 +731,7 @@ class ArrayDropOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -409,22 +743,26 @@ class ArrayDropOperator extends WorkflowOperator {
 }
 
 class ArrayJoinOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_join"
-  override def documentationDescription: String = "This operator joins an array into a string"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array", "separator"),
-    "properties" -> Json.obj(
-      "array"     -> Json.obj("type" -> "array", "description" -> "The array to join"),
-      "separator" -> Json.obj("type" -> "string", "description" -> "The separator to use"),
+  override def documentationName: String                  = "$array_join"
+  override def documentationDescription: String           = "This operator joins an array into a string"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array", "separator"),
+      "properties" -> Json.obj(
+        "array"     -> Json.obj("type" -> "array", "description" -> "The array to join"),
+        "separator" -> Json.obj("type" -> "string", "description" -> "The separator to use")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_join" -> Json.obj(
-      "array"     -> Seq("my_value", "other_value"),
-      "separator" -> ","
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_join" -> Json.obj(
+        "array"     -> Seq("my_value", "other_value"),
+        "separator" -> ","
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -434,7 +772,7 @@ class ArrayJoinOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -446,20 +784,24 @@ class ArrayJoinOperator extends WorkflowOperator {
 }
 
 class ArrayLengthOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_length"
-  override def documentationDescription: String = "This operator gets the length of an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the length from"),
+  override def documentationName: String                  = "$array_length"
+  override def documentationDescription: String           = "This operator gets the length of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to get the length from")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_length" -> Json.obj(
-      "array" -> Seq("my_value", "other_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_length" -> Json.obj(
+        "array" -> Seq("my_value", "other_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -469,7 +811,7 @@ class ArrayLengthOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -481,20 +823,24 @@ class ArrayLengthOperator extends WorkflowOperator {
 }
 
 class ArrayInitOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_init"
-  override def documentationDescription: String = "This operator gets the init of an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the init from"),
+  override def documentationName: String                  = "$array_init"
+  override def documentationDescription: String           = "This operator gets the init of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to get the init from")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_init" -> Json.obj(
-      "array" -> Seq("my_value", "other_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_init" -> Json.obj(
+        "array" -> Seq("my_value", "other_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -504,7 +850,7 @@ class ArrayInitOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -516,20 +862,24 @@ class ArrayInitOperator extends WorkflowOperator {
 }
 
 class ArrayTailOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_tail"
-  override def documentationDescription: String = "This operator gets the tail of an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the tail from"),
+  override def documentationName: String                  = "$array_tail"
+  override def documentationDescription: String           = "This operator gets the tail of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to get the tail from")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_tail" -> Json.obj(
-      "array" -> Seq("my_value", "other_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_tail" -> Json.obj(
+        "array" -> Seq("my_value", "other_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -539,7 +889,7 @@ class ArrayTailOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
@@ -551,20 +901,24 @@ class ArrayTailOperator extends WorkflowOperator {
 }
 
 class ArrayHeadOperator extends WorkflowOperator {
-  override def documentationName: String = "$array_head"
-  override def documentationDescription: String = "This operator gets the head of an array"
-  override def documentationInputSchema: Option[JsObject] = Some(Json.obj(
-    "type" -> "object",
-    "required" -> Seq("array"),
-    "properties" -> Json.obj(
-      "array" -> Json.obj("type" -> "array", "description" -> "The array to get the head from"),
+  override def documentationName: String                  = "$array_head"
+  override def documentationDescription: String           = "This operator gets the head of an array"
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("array"),
+      "properties" -> Json.obj(
+        "array" -> Json.obj("type" -> "array", "description" -> "The array to get the head from")
+      )
     )
-  ))
-  override def documentationExample: Option[JsObject] = Some(Json.obj(
-    "$array_head" -> Json.obj(
-      "array" -> Seq("my_value", "other_value")
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$array_head" -> Json.obj(
+        "array" -> Seq("my_value", "other_value")
+      )
     )
-  ))
+  )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value: JsValue = opts.select("array").asOpt[JsArray] match {
       case Some(v) => v
@@ -574,13 +928,45 @@ class ArrayHeadOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
+          case Some(value)                   => value.at(path.get).asValue
         }
       }
     }
     value match {
       case JsArray(arr) => arr.headOption.getOrElse(JsNull)
       case _            => JsNull
+    }
+  }
+}
+
+class RoundOperator extends WorkflowOperator {
+  override def documentationName: String                  = "$round"
+  override def documentationDisplayName: String           = "Round"
+  override def documentationIcon: String                  = "fas fa-code"
+  override def documentationDescription: String           = "This operator rounds a value to the nearest integer"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "value" -> Json.obj(
+        "type"  -> "json",
+        "props" -> Json.obj(
+          "description" -> "A value to round"
+        ),
+        "label" -> "Value"
+      )
+    )
+  )
+  override def documentationInputSchema: Option[JsObject] = None
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$round" -> Json.obj(
+        "value" -> 0.5
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    opts.select("value").asOpt[JsNumber] match {
+      case Some(value) => JsNumber(Math.floor(value.value.toDouble))
+      case v           => JsNumber(0)
     }
   }
 }
@@ -618,7 +1004,7 @@ class JqOperator extends WorkflowOperator {
       "required"   -> Seq("value"),
       "properties" -> Json.obj(
         "filter" -> Json.obj("type" -> "string", "description" -> "The JQ filter applied on the JSON"),
-        "value"  -> Json.obj("type" -> "any", "description" -> "The JSON passed to JQ")
+        "value"  -> Json.obj("description" -> "The JSON passed to JQ")
       )
     )
   )
@@ -658,7 +1044,7 @@ class StringifyOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type"  -> "json",
+        "type"  -> "any",
         "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The json to convert to string"
@@ -671,7 +1057,7 @@ class StringifyOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value"),
       "properties" -> Json.obj(
-        "value" -> Json.obj("type" -> "any", "description" -> "The json to convert to string")
+        "value" -> Json.obj("description" -> "The json to convert to string")
       )
     )
   )
@@ -695,8 +1081,8 @@ class PrettifyOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type"        -> "json",
-        "props"       -> Json.obj(
+        "type"  -> "json",
+        "props" -> Json.obj(
           "editorOnly"  -> true,
           "description" -> "The json to convert to string"
         )
@@ -708,7 +1094,7 @@ class PrettifyOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value"),
       "properties" -> Json.obj(
-        "value" -> Json.obj("type" -> "any", "description" -> "The json to convert to string")
+        "value" -> Json.obj("description" -> "The json to convert to string")
       )
     )
   )
@@ -883,7 +1269,7 @@ class UppercaseOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("value").as[String].toUpperCase().json
+    opts.select("value").asOpt[String].map(_.toUpperCase().json).getOrElse(JsNull)
   }
 }
 
@@ -920,7 +1306,7 @@ class LowercaseOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("value").as[String].toLowerCase().json
+    opts.select("value").asOpt[String].map(_.toLowerCase().json).getOrElse(JsNull)
   }
 }
 
@@ -1013,7 +1399,7 @@ class IncrementOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     val value = opts.select("value").asOpt[BigDecimal].getOrElse(BigDecimal(0))
-    val inc = opts.select("increment").asOpt[BigDecimal].getOrElse(BigDecimal(0))
+    val inc   = opts.select("increment").asOpt[BigDecimal].getOrElse(BigDecimal(0))
     JsNumber(value.+(inc))
   }
 }
@@ -1134,11 +1520,10 @@ class AddOperator extends WorkflowOperator {
   )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
-      "values" -> Json.obj(
-        "type"   -> "array",
-        "label"  -> "Numbers to Add",
-        "array"  -> true,
-        "format" -> null
+      "type"       -> "object",
+      "required"   -> Seq("values"),
+      "properties" -> Json.obj(
+        "values" -> Json.obj("type" -> "array", "description" -> "The list of numbers to add")
       )
     )
   )
@@ -1150,9 +1535,18 @@ class AddOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b.value))
-      case _             => 0.json
+    opts.select("values").asOpt[Seq[JsValue]] match {
+      case Some(values) =>
+        val numbers: Seq[BigDecimal] = values.map {
+          case JsNumber(n) => n
+          case JsString(s) =>
+            Try {
+              BigDecimal(s)
+            } recover { case _: NumberFormatException => BigDecimal(0) } get
+          case _           => BigDecimal(0)
+        }
+        JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a + b))
+      case _            => 0.json
     }
   }
 }
@@ -1191,9 +1585,18 @@ class SubtractOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b.value))
-      case _             => 0.json
+    opts.select("values").asOpt[Seq[JsValue]] match {
+      case Some(values) =>
+        val numbers: Seq[BigDecimal] = values.map {
+          case JsNumber(n) => n
+          case JsString(s) =>
+            Try {
+              BigDecimal(s)
+            } recover { case _: NumberFormatException => BigDecimal(0) } get
+          case _           => BigDecimal(0)
+        }
+        JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a - b))
+      case _            => 0.json
     }
   }
 }
@@ -1232,9 +1635,53 @@ class MultiplyOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a * b.value))
-      case _             => 0.json
+      case Some(numbers) if numbers.length == 1 => numbers.head
+      case Some(numbers)                        => JsNumber(numbers.foldLeft(BigDecimal(1))((a, b) => a * b.value))
+      case _                                    => 0.json
     }
+  }
+}
+
+class RemainderOperator extends WorkflowOperator {
+  override def documentationName: String                  = "$remainder"
+  override def documentationDisplayName: String           = "Remainder"
+  override def documentationIcon: String                  = "fas fa-percent"
+  override def documentationDescription: String           = "This operator perform Euclidian division"
+  override def documentationFormSchema: Option[JsObject]  = Some(
+    Json.obj(
+      "values" -> Json.obj(
+        "type"  -> "array",
+        "label" -> "Values",
+        "props" -> Json.obj(
+          "description" -> "The list of numbers to divide"
+        )
+      )
+    )
+  )
+  override def documentationInputSchema: Option[JsObject] = Some(
+    Json.obj(
+      "type"       -> "object",
+      "required"   -> Seq("value", "by"),
+      "properties" -> Json.obj(
+        "value" -> Json.obj("type" -> "number", "description" -> "The number to divide"),
+        "by"    -> Json.obj("type" -> "number", "description" -> "The numbe to divide by")
+      )
+    )
+  )
+  override def documentationExample: Option[JsObject]     = Some(
+    Json.obj(
+      "$remainder" -> Json.obj(
+        "value" -> 10,
+        "by"    -> 2
+      )
+    )
+  )
+  override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
+    val result: Option[JsNumber] = for {
+      value <- opts.select("value").asOpt[JsNumber]
+      by    <- opts.select("by").asOpt[JsNumber]
+    } yield JsNumber(value.value % by.value)
+    result.getOrElse(0.json)
   }
 }
 
@@ -1272,8 +1719,9 @@ class DivideOperator extends WorkflowOperator {
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
     opts.select("values").asOpt[Seq[JsNumber]] match {
-      case Some(numbers) => JsNumber(numbers.foldLeft(BigDecimal(0))((a, b) => a / b.value))
-      case _             => 0.json
+      case Some(numbers) if numbers.nonEmpty =>
+        JsNumber(numbers.tail.foldLeft(numbers.head.value)((a, b) => a / b.value))
+      case _                                 => 0.json
     }
   }
 }
@@ -1326,7 +1774,7 @@ class ParseDateTimeOperator extends WorkflowOperator {
       .map(p => DateTimeFormat.forPattern(p))
       .getOrElse(ISODateTimeFormat.dateTimeParser.withOffsetParsed)
 
-    println(s"ParseDateTimeOperator - ${DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json}")
+    //println("ParseDateTimeOperator", DateTime.parse(opts.select("value").as[String], pattern).toDate.getTime.json)
 
     opts.select("value").asOpt[String] match {
       case Some(dateStr) => DateTime.parse(dateStr, pattern).toDate.getTime.json
@@ -1858,8 +2306,8 @@ class EqOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("a", "b"),
       "properties" -> Json.obj(
-        "a" -> Json.obj("type" -> "any", "description" -> "The first value"),
-        "b" -> Json.obj("type" -> "any", "description" -> "The second value")
+        "a" -> Json.obj("description" -> "The first value"),
+        "b" -> Json.obj("description" -> "The second value")
       )
     )
   )
@@ -1906,8 +2354,8 @@ class NeqOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("a", "b"),
       "properties" -> Json.obj(
-        "a" -> Json.obj("type" -> "any", "description" -> "The first value"),
-        "b" -> Json.obj("type" -> "any", "description" -> "The second value")
+        "a" -> Json.obj("description" -> "The first value"),
+        "b" -> Json.obj("description" -> "The second value")
       )
     )
   )
@@ -1933,18 +2381,18 @@ class ContainsOperator extends WorkflowOperator {
   override def documentationDescription: String           = "This operator checks if a value is contained in a container"
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-      "value" -> Json.obj(
-        "type"      -> "json",
-        "label"     -> "Value",
-        "props"     -> Json.obj(
+      "value"     -> Json.obj(
+        "type"  -> "json",
+        "label" -> "Value",
+        "props" -> Json.obj(
           "description" -> "The value to check"
-        ),
-        "container" -> Json.obj(
-          "type"  -> "json",
-          "label" -> "Container",
-          "props" -> Json.obj(
-            "description" -> "The container to check"
-          )
+        )
+      ),
+      "container" -> Json.obj(
+        "type"  -> "json",
+        "label" -> "Container",
+        "props" -> Json.obj(
+          "description" -> "The container to check"
         )
       )
     )
@@ -1954,8 +2402,8 @@ class ContainsOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value", "container"),
       "properties" -> Json.obj(
-        "value"     -> Json.obj("type" -> "any", "description" -> "The value to check"),
-        "container" -> Json.obj("type" -> "any", "description" -> "The container to check")
+        "value"     -> Json.obj("description" -> "The value to check"),
+        "container" -> Json.obj("description" -> "The container to check")
       )
     )
   )
@@ -1968,8 +2416,20 @@ class ContainsOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val value              = opts.select("value").asValue
-    val container: JsValue = opts.select("container").asOpt[JsValue] match {
+    val all                  = !opts.select("mode").asOptString.contains("contains_any")
+    val values = opts
+      .select("value")
+      .asOpt[JsValue]
+      .orElse(opts.select("values").asOpt[JsValue])
+      .map {
+        case v @ JsString(_)  => Seq(v)
+        case v @ JsNumber(_)  => Seq(v)
+        case v @ JsBoolean(_) => Seq(v)
+        case JsArray(values)  => values
+        case _                => Seq.empty[JsValue]
+      }
+      .getOrElse(Seq.empty).toSeq
+    val container: JsValue   = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
       case None    =>
         val name = opts.select("name").asString
@@ -1977,16 +2437,26 @@ class ContainsOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
-    (container match {
-      case JsObject(values) if value.isInstanceOf[JsString] => values.contains(value.asString)
-      case JsArray(values)                                  => values.contains(value)
-      case JsString(str) if value.isInstanceOf[JsString]    => str.contains(value.asString)
-      case _                                                => false
-    }).json
+    if (all) {
+      (container match {
+        case JsObject(objValues) =>
+          values.filter(_.isInstanceOf[JsString]).forall(value => objValues.contains(value.asString))
+        case JsArray(arrvalues)  => values.forall(value => arrvalues.contains(value))
+        case JsString(str)       => values.filter(_.isInstanceOf[JsString]).forall(value => str.contains(value.asString))
+        case _                   => false
+      }).json
+    } else {
+      (container match {
+        case JsObject(objValues) =>
+          values.filter(_.isInstanceOf[JsString]).exists(value => objValues.contains(value.asString))
+        case JsArray(arrvalues)  => values.exists(value => arrvalues.contains(value))
+        case JsString(str)       => values.filter(_.isInstanceOf[JsString]).exists(value => str.contains(value.asString))
+        case _                   => false
+      }).json
+    }
   }
 }
 
@@ -2012,7 +2482,7 @@ class IsTruthyOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value"),
       "properties" -> Json.obj(
-        "value" -> Json.obj("type" -> "any", "description" -> "The value to check")
+        "value" -> Json.obj("description" -> "The value to check")
       )
     )
   )
@@ -2032,17 +2502,22 @@ class IsTruthyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
-    (value match {
+    IsTruthyOperator.isTruthy(value).json
+  }
+}
+
+object IsTruthyOperator {
+  def isTruthy(value: JsValue): Boolean = {
+    value match {
       case JsNull                                                   => false
       case JsString(str) if str.isEmpty                             => false
       case JsBoolean(false)                                         => false
       case JsNumber(v) if v.bigDecimal == java.math.BigDecimal.ZERO => false
       case _                                                        => true
-    }).json
+    }
   }
 }
 
@@ -2068,7 +2543,7 @@ class IsFalsyOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value"),
       "properties" -> Json.obj(
-        "value" -> Json.obj("type" -> "any", "description" -> "The value to check")
+        "value" -> Json.obj("description" -> "The value to check")
       )
     )
   )
@@ -2088,8 +2563,7 @@ class IsFalsyOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     val res            = value match {
@@ -2104,43 +2578,53 @@ class IsFalsyOperator extends WorkflowOperator {
 }
 
 class MemRefOperator extends WorkflowOperator {
-  override def documentationName: String                  = "$memref"
+  override def documentationName: String                  = "$mem_ref"
   override def documentationDisplayName: String           = "Memory reference"
   override def documentationIcon: String                  = "fas fa-memory"
   override def documentationDescription: String           = "This operator gets a value from the memory"
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
-      "name" -> Json.obj(
+      "name"          -> Json.obj(
         "type"  -> "string",
         "label" -> "Memory Name"
       ),
-      "path" -> Json.obj(
+      "path"          -> Json.obj(
         "type"  -> "string",
         "label" -> "Memory Path",
         "props" -> Json.obj(
           "description" -> "Only useful if the variable is an object"
+        )
+      ),
+      "default_value" -> Json.obj(
+        "type"  -> "code",
+        "label" -> "Default value",
+        "props" -> Json.obj(
+          "editorOnly"  -> true,
+          "description" -> "If value is not defined"
         )
       )
     )
   )
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
-      "name" -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Memory Name"
-      ),
-      "path" -> Json.obj(
-        "type"  -> "string",
-        "label" -> "Memory Path",
-        "help"  -> "Only useful if the variable is an object"
+      "type"       -> "object",
+      "required"   -> Seq("name"),
+      "properties" -> Json.obj(
+        "name"          -> Json.obj("type" -> "string", "description" -> "Memory name"),
+        "path"          -> Json.obj(
+          "type"        -> "string",
+          "description" -> "Memory path (only useful if the variable is an object)"
+        ),
+        "default_value" -> Json.obj("type" -> "string", "description" -> "Default value if not defined")
       )
     )
   )
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
-      "$memref" -> Json.obj(
-        "name" -> "my_memory",
-        "path" -> "my_path"
+      "$mem_ref" -> Json.obj(
+        "name"          -> "my_memory",
+        "path"          -> "my_path",
+        "default_value" -> ""
       )
     )
   )
@@ -2151,13 +2635,26 @@ class MemRefOperator extends WorkflowOperator {
       case n if wfr.memory.contains(n) => {
         wfr.memory.get(n) match {
           case None                          => JsNull
-          case Some(value) if path.isEmpty   => value
+          case Some(value) if path.isEmpty   =>
+            opts.select("path").asOpt[JsNumber] match {
+              case Some(index) => value(index.value.toInt)
+              case None        => value
+            }
           case Some(value) if path.isDefined => value.at(path.get).asValue
           case Some(_)                       => JsNull
         }
       }
     }
-    first.getOrElse(JsNull)
+
+    first match {
+      case Some(JsNull) =>
+        opts
+          .select("default_value")
+          .asOptString
+          .map(defaultValue => WorkflowOperator.processOperators(JsString(defaultValue), wfr, env))
+          .getOrElse(JsNull)
+      case v            => v.getOrElse(JsNull)
+    }
     // wfr.memory.get(name) match {
     //   case None                          => JsNull
     //   case Some(value) if path.isEmpty   => value
@@ -2207,8 +2704,7 @@ class JsonParseOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2260,7 +2756,7 @@ class StrConcatOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val separator = opts.select("separator").asOptString.getOrElse(" ")
     values.mkString(separator).json
   }
@@ -2317,8 +2813,7 @@ class MapGetOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2370,11 +2865,14 @@ class MapDelOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val keys: Seq[String] = opts.select("key").asOptString.map(s => Seq(s))
+    val keys: Seq[String] = opts
+      .select("key")
+      .asOptString
+      .map(s => Seq(s))
       .orElse(opts.select("key").asOpt[Seq[String]])
       .orElse(opts.select("keys").asOpt[Seq[String]])
-      .getOrElse(Seq.empty)
-    val value: JsValue = opts.select("map").asOpt[JsObject] match {
+      .getOrElse(Seq.empty).toSeq
+    val value: JsValue    = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
       case None    =>
         val name = opts.select("name").asString
@@ -2382,8 +2880,7 @@ class MapDelOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2429,7 +2926,7 @@ class MapPutOperator extends WorkflowOperator {
       "required"   -> Seq("key", "value", "map"),
       "properties" -> Json.obj(
         "key"   -> Json.obj("type" -> "string", "description" -> "The key to put"),
-        "value" -> Json.obj("type" -> "any", "description" -> "The value to put"),
+        "value" -> Json.obj("description" -> "The value to put"),
         "map"   -> Json.obj("type" -> "object", "description" -> "The map to put the key-value pair in")
       )
     )
@@ -2454,8 +2951,7 @@ class MapPutOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2473,7 +2969,7 @@ class ArrayAppendOperator extends WorkflowOperator {
   override def documentationFormSchema: Option[JsObject]  = Some(
     Json.obj(
       "value" -> Json.obj(
-        "type"  -> "json",
+        "type"  -> "any",
         "label" -> "Value",
         "props" -> Json.obj(
           "description" -> "The value to append"
@@ -2493,7 +2989,7 @@ class ArrayAppendOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value", "array"),
       "properties" -> Json.obj(
-        "value" -> Json.obj("type" -> "any", "description" -> "The value to append"),
+        "value" -> Json.obj("description" -> "The value to append"),
         "array" -> Json.obj("type" -> "array", "description" -> "The array to append the value to")
       )
     )
@@ -2520,10 +3016,10 @@ class ArrayAppendOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
+    // println("array_append", value)
     value match {
       case arr @ JsArray(_) if v.isInstanceOf[JsArray] => arr ++ v.asArray
       case arr @ JsArray(_)                            => arr.append(v)
@@ -2560,7 +3056,7 @@ class ArrayPrependOperator extends WorkflowOperator {
       "type"       -> "object",
       "required"   -> Seq("value", "array"),
       "properties" -> Json.obj(
-        "value" -> Json.obj("type" -> "any", "description" -> "The value to prepend"),
+        "value" -> Json.obj("description" -> "The value to prepend"),
         "array" -> Json.obj("type" -> "array", "description" -> "The array to prepend the value to")
       )
     )
@@ -2583,8 +3079,7 @@ class ArrayPrependOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2646,12 +3141,11 @@ class ArrayDelOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
-      case arr @ JsArray(_) => JsArray(arr.value.zipWithIndex.filterNot(_._2 == idx).map(_._1))
+      case arr @ JsArray(_) => JsArray(arr.value.toSeq.zipWithIndex.filterNot(_._2 == idx).map(_._1))
       case _                => JsNull
     }
   }
@@ -2708,8 +3202,7 @@ class ArrayAtOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2780,8 +3273,7 @@ class ArrayPageOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     value match {
@@ -2845,8 +3337,7 @@ class ProjectionOperator extends WorkflowOperator {
         wfr.memory.get(name) match {
           case None                          => JsNull
           case Some(value) if path.isEmpty   => value
-          case Some(value) if path.isDefined => value.at(path.get).asValue
-          case Some(_)                       => JsNull
+          case Some(value)                   => value.at(path.get).asValue
         }
     }
     otoroshi.utils.Projection.project(value, blueprint, identity)

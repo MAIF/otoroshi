@@ -11,7 +11,7 @@ export default {
           className="btn btn-sm btn-primary mb-3"
           onClick={() => showAdvancedDesignerView(MocksDesigner)}
         >
-          Edit with the Mocks Designer
+          Mock responses Designer
         </button>
       ),
     },

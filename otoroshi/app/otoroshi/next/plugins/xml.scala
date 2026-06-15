@@ -8,13 +8,13 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.*
 import play.api.libs.ws.WSBodyWritables.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters.given
 import scala.util.{Failure, Success, Try}
 
 case class JsonTransformConfig(filter: Option[String] = None) extends NgPluginConfig {
@@ -75,9 +75,13 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
-    if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(_.contains("text/xml"))) {
+    if (
+      ctx.request.hasBody && ctx.otoroshiRequest.contentType
+        .exists(c => c.contains("text/xml") || c.contains("application/xml"))
+    ) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val xmlBody  = scala.xml.XML.loadString(bodyRaw.utf8String)
+        val str      = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
+        val xmlBody  = scala.xml.XML.loadString(str)
         val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left
@@ -165,9 +169,10 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
       ctx: NgTransformerResponseContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
-    if (ctx.otoroshiResponse.contentType.exists(_.contains("text/xml"))) {
+    if (ctx.otoroshiResponse.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-        val xmlBody  = scala.xml.XML.loadString(bodyRaw.utf8String)
+        val cleanXml = bodyRaw.utf8String.dropWhile(_.isWhitespace).stripPrefix("\uFEFF")
+        val xmlBody  = scala.xml.XML.loadString(cleanXml)
         val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
         transform(jsonBody, config) match {
           case Left(err)   => Results.InternalServerError(err).as("application/json").left

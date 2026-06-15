@@ -1,30 +1,30 @@
 package otoroshi.models
 
-import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.otoroshi.wasm4s.scaladsl.WasmoSettings
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.next.models.{NgPlugins, NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
 import otoroshi.script.plugins.Plugins
 import otoroshi.security.IdGenerator
-import otoroshi.ssl.{Cert, ClientCertificateValidator}
+import otoroshi.ssl.{Cert, ClientAuth, ClientCertificateValidator}
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
 import otoroshi.utils.RegexPool
 import otoroshi.utils.clevercloud.CleverCloudClient
 import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
 import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.json.JsonImplicits.given
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
-import otoroshi.utils.syntax.implicits._
-import otoroshi.utils.json.JsonImplicits.given
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -62,9 +62,11 @@ case class IndexSettings(
     clientSide: Boolean = true,
     numberOfShards: Int = 1,
     numberOfReplicas: Int = 1,
+    action: String = "index",
     interval: IndexSettingsInterval = IndexSettingsInterval.Day
 ) {
   def json: JsValue = Json.obj(
+    "action"           -> action,
     "clientSide"       -> clientSide,
     "interval"         -> interval.json,
     "numberOfShards"   -> numberOfShards,
@@ -82,6 +84,7 @@ object IndexSettings {
   val format: Format[IndexSettings] = new Format[IndexSettings] {
     override def reads(json: JsValue): JsResult[IndexSettings] = Try {
       IndexSettings(
+        action = json.select("action").asOpt[String].getOrElse("index"),
         clientSide = json.select("clientSide").asOpt[Boolean].getOrElse(true),
         numberOfShards = json.select("numberOfShards").asOpt[Int].getOrElse(1),
         numberOfReplicas = json.select("numberOfReplicas").asOpt[Int].getOrElse(1),
@@ -136,8 +139,8 @@ object ElasticAnalyticsConfig {
     override def reads(json: JsValue)              =
       Try {
         val clusterUriValue: Seq[String] =
-          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty)
-        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty)
+          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty).toSeq
+        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         val uris: Seq[String]            = (clusterUriValue ++ urisValue).flatMap { uri =>
           if (uri.contains(",")) {
             uri.split(",").map(_.trim)
@@ -326,17 +329,17 @@ object GlobalScripts {
       Try {
         JsSuccess(
           GlobalScripts(
-            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
-            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             transformersConfig = (json \ "transformersConfig").asOpt[JsValue].getOrElse(Json.obj()),
             validatorConfig = (json \ "validatorConfig").asOpt[JsValue].getOrElse(Json.obj()),
             preRouteConfig = (json \ "preRouteConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             sinkConfig = (json \ "sinkConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             jobConfig = (json \ "jobConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty)
+            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -425,11 +428,10 @@ object UserAgentSettings {
 
 case class UserAgentSettings(enabled: Boolean) {
   def json: JsValue = Json.obj("enabled" -> enabled)
-  def find(ua: String)(using env: Env): Option[JsValue] = {
-    if (enabled) {
-      UserAgentHelper.userAgentDetails(ua)
-    } else {
-      None
+  def find(ua: String)(using env: Env): Future[Option[JsValue]] = {
+    enabled match {
+      case false => None.future
+      case true  => UserAgentHelper.userAgentDetails(ua)
     }
   }
 }
@@ -466,7 +468,7 @@ object AutoCert {
           replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(false),
           caRef = (json \ "caRef").asOpt[String],
           allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq("*")),
-          notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty)
+          notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -481,9 +483,14 @@ case class TlsSettings(
     includeJdkCaServer: Boolean = true,
     includeJdkCaClient: Boolean = true,
     trustedCAsServer: Seq[String] = Seq.empty,
-    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty
+    bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty,
+    clientAuth: ClientAuth = ClientAuth.None
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
+  def trustedCAsServerWithLocalCAs(env: Env): Seq[String] = {
+    val global = trustedCAsServer
+    (global ++ env.serverTrustedCAs).distinct
+  }
 }
 object TlsSettings {
   val format: Format[TlsSettings] = new Format[TlsSettings] {
@@ -494,7 +501,8 @@ object TlsSettings {
         "includeJdkCaServer"  -> o.includeJdkCaServer,
         "includeJdkCaClient"  -> o.includeJdkCaClient,
         "trustedCAsServer"    -> JsArray(o.trustedCAsServer.map(JsString.apply)),
-        "bannedAlpnProtocols" -> o.bannedAlpnProtocols
+        "bannedAlpnProtocols" -> o.bannedAlpnProtocols,
+        "clientAuth"          -> o.clientAuth.name
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -504,8 +512,13 @@ object TlsSettings {
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
-          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
-          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty)
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
+          clientAuth = (json \ "clientAuth")
+            .asOpt[String]
+            .flatMap(ClientAuth.apply)
+            .filterNot(_ == ClientAuth.Dynamic)
+            .getOrElse(ClientAuth.None)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -515,25 +528,28 @@ object TlsSettings {
 }
 
 case class DefaultTemplates(
-    route: Option[JsObject] = Json.obj().some,                  // Option[NgRoute],
-    service: Option[JsObject] = Json.obj().some,                // Option[NgService],
-    backend: Option[JsObject] = Json.obj().some,                // Option[NgBackend],
-    target: Option[JsObject] = Json.obj().some,                 // Option[NgTarget],
-    descriptor: Option[JsObject] = Json.obj().some,             // Option[ServiceDescriptor],
-    apikey: Option[JsObject] = Json.obj().some,                 // Option[ApiKey],
-    group: Option[JsObject] = Json.obj().some,                  // Option[ServiceGroup],
-    template: Option[JsObject] = Json.obj().some,               // Option[ErrorTemplate],
-    verifier: Option[JsObject] = Json.obj().some,               // Option[GlobalJwtVerifier],
-    authConfig: Option[JsObject] = Json.obj().some,             // Option[AuthModuleConfig],
-    certificate: Option[JsObject] = Json.obj().some,            // Option[Cert],
-    script: Option[JsObject] = Json.obj().some,                 // Option[Script],
-    draft: Option[JsObject] = Json.obj().some,                  // Option[Draft],
-    api: Option[JsObject] = Json.obj().some,                    // Option[Api],
-    tcpService: Option[JsObject] = Json.obj().some,             // Option[TcpService],
-    dataExporter: Option[JsObject] = Json.obj().some,           // Option[DataExporterConfig],
-    tenant: Option[JsObject] = Json.obj().some,                 // Option[Tenant],
-    team: Option[JsObject] = Json.obj().some,                   // Option[Team],
-    apiConsumerSubscription: Option[JsObject] = Json.obj().some // Option[ApiConsumerSubscription],
+    route: Option[JsObject] = Json.obj().some,                 // Option[NgRoute],
+    service: Option[JsObject] = Json.obj().some,               // Option[NgService],
+    backend: Option[JsObject] = Json.obj().some,               // Option[NgBackend],
+    target: Option[JsObject] = Json.obj().some,                // Option[NgTarget],
+    descriptor: Option[JsObject] = Json.obj().some,            // Option[ServiceDescriptor],
+    apikey: Option[JsObject] = Json.obj().some,                // Option[ApiKey],
+    group: Option[JsObject] = Json.obj().some,                 // Option[ServiceGroup],
+    template: Option[JsObject] = Json.obj().some,              // Option[ErrorTemplate],
+    verifier: Option[JsObject] = Json.obj().some,              // Option[GlobalJwtVerifier],
+    authConfig: Option[JsObject] = Json.obj().some,            // Option[AuthModuleConfig],
+    certificate: Option[JsObject] = Json.obj().some,           // Option[Cert],
+    script: Option[JsObject] = Json.obj().some,                // Option[Script],
+    draft: Option[JsObject] = Json.obj().some,                 // Option[Draft],
+    api: Option[JsObject] = Json.obj().some,                   // Option[Api],
+    tcpService: Option[JsObject] = Json.obj().some,            // Option[TcpService],
+    dataExporter: Option[JsObject] = Json.obj().some,          // Option[DataExporterConfig],
+    tenant: Option[JsObject] = Json.obj().some,                // Option[Tenant],
+    team: Option[JsObject] = Json.obj().some,                  // Option[Team],
+    apiSubscription: Option[JsObject] = Json.obj().some,       // Option[ApiSubscription],
+    routeTemplate: Option[JsObject] = Json.obj().some,         // Option[RouteTemplate],
+    userDashboardTemplate: Option[JsObject] = Json.obj().some, // Option[UserDashboard],
+    userAlertTemplate: Option[JsObject] = Json.obj().some      // Option[UserAlert],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -561,7 +577,10 @@ object DefaultTemplates {
           dataExporter = json.select("dataExporter").asOpt[JsObject],
           tenant = json.select("tenant").asOpt[JsObject],
           team = json.select("team").asOpt[JsObject],
-          apiConsumerSubscription = json.select("apiConsumerSubscription").asOpt[JsObject]
+          apiSubscription = json.select("apiSubscription").asOpt[JsObject],
+          routeTemplate = json.select("routeTemplate").asOpt[JsObject],
+          userDashboardTemplate = json.select("userDashboardTemplate").asOpt[JsObject],
+          userAlertTemplate = json.select("userAlertTemplate").asOpt[JsObject]
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -569,25 +588,28 @@ object DefaultTemplates {
       }
     }
     override def writes(o: DefaultTemplates): JsValue = Json.obj(
-      "route"                   -> o.route.getOrElse(JsNull).asValue,
-      "service"                 -> o.service.getOrElse(JsNull).asValue,
-      "backend"                 -> o.backend.getOrElse(JsNull).asValue,
-      "target"                  -> o.target.getOrElse(JsNull).asValue,
-      "descriptor"              -> o.descriptor.getOrElse(JsNull).asValue,
-      "apikey"                  -> o.apikey.getOrElse(JsNull).asValue,
-      "group"                   -> o.group.getOrElse(JsNull).asValue,
-      "template"                -> o.template.getOrElse(JsNull).asValue,
-      "verifier"                -> o.verifier.getOrElse(JsNull).asValue,
-      "authConfig"              -> o.authConfig.getOrElse(JsNull).asValue,
-      "certificate"             -> o.certificate.getOrElse(JsNull).asValue,
-      "script"                  -> o.script.getOrElse(JsNull).asValue,
-      "draft"                   -> o.draft.getOrElse(JsNull).asValue,
-      "api"                     -> o.api.getOrElse(JsNull).asValue,
-      "tcpService"              -> o.tcpService.getOrElse(JsNull).asValue,
-      "dataExporter"            -> o.dataExporter.getOrElse(JsNull).asValue,
-      "tenant"                  -> o.tenant.getOrElse(JsNull).asValue,
-      "team"                    -> o.team.getOrElse(JsNull).asValue,
-      "apiConsumerSubscription" -> o.apiConsumerSubscription.getOrElse(JsNull).asValue
+      "route"                 -> o.route.getOrElse(JsNull).asValue,
+      "service"               -> o.service.getOrElse(JsNull).asValue,
+      "backend"               -> o.backend.getOrElse(JsNull).asValue,
+      "target"                -> o.target.getOrElse(JsNull).asValue,
+      "descriptor"            -> o.descriptor.getOrElse(JsNull).asValue,
+      "apikey"                -> o.apikey.getOrElse(JsNull).asValue,
+      "group"                 -> o.group.getOrElse(JsNull).asValue,
+      "template"              -> o.template.getOrElse(JsNull).asValue,
+      "verifier"              -> o.verifier.getOrElse(JsNull).asValue,
+      "authConfig"            -> o.authConfig.getOrElse(JsNull).asValue,
+      "certificate"           -> o.certificate.getOrElse(JsNull).asValue,
+      "script"                -> o.script.getOrElse(JsNull).asValue,
+      "draft"                 -> o.draft.getOrElse(JsNull).asValue,
+      "api"                   -> o.api.getOrElse(JsNull).asValue,
+      "tcpService"            -> o.tcpService.getOrElse(JsNull).asValue,
+      "dataExporter"          -> o.dataExporter.getOrElse(JsNull).asValue,
+      "tenant"                -> o.tenant.getOrElse(JsNull).asValue,
+      "team"                  -> o.team.getOrElse(JsNull).asValue,
+      "apiSubscription"       -> o.apiSubscription.getOrElse(JsNull).asValue,
+      "routeTemplate"         -> o.routeTemplate.getOrElse(JsNull).asValue,
+      "userDashboardTemplate" -> o.userDashboardTemplate.getOrElse(JsNull).asValue,
+      "userAlertTemplate"     -> o.userAlertTemplate.getOrElse(JsNull).asValue
     )
   }
 }
@@ -1013,7 +1035,7 @@ object GlobalConfig {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -1081,8 +1103,8 @@ case class OtoroshiExport(
     drafts: Seq[Draft] = Seq.empty
 ) {
 
-  import otoroshi.utils.json.JsonImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.json.JsonImplicits.given
+  import otoroshi.utils.syntax.implicits.given
 
   private def customizeAndMergeArray[A](
       entities: Seq[A],

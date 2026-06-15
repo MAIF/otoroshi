@@ -2,11 +2,11 @@ package otoroshi.models
 
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import play.api.Logger
-import play.api.libs.json._
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 import otoroshi.utils.syntax.implicits.BetterJsReadable
+import play.api.Logger
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -49,7 +49,7 @@ object ServiceGroup {
           name = (json \ "name").as[String],
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

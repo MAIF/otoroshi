@@ -1,0 +1,655 @@
+---
+title: Data Exporters
+sidebar_position: 7
+---
+
+import { FilteringDocs, ProjectionDocs } from '@site/src/components/DataExporterDocs';
+
+# Data Exporters
+
+Otoroshi is not a monitoring tool, but as a reverse proxy sitting in front of all your services it naturally observes everything: 
+every HTTP request, every admin action, every backend health check, every security alert. 
+Data exporters are the bridge between this rich stream of telemetry and your observability stack. 
+They push events out of Otoroshi and into the external systems where you actually analyze, visualize, 
+and alert on them -- Elasticsearch, Kafka, Datadog, Pulsar, and many others.
+
+Without data exporters, events live only in memory and are lost when Otoroshi restarts. 
+In production, you almost always want at least one exporter configured so that you have persistent visibility into what is flowing through the gateway.
+
+Otoroshi supports a wide range of export destinations out of the box:
+
+- **Search and analytics**: Elasticsearch, Splunk, Datadog, New Relic
+- **Streaming platforms**: Kafka, Pulsar, JMS
+- **Observability protocols**: OTLP Metrics, OTLP Logs, custom Prometheus metrics
+- **Storage**: PostgreSQL, file, S3
+- **Network**: webhook (HTTP), TCP, UDP, Syslog
+- **Traffic replay**: GoReplay (file or S3)
+- **Notifications**: email via Mailgun, Mailjet, Sendgrid, or generic HTTP mailer
+- **Programmable**: WASM plugins, workflow processing, custom exporter plugins
+- **Development**: console (stdout)
+
+Each exporter runs its own independent pipeline with configurable filtering (which events to keep), projection (which fields to include), 
+and batching (how many events to group before sending). You can run as many exporters in parallel 
+as you need, each with a different destination and different rules.
+
+To try them out, you can follow [this tutorial](../tutorials/export-alerts-using-mailgun.md).
+
+## Why use data exporters?
+
+Otoroshi generates a continuous stream of events as it processes traffic: every proxied request, every admin action, every alert, every health check result. 
+By default these events live only in memory and are lost when the instance restarts. Data exporters let you **push those events to external systems** so you can:
+
+- **Monitor traffic** in real time (dashboards, alerting)
+- **Audit admin activity** (who changed what, and when)
+- **Debug issues** by replaying request/response flows
+- **Meet compliance requirements** with long-term event archival
+- **Feed custom analytics pipelines** (data lakes, ML, billing)
+
+You can create as many exporters as needed. Each exporter runs independently with its own destination, filtering rules, and batching settings. 
+For example, you might send all traffic events to Elasticsearch for dashboards, alerts to a Slack webhook, and audit events to S3 for long-term storage, all at the same time.
+
+## Event types
+
+Otoroshi produces several categories of events:
+
+| Event type | Description |
+|------------|-------------|
+| **GatewayEvent** | Emitted for every proxied HTTP request. Contains full request/response metadata: status code, latency, headers, upstream target, etc. This is the highest-volume event type. |
+| **AlertEvent** | Triggered when something notable happens: a circuit breaker opens, a quota is exceeded, an API key is about to rotate, a certificate is expiring, etc. |
+| **AuditEvent** | Tracks admin operations: back-office logins, API key creation, route changes, and any admin API call. |
+| **HealthCheckEvent** | Result of periodic backend health checks (up/down, response time). |
+| **TrafficCaptureEvent** | Full request and response body capture (only when the `capture` flag is enabled on a route). Used with GoReplay exporters. |
+| **TcpEvent** | Events from the TCP proxy (non-HTTP traffic). |
+| **RequestBodyEvent / ResponseBodyEvent** | Request or response body content, captured by specific plugins. |
+| **Other events from plugins or extensions** | for anything useful |
+
+Each event is enriched before export with additional context: geolocation data derived from client IP, parsed user-agent details, Otoroshi instance metadata (name, zone, region, datacenter), and cluster information.
+
+## Event shapes
+
+This section gives a **rough** overview of the JSON shape of the most common events so you know what to expect on the receiving end (Elasticsearch, Kafka, a webhook, etc.). The shapes below are not exhaustive &mdash; events carry more fields than shown, and the exact payload may evolve between versions &mdash; but the key fields are stable. All field names use the literal casing emitted by Otoroshi (note the leading `@` on the envelope fields).
+
+### Common envelope
+
+Every event, whatever its type, starts from the same small envelope:
+
+```json
+{
+  "@id": "1516...",          // unique snowflake id of the event
+  "@timestamp": 1717238400000, // event time, epoch milliseconds
+  "@type": "GatewayEvent",   // discriminator: GatewayEvent, AuditEvent, AlertEvent, HealthCheckEvent, ...
+  "@product": "otoroshi",    // product/events name
+  "@serviceId": "route_xxx", // id of the route/service, or "--" when not applicable
+  "@service": "my-api",      // name of the route/service, or "Otoroshi" for admin events
+  "@env": "prod"             // environment
+}
+```
+
+`@type` is the field you filter on (see [Filtering](#filtering)). On top of the envelope, **enrichment fields are added at export time** (only when the corresponding feature is enabled):
+
+```json
+{
+  "user-agent-details": { /* parsed UA, or null */ },
+  "origin-details":     { /* geolocation derived from the client IP, or null */ },
+  "instance-number": 0,
+  "instance-name": "otoroshi",
+  "instance-zone": "...",
+  "instance-region": "...",
+  "instance-dc": "...",
+  "instance-provider": "...",
+  "instance-rack": "...",
+  "cluster-mode": "Leader",
+  "cluster-name": "..."
+}
+```
+
+### GatewayEvent &mdash; one per proxied HTTP request
+
+The highest-volume event. It describes a full request/response round-trip with timings, sizes, identity and the matched route:
+
+```json
+{
+  "@type": "GatewayEvent",
+  "@id": "...", "@timestamp": 1717238400000,
+  "@callAt": 1717238399950,
+  "reqId": "...",
+  "parentReqId": null,
+  "protocol": "HTTP/1.1",
+  "method": "GET",
+  "url": "https://api.foo.bar/users",
+  "from": "10.0.0.4",                  // client IP
+  "to":     { "host": "api.foo.bar", "scheme": "https", "uri": "/users" },
+  "target": { "host": "backend.svc",  "scheme": "https", "uri": "/users" },
+  "status": 200,
+  "duration": 42,                      // total time (ms)
+  "overhead": 3,                       // time spent in Otoroshi itself (ms)
+  "backendDuration": 39,               // time spent calling the backend (ms)
+  "cbDuration": 0, "overheadWoCb": 3, "callAttempts": 1,
+  "data": { "dataIn": 0, "dataOut": 1234 }, // bytes in / out
+  "responseChunked": false,
+  "headers":    [ { "key": "Host", "value": "api.foo.bar" } ],      // incoming headers
+  "headersOut": [ { "key": "Content-Type", "value": "application/json" } ], // response headers
+  "otoroshiHeadersIn":  [ /* headers Otoroshi added/changed before the backend */ ],
+  "otoroshiHeadersOut": [ /* headers Otoroshi added/changed before the client */ ],
+  "identity": {                        // caller identity, or null
+    "identityType": "APIKEY",          // "APIKEY" or "PRIVATEAPP"
+    "identity": "client-id",
+    "label": "my-apikey",
+    "metadata": { },
+    "tags": [ ]
+  },
+  "remainingQuotas": { /* per-window / per-day / per-month quota counters */ },
+  "gwError": null,                     // gateway error message, or null
+  "err": false,
+  "@serviceId": "route_xxx", "@service": "my-api",
+  "route": { /* the matched NgRoute, or null */ },
+  "descriptor": null,                  // legacy ServiceDescriptor, or null
+  "clientCertChain": [ ],
+  "extraInfos": null
+}
+```
+
+### AuditEvent &mdash; admin / operational actions
+
+All audit events share `@type: "AuditEvent"` and carry an `audit` field naming the specific action. The two most common ones:
+
+**`BackOfficeEvent`** &mdash; something done in the admin UI:
+
+```json
+{
+  "@type": "AuditEvent",
+  "@service": "Otoroshi", "@serviceId": "--",
+  "audit": "BackOfficeEvent",
+  "action": "UPDATE_ROUTE",
+  "message": "User updated a route",
+  "userName": "admin@otoroshi.io",
+  "userEmail": "admin@otoroshi.io",
+  "user": { /* user profile */ },
+  "userRandomId": "...",
+  "from": "10.0.0.4",
+  "metadata": { /* action-specific details */ }
+}
+```
+
+**`AdminApiEvent`** &mdash; a call to the admin API:
+
+```json
+{
+  "@type": "AuditEvent",
+  "@service": "Otoroshi", "@serviceId": "--",
+  "audit": "AdminApiEvent",
+  "action": "ACCESS_ADMIN_API",
+  "message": "...",
+  "user": { /* or null */ },
+  "apiKey": { /* the api key used, or null */ },
+  "from": "10.0.0.4",
+  "metadata": { }
+}
+```
+
+Other audit subtypes (same envelope, different `audit` value and extra fields) include `CircuitBreakerOpenedEvent`, `CircuitBreakerClosedEvent`, `MaxConcurrentRequestReachedEvent`, the `Job*` events (`JobStartedEvent`, `JobRunEvent`, `JobErrorEvent`&hellip;) and `SnowMonkeyOutageRegisteredEvent`.
+
+### AlertEvent &mdash; notable conditions
+
+All alert events share `@type: "AlertEvent"` and carry an `alert` field naming the specific alert, plus alert-specific fields. Example for an API key whose secret is about to rotate:
+
+```json
+{
+  "@type": "AlertEvent",
+  "@service": "Otoroshi", "@serviceId": "--",
+  "alert": "ApiKeySecretWillRotate",
+  "inHoursOrLess": 168,
+  "apikey": { /* the api key */ }
+}
+```
+
+A few notable `alert` values and their extra fields:
+
+| `alert` | Extra fields |
+|---|---|
+| `MaxConcurrentRequestReachedAlert` | `limit`, `current` |
+| `CircuitBreakerOpenedAlert` / `CircuitBreakerClosedAlert` | `target`, `service` |
+| `HighOverheadAlert` | `limit`, `overhead`, `target`, `service` |
+| `ApiKeyQuotasAlmostExceededAlert` / `ApiKeyQuotasExceededAlert` | `apikey`, `remaining`, `reason` |
+| `CertExpiredAlert` / `CertAlmostExpiredAlert` / `CertRenewalAlert` | `certificate` |
+| `AdminLoggedInAlert` / `AdminLoggedOutAlert` | `userName`, `userEmail`, `user` |
+| Entity CRUD (`ServiceCreatedAlert`, `ApiKeyDeletedAlert`, &hellip;) | `adminApiAlert: true`, `user`, `audit_payload` |
+
+### HealthCheckEvent &mdash; backend health probes
+
+```json
+{
+  "@type": "HealthCheckEvent",
+  "@id": "...", "@timestamp": 1717238400000,
+  "@service": "my-api", "@serviceId": "route_xxx", "@product": "otoroshi",
+  "url": "https://backend.svc/health",
+  "status": 200,
+  "duration": 12,
+  "logicCheck": true,
+  "error": null,
+  "health": "UP"            // "UP" or "DOWN" (null if unknown)
+}
+```
+
+### Body & capture events
+
+`TrafficCaptureEvent` (enabled per-route via the `capture` flag, used with GoReplay) carries the full exchange under `request`, `backend_request`, `backend_response` and `response` (each with headers and a decoded `body`), plus a small `route` object. The legacy `RequestBodyEvent` / `ResponseBodyEvent` (from the BodyLogger plugin) carry `reqId`, `method`, `url`, `headers`, a base64-encoded `body` (and `status` for the response one).
+
+### Other events
+
+- **`TcpEvent`** &mdash; TCP proxy traffic: `reqId`, `protocol`, `port`, `to`, `target`, `remote`, `local`, `duration`, `overhead`, `data` (`dataIn`/`dataOut`), `gwError`, `service`.
+- **`WebsocketEvent`** &mdash; WebSocket frames: `reqId`, `protocol`, `to`, `target`, `statusCode`, `reason`, `frame`, `frameSize`.
+- **`WasmLogEvent`** &mdash; logs emitted by WASM plugins: `route`, `message`, `level`.
+- **`ApiDeploymentEvent`** &mdash; API deployment tracking: `apiRef`, `owner`, `at`, `apiDefinition`, `version`.
+- **Plugin / extension events** &mdash; custom plugins and extensions can emit their own events; they always carry the common envelope and a distinctive `@type`.
+
+:::tip
+The simplest way to discover the exact shape of an event in your own setup is to configure a **console** exporter (or a webhook to a request-bin) with no projection: every event is printed as JSON, so you can inspect the real fields produced by your Otoroshi version.
+:::
+
+## How the pipeline works
+
+Each data exporter runs an independent streaming pipeline built on top of Akka Streams:
+
+```
+Events → Queue → JSON enrichment → Filtering → Projection → Batching → Send
+```
+
+1. **Queue**: every event produced by Otoroshi is published to all active exporters. Each exporter holds an in-memory bounded queue (`bufferSize`, default 5000). When the queue is full, the **oldest events are dropped** to keep the system responsive.
+2. **JSON enrichment**: events are converted to JSON and enriched with geolocation, user-agent parsing, and instance metadata. The `jsonWorkers` parameter controls the parallelism of this step.
+3. **Filtering**: include/exclude rules are applied (see [Matching and projections](#matching-and-projections)). Events that do not match are discarded.
+4. **Projection**: if a projection is defined, only the selected fields are kept in the JSON payload.
+5. **Batching**: events are grouped into batches by count (`groupSize`, default 100) or by time (`groupDuration`, default 30 seconds), whichever comes first. This reduces the number of network calls to the destination.
+6. **Send**: batches are sent to the configured destination. The `sendWorkers` parameter controls how many batches can be sent concurrently. If a send fails, the events are re-queued for retry.
+
+### Tuning tips
+
+- **High-traffic environments**: increase `bufferSize` to avoid dropping events, increase `jsonWorkers` and `sendWorkers` for more parallelism, and increase `groupSize` for fewer but larger network calls.
+- **Low-latency alerting**: decrease `groupDuration` (e.g. 5000 ms) so batches are sent more frequently.
+- **Resource-constrained setups**: keep worker counts low and use filtering aggressively to reduce the volume of events processed.
+
+### Lifecycle
+
+Exporters are hot-configurable. When you create or update an exporter through the admin API or the UI, Otoroshi gracefully drains the old pipeline (letting in-flight batches complete) and starts a new one with the updated settings. No restart is required.
+
+## UI page
+
+You can find all data exporters [here](http://otoroshi.oto.tools:8080/bo/dashboard/exporters)
+
+## Properties
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `id` | string |     | Unique identifier |
+| `name` | string |     | Display name |
+| `description` | string |     | Description |
+| `enabled` | boolean | `true` | Whether the exporter is active |
+| `typ` | string |     | The type of exporter (see [exporter types](#exporter-types)) |
+| `tags` | array of string | `[]` | Tags |
+| `metadata` | object | `{}` | Key/value metadata |
+| `filtering` | object |     | Event filtering configuration (see [below](#matching-and-projections)) |
+| `projection` | object | `{}` | Projection to export only specific fields |
+| `bufferSize` | number | `5000` | Number of events to keep in memory buffer |
+| `jsonWorkers` | number | `1` | Number of workers for JSON serialization |
+| `sendWorkers` | number | `1` | Number of workers for sending events |
+| `groupSize` | number | `100` | Number of events to batch together |
+| `groupDuration` | number | `30000` | Maximum wait time (ms) before sending a batch |
+| `config` | object |     | Exporter-specific configuration |
+
+## Matching and projections
+
+### Filtering
+
+**Filtering** is used to **include** or **exclude** specific types of events and alerts. Each include/exclude entry is a key-value match.
+
+Example: only keep Otoroshi alerts:
+
+```json
+{ "include": [{ "@type": "AlertEvent" }] }
+```
+
+Otoroshi provides rules to filter events based on their content. Given this example event:
+
+```json
+{
+  "foo": "bar",
+  "type": "AlertEvent",
+  "alert": "big-alert",
+  "status": 200,
+  "codes": ["a", "b"],
+  "inner": {
+    "foo": "bar",
+    "bar": "foo"
+  }
+}
+```
+
+<FilteringDocs />
+### Projection
+
+**Projection** is a list of fields to export. If empty, all fields are exported. If specified, **only** the listed fields will be included in exported events.
+
+<ProjectionDocs />
+## Exporter types
+
+### Elastic
+
+Sends events in batch to an Elasticsearch cluster. Can be used with the [elastic analytics dashboard](./global-config.md#analytics-elastic-dashboard-datasource-read-).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `uris` | array of string | Elasticsearch cluster URIs |
+| `index` | string | Index name |
+| `type` | string | Event type (not needed for ES 6.x+) |
+| `user` | string | Username (optional) |
+| `password` | string | Password (optional) |
+| `version` | string | Elasticsearch version (auto-detected if not set) |
+| `applyTemplate` | boolean | Automatically apply index template |
+| `indexSettings.clientSide` | boolean | Otoroshi manages index creation over time |
+| `indexSettings.interval` | string | Index rotation interval: `Day`, `Week`, `Month`, or `Year` |
+| `indexSettings.numberOfShards` | number | Number of shards |
+| `indexSettings.numberOfReplicas` | number | Number of replicas |
+| `mtlsConfig` | object | Custom TLS settings |
+
+### Webhook
+
+Sends events in batch to an HTTP endpoint using POST with a JSON array body.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | URL to post events to |
+| `headers` | object | HTTP headers to include |
+| `tlsConfig` | object | Custom TLS settings |
+
+### Kafka
+
+Sends events to an [Apache Kafka](https://kafka.apache.org/) topic. See [Kafka tutorials](../tutorials/communicate-with-kafka.mdx).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `servers` | array of string | Kafka broker addresses |
+| `topic` | string | Kafka topic name |
+| `sasl` | object | SASL authentication (username, password, mechanism: `PLAIN`/`SCRAM-SHA-256`/`SCRAM-SHA-512`) |
+| `keypass` | string | Keystore password |
+| `keystore` | string | Keystore path |
+| `truststore` | string | Truststore path |
+| `tlsConfig` | object | Custom TLS settings |
+
+### Pulsar
+
+Sends events to an [Apache Pulsar](https://pulsar.apache.org/) topic.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `uri` | string | Pulsar server URI |
+| `tenant` | string | Pulsar tenant |
+| `namespace` | string | Pulsar namespace |
+| `topic` | string | Pulsar topic |
+| `tlsConfig` | object | Custom TLS settings |
+
+### Splunk
+
+Sends events to a Splunk HTTP Event Collector (HEC).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | Splunk HEC URL |
+| `token` | string | HEC token |
+| `index` | string | Splunk index (optional) |
+| `type` | string | Event source type (optional) |
+| `headers` | object | Additional HTTP headers |
+| `tlsConfig` | object | Custom TLS settings |
+
+### Datadog
+
+Sends events to Datadog via the Datadog API.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Datadog API host (e.g., `https://api.datadoghq.eu`) |
+| `apiKey` | string | Datadog API key |
+| `applicationKey` | string | Application key (optional) |
+| `headers` | object | Additional HTTP headers |
+| `tlsConfig` | object | Custom TLS settings |
+
+### New Relic
+
+Sends events to New Relic via their API.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | New Relic API URL |
+| `licenseKey` | string | New Relic license key |
+| `accountId` | string | New Relic account ID |
+| `headers` | object | Additional HTTP headers |
+| `tlsConfig` | object | Custom TLS settings |
+
+### File
+
+Writes events to local files.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | string | File path to write events |
+| `maxFileSize` | number | Maximum file size in bytes. When reached, a new timestamped file is created |
+| `maxNumberOfFile` | number | Maximum number of files to retain |
+
+### S3
+
+Writes events to an S3-compatible object store.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `maxFileSize` | number | Maximum size per file |
+| `maxNumberOfFile` | number | Maximum number of files |
+| `config` | object | S3 configuration (bucket, region, credentials, endpoint) |
+
+### GoReplay file
+
+Writes events in `.gor` format compatible with [GoReplay](https://goreplay.org/).
+
+:::warning
+This exporter only catches `TrafficCaptureEvent`. These events are generated when a route has the `capture` flag enabled. See [engine docs](../topics/engine.mdx).
+:::
+| Property | Type | Description |
+|----------|------|-------------|
+| `path` | string | File path |
+| `maxFileSize` | number | Maximum file size |
+| `captureRequests` | boolean | Capture HTTP requests |
+| `captureResponses` | boolean | Capture HTTP responses |
+
+### GoReplay S3
+
+Same as GoReplay file but writes to an S3-compatible store.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `s3` | object | S3 configuration |
+| `maxFileSize` | number | Maximum file size |
+| `captureRequests` | boolean | Capture HTTP requests |
+| `captureResponses` | boolean | Capture HTTP responses |
+| `preferBackendRequest` | boolean | Prefer backend request over client request |
+| `preferBackendResponse` | boolean | Prefer backend response over client response |
+| `methods` | array of string | HTTP methods to capture |
+
+### TCP
+
+Sends events over raw TCP connections.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Target host |
+| `port` | number | Target port |
+| `unixSocket` | string | Unix socket path (alternative to host/port) |
+| `connectTimeout` | number | Connection timeout (ms) |
+| `tls` | object | TLS configuration |
+
+### UDP
+
+Sends events over UDP.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Target host |
+| `port` | number | Target port |
+| `unixSocket` | string | Unix socket path (alternative to host/port) |
+| `connectTimeout` | number | Connection timeout (ms) |
+
+### Syslog
+
+Sends events to a syslog server.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `host` | string | Syslog server host |
+| `port` | number | Syslog server port |
+| `protocol` | string | Protocol: `tcp` or `udp` |
+| `unixSocket` | string | Unix socket path |
+| `connectTimeout` | number | Connection timeout (ms) |
+| `tls` | object | TLS configuration (for TCP) |
+
+### JMS
+
+Sends events to a JMS (Java Message Service) queue or topic.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | JMS connection URL |
+| `name` | string | Queue/topic name |
+| `topic` | boolean | If `true`, sends to a topic; otherwise to a queue |
+| `username` | string | JMS username |
+| `password` | string | JMS password |
+
+### PostgreSQL
+
+Writes events to a PostgreSQL database.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `uri` | string | Full connection URI (alternative to individual fields) |
+| `host` | string | Database host |
+| `port` | number | Database port |
+| `database` | string | Database name |
+| `user` | string | Username |
+| `password` | string | Password |
+| `schema` | string | Schema name |
+| `table` | string | Table name |
+| `poolSize` | number | Connection pool size |
+| `ssl` | boolean | Enable SSL |
+| `retentionDays` | number | Number of days to keep events. If absent, 0 or negative, no cleanup is performed. When set, events older than the specified number of days are automatically deleted (checked at most once per hour). |
+
+### Workflow
+
+Routes events to an Otoroshi [workflow](./workflows.md) for custom processing.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ref` | string | Workflow ID to invoke |
+
+### Console
+
+Writes events to the standard output. No additional configuration needed.
+
+### WASM
+
+Processes events through a WebAssembly plugin.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `wasmRef` | string | Reference to a [WASM plugin](./wasm-plugins.md) entity |
+| `params` | object | Additional parameters passed to the WASM function |
+
+### OTLP Metrics
+
+Exports metrics using the OpenTelemetry Protocol (OTLP).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `otlp` | object | OTLP endpoint configuration (URL, headers, protocol) |
+| `tags` | object | Custom metric tags/labels |
+| `metrics` | array of object | Metric definitions to export |
+
+### OTLP Logs
+
+Exports logs using the OpenTelemetry Protocol (OTLP).
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `otlp` | object | OTLP endpoint configuration (URL, headers, protocol) |
+
+### Custom Metrics
+
+Exposes custom metrics on the `/metrics` endpoint.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `tags` | object | Custom metric labels |
+| `metrics` | array of object | Metric definitions |
+
+### Metrics
+
+Rewrites metric labels exposed on the `/metrics` endpoint.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `labels` | object | Map of existing label names to new label names |
+
+### Mailer
+
+Sends events as email using one of the following providers:
+
+#### Console mailer
+
+Writes emails to the standard output (for testing).
+
+#### Generic mailer
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `url` | string | URL to push events |
+| `headers` | object | HTTP headers |
+| `to` | array of string | Recipient email addresses |
+
+#### Mailgun
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `eu` | boolean | Use EU server (`api.eu.mailgun.net`) instead of US |
+| `apiKey` | string | Mailgun API key |
+| `domain` | string | Mailgun domain |
+| `to` | array of string | Recipient email addresses |
+
+#### Mailjet
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `publicKey` | string | Mailjet public API key |
+| `privateKey` | string | Mailjet private API key |
+| `to` | array of string | Recipient email addresses |
+
+#### Sendgrid
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `apiKey` | string | Sendgrid API key |
+| `to` | array of string | Recipient email addresses |
+
+### Custom exporter
+
+Allows using a custom exporter plugin. Create a plugin of type "exporter" on the plugins page, then select it here.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `ref` | string | Reference to the custom exporter plugin |
+| `config` | object | Exporter configuration |
+
+## Admin API
+
+```
+GET    /api/data-exporter-configs           # List all data exporters
+POST   /api/data-exporter-configs           # Create a data exporter
+GET    /api/data-exporter-configs/:id       # Get a data exporter
+PUT    /api/data-exporter-configs/:id       # Update a data exporter
+DELETE /api/data-exporter-configs/:id       # Delete a data exporter
+PATCH  /api/data-exporter-configs/:id       # Partially update a data exporter
+```

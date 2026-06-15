@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { Component, useState, useEffect } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import {
   Table,
@@ -24,6 +24,7 @@ import {
   NgStringRenderer,
 } from '../components/nginputs';
 import { Location } from '../components/Location';
+import InfoCollapse from '../components/InfoCollapse';
 
 function tryOrTrue(f) {
   try {
@@ -39,6 +40,115 @@ function tryOrFalse(f) {
   } catch (e) {
     return false;
   }
+}
+
+function CustomDataExporterRefSection({ label, role, value, onChange }) {
+  const enabled = !!value;
+  const v = value || { kind: 'wasm', ref: '', config: {} };
+  const [pluginList, setPluginList] = useState(null);
+  const stepName = role === 'transform' ? 'DataExporterTransform' : 'DataExporterFilter';
+
+  useEffect(() => {
+    if (enabled && v.kind === 'plugin') {
+      fetch('/bo/api/proxy/api/plugins/all', {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      })
+        .then((r) => r.json())
+        .then((list) =>
+          (list || []).filter((p) => (p.plugin_steps || p.pluginSteps || []).includes(stepName))
+        )
+        .then((list) => setPluginList(list))
+        .catch(() => setPluginList([]));
+    } else {
+      setPluginList(null);
+    }
+  }, [enabled, v.kind, stepName]);
+
+  const pluginMeta =
+    v.kind === 'plugin' && pluginList ? pluginList.find((p) => p.id === v.ref) : null;
+  const hasFormSchema = pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
+
+  const refSelectorByKind = {
+    wasm: {
+      label: 'WASM plugin',
+      valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins',
+      transformer: (i) => ({ value: i.id, label: i.name }),
+    },
+    workflow: {
+      label: 'Workflow',
+      valuesFrom: '/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows',
+      transformer: (i) => ({ value: i.id, label: i.name }),
+    },
+  };
+
+  return (
+    <div>
+      <BooleanInput
+        label={label}
+        value={enabled}
+        onChange={(b) => onChange(b ? { kind: 'wasm', ref: '', config: {} } : null)}
+      />
+      {enabled && (
+        <div style={{ paddingLeft: 20, borderLeft: '2px solid #eee' }}>
+          <SelectInput
+            label="Kind"
+            value={v.kind}
+            possibleValues={[
+              { value: 'wasm', label: 'WASM plugin' },
+              { value: 'workflow', label: 'Workflow' },
+              { value: 'plugin', label: 'Plugin class' },
+            ]}
+            onChange={(kind) => onChange({ ...v, kind, ref: '' })}
+          />
+          {v.kind === 'plugin' && (
+            <SelectInput
+              label="Plugin"
+              value={v.ref}
+              possibleValues={(pluginList || []).map((p) => ({
+                value: p.id,
+                label: p.name || p.id,
+              }))}
+              onChange={(ref) => onChange({ ...v, ref, config: {} })}
+            />
+          )}
+          {v.kind === 'workflow' && (
+            <SelectInput
+              label="Workflow"
+              value={v.ref}
+              valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
+              transformer={(i) => ({ value: i.id, label: i.name })}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
+          {v.kind === 'wasm' && (
+            <SelectInput
+              label="WASM plugin"
+              value={v.ref}
+              valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+              transformer={(i) => ({ value: i.id, label: i.name })}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
+          {hasFormSchema ? (
+            <Form
+              value={v.config || {}}
+              onChange={(config) => onChange({ ...v, config })}
+              schema={pluginMeta.configSchema || pluginMeta.config_schema}
+              flow={pluginMeta.configFlow || pluginMeta.config_flow || []}
+            />
+          ) : (
+            <JsonObjectAsCodeInput
+              label="Config"
+              value={v.config || {}}
+              onChange={(config) => onChange({ ...v, config })}
+              height="150px"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 class CustomMetrics extends Component {
@@ -117,10 +227,20 @@ class CustomMetrics extends Component {
                   name="Selector"
                   creatable={true}
                   value={props?.value}
-                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${props?.rootValue?.eventType || 'GatewayEvent'
-                    }`}
-                  optionsTransformer={(arr) => arr.map((item) => ({ value: item, label: item }))}
-                  onChange={props.onChange}
+                  optionsFrom={`/bo/api/proxy/api/events/_template?eventType=${
+                    props?.rootValue?.eventType || 'GatewayEvent'
+                  }`}
+                  optionsTransformer={(arr) => {
+                    return arr.map((item) => {
+                      if (item.label) {
+                        return item;
+                      }
+                      return { value: item, label: item };
+                    });
+                  }}
+                  onChange={(v) => {
+                    props.onChange(v.value);
+                  }}
                 />
               </LabelAndInput>
             );
@@ -162,6 +282,8 @@ export const MAILERS_FORM = {
   mailgunFormFlow: ['eu', 'apiKey', 'domain', 'to'],
   mailjetFormFlow: ['apiKeyPublic', 'apiKeyPrivate', 'to'],
   sendgridFormFlow: ['apiKey', 'to'],
+  scalewayFormFlow: ['secretKey', 'projectId', 'region', 'to'],
+  mailpaceFormFlow: ['serverToken', 'to'],
   genericFormSchema: {
     url: {
       type: 'string',
@@ -271,8 +393,66 @@ export const MAILERS_FORM = {
         initTransform: (values) => values.map((value) => value.email),
       },
     },
-  }
-}
+  },
+  scalewayFormSchema: {
+    secretKey: {
+      type: 'string',
+      label: 'Scaleway secret key',
+      props: {
+        label: 'Scaleway secret key',
+        placeholder: 'Scaleway secret key',
+      },
+    },
+    projectId: {
+      type: 'string',
+      label: 'Scaleway project id',
+      props: {
+        label: 'Scaleway project id',
+        placeholder: 'Scaleway project id',
+      },
+    },
+    region: {
+      type: 'string',
+      label: 'Scaleway region',
+      props: {
+        label: 'Scaleway region',
+        placeholder: 'fr-par',
+        help: 'Scaleway region where the TEM API is exposed (e.g. fr-par)',
+      },
+    },
+    to: {
+      type: 'array',
+      label: 'Email addresses',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive events',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
+  },
+  mailpaceFormSchema: {
+    serverToken: {
+      type: 'string',
+      label: 'MailPace server token',
+      props: {
+        label: 'MailPace server token',
+        placeholder: 'MailPace server token',
+        help: 'Per-domain server token used in the MailPace-Server-Token header',
+      },
+    },
+    to: {
+      type: 'array',
+      label: 'Email addresses',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive events',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
+  },
+};
 
 class Mailer extends Component {
   render() {
@@ -320,6 +500,22 @@ class Mailer extends Component {
                   to: [],
                 });
                 break;
+              case 'scaleway':
+                this.props.onChange({
+                  type: 'scaleway',
+                  secretKey: '',
+                  projectId: '',
+                  region: 'fr-par',
+                  to: [],
+                });
+                break;
+              case 'mailpace':
+                this.props.onChange({
+                  type: 'mailpace',
+                  serverToken: '',
+                  to: [],
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -328,6 +524,8 @@ class Mailer extends Component {
             { label: 'Mailgun', value: 'mailgun' },
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
+            { label: 'Scaleway TEM', value: 'scaleway' },
+            { label: 'MailPace', value: 'mailpace' },
           ]}
           help="..."
         />
@@ -367,6 +565,24 @@ class Mailer extends Component {
             style={{ marginTop: 5 }}
           />
         )}
+        {type === 'scaleway' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={MAILERS_FORM.scalewayFormFlow}
+            schema={MAILERS_FORM.scalewayFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailpace' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={MAILERS_FORM.mailpaceFormFlow}
+            schema={MAILERS_FORM.mailpaceFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
       </div>
     );
   }
@@ -380,6 +596,33 @@ export class DataExportersPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Data exporters`);
   }
+
+  /**
+   * Build the initial value for a brand-new exporter, taking optional query
+   * params into account. Supported params on `/bo/dashboard/exporters/add`:
+   *
+   *   - `type=mailer|webhook|user-analytics|...` : pre-select the exporter type
+   *   - `name=Some+name` : pre-fill the name
+   *   - `kind=alert-channel` : add a filter that only keeps user-analytics alerts
+   *     (`{ alert: "UserAnalyticsAlert" }` in `filtering.include`)
+   */
+  buildDefaultValue = () => {
+    const q = (this.props.location && this.props.location.query) || {};
+    const type = q.type || 'file';
+    return BackOfficeServices.createNewDataExporterConfig(type).then((cfg) => {
+      let next = { ...cfg };
+      if (q.name) next.name = q.name;
+      if (q.kind === 'alert-channel') {
+        const include = (next.filtering && next.filtering.include) || [];
+        next.filtering = {
+          ...(next.filtering || {}),
+          include: [...include, { alert: 'UserAnalyticsAlert' }],
+        };
+        if (!q.name) next.name = 'User analytics alert channel';
+      }
+      return next;
+    });
+  };
 
   nothing() {
     return null;
@@ -431,11 +674,47 @@ export class DataExportersPage extends Component {
           style={{ _backgroundColor: "var(--color-primary)", _borderColor: "var(--color-primary)", marginLeft: 5 }}>
           <i className="fas fa-hat-wizard" /> Create with wizard
         </button> */}
+        <InfoCollapse title="What is a Data Exporter?">
+          <p>
+            A Data Exporter lets you <strong>monitor and export all events</strong> happening inside
+            Otoroshi in real time. Every HTTP call, every authentication, every error, every admin
+            action — everything that passes through the gateway generates events that can be
+            streamed to your observability stack.
+          </p>
+          <p>Otoroshi supports a wide range of export targets out of the box:</p>
+          <ul>
+            <li>
+              <strong>Elasticsearch</strong> — index events for search, dashboards, and alerting
+              with Kibana.
+            </li>
+            <li>
+              <strong>Kafka</strong> — stream events to topics for real-time processing pipelines.
+            </li>
+            <li>
+              <strong>Webhooks</strong> — push events to any HTTP endpoint of your choice.
+            </li>
+            <li>
+              <strong>File</strong> — write events to local files for simple logging or debugging.
+            </li>
+            <li>
+              <strong>Pulsar, custom</strong> — connect to additional backends depending on your
+              infrastructure.
+            </li>
+          </ul>
+          <p>
+            Each exporter can be configured with <strong>filters</strong> to select which event
+            types to export,
+            <strong>projections</strong> to reshape the data before sending, and{' '}
+            <strong>buffering</strong> options to control throughput and batch size. You can run
+            multiple exporters in parallel, each targeting a different system with different
+            filters.
+          </p>
+        </InfoCollapse>
         <Table
           parentProps={this.props}
           selfUrl="exporters"
           defaultTitle="Data exporters"
-          defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
+          defaultValue={this.buildDefaultValue}
           itemName="Data exporter"
           columns={this.columns}
           fetchItems={(paginationState) =>
@@ -673,6 +952,20 @@ export class NewExporterForm extends Component {
               </div>
             </div>
           </Collapse>
+          <Collapse initCollapsed={true} label="Custom filter & projection">
+            <CustomDataExporterRefSection
+              label="Enable custom filter"
+              role="filter"
+              value={this.data().customFilter}
+              onChange={(e) => this.dataChange({ customFilter: e })}
+            />
+            <CustomDataExporterRefSection
+              label="Enable custom projection"
+              role="transform"
+              value={this.data().customTransform}
+              onChange={(e) => this.dataChange({ customTransform: e })}
+            />
+          </Collapse>
           <Collapse initCollapsed={true} label="Queue details">
             <NumberInput
               label="Buffer Size"
@@ -732,8 +1025,98 @@ export class NewExporterForm extends Component {
             </Collapse>
           )}
           {this.data().type === 'kafka' && <KafkaExporterTryIt exporter={this.props.value} />}
+          {this.data().type === 'user-analytics' && (
+            <UserAnalyticsActivationBlock exporter={this.data()} />
+          )}
         </form>
       </>
+    );
+  }
+}
+
+class UserAnalyticsActivationBlock extends Component {
+  state = { busy: false, message: null, error: null };
+
+  isActive() {
+    const md = (this.props.exporter && this.props.exporter.metadata) || {};
+    return md['otoroshi:user-analytics:active'] === 'true';
+  }
+
+  promote = () => {
+    const id = this.props.exporter && this.props.exporter.id;
+    if (!id) {
+      this.setState({ error: 'Save the exporter first' });
+      return;
+    }
+    this.setState({ busy: true, message: null, error: null });
+    fetch(`/bo/api/proxy/api/analytics/_set-active-exporter/${id}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.error) {
+          this.setState({ busy: false, error: res.error });
+        } else {
+          const seeded = (res && res.seeded_default) || [];
+          this.setState({
+            busy: false,
+            message:
+              seeded.length > 0
+                ? `Exporter is now active. Seeded default dashboards: ${seeded.join(', ')}`
+                : 'Exporter is now active.',
+          });
+          window.setTimeout(() => window.location.reload(), 800);
+        }
+      })
+      .catch((e) => this.setState({ busy: false, error: e.message }));
+  };
+
+  render() {
+    const active = this.isActive();
+    return (
+      <Collapse initCollapsed={false} label="User analytics activation">
+        <div style={{ padding: 12 }}>
+          <p style={{ color: '#aaa', marginBottom: 12 }}>
+            Only one user-analytics exporter can be active at a time. The active exporter is the one
+            queried by dashboards. Promoting an exporter automatically demotes any other
+            user-analytics exporter and seeds the default dashboards if missing.
+          </p>
+          {active ? (
+            <span className="badge badge-success" style={{ fontSize: 14, padding: 6 }}>
+              <i className="fas fa-check" /> This exporter is currently active
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={this.promote}
+              disabled={this.state.busy}
+            >
+              {this.state.busy ? (
+                <>
+                  <i className="fas fa-spinner fa-spin" /> Promoting…
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-star" /> Set as active analytics exporter
+                </>
+              )}
+            </button>
+          )}
+          {this.state.message && (
+            <div className="alert alert-success" style={{ marginTop: 12 }}>
+              {this.state.message}
+            </div>
+          )}
+          {this.state.error && (
+            <div className="alert alert-danger" style={{ marginTop: 12 }}>
+              {this.state.error}
+            </div>
+          )}
+        </div>
+      </Collapse>
     );
   }
 }
@@ -929,6 +1312,7 @@ const possibleExporterConfigFormValues = {
       'checkConnection',
       '>>>Index settings',
       'indexSettings.clientSide',
+      'indexSettings.action',
       'indexSettings.interval',
       'indexSettings.numberOfShards',
       'indexSettings.numberOfReplicas',
@@ -1006,6 +1390,10 @@ const possibleExporterConfigFormValues = {
       'indexSettings.clientSide': {
         type: 'bool',
         props: { label: 'Client side temporal indexes handling' },
+      },
+      'indexSettings.action': {
+        type: 'string',
+        props: { label: 'Bulk action' },
       },
       'indexSettings.interval': {
         type: 'select',
@@ -1264,6 +1652,108 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  datadog: {
+    flow: [
+      'url',
+      'headers',
+      'timeout',
+      'token',
+      'hostname',
+      'service',
+      'ddsource',
+      'ddtags',
+      'tls_config',
+    ],
+    schema: {
+      url: {
+        type: 'string',
+        props: {
+          label: 'URL',
+          placeholder: 'example: https://http-intake.logs.datadoghq.eu/api/v2/logs',
+        },
+      },
+      token: {
+        type: 'string',
+        props: { label: 'DD Apikey', placeholder: 'The datadog apikey' },
+      },
+      ddsource: {
+        type: 'string',
+        props: { label: 'Source', placeholder: 'example: otoroshi' },
+      },
+      ddtags: {
+        type: 'string',
+        props: { label: 'Tags', placeholder: 'example: otoroshi:prod, foo:bar' },
+      },
+      hostname: {
+        type: 'string',
+        props: { label: 'Hostname', placeholder: 'example: otoroshi' },
+      },
+      service: {
+        type: 'string',
+        props: { label: 'Service', placeholder: 'example: otoroshi' },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
+      },
+    },
+  },
+  newrelic: {
+    flow: ['url', 'headers', 'timeout', 'token', 'hostname', 'service', 'logtype', 'tls_config'],
+    schema: {
+      url: {
+        type: 'string',
+        props: {
+          label: 'URL',
+          placeholder: 'example: https://log-api.eu.newrelic.com/log/v1',
+        },
+      },
+      token: {
+        type: 'string',
+        props: { label: 'New Relic Apikey', placeholder: 'The new relic apikey' },
+      },
+      logtype: {
+        type: 'string',
+        props: { label: 'Log type', placeholder: 'example: accesslogs' },
+      },
+      hostname: {
+        type: 'string',
+        props: { label: 'Hostname', placeholder: 'example: otoroshi' },
+      },
+      service: {
+        type: 'string',
+        props: { label: 'Service', placeholder: 'example: otoroshi' },
+      },
+      headers: {
+        type: 'object',
+        props: {
+          label: 'Http Headers',
+          placeholderKey: 'Name of the header',
+          placeholderValue: 'Value of the header',
+        },
+      },
+      timeout: {
+        type: 'number',
+        props: { label: 'HTTP Timeout', suffix: 'ms.' },
+      },
+      tls_config: {
+        type: 'jsonobjectcode',
+        props: { label: 'TLS Config' },
+      },
+    },
+  },
   workflow: {
     flow: ['ref'],
     schema: {
@@ -1415,6 +1905,7 @@ const possibleExporterConfigFormValues = {
       'saslConfig.username',
       'saslConfig.password',
       'saslConfig.mechanism',
+      'saslConfig.jaasConfig',
       'mtlsConfig.mtls',
       'keyPass',
       'keystore',
@@ -1424,6 +1915,7 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',
       'hostValidation',
+      'properties',
     ],
     schema: {
       servers: {
@@ -1461,6 +1953,14 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
           help: 'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+        },
+      },
+      'saslConfig.jaasConfig': {
+        type: 'string',
+        display: (v) => tryOrTrue(() => v.securityProtocol.includes('SASL')),
+        props: {
+          label: 'SASL JAAS Config',
+          help: 'The JAAS config. property',
         },
       },
       'saslConfig.username': {
@@ -1561,6 +2061,13 @@ const possibleExporterConfigFormValues = {
           label: 'Kafka topic',
           placeholder: 'otoroshi-alerts',
           help: 'The topic on which Otoroshi alerts will be sent',
+        },
+      },
+      properties: {
+        type: 'object',
+        props: {
+          label: 'Properties',
+          help: 'Additional properties for the Kafka client',
         },
       },
     },
@@ -2409,6 +2916,128 @@ const possibleExporterConfigFormValues = {
       topic: {
         type: 'bool',
         props: { label: 'Destination is a topic' },
+      },
+    },
+  },
+  'user-analytics': {
+    label: 'User Analytics (PostgreSQL)',
+    flow: [
+      'uri',
+      'host',
+      'port',
+      'database',
+      'user',
+      'password',
+      'schema',
+      'table',
+      'pool_size',
+      'ssl',
+      'retention_days',
+      'statement_timeout_ms',
+      'rollup_enabled',
+    ],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Connection URI',
+          placeholder:
+            'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+        },
+      },
+      host: { type: 'string', props: { label: 'Host', placeholder: 'localhost' } },
+      port: { type: 'number', props: { label: 'Port' } },
+      database: { type: 'string', props: { label: 'Database' } },
+      user: { type: 'string', props: { label: 'User' } },
+      password: { type: 'password', props: { label: 'Password' } },
+      schema: { type: 'string', props: { label: 'Schema', placeholder: 'public' } },
+      table: {
+        type: 'string',
+        props: { label: 'Table', placeholder: 'otoroshi_analytics_events' },
+      },
+      pool_size: { type: 'number', props: { label: 'Pool size' } },
+      ssl: { type: 'bool', props: { label: 'SSL (REQUIRE mode)' } },
+      retention_days: {
+        type: 'number',
+        props: { label: 'Retention (days)', placeholder: '30' },
+      },
+      statement_timeout_ms: {
+        type: 'number',
+        props: { label: 'Statement timeout (ms)', placeholder: '30000' },
+      },
+      rollup_enabled: {
+        type: 'bool',
+        props: { label: 'Rollup tables (phase 2 — keep disabled)' },
+      },
+    },
+  },
+  postgresql: {
+    label: 'PostgreSQL',
+    flow: [
+      'uri',
+      'host',
+      'port',
+      'database',
+      'user',
+      'password',
+      'schema',
+      'table',
+      'pool_size',
+      'ssl',
+      'retention_days',
+    ],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Connection URI',
+          placeholder:
+            'postgresql://user:password@host:5432/database (optional, overrides fields below)',
+        },
+      },
+      host: {
+        type: 'string',
+        props: { label: 'Host', placeholder: 'localhost' },
+      },
+      port: {
+        type: 'number',
+        props: { label: 'Port' },
+      },
+      database: {
+        type: 'string',
+        props: { label: 'Database' },
+      },
+      user: {
+        type: 'string',
+        props: { label: 'User' },
+      },
+      password: {
+        type: 'password',
+        props: { label: 'Password' },
+      },
+      schema: {
+        type: 'string',
+        props: { label: 'Schema', placeholder: 'otoroshi' },
+      },
+      table: {
+        type: 'string',
+        props: { label: 'Table', placeholder: 'otoroshi_events' },
+      },
+      pool_size: {
+        type: 'number',
+        props: { label: 'Pool size' },
+      },
+      ssl: {
+        type: 'bool',
+        props: { label: 'SSL (REQUIRE mode)' },
+      },
+      retention_days: {
+        type: 'number',
+        props: {
+          label: 'Retention (days)',
+          placeholder: '0',
+          help: 'Number of days to keep events. Set to 0 or leave empty to disable cleanup.',
+        },
       },
     },
   },

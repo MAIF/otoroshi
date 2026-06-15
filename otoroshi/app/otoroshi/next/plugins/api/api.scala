@@ -1,35 +1,28 @@
 package otoroshi.next.plugins.api
 
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.apache.pekko.Done
 import org.apache.pekko.http.scaladsl.model.{ContentType, StatusCodes, Uri}
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, PrivateAppsUser, Target}
-import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgRoute, NgTarget}
-import otoroshi.next.plugins.RejectStrategy
+import otoroshi.models.{ApiKey, JwtTokenLocation, PrivateAppsUser, Target}
+import otoroshi.next.models.{NgMatchedRoute, NgPluginInstance, NgPluginInstanceConfig, NgRoute, NgTarget, PluginIndex}
+import otoroshi.next.plugins.{NgApikeyCallsConfig, NgApikeyMandatoryTagsConfig, OIDCJwtVerifierConfig, RejectStrategy}
 import otoroshi.next.proxy.{NgExecutionReport, NgProxyEngineError, NgReportPluginSequence, NgReportPluginSequenceItem}
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.script.{InternalEventListener, NamedPlugin, PluginType, StartableAndStoppable}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.http.websocket.{
-  CloseMessage,
-  Message,
-  PingMessage,
-  PongMessage,
-  BinaryMessage => PlayWSBinaryMessage,
-  TextMessage => PlayWSTextMessage
-}
-import play.api.libs.json._
+import play.api.http.websocket.{CloseMessage, Message, PingMessage, PongMessage, BinaryMessage as PlayWSBinaryMessage, TextMessage as PlayWSTextMessage}
+import play.api.libs.json.*
+import play.api.libs.ws.WSBodyWritables.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSResponse}
-import play.api.libs.ws.WSBodyWritables._
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 
 import java.security.cert.X509Certificate
@@ -287,17 +280,19 @@ sealed trait NgStep {
   def json: JsValue = name.json
 }
 object NgStep       {
-  case object Router            extends NgStep { def name: String = "Router"            }
-  case object Sink              extends NgStep { def name: String = "Sink"              }
-  case object PreRoute          extends NgStep { def name: String = "PreRoute"          }
-  case object ValidateAccess    extends NgStep { def name: String = "ValidateAccess"    }
-  case object TransformRequest  extends NgStep { def name: String = "TransformRequest"  }
-  case object TransformResponse extends NgStep { def name: String = "TransformResponse" }
-  case object MatchRoute        extends NgStep { def name: String = "MatchRoute"        }
-  case object HandlesTunnel     extends NgStep { def name: String = "HandlesTunnel"     }
-  case object HandlesRequest    extends NgStep { def name: String = "HandlesRequest"    }
-  case object CallBackend       extends NgStep { def name: String = "CallBackend"       }
-  case object Job               extends NgStep { def name: String = "Job"               }
+  case object Router                extends NgStep { def name: String = "Router"                }
+  case object Sink                  extends NgStep { def name: String = "Sink"                  }
+  case object PreRoute              extends NgStep { def name: String = "PreRoute"              }
+  case object ValidateAccess        extends NgStep { def name: String = "ValidateAccess"        }
+  case object TransformRequest      extends NgStep { def name: String = "TransformRequest"      }
+  case object TransformResponse     extends NgStep { def name: String = "TransformResponse"     }
+  case object MatchRoute            extends NgStep { def name: String = "MatchRoute"            }
+  case object HandlesTunnel         extends NgStep { def name: String = "HandlesTunnel"         }
+  case object HandlesRequest        extends NgStep { def name: String = "HandlesRequest"        }
+  case object CallBackend           extends NgStep { def name: String = "CallBackend"           }
+  case object Job                   extends NgStep { def name: String = "Job"                   }
+  case object DataExporterFilter    extends NgStep { def name: String = "DataExporterFilter"    }
+  case object DataExporterTransform extends NgStep { def name: String = "DataExporterTransform" }
 
   val all: Seq[NgStep] = Seq(
     Router,
@@ -313,18 +308,20 @@ object NgStep       {
   )
 
   def apply(value: String): Option[NgStep] = value match {
-    case "Router"            => Router.some
-    case "Sink"              => Sink.some
-    case "PreRoute"          => PreRoute.some
-    case "ValidateAccess"    => ValidateAccess.some
-    case "TransformRequest"  => TransformRequest.some
-    case "TransformResponse" => TransformResponse.some
-    case "MatchRoute"        => MatchRoute.some
-    case "HandlesTunnel"     => HandlesTunnel.some
-    case "HandlesRequest"    => HandlesRequest.some
-    case "CallBackend"       => CallBackend.some
-    case "Job"               => Job.some
-    case _                   => None
+    case "Router"                => Router.some
+    case "Sink"                  => Sink.some
+    case "PreRoute"              => PreRoute.some
+    case "ValidateAccess"        => ValidateAccess.some
+    case "TransformRequest"      => TransformRequest.some
+    case "TransformResponse"     => TransformResponse.some
+    case "MatchRoute"            => MatchRoute.some
+    case "HandlesTunnel"         => HandlesTunnel.some
+    case "HandlesRequest"        => HandlesRequest.some
+    case "CallBackend"           => CallBackend.some
+    case "Job"                   => Job.some
+    case "DataExporterFilter"    => DataExporterFilter.some
+    case "DataExporterTransform" => DataExporterTransform.some
+    case _                       => None
   }
 }
 
@@ -412,15 +409,17 @@ trait NgCachedConfigContext {
     }
   }
 
-  def extractTypedBody(request: NgPluginHttpRequest)(using env: Env, ec: ExecutionContext): Future[JsObject] = {
+  def extractTypedBody(
+      request: NgPluginHttpRequest
+  )(using env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(request).map {
-      case None                                              => Json.obj()
-      case Some((bytes, "application/json"))                 => Json.obj("body_json" -> Json.parse(bytes.toArray))
-      case Some((bytes, "application/xml"))                  => Json.obj("body_str" -> bytes.utf8String)
-      case Some((bytes, ctype)) if ctype.startsWith("text/") => Json.obj("body_str" -> bytes.utf8String)
+      case None                                              => (Json.obj(), None)
+      case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
+      case Some((bytes, "application/xml"))                  => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
+      case Some((bytes, ctype)) if ctype.startsWith("text/") => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
       case Some((bytes, _))                                  =>
         val array = Writes.arrayWrites[Byte].writes(bytes.toArray[Byte])
-        Json.obj("body_bytes" -> array)
+        (Json.obj("body_bytes" -> array), bytes.some)
     }
   }
   def extractBody(
@@ -432,15 +431,17 @@ trait NgCachedConfigContext {
     }
   }
 
-  def extractTypedBody(response: NgPluginHttpResponse)(using env: Env, ec: ExecutionContext): Future[JsObject] = {
+  def extractTypedBody(
+      response: NgPluginHttpResponse
+  )(using env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(response).map {
-      case None                                              => Json.obj()
-      case Some((bytes, "application/json"))                 => Json.obj("body_json" -> Json.parse(bytes.toArray))
-      case Some((bytes, "application/xml"))                  => Json.obj("body_str" -> bytes.utf8String)
-      case Some((bytes, ctype)) if ctype.startsWith("text/") => Json.obj("body_str" -> bytes.utf8String)
+      case None                                              => (Json.obj(), None)
+      case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
+      case Some((bytes, "application/xml"))                  => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
+      case Some((bytes, ctype)) if ctype.startsWith("text/") => (Json.obj("body_str" -> bytes.utf8String), bytes.some)
       case Some((bytes, _))                                  =>
         val array = Writes.arrayWrites[Byte].writes(bytes.toArray[Byte])
-        Json.obj("body_bytes" -> array)
+        (Json.obj("body_bytes" -> array), bytes.some)
     }
   }
 }
@@ -551,6 +552,33 @@ trait NgRouter extends NgPlugin {
   def findRoute(ctx: NgRouterContext)(using env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = None
 }
 
+trait RequestTransformerErrors {
+
+  def request: RequestHeader
+  def route: NgRoute
+  def attrs: TypedMap
+  def report: NgExecutionReport
+
+  def errorResponse[A](status: Results.Status, message: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[Result, A]] = {
+    Errors
+      .craftResponseResult(
+        message = message,
+        status = status,
+        req = request,
+        maybeDescriptor = None,
+        maybeCauseId = None,
+        duration = report.getDurationNow(),
+        overhead = report.getOverheadInNow(),
+        attrs = attrs,
+        maybeRoute = route.some
+      )
+      .map(r => Left(r))
+  }
+}
+
 case class NgBeforeRequestContext(
     snowflake: String,
     route: NgRoute,
@@ -604,7 +632,8 @@ case class NgTransformerRequestContext(
     sequence: NgReportPluginSequence,
     markPluginItem: (NgReportPluginSequenceItem, NgTransformerRequestContext, Boolean, JsValue) => Unit,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"        -> snowflake,
     "raw_request"      -> rawRequest.json,
@@ -618,21 +647,24 @@ case class NgTransformerRequestContext(
     "attrs"            -> attrs.json
   )
 
-  def wasmJson(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     given mat: Materializer = env.otoroshiMaterializer
-    JsonHelpers.requestBody(otoroshiRequest).map { body =>
-      json.asObject ++ Json.obj(
-        "route"              -> route.json,
-        "request_body_bytes" -> body
+    JsonHelpers.requestBody(otoroshiRequest).map { case (body, bodyBytesOut) =>
+      (
+        json.asObject ++ Json.obj(
+          "route"              -> route.json,
+          "request_body_bytes" -> body
+        ),
+        bodyBytesOut
       )
     }
   }
-  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
-    extractTypedBody(otoroshiRequest).map { obj =>
-      baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj))
+    extractTypedBody(otoroshiRequest).map { case (obj, bodyBytesOpt) =>
+      (baseObject ++ Json.obj("request" -> (baseObject.select("request").asObject ++ obj)), bodyBytesOpt)
     }
   }
 }
@@ -653,7 +685,8 @@ case class NgTransformerResponseContext(
     sequence: NgReportPluginSequence,
     markPluginItem: (NgReportPluginSequenceItem, NgTransformerResponseContext, Boolean, JsValue) => Unit,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
     "raw_response"      -> rawResponse.json,
@@ -667,22 +700,28 @@ case class NgTransformerResponseContext(
     "attrs"             -> attrs.json
   )
 
-  def wasmJson(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     given mat: Materializer = env.otoroshiMaterializer
-    JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
-      json.asObject ++ Json.obj(
-        "route"               -> route.json,
-        "response_body_bytes" -> bodyOut
+    JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
+          "route"               -> route.json,
+          "response_body_bytes" -> bodyOut
+        ),
+        bodyBytesOpt
       )
     }
   }
 
-  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
-    extractTypedBody(otoroshiResponse).map { obj =>
-      baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj))
+    extractTypedBody(otoroshiResponse).map { case (obj, bodyBytesOut) =>
+      (
+        baseObject ++ Json.obj("otoroshi_response" -> (baseObject.select("otoroshi_response").asObject ++ obj)),
+        bodyBytesOut
+      )
     }
   }
 }
@@ -702,7 +741,8 @@ case class NgTransformerErrorContext(
     attrs: TypedMap,
     report: NgExecutionReport,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"         -> snowflake,
     "maybe_cause_id"    -> maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -717,12 +757,15 @@ case class NgTransformerErrorContext(
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
   )
-  def wasmJson(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     given mat: Materializer = env.otoroshiMaterializer
-    JsonHelpers.responseBody(otoroshiResponse).map { bodyOut =>
-      json.asObject ++ Json.obj(
-        "route"               -> route.json,
-        "response_body_bytes" -> bodyOut
+    JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
+          "route"               -> route.json,
+          "response_body_bytes" -> bodyOut
+        ),
+        bodyBytesOpt
       )
     }
   }
@@ -779,6 +822,33 @@ trait NgRequestTransformer extends NgPlugin {
   }
 }
 
+trait NgAccessContextErrors {
+
+  def request: RequestHeader
+  def route: NgRoute
+  def attrs: TypedMap
+  def report: NgExecutionReport
+
+  def deniedAccess(status: Results.Status, message: String)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[NgAccess] = {
+    Errors
+      .craftResponseResult(
+        message = message,
+        status = status,
+        req = request,
+        maybeDescriptor = None,
+        maybeCauseId = None,
+        duration = report.getDurationNow(),
+        overhead = report.getOverheadInNow(),
+        attrs = attrs,
+        maybeRoute = route.some
+      )
+      .map(r => NgAccess.NgDenied(r))
+  }
+}
+
 case class NgAccessContext(
     snowflake: String,
     request: RequestHeader,
@@ -792,7 +862,9 @@ case class NgAccessContext(
     sequence: NgReportPluginSequence,
     markPluginItem: (NgReportPluginSequenceItem, NgAccessContext, Boolean, JsValue) => Unit,
     idx: Int = 0
-) extends NgCachedConfigContext {
+) extends NgCachedConfigContext
+    with NgAccessContextErrors
+    with RequestTransformerErrors {
   def json: JsValue = Json.obj(
     "snowflake"     -> snowflake,
     "apikey"        -> apikey.map(_.lightJson).getOrElse(JsNull).as[JsValue],
@@ -944,22 +1016,28 @@ case class NgbBackendCallContext(
     "attrs"         -> attrs.json
   )
 
-  def wasmJson(using env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     given mat: Materializer = env.otoroshiMaterializer
-    JsonHelpers.requestBody(request).map { body =>
-      (json.asObject ++ Json.obj(
-        "route"              -> route.json,
-        "request_body_bytes" -> body,
-        "request"            -> request.json
-      ))
+    JsonHelpers.requestBody(request).map { case (body, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
+          "route"              -> route.json,
+          "request_body_bytes" -> body,
+          "request"            -> request.json
+        ),
+        bodyBytesOpt
+      )
     }
   }
 
-  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[JsValue] = {
-    extractTypedBody(request).map { obj =>
-      json.asObject ++ Json.obj(
-        "route"   -> route.json,
-        "request" -> (request.json.asObject ++ obj)
+  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+    extractTypedBody(request).map { case (obj, bodyBytesOpt) =>
+      (
+        json.asObject ++ Json.obj(
+          "route"   -> route.json,
+          "request" -> (request.json.asObject ++ obj)
+        ),
+        bodyBytesOpt
       )
     }
   }
@@ -967,7 +1045,7 @@ case class NgbBackendCallContext(
 
 case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Option[WSResponse]) {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.given
 
   def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
   def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
@@ -1361,18 +1439,20 @@ case class NgWebsocketPluginContext(
     snowflake: String,
     idx: Int = 0,
     request: RequestHeader,
+    otoroshiRequest: NgPluginHttpRequest,
     route: NgRoute,
     attrs: TypedMap,
     target: Target
 ) extends NgCachedConfigContext {
   def wasmJson: JsValue = json.asObject ++ Json.obj("route" -> route.json)
   def json: JsValue     = Json.obj(
-    "snowflake" -> snowflake,
-    "idx"       -> idx,
-    "request"   -> JsonHelpers.requestToJson(request, attrs),
-    "config"    -> config,
-    "target"    -> target.json,
-    "attrs"     -> attrs.json
+    "snowflake"        -> snowflake,
+    "idx"              -> idx,
+    "request"          -> JsonHelpers.requestToJson(request, attrs),
+    "otoroshi_request" -> otoroshiRequest.json,
+    "config"           -> config,
+    "target"           -> target.json,
+    "attrs"            -> attrs.json
   )
 }
 
@@ -1396,7 +1476,6 @@ object WebsocketMessage {
       case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
-      case _                                                                      => ByteString.empty.future
     }
     override def str()(using m: Materializer, ec: ExecutionContext): Future[String]       = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
@@ -1407,7 +1486,6 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.utf8String)
-      case _                                                                      => "".future
     }
 
     override def size()(using m: Materializer, ec: ExecutionContext): Future[Int] = data match {
@@ -1419,7 +1497,6 @@ object WebsocketMessage {
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.size)
-      case _                                                                      => 0.future
     }
 
     override def isBinary: Boolean = !data.isText
@@ -1436,7 +1513,6 @@ object WebsocketMessage {
           source
             .runFold(ByteString.empty)((concat, str) => concat ++ str)
             .map(data => PlayWSBinaryMessage(data))
-        case other                                                                  => throw new RuntimeException(s"Unkown message type $other")
       }
     }
     override def asAkka(using env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
@@ -1540,7 +1616,7 @@ trait NgWebsocketPlugin extends NgPlugin {
 
 trait NgWebsocketBackendPlugin extends NgPlugin {
 
-  import play.api.http.websocket.{Message => PlayWSMessage}
+  import play.api.http.websocket.Message as PlayWSMessage
 
   def callBackendOrError(
       ctx: NgWebsocketPluginContext
@@ -1632,4 +1708,22 @@ case class NgIncomingRequestValidatorContext(
   )
 
   def wasmJson(using env: Env, ec: ExecutionContext): JsObject = json.asObject
+}
+
+case class NgPresetPluginContext(
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    route: NgRoute,
+    idx: Int = 0
+) {
+  def json: JsValue = Json.obj(
+    "request" -> JsonHelpers.requestToJson(request, attrs),
+    "config"  -> config,
+    "attrs"   -> attrs.json
+  )
+}
+
+trait NgPresetPlugin extends NgPlugin {
+  def expand(ctx: NgPresetPluginContext): Seq[NgPluginInstance]
 }

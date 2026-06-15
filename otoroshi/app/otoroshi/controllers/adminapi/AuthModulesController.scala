@@ -4,15 +4,13 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.actions.ApiAction
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule}
 import otoroshi.env.Env
-import otoroshi.utils.controllers._
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
+import otoroshi.utils.controllers.*
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
+import play.api.{Logger, mvc}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.mvc
-import play.api.mvc.AnyContent
 
 class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
@@ -61,9 +59,14 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.findAll().map { seq =>
+      val entities: Seq[AuthModuleConfig] = req.queryString.get("types") match {
+        case None        => seq
+        case Some(types) => seq.filter(auth => types.contains(auth.`type`))
+      }
+
       Right(
         SeqEntityAndContext(
-          entity = seq,
+          entity = entities,
           action = "ACCESS_ALL_AUTH_MODULES",
           message = "User accessed all Auth. modules",
           metadata = Json.obj(),

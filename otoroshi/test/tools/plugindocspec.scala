@@ -1,7 +1,7 @@
 package tools
 
-import org.scalatest.matchers.must.Matchers
 import org.scalatest.OptionValues
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.next.doc.NgPluginDocumentationGenerator
 import otoroshi.script.PluginDocumentationGenerator

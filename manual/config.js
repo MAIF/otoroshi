@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-const src = __dirname + '/src/main/paradox/snippets/reference.conf';
-const dest = __dirname + '/src/main/paradox/snippets/reference-env.conf';
+const src = __dirname + '/next/docs/snippets/reference.conf';
+const dest = __dirname + '/next/docs/snippets/reference-env.conf';
 
 const content = fs.readFileSync(src).toString('utf8');
 const finalContent = content.split('\n').filter(l => {

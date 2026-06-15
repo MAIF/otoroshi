@@ -9,7 +9,7 @@ import org.biscuitsec.biscuit.token.builder.parser.Parser
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, ServiceGroupIdentifier}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.plugins.apikeys.ClientCredentialFlowBody
 import otoroshi.security.IdGenerator
@@ -17,17 +17,17 @@ import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, SecureRandom}
-import java.util.{Base64 => JavaBase64}
-import scala.concurrent.duration._
+import java.util.Base64 as JavaBase64
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 
 case class BiscuitConf(
     privkey: Option[String] = None,
@@ -49,9 +49,9 @@ object BiscuitConf {
     override def reads(json: JsValue): JsResult[BiscuitConf] = Try {
       BiscuitConf(
         privkey = json.select("privkey").asOpt[String],
-        checks = json.select("checks").asOpt[Seq[String]].getOrElse(Seq.empty),
-        facts = json.select("facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-        rules = json.select("rules").asOpt[Seq[String]].getOrElse(Seq.empty)
+        checks = json.select("checks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        facts = json.select("facts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        rules = json.select("rules").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -166,10 +166,19 @@ class NgClientCredentials extends NgRequestSink {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
-    JWKSHelper.jwks(ctx.request, conf.defaultKeyPair.some.toSeq).map {
-      case Left(body)  => Results.NotFound(body)
-      case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
-    }
+    JWKSHelper
+      .jwks(
+        ctx.request,
+        conf.defaultKeyPair.some.toSeq,
+        true,
+        env.confJwksIncludeAlgorithms,
+        env.confJwksRsaAlgorithms,
+        env.confJwksEsAlgorithms
+      )
+      .map {
+        case Left(body)  => Results.NotFound(body)
+        case Right(keys) => Results.Ok(Json.obj("keys" -> JsArray(keys)))
+      }
   }
 
   private def introspect(conf: NgClientCredentialsConfig, ctx: NgRequestSinkContext)(using
@@ -226,9 +235,9 @@ class NgClientCredentials extends NgRequestSink {
           case Some(apiKey) if apiKey.isValid(clientSecret) && apiKey.isActive() && bearerKind == "biscuit" =>
             import org.biscuitsec.biscuit.crypto.KeyPair
             import org.biscuitsec.biscuit.token.Biscuit
-            import org.biscuitsec.biscuit.token.builder.Utils._
+            import org.biscuitsec.biscuit.token.builder.Utils.*
 
-            import scala.jdk.CollectionConverters._
+            import scala.jdk.CollectionConverters.given
 
             val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
 
@@ -489,8 +498,8 @@ object NgClientCredentialTokenEndpointConfig {
         expiration = json.select("expiration").asOpt[Long].map(_.millis).getOrElse(1.hour),
         defaultKeyPair =
           json.select("default_key_pair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning),
-        allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty),
-        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty)
+        allowedApikeys = json.select("allowed_apikeys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        allowedGroups = json.select("allowed_groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Success(s) => JsSuccess(s)

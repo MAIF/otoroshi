@@ -156,13 +156,13 @@ export class JwtVerifier extends Component {
 
   render() {
     const { isConfigView, verifier } = this.state;
-    const isLegacyView = this.props.showAdvancedForm;
+    const isLegacyView = true; // this.props.showAdvancedForm;
 
     const restrictedStrategy = this.props.allowedNewStrategy || this.props.strategy;
 
     return (
       <div>
-        {this.props.showHeader && (
+        {false && this.props.showHeader && (
           <Header
             isConfigView={isConfigView}
             onChange={(isConfigView) => this.setState({ isConfigView })}
@@ -330,7 +330,7 @@ export class LocationSettings extends Component {
           />,
           <TextInput
             label={this.props.sign ? `Prepend value` : `Remove value`}
-            placeholder="Bearer "
+            placeholder="example: Bearer "
             value={location.remove}
             help={(this.props.sign ? 'Remove' : 'Prepend') + ' a value inside the header value'}
             onChange={(e) => changeTheValue(path + '.remove', e)}
@@ -714,7 +714,7 @@ export class LegacyJwtVerifier extends Component {
     const path = this.props.path || '';
     const changeTheValue = this.changeTheValue;
     return (
-      <div>
+      <div style={{ maxWidth: 1000 }}>
         {verifier.type === 'global' && (
           <>
             <Collapse initCollapsed={false} label="Location" lineEnd={true}>

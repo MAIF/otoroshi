@@ -1,21 +1,21 @@
 package functional
 
-import java.util.concurrent.atomic.AtomicInteger
-import org.apache.pekko.{Done, NotUsed}
+import com.typesafe.config.ConfigFactory
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.{Http, HttpExt}
 import org.apache.pekko.http.scaladsl.model.headers.Host
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.http.scaladsl.{Http, HttpExt}
 import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
-import com.typesafe.config.ConfigFactory
-import otoroshi.models.{ServiceDescriptor, Target}
+import org.apache.pekko.stream.{ActorMaterializer, Materializer}
+import org.apache.pekko.{Done, NotUsed}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
+import otoroshi.models.{ServiceDescriptor, Target}
 import play.api.Configuration
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class WebsocketSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

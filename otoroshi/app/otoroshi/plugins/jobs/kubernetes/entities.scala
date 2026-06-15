@@ -3,16 +3,15 @@ package otoroshi.plugins.jobs.kubernetes
 import otoroshi.env.Env
 import otoroshi.models.ServiceDescriptor
 import otoroshi.next.models.NgRoute
-import otoroshi.utils.syntax.implicits._
-import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import otoroshi.security.OtoroshiClaim
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
+import play.api.Logger
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
+import scala.collection.MapView
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.collection.MapView
 
 trait KubernetesEntity {
   def raw: JsValue
@@ -73,16 +72,16 @@ case class KubernetesMutatingWebhookConfiguration(raw: JsValue) extends Kubernet
 
 case class KubernetesOpenshiftDnsOperatorServer(raw: JsValue) {
   lazy val name: String                        = raw.select("name").as[String]
-  lazy val zones: Seq[String]                  = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val zones: Seq[String]                  = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val forwardPluginUpstreams: Seq[String] =
-    raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty)
+    raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesOpenshiftDnsOperator(raw: JsValue) extends KubernetesEntity {
   lazy val servers: scala.collection.Seq[KubernetesOpenshiftDnsOperatorServer] = (raw \ "spec" \ "servers")
     .asOpt[JsArray]
     .map(_.value.map(KubernetesOpenshiftDnsOperatorServer.apply))
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity

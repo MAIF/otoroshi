@@ -2,10 +2,10 @@ package otoroshi.models
 
 import otoroshi.actions.{ApiActionContext, BackOfficeActionContext, BackOfficeActionContextAuth}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.given
+import play.api.libs.json.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -85,8 +85,7 @@ object UserRights {
 
   def readFromArray(arr: JsArray): UserRights = {
     UserRights(
-      arr.value
-        .map { ur =>
+      arr.value.toSeq        .map { ur =>
           UserRight.format.reads(ur).asOpt
         }
         .collect { case Some(ur) =>
@@ -122,7 +121,7 @@ object UserRight {
           tenant = TenantAccess((json \ "tenant").as[String]),
           teams = (json \ "teams")
             .as[JsArray]
-            .value
+            .value.toSeq
             .map { t =>
               TeamAccess(t.as[String])
             }
@@ -149,7 +148,7 @@ object EntityLocation {
       .getOrElse(EntityLocation.default)
   }
   private def getOwnEntityLocation[T <: EntityLocationSupport](currentTenant: TenantId, canUserRead: T => Boolean)(
-      implicit env: Env
+      using env: Env
   ) = {
     EntityLocation(
       tenant = currentTenant,
@@ -186,7 +185,7 @@ object EntityLocation {
               .map(e => Team.format.reads(e))
               .collect { case JsSuccess(team, _) => team.id }
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
 
         val teams = teamsAsStringList
           .map(teams => teams ++ teamsAsJsonArray)
@@ -337,7 +336,7 @@ object Tenant {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -386,7 +385,7 @@ object Team   {
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

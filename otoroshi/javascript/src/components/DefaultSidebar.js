@@ -5,7 +5,6 @@ import { createTooltip } from '../tooltips';
 import { SidebarContext } from '../apps/BackOfficeApp';
 import { firstLetterUppercase } from '../util';
 import { graph } from '../pages/FeaturesPage';
-import { useHistory } from 'react-router-dom/';
 import { icon as snowmonkeyIcon } from '../components/SnowMonkeyConfig.js';
 import isString from 'lodash/isString';
 import isObject from 'lodash/isObject';
@@ -138,8 +137,10 @@ export function DefaultSidebar(props) {
       .sort((a, b) => a.title.localeCompare(b.title))
   );
 
-  if (window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/') &&
-    window.location.pathname !== '/bo/dashboard/extensions/workflows/workflows') {
+  if (
+    window.location.pathname.startsWith('/bo/dashboard/extensions/workflows/') &&
+    window.location.pathname !== '/bo/dashboard/extensions/workflows/workflows'
+  ) {
     return null;
   }
 
@@ -179,6 +180,33 @@ export function DefaultSidebar(props) {
           }, 50); // delay to avoid simple click
         }}
       >
+        {openedSidebar && !onRouteTab && (
+          <div className="mb-2">
+            <p className="sidebar-title mt-0">Gateway Management</p>
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="HTTP Routes"
+              description="All your routes"
+              img="routes"
+              icon="fa-road"
+              link="/routes"
+            />
+            <CoreSidebarLink
+              rootClassName={rootClassName}
+              openedSidebar={openedSidebar}
+              clearSidebar={clearSidebar}
+              title="APIs"
+              description="All apis"
+              img="apis"
+              icon="fa-brush"
+              link="/apis"
+              tag={<span className="badge bg-xs bg-warning">ALPHA</span>}
+            />
+          </div>
+        )}
+
         {openedSidebar && !onRouteTab && shortcuts.length > 0 && (
           <p className="sidebar-title">Shortcuts</p>
         )}
@@ -203,8 +231,8 @@ export function DefaultSidebar(props) {
                   dragging={
                     draggingIndex === initialIndex
                       ? {
-                        clientY: client.clientY - start.clientY,
-                      }
+                          clientY: client.clientY - start.clientY,
+                        }
                       : undefined
                   }
                   startDragging={(clientY) => {
@@ -221,26 +249,7 @@ export function DefaultSidebar(props) {
             })}
       </ul>
       {openedSidebar && !onRouteTab && (
-        <ul className="nav flex-column nav-sidebar me-2" style={{ marginTop: 20 }}>
-          <p className="sidebar-title">Categories</p>
-          <div className="d-flex flex-column">
-            {links.sort(sortCategory).map((item, i) => {
-              return (
-                <Block
-                  key={item.title}
-                  {...item}
-                  first={i === 0}
-                  last={i === links.length - 1}
-                  shortcuts={shortcuts}
-                  writeStorage={writeStorage}
-                  hightlighted={!hightlighted || item.title === hightlighted}
-                  setHighlighted={() => setHighlighted(item.title)}
-                  onClose={() => setHighlighted(undefined)}
-                />
-              );
-            })}
-          </div>
-
+        <ul className="nav flex-column nav-sidebar me-2">
           <li
             className={`nav-item ${openedSidebar ? 'nav-item--open' : ''} mt-3`}
             style={{
@@ -263,6 +272,24 @@ export function DefaultSidebar(props) {
               <span style={{ marginTop: '4px' }}>{!openedSidebar ? '' : 'Features'}</span>
             </Link>
           </li>
+          <p className="sidebar-title">Categories</p>
+          <div className="d-flex flex-column" style={{ width: '100%', minWidth: 0 }}>
+            {links.sort(sortCategory).map((item, i) => {
+              return (
+                <Block
+                  key={item.title}
+                  {...item}
+                  first={i === 0}
+                  last={i === links.length - 1}
+                  shortcuts={shortcuts}
+                  writeStorage={writeStorage}
+                  hightlighted={!hightlighted || item.title === hightlighted}
+                  setHighlighted={() => setHighlighted(item.title)}
+                  onClose={() => setHighlighted(undefined)}
+                />
+              );
+            })}
+          </div>
         </ul>
       )}
     </>
@@ -306,21 +333,28 @@ function Block({
   writeStorage,
 }) {
   const [open, setOpen] = useState(false);
-  const history = useHistory();
 
   return (
     <div
       key={title}
-      style={{
-        background: 'var(--bg-color_level1)',
-        borderTopLeftRadius: first ? 6 : 0,
-        borderTopRightRadius: first ? 6 : 0,
-        borderBottomLeftRadius: last ? 6 : 0,
-        borderBottomRightRadius: last ? 6 : 0,
-        cursor: 'pointer',
-        marginBottom: 1,
-        opacity: hightlighted ? 1 : 0.5,
-      }}
+      style={
+        last
+          ? {
+              border: '1px solid var(--input-border)',
+              borderBottomLeftRadius: 6,
+              borderBottomRightRadius: 6,
+            }
+          : {
+              border: '1px solid var(--input-border)',
+              borderBottom: 0,
+              borderTopLeftRadius: first ? 6 : 0,
+              borderTopRightRadius: first ? 6 : 0,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+              cursor: 'pointer',
+              opacity: hightlighted ? 1 : 0.5,
+            }
+      }
       className="py-2"
       onClick={() => {
         if (!open === false) {
@@ -340,7 +374,10 @@ function Block({
       </div>
 
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2 animOpacity">
+        <div
+          style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}
+          className="mt-2 animOpacity"
+        >
           {features
             .filter((d) => d.display === undefined || d.display())
             .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
@@ -361,6 +398,9 @@ function Block({
                       flexDirection: 'row',
                       justifyContent: 'space-between',
                       alignItems: 'center',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      overflow: 'hidden',
                     }}
                     onClick={(e) => {
                       if (!addShortcutButton) {
@@ -374,6 +414,8 @@ function Block({
                         flexDirection: 'row',
                         alignItems: 'center',
                         color: alreadyInShortcuts ? '#888' : null,
+                        minWidth: 0,
+                        flex: 1,
                       }}
                     >
                       <CustomIcon icon={icon} title={iconTitle} />
@@ -384,7 +426,8 @@ function Block({
                           whiteSpace: 'nowrap',
                           textOverflow: 'ellipsis',
                           marginLeft: 15,
-                          maxWidth: 130,
+                          minWidth: 0,
+                          flex: 1,
                         }}
                       >
                         {title}
@@ -392,12 +435,16 @@ function Block({
                     </div>
                     {addShortcutButton && (
                       <i
-                        className="fas fa-thumbtack"
+                        className="fas fa-thumbtack ms-2"
                         title={
                           alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'
                         }
                         disabled={alreadyInShortcuts}
-                        style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
+                        style={{
+                          cursor: 'pointer',
+                          color: alreadyInShortcuts ? '#888' : null,
+                          flexShrink: 0,
+                        }}
                         onClick={(e) => {
                           if (!alreadyInShortcuts && addShortcutButton) {
                             writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
@@ -425,6 +472,9 @@ function Block({
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
                   }}
                   onClick={(e) => {
                     if (!addShortcutButton) {
@@ -438,6 +488,8 @@ function Block({
                       flexDirection: 'row',
                       alignItems: 'center',
                       color: alreadyInShortcuts ? '#888' : null,
+                      minWidth: 0,
+                      flex: 1,
                     }}
                   >
                     <CustomIcon icon={icon} title={iconTitle} />
@@ -448,20 +500,25 @@ function Block({
                         whiteSpace: 'nowrap',
                         textOverflow: 'ellipsis',
                         marginLeft: 15,
-                        maxWidth: 130,
+                        minWidth: 0,
+                        flex: 1,
                       }}
                       className="pe-2"
                     >
                       {title}
                     </div>
-                    {tag}
+                    {tag && <span style={{ flexShrink: 0 }}>{tag}</span>}
                   </div>
                   {addShortcutButton && (
                     <i
-                      className="fas fa-thumbtack"
+                      className="fas fa-thumbtack ms-2"
                       title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
                       disabled={alreadyInShortcuts}
-                      style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
+                      style={{
+                        cursor: 'pointer',
+                        color: alreadyInShortcuts ? '#888' : null,
+                        flexShrink: 0,
+                      }}
                       onClick={(e) => {
                         if (!alreadyInShortcuts && addShortcutButton) {
                           writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
@@ -498,8 +555,9 @@ function SidebarLink({
 
   return (
     <li
-      className={`nav-item mt-0 d-flex align-items-center animOpacity ${openedSidebar ? 'nav-item--open' : ''
-        }`}
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
       draggable={false}
       style={{
         position: dragging ? 'asbolute' : 'relative',
@@ -573,6 +631,51 @@ function SidebarLink({
         onClick={removeShortcut}
         title="Remove shortcut"
       />
+    </li>
+  );
+}
+
+function CoreSidebarLink({
+  openedSidebar,
+  clearSidebar,
+  title,
+  description,
+  text,
+  icon,
+  rootClassName,
+  ...props
+}) {
+  const path = props.path || props.link;
+  const iconTitle = description ? `${title} - ${description}` : title;
+
+  return (
+    <li
+      className={`nav-item mt-0 d-flex align-items-center animOpacity ${
+        openedSidebar ? 'nav-item--open' : ''
+      }`}
+      style={{
+        border: openedSidebar ? '2px solid transparent' : 'none',
+      }}
+    >
+      {path.indexOf('http') < 0 && (
+        <Link
+          to={`/${path}`.replace('//', '/')}
+          className={`nav-link ${rootClassName(path)}`}
+          {...createTooltip(text)}
+          onClick={clearSidebar}
+          style={{ flex: 1, marginLeft: openedSidebar ? 4 : 0 }}
+        >
+          <CustomIcon icon={icon} title={iconTitle} />{' '}
+          <span
+            style={{ marginTop: '4px' }}
+            className="d-flex align-items-center"
+            title={iconTitle}
+          >
+            {!openedSidebar ? '' : title ? firstLetterUppercase(title) : firstLetterUppercase(path)}
+            <div className="ms-2">{props.tag}</div>
+          </span>
+        </Link>
+      )}
     </li>
   );
 }

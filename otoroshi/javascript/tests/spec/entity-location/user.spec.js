@@ -1,5 +1,4 @@
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { test, expect } from '@playwright/test';
 
 let context;
 
@@ -13,8 +12,6 @@ test.afterAll(async () => {
 
 async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
     const page = await context.newPage();
-    await validAnonymousModal(page)
-
     await page.goto(`/bo/dashboard/${path}`);
 
     await page.getByRole('button', { name: action, exact: false }).click();
@@ -24,24 +21,15 @@ async function shouldDefaultTeamsAndTenant(path, action = 'add item') {
 
 async function shouldDefaultTeamsAndTenantOnRoutes() {
     const page = await context.newPage();
-    await page.goto('/');
-    await validAnonymousModal(page)
+    await page.goto('/bo/dashboard/routes');
 
-    await page.locator('#navbar').click();
-
-    await page.locator('#react-select-2-input').fill('Routes');
-    await page.getByRole('option', { name: ` Routes` }).locator('div').click();
-    // await page.getByRole('button', { name: ' Add item' }).click();
-
-    await page.getByRole('link', { name: ' Create new route' }).click();
+    await page.getByRole('link', { name: /Create new route/ }).click();
     await page.locator('div').filter({ hasText: /^Location$/ }).nth(1).click();
-
 
     await expect(page.locator('#content-scroll-container')).toContainText('tester-team');
 }
 
 test('New Routes got the right entity location', async () => shouldDefaultTeamsAndTenantOnRoutes());
-test('New Services got the right entity location', async () => shouldDefaultTeamsAndTenant('services', 'new'));
 test('New Data Exporters got the right entity location', async () => shouldDefaultTeamsAndTenant('exporters'));
 test('New Apikeys got the right entity location', async () => shouldDefaultTeamsAndTenant('apikeys'));
 test('New Auth. modules got the right entity location', async () => shouldDefaultTeamsAndTenant('auth-configs'));

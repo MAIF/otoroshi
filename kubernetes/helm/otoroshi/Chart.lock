@@ -1,6 +1,6 @@
 dependencies:
 - name: redis
-  repository: https://charts.bitnami.com/bitnami
-  version: 21.2.9
-digest: sha256:f6e096ee6d14650b3aa9a63f584a170a48ad7cf91d7623a6b91dbaebd3a14c75
-generated: "2025-07-09T14:57:46.864635+02:00"
+  repository: oci://registry-1.docker.io/cloudpirates
+  version: 0.29.2
+digest: sha256:3fdde031294af4ba84d275f04a5a0cf37e1c9d7669de343b1b78c0efdb7e08a3
+generated: "2026-05-27T14:23:45.888062+02:00"

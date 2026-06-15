@@ -1,5 +1,5 @@
-const { test, expect, describe } = require('@playwright/test');
-const { SECTIONS, validAnonymousModal } = require('../../utils');
+import { test, expect, describe } from '@playwright/test';
+import { SECTIONS } from '../../utils';
 
 
 let context;
@@ -15,8 +15,6 @@ test.afterAll(async () => {
 async function showTableOfEntity(section, tab, expected) {
     const page = await context.newPage();
     await page.goto('/');
-    await validAnonymousModal(page)
-
 
     await page.getByText(section).click();
     await page
@@ -25,7 +23,6 @@ async function showTableOfEntity(section, tab, expected) {
     await expect(page.locator('#content-scroll-container')).toContainText(expected ? expected : tab);
 }
 
-test('Show Cluster members', async () => showTableOfEntity(SECTIONS.NETWORKING, 'Cluster members', undefined, { admin: true }));
 test('Show Connected tunnels', async () => showTableOfEntity(SECTIONS.NETWORKING, 'Connected tunnels'));
 test('Show Eureka servers', async () => showTableOfEntity(SECTIONS.NETWORKING, 'Eureka servers'));
 

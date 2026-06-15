@@ -1,35 +1,35 @@
 package otoroshi.wasm.proxywasm
 
+import io.otoroshi.wasm4s.scaladsl.*
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import io.otoroshi.wasm4s.scaladsl._
 import org.joda.time.DateTime
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
-import otoroshi.next.extensions._
+import otoroshi.next.extensions.*
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import otoroshi.wasm._
+import otoroshi.utils.syntax.implicits.given
+import otoroshi.wasm.*
 import play.api.libs.json
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc
 import play.api.mvc.Results
 
 import scala.collection.Seq
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
+import scala.concurrent.*
+import scala.concurrent.duration.*
+import scala.util.*
 
 object CorazaPluginKeys {
   val CorazaWasmVmKey: TypedKey[WasmVm] = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
@@ -333,7 +333,7 @@ object CorazaWafConfig {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         inspectInputBody = (json \ "inspect_in_body").asOpt[Boolean].getOrElse(true),
         inspectOutputBody = (json \ "inspect_out_body").asOpt[Boolean].getOrElse(true),
         isBlockingMode = (json \ "is_blocking_mode").asOpt[Boolean].getOrElse(true),
@@ -342,7 +342,7 @@ object CorazaWafConfig {
           .asOpt[JsArray]
           .getOrElse(oldDirectives.getOrElse(Json.arr()))
           .value
-          .map(_.as[String]),
+          .map(_.as[String]).toSeq,
         poolCapacity = (json \ "pool_capacity").asOpt[Int].getOrElse(2)
       )
     } match {

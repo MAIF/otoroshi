@@ -1,20 +1,36 @@
 
 name: otoroshi
 
-replicas: 2
+# Number of Otoroshi replicas. `replicas` is kept for backward compatibility.
+replicaCount: 2
 terminationGracePeriodSeconds: 60
 
 global:
+  # DEPRECATED. Only kept so existing values files keep installing.
+  # New users should set storage.backend and redis.deploy explicitly.
+  # When prod=false (legacy), defaults below switch to inmemory + 1 replica + no Redis subchart
+  # — unless storage.backend / redis.deploy / replicaCount are set explicitly.
   prod: true
 
+# Otoroshi storage backend.
+# Allowed values: inmemory, lettuce, experimental-pg, postgres, cassandra, file, s3, http
+# When using lettuce, also set env.redisURL (or leave it empty to use the bundled Redis subchart).
+storage:
+  backend: lettuce
+
 serviceAccount:
+  # When true (default), the chart creates a ServiceAccount.
+  # Set to false to reuse a pre-existing SA — its name must still match `name` below.
+  create: true
   name: "otoroshi-admin-user"
   clusterRole: "otoroshi-admin-user"
   clusterRoleBinding: "otoroshi-admin-user"
+  # Annotations on the ServiceAccount (e.g., for IRSA / Workload Identity).
+  annotations: {}
 
 image:
   name: maif/otoroshi
-  tag: 17.6.0-dev
+  tag: 17.17.0-dev
   pullPolicy: IfNotPresent
   https: 8443
   http: 8080
@@ -24,28 +40,135 @@ deployment:
   annotations: {}
 
 service:
+  # ClusterIP service that exposes the Otoroshi data plane to in-cluster callers.
   name: otoroshi-service
+  # Alias ClusterIP service with the same selector — referenced as ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+  # so the admin / CRD-controller API has a dedicated DNS name (handy for webhooks, RBAC).
   apiName: otoroshi-api-service
   https: 8443
   http: 8080
 
 loadbalancer:
-  enabled: true
+  # Service type for the external Otoroshi service.
+  # Allowed values: LoadBalancer | NodePort | ClusterIP.
+  # - LoadBalancer (default): cloud / MetalLB provisions an external IP. Honors `annotations`,
+  #   `sourceRanges`, `loadBalancerClass`.
+  # - NodePort: exposes ports on every node — honors `nodePort.*` below.
+  # - ClusterIP: no external exposure; put your own Ingress / proxy in front.
+  # Leave empty to use the default (LoadBalancer, or NodePort if the deprecated `enabled: false` is set).
+  type: ""
   name: otoroshi-external-service
   https: 443
   http: 80
+  # NodePort values — only used when `type: NodePort`.
   nodePort:
     http: 31080
     https: 31443
+  # Annotations applied to the external Service (cloud-provider hints — AWS NLB, GCP Internal LB, etc.).
+  annotations: {}
+  # LoadBalancer-only: restrict which client CIDRs can reach the LoadBalancer. Empty means open to the world.
+  sourceRanges: []
+  # LoadBalancer-only: force a specific load balancer class (e.g., service.k8s.aws/nlb).
+  # Leave empty for the cluster default.
+  loadBalancerClass: ""
+  # DEPRECATED. Old boolean flag — kept ONLY for backward compatibility with values files
+  # that still set `loadbalancer.enabled: false`. When set, `type` is derived
+  # (enabled=true → LoadBalancer, enabled=false → NodePort) UNLESS `type` is also set
+  # explicitly (explicit `type` always wins). Migrate to `type`.
+  # enabled: ~
 
 env:
   storageRoot: otoroshi
-  password: password
   domain: "oto.tools"
-  clientId: "admin-api-apikey-id"
-  clientSecret: "admin-api-apikey-secret"
-  secret: "verysecretvaluethatyoumustoverwrite"
-  redisURL: "redis://otorosi-redis-master:6379"
+  # When set, password / clientId / clientSecret / otoroshiSecret are read from this Secret
+  # (expected keys: password, clientId, clientSecret, otoroshiSecret).
+  # When empty, the chart creates its own Secret from the values below.
+  existingSecret: ""
+  # Initial admin login (OTOROSHI_INITIAL_ADMIN_LOGIN). Used as-is when set.
+  # When empty, falls back to the default `admin@otoroshi.io`.
+  adminLogin: "admin@otoroshi.io"
+  # Each of the four credentials below is used as-is when non-empty. When empty, the chart
+  # auto-generates a random value AND uses `lookup` to keep the value stable across upgrades
+  # (existing Secret values are preserved). Leave empty for a secure first install.
+  password: ""
+  clientId: ""
+  clientSecret: ""
+  secret: ""
+  # Redis connection URL.
+  #
+  # Leave empty to source REDIS_URL from the bundled cloudpirates/redis subchart:
+  # the chart's `<release>-redis` Secret has a `uri` key with the full URL
+  # (`redis://default:<password>@<release>-redis.<ns>.svc:6379`) which Otoroshi
+  # consumes via valueFrom. This is the recommended path because Otoroshi's
+  # default Lettuce driver only reads the password from the URI — a separate
+  # REDIS_PASSWORD env var is ignored.
+  #
+  # For external/managed Redis, set the full URL here with the password embedded:
+  #   redisURL: "redis://:mySecret@redis.example.com:6379/0"
+  # …or for TLS-enabled (Redis 6+):
+  #   redisURL: "rediss://:mySecret@redis.example.com:6380/0"
+  redisURL: ""
+
+  # LEGACY: REDIS_PASSWORD env var. Otoroshi's default Lettuce driver IGNORES
+  # this — embed the password in `env.redisURL` instead. These knobs are kept
+  # for the rare case where you swap APP_STORAGE to a non-Lettuce driver
+  # (Jedis, …) that does read `app.redis.password` from REDIS_PASSWORD.
+  redisPassword: ""
+  redisPasswordExistingSecret:
+    name: ""
+    # Defaults to `redis-password` if empty.
+    key: ""
+
+# Extra env vars appended to the Otoroshi container.
+extraEnv: []
+# - name: OTOROSHI_FOO
+#   value: "bar"
+
+# Extra envFrom sources (configMap or secret references).
+extraEnvFrom: []
+# - secretRef:
+#     name: my-extra-secret
+
+# Extra volumes mounted on the pod (e.g., to inject a config file as described in the docs).
+extraVolumes: []
+# - name: oto-conf
+#   secret:
+#     secretName: otoroshi-config
+
+# Extra volumeMounts on the Otoroshi container.
+extraVolumeMounts: []
+# - name: oto-conf
+#   mountPath: /usr/app/otoroshi/conf
+#   readOnly: true
+
+# Extra command-line arguments for the container (e.g., -Dconfig.file=/usr/app/otoroshi/conf/oto.conf).
+extraArgs: []
+
+# Pod-level annotations (e.g., for Prometheus scraping, Vault injector).
+podAnnotations: {}
+
+# Extra labels on pods (do not override app.kubernetes.io/* labels).
+podLabels: {}
+
+# Pod scheduling.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+priorityClassName: ""
+
+# Pod-level security context (uid/gid, fsGroup, runAsNonRoot, …).
+podSecurityContext: {}
+# Container-level security context.
+securityContext: {}
+
+# imagePullSecrets for private registries.
+imagePullSecrets: []
+# - name: my-registry-creds
+
+# Extra JVM options. The container memory limit caps the heap via MaxRAMPercentage —
+# do not set -Xms/-Xmx unless you know what you're doing.
+javaOpts: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 resources:
   requests:
@@ -63,12 +186,12 @@ strategy:
 
 probes:
   readiness:
-    failureThreshold: 1          
+    failureThreshold: 1
     initialDelaySeconds: 60
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 2
-  liveness:  
+  liveness:
     failureThreshold: 3
     initialDelaySeconds: 60
     periodSeconds: 10
@@ -79,69 +202,109 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      targetAverageUtilization: 80
-  - type: Resource
-    resource:
-      name: memory
-      targetAverageUtilization: 80
-
-# This block overrides values for the bitnami/redis chart dependency
-# For the full set of configurable options, see:
-# https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
-
-redis:
-  ## @param cluster.enabled Deploy Redis in cluster mode (master + slaves)
-  cluster:
-    enabled: false
-  ## @param sentinel.enabled Enable Redis Sentinel support
-  sentinel:
-    enabled: false
-    ## @param sentinel.usePassword Require password authentication on Sentinel instances
-    usePassword: false
-  ## @param usePassword Enable Redis AUTH for master and slaves
-  usePassword: false
-  ## @param auth.enabled Enable password authentication for Redis® (newer chart versions)
-  auth:
-    enabled: false
-  master:
-    persistence:
-      ## @param master.persistence.enabled Enable persistence on Redis(R) master nodes using Persistent Volume Claims
-      enabled: true
-      ## @param master.persistence.storageClass Persistent Volume storage class
-      ## If defined, storageClassName: <storageClass>
-      ## If set to "-", storageClassName: "", which disables dynamic provisioning
-      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
-      storageClass: ""
-      ## @param master.persistence.accessModes Persistent Volume access modes
-      accessModes:
-        - ReadWriteOnce
-      ## @param master.persistence.size Persistent Volume size
-      size: 8Gi
-      ## @param master.persistence.existingClaim Use an existing PVC which must be created manually before being bound
-      ## NOTE: Requires master.persistence.enabled: true
-      existingClaim: ""
-  replica:
-    persistence:
-      ## @param replica.persistence.enabled Enable persistence on Redis(R) replica nodes using Persistent Volume Claims
-      enabled: true
-      ## @param replica.persistence.storageClass Persistent Volume storage class
-      ## If defined, storageClassName: <storageClass>
-      ## If set to "-", storageClassName: "", which disables dynamic provisioning
-      ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
-      storageClass: ""
-      ## @param replica.persistence.accessModes Persistent Volume access modes
-      accessModes:
-        - ReadWriteOnce
-      ## @param replica.persistence.size Persistent Volume size
-      size: 8Gi
-      ## @param replica.persistence.existingClaim Use an existing PVC which must be created manually before being bound
-      ## NOTE: Requires replica.persistence.enabled: true
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+  # Additional v2 HPA metrics (External / Pods / Object), appended verbatim.
+  extraMetrics: []
+  # HPA scaling behavior (v2). Empty means use Kubernetes defaults.
+  behavior: {}
 
 webhooks:
   validation: true
   sidecarInject: false
 
+# PodDisruptionBudget.
+pdb:
+  enabled: false
+  # Only one of minAvailable / maxUnavailable may be set. Default ensures one pod stays up.
+  minAvailable: 1
+  maxUnavailable: ""
+
+# NetworkPolicy. When enabled, allows ingress to the Otoroshi pods on the configured ports
+# from any namespace, plus egress everywhere. Tighten as needed via networkPolicy.extraIngress / extraEgress.
+networkPolicy:
+  enabled: false
+  # Extra ingress rules appended verbatim.
+  extraIngress: []
+  # Extra egress rules appended verbatim.
+  extraEgress: []
+
+# Cluster (Leader / Worker) mode.
+# When enabled, the chart renders two Deployments (leader + worker) and the corresponding
+# Services, instead of a single Deployment. Workers connect to the leader API service via mTLS.
+# Mirrors kustomize/overlays/cluster/.
+cluster:
+  enabled: false
+  mtls:
+    enabled: true
+    loose: true
+    trustAll: true
+  leader:
+    name: otoroshi-leader-deployment
+    replicas: 2
+  worker:
+    name: otoroshi-worker-deployment
+    replicas: 2
+  leaderApiServiceName: otoroshi-leader-api-service
+  leaderServiceName: otoroshi-leader-service
+  workerServiceName: otoroshi-worker-service
+  leaderExternalServiceName: otoroshi-leader-external-service
+  workerExternalServiceName: otoroshi-worker-external-service
+
+# Kubernetes Gateway API support.
+# Requires Gateway API CRDs (https://github.com/kubernetes-sigs/gateway-api/releases) installed on the cluster.
+gatewayApi:
+  enabled: false
+  controllerName: "otoroshi.io/gateway-controller"
+  httpListenerPort: 8080
+  httpsListenerPort: 8443
+  syncIntervalSeconds: 30
+
+# This block overrides values for the cloudpirates/redis chart dependency.
+# Set redis.deploy=false to skip deploying the bundled Redis and bring your own
+# (set env.redisURL accordingly — with the password embedded in the URL).
+# For the full set of configurable options, see:
+# https://github.com/CloudPirates-io/helm-charts/blob/main/charts/redis/values.yaml
+redis:
+  # When true (default), the bundled cloudpirates/redis subchart is deployed.
+  deploy: true
+
+  # Redis topology. Allowed values:
+  #   standalone  — 1 instance (default; lowest footprint, sufficient for most installs)
+  #   replication — 1 master + N replicas (optionally with Sentinel)
+  #   cluster     — Redis Cluster (sharded; only if you actually need sharding)
+  architecture: standalone
+
+  # Only consulted when architecture=replication or cluster.
+  # replicaCount: 3
+
+  sentinel:
+    # Only meaningful with architecture=replication.
+    enabled: false
+
+  # SECURE BY DEFAULT: cloudpirates auto-generates a 16-char password on first
+  # install and persists it across `helm upgrade` via a lookup of the existing
+  # Secret. Otoroshi consumes the full URL (with password embedded) from the
+  # Secret's `uri` key — no separate REDIS_PASSWORD wiring is needed (and
+  # wouldn't work anyway with the default Lettuce driver).
+  #
+  # To use a pre-existing Secret, set:
+  #   redis.auth.existingSecret: my-redis-secret
+  # The Secret MUST contain a `uri` key with the full Redis URL
+  # (`redis://default:<password>@<host>:<port>`). If you only have a password,
+  # set redis.deploy=false and provide the full URL via env.redisURL instead.
+  #
+  # To run Redis without auth (NOT RECOMMENDED — anyone in the cluster who can
+  # reach `<release>-redis:6379` can read/write Otoroshi's data plane state):
+  #   redis.auth.enabled: false
+  auth:
+    enabled: true
+
+  # Persistence for the Redis pod(s). cloudpirates uses a single top-level
+  # block (vs bitnami's master / replica split).
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi

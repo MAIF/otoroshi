@@ -15,6 +15,8 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
 
   override def pttl(key: String)(using ec: ExecutionContext, env: Env): Future[Long] = redis.pttl(key)
 
+  override def expire(key: String, seconds: Int): Future[Boolean] = redis.expire(key, seconds)
+
   override def pexpire(key: String, pttl: Long)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     redis.pexpire(key, pttl)
 

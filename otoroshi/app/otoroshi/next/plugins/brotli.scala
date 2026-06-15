@@ -1,18 +1,18 @@
 package otoroshi.next.plugins
 
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.util.ByteString
 import com.nixxcode.jvmbrotli.common.BrotliLoader
 import com.nixxcode.jvmbrotli.enc.Encoder
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.http.HeaderNames.{ACCEPT_ENCODING, CONTENT_ENCODING, VARY}
 import play.api.http.{MediaType, Status}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Headers, RequestHeader, Result}
 
 import scala.concurrent.ExecutionContext
@@ -33,8 +33,8 @@ object NgBrotliConfig {
     override def reads(json: JsValue): JsResult[NgBrotliConfig] =
       Try {
         NgBrotliConfig(
-          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "buffer_size").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunked_threshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compression_level").asOpt[Int].getOrElse(5)

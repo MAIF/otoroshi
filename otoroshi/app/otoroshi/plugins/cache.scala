@@ -1,6 +1,5 @@
 package otoroshi.plugins.cache
 
-import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -9,15 +8,16 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext, TransformerResponseBodyContext}
+import otoroshi.utils.http.RequestImplicits.given
+import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import otoroshi.utils.{RegexPool, SchedulerHelper}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 
-import scala.concurrent.duration._
+import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 case class ResponseCacheFilterConfig(json: JsValue) {
@@ -30,9 +30,9 @@ case class ResponseCacheFilterConfig(json: JsValue) {
   lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 case class ResponseCacheConfig(json: JsValue) {
@@ -139,7 +139,7 @@ class ResponseCache extends RequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),

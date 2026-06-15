@@ -1,5 +1,4 @@
-const fs = require('fs');
-const fetch = require('node-fetch');
+import fs from 'node:fs';
 
 const authToken = Buffer.from(`admin-api-apikey-id:admin-api-apikey-secret`).toString('base64');
 

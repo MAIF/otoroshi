@@ -4,13 +4,13 @@ import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
-import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.model.headers.*
 import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import org.apache.pekko.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
+import org.apache.pekko.http.scaladsl.*
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
 import org.apache.pekko.stream.{Materializer, QueueOfferResult}
 import org.apache.pekko.util.ByteString
@@ -22,27 +22,26 @@ import otoroshi.next.models.NgOverflowStrategy
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
 import java.nio.charset.StandardCharsets
+import java.util.Base64 as JavaBase64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import java.util.{Base64 => JavaBase64}
 import javax.net.ssl.{SSLContext, SSLEngine}
 import scala.collection.immutable.TreeMap
-import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.duration.{Duration, *}
 import scala.concurrent.{Await, ExecutionContextExecutor, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try, Using}
 import scala.xml.{Elem, XML}
-import org.apache.pekko.http.scaladsl.HttpExt
 
 case class DNPart(raw: String) {
   private val parts = raw.split("=").map(_.trim)
@@ -154,11 +153,11 @@ object MtlsConfig {
             .asOpt[Seq[String]]
             .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           trustedCerts = (json \ "trustedCerts")
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           mtls = (json \ "mtls").asOpt[Boolean].orElse((json \ "tls").asOpt[Boolean]).getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trustAll").asOpt[Boolean].getOrElse(false)
@@ -1046,7 +1045,7 @@ case class AkkaWsClientRequest(
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
       .filter(p =>
-        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
       )
       .map { proxySettings =>
         val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)

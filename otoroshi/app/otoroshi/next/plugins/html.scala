@@ -5,9 +5,9 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.gzip.GzipFlow
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 
@@ -69,7 +69,7 @@ class NgHtmlPatcher extends NgRequestTransformer {
           ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
         val isGzip        = ctx.otoroshiResponse.headers.getIgnoreCase("Content-Encoding").contains("gzip")
         val processedBody = if (isGzip) {
-          ctx.otoroshiResponse.body.via(GzipFlow.gunzip())
+          ctx.otoroshiResponse.body.via(GzipFlow.gzipDecompress())
         } else {
           ctx.otoroshiResponse.body
         }
@@ -81,22 +81,22 @@ class NgHtmlPatcher extends NgRequestTransformer {
                 .select("appendHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_head").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val prependHead         = ctx.config
                 .select("prependHead")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_head").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val appendBody          = ctx.config
                 .select("appendBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("append_body").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val prependBody         = ctx.config
                 .select("prependBody")
                 .asOpt[Seq[String]]
                 .orElse(ctx.config.select("prepend_body").asOpt[Seq[String]])
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               val beforeHeadInjection = applyEl(prependHead.mkString(""), ctx)
               val afterHeadInjection  = applyEl(appendHead.mkString(""), ctx)
               val beforeBodyInjection = applyEl(prependBody.mkString(""), ctx)

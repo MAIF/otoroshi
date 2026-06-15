@@ -3,8 +3,8 @@ package otoroshi.storage.stores
 import otoroshi.env.Env
 import otoroshi.events.{HealthCheckDataStore, HealthCheckEvent}
 import otoroshi.models.ServiceDescriptor
-import play.api.libs.json.{JsValue, Json}
 import otoroshi.storage.RedisLike
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 

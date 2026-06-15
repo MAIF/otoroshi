@@ -4,7 +4,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
@@ -198,7 +198,7 @@ class HMACValidator extends AccessValidator {
 
     val algorithm            = params.getOrElse("algorithm", "HMAC-SHA256")
     val signature            = params("signature")
-    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String])
+    val headers: Seq[String] = params.get("headers").map(_.split(" ").toSeq).getOrElse(Seq.empty[String]).toSeq
     val signingValues        = context.request.headers.headers.filter(p => headers.contains(p._1)).map(_._2)
     val signingString        = signingValues.mkString(" ")
 

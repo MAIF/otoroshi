@@ -1,7 +1,7 @@
 package functional
 
-import org.apache.pekko.stream.Materializer
 import com.typesafe.config.ConfigFactory
+import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
 import play.api.Configuration
@@ -80,11 +80,11 @@ class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extend
                 "predicate" -> Json.obj(
                   "operator" -> "not-equals",
                   "left"     -> Json.obj(
-                    "$path"       -> "$.responses.call-dns.body.spec.servers[?(@.name == 'otoroshi-dns')].forwardPlugin.upstreams[0]",
+                    "$path"       -> "$.responses.call-dns.body[String].spec.servers[?(@.name == 'otoroshi-dns')].forwardPlugin.upstreams[0]",
                     "$resultPath" -> "$.[0]"
                   ),
                   "right"    -> Json.obj(
-                    "$path"   -> "$.responses.call-service.body.spec.clusterIP",
+                    "$path"   -> "$.responses.call-service.body[String].spec.clusterIP",
                     "$append" -> ":5353"
                   )
                 ),
@@ -104,7 +104,7 @@ class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extend
                     Json.obj(
                       "op"    -> "replace",
                       "path"  -> "/spec/servers/0/forwardPlugin/upstreams/0",
-                      "value" -> "${responses.call-service[$.body.spec.clusterIP]}:5353"
+                      "value" -> "${responses.call-service[$.body[String].spec.clusterIP]}:5353"
                     )
                   )
                 ),
@@ -153,7 +153,7 @@ class WorkFlowTestSpec(name: String, configurationSpec: => Configuration) extend
                 "response" -> Json.obj(
                   "foo"    -> "bar",
                   "status" -> Json.obj("$path" -> "$.responses.call-service.status"),
-                  "value"  -> Json.obj("$path" -> "$.responses.call-service.body.spec")
+                  "value"  -> Json.obj("$path" -> "$.responses.call-service.body[String].spec")
                 )
               )
             )

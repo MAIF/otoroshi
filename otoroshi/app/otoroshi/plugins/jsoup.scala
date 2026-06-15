@@ -3,14 +3,14 @@ package otoroshi.plugins.jsoup
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import otoroshi.env.Env
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerResponseBodyContext, TransformerResponseContext}
-import play.api.mvc.Result
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.given
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -76,8 +76,8 @@ class HtmlPatcher extends RequestTransformer {
             val body       = bodyRaw.utf8String
             val doc        = Jsoup.parse(body)
             val config     = ctx.configFor("HtmlPatcher")
-            val appendHead = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty)
-            val appendBody = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val appendHead = config.select("appendHead").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+            val appendBody = config.select("appendBody").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
             parseElement(appendHead.mkString("\n")).map { elementHead =>
               doc.head().insertChildren(-1, elementHead)
             }

@@ -2,17 +2,9 @@ package otoroshi.next.plugins
 
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.next.plugins.api.{
-  NgAccess,
-  NgAccessContext,
-  NgAccessValidator,
-  NgPluginCategory,
-  NgPluginConfig,
-  NgPluginVisibility,
-  NgStep
-}
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json.{Format, JsError, JsResult, JsSuccess, JsValue, Json}
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -62,8 +54,8 @@ object NgAllowedMethodsConfig {
   val format: Format[NgAllowedMethodsConfig] = new Format[NgAllowedMethodsConfig] {
     override def reads(json: JsValue): JsResult[NgAllowedMethodsConfig] = Try {
       NgAllowedMethodsConfig(
-        allowed = json.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase),
-        forbidden = json.select("forbidden").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
+        allowed = json.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq.map(_.toLowerCase),
+        forbidden = json.select("forbidden").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq.map(_.toLowerCase)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

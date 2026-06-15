@@ -3,11 +3,11 @@ package otoroshi.jobs.apikeys
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
-import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.script.*
+import otoroshi.utils.syntax.implicits.given
 import play.api.Logger
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class ApikeysSecretsRotationJob extends Job {

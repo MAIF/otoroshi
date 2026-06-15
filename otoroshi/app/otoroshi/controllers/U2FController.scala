@@ -1,29 +1,33 @@
 package otoroshi.controllers
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.yubico.webauthn.*
+import com.yubico.webauthn.data.*
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.joda.time.DateTime
+import org.mindrot.jbcrypt.BCrypt
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth}
+import otoroshi.env.Env
+import otoroshi.events.*
+import otoroshi.models.*
+import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
+import otoroshi.security.IdGenerator
+import otoroshi.utils.syntax.implicits.given
+import play.api.Logger
+import play.api.libs.json.*
+import play.api.mvc.*
+
 import java.security.SecureRandom
 import java.util
 import java.util.Optional
 import java.util.concurrent.TimeUnit
-import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth}
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.http.scaladsl.util.FastFuture
-import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.yubico.webauthn._
-import com.yubico.webauthn.data._
-import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models.BackOfficeUser
-import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models._
-import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
-import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.crypto.BCryptHelper
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
@@ -43,10 +47,12 @@ class U2FController(
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
   private val random        = new SecureRandom()
-  private val jsonMapper    = new ObjectMapper()
+  private val jsonMapper: ObjectMapper = JsonMapper
+    .builder()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-    .setSerializationInclusion(Include.NON_ABSENT)
-    .registerModule(new Jdk8Module())
+    .defaultPropertyInclusion(JsonInclude.Value.empty().withValueInclusion(Include.NON_ABSENT))
+    .addModule(new Jdk8Module())
+    .build()
 
   def loginPage(): Action[AnyContent] =
     BackOfficeAction { ctx =>
@@ -66,7 +72,7 @@ class U2FController(
             case Some(user) =>
               val password = user.password
               val label    = user.label
-              if (BCrypt.checkpw(pass, password)) {
+              if (BCryptHelper.checkpw(pass, password)) {
                 if (logger.isDebugEnabled) logger.debug(s"Login successful for simple admin '$username'")
                 BackOfficeUser(
                   randomId = IdGenerator.token(64),
@@ -225,7 +231,7 @@ class U2FController(
   def webAuthnRegistrationStart(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
-        import scala.jdk.CollectionConverters._
+        import scala.jdk.CollectionConverters.given
 
         val username                = (ctx.request.body \ "username").as[String]
         val label                   = (ctx.request.body \ "label").as[String]
@@ -281,7 +287,7 @@ class U2FController(
   def webAuthnRegistrationFinish(): Action[JsValue] =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(SuperAdminOnly) {
-        import scala.jdk.CollectionConverters._
+        import scala.jdk.CollectionConverters.given
 
         val json                    = ctx.request.body
         val responseJson            = Json.stringify((json \ "webauthn").as[JsValue])
@@ -358,7 +364,7 @@ class U2FController(
                         .map { _ =>
                           Ok(Json.obj("username" -> username))
                         }
-                    case Some(user) if BCrypt.checkpw(password, user.password) =>
+                    case Some(user) if BCryptHelper.checkpw(password, user.password) =>
                       // update usrer
                       env.datastores.webAuthnAdminDataStore
                         .registerUser(
@@ -381,7 +387,7 @@ class U2FController(
 
   def webAuthnLoginStart(): Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.given
 
       val usernameOpt             = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt             = (ctx.request.body \ "password").asOpt[String]
@@ -396,7 +402,7 @@ class U2FController(
         case (Some(username), Some(password)) =>
           env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
             users.find(u => u.username == username) match {
-              case Some(user) if BCrypt.checkpw(password, user.password) =>
+              case Some(user) if BCryptHelper.checkpw(password, user.password) =>
                 val rpIdentity: RelyingPartyIdentity =
                   RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
                 val rp: RelyingParty                 = RelyingParty.builder
@@ -431,7 +437,7 @@ class U2FController(
 
   def webAuthnLoginFinish(): Action[JsValue] =
     BackOfficeAction.async(parse.json) { ctx =>
-      import scala.jdk.CollectionConverters._
+      import scala.jdk.CollectionConverters.given
 
       given req: Request[JsValue] = ctx.request
 
@@ -462,7 +468,7 @@ class U2FController(
                     val password = user.password
                     val label    = user.label
 
-                    if (BCrypt.checkpw(pass, password)) {
+                    if (BCryptHelper.checkpw(pass, password)) {
                       Try {
                         val rpIdentity: RelyingPartyIdentity =
                           RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
@@ -551,7 +557,7 @@ class LocalCredentialRepository(
     base64Decoder: java.util.Base64.Decoder
 ) extends CredentialRepository {
 
-  import scala.jdk.CollectionConverters._
+  import scala.jdk.CollectionConverters.given
 
   // changes in webauthn-server-core 2.1.0 from 1.7.0 forces us to do some shenanigans
   def handleVersion210Upgrade(json: JsValue): JsValue = {

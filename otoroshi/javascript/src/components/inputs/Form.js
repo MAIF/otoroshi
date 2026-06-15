@@ -8,6 +8,7 @@ import {
   NumberInput,
   LabelInput,
   DateTimeInput,
+  MonacoInput,
 } from '.';
 // import { NgBoxBooleanRenderer } from '../nginputs/inputs';
 import { Location } from '../Location';
@@ -149,12 +150,15 @@ export class Form extends Component {
           return <Separator title={name.replace('-- ', '')} />;
         }
       }
-      if (!this.props.schema[name]) {
-        console.log('unable to find "', name, '" in', this.props.schema);
+      const finalSchema = isFunction(this.props.schema)
+        ? this.props.schema(this.props, this.state)
+        : this.props.schema;
+      if (!finalSchema[name]) {
+        console.log('unable to find "', name, '" in', finalSchema);
         return null;
       }
-      const { display, type, disabled, props = {} } = this.props.schema[name];
-      // console.log('generate', name, 'of type', type, 'from', this.props.schema);
+      const { display, type, disabled, props = {} } = finalSchema[name];
+      // console.log('generate', name, 'of type', type, 'from', finalSchema);
       let component = null;
       if (display) {
         if (!display(this.theValue())) {
@@ -247,6 +251,31 @@ export class Form extends Component {
               type="password"
               {...props}
               onChange={(v) => this.changeValue(name, v)}
+            />
+          );
+        } else if (type === 'monaco') {
+          component = (
+            <MonacoInput
+              disabled={disabled}
+              key={name}
+              value={this.getValue(name, '')}
+              {...props}
+              onChange={(v) => this.changeValue(name, v)}
+            />
+          );
+        } else if (type === 'monaco-json') {
+          component = (
+            <MonacoInput
+              disabled={disabled}
+              key={name}
+              language="json"
+              {...props}
+              value={JSON.stringify(this.getValue(name, '{}'), null, 2)}
+              onChange={(v) => {
+                try {
+                  this.changeValue(name, JSON.parse(v));
+                } catch (e) {}
+              }}
             />
           );
         } else if (type === 'code') {
@@ -376,7 +405,10 @@ export class Form extends Component {
   render() {
     if (isFunction(this.props.flow)) {
       return (
-        <form className={`${this.props.styleName} form-horizontal`} style={this.props.style}>
+        <form
+          className={`${this.props.styleName} form-horizontal`}
+          style={{ maxWidth: 1000, ...this.props.style }}
+        >
           {this.props
             .flow(this.props.value)
             .filter((v) => !!v)
@@ -386,7 +418,10 @@ export class Form extends Component {
       );
     } else {
       return (
-        <form className={`${this.props.styleName} form-horizontal`} style={this.props.style}>
+        <form
+          className={`${this.props.styleName} form-horizontal`}
+          style={{ maxWidth: 1000, ...this.props.style }}
+        >
           {this.props.flow.filter((v) => !!v).map((step, idx) => this.generateStep(step, idx))}
           {this.generateLastStep()}
         </form>

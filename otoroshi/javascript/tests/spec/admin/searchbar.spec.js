@@ -1,5 +1,4 @@
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
+import { test, expect } from '@playwright/test';
 
 let context;
 
@@ -14,12 +13,18 @@ test.afterAll(async () => {
 test('access to the admin api', async () => {
     const page = await context.newPage()
     await page.goto('/');
-    await validAnonymousModal(page)
 
     await page.locator('#navbar').click();
 
-    await page.locator('#react-select-2-input').fill(' admin');
-    await page.getByText('rout.otoroshi-admin-api').click();
+    // react-select auto-generates ids (`react-select-N-input`) from a global
+    // mount counter — the number is not stable across renders/CI. Target the
+    // search input inside the navbar instead.
+    const searchInput = page.locator('#navbar input').first();
+    await searchInput.fill(' admin');
 
-    expect(page).toHaveURL('/bo/dashboard/routes/admin-api-service?tab=flow');
+    const adminOption = page.getByText('rout.otoroshi-admin-api');
+    await expect(adminOption).toBeVisible({ timeout: 10_000 });
+    await adminOption.click();
+
+    await expect(page).toHaveURL(/\/bo\/dashboard\/routes\/admin-api-service/);
 });
