@@ -2118,7 +2118,7 @@ object ApiKeyHelper {
           case None         => (None, s"apikey '${apikeyTuple.clientId}' not found in datastore".some).left
           case Some(apikey) =>
             apikeyTuple match {
-              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly                                     => apikey.right
+              case ApikeyTuple(_, None, None, _, _) if apikey.allowClientIdOnly && apikey.enabled                   => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)                               => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)                             =>
                 (
@@ -2129,6 +2129,8 @@ object ApiKeyHelper {
                 apikey.right
               case ApikeyTuple(_, None, _, _, Some(otoBearer)) if !apikey.checkBearer(otoBearer) || !apikey.enabled =>
                 (apikey.some, s"apikey ${apikeyTuple.clientId}' bearer/next.bearer does not match".some).left
+              case ApikeyTuple(_, None, Some(_), _, _) if !apikey.enabled                                           =>
+                (apikey.some, s"apikey ${apikeyTuple.clientId}' disabled".some).left
               case ApikeyTuple(_, None, Some(jwt), _, _)                                                            => {
                 val possibleKeyPairId               = apikey.metadata.get("jwt-sign-keypair")
                 val kid                             = Option(jwt.getKeyId)
