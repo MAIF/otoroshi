@@ -1,4 +1,5 @@
 package plugins
+import play.api.libs.ws.DefaultBodyReadables.*
 
 import functional.PluginsTestSpec
 import otoroshi.models.EntityLocation

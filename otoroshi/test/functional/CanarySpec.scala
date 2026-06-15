@@ -1,4 +1,5 @@
 package functional
+import play.api.libs.ws.DefaultBodyReadables.*
 
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ServiceDescriptor, Target}

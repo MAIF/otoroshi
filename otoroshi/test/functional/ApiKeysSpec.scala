@@ -1,4 +1,5 @@
 package functional
+import play.api.libs.ws.DefaultBodyReadables.*
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
