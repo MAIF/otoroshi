@@ -343,17 +343,18 @@ class MockResponses extends NgBackendCall {
           None
       }
       .map(mr => {
-        import otoroshi.utils.KaleidoscopeShim._
-
         val route    = mr.routes.headOption.get
         val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
 
         def replaceOn(value: String) = {
           val newValue = Try {
             expressionReplacer.replaceOn(value) {
-              case r"req.pathparams.$field@(.*):$defaultValue@(.*)" => mr.pathParams.getOrElse(field, defaultValue)
-              case r"req.pathparams.$field@(.*)"                    => mr.pathParams.getOrElse(field, s"no-path-param-$field")
-              case r                                                => r
+              case el if el.startsWith("req.pathparams.") =>
+                val spec = el.stripPrefix("req.pathparams.")
+                val idx  = spec.indexOf(':')
+                if (idx >= 0) mr.pathParams.getOrElse(spec.substring(0, idx), spec.substring(idx + 1))
+                else mr.pathParams.getOrElse(spec, s"no-path-param-$spec")
+              case r => r
             }
           } recover { case _ => value } get
 

@@ -34,34 +34,7 @@ case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
   }
 }
 
-object AnalyticsTmpListenerActor {
-  def props(sink: Sinks.Many[String], ctx: ApiActionContext[AnyContent], env: Env) = Props(
-    new AnalyticsTmpListenerActor(sink, ctx, env)
-  )
-}
-
-class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[AnyContent], env: Env) extends Actor {
-
-  lazy val filter = ctx.request.getQueryString("filter")
-
-  override def receive: Receive = {
-    case evt: OtoroshiEvent =>
-      //println(s"forward event: ${evt.`@id`}")
-      val json = evt.toJson(env)
-      filter match {
-        case Some(value) => {
-          json.select("@type").asOptString match {
-            case Some(kind) if kind == value => sink.tryEmitNext(json.stringify)
-            case _                           => ()
-          }
-        }
-        case _           => sink.tryEmitNext(json.stringify)
-      }
-    case _                  =>
-  }
-}
-
-class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
 ) extends AbstractController(cc) {
 
@@ -69,26 +42,6 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   implicit lazy val mat: Materializer    = env.otoroshiMaterializer
 
   lazy val logger: Logger = Logger("otoroshi-analytics-api")
-
-  def getNodeEventStream() = ApiAction.async { ctx =>
-    ctx.checkRights(RightsChecker.SuperAdminOnly) {
-      val hotSource: Sinks.Many[String] = Sinks.many().unicast().onBackpressureBuffer[String]()
-      val hotFlux                       = hotSource.asFlux()
-      val source: Source[String, _]     = Source.fromPublisher(hotFlux)
-      val ref                           = env.analyticsActorSystem.actorOf(AnalyticsTmpListenerActor.props(hotSource, ctx, env))
-      //println("subscribing to eventStream")
-      env.analyticsActorSystem.eventStream.subscribe(ref, classOf[OtoroshiEvent])
-      Ok.chunked(
-        source
-          .map(e => s"data: ${e}\n\n".byteString)
-          .alsoTo(Sink.onComplete { _ =>
-            //println("unsubscribing from eventStream")
-            env.analyticsActorSystem.eventStream.unsubscribe(ref)
-          })
-      ).as("text/event-stream")
-        .vfuture
-    }
-  }
 
   def withEventStore(f: ApiActionContext[AnyContent] => Future[Result]): Action[AnyContent] = {
     withEventStoreAndParser[AnyContent](BodyParsers.utils.ignore(AnyContentAsEmpty: AnyContent))(f)

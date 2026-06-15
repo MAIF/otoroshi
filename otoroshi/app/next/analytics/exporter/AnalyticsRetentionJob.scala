@@ -79,6 +79,6 @@ class AnalyticsRetentionJob extends Job {
       .recover { case e: Throwable =>
         logger.error(s"[user-analytics-retention] error while cleaning up ${AnalyticsSchema.fullTable(s)}", e)
       }
-      .map(_ => pool.close((_: io.vertx.core.AsyncResult[Void]) => ()))
+      .map(_ => pool.close())
   }
 }

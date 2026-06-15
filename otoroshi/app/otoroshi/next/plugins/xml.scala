@@ -441,12 +441,12 @@ class SOAPAction extends NgBackendCall {
               resp.contentType.contains("text/xml") || resp.contentType.contains("application/xml") || resp.contentType
                 .contains("application/xml+soap")
             ) {
-              val xmlBody  = scala.xml.XML.loadString(resp.body[String])
+              val xmlBody  = scala.xml.XML.loadString(resp.body)
               val jsonBody = otoroshi.utils.xml.Xml.toJson(xmlBody).stringify
               val headerz  = headers :+ ("Content-Length" -> jsonBody.length.toString)
-              val status   = if (resp.body[String].contains(":Fault>") && resp.body[String].contains(":Client")) {
+              val status   = if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
                 400
-              } else if (resp.body[String].contains(":Fault>")) {
+              } else if (resp.body.contains(":Fault>")) {
                 500
               } else {
                 200
@@ -468,14 +468,14 @@ class SOAPAction extends NgBackendCall {
                   )
               }
             } else {
-              val headerz = headers :+ ("Content-Length" -> resp.body[String].length.toString)
-              if (resp.body[String].contains(":Fault>") && resp.body[String].contains(":Client")) {
+              val headerz = headers :+ ("Content-Length" -> resp.body.length.toString)
+              if (resp.body.contains(":Fault>") && resp.body.contains(":Client")) {
                 inMemoryBodyResponse(
                   400,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
                   resp.body(using play.api.libs.ws.DefaultBodyReadables.readableAsByteString)
                 )
-              } else if (resp.body[String].contains(":Fault>")) {
+              } else if (resp.body.contains(":Fault>")) {
                 inMemoryBodyResponse(
                   500,
                   headerz.toMap ++ Map("Content-Type" -> "text/xml"),
