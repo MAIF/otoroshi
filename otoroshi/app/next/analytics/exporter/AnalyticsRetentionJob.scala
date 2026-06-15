@@ -72,12 +72,13 @@ class AnalyticsRetentionJob extends Job {
       .executeAsync()
       .map { rs =>
         logger.info(
-          s"[user-analytics-retention] deleted ${rs.rowCount()} events older than ${s.retentionDays} days from ${AnalyticsSchema.fullTable(s)}"
+          s"[user-analytics-retention] deleted ${rs
+            .rowCount()} events older than ${s.retentionDays} days from ${AnalyticsSchema.fullTable(s)}"
         )
       }
       .recover { case e: Throwable =>
         logger.error(s"[user-analytics-retention] error while cleaning up ${AnalyticsSchema.fullTable(s)}", e)
       }
-      .map(_ => pool.close())
+      .map(_ => pool.close((_: io.vertx.core.AsyncResult[Void]) => ()))
   }
 }

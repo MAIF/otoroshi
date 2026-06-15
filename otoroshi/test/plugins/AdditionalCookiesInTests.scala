@@ -38,7 +38,7 @@ class AdditionalCookiesInTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
   val cookies = Json
-    .parse(resp.body)
+    .parse(resp.body[String])
     .as[JsValue]
     .select("cookies")
     .as[Map[String, String]]

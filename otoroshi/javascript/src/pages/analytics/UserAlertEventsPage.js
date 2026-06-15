@@ -227,12 +227,10 @@ export class UserAlertEventsPage extends Component {
         )}
       </div>
     );
-    window.newAlert(
-      body,
-      `Alert event — ${item.alert_name || item.alert_id}`,
-      undefined,
-      { maxWidth: '90vw', width: 1100 }
-    );
+    window.newAlert(body, `Alert event — ${item.alert_name || item.alert_id}`, undefined, {
+      maxWidth: '90vw',
+      width: 1100,
+    });
   };
 
   markAllSeen = () => {
@@ -413,10 +411,7 @@ export class UserAlertEventsPage extends Component {
               <i className="fas fa-th-list" /> All alerts
             </Link>
             {alert && (
-              <Link
-                to={`/user-alerts/edit/${alert.id}`}
-                className="btn btn-sm btn-secondary"
-              >
+              <Link to={`/user-alerts/edit/${alert.id}`} className="btn btn-sm btn-secondary">
                 <i className="fas fa-edit" /> Edit alert
               </Link>
             )}

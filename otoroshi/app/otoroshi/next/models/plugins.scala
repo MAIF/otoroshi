@@ -97,9 +97,9 @@ object NgPluginInstance {
       plugin = obj.select("plugin").asString,
       debug = obj.select("debug").asOpt[Boolean].getOrElse(false),
       enabled = obj.select("enabled").asOpt[Boolean].getOrElse(true),
-      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty),
-      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty),
-      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty),
+      include = obj.select("include").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj())),
       pluginIndex = obj.select("plugin_index").asOpt(using PluginIndex.format)
     )
@@ -329,7 +329,7 @@ object NgPlugins {
       case None      => NgPlugins(Seq.empty)
       case Some(arr) =>
         NgPlugins(
-          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty)
+          slots = arr.asOpt[Seq[JsValue]].map(_.map(NgPluginInstance.readFrom)).getOrElse(Seq.empty).toSeq
         )
     }
   }

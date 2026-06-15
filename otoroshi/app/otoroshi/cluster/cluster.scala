@@ -3,7 +3,14 @@ package otoroshi.cluster
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
-import next.models.{ApiSubscriptionDataStore, ApiDataStore, KvApiSubscriptionDataStore, KvApiDataStore, KvRouteTemplateDataStore, RouteTemplateDataStore}
+import next.models.{
+  ApiDataStore,
+  ApiSubscriptionDataStore,
+  KvApiDataStore,
+  KvApiSubscriptionDataStore,
+  KvRouteTemplateDataStore,
+  RouteTemplateDataStore
+}
 import org.apache.commons.codec.binary.Hex
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
@@ -434,10 +441,10 @@ object ClusterConfig {
               val trustAll     =
                 configuration.getOptionalWithFileSupport[Boolean]("relay.exposition.tls.trustAll").getOrElse(false)
               val certs        =
-                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty)
+                configuration.getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.certs").getOrElse(Seq.empty).toSeq
               val trustedCerts = configuration
                 .getOptionalWithFileSupport[Seq[String]]("relay.exposition.tls.trustedCerts")
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
               MtlsConfig(
                 certs = certs,
                 trustedCerts = trustedCerts,
@@ -453,8 +460,8 @@ object ClusterConfig {
       ),
       // autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
-        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
-        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
+        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty).toSeq,
+        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty).toSeq,
         loose = configuration.getOptionalWithFileSupport[Boolean]("mtls.loose").getOrElse(false),
         trustAll = configuration.getOptionalWithFileSupport[Boolean]("mtls.trustAll").getOrElse(false),
         mtls = configuration.getOptionalWithFileSupport[Boolean]("mtls.enabled").getOrElse(false)
@@ -571,7 +578,7 @@ object ClusterConfig {
             configuration.getOptionalWithFileSupport[String]("worker.tenantsStr").map(_.split(",").toSeq.map(_.trim))
           )
           .map(_.map(TenantId.apply))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         swapStrategy = configuration.getOptionalWithFileSupport[String]("worker.swapStrategy") match {
           case Some("Merge") => SwapStrategy.Merge
           case _             => SwapStrategy.Replace
@@ -830,7 +837,7 @@ object MemberView {
             .map(n => ClusterMode(n).getOrElse(ClusterMode.Off))
             .getOrElse(ClusterMode.Off),
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj()),
-          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty),
+          tunnels = (value \ "tunnels").asOpt[Seq[String]].map(_.distinct).getOrElse(Seq.empty).toSeq,
           httpsPort = (value \ "httpsPort").asOpt[Int].getOrElse(env.exposedHttpsPortInt),
           httpPort = (value \ "httpPort").asOpt[Int].getOrElse(env.exposedHttpPortInt),
           internalHttpsPort = (value \ "internalHttpsPort").asOpt[Int].getOrElse(env.httpsPort),
@@ -2178,7 +2185,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  =>
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       case "list" if modern =>
         val list = scala.collection.mutable.ListBuffer.empty[ByteString]
@@ -2190,11 +2197,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
         Some(map)
       case "set"            =>
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       case "list"           =>
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       case "hash"           =>
         val map = new UnboundedConcurrentHashMap[String, ByteString]
@@ -2958,7 +2965,7 @@ class SwappableInMemoryDataStores(
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  =>
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       case "list" if modern =>
         val list = scala.collection.mutable.ListBuffer.empty[ByteString]
@@ -2970,11 +2977,11 @@ class SwappableInMemoryDataStores(
         Some(map)
       case "set"            =>
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       case "list"           =>
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       case "hash"           =>
         val map = new UnboundedConcurrentHashMap[String, ByteString]
@@ -3077,7 +3084,7 @@ class SwappableInMemoryDataStores(
   private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
-  private lazy val _userAlertDataStore                                                =
+  private lazy val _userAlertDataStore                                               =
     new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 

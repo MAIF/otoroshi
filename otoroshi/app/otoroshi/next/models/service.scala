@@ -147,7 +147,7 @@ object NgRouteComposition {
         id = json.select("id").as[String],
         name = json.select("name").as[String],
         description = json.select("description").asOpt[String].getOrElse(""),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         capture = json.select("capture").asOpt[Boolean].getOrElse(false),
@@ -182,7 +182,7 @@ object NgRouteComposition {
       val name                        = json.select("info").select("title").as[String]
       val description                 = json.select("info").select("description").asOpt[String].getOrElse("")
       val version                     = json.select("info").select("version").asOpt[String].getOrElse("")
-      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
+      val targets                     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { server =>
         val serverUrl    = server.select("url").asString
         val serverUri    = Uri(serverUrl)
         val serverDomain = serverUri.authority.host.toString()

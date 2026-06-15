@@ -88,14 +88,14 @@ class StatefulClientsManager(env: Env) {
       .select("otoroshi")
       .select("stateful-clients")
       .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val staticJsonConfigs = env.configurationJson
       .select("otoroshi")
       .select("stateful-clients-json")
       .asOpt[String]
       .flatMap(str => str.parseJson.asOpt[Seq[JsObject]])
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val dynConfigs        = env.datastores.globalConfigDataStore
       .latest()(using env.otoroshiExecutionContext, env)
@@ -103,7 +103,7 @@ class StatefulClientsManager(env: Env) {
       .config
       .select("stateful-clients")
       .asOpt[Seq[JsObject]]
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
       .toList
     val configs           = staticConfigs ++ staticJsonConfigs ++ dynConfigs
     configs.flatMap { config =>

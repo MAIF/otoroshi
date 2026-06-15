@@ -273,7 +273,7 @@ export function DefaultSidebar(props) {
             </Link>
           </li>
           <p className="sidebar-title">Categories</p>
-          <div className="d-flex flex-column">
+          <div className="d-flex flex-column" style={{ width: '100%', minWidth: 0 }}>
             {links.sort(sortCategory).map((item, i) => {
               return (
                 <Block
@@ -374,7 +374,10 @@ function Block({
       </div>
 
       {open && (
-        <div style={{ display: 'flex', flexDirection: 'column' }} className="mt-2 animOpacity">
+        <div
+          style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}
+          className="mt-2 animOpacity"
+        >
           {features
             .filter((d) => d.display === undefined || d.display())
             .sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase()))
@@ -395,6 +398,9 @@ function Block({
                       flexDirection: 'row',
                       justifyContent: 'space-between',
                       alignItems: 'center',
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      overflow: 'hidden',
                     }}
                     onClick={(e) => {
                       if (!addShortcutButton) {
@@ -408,6 +414,8 @@ function Block({
                         flexDirection: 'row',
                         alignItems: 'center',
                         color: alreadyInShortcuts ? '#888' : null,
+                        minWidth: 0,
+                        flex: 1,
                       }}
                     >
                       <CustomIcon icon={icon} title={iconTitle} />
@@ -418,7 +426,8 @@ function Block({
                           whiteSpace: 'nowrap',
                           textOverflow: 'ellipsis',
                           marginLeft: 15,
-                          maxWidth: 130,
+                          minWidth: 0,
+                          flex: 1,
                         }}
                       >
                         {title}
@@ -426,12 +435,16 @@ function Block({
                     </div>
                     {addShortcutButton && (
                       <i
-                        className="fas fa-thumbtack"
+                        className="fas fa-thumbtack ms-2"
                         title={
                           alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'
                         }
                         disabled={alreadyInShortcuts}
-                        style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
+                        style={{
+                          cursor: 'pointer',
+                          color: alreadyInShortcuts ? '#888' : null,
+                          flexShrink: 0,
+                        }}
                         onClick={(e) => {
                           if (!alreadyInShortcuts && addShortcutButton) {
                             writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);
@@ -459,6 +472,9 @@ function Block({
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
                   }}
                   onClick={(e) => {
                     if (!addShortcutButton) {
@@ -472,6 +488,8 @@ function Block({
                       flexDirection: 'row',
                       alignItems: 'center',
                       color: alreadyInShortcuts ? '#888' : null,
+                      minWidth: 0,
+                      flex: 1,
                     }}
                   >
                     <CustomIcon icon={icon} title={iconTitle} />
@@ -482,20 +500,25 @@ function Block({
                         whiteSpace: 'nowrap',
                         textOverflow: 'ellipsis',
                         marginLeft: 15,
-                        maxWidth: 130,
+                        minWidth: 0,
+                        flex: 1,
                       }}
                       className="pe-2"
                     >
                       {title}
                     </div>
-                    {tag}
+                    {tag && <span style={{ flexShrink: 0 }}>{tag}</span>}
                   </div>
                   {addShortcutButton && (
                     <i
-                      className="fas fa-thumbtack"
+                      className="fas fa-thumbtack ms-2"
                       title={alreadyInShortcuts ? 'Already added to shortcuts' : 'Add to shortcuts'}
                       disabled={alreadyInShortcuts}
-                      style={{ cursor: 'pointer', color: alreadyInShortcuts ? '#888' : null }}
+                      style={{
+                        cursor: 'pointer',
+                        color: alreadyInShortcuts ? '#888' : null,
+                        flexShrink: 0,
+                      }}
                       onClick={(e) => {
                         if (!alreadyInShortcuts && addShortcutButton) {
                           writeStorage([...new Set([...shortcuts, title.toLowerCase()])]);

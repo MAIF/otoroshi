@@ -535,7 +535,7 @@ class HttpHandler()(using env: Env) {
               val isUp = true
               val (resp, remainingQuotas) = tuple
               // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-              val headers = resp.headers.view.mapValues(_.head)
+              val headers                               = resp.headers.mapValues(_.head).toMap
               val _headersForOut: Seq[(String, String)] =
                 resp.headers.toSeq.flatMap(c =>
                   c._2.map(v => (c._1, v))
@@ -543,7 +543,7 @@ class HttpHandler()(using env: Env) {
               val rawResponse = otoroshi.script.HttpResponse(
                 status = resp.status,
                 headers = headers.toMap,
-                cookies = resp.safeCookies(env),
+                cookies = resp.safeCookies(env).toSeq,
                 body = () => resp.bodyAsSource
               )
               val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
@@ -635,7 +635,7 @@ class HttpHandler()(using env: Env) {
                   val otoroshiResponse = otoroshi.script.HttpResponse(
                     status = resp.status,
                     headers = _headersOut.toMap,
-                    cookies = resp.safeCookies(env),
+                    cookies = resp.safeCookies(env).toSeq,
                     body = () => resp.bodyAsSource
                   )
                   descriptor

@@ -729,7 +729,7 @@ object CloudShellCredentials {
       input.readLine()
       val content                   = input.lines.collect(Collectors.joining("\n"))
       input.close()
-      val messageArray: Seq[String] = Json.parse(content).asOpt[Seq[String]].getOrElse(Seq.empty)
+      val messageArray: Seq[String] = Json.parse(content).asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       messageArray.apply(ACCESS_TOKEN_INDEX)
     } finally {
       socket.close()
@@ -1015,7 +1015,7 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
           val sources = response.json
             .select("propertySources")
             .asOpt[Seq[JsValue]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map(_.select("source").asOpt[JsObject].getOrElse(Json.obj()))
           val source  = sources.foldRight(Json.obj())((s, next) => s.deepMerge(next))
           source.atPointer(pointer).asOpt[JsValue] match {

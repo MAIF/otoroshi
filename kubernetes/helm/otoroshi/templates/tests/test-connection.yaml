@@ -1,0 +1,18 @@
+{{- $svc := ternary .Values.cluster.leaderServiceName .Values.service.name .Values.cluster.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-connection"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "otoroshi.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      command: ["curl", "--fail", "--silent", "--show-error", "--max-time", "10",
+                "http://{{ $svc }}:{{ .Values.service.http }}/ready"]

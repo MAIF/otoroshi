@@ -209,7 +209,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val ref = configCache.get()
     if (ref == null) {
       // new Throwable().printStackTrace()
-      logger.error("this await should never be called!")
+      logger.warn("this await should never be called!")
       // AWAIT: valid
       Await.result(singleton(), 1.second) // WARN: await here should never be executed
     } else {

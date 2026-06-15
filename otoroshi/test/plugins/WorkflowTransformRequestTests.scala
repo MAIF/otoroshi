@@ -62,7 +62,7 @@ class WorkflowTransformRequestTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("method") mustBe "POST"
+  Json.parse(resp.body[String]).selectAsString("method") mustBe "POST"
 
   deleteOtoroshiWorkflow(workflow).futureValue
   deleteOtoroshiRoute(route).futureValue

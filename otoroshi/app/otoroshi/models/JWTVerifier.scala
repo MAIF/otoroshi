@@ -814,7 +814,7 @@ object MappingSettings                                                          
         MappingSettings(
           (json \ "map").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           (json \ "values").asOpt[JsObject].getOrElse(Json.obj()),
-          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -875,7 +875,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(jwt)((a, b) => {
       val values: Set[String]         = (token \ b._1)
         .as[JsArray]
-        .value
+        .value.toSeq
         .collect {
           case JsNumber(nbr) => nbr.toString()
           case JsBoolean(b)  => b.toString
@@ -2325,7 +2325,7 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
         RefJwtVerifier(
           ids = refs,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -2344,7 +2344,7 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
         LocalJwtVerifier(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -2440,7 +2440,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy

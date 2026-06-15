@@ -57,24 +57,24 @@ case class UserAnalyticsAlertEvent(
 
   override def toJson(implicit env: Env): JsValue = {
     Json.obj(
-      "@id"               -> `@id`,
-      "@timestamp"        -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-      "@type"             -> `@type`,
-      "@product"          -> env.eventsName,
-      "@serviceId"        -> `@serviceId`,
-      "@service"          -> `@service`,
-      "@env"              -> env.env,
-      "alert"             -> alert,
-      "alertSubcategory"  -> "user-analytics",
-      "alertId"           -> alertConfig.id,
-      "alertName"         -> alertConfig.name,
-      "severity"          -> alertConfig.severity,
-      "message"           -> alertConfig.message,
-      "tenant"            -> alertConfig.location.tenant.value,
-      "teams"             -> JsArray(alertConfig.location.teams.map(t => JsString(t.value))),
-      "windowSeconds"     -> alertConfig.windowSeconds,
-      "combine"           -> alertConfig.combine,
-      "conditions"        -> JsArray(evaluations.map(_.json))
+      "@id"              -> `@id`,
+      "@timestamp"       -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"            -> `@type`,
+      "@product"         -> env.eventsName,
+      "@serviceId"       -> `@serviceId`,
+      "@service"         -> `@service`,
+      "@env"             -> env.env,
+      "alert"            -> alert,
+      "alertSubcategory" -> "user-analytics",
+      "alertId"          -> alertConfig.id,
+      "alertName"        -> alertConfig.name,
+      "severity"         -> alertConfig.severity,
+      "message"          -> alertConfig.message,
+      "tenant"           -> alertConfig.location.tenant.value,
+      "teams"            -> JsArray(alertConfig.location.teams.map(t => JsString(t.value))),
+      "windowSeconds"    -> alertConfig.windowSeconds,
+      "combine"          -> alertConfig.combine,
+      "conditions"       -> JsArray(evaluations.map(_.json))
     )
   }
 }

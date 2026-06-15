@@ -37,7 +37,7 @@ class UserAgentDetailsExtractorUserAgentEndpointTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("browser") mustBe "Firefox"
+  Json.parse(resp.body[String]).selectAsString("browser") mustBe "Firefox"
 
   deleteOtoroshiRoute(route).futureValue
 }

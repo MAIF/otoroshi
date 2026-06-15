@@ -190,7 +190,7 @@ export function RouteDesigner(props) {
   const [route, setRoute] = useState();
   const [schema, setSchema] = useState();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [backends, setBackends] = useState([]);
 
@@ -246,6 +246,7 @@ export function RouteDesigner(props) {
       </DraftOnly>
 
       <NgForm
+        readOnly={!isDraft}
         value={route}
         flow={ROUTE_FORM_SETTINGS.flow}
         schema={schema}
@@ -444,7 +445,7 @@ export function Endpoints(props) {
         navigateOnEdit={(item) =>
           historyPush(history, location, `/apis/${params.apiId}/endpoints/${item.id}/edit`)
         }
-        selfUrl="endpoints"
+        selfUrl={`apis/${params.apiId}/endpoints`}
         defaultTitle="Endpoint"
         itemName="Endpoint"
         columns={columns}
@@ -470,7 +471,8 @@ export function Endpoints(props) {
                   search: location.search,
                 }}
               >
-                <i className="fas fa-plus-circle me-1" />Create new endpoint
+                <i className="fas fa-plus-circle me-1" />
+                Create new endpoint
               </Link>
               {props.injectTopBar}
             </div>

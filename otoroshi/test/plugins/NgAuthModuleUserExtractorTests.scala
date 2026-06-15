@@ -113,7 +113,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
     id = IdGenerator.uuid
   ).futureValue
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,

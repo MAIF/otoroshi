@@ -184,7 +184,7 @@ class InMemoryDataStores(
   private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
-  private lazy val _userAlertDataStore                                                =
+  private lazy val _userAlertDataStore                                               =
     new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 

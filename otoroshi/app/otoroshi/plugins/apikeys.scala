@@ -118,13 +118,13 @@ class HasAllowedApiKeyValidator extends AccessValidator {
           .orElse((context.config \ "HasAllowedApiKeyValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedClientIds =
-          (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedTags      = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
+        val allowedTags      = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val allowedMetadatas = (config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
         val apikeyMatch      =
-          (config \ "apikeyMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "apikeyMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         val apikeyNotMatch   =
-          (config \ "apikeyNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+          (config \ "apikeyNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String]).toSeq
         lazy val apikeyJson  = apiKey.toJson
         if (
           allowedClientIds.contains(apiKey.clientId) ||
@@ -239,7 +239,7 @@ class CertificateAsApikey extends PreRouting {
                 dailyQuota = (conf \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
                 monthlyQuota = (conf \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
                 constrainedServicesOnly = (conf \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-                tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+                tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
                 metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
               )
               if (env.clusterConfig.mode.isWorker) {
@@ -731,7 +731,7 @@ class ClientCredentialFlow extends RequestTransformer {
               case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") =>
                 val charset          = ctx.request.charset.getOrElse("UTF-8")
                 val urlEncodedString = bodyRaw.utf8String
-                val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).view.mapValues(_.head)
+                val body             = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head).toMap
                 (
                   body.get("grant_type"),
                   body.get("client_id"),
@@ -944,9 +944,9 @@ class ClientCredentialService extends RequestSink {
       .map { js =>
         BiscuitConf(
           privkey = (js \ "privkey").asOpt[String],
-          checks = (js \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
-          facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-          rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty)
+          checks = (js \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       }
       .getOrElse(BiscuitConf())

@@ -25,7 +25,7 @@ case class GatewayListener(raw: JsValue) {
 
   lazy val certificateRefs: Seq[JsObject] = tls
     .flatMap(t => (t \ "certificateRefs").asOpt[Seq[JsObject]])
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 
   lazy val tlsMode: Option[String] = tls.flatMap(t => (t \ "mode").asOpt[String])
 
@@ -38,7 +38,7 @@ case class GatewayListener(raw: JsValue) {
 
   lazy val allowedRoutesKinds: Seq[JsObject] = allowedRoutes
     .flatMap(ar => (ar \ "kinds").asOpt[Seq[JsObject]])
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesGateway(raw: JsValue) extends KubernetesEntity {
@@ -46,12 +46,12 @@ case class KubernetesGateway(raw: JsValue) extends KubernetesEntity {
   lazy val listeners: Seq[GatewayListener] = spec
     .select("listeners")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(GatewayListener.apply)
   lazy val addresses: Seq[JsObject]        = spec
     .select("addresses")
     .asOpt[Seq[JsObject]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 }
 
 // ─── HTTPRoute ──────────────────────────────────────────────────────────────
@@ -67,8 +67,8 @@ case class HTTPRouteParentRef(raw: JsValue) {
 
 case class HTTPRouteMatch(raw: JsValue) {
   lazy val path: Option[JsObject]      = (raw \ "path").asOpt[JsObject]
-  lazy val headers: Seq[JsObject]      = (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-  lazy val queryParams: Seq[JsObject]  = (raw \ "queryParams").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+  lazy val headers: Seq[JsObject]      = (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
+  lazy val queryParams: Seq[JsObject]  = (raw \ "queryParams").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
   lazy val method: Option[String]      = (raw \ "method").asOpt[String]
   lazy val pathTypeOpt: Option[String] = path.flatMap(p => (p \ "type").asOpt[String])
   lazy val pathType: String            = pathTypeOpt.getOrElse("PathPrefix")
@@ -106,11 +106,11 @@ case class HTTPRouteRule(raw: JsValue) {
     .map(HTTPRouteMatch.apply)
   lazy val filters: Seq[HTTPRouteFilter]         = (raw \ "filters")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteFilter.apply)
   lazy val backendRefs: Seq[HTTPRouteBackendRef] = (raw \ "backendRefs")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteBackendRef.apply)
   lazy val timeouts: Option[JsObject]            = (raw \ "timeouts").asOpt[JsObject]
 }
@@ -119,16 +119,16 @@ case class KubernetesHTTPRoute(raw: JsValue) extends KubernetesEntity {
   lazy val parentRefs: Seq[HTTPRouteParentRef] = spec
     .select("parentRefs")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteParentRef.apply)
   lazy val hostnames: Seq[String]              = spec
     .select("hostnames")
     .asOpt[Seq[String]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val rules: Seq[HTTPRouteRule]           = spec
     .select("rules")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteRule.apply)
 }
 
@@ -146,7 +146,7 @@ case class GRPCRouteMatch(raw: JsValue) {
   lazy val method: Option[GRPCRouteMethodMatch] =
     (raw \ "method").asOpt[JsValue].map(GRPCRouteMethodMatch.apply)
   lazy val headers: Seq[JsObject]               =
-    (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    (raw \ "headers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
 }
 
 case class GRPCRouteRule(raw: JsValue) {
@@ -156,11 +156,11 @@ case class GRPCRouteRule(raw: JsValue) {
     .map(GRPCRouteMatch.apply)
   lazy val filters: Seq[HTTPRouteFilter]         = (raw \ "filters")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteFilter.apply)
   lazy val backendRefs: Seq[HTTPRouteBackendRef] = (raw \ "backendRefs")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteBackendRef.apply)
 }
 
@@ -168,16 +168,16 @@ case class KubernetesGRPCRoute(raw: JsValue) extends KubernetesEntity {
   lazy val parentRefs: Seq[HTTPRouteParentRef] = spec
     .select("parentRefs")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(HTTPRouteParentRef.apply)
   lazy val hostnames: Seq[String]              = spec
     .select("hostnames")
     .asOpt[Seq[String]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
   lazy val rules: Seq[GRPCRouteRule]           = spec
     .select("rules")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(GRPCRouteRule.apply)
 }
 
@@ -201,12 +201,12 @@ case class KubernetesReferenceGrant(raw: JsValue) extends KubernetesEntity {
   lazy val from: Seq[ReferenceGrantFrom] = spec
     .select("from")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(ReferenceGrantFrom.apply)
   lazy val to: Seq[ReferenceGrantTo]     = spec
     .select("to")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(ReferenceGrantTo.apply)
 }
 
@@ -222,16 +222,16 @@ case class BackendTLSPolicyTargetRef(raw: JsValue) {
 
 case class BackendTLSPolicyValidation(raw: JsValue) {
   lazy val hostname: String                        = (raw \ "hostname").as[String]
-  lazy val caCertificateRefs: Seq[JsObject]        = (raw \ "caCertificateRefs").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+  lazy val caCertificateRefs: Seq[JsObject]        = (raw \ "caCertificateRefs").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
   lazy val wellKnownCACertificates: Option[String] = (raw \ "wellKnownCACertificates").asOpt[String]
-  lazy val subjectAltNames: Seq[JsObject]          = (raw \ "subjectAltNames").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+  lazy val subjectAltNames: Seq[JsObject]          = (raw \ "subjectAltNames").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesBackendTLSPolicy(raw: JsValue) extends KubernetesEntity {
   lazy val targetRefs: Seq[BackendTLSPolicyTargetRef]     = spec
     .select("targetRefs")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(BackendTLSPolicyTargetRef.apply)
   lazy val validation: Option[BackendTLSPolicyValidation] = spec
     .select("validation")
@@ -244,7 +244,7 @@ case class KubernetesBackendTLSPolicy(raw: JsValue) extends KubernetesEntity {
 // An EndpointSlice contains a subset of endpoints for a given Service.
 
 case class EndpointSliceEndpoint(raw: JsValue) {
-  lazy val addresses: Seq[String]      = (raw \ "addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val addresses: Seq[String]      = (raw \ "addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val conditions: JsObject        = (raw \ "conditions").asOpt[JsObject].getOrElse(Json.obj())
   lazy val ready: Boolean              = (conditions \ "ready").asOpt[Boolean].getOrElse(true)
   lazy val serving: Boolean            = (conditions \ "serving").asOpt[Boolean].getOrElse(ready)
@@ -263,11 +263,11 @@ case class KubernetesEndpointSlice(raw: JsValue) extends KubernetesEntity {
   lazy val addressType: String                   = (raw \ "addressType").asOpt[String].getOrElse("IPv4")
   lazy val endpoints: Seq[EndpointSliceEndpoint] = (raw \ "endpoints")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(EndpointSliceEndpoint.apply)
   lazy val ports: Seq[EndpointSlicePort]         = (raw \ "ports")
     .asOpt[Seq[JsValue]]
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
     .map(EndpointSlicePort.apply)
   lazy val serviceName: Option[String]           = labels.get("kubernetes.io/service-name")
 }

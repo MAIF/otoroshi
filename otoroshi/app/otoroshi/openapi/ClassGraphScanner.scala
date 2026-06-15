@@ -73,7 +73,7 @@ class ClassGraphScanner {
         val jsonRaw = Files.readString(formFile.toPath)
         val obj     = Json.parse(jsonRaw).as[JsObject]
         val map     = new LegitTrieMap[String, Form]()
-        map.++=(obj.value.view.mapValues(Form.fromJson)).toMap
+        map.++=(obj.value.mapValues(Form.fromJson).toMap).toMap
       }*/
     )
   }
@@ -98,7 +98,7 @@ class ClassGraphScanner {
         val jsonRaw = new String(openapiformres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
         val map     = new UnboundedTrieMap[String, Form]()
-        map.++=(obj.value.view.mapValues(Form.fromJson)).toMap
+        map.++=(obj.value.mapValues(Form.fromJson).toMap).toMap
       }
       OpenApiSchema(
         scanResult = scanResult,

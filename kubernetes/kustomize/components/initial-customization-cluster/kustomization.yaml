@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Bootstrap JSON for cluster-mode Otoroshi (KubernetesConfig.otoroshiServiceName
+# = otoroshi-worker-service). Shared by overlays/{cluster, cluster-baremetal,
+# cluster-baremetal-daemonset}. Use the `initial-customization-single` sibling
+# component for single-pod setups.
+configMapGenerator:
+  - name: otoroshi-initial-customization
+    files:
+      - initial-customization.json

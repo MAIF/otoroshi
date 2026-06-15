@@ -50,7 +50,7 @@ class StateExporter extends Job {
     .some
 
   override def description: Option[String] =
-    s"""This job send an event containing the full otoroshi export every n seconds""".stripMargin.some
+    s"""This job send an event containing the full otoroshi `export` every n seconds""".stripMargin.some
 
   override def jobVisibility: JobVisibility = JobVisibility.UserLand
 

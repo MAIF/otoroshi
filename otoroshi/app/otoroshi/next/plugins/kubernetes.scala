@@ -34,7 +34,7 @@ object KubernetesNamespaceScanConfig {
     override def reads(json: JsValue): JsResult[KubernetesNamespaceScanConfig] = {
       Try {
         KubernetesNamespaceScanConfig(
-          namespaces = json.select("namespaces").asOpt[Seq[String]].getOrElse(Seq.empty)
+          namespaces = json.select("namespaces").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

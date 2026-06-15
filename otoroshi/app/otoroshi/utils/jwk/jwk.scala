@@ -37,7 +37,7 @@ class StringJwkProvider(jwkRaw: String) extends JwkProvider {
     .as[JsObject]
     .\("keys")
     .as[JsArray]
-    .value
+    .value.toSeq
     .map { js =>
       val map: java.util.Map[String, AnyRef] =
         js.as[Map[String, String]].asJava.asInstanceOf[java.util.Map[String, AnyRef]]

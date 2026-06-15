@@ -72,16 +72,16 @@ case class KubernetesMutatingWebhookConfiguration(raw: JsValue) extends Kubernet
 
 case class KubernetesOpenshiftDnsOperatorServer(raw: JsValue) {
   lazy val name: String                        = raw.select("name").as[String]
-  lazy val zones: Seq[String]                  = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val zones: Seq[String]                  = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val forwardPluginUpstreams: Seq[String] =
-    raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty)
+    raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesOpenshiftDnsOperator(raw: JsValue) extends KubernetesEntity {
   lazy val servers: scala.collection.Seq[KubernetesOpenshiftDnsOperatorServer] = (raw \ "spec" \ "servers")
     .asOpt[JsArray]
     .map(_.value.map(KubernetesOpenshiftDnsOperatorServer.apply))
-    .getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
 }
 
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity

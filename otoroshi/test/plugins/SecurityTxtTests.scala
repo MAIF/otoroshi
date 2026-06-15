@@ -34,7 +34,7 @@ class SecurityTxtTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    expected.foreach(str => resp.body.contains(str) mustBe true)
+    expected.foreach(str => resp.body[String].contains(str) mustBe true)
 
     deleteOtoroshiRoute(route).futureValue
   }

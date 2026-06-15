@@ -194,7 +194,7 @@ class GenericDataStores(
 
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
-  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
+  private lazy val _userDashboardDataStore = new KvUserDashboardDataStore(redis, env)
 
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 

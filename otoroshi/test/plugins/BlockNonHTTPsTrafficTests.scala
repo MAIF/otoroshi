@@ -57,7 +57,7 @@ class BlockNonHTTPsTrafficTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.UPGRADE_REQUIRED
-  Json.parse(resp.body) mustBe Json.obj("message" -> "you shall not pass")
+  Json.parse(resp.body[String]) mustBe Json.obj("message" -> "you shall not pass")
 
   awaitF(10.seconds).futureValue
   env.proxyState

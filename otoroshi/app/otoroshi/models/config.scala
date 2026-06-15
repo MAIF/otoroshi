@@ -139,8 +139,8 @@ object ElasticAnalyticsConfig {
     override def reads(json: JsValue)              =
       Try {
         val clusterUriValue: Seq[String] =
-          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty)
-        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty)
+          (json \ "clusterUri").asOpt[String].map(_.trim).filter(_.nonEmpty).map(s => Seq(s)).getOrElse(Seq.empty).toSeq
+        val urisValue: Seq[String]       = json.select("uris").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         val uris: Seq[String]            = (clusterUriValue ++ urisValue).flatMap { uri =>
           if (uri.contains(",")) {
             uri.split(",").map(_.trim)
@@ -329,17 +329,17 @@ object GlobalScripts {
       Try {
         JsSuccess(
           GlobalScripts(
-            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
-            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            transformersRefs = (json \ "transformersRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+            validatorRefs = (json \ "validatorRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             transformersConfig = (json \ "transformersConfig").asOpt[JsValue].getOrElse(Json.obj()),
             validatorConfig = (json \ "validatorConfig").asOpt[JsValue].getOrElse(Json.obj()),
             preRouteConfig = (json \ "preRouteConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             sinkConfig = (json \ "sinkConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
             jobConfig = (json \ "jobConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty)
+            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -468,7 +468,7 @@ object AutoCert {
           replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(false),
           caRef = (json \ "caRef").asOpt[String],
           allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq("*")),
-          notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty)
+          notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -512,7 +512,7 @@ object TlsSettings {
           randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false),
           includeJdkCaServer = (json \ "includeJdkCaServer").asOpt[Boolean].getOrElse(true),
           includeJdkCaClient = (json \ "includeJdkCaClient").asOpt[Boolean].getOrElse(true),
-          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty),
+          trustedCAsServer = (json \ "trustedCAsServer").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           bannedAlpnProtocols = (json \ "bannedAlpnProtocols").asOpt[Map[String, Seq[String]]].getOrElse(Map.empty),
           clientAuth = (json \ "clientAuth")
             .asOpt[String]
@@ -528,28 +528,28 @@ object TlsSettings {
 }
 
 case class DefaultTemplates(
-    route: Option[JsObject] = Json.obj().some,           // Option[NgRoute],
-    service: Option[JsObject] = Json.obj().some,         // Option[NgService],
-    backend: Option[JsObject] = Json.obj().some,         // Option[NgBackend],
-    target: Option[JsObject] = Json.obj().some,          // Option[NgTarget],
-    descriptor: Option[JsObject] = Json.obj().some,      // Option[ServiceDescriptor],
-    apikey: Option[JsObject] = Json.obj().some,          // Option[ApiKey],
-    group: Option[JsObject] = Json.obj().some,           // Option[ServiceGroup],
-    template: Option[JsObject] = Json.obj().some,        // Option[ErrorTemplate],
-    verifier: Option[JsObject] = Json.obj().some,        // Option[GlobalJwtVerifier],
-    authConfig: Option[JsObject] = Json.obj().some,      // Option[AuthModuleConfig],
-    certificate: Option[JsObject] = Json.obj().some,     // Option[Cert],
-    script: Option[JsObject] = Json.obj().some,          // Option[Script],
-    draft: Option[JsObject] = Json.obj().some,           // Option[Draft],
-    api: Option[JsObject] = Json.obj().some,             // Option[Api],
-    tcpService: Option[JsObject] = Json.obj().some,      // Option[TcpService],
-    dataExporter: Option[JsObject] = Json.obj().some,    // Option[DataExporterConfig],
-    tenant: Option[JsObject] = Json.obj().some,          // Option[Tenant],
-    team: Option[JsObject] = Json.obj().some,            // Option[Team],
-    apiSubscription: Option[JsObject] = Json.obj().some, // Option[ApiSubscription],
-    routeTemplate: Option[JsObject] = Json.obj().some,    // Option[RouteTemplate],
-    userDashboardTemplate: Option[JsObject] = Json.obj().some,    // Option[UserDashboard],
-    userAlertTemplate: Option[JsObject] = Json.obj().some,        // Option[UserAlert],
+    route: Option[JsObject] = Json.obj().some,                 // Option[NgRoute],
+    service: Option[JsObject] = Json.obj().some,               // Option[NgService],
+    backend: Option[JsObject] = Json.obj().some,               // Option[NgBackend],
+    target: Option[JsObject] = Json.obj().some,                // Option[NgTarget],
+    descriptor: Option[JsObject] = Json.obj().some,            // Option[ServiceDescriptor],
+    apikey: Option[JsObject] = Json.obj().some,                // Option[ApiKey],
+    group: Option[JsObject] = Json.obj().some,                 // Option[ServiceGroup],
+    template: Option[JsObject] = Json.obj().some,              // Option[ErrorTemplate],
+    verifier: Option[JsObject] = Json.obj().some,              // Option[GlobalJwtVerifier],
+    authConfig: Option[JsObject] = Json.obj().some,            // Option[AuthModuleConfig],
+    certificate: Option[JsObject] = Json.obj().some,           // Option[Cert],
+    script: Option[JsObject] = Json.obj().some,                // Option[Script],
+    draft: Option[JsObject] = Json.obj().some,                 // Option[Draft],
+    api: Option[JsObject] = Json.obj().some,                   // Option[Api],
+    tcpService: Option[JsObject] = Json.obj().some,            // Option[TcpService],
+    dataExporter: Option[JsObject] = Json.obj().some,          // Option[DataExporterConfig],
+    tenant: Option[JsObject] = Json.obj().some,                // Option[Tenant],
+    team: Option[JsObject] = Json.obj().some,                  // Option[Team],
+    apiSubscription: Option[JsObject] = Json.obj().some,       // Option[ApiSubscription],
+    routeTemplate: Option[JsObject] = Json.obj().some,         // Option[RouteTemplate],
+    userDashboardTemplate: Option[JsObject] = Json.obj().some, // Option[UserDashboard],
+    userAlertTemplate: Option[JsObject] = Json.obj().some      // Option[UserAlert],
 ) {
   def json: JsValue = DefaultTemplates.format.writes(this)
 }
@@ -588,24 +588,24 @@ object DefaultTemplates {
       }
     }
     override def writes(o: DefaultTemplates): JsValue = Json.obj(
-      "route"           -> o.route.getOrElse(JsNull).asValue,
-      "service"         -> o.service.getOrElse(JsNull).asValue,
-      "backend"         -> o.backend.getOrElse(JsNull).asValue,
-      "target"          -> o.target.getOrElse(JsNull).asValue,
-      "descriptor"      -> o.descriptor.getOrElse(JsNull).asValue,
-      "apikey"          -> o.apikey.getOrElse(JsNull).asValue,
-      "group"           -> o.group.getOrElse(JsNull).asValue,
-      "template"        -> o.template.getOrElse(JsNull).asValue,
-      "verifier"        -> o.verifier.getOrElse(JsNull).asValue,
-      "authConfig"      -> o.authConfig.getOrElse(JsNull).asValue,
-      "certificate"     -> o.certificate.getOrElse(JsNull).asValue,
-      "script"          -> o.script.getOrElse(JsNull).asValue,
-      "draft"           -> o.draft.getOrElse(JsNull).asValue,
-      "api"             -> o.api.getOrElse(JsNull).asValue,
-      "tcpService"      -> o.tcpService.getOrElse(JsNull).asValue,
-      "dataExporter"    -> o.dataExporter.getOrElse(JsNull).asValue,
-      "tenant"          -> o.tenant.getOrElse(JsNull).asValue,
-      "team"            -> o.team.getOrElse(JsNull).asValue,
+      "route"                 -> o.route.getOrElse(JsNull).asValue,
+      "service"               -> o.service.getOrElse(JsNull).asValue,
+      "backend"               -> o.backend.getOrElse(JsNull).asValue,
+      "target"                -> o.target.getOrElse(JsNull).asValue,
+      "descriptor"            -> o.descriptor.getOrElse(JsNull).asValue,
+      "apikey"                -> o.apikey.getOrElse(JsNull).asValue,
+      "group"                 -> o.group.getOrElse(JsNull).asValue,
+      "template"              -> o.template.getOrElse(JsNull).asValue,
+      "verifier"              -> o.verifier.getOrElse(JsNull).asValue,
+      "authConfig"            -> o.authConfig.getOrElse(JsNull).asValue,
+      "certificate"           -> o.certificate.getOrElse(JsNull).asValue,
+      "script"                -> o.script.getOrElse(JsNull).asValue,
+      "draft"                 -> o.draft.getOrElse(JsNull).asValue,
+      "api"                   -> o.api.getOrElse(JsNull).asValue,
+      "tcpService"            -> o.tcpService.getOrElse(JsNull).asValue,
+      "dataExporter"          -> o.dataExporter.getOrElse(JsNull).asValue,
+      "tenant"                -> o.tenant.getOrElse(JsNull).asValue,
+      "team"                  -> o.team.getOrElse(JsNull).asValue,
       "apiSubscription"       -> o.apiSubscription.getOrElse(JsNull).asValue,
       "routeTemplate"         -> o.routeTemplate.getOrElse(JsNull).asValue,
       "userDashboardTemplate" -> o.userDashboardTemplate.getOrElse(JsNull).asValue,
@@ -1035,7 +1035,7 @@ object GlobalConfig {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           env = (json \ "env").asOpt[JsObject].getOrElse(Json.obj()),
           extensions = (json \ "extensions").asOpt[Map[String, JsValue]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)

@@ -37,5 +37,6 @@ in this section, we will explain some mainstream Otoroshi usage scenario's
 * [Calling Otoroshi from a frontend](./calling-otoroshi-from-a-frontend.mdx)
 * [Create your first API](./create-your-first-api.mdx)
 * [Set up an AI Gateway with otoroshictl](./setup-ai-gateway-with-otoroshictl.md)
+* [Sign and verify HTTP messages (RFC 9421)](./http-message-signatures-rfc9421.md)
 
 

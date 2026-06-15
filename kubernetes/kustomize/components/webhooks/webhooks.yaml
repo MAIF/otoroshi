@@ -1,0 +1,75 @@
+---
+# ValidatingWebhookConfiguration — calls Otoroshi to validate any new/updated
+# proxy.otoroshi.io CR before kube-apiserver persists it. caBundle is left empty
+# and gets injected at runtime by the KubernetesAdmissionWebhookCRDValidator
+# sink, which also patches failurePolicy. Make sure that sink is enabled in
+# `initial-customization.json` (it is by default).
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-validation
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook.otoroshi.io
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - proxy.otoroshi.io
+        apiVersions:
+          - "*"
+        resources:
+          - "*"
+        scope: Namespaced
+    clientConfig:
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: /apis/webhooks/validation
+        port: 8443
+      caBundle: ""
+    failurePolicy: Ignore
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+---
+# MutatingWebhookConfiguration — injects an otoroshi-sidecar container into
+# pods labeled `otoroshi.io/sidecar: inject`. Same caBundle / failurePolicy
+# runtime-injection contract as the validating one above (handled by the
+# KubernetesAdmissionWebhookSidecarInjector sink).
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-injector
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook-injector.otoroshi.io
+    rules:
+      - operations:
+          - CREATE
+        apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        resources:
+          - pods
+        scope: Namespaced
+    objectSelector:
+      matchLabels:
+        otoroshi.io/sidecar: inject
+    clientConfig:
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: /apis/webhooks/inject
+        port: 8443
+      caBundle: ""
+    failurePolicy: Ignore
+    sideEffects: None
+    admissionReviewVersions:
+      - v1

@@ -99,7 +99,7 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  println(callWithUser.body)
+  println(callWithUser.body[String])
 
   callWithUser.status.mustBe(200)
   Json.parse(callWithUser.body).selectAsString("email").contains("user@oto.tools").mustBe(true)

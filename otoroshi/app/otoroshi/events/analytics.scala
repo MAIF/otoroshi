@@ -35,7 +35,7 @@ object AnalyticsActor {
 
 class AnalyticsActor(exporter: DataExporterConfig)(using env: Env) extends Actor {
 
-  implicit lazy val ec = env.analyticsExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   lazy val logger = Logger("otoroshi-analytics-actor")
 
@@ -294,7 +294,7 @@ object Identity {
         identity = json.select("identity").asString,
         label = json.select("label").asString,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Success(s) => JsSuccess(s)

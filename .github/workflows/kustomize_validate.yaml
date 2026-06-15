@@ -1,0 +1,72 @@
+name: Kustomize validate
+
+on:
+  push:
+    paths:
+      - 'kubernetes/kustomize/**'
+      - '.github/workflows/kustomize_validate.yaml'
+  pull_request:
+    paths:
+      - 'kubernetes/kustomize/**'
+      - '.github/workflows/kustomize_validate.yaml'
+  workflow_dispatch:
+
+jobs:
+  kustomize-build:
+    name: kustomize build (${{ matrix.overlay }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        overlay:
+          - simple
+          - simple-baremetal
+          - simple-baremetal-daemonset
+          - cluster
+          - cluster-baremetal
+          - cluster-baremetal-daemonset
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kustomize
+        run: |
+          curl -sSL "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          kustomize version
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /tmp kubeconform
+          sudo mv /tmp/kubeconform /usr/local/bin/
+          kubeconform -v
+
+      - name: kustomize build
+        run: |
+          set -e
+          kustomize build kubernetes/kustomize/overlays/${{ matrix.overlay }} > /tmp/render.yaml
+          echo "Rendered $(grep -c '^kind:' /tmp/render.yaml) resources"
+
+      - name: kubeconform validate (against K8s 1.28)
+        run: |
+          set -e
+          # Skip CRD-defined kinds (Otoroshi CRs, Prometheus Operator CRs)
+          # since they don't have a public OpenAPI schema kubeconform can
+          # download. Everything from core / apps / networking / RBAC /
+          # autoscaling / policy / admissionregistration is validated.
+          kubeconform \
+            -summary \
+            -strict \
+            -kubernetes-version 1.28.0 \
+            -ignore-missing-schemas \
+            -skip CustomResourceDefinition,Certificate,ApiKey,ServiceDescriptor,ServiceGroup,Route,Backend,GlobalConfig,JwtVerifier,AuthModule,DataExporter,TcpService,ErrorTemplate,AdminSession,Tenant,Team,Organization,WasmPlugin,Plugin,Script,CorazaConfig,GreenScore,HttpListener,RouteComposition,AuthModuleUser,SimpleAdminUser,SimpleAdminUsers,ServiceMonitor,PrometheusRule \
+            /tmp/render.yaml
+
+      - name: Check for unresolved ${var} placeholders
+        run: |
+          if grep -E '\$\{[a-zA-Z]+\}' /tmp/render.yaml; then
+            echo "::error::Found unresolved \${var} placeholders in rendered output — kustomize doesn't template, every value must come from a generator or env."
+            exit 1
+          fi

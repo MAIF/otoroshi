@@ -148,7 +148,7 @@ object KubernetesConfig {
         val currentContextName    = (json \ "current-context").as[String]
         val currentContextUser    = (json \ "contexts")
           .as[JsArray]
-          .value
+          .value.toSeq
           .find(v => (v \ "name").as[String] == currentContextName)
           .get
           .\("context")
@@ -156,7 +156,7 @@ object KubernetesConfig {
           .as[String]
         val currentContextCluster = (json \ "contexts")
           .as[JsArray]
-          .value
+          .value.toSeq
           .find(v => (v \ "name").as[String] == currentContextName)
           .get
           .\("context")
@@ -166,7 +166,7 @@ object KubernetesConfig {
           trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
           endpoint = (json \ "clusters")
             .as[JsArray]
-            .value
+            .value.toSeq
             .find(v => (v \ "name").as[String] == currentContextCluster)
             .map { defaultUser =>
               (defaultUser \ "cluster" \ "server").as[String]
@@ -180,7 +180,7 @@ object KubernetesConfig {
             ),
           token = None,
           clientCert =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 defaultUser
                   .select("user")
@@ -189,7 +189,7 @@ object KubernetesConfig {
                   .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
             },
           clientCertKey =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 defaultUser
                   .select("user")
@@ -198,7 +198,7 @@ object KubernetesConfig {
                   .map(v => new String(Base64.getDecoder.decode(v), StandardCharsets.UTF_8))
             },
           userPassword =
-            (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
+            (json \ "users").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextUser).flatMap {
               defaultUser =>
                 for {
                   username <- (defaultUser \ "user" \ "username").asOpt[String]
@@ -206,7 +206,7 @@ object KubernetesConfig {
                 } yield s"$username:$password"
             },
           caCert =
-            (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map {
+            (json \ "clusters").as[JsArray].value.toSeq.find(v => (v \ "name").as[String] == currentContextCluster).map {
               defaultUser =>
                 {
                   val base64Cert = (defaultUser \ "cluster" \ "certificate-authority-data").as[String]
@@ -265,9 +265,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCleanupNames =
-            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           openshiftDnsOperatorCleanupDomains =
-            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -294,7 +294,7 @@ object KubernetesConfig {
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(443, 8443)),
           gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
-          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
           gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
       case None             =>
@@ -380,9 +380,9 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
           openshiftDnsOperatorCleanup = (conf \ "openshiftDnsOperatorCleanup").asOpt[Boolean].getOrElse(false),
           openshiftDnsOperatorCleanupNames =
-            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           openshiftDnsOperatorCleanupDomains =
-            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty),
+            (conf \ "openshiftDnsOperatorCleanupDomains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
           kubeDnsOperatorCoreDnsNamespace =
             (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
@@ -409,7 +409,7 @@ object KubernetesConfig {
             .orElse((conf \ "gatewayApiHttpsListenerPort").asOpt[Seq[Int]])
             .getOrElse(Seq(443, 8443)),
           gatewayApiSyncIntervalSeconds = (conf \ "gatewayApiSyncIntervalSeconds").asOpt[Long].getOrElse(60L),
-          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
+          gatewayApiAddresses = (conf \ "gatewayApiAddresses").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq,
           gatewayApiGatewayServiceName = (conf \ "gatewayApiGatewayServiceName").asOpt[String].filter(_.nonEmpty)
         )
     }

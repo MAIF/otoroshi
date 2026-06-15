@@ -583,6 +583,7 @@ GET     /api/stats                                            otoroshi.controlle
 GET     /api/events                                           otoroshi.controllers.adminapi.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])
 GET     /api/events/_template                                 otoroshi.controllers.adminapi.TemplatesController.templateSpec(eventType: String)
 POST    /api/status                                           otoroshi.controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
+GET     /api/node/eventstream                                 otoroshi.controllers.adminapi.AnalyticsController.getNodeEventStream()
 
 ###  User analytics (PostgreSQL-backed dashboards)  ###
 POST    /api/analytics/_query                                 otoroshi.next.analytics.controllers.AnalyticsController.runQuery

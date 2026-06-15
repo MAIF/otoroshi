@@ -791,7 +791,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       }
       .filterNot(a => a._1 == "page" || a._1 == "pageSize" || a._1 == "fields")
     val hasFilters         = filters.nonEmpty
-    val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+    val fields             = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
     val hasFields          = fields.nonEmpty
     val filtered           = ctx.request
       .getQueryString("filtered")
@@ -803,7 +803,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           })
           .toSeq
       )
-      .getOrElse(Seq.empty[(String, String)])
+      .getOrElse(Seq.empty[(String, String)]).toSeq
 
     def sortFinalItems(values: Seq[JsValue]): Seq[JsValue] = {
       val sorted    = ctx.request
@@ -816,7 +816,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             })
             .toSeq
         )
-        .getOrElse(Seq.empty[(String, Boolean)])
+        .getOrElse(Seq.empty[(String, Boolean)]).toSeq
       val hasSorted = sorted.nonEmpty
 
       if (hasSorted) {
@@ -992,7 +992,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 metadata
               )
             )
-            val fields    = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+            val fields    = ctx.request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
             val hasFields = fields.nonEmpty
             if (hasFields) {
               val out = writeEntity(v).as[JsObject]

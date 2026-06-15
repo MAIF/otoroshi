@@ -29,7 +29,8 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
 
   private val logger = Logger("otoroshi-user-analytics-alert-events-api")
 
-  /** Read a JSONB array column. Vert.x may return either a `JsonArray`,
+  /**
+   * Read a JSONB array column. Vert.x may return either a `JsonArray`,
    *  a `String` (PG bytea/jsonb representation), or a wrapped `Buffer` —
    *  fall back to Play JSON parsing in any case.
    */
@@ -38,7 +39,7 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
     if (v == null) JsArray()
     else
       v match {
-        case s: String                       => scala.util.Try(Json.parse(s)).getOrElse(JsArray())
+        case s: String                        => scala.util.Try(Json.parse(s)).getOrElse(JsArray())
         case ja: io.vertx.core.json.JsonArray => scala.util.Try(Json.parse(ja.encode())).getOrElse(JsArray())
         case other                            => scala.util.Try(Json.parse(other.toString)).getOrElse(JsArray())
       }
@@ -47,11 +48,11 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
   private def requireTenantAccess(
       ctx: ApiActionContext[?]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
-    val tenant = ctx.currentTenant
+    val tenant    = ctx.currentTenant
     val canAccess =
       env.bypassUserRightsCheck ||
-        ctx.userIsSuperAdmin ||
-        ctx.backOfficeUser.toOption.flatten.exists(_.rights.canReadTenant(tenant))
+      ctx.userIsSuperAdmin ||
+      ctx.backOfficeUser.toOption.flatten.exists(_.rights.canReadTenant(tenant))
     if (canAccess) f(tenant.value)
     else Forbidden(Json.obj("error" -> s"no access to tenant '${tenant.value}'")).future
   }
@@ -59,8 +60,14 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
   /** GET /api/analytics/alerts/:alertId/events */
   def listEvents(alertId: String): Action[AnyContent] = ApiAction.async { ctx =>
     requireTenantAccess(ctx) { tenant =>
-      val limit  = ctx.request.getQueryString("limit").flatMap(s => scala.util.Try(s.toInt).toOption).getOrElse(200).max(1).min(2000)
-      val offset = ctx.request.getQueryString("offset").flatMap(s => scala.util.Try(s.toInt).toOption).getOrElse(0).max(0)
+      val limit      = ctx.request
+        .getQueryString("limit")
+        .flatMap(s => scala.util.Try(s.toInt).toOption)
+        .getOrElse(200)
+        .max(1)
+        .min(2000)
+      val offset     =
+        ctx.request.getQueryString("offset").flatMap(s => scala.util.Try(s.toInt).toOption).getOrElse(0).max(0)
       val seenFilter = ctx.request.getQueryString("seen") match {
         case Some("true")  => Some("AND seen_at IS NOT NULL")
         case Some("false") => Some("AND seen_at IS NULL")
@@ -81,23 +88,53 @@ class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(impl
                | LIMIT $$3 OFFSET $$4""".stripMargin
           pool
             .preparedQuery(sql)
-            .execute(VertxTuple.from(Array[AnyRef](alertId, tenant, java.lang.Integer.valueOf(limit), java.lang.Integer.valueOf(offset))))
+            .execute(
+              VertxTuple.from(
+                Array[AnyRef](alertId, tenant, java.lang.Integer.valueOf(limit), java.lang.Integer.valueOf(offset))
+              )
+            )
             .scala
             .map { rs =>
               val items = rs.iterator().asScala.toList.map { row =>
                 Json.obj(
-                  "id"             -> row.getString("id"),
-                  "ts"             -> Option(row.getOffsetDateTime("ts")).map(_.toInstant.toEpochMilli).map(JsNumber(_)).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "tenant"         -> row.getString("tenant"),
-                  "alert_id"       -> row.getString("alert_id"),
-                  "alert_name"     -> Option(row.getString("alert_name")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "severity"       -> Option(row.getString("severity")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "message"        -> Option(row.getString("message")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "combine"        -> Option(row.getString("combine_op")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "windowSeconds"  -> Option(row.getValue("window_seconds")).map(v => JsNumber(BigDecimal(v.toString))).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "conditions"     -> readJsonbArray(row, "conditions"),
-                  "seen_at"        -> Option(row.getOffsetDateTime("seen_at")).map(_.toInstant.toEpochMilli).map(JsNumber(_)).getOrElse(JsNull).asInstanceOf[JsValue],
-                  "seen_by"        -> Option(row.getString("seen_by")).map(JsString.apply).getOrElse(JsNull).asInstanceOf[JsValue]
+                  "id"            -> row.getString("id"),
+                  "ts"            -> Option(row.getOffsetDateTime("ts"))
+                    .map(_.toInstant.toEpochMilli)
+                    .map(JsNumber(_))
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "tenant"        -> row.getString("tenant"),
+                  "alert_id"      -> row.getString("alert_id"),
+                  "alert_name"    -> Option(row.getString("alert_name"))
+                    .map(JsString.apply)
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "severity"      -> Option(row.getString("severity"))
+                    .map(JsString.apply)
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "message"       -> Option(row.getString("message"))
+                    .map(JsString.apply)
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "combine"       -> Option(row.getString("combine_op"))
+                    .map(JsString.apply)
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "windowSeconds" -> Option(row.getValue("window_seconds"))
+                    .map(v => JsNumber(BigDecimal(v.toString)))
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "conditions"    -> readJsonbArray(row, "conditions"),
+                  "seen_at"       -> Option(row.getOffsetDateTime("seen_at"))
+                    .map(_.toInstant.toEpochMilli)
+                    .map(JsNumber(_))
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue],
+                  "seen_by"       -> Option(row.getString("seen_by"))
+                    .map(JsString.apply)
+                    .getOrElse(JsNull)
+                    .asInstanceOf[JsValue]
                 )
               }
               Ok(Json.obj("items" -> JsArray(items), "limit" -> limit, "offset" -> offset))

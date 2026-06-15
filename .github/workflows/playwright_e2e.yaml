@@ -24,6 +24,13 @@ jobs:
       OTOROSHI_INITIAL_ADMIN_PASSWORD: 'password'
       ADMIN_API_CLIENT_ID: 'admin-api-apikey-id'
       ADMIN_API_CLIENT_SECRET: 'admin-api-apikey-secret'
+      # Disable the anonymous-reporting opt-in popup: on a fresh instance it
+      # renders asynchronously after login and overlays the whole BO, making
+      # its modal intercept every click. Off => backend reports should_enable,
+      # so BackOfficeApp never triggers the popup at all.
+      OTOROSHI_ANONYMOUS_REPORTING_ENABLED: 'false'
+      # Refresh proxyState every 2s (default 10s) so the admin API reflects writes quickly in tests.
+      OTOROSHI_NEXT_STATE_SYNC_INTERVAL: '2000'
       # Playwright config
       PW_AUTH_TTL_MIN: '0'
       CI: 'true'
@@ -155,13 +162,32 @@ jobs:
               "label": "Tester"
             }' || echo "tester admin may already exist"
 
+      - name: Resolve Playwright version
+        id: playwright-version
+        working-directory: otoroshi/javascript
+        run: echo "version=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
         working-directory: otoroshi/javascript
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" == "true" ]; then
+            # Browser binaries restored from cache; OS-level libs aren't, so
+            # install just those (they live on the runner, not in the cache).
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Run Playwright tests
         working-directory: otoroshi/javascript
-        run: npx playwright test
+        run: npx playwright test --reporter=line
 
       - name: Stop Otoroshi
         if: always()

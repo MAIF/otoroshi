@@ -35,12 +35,16 @@ function View({ rawValue }) {
         <Link className="btn btn-secondary btn-sm" to={`/user-dashboards/show/${rawValue.id}`}>
           <i className="fas fa-chart-line"></i> View dashboard
         </Link>
-        <Link className="btn btn-secondary btn-sm" to={`/user-dashboards`} style={{ marginLeft: 5 }}>
+        <Link
+          className="btn btn-secondary btn-sm"
+          to={`/user-dashboards`}
+          style={{ marginLeft: 5 }}
+        >
           <i className="fas fa-th-list" /> All dashboards
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 export class UserDashboardsPage extends Component {
@@ -79,8 +83,7 @@ export class UserDashboardsPage extends Component {
       props: {
         label: 'Widgets',
         height: '500px',
-        help:
-          'JSON array of widgets. Each widget needs: id, title, query, type (line/area/bar/pie/donut/scalar/metric/table/heatmap), width (1-4), height (rows). See /api/analytics/_schema for available queries.',
+        help: 'JSON array of widgets. Each widget needs: id, title, query, type (line/area/bar/pie/donut/scalar/metric/table/heatmap), width (1-4), height (rows). See /api/analytics/_schema for available queries.',
       },
     },
     defaults: {
@@ -88,17 +91,28 @@ export class UserDashboardsPage extends Component {
       props: {
         label: 'Defauls',
         height: '250px',
-        help:
-          'JSON free object to store dashboard input like auto refresh, time range, etc',
+        help: 'JSON free object to store dashboard input like auto refresh, time range, etc',
       },
     },
     view: {
       type: View,
-
-    }
+    },
   };
 
-  formFlow = ['_loc', 'id', 'name', 'description', '<<< Dashboard', 'enabled', 'widgets', 'defaults', 'view', '>>> Tags & Metadata','tags', 'metadata', ];
+  formFlow = [
+    '_loc',
+    'id',
+    'name',
+    'description',
+    '<<< Dashboard',
+    'enabled',
+    'widgets',
+    'defaults',
+    'view',
+    '>>> Tags & Metadata',
+    'tags',
+    'metadata',
+  ];
 
   columns = [
     {
@@ -123,7 +137,11 @@ export class UserDashboardsPage extends Component {
       style: { width: 220 },
       content: (item) => (item.metadata && item.metadata['otoroshi-default-id']) || '',
       cell: (v) =>
-        v ? <span className="badge bg-info">{v}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>,
+        v ? (
+          <span className="badge bg-info">{v}</span>
+        ) : (
+          <span style={{ color: 'var(--text-muted)' }}>—</span>
+        ),
     },
     // {
     //   title: 'View',
@@ -169,8 +187,7 @@ export class UserDashboardsPage extends Component {
       });
   };
 
-  fetchItems = () =>
-    dashboards.findAll().then((items) => (Array.isArray(items) ? items : []));
+  fetchItems = () => dashboards.findAll().then((items) => (Array.isArray(items) ? items : []));
 
   createItem = (item) => dashboards.create(item);
   updateItem = (item) => dashboards.update(item);

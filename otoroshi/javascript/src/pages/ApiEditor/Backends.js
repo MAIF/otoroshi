@@ -12,7 +12,7 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import { Row } from '../../components/Row';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush, linkWithQuery } from './hooks';
-import { DraftOnly, VersionBadge } from './DraftOnly';
+import { DraftOnly, VersionBadge, EditInDraftButton } from './DraftOnly';
 
 export function Backends(props) {
   const history = useHistory();
@@ -78,7 +78,7 @@ export function Backends(props) {
       navigateOnEdit={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/backends/${item.id}/edit`)
       }
-      selfUrl="backends"
+      selfUrl={`apis/${params.apiId}/backends`}
       defaultTitle="Backend"
       itemName="Backend"
       columns={columns}
@@ -229,7 +229,7 @@ export function EditBackend(props) {
   const history = useHistory();
   const location = useLocation();
 
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [backend, setBackend] = useState();
 
@@ -252,12 +252,57 @@ export function EditBackend(props) {
 
   if (!item || !backend) return <SimpleLoader />;
 
+  const formSchema = {
+    name: {
+      label: 'Name',
+      type: 'string',
+      placeholder: 'New backend',
+    },
+    client: {
+      renderer: (props) => (
+        <Row title="HTTP client">
+          <NgSelectRenderer
+            id="client_select"
+            value={props.rootValue.client}
+            placeholder="Select an existing http client"
+            label={' '}
+            ngOptions={{ spread: true }}
+            isClearable
+            onChange={(client) => {
+              props.rootOnChange({
+                ...props.rootValue,
+                client,
+              });
+            }}
+            options={item.clients_backend_config}
+            optionsTransformer={(arr) => arr.map((item) => ({ label: item.name, value: item.id }))}
+          />
+        </Row>
+      ),
+    },
+    backend: {
+      type: 'form',
+      label: 'Configuration',
+      schema: NgBackend.schema,
+      flow: NgBackend.flow.filter((f) => f !== 'client'),
+    },
+  };
+
+  const formFlow = [
+    {
+      type: 'group',
+      fields: ['name', 'client'],
+      collapsable: false,
+    },
+    'backend',
+  ];
+
   return (
     <div className="page">
       <PageTitle title="Backend Settings" {...props} style={{ paddingBottom: 0 }} />
 
       <div className="displayGroupBtn">
-        <DraftOnly>
+        {isDraft ? (
           <FeedbackButton
             type="success"
             onPress={updateBackend}
@@ -267,60 +312,14 @@ export function EditBackend(props) {
               </div>
             }
           />
-        </DraftOnly>
+        ) : (
+          <EditInDraftButton />
+        )}
       </div>
 
       <BackendForm
-        state={{
-          form: {
-            schema: {
-              name: {
-                label: 'Name',
-                type: 'string',
-                placeholder: 'New backend',
-              },
-              client: {
-                renderer: (props) => (
-                  <Row title="HTTP client">
-                    <NgSelectRenderer
-                      id="client_select"
-                      value={props.rootValue.client}
-                      placeholder="Select an existing http client"
-                      label={' '}
-                      ngOptions={{ spread: true }}
-                      isClearable
-                      onChange={(client) => {
-                        props.rootOnChange({
-                          ...props.rootValue,
-                          client,
-                        });
-                      }}
-                      options={item.clients_backend_config}
-                      optionsTransformer={(arr) =>
-                        arr.map((item) => ({ label: item.name, value: item.id }))
-                      }
-                    />
-                  </Row>
-                ),
-              },
-              backend: {
-                type: 'form',
-                label: 'Configuration',
-                schema: NgBackend.schema,
-                flow: NgBackend.flow.filter((f) => f !== 'client'),
-              },
-            },
-            flow: [
-              {
-                type: 'group',
-                fields: ['name', 'client'],
-                collapsable: false,
-              },
-              'backend',
-            ],
-            value: backend,
-          },
-        }}
+        readOnly={!isDraft}
+        state={{ form: { schema: formSchema, flow: formFlow, value: backend } }}
         onChange={setBackend}
       />
     </div>

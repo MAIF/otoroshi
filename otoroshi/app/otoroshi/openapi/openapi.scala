@@ -327,7 +327,7 @@ class OpenApiGenerator(
 
     if (!result.contains(clazz.getName)) {
       val ctrInfo    = clazz.getDeclaredConstructorInfo.asScala.headOption
-      val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
+      val params     = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty).toSeq
       val paramNames = params.map { param =>
         param.getName
       }
@@ -1152,7 +1152,7 @@ class OpenApiGenerator(
       "info"         -> Json.obj(
         "title"       -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
-        "version"     -> "17.16.0-dev",
+        "version"     -> "17.17.0-dev",
         "contact"     -> Json.obj(
           "name"  -> "Otoroshi Team",
           "email" -> "oss@maif.fr"

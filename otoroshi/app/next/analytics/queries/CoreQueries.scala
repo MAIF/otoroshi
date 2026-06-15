@@ -54,7 +54,8 @@ object QueryHelpers {
   }
 }
 
-/** Aggregates all built-in queries. Extension queries are added by the
+/**
+ * Aggregates all built-in queries. Extension queries are added by the
  *  registry on top of `all`.
  */
 object CoreQueries {
@@ -75,9 +76,12 @@ object ScalarQueries {
       settings: UserAnalyticsExporterSettings,
       pool: Pool
   )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
-    val (where, vals) = FilterSql.whereClause(filters)
-    val whereWithExtra = if (filtersExtra.isEmpty) where else (if (where.isEmpty) " WHERE " + filtersExtra else where + " AND " + filtersExtra)
-    val sql = s"SELECT $query AS value FROM ${AnalyticsSchema.fullTable(settings)}$whereWithExtra"
+    val (where, vals)  = FilterSql.whereClause(filters)
+    val whereWithExtra =
+      if (filtersExtra.isEmpty) where
+      else (if (where.isEmpty) " WHERE " + filtersExtra
+            else where + " AND " + filtersExtra)
+    val sql            = s"SELECT $query AS value FROM ${AnalyticsSchema.fullTable(settings)}$whereWithExtra"
     QueryHelpers.runSelect(pool, sql, vals).map { rows =>
       val value = rows.headOption.map(r => QueryHelpers.safeLong(r, 0)).getOrElse(0L)
       QueryResult(
@@ -89,29 +93,29 @@ object ScalarQueries {
   }
 
   object RequestsTotal extends AnalyticsQuery {
-    val id              = "requests_total"
-    val name            = "Total requests"
-    val description     = "Total number of gateway requests over the selected period."
-    val shape           = AnalyticsShape.Scalar
-    val defaultWidget   = "metric"
+    val id                       = "requests_total"
+    val name                     = "Total requests"
+    val description              = "Total number of gateway requests over the selected period."
+    val shape                    = AnalyticsShape.Scalar
+    val defaultWidget            = "metric"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] = scalar("COUNT(*)", "Total requests")(f, s, pool)
+    ): Future[QueryResult]       = scalar("COUNT(*)", "Total requests")(f, s, pool)
   }
 
   object ErrorsTotal extends AnalyticsQuery {
-    val id              = "errors_total"
-    val name            = "Total errors"
-    val description     = "Total number of errored requests over the selected period."
-    val shape           = AnalyticsShape.Scalar
-    val defaultWidget   = "metric"
+    val id                       = "errors_total"
+    val name                     = "Total errors"
+    val description              = "Total number of errored requests over the selected period."
+    val shape                    = AnalyticsShape.Scalar
+    val defaultWidget            = "metric"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] = scalar("COUNT(*)", "Total errors", "err = true")(f, s, pool)
+    ): Future[QueryResult]       = scalar("COUNT(*)", "Total errors", "err = true")(f, s, pool)
   }
 }
 
@@ -130,7 +134,7 @@ object PieQueries {
   )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
     val (where, vals) = FilterSql.whereClause(filters)
     val key           = if (castToText) s"$field::text" else field
-    val sql =
+    val sql           =
       s"""SELECT $key AS key, COUNT(*) AS value
          |FROM ${AnalyticsSchema.fullTable(settings)}$where
          |GROUP BY 1 ORDER BY value DESC""".stripMargin
@@ -198,17 +202,17 @@ object TopNQueries {
   )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
     val topN          = (params \ "top_n").asOpt[Int].getOrElse(10).max(1).min(1000)
     val (where, vals) = FilterSql.whereClause(filters)
-    val whereFull = (where, whereExtra) match {
-      case ("", "")      => ""
-      case (w, "")       => w
-      case ("", e)       => " WHERE " + e
-      case (w, e)        => w + " AND " + e
+    val whereFull     = (where, whereExtra) match {
+      case ("", "") => ""
+      case (w, "")  => w
+      case ("", e)  => " WHERE " + e
+      case (w, e)   => w + " AND " + e
     }
-    val select = labelField match {
+    val select        = labelField match {
       case Some(lbl) => s"$keyField AS key, MAX($lbl) AS label, COUNT(*) AS value"
       case None      => s"$keyField AS key, COUNT(*) AS value"
     }
-    val sql = s"""SELECT $select
+    val sql           = s"""SELECT $select
                  |FROM ${AnalyticsSchema.fullTable(settings)}$whereFull
                  |GROUP BY $keyField
                  |ORDER BY value DESC
@@ -225,13 +229,13 @@ object TopNQueries {
   }
 
   abstract class TopN(field: String, labelField: Option[String], extra: String = "") extends AnalyticsQuery {
-    val shape         = AnalyticsShape.TopN
-    val defaultWidget = "bar"
+    val shape                            = AnalyticsShape.TopN
+    val defaultWidget                    = "bar"
     override val params: Seq[QueryParam] = Seq(TopNParam)
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] = topNQuery(field, labelField, extra)(f, p, s, pool)
+    ): Future[QueryResult]               = topNQuery(field, labelField, extra)(f, p, s, pool)
   }
 
   object ByRoute extends TopN("route_id", Some("route_name"), "route_id IS NOT NULL") {
@@ -326,7 +330,7 @@ object TimeseriesQueries {
     val sql           = buildSeriesQuery(s"$aggExpr AS value", bucket, where, AnalyticsSchema.fullTable(settings))
     QueryHelpers.runSelect(pool, sql, vals).map { rows =>
       val points = rows.map { r =>
-        val ts = r.getOffsetDateTime(0)
+        val ts         = r.getOffsetDateTime(0)
         val v: JsValue = if (asDouble) {
           val v = QueryHelpers.safeDouble(r, 2)
           JsNumber(BigDecimal(v))
@@ -342,31 +346,34 @@ object TimeseriesQueries {
   }
 
   object RequestsPerSecond extends AnalyticsQuery {
-    val id            = "requests_per_second"
-    val name          = "Requests per second"
-    val description   = "Request rate (computed from bucket count / bucket size)."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "line"
+    val id                       = "requests_per_second"
+    val name                     = "Requests per second"
+    val description              = "Request rate (computed from bucket count / bucket size)."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "line"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] =
+    ): Future[QueryResult]       =
       runSingleSeries(s"COUNT(*)::float / ${b.seconds.toDouble}", asDouble = true)(f, b, s, pool)
   }
 
   object ErrorRateTs extends AnalyticsQuery {
-    val id            = "error_rate_ts"
-    val name          = "Error rate"
-    val description   = "Fraction of errored requests per bucket."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "line"
+    val id                       = "error_rate_ts"
+    val name                     = "Error rate"
+    val description              = "Fraction of errored requests per bucket."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "line"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] =
-      runSingleSeries("CASE WHEN COUNT(*) > 0 THEN SUM(CASE WHEN err THEN 1 ELSE 0 END)::float / COUNT(*) ELSE 0 END", asDouble = true)(
+    ): Future[QueryResult]       =
+      runSingleSeries(
+        "CASE WHEN COUNT(*) > 0 THEN SUM(CASE WHEN err THEN 1 ELSE 0 END)::float / COUNT(*) ELSE 0 END",
+        asDouble = true
+      )(
         f,
         b,
         s,
@@ -375,53 +382,53 @@ object TimeseriesQueries {
   }
 
   object DurationAvgTs extends AnalyticsQuery {
-    val id            = "duration_avg_ts"
-    val name          = "Average response time"
-    val description   = "Average duration_ms per bucket."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "line"
+    val id                       = "duration_avg_ts"
+    val name                     = "Average response time"
+    val description              = "Average duration_ms per bucket."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "line"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] =
+    ): Future[QueryResult]       =
       runSingleSeries("COALESCE(AVG(duration_ms), 0)", asDouble = true)(f, b, s, pool)
   }
 
   object OverheadAvgTs extends AnalyticsQuery {
-    val id            = "overhead_avg_ts"
-    val name          = "Average overhead"
-    val description   = "Average overhead_ms per bucket."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "line"
+    val id                       = "overhead_avg_ts"
+    val name                     = "Average overhead"
+    val description              = "Average overhead_ms per bucket."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "line"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
-    ): Future[QueryResult] =
+    ): Future[QueryResult]       =
       runSingleSeries("COALESCE(AVG(overhead_ms), 0)", asDouble = true)(f, b, s, pool)
   }
 
   object DurationPercentilesTs extends AnalyticsQuery {
-    val id            = "duration_percentiles_ts"
-    val name          = "Latency percentiles"
-    val description   = "p50/p75/p95/p99 of duration_ms per bucket."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "line"
+    val id                       = "duration_percentiles_ts"
+    val name                     = "Latency percentiles"
+    val description              = "p50/p75/p95/p99 of duration_ms per bucket."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "line"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = {
       val (where, vals) = FilterSql.whereClause(f)
-      val agg =
+      val agg           =
         """COALESCE(percentile_cont(0.5)  WITHIN GROUP (ORDER BY duration_ms), 0) AS p50,
           |COALESCE(percentile_cont(0.75) WITHIN GROUP (ORDER BY duration_ms), 0) AS p75,
           |COALESCE(percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms), 0) AS p95,
           |COALESCE(percentile_cont(0.99) WITHIN GROUP (ORDER BY duration_ms), 0) AS p99""".stripMargin
-      val sql = TimeseriesQueries.buildSeriesQuery(agg, bucket, where, AnalyticsSchema.fullTable(s))
+      val sql           = TimeseriesQueries.buildSeriesQuery(agg, bucket, where, AnalyticsSchema.fullTable(s))
       QueryHelpers.runSelect(pool, sql, vals).map { rows =>
-        val seriesNames = Seq("p50", "p75", "p95", "p99")
+        val seriesNames  = Seq("p50", "p75", "p95", "p99")
         val pointsByName = seriesNames.zipWithIndex.map { case (nm, i) =>
           val pts = rows.map { r =>
             val ts = r.getOffsetDateTime(0)
@@ -440,11 +447,11 @@ object TimeseriesQueries {
   }
 
   object TrafficInOutTs extends AnalyticsQuery {
-    val id            = "traffic_in_out_ts"
-    val name          = "Traffic in / out"
-    val description   = "Sum of data_in and data_out per bucket."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "area"
+    val id                       = "traffic_in_out_ts"
+    val name                     = "Traffic in / out"
+    val description              = "Sum of data_in and data_out per bucket."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "area"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
@@ -452,10 +459,10 @@ object TimeseriesQueries {
     ): Future[QueryResult] = {
       val (where, vals) = FilterSql.whereClause(f)
       val agg           = "COALESCE(SUM(data_in), 0) AS data_in, COALESCE(SUM(data_out), 0) AS data_out"
-      val sql = TimeseriesQueries.buildSeriesQuery(agg, bucket, where, AnalyticsSchema.fullTable(s))
+      val sql           = TimeseriesQueries.buildSeriesQuery(agg, bucket, where, AnalyticsSchema.fullTable(s))
       QueryHelpers.runSelect(pool, sql, vals).map { rows =>
         val seriesNames = Seq("data_in", "data_out")
-        val seriesJs = seriesNames.zipWithIndex.map { case (nm, i) =>
+        val seriesJs    = seriesNames.zipWithIndex.map { case (nm, i) =>
           val pts = rows.map { r =>
             val ts = r.getOffsetDateTime(0)
             val v  = QueryHelpers.safeLong(r, 2 + i)
@@ -473,26 +480,26 @@ object TimeseriesQueries {
   }
 
   object RequestsByStatusClassTs extends AnalyticsQuery {
-    val id            = "requests_by_status_class_ts"
-    val name          = "Status classes over time"
-    val description   = "2xx / 3xx / 4xx / 5xx counts per bucket."
-    val shape         = AnalyticsShape.Timeseries
-    val defaultWidget = "area"
+    val id                       = "requests_by_status_class_ts"
+    val name                     = "Status classes over time"
+    val description              = "2xx / 3xx / 4xx / 5xx counts per bucket."
+    val shape                    = AnalyticsShape.Timeseries
+    val defaultWidget            = "area"
     override val supportsCompare = true
     def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: Pool)(implicit
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = {
       val (where, vals) = FilterSql.whereClause(f)
-      val agg =
+      val agg           =
         """COUNT(*) FILTER (WHERE status >= 200 AND status < 300) AS s2xx,
           |COUNT(*) FILTER (WHERE status >= 300 AND status < 400) AS s3xx,
           |COUNT(*) FILTER (WHERE status >= 400 AND status < 500) AS s4xx,
           |COUNT(*) FILTER (WHERE status >= 500 AND status < 600) AS s5xx""".stripMargin
-      val sql = TimeseriesQueries.buildSeriesQuery(agg, bucket, where, AnalyticsSchema.fullTable(s))
+      val sql           = TimeseriesQueries.buildSeriesQuery(agg, bucket, where, AnalyticsSchema.fullTable(s))
       QueryHelpers.runSelect(pool, sql, vals).map { rows =>
         val seriesNames = Seq("2xx", "3xx", "4xx", "5xx")
-        val seriesJs = seriesNames.zipWithIndex.map { case (nm, i) =>
+        val seriesJs    = seriesNames.zipWithIndex.map { case (nm, i) =>
           val pts = rows.map { r =>
             val ts = r.getOffsetDateTime(0)
             val v  = QueryHelpers.safeLong(r, 2 + i)
@@ -540,12 +547,12 @@ object HeatmapQueries {
         env: Env
     ): Future[QueryResult] = {
       val (where, vals) = FilterSql.whereClause(f)
-      val filterCounts = LatencyBuckets.zipWithIndex
+      val filterCounts  = LatencyBuckets.zipWithIndex
         .map { case ((_, cond), i) => s"COUNT(*) FILTER (WHERE $cond) AS y$i" }
         .mkString(",\n")
-      val sql = TimeseriesQueries.buildSeriesQuery(filterCounts, bucket, where, AnalyticsSchema.fullTable(s))
+      val sql           = TimeseriesQueries.buildSeriesQuery(filterCounts, bucket, where, AnalyticsSchema.fullTable(s))
       QueryHelpers.runSelect(pool, sql, vals).map { rows =>
-        val xBuckets = rows.map(r => QueryHelpers.jsTs(r.getOffsetDateTime(0)))
+        val xBuckets                  = rows.map(r => QueryHelpers.jsTs(r.getOffsetDateTime(0)))
         val values: Seq[Seq[JsValue]] = LatencyBuckets.zipWithIndex.map { case (_, i) =>
           rows.map(r => JsNumber(QueryHelpers.safeLong(r, 2 + i)))
         }

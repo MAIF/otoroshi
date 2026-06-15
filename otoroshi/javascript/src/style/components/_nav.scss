@@ -96,6 +96,16 @@ li:not(.nav-item--open) .nav-link {
   background-color: var(--bg-color_level2);
 }
 
+// compact tag/badge inside sidebar items so it leaves more room for the title
+.sidebar-feature .badge {
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  padding: 1px 4px;
+}
+
 .nav-item:hover {
   background-color: var(--bg-color_level1);
 }

@@ -10,6 +10,7 @@ import { UserAlertsPage } from '../pages/analytics/UserAlertsPage';
 import { UserAlertEventsPage } from '../pages/analytics/UserAlertEventsPage';
 import { DocumentationPage } from '../pages/DocumentationPage';
 import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
+import { GlobalNodeEventStreamPage } from '../pages/GlobalNodeEventStreamPage';
 import { ServiceHealthPage } from '../pages/ServiceHealthPage';
 import { ServiceEventsPage } from '../pages/ServiceEventsPage';
 import { ServiceLiveStatsPage } from '../pages/ServiceLiveStatsPage';
@@ -60,6 +61,7 @@ import { ReloadNewVersion } from '../components/ReloadNewVersion';
 import { UpdateOtoroshiVersion } from '../components/UpdateOtoroshiVersion';
 import { DefaultSidebar } from '../components/DefaultSidebar';
 import { DynamicSidebar } from '../components/DynamicSidebar';
+import SidebarModeToggle from '../components/SidebarModeToggle';
 // import { DynamicTitle } from '../components/DynamicTitle';
 import { dynamicTitleContent, DynamicTitleSignal } from '../components/DynamicTitleSignal';
 
@@ -103,10 +105,7 @@ class ServiceDescriptorsMigrationPopup extends Component {
               Service Descriptor
             </a>{' '}
             remaining in your database. For more information about that, please read{' '}
-            <a
-              href="https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html"
-              target="_blank"
-            >
+            <a href="https://www.otoroshi.io/docs/topics/deprecating-sd" target="_blank">
               the documentation
             </a>
           </p>
@@ -140,9 +139,7 @@ class AnonymousReportingEnabled extends Component {
           <p style={{ textAlign: 'justify' }}>
             It won't send sensitive or personnal data, just a bunch of statistics about your usage
             of otoroshi (see{' '}
-            <a href="https://maif.github.io/otoroshi/manual/topics/anonymous-reporting.html">
-              the documentation
-            </a>
+            <a href="https://www.otoroshi.io/docs/topics/anonymous-reporting">the documentation</a>
             ).
           </p>
           <p style={{ textAlign: 'justify' }}>
@@ -181,8 +178,20 @@ class AnonymousReportingEnable extends Component {
   }
 }
 
-const sidebarOpenOnLoad =
-  (window.localStorage.getItem('otoroshi-sidebar-open') || 'true') === 'true';
+const SIDEBAR_MODE_KEY = 'otoroshi-sidebar-mode';
+
+// Reads the persisted sidebar mode, migrating from the legacy boolean flag if needed
+function readSidebarMode() {
+  const stored = window.localStorage.getItem(SIDEBAR_MODE_KEY);
+  if (stored === 'expanded' || stored === 'collapsed' || stored === 'hover') {
+    return stored;
+  }
+  const legacy = window.localStorage.getItem('otoroshi-sidebar-open');
+  return legacy === 'false' ? 'collapsed' : 'expanded';
+}
+
+const sidebarModeOnLoad = readSidebarMode();
+const sidebarOpenOnLoad = sidebarModeOnLoad === 'expanded';
 
 export const SidebarContext = React.createContext({
   sidebarOpen: sidebarOpenOnLoad,
@@ -199,9 +208,22 @@ class BackOfficeAppContainer extends Component {
       catchedError: null,
       env: null,
       loading: true,
-      openedSidebar: sidebarOpenOnLoad,
+      sidebarMode: sidebarModeOnLoad,
+      sidebarHovered: false,
     };
   }
+
+  // Effective open/closed state derived from the selected sidebar mode
+  isSidebarOpened = () => {
+    const { sidebarMode, sidebarHovered } = this.state;
+    return sidebarMode === 'expanded' || (sidebarMode === 'hover' && sidebarHovered);
+  };
+
+  setSidebarMode = (sidebarMode) => {
+    window.localStorage.setItem(SIDEBAR_MODE_KEY, sidebarMode);
+    window.localStorage.setItem('otoroshi-sidebar-open', String(sidebarMode === 'expanded'));
+    this.setState({ sidebarMode, sidebarHovered: false });
+  };
 
   addService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -303,7 +325,7 @@ class BackOfficeAppContainer extends Component {
         setTitle={(t) => (dynamicTitleContent.value = t)}
         getTitle={() => dynamicTitleContent.value}
         setSidebarContent={(c) => DynamicSidebar.setContent(c)}
-        openedSidebar={this.state.openedSidebar}
+        openedSidebar={this.isSidebarOpened()}
         {...newProps}
       />
     );
@@ -346,15 +368,20 @@ class BackOfficeAppContainer extends Component {
       shortcuts = this.state.env.user_preferences.preferences.backoffice_sidebar_shortcuts || [];
     }
 
+    const { sidebarMode } = this.state;
+    const openedSidebar = this.isSidebarOpened();
+    const hoverMode = sidebarMode === 'hover';
+    const showSidebarToggle = !window.location.pathname.includes('/designer');
+
     return (
       <Loader loading={this.state.loading}>
         <SidebarContext.Provider
           value={{
             shortcuts,
             reloadEnv: this.reloadEnv,
-            openedSidebar: this.state.openedSidebar,
-            toggleSibebar: (openedSidebar) => this.setState({ openedSidebar }),
-            width: () => (this.state.openedSidebar ? 250 : 52),
+            openedSidebar,
+            toggleSibebar: (opened) => this.setSidebarMode(opened ? 'expanded' : 'collapsed'),
+            width: () => (openedSidebar ? 250 : 52),
           }}
         >
           <ReloadNewVersion />
@@ -378,31 +405,23 @@ class BackOfficeAppContainer extends Component {
             style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}
           >
             <div className="d-flex" style={{ position: 'relative' }}>
+              {hoverMode && <div className="sidebar-spacer" />}
               <div
-                className={`sidebar ${!this.state.openedSidebar ? 'sidebar--closed' : ''}`}
+                className={`sidebar ${!openedSidebar ? 'sidebar--closed' : ''} ${
+                  hoverMode ? 'sidebar--hover' : ''
+                }`}
                 id="sidebar"
+                onMouseEnter={hoverMode ? () => this.setState({ sidebarHovered: true }) : undefined}
+                onMouseLeave={
+                  hoverMode ? () => this.setState({ sidebarHovered: false }) : undefined
+                }
               >
-                {!window.location.pathname.includes('/designer') && (
-                  <i
-                    className={`fas fa-chevron-${this.state.openedSidebar ? 'left' : 'right'} sidebar-toggle`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.localStorage.setItem(
-                        'otoroshi-sidebar-open',
-                        String(!this.state.openedSidebar)
-                      );
-                      this.setState({
-                        openedSidebar: !this.state.openedSidebar,
-                      });
-                    }}
-                  />
-                )}
-                <div className={`sidebar-content ${this.state.openedSidebar ? 'ps-2' : 'px-1'}`}>
+                <div className={`sidebar-content ${openedSidebar ? 'ps-2' : 'px-1'}`}>
                   {this.state.env && (
                     <GlobalTenantSelector
                       env={this.state.env}
-                      openedSidebar={this.state.openedSidebar}
-                      toggleSidebar={(value) => this.setState({ openedSidebar: value })}
+                      openedSidebar={openedSidebar}
+                      toggleSidebar={() => this.setSidebarMode('expanded')}
                     />
                   )}
                   <DynamicSidebar />
@@ -424,6 +443,13 @@ class BackOfficeAppContainer extends Component {
                     )}
                   </div>
                 </div>
+                {showSidebarToggle && (
+                  <SidebarModeToggle
+                    mode={sidebarMode}
+                    opened={openedSidebar}
+                    onChange={this.setSidebarMode}
+                  />
+                )}
               </div>
               <div
                 className="flex-fill px-3"
@@ -521,7 +547,7 @@ class BackOfficeAppContainer extends Component {
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
-                            openedSidebar={this.state.openedSidebar}
+                            openedSidebar={openedSidebar}
                             {...props}
                           />
                         )}
@@ -535,7 +561,7 @@ class BackOfficeAppContainer extends Component {
                             setTitle={(t) => (dynamicTitleContent.value = t)}
                             getTitle={() => dynamicTitleContent.value}
                             setSidebarContent={(c) => DynamicSidebar.setContent(c)}
-                            openedSidebar={this.state.openedSidebar}
+                            openedSidebar={openedSidebar}
                             {...props}
                           />
                         )}
@@ -899,6 +925,10 @@ class BackOfficeAppContainer extends Component {
                       <Route
                         path="/events"
                         component={(props) => this.decorate(GlobalEventsPage, props)}
+                      />
+                      <Route
+                        path="/node/eventstream"
+                        component={(props) => this.decorate(GlobalNodeEventStreamPage, props)}
                       />
                       <Route
                         path="/snowmonkey"

@@ -106,7 +106,7 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
 
   page.content().contains("GET") mustBe true
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,

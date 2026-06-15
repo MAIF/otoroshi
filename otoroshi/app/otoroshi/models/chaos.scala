@@ -309,7 +309,7 @@ object SnowMonkeyConfig {
           outageDurationTo = (json \ "outageDurationTo")
             .asOpt[FiniteDuration](using durationFmt)
             .getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
-          targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty),
+          targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chaosConfig = (json \ "chaosConfig")
             .asOpt[ChaosConfig](using ChaosConfig._fmt)
             .getOrElse(ChaosConfig(enabled = true, None, None, None, None))

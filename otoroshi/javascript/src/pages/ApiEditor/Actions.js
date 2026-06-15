@@ -58,24 +58,23 @@ export function publishAPI(draft, api, history) {
           'POST',
           deployment,
           'apis.otoroshi.io'
-        )
-          .then((res) => {
-            if (res && res.error) {
-              window.newAlert(res.error_description || res.error);
-              return { aborted: true };
-            }
-            const queryParams = new URLSearchParams(window.location.search);
-            queryParams.delete('version');
-            window.history.replaceState(null, null, '?' + queryParams.toString());
-            window.location.reload();
+        ).then((res) => {
+          if (res && res.error) {
+            window.newAlert(res.error_description || res.error);
+            return;
+          }
+          // Keep the draft around after publish so the testing routes
+          // (X-OTOROSHI-TESTING) keep serving without an extra UI
+          // roundtrip via "Edit in Draft Mode". The draft content equals
+          // the just-published prod anyway since the deploy snapshotted
+          // from it.
+          const queryParams = new URLSearchParams(window.location.search);
+          queryParams.delete('version');
+          window.history.replaceState(null, null, '?' + queryParams.toString());
+          window.location.reload();
 
-            history.push(`/apis/${api.id}`);
-            return { aborted: false };
-          })
-          .then((result) => {
-            if (!result?.aborted)
-              return nextClient.forEntityNext(nextClient.ENTITIES.DRAFTS).deleteById(api.id);
-          });
+          history.push(`/apis/${api.id}`);
+        });
       }
     });
 }

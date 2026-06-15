@@ -1,10 +1,9 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSignalValue } from 'signals-react-safe';
 import { createTooltip } from '../../tooltips';
 import { SidebarContext } from '../../apps/BackOfficeApp';
 import { signalVersion } from './VersionSignal';
-import { useSignalValue } from 'signals-react-safe';
-import { VersionToggle } from './DraftOnly';
 
 const LINK_GROUPS = (id) => [
   {
@@ -104,6 +103,7 @@ const LINK_GROUPS = (id) => [
         title: 'API Keys',
         tab: 'apikeys',
         tooltip: { ...createTooltip(`Manage all API keys that can access`) },
+        isProd: true,
       },
       {
         to: `/apis/${id}/documentation`,
@@ -117,6 +117,13 @@ const LINK_GROUPS = (id) => [
   {
     label: 'Operations',
     links: [
+      {
+        to: `/apis/${id}/quality`,
+        icon: 'fa-clipboard-check',
+        title: 'Quality',
+        tab: 'quality',
+        tooltip: { ...createTooltip(`Show API quality tab`) },
+      },
       {
         to: `/apis/${id}/deployments`,
         icon: 'fa-server',
@@ -150,7 +157,8 @@ export default (props) => {
 
   const isOnApisHome = location.pathname.endsWith('/apis');
   const isOnNewAPIView = location.pathname.endsWith(`${params.apiId}/new`);
-  const version = useSignalValue(signalVersion);
+
+  const isProdView = useSignalValue(signalVersion) === 'Published';
 
   const isActive = (tab) => {
     if (tab.toLowerCase() === 'overview' && noneTabIsActive) return 'active';
@@ -184,11 +192,6 @@ export default (props) => {
         </li>
         {!isOnApisHome && (
           <>
-            {openedSidebar && version && version !== 'staging' && (
-              <div className="me-1 my-2" aria-disabled={isOnNewAPIView}>
-                <VersionToggle isDraft={version === 'Draft'} />
-              </div>
-            )}
             {LINK_GROUPS(params.apiId).map((group) => (
               <React.Fragment key={group.label}>
                 {openedSidebar && (
@@ -196,41 +199,43 @@ export default (props) => {
                     {group.label}
                   </p>
                 )}
-                {group.links.map(({ to, icon, title, tooltip, tab, isProd }) => (
-                  <li
-                    className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
-                    key={title}
-                    aria-disabled={isOnNewAPIView}
-                    data-testid={`sidebar-tab-${tab}`}
-                  >
-                    <Link
-                      to={{
-                        pathname: to,
-                        search: location.search,
-                      }}
-                      {...(tooltip || {})}
-                      className={`d-flex align-items-center nav-link ${isActive(tab)} ${
-                        openedSidebar ? 'ms-1' : ''
-                      } m-0 ${isActive(tab)}`}
+                {group.links
+                  .filter((link) => !link.isProd || isProdView)
+                  .map(({ to, icon, title, tooltip, tab, isProd }) => (
+                    <li
+                      className={`nav-item ${openedSidebar ? 'nav-item--open' : ''}`}
+                      key={title}
+                      aria-disabled={isOnNewAPIView}
+                      data-testid={`sidebar-tab-${tab}`}
                     >
-                      <div style={{ width: '20px' }} className="d-flex justify-content-center">
-                        <i className={`fas ${icon}`} />
-                      </div>
-                      <div className="title"> {openedSidebar ? title : ''}</div>
+                      <Link
+                        to={{
+                          pathname: to,
+                          search: location.search,
+                        }}
+                        {...(tooltip || {})}
+                        className={`d-flex align-items-center nav-link ${isActive(tab)} ${
+                          openedSidebar ? 'ms-1' : ''
+                        } m-0 ${isActive(tab)}`}
+                      >
+                        <div style={{ width: '20px' }} className="d-flex justify-content-center">
+                          <i className={`fas ${icon}`} />
+                        </div>
+                        <div className="title"> {openedSidebar ? title : ''}</div>
 
-                      {isProd && openedSidebar && (
-                        <span
-                          className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
-                          style={{
-                            color: '#fff',
-                          }}
-                        >
-                          PROD
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
+                        {isProd && openedSidebar && (
+                          <span
+                            className="dashboard-version-toggle-indicator dashboard-version-toggle-indicator--prod ms-auto"
+                            style={{
+                              color: '#fff',
+                            }}
+                          >
+                            PROD
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
               </React.Fragment>
             ))}
           </>

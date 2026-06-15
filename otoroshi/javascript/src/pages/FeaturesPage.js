@@ -44,6 +44,15 @@ export const graph = (env) => {
           icon: () => 'fa-hammer',
         },
         {
+          title: 'Node eventstream',
+          img: 'node-eventstream',
+          description: 'Show current otoroshi node eventstream',
+          display: () => true,
+          link: '/node/eventstream',
+          icon: () => 'fa-filter',
+          // tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
+        },
+        {
           title: 'Snow monkey',
           absoluteImg: '/assets/images/nihonzaru.svg',
           description: 'Create chaos in your routes and test your resilience',
@@ -64,7 +73,7 @@ export const graph = (env) => {
           img: 'manual',
           description: 'You have a question ? Read everything you need to know about otoroshi',
           display: () => true,
-          link: 'https://maif.github.io/otoroshi/manual/index.html',
+          link: 'https://www.otoroshi.io/docs/',
           icon: () => 'fa-book',
         },
       ],
@@ -247,6 +256,7 @@ export const graph = (env) => {
           display: () => env.userAdmin || env.tenantAdmin,
           link: '/user-dashboards',
           icon: () => 'fa-chart-line',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
         {
           title: 'User Alerts',
@@ -255,6 +265,7 @@ export const graph = (env) => {
           display: () => env.userAdmin || env.tenantAdmin,
           link: '/user-alerts',
           icon: () => 'fa-bell',
+          tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
         },
         {
           title: 'Global Status',

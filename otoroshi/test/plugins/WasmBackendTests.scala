@@ -50,7 +50,7 @@ class WasmBackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsString("foo") mustBe "bar"
+  Json.parse(resp.body[String]).selectAsString("foo") mustBe "bar"
 
   deleteOtoroshiRoute(route).futureValue
 }

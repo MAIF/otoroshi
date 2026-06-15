@@ -32,9 +32,9 @@ object GrpcWebConfig {
     override def reads(json: JsValue): JsResult[GrpcWebConfig] =
       Try {
         GrpcWebConfig(
-          allowServices = json.select("allow_services").asOpt[Seq[String]].getOrElse(Seq.empty),
-          allowMethods = json.select("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty),
-          blockedMethods = json.select("blocked_methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+          allowServices = json.select("allow_services").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          allowMethods = json.select("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          blockedMethods = json.select("blocked_methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       } match {
         case Failure(e)    => JsError(e.getMessage)

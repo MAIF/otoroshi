@@ -1820,7 +1820,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
         }
       case Some(body) if request.contentType.contains("application/json+oto-patch")        =>
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-          val values: Seq[JsObject]            = Json.parse(bodyRaw.utf8String).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val values: Seq[JsObject]            = Json.parse(bodyRaw.utf8String).asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val default                          =
             defaultEntity
               .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
@@ -1909,7 +1909,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //      case arr @ JsArray(_) => {
 //        val prefix     = filterPrefix
 //        val filters    = request.queryString
-//          .mapValues(_.last)
+//          .mapValues(_.last).toMap
 //          .collect {
 //            case v if prefix.isEmpty                                  => v
 //            case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
@@ -1925,7 +1925,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //              })
 //              .toSeq
 //          )
-//          .getOrElse(Seq.empty[(String, String)])
+//          .getOrElse(Seq.empty[(String, String)]).toSeq
 //        val hasFilters = filters.nonEmpty
 //
 //        val reducedItems = if (hasFilters) {
@@ -1971,7 +1971,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //          }
 //          items
 //        } else {
-//          arr.value
+//          arr.value.toSeq
 //        }
 //
 //        val filteredItems = if (filtered.nonEmpty) {
@@ -2026,10 +2026,10 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //              })
 //              .toSeq
 //          )
-//          .getOrElse(Seq.empty[(String, Boolean)])
+//          .getOrElse(Seq.empty[(String, Boolean)]).toSeq
 //        val hasSorted = sorted.nonEmpty
 //        if (hasSorted) {
-//          JsArray(sorted.foldLeft(arr.value) {
+//          JsArray(sorted.foldLeft(arr.value.toSeq) {
 //            case (sortedArray, sort) => {
 //              val out = sortedArray
 //                .sortBy { r => String.valueOf(JsonOperationsHelper.getValueAtPath(sort._1.toLowerCase(), r)._2) }(
@@ -2070,7 +2070,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //            .getOrElse(Int.MaxValue)
 //        val paginationPosition      = (paginationPage - 1) * paginationPageSize
 //
-//        val content = arr.value.slice(paginationPosition, paginationPosition + paginationPageSize)
+//        val content = arr.value.toSeq.slice(paginationPosition, paginationPosition + paginationPageSize)
 //        PaginatedContent(
 //          pages = Math.ceil(arr.value.size.toFloat / paginationPageSize).toInt,
 //          content = JsArray(content)
@@ -2084,7 +2084,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 //  }
 //
 //  private def projectedEntity(_entity: PaginatedContent, request: RequestHeader): Option[PaginatedContent] = {
-//    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String])
+//    val fields    = request.getQueryString("fields").map(_.split(",").toSeq).getOrElse(Seq.empty[String]).toSeq
 //    val hasFields = fields.nonEmpty
 //    if (hasFields) {
 //      val content = _entity.content match {

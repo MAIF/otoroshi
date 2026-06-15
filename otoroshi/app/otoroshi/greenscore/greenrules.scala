@@ -144,7 +144,7 @@ object Rule {
       JsSuccess(
         json
           .as[JsArray]
-          .value
+          .value.toSeq
           .map(item =>
             Rule(
               id = RuleId(item.select("id").as[String]),
@@ -190,7 +190,7 @@ object RuleState {
       JsSuccess(
         json
           .as[JsArray]
-          .value
+          .value.toSeq
           .map(item =>
             RuleState(
               id = RuleId(item.select("id").as[String]),

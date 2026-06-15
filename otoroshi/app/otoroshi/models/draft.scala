@@ -58,7 +58,7 @@ object Draft {
         content = (json \ "content").asOpt[JsValue].getOrElse(Json.obj()),
         kind = (json \ "kind").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    =>
@@ -78,7 +78,7 @@ object Draft {
       env: Env
   ): Future[Either[JsValue, Draft]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     entity.id
       .split("_")

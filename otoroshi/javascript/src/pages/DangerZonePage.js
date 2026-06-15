@@ -167,6 +167,8 @@ class Mailer extends Component {
   mailgunFormFlow = ['eu', 'apiKey', 'domain'];
   mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
   sendgridFormFlow = ['apiKey'];
+  scalewayFormFlow = ['secretKey', 'projectId', 'region'];
+  mailpaceFormFlow = ['serverToken'];
   genericFormSchema = {
     url: {
       type: 'string',
@@ -229,6 +231,38 @@ class Mailer extends Component {
       },
     },
   };
+  scalewayFormSchema = {
+    secretKey: {
+      type: 'string',
+      props: {
+        label: 'Scaleway secret key',
+        placeholder: 'Scaleway secret key',
+      },
+    },
+    projectId: {
+      type: 'string',
+      props: {
+        label: 'Scaleway project id',
+        placeholder: 'Scaleway project id',
+      },
+    },
+    region: {
+      type: 'string',
+      props: {
+        label: 'Scaleway region',
+        placeholder: 'fr-par',
+      },
+    },
+  };
+  mailpaceFormSchema = {
+    serverToken: {
+      type: 'string',
+      props: {
+        label: 'MailPace server token',
+        placeholder: 'MailPace server token',
+      },
+    },
+  };
   render() {
     const settings = this.props.value;
     const type = settings.type;
@@ -272,6 +306,20 @@ class Mailer extends Component {
                   apiKeyPrivate: '',
                 });
                 break;
+              case 'scaleway':
+                this.props.onChange({
+                  type: 'scaleway',
+                  secretKey: '',
+                  projectId: '',
+                  region: 'fr-par',
+                });
+                break;
+              case 'mailpace':
+                this.props.onChange({
+                  type: 'mailpace',
+                  serverToken: '',
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -281,6 +329,8 @@ class Mailer extends Component {
             { label: 'Mailgun', value: 'mailgun' },
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
+            { label: 'Scaleway TEM', value: 'scaleway' },
+            { label: 'MailPace', value: 'mailpace' },
           ]}
           help="..."
         />
@@ -317,6 +367,24 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={this.sendgridFormFlow}
             schema={this.sendgridSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'scaleway' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.scalewayFormFlow}
+            schema={this.scalewayFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailpace' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.mailpaceFormFlow}
+            schema={this.mailpaceFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
@@ -1953,11 +2021,10 @@ class GlobalScripts extends Component {
 const GlobalPluginInformation = ({ plugin, open }) => {
   if (!open) return null;
 
-  const legacyPluginDocumentationUrl =
-    'https://maif.github.io/otoroshi/manual/plugins/built-in-plugins.html';
+  const legacyPluginDocumentationUrl = 'https://www.otoroshi.io/docs/plugins/built-in-plugins';
 
   const getNgPluginDocumentationUrl = () => {
-    return `https://maif.github.io/otoroshi/manual/next/built-in-plugins.html#${
+    return `https://www.otoroshi.io/docs/plugins/built-in-plugins#${
       plugin.id.replace('cp:', '')
       // .replace(/\./g, '-')
       // .toLowerCase()

@@ -83,8 +83,8 @@ class JqBodyTransformer extends RequestTransformer {
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val config   = ctx.configFor("JqBodyTransformer").select("response")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
-    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (shouldApply(included, excluded, ctx.request.thePath)) {
       val newHeaders =
         ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
@@ -154,8 +154,8 @@ class JqBodyTransformer extends RequestTransformer {
     ctx.attrs.put(requestKey -> promise.future)
     val config   = ctx.configFor("JqBodyTransformer").select("request")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
-    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (BodyUtils.hasBody(ctx.request) && shouldApply(included, excluded, ctx.request.thePath)) {
       ctx.rawRequest.body().runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val bodyStr  = bodyRaw.utf8String

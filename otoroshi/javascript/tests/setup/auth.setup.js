@@ -1,7 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
-import { validAnonymousModal } from '../utils';
 
 const userAuthFile = path.join(__dirname, '../playwright/.auth/tester.json');
 const adminAuthFile = path.join(__dirname, '../playwright/.auth/admin.json');
@@ -68,7 +67,10 @@ async function ensureTesterTenancySetup() {
     await ensureEntity(`${ADMIN_API}/api/teams`, {
         id: 'tester-team',
         tenant: 'tester',
-        name: 'Tester Team',
+        // Name kept equal to the id on purpose: the Location component renders
+        // teams as "<name> - <description>", and entity-location specs assert
+        // the string "tester-team" shows up.
+        name: 'tester-team',
         description: 'Auto-seeded by Playwright auth.setup.js',
         metadata: {},
         tags: [],
@@ -160,7 +162,6 @@ setup('authenticate', async ({ page }) => {
     await ensureTesterTenancySetup();
 
     await page.goto('/');
-    await validAnonymousModal(page);
     await page.getByRole('button', { name: 'Login', exact: true }).click();
     await page.locator('input[name="email"]').click();
     await page.locator('input[name="email"]').fill('tester@otoroshi.io');
@@ -188,9 +189,4 @@ setup('authenticate', async ({ page }) => {
     await expect(page.locator('#content-scroll-container img')).toBeVisible();
 
     await page.context().storageState({ path: adminAuthFile });
-
-    const closeButton = await page.$('text=Close');
-    if (closeButton) {
-        await closeButton.click();
-    }
 });

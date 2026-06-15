@@ -342,7 +342,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       println(s"Stderr: $stderr")
 
       if (getResult.getExitCode != 0) {
-        println(s"Command failed, retrying... ($attemptsLeft left)")
+        println((s"Command failed, retrying... ($attemptsLeft left)"))
         Thread.sleep(2000)
         check(attemptsLeft - 1)
       } else if (output.isEmpty || !output.contains("Running") || output.contains("Init")) {
@@ -371,7 +371,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
           .withRequestTimeout(1.second)
           .get()
           .map(r => {
-            println(s"Status: ${r.status}, Body: ${r.body}")
+            println((s"Status: ${r.status}, Body: ${r.body[String]}"))
             r.status mustBe play.mvc.Http.Status.OK
             r.status
           })
@@ -398,7 +398,8 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       _                <- applyManifest(kubectlContainer, "common/crds.yaml")
       _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
       _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
-      _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
+      leaderFilename   <- prepareManifest("leader.yaml", "maif/otoroshi:17.15.1")
+      _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
       _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
       _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
       _                <- cleanup(k3sContainer, kubectlContainer)
@@ -418,7 +419,8 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       _                <- applyManifest(kubectlContainer, "common/crds.yaml")
       _                <- applyManifest(kubectlContainer, "common/rbac.yaml")
       _                <- applyManifest(kubectlContainer, "common/redis.yaml", namespace)
-      _                <- applyManifest(kubectlContainer, "leader.yaml", namespace)
+      leaderFilename   <- prepareManifest("leader.yaml", "maif/otoroshi:17.15.1")
+      _                <- applyManifest(kubectlContainer, s"tmp/$leaderFilename", namespace)
       _                <- waitForReady(Seq("kubectl", "get", "pods", "-n", namespace), kubectlContainer)
       _                <- call(k3sContainer, "Wait leader health ...", "otoroshi.k3s.local", "/health")
       _                <- applyManifest(kubectlContainer, "foo-route.yaml", namespace)

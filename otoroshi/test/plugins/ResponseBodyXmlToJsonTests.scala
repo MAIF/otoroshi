@@ -50,11 +50,11 @@ class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
     .get()
     .futureValue
 
-  Json.parse(resp.body).selectAsOptObject("book").isDefined mustBe true
-  Json.parse(resp.body).selectAsObject("book").selectAsString("category") mustBe "web"
-  Json.parse(resp.body).selectAsObject("book").selectAsString("cover") mustBe "paperback"
-  Json.parse(resp.body).selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
-  Json.parse(resp.body).selectAsObject("book").selectAsString("author") mustBe "Erik T. Ray"
+  Json.parse(resp.body[String]).selectAsOptObject("book").isDefined mustBe true
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsString("category") mustBe "web"
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsString("cover") mustBe "paperback"
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsOptObject("title").isDefined mustBe true
+  Json.parse(resp.body[String]).selectAsObject("book").selectAsString("author") mustBe "Erik T. Ray"
 
   deleteOtoroshiRoute(route).futureValue
 }

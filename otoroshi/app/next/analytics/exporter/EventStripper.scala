@@ -58,13 +58,13 @@ object EventStripper {
       val withoutRoute    = (withoutTopLevel \ "route").asOpt[JsObject] match {
         case None        => withoutTopLevel
         case Some(route) =>
-          val keptRoute     = JsObject(route.fields.filter { case (k, _) => keptRouteFields.contains(k) })
+          val keptRoute    = JsObject(route.fields.filter { case (k, _) => keptRouteFields.contains(k) })
           // keep only route.frontend.domains
-          val frontend      = (route \ "frontend").asOpt[JsObject].map { f =>
+          val frontend     = (route \ "frontend").asOpt[JsObject].map { f =>
             val domains: JsArray = (f \ "domains").asOpt[JsArray].getOrElse(JsArray.empty)
             Json.obj("domains" -> domains)
           }
-          val withFrontend  = frontend match {
+          val withFrontend = frontend match {
             case Some(f) => keptRoute ++ Json.obj("frontend" -> f)
             case None    => keptRoute
           }

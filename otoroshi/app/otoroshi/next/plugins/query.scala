@@ -28,7 +28,7 @@ object QueryTransformerConfig {
     )
     override def reads(json: JsValue): JsResult[QueryTransformerConfig] = Try {
       QueryTransformerConfig(
-        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty),
+        remove = json.select("remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         rename = json.select("rename").asOpt[Map[String, String]].getOrElse(Map.empty),
         add = json.select("add").asOpt[Map[String, String]].getOrElse(Map.empty)
       )

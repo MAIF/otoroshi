@@ -140,7 +140,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       resp3.status mustBe 200
       // resp4.status mustBe 200
       resp5.status mustBe 429
-      resp5.body.contains("") mustBe true
+      resp5.body[String].contains("") mustBe true
     }
 
     "prevent too many calls per month" in {
@@ -165,7 +165,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration) extends Otor
       resp3.status mustBe 200
       // resp4.status mustBe 200
       resp5.status mustBe 429
-      resp5.body.contains("") mustBe true
+      resp5.body[String].contains("") mustBe true
     }
 
     "stop servers" in {

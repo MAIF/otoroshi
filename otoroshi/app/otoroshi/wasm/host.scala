@@ -406,7 +406,7 @@ object Http extends AwaitCapable {
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.plugins.Keys.PreExtractedRequestTargetsKey,
-      json => json.asArray.value.map(v => NgTarget.fmt.reads(v).get)
+      json => json.asArray.value.toSeq.map(v => NgTarget.fmt.reads(v).get)
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.plugins.Keys.ElCtxKey,
@@ -710,7 +710,7 @@ object DataStore extends AwaitCapable {
             .del(
               (data \ "keys")
                 .asOpt[Seq[String]]
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
                 .map(r => s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$r")
             )
           val out    = await(future)

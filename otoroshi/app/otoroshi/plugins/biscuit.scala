@@ -97,11 +97,11 @@ object BiscuitHelper {
   def readConfigFromJson(rawConfig: JsValue): BiscuitConfig = {
     BiscuitConfig(
       publicKey = (rawConfig \ "publicKey").asOpt[String].orElse((rawConfig \ "public_key").asOpt[String]),
-      checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
-      facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-      resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
-      rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
-      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+      checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       extractor = (rawConfig \ "extractor" \ "type").asOpt[String].getOrElse("header"),
       extractorName = (rawConfig \ "extractor" \ "name").asOpt[String].getOrElse("Authorization"),
       enforce = (rawConfig \ "enforce").asOpt[Boolean].getOrElse(false)

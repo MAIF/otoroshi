@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Canonical cluster-mode Otoroshi workloads: Leader + Worker Deployments,
+# their three internal Services (leader-api, leader, worker — all ClusterIP),
+# and the shared Certificate. Shared by overlays/{cluster, cluster-baremetal};
+# the overlay only adds its external exposure (LoadBalancer leader/worker, or
+# NodePort patches on the internal Services).
+resources:
+  - deployment.yaml

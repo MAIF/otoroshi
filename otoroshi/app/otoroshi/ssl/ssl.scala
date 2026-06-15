@@ -302,7 +302,7 @@ case class Cert(
       subject = (meta \ "subjectDN").as[String],
       from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
       to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-      sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty)
+      sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     )
   }
   def delete()(using ec: ExecutionContext, env: Env): Future[Boolean] =
@@ -559,7 +559,7 @@ object Cert {
             .orElse((json \ "domain").asOpt[String].map(v => s"Certificate for $v"))
             .getOrElse("none"),
           domain = (json \ "domain").as[String],
-          sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty),
+          sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chain = (json \ "chain").as[String],
           caRef = (json \ "caRef").asOpt[String],
           password = (json \ "password").asOpt[String].filter(_.trim.nonEmpty),
@@ -577,7 +577,7 @@ object Cert {
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -989,7 +989,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )(using env, ec)
     env.configuration
       .getOptionalWithFileSupport[Seq[Configuration]]("otoroshi.ssl.initialCerts")
-      .getOrElse(Seq.empty[Configuration])
+      .getOrElse(Seq.empty[Configuration]).toSeq
       .zipWithIndex
       .foreach { case (conf, idx) =>
         importOneCert(
@@ -1483,14 +1483,14 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1522,14 +1522,14 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1544,14 +1544,14 @@ object DynamicSSLEngineProvider {
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaClient).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     val (ctxServer, keyManagerServer, trustManagerServer) = setupContextAndManagers(
       env,
       env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.includeJdkCaServer).getOrElse(true),
       env.datastores.globalConfigDataStore.latestSafe
         .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     )
     currentContextClient.set(ctxClient)
     currentContextServer.set(ctxServer)
@@ -1993,7 +1993,7 @@ object CertificateData {
       "client"          -> client,
       "subAltNames"     -> JsArray(altNames.map(JsString.apply)),
       "cExtensions"     -> JsArray(
-        Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+        Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).toSeq.map { oid =>
           val ext: String =
             Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
           Json.obj(
@@ -2003,7 +2003,7 @@ object CertificateData {
         }
       ),
       "ncExtensions"    -> JsArray(
-        Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
+        Option(cert.getNonCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).toSeq.map { oid =>
           val ext: String =
             Option(cert.getExtensionValue(oid)).map(bytes => ByteString(bytes).utf8String).getOrElse("--")
           Json.obj(
@@ -2493,7 +2493,7 @@ object ClientCertificateValidator {
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
             proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>

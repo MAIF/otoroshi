@@ -224,7 +224,7 @@ object GatewayApiConverter {
    */
   private def matchesLabelSelector(labels: Map[String, String], selector: JsObject): Boolean = {
     val matchLabels      = (selector \ "matchLabels").asOpt[Map[String, String]].getOrElse(Map.empty)
-    val matchExpressions = (selector \ "matchExpressions").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    val matchExpressions = (selector \ "matchExpressions").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
 
     val labelsMatch = matchLabels.forall { case (key, value) =>
       labels.get(key).contains(value)
@@ -233,7 +233,7 @@ object GatewayApiConverter {
     val expressionsMatch = matchExpressions.forall { expr =>
       val key      = (expr \ "key").as[String]
       val operator = (expr \ "operator").as[String]
-      val values   = (expr \ "values").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val values   = (expr \ "values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       operator match {
         case "In"           => labels.get(key).exists(values.contains)
         case "NotIn"        => labels.get(key).forall(v => !values.contains(v))
@@ -1147,15 +1147,15 @@ object GatewayApiConverter {
           filter.requestHeaderModifier.toSeq.flatMap { mod =>
             val setHeaders    = (mod \ "set")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
             val addHeaders    = (mod \ "add")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
-            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
             val allHeaders = setHeaders ++ addHeaders
             val addPlugin  = if (allHeaders.nonEmpty) {
@@ -1185,15 +1185,15 @@ object GatewayApiConverter {
           filter.responseHeaderModifier.toSeq.flatMap { mod =>
             val setHeaders    = (mod \ "set")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
             val addHeaders    = (mod \ "add")
               .asOpt[Seq[JsObject]]
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
               .map(h => (h \ "name").as[String] -> (h \ "value").as[String])
               .toMap
-            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty)
+            val removeHeaders = (mod \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
             val allHeaders = setHeaders ++ addHeaders
             val addPlugin  = if (allHeaders.nonEmpty) {

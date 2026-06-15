@@ -1,5 +1,4 @@
-const { test, expect } = require('@playwright/test')
-const { validAnonymousModal } = require('../../utils')
+import { test, expect } from '@playwright/test'
 
 let context
 
@@ -13,7 +12,6 @@ test.afterAll(async () => {
 
 async function createRoute(page) {
     await page.goto('/bo/dashboard/routes')
-    await validAnonymousModal(page)
     await page.getByRole('link', { name: ' Create new route' }).click();
     await page.getByRole('textbox', { name: 'The name of your route. Only' }).click();
     await page.getByRole('textbox', { name: 'The name of your route. Only' }).fill('My first route');
@@ -31,7 +29,6 @@ async function deleteRoute(page) {
 
 test('Should be able to create a route', async () => {
     const page = await context.newPage()
-    await validAnonymousModal(page)
     await createRoute(page)
     await deleteRoute(page)
 })
@@ -55,7 +52,6 @@ async function editDraftName(page) {
 
 test('Should be able to edit the draft', async () => {
     const page = await context.newPage()
-    await validAnonymousModal(page)
     await createRoute(page)
     await editDraftName(page)
     await deleteRoute(page)
@@ -63,7 +59,6 @@ test('Should be able to edit the draft', async () => {
 
 test('Should be able to publish draft changes', async () => {
     const page = await context.newPage()
-    await validAnonymousModal(page)
     await createRoute(page)
 
     await editDraftName(page)

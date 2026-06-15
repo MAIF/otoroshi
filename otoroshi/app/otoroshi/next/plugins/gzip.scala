@@ -45,9 +45,9 @@ object NgGzipConfig {
     override def reads(json: JsValue): JsResult[NgGzipConfig] =
       Try {
         NgGzipConfig(
-          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          whiteList = (json \ "allowed_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blocked_list").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "buffer_size").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunked_threshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compression_level").asOpt[Int].getOrElse(5)

@@ -1,12 +1,15 @@
-apiVersion: v3
+apiVersion: v2
 name: otoroshi
 description: An Otoroshi based Kubernetes ingress controller
 type: application
-version: 17.16.0-dev
-appVersion: 17.16.0-dev
+version: 17.17.0-dev
+appVersion: 17.17.0-dev
+kubeVersion: ">=1.25.0-0"
 keywords:
   - otoroshi
   - ingress
+  - gateway
+  - apim
   - reverseproxy
   - apimanager
 sources:
@@ -16,6 +19,6 @@ maintainers:
 icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
 dependencies:
   - name: redis
-    version: "21.2.9"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: global.prod
+    version: 0.29.2
+    repository: oci://registry-1.docker.io/cloudpirates
+    condition: redis.deploy

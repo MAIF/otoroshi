@@ -1,12 +1,10 @@
 // End-to-end coverage of the API lifecycle: create, publish, draft divergence,
 // gateway dev/prod gating via X-OTOROSHI-TESTING, and UI cross-checks.
 
-const { test, expect } = require('@playwright/test');
-const { validAnonymousModal } = require('../../utils');
-const {
+import { test, expect } from '@playwright/test';
+import {
   PROXY_ANY,
   createApiViaUI,
-  createApiViaApi,
   createPublishedApi,
   deleteApiViaApi,
   getDraft,
@@ -15,7 +13,7 @@ const {
   putDraft,
   postDeployment,
   uniqueName,
-} = require('./_apiHelpers');
+} from './_apiHelpers';
 
 test.setTimeout(30_000);
 
@@ -53,7 +51,9 @@ test('creates an API from scratch and lands in staging', async () => {
   const apiId = await createApiViaUI(page);
   trackedApis.add(apiId);
   try {
-    expect(page.url()).toMatch(/\/apis\/api_dev_[a-f0-9-]+/);
+    // id is `api_dev_<uuid>` under `sbt run` (env.isDev) but `api_<uuid>` in a
+    // packaged/CI build — accept both.
+    expect(page.url()).toMatch(/\/apis\/api_(dev_)?[a-f0-9-]+/);
 
     // Getting-started stepper visible on a fresh API (state=staging, all steps
     // incomplete).
@@ -86,6 +86,10 @@ test('publishes from staging, deployment payload is slim, draft is wiped', async
   const apiId = await createApiViaUI(page);
   trackedApis.add(apiId);
   try {
+    // The dashboard auto-creates the draft asynchronously; the deploy 404s
+    // without it. Wait for the draft before publishing.
+    await expect.poll(async () => (await getDraftRaw(page, apiId)).status()).toBe(200);
+
     // Publish via the header CTA (the entry point we expose to users now).
     await page.getByTestId('publish-this-version').click();
     // Confirm modal — "Publish API" header button is "Publish API", the modal
@@ -108,9 +112,12 @@ test('publishes from staging, deployment payload is slim, draft is wiped', async
     const keys = Object.keys(apiDef).sort();
     expect(keys).toEqual(['backends', 'documentation', 'flows', 'routes']);
 
-    // B.4 — draft is wiped after deploy.
+    // B.4 (revised) — the draft is KEPT after publish so testing routes
+    // (X-OTOROSHI-TESTING) continue to serve without a UI roundtrip via
+    // "Edit in Draft Mode". The draft content equals the just-published
+    // prod anyway since the deploy snapshotted from it.
     const draftRes = await getDraftRaw(page, apiId);
-    expect(draftRes.status()).toBe(404);
+    expect(draftRes.status()).toBe(200);
   } finally {
     await deleteApiViaApi(page, apiId);
     await page.close();
@@ -234,7 +241,6 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
     // Visit the API in draft mode — useDraftOfAPI auto-creates the draft
     // wrapper for us (no manual POST /drafts).
     await page.goto(`/bo/dashboard/apis/${apiId}/testing?version=Draft`);
-    await validAnonymousModal(page);
     await expect.poll(async () => (await getDraftRaw(page, apiId)).status()).toBe(200);
     const draft = await getDraft(page, apiId);
 
@@ -310,32 +316,15 @@ test('testing header gates dev vs prod traffic at the gateway', async () => {
 
 // Actions tab only shows the legal transitions per state. ----------------------
 
+// The Actions tab is production-only — the sidebar entry is gated behind the
+// Published version (Sidebar.js `isProd`). Navigate with `?version=Published`
+// so the tab is guaranteed to render.
 async function navigateToActions(page, apiId) {
-  await page.goto(`/bo/dashboard/apis/${apiId}`);
-  await validAnonymousModal(page);
+  await page.goto(`/bo/dashboard/apis/${apiId}?version=Published`);
   await page.getByTestId('sidebar-tab-actions').click();
 }
 
 test.describe('Actions tab only shows legal transitions', () => {
-  test('staging shows no transition cards (publish lives in the header CTA)', async () => {
-    const page = await context.newPage();
-    const apiId = await createApiViaApi(page);
-  trackedApis.add(apiId);
-    try {
-      await navigateToActions(page, apiId);
-      // The Actions tab is intentionally empty in staging — the publish CTA
-      // is exposed via the dashboard header (`publish-this-version`).
-      await expect(page.getByTestId('action-card-publish')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-deprecate')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-close')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-reopen')).toHaveCount(0);
-      await expect(page.getByTestId('action-card-republish')).toHaveCount(0);
-    } finally {
-      await deleteApiViaApi(page, apiId);
-      await page.close();
-    }
-  });
-
   test('published shows deprecate + close', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
@@ -402,7 +391,6 @@ test('production-locked tabs disable write actions', async () => {
   trackedApis.add(apiId);
   try {
     await page.goto(`/bo/dashboard/apis/${apiId}?version=Published`);
-    await validAnonymousModal(page);
 
     // Endpoints — no "Create new endpoint" link in prod (it's an <a>, not <button>).
     await page.getByTestId('sidebar-tab-endpoints').click();
@@ -416,8 +404,9 @@ test('production-locked tabs disable write actions', async () => {
     await page.getByTestId('sidebar-tab-testing').click();
     await expect(page.getByTestId('testing-rotate-button')).toHaveCount(0);
 
-    // Switching to Draft re-enables them.
-    await page.getByTestId('version-toggle').click();
+    // Switching to Draft re-enables them — the version banner exposes the
+    // "Edit in draft" switch (data-testid="version-banner-switch").
+    await page.getByTestId('version-banner-switch').click();
     await page.waitForLoadState('domcontentloaded');
     await page.getByTestId('sidebar-tab-endpoints').click();
     await expect(page.getByRole('link', { name: /Create new endpoint/ })).toBeVisible();

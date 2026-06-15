@@ -60,9 +60,9 @@ object WasmPlugin {
         steps = (json \ "steps")
           .asOpt[Seq[String]]
           .map(_.map(NgStep.apply).collect { case Some(s) => s })
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

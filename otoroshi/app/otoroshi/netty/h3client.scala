@@ -370,7 +370,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
           )
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 
   override def bodyAsSource: Source[ByteString, ?]    = _body

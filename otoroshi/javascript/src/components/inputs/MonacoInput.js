@@ -38,8 +38,9 @@ export class MonacoInput extends Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ error, errorInfo });
     console.log({
-      error, errorInfo
-    })
+      error,
+      errorInfo,
+    });
   }
 
   render() {
@@ -47,7 +48,11 @@ export class MonacoInput extends Component {
       return this.state.error.message;
     }
 
-    let code = this.state.value || this.props.value;
+    let code = this.state.value || this.props.value || '';
+
+    if (!(typeof code === 'string')) {
+      code = '';
+    }
 
     const options = {
       automaticLayout: true,
@@ -62,6 +67,20 @@ export class MonacoInput extends Component {
       ...(this.props.monaco_config || {}),
     };
 
+    const editor = (
+      <MonacoEditor
+        height={this.props.height}
+        width="100%"
+        theme="vs-dark"
+        defaultLanguage={this.props.language || 'javascript'}
+        value={code}
+        options={options}
+        onChange={(newValue) => {
+          this.props.onChange(newValue);
+        }}
+      />
+    );
+
     if (this.props.editorOnly) {
       return editor;
     }
@@ -71,19 +90,7 @@ export class MonacoInput extends Component {
         <label htmlFor={`input-${this.props.label}`} className="col-sm-2 col-form-label">
           {this.props.label}
         </label>
-        <div className="col-sm-10">
-          <MonacoEditor
-            height={this.props.height}
-            width="100%"
-            theme="vs-dark"
-            defaultLanguage={this.props.language || 'javascript'}
-            value={code}
-            options={options}
-            onChange={(newValue) => {
-              this.props.onChange(newValue);
-            }}
-          />
-        </div>
+        <div className="col-sm-10">{editor}</div>
       </div>
     );
   }

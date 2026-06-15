@@ -163,7 +163,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -178,7 +178,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -193,7 +193,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -208,7 +208,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()
@@ -316,7 +316,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -327,7 +327,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -342,7 +342,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -357,7 +357,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()
@@ -491,7 +491,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -502,7 +502,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -517,7 +517,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -532,7 +532,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()
@@ -659,7 +659,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithJWT() = {
         val r = ws
@@ -674,7 +674,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT1() = {
         val r = ws
@@ -689,7 +689,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
       def callServerWithBadJWT2() = {
         val r = ws
@@ -704,7 +704,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) 
           )
           .get()
           .futureValue
-        (r.status, r.body)
+        (r.status, r.body[String])
       }
 
       val (status0, body0) = callServerWithoutJWT()

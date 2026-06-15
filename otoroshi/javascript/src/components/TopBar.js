@@ -673,14 +673,15 @@ export class TopBar extends Component {
           }
           return v;
         };
-        const seenLabels = new Set();
+        const seen = new Set();
         graph(graphEnv).forEach((category) => {
           (category.features || [])
             .filter((f) => f.display === undefined || f.display())
             .forEach((f) => {
               if (!f.title || !f.link) return;
-              if (seenLabels.has(f.title)) return;
-              seenLabels.add(f.title);
+              const key = isString(f.link) ? f.link : f.title;
+              if (seen.has(key)) return;
+              seen.add(key);
               options.push({
                 kind: 'menu',
                 label: f.title,
@@ -906,11 +907,7 @@ export class TopBar extends Component {
           <VersionButton />
         </li>
         <li>
-          <a
-            href="https://maif.github.io/otoroshi/manual/index.html"
-            target="_blank"
-            className="dropdown-item"
-          >
+          <a href="https://www.otoroshi.io/docs/" target="_blank" className="dropdown-item">
             <span className="fas fa-book" /> User manual
           </a>
         </li>
@@ -1321,11 +1318,7 @@ export class TopBar extends Component {
           </a>
         </li>
         <li>
-          <a
-            href="https://maif.github.io/otoroshi/manual/index.html"
-            target="_blank"
-            className="dropdown-item"
-          >
+          <a href="https://www.otoroshi.io/docs/" target="_blank" className="dropdown-item">
             <span className="fas fa-book" /> User manual
           </a>
         </li>

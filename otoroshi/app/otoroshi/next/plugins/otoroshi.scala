@@ -504,17 +504,17 @@ object PossibleCerts {
     )
     override def reads(json: JsValue): JsResult[PossibleCerts] = Try {
       PossibleCerts(
-        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty),
+        certIds = json.select("cert_ids").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         includeAlgorithms = json.select("include_algorithms").asOptBoolean.getOrElse(false),
         rsaAlgorithms = json
           .select("rsa_algorithms")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str)),
         esAlgorithms = json
           .select("es_algorithms")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(str => com.nimbusds.jose.JWSAlgorithm.parse(str))
       )
     } match {

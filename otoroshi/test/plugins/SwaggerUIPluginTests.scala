@@ -47,7 +47,7 @@ class SwaggerUIPluginTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    val html = resp.body
+    val html = resp.body[String]
 
     html.contains("<title>My Swagger UI Configuration</title>") mustBe true
     html.contains("layout: \"BaseLayout\"") mustBe true

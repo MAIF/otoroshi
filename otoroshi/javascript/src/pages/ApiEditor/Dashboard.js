@@ -10,10 +10,11 @@ import { JsonObjectAsCodeInput } from '../../components/inputs/CodeInput';
 import { HTTP_COLORS } from '../RouteDesigner/MocksDesigner';
 import { unsecuredCopyToClipboard } from '../../util';
 import { ApiStats } from './ApiStats';
+import { ApiQualityCard } from './ApiQualityCard';
 import { API_STATE } from './model';
 import SimpleLoader from './SimpleLoader';
 import { useDraftOfAPI, historyPush } from './hooks';
-import { DraftOnly, VersionBadge, VersionToggle } from './DraftOnly';
+import { DraftOnly, VersionBadge } from './DraftOnly';
 import { VersionManager } from './VersionManager';
 import { publishAPI } from './Actions';
 import { signalVersion } from './VersionSignal';
@@ -317,14 +318,14 @@ function RouteItem({ item, api, ports, isDraft }) {
   const allMethods =
     rawMethods && rawMethods.length > 0
       ? rawMethods.map((m, i) => (
-        <span
-          key={`frontendmethod-${i}`}
-          className={`badge me-1`}
-          style={{ backgroundColor: HTTP_COLORS[m] }}
-        >
-          {m}
-        </span>
-      ))
+          <span
+            key={`frontendmethod-${i}`}
+            className={`badge me-1`}
+            style={{ backgroundColor: HTTP_COLORS[m] }}
+          >
+            {m}
+          </span>
+        ))
       : [<span className="badge bg-success">ALL</span>];
 
   const goTo = (idx) => window.open(routeEntries(idx), '_blank');
@@ -686,7 +687,6 @@ export function Dashboard(props) {
         {/* API Header */}
         <ContainerBlock full highlighted>
           <APIHeader api={item} version={version} draft={draft} />
-          {version !== 'staging' && <VersionToggle isDraft={version === 'Draft'} />}
         </ContainerBlock>
 
         {/* Quick Stats Row */}
@@ -736,6 +736,24 @@ export function Dashboard(props) {
                     : `/bo/api/proxy/apis/proxy.otoroshi.io/v1/drafts/${item.id}/live?every=2000`
                 }
               />
+            </ContainerBlock>
+
+            {/* API Quality */}
+            <ContainerBlock full>
+              <SectionHeader
+                text="API Quality"
+                description="How complete and precise this API definition is"
+                icon="fas fa-clipboard-check"
+                actions={
+                  <Link
+                    to={{ pathname: `/apis/${params.apiId}/quality`, search: location.search }}
+                    className="btn btn-sm btn-primaryColor"
+                  >
+                    View details
+                  </Link>
+                }
+              />
+              <ApiQualityCard api={item} />
             </ContainerBlock>
 
             {/* Health */}

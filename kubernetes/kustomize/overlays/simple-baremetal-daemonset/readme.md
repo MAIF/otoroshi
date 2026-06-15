@@ -1,86 +1,47 @@
-# DaemonSet deployment on baremetal kubernetes cluster
+# simple-baremetal-daemonset overlay
 
-here we deploy 1 otoroshi instance on each kubernetes node (with the `otoroshi-kind: instance` label) with redis persistance. 
+Single Otoroshi instance per node, listening directly on the node's network
+ports via `hostPort` (no Service in the path → one fewer hop, source IP
+preserved). Use for performance-sensitive baremetal deployments.
 
-The otoroshi instances are exposed using `hostPort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You'll also have to configure your DNS to route otoroshi domain names to the loadbalancer itself
+## What it deploys
 
-## NGINX config. example
+- 1 × `DaemonSet` (`otoroshi-deployment`) — one pod per node matching
+  `nodeAffinity { otoroshi-kind: instance }`
+- Pods bind **41080** / **41443** on the host network
+- 1 × `Service: ClusterIP` (`otoroshi-service`, in-cluster only — no external
+  Service, hostPorts do the external exposure)
+- 1 × `Certificate`
+- Base + initial-customization-single component
 
-```
-stream {
+## Prerequisites
 
-  upstream back_http_nodes {
-    zone back_http_nodes 64k;
-    server 10.2.2.40:41080 max_fails=1;
-    server 10.2.2.41:41080 max_fails=1;
-    server 10.2.2.42:41080 max_fails=1;
-  }
+- Kubernetes ≥ 1.25 baremetal cluster
+- Label the nodes you want to run Otoroshi on:
 
-  upstream back_https_nodes {
-    zone back_https_nodes 64k;
-    server 10.2.2.40:41443 max_fails=1;
-    server 10.2.2.41:41443 max_fails=1;
-    server 10.2.2.42:41443 max_fails=1;
-  }
+  ```sh
+  kubectl label node node-A otoroshi-kind=instance
+  kubectl label node node-B otoroshi-kind=instance
+  ```
 
-  server {
-    listen     80;
-    proxy_pass back_http_nodes;
-    health_check;
-  }
+- An external L4 load balancer routing TCP/80/443 → `<node-ip>:41080` /
+  `<node-ip>:41443` for every labeled node — see [`nginx.example`](nginx.example)
+  and [`haproxy.example`](haproxy.example)
+- DNS pointing at the LB — see [`dns.example`](dns.example)
+- An external Redis (or enable `components/redis`)
 
-  server {
-    listen     443;
-    proxy_pass back_https_nodes;
-    health_check;
-  }
-  
-}
-```
+## Trade-offs vs `simple-baremetal`
 
-## HAProxy config. example
+- ✅ One network hop fewer (no kube-proxy in the data path)
+- ✅ Client source IP preserved by default
+- ❌ DaemonSet locks the pod to specific nodes — you lose scheduler
+  flexibility (e.g. autoscaling)
+- ❌ `replicas:` doesn't apply — one pod per matching node
 
-```
-frontend front_nodes_http
-    bind *:80
-    mode tcp
-    default_backend back_http_nodes
-    timeout client          1m
+## Override checklist
 
-frontend front_nodes_https
-    bind *:443
-    mode tcp
-    default_backend back_https_nodes
-    timeout client          1m
-
-backend back_http_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:41080
-    server kubernetes-node2 10.2.2.41:41080
-    server kubernetes-node3 10.2.2.42:41080
-    timeout connect        10s
-    timeout server          1m
-
-backend back_https_nodes
-    mode tcp
-    balance roundrobin
-    server kubernetes-node1 10.2.2.40:41443
-    server kubernetes-node2 10.2.2.41:41443
-    server kubernetes-node3 10.2.2.42:41443
-    timeout connect        10s
-    timeout server          1m
-```
-
-## DNS config. example
-
-if your loadbalancer is at ip address 10.2.2.50
-
-```
-otoroshi.your.otoroshi.domain      IN A 10.2.2.50
-otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
-privateapps.your.otoroshi.domain   IN A 10.2.2.50
-api1.another.domain                IN A 10.2.2.50
-api2.another.domain                IN A 10.2.2.50
-*.api.the.api.domain               IN A 10.2.2.50
-```
+| Field | Default | Where |
+|---|---|---|
+| Admin / Redis credentials, domain, image | see [simple readme](../simple/readme.md) | `kustomization.yaml` |
+| Node label key/value | `otoroshi-kind: instance` | `deployment.yaml` (`nodeAffinity`) |
+| `hostPort` numbers | `41080` / `41443` | `deployment.yaml` (`containers[].ports[].hostPort`) |

@@ -202,7 +202,7 @@ object GraphQLBackendConfig {
     override def reads(json: JsValue): JsResult[GraphQLBackendConfig] = Try {
       GraphQLBackendConfig(
         schema = json.select("schema").as[String],
-        permissions = json.select("permissions").asOpt[Seq[String]].getOrElse(Seq.empty),
+        permissions = json.select("permissions").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         initialData = json.select("initial_data").asOpt[JsObject],
         maxDepth = json.select("max_depth").asOpt[Int].getOrElse(15)
       )
@@ -743,7 +743,7 @@ class GraphQLBackend extends NgBackendCall {
         memoryPages = wasmMemoryPages.getOrElse(100),
         functionName = wasmFunctionName,
         config = Map.empty,
-        allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty),
+        allowedHosts = wasmAllowedHosts.getOrElse(Seq.empty).toSeq,
         wasi = wasmWasi,
         authorizations = WasmAuthorizations(
           proxyHttpCallTimeout = wasmProxyHttpCallTimeout.getOrElse(5000),
@@ -907,7 +907,7 @@ class GraphQLBackend extends NgBackendCall {
       case (k, v)         => (k, String.valueOf(v))
     }
 
-    queryArgs.foldLeft(c.arg(urlArg))((u, value) =>
+    queryArgs.foldLeft(c.arg(urlArg): String)((u, value) =>
       GlobalExpressionLanguage.expressionReplacer.replaceOn(u) {
         case value._1 => value._2
         case v        => v

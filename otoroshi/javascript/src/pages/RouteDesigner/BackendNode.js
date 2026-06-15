@@ -8,6 +8,7 @@ export class BackendForm extends React.Component {
     return (
       <div>
         <NgForm
+          readOnly={this.props.readOnly}
           value={form.value}
           schema={form.schema}
           flow={form.flow}

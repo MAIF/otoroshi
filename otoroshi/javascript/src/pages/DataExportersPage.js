@@ -67,8 +67,7 @@ function CustomDataExporterRefSection({ label, role, value, onChange }) {
 
   const pluginMeta =
     v.kind === 'plugin' && pluginList ? pluginList.find((p) => p.id === v.ref) : null;
-  const hasFormSchema =
-    pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
+  const hasFormSchema = pluginMeta && (pluginMeta.configSchema || pluginMeta.config_schema);
 
   const refSelectorByKind = {
     wasm: {
@@ -102,29 +101,35 @@ function CustomDataExporterRefSection({ label, role, value, onChange }) {
             ]}
             onChange={(kind) => onChange({ ...v, kind, ref: '' })}
           />
-          {v.kind === 'plugin' &&  <SelectInput
-            label="Plugin"
-            value={v.ref}
-            possibleValues={(pluginList || []).map((p) => ({
-              value: p.id,
-              label: p.name || p.id,
-            }))}
-            onChange={(ref) => onChange({ ...v, ref, config: {} })}
-          />}
-          {v.kind === 'workflow' && <SelectInput
-            label="Workflow"
-            value={v.ref}
-            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
-            transformer={(i) => ({ value: i.id, label: i.name })}
-            onChange={(ref) => onChange({ ...v, ref })}
-          />}
-          {v.kind === 'wasm' && <SelectInput
-            label="WASM plugin"
-            value={v.ref}
-            valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
-            transformer={(i) => ({ value: i.id, label: i.name })}
-            onChange={(ref) => onChange({ ...v, ref })}
-          />}
+          {v.kind === 'plugin' && (
+            <SelectInput
+              label="Plugin"
+              value={v.ref}
+              possibleValues={(pluginList || []).map((p) => ({
+                value: p.id,
+                label: p.name || p.id,
+              }))}
+              onChange={(ref) => onChange({ ...v, ref, config: {} })}
+            />
+          )}
+          {v.kind === 'workflow' && (
+            <SelectInput
+              label="Workflow"
+              value={v.ref}
+              valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/workflows"
+              transformer={(i) => ({ value: i.id, label: i.name })}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
+          {v.kind === 'wasm' && (
+            <SelectInput
+              label="WASM plugin"
+              value={v.ref}
+              valuesFrom="/bo/api/proxy/apis/plugins.otoroshi.io/v1/wasm-plugins"
+              transformer={(i) => ({ value: i.id, label: i.name })}
+              onChange={(ref) => onChange({ ...v, ref })}
+            />
+          )}
           {hasFormSchema ? (
             <Form
               value={v.config || {}}
@@ -277,6 +282,8 @@ export const MAILERS_FORM = {
   mailgunFormFlow: ['eu', 'apiKey', 'domain', 'to'],
   mailjetFormFlow: ['apiKeyPublic', 'apiKeyPrivate', 'to'],
   sendgridFormFlow: ['apiKey', 'to'],
+  scalewayFormFlow: ['secretKey', 'projectId', 'region', 'to'],
+  mailpaceFormFlow: ['serverToken', 'to'],
   genericFormSchema: {
     url: {
       type: 'string',
@@ -387,6 +394,64 @@ export const MAILERS_FORM = {
       },
     },
   },
+  scalewayFormSchema: {
+    secretKey: {
+      type: 'string',
+      label: 'Scaleway secret key',
+      props: {
+        label: 'Scaleway secret key',
+        placeholder: 'Scaleway secret key',
+      },
+    },
+    projectId: {
+      type: 'string',
+      label: 'Scaleway project id',
+      props: {
+        label: 'Scaleway project id',
+        placeholder: 'Scaleway project id',
+      },
+    },
+    region: {
+      type: 'string',
+      label: 'Scaleway region',
+      props: {
+        label: 'Scaleway region',
+        placeholder: 'fr-par',
+        help: 'Scaleway region where the TEM API is exposed (e.g. fr-par)',
+      },
+    },
+    to: {
+      type: 'array',
+      label: 'Email addresses',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive events',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
+  },
+  mailpaceFormSchema: {
+    serverToken: {
+      type: 'string',
+      label: 'MailPace server token',
+      props: {
+        label: 'MailPace server token',
+        placeholder: 'MailPace server token',
+        help: 'Per-domain server token used in the MailPace-Server-Token header',
+      },
+    },
+    to: {
+      type: 'array',
+      label: 'Email addresses',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive events',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+        initTransform: (values) => values.map((value) => value.email),
+      },
+    },
+  },
 };
 
 class Mailer extends Component {
@@ -435,6 +500,22 @@ class Mailer extends Component {
                   to: [],
                 });
                 break;
+              case 'scaleway':
+                this.props.onChange({
+                  type: 'scaleway',
+                  secretKey: '',
+                  projectId: '',
+                  region: 'fr-par',
+                  to: [],
+                });
+                break;
+              case 'mailpace':
+                this.props.onChange({
+                  type: 'mailpace',
+                  serverToken: '',
+                  to: [],
+                });
+                break;
             }
           }}
           possibleValues={[
@@ -443,6 +524,8 @@ class Mailer extends Component {
             { label: 'Mailgun', value: 'mailgun' },
             { label: 'Mailjet', value: 'mailjet' },
             { label: 'Sendgrid', value: 'sendgrid' },
+            { label: 'Scaleway TEM', value: 'scaleway' },
+            { label: 'MailPace', value: 'mailpace' },
           ]}
           help="..."
         />
@@ -479,6 +562,24 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={MAILERS_FORM.sendgridFormFlow}
             schema={MAILERS_FORM.sendgridFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'scaleway' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={MAILERS_FORM.scalewayFormFlow}
+            schema={MAILERS_FORM.scalewayFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailpace' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={MAILERS_FORM.mailpaceFormFlow}
+            schema={MAILERS_FORM.mailpaceFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
@@ -994,9 +1095,13 @@ class UserAnalyticsActivationBlock extends Component {
               disabled={this.state.busy}
             >
               {this.state.busy ? (
-                <><i className="fas fa-spinner fa-spin" /> Promoting…</>
+                <>
+                  <i className="fas fa-spinner fa-spin" /> Promoting…
+                </>
               ) : (
-                <><i className="fas fa-star" /> Set as active analytics exporter</>
+                <>
+                  <i className="fas fa-star" /> Set as active analytics exporter
+                </>
               )}
             </button>
           )}

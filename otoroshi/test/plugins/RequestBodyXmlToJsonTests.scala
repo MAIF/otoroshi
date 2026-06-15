@@ -32,7 +32,7 @@ class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
         |""".stripMargin)
     .futureValue
 
-  val body = Json.parse(resp.body).selectAsObject("body")
+  val body = Json.parse(resp.body[String]).selectAsObject("body")
 
   body.selectAsOptObject("book").isDefined mustBe true
   body.selectAsObject("book").selectAsString("category") mustBe "web"

@@ -112,7 +112,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .url(s"http://127.0.0.1:$port/api")
       .withFollowRedirects(true)
       .withHttpHeaders(
-        "Host" -> "foo.oto.tools"
+        "Host" -> s"foo.oto.tools:$port"
       )
       .get()
       .futureValue
@@ -121,7 +121,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .url(s"http://127.0.0.1:$port/api")
       .withFollowRedirects(false)
       .withHttpHeaders(
-        "Host" -> "foo.oto.tools"
+        "Host" -> s"foo.oto.tools:$port"
       )
       .get()
       .futureValue
@@ -173,7 +173,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .url(s"http://127.0.0.1:$port/api")
       .withFollowRedirects(true)
       .withHttpHeaders(
-        "Host" -> "foo.oto.tools"
+        "Host" -> s"foo.oto.tools:$port"
       )
       .get()
       .futureValue
@@ -182,7 +182,7 @@ class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
       .url(s"http://127.0.0.1:$port/api")
       .withFollowRedirects(false)
       .withHttpHeaders(
-        "Host" -> "foo.oto.tools"
+        "Host" -> s"foo.oto.tools:$port"
       )
       .get()
       .futureValue

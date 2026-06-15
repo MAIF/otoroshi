@@ -175,12 +175,13 @@ export function Subscriptions(props) {
             <Button
               type="success"
               className="btn-sm"
+              data-testid="subscription-confirm"
               onClick={() => {
                 BackOfficeServices.confirmSubscription(
                   item.id,
                   subscription.id,
                   isDraft ? 'Draft' : 'Published'
-                ).then(() => window.location.reload());
+                ).then(() => table.update());
               }}
             >
               Confirm
@@ -228,6 +229,7 @@ export function Subscriptions(props) {
 
   return (
     <Table
+      key={version}
       parentProps={{ params }}
       navigateTo={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/subscriptions/${item.id}/edit`)
@@ -235,7 +237,7 @@ export function Subscriptions(props) {
       navigateOnEdit={(item) =>
         historyPush(history, location, `/apis/${params.apiId}/subscriptions/${item.id}/edit`)
       }
-      selfUrl="subscriptions"
+      selfUrl={`apis/${params.apiId}/subscriptions`}
       defaultTitle="Subscription"
       itemName="Subscription"
       columns={columns}

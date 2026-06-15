@@ -381,7 +381,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
       status: Int
   ): Unit = {
 
-    println(s"Calling ${route.frontend.domains.head.domain}, expected $status")
+    println((s"Calling ${route.frontend.domains.head.domain}, expected $status"))
 
     val pureNettyClient = HttpClient
       .create()

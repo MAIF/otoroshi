@@ -1,16 +1,13 @@
+{{- $webhookServiceName := ternary .Values.cluster.leaderApiServiceName .Values.service.name .Values.cluster.enabled -}}
 {{- if .Values.webhooks.validation }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-validation
-  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    app: otoroshi
-    component: otoroshi-validation-webhook
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otoroshi-validation-webhook
 webhooks:
   - name: otoroshi-admission-webhook.otoroshi.io
     rules:
@@ -27,10 +24,10 @@ webhooks:
     clientConfig:
       # url: "https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/validation"
       service:
-        name: {{ .Values.service.name }}
+        name: {{ $webhookServiceName }}
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/validation"
-        port: 8443
+        port: {{ .Values.service.https }}
       caBundle: "" # injected at runtime
     failurePolicy: Ignore
     sideEffects: None
@@ -43,13 +40,9 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-injector
-  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-    app: otoroshi
-    component: otoroshi-validation-webhook
+    {{- include "otoroshi.labels" . | nindent 4 }}
+    app.kubernetes.io/component: otoroshi-sidecar-injector-webhook
 webhooks:
   - name: otoroshi-admission-webhook-injector.otoroshi.io
     rules:
@@ -71,11 +64,11 @@ webhooks:
     clientConfig:
       # url: "https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/inject"
       service:
-        name: {{ .Values.service.name }}
+        name: {{ $webhookServiceName }}
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/inject"
-        port: 8443
-      caBundle: "." # injected at runtime
+        port: {{ .Values.service.https }}
+      caBundle: "" # injected at runtime
     failurePolicy: Ignore
     sideEffects: None
     admissionReviewVersions: 

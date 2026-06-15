@@ -46,7 +46,7 @@ class RemoveCookiesInTests(parent: PluginsTestSpec) {
     .futureValue
 
   val cookies = Json
-    .parse(resp.body)
+    .parse(resp.body[String])
     .as[JsValue]
     .select("cookies")
     .as[Map[String, String]]

@@ -103,16 +103,9 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   def findAllByKind(kind: String) =
     ApiAction.async { ctx =>
-      Results
-        .Ok(
-          JsArray(
-            env.proxyState
-              .allDrafts()
-              .filter(_.id.startsWith(kind))
-              .map(_.json)
-          )
-        )
-        .future
+      env.datastores.draftsDataStore.findAll().map { drafts =>
+        Results.Ok(JsArray(drafts.filter(_.id.startsWith(kind)).map(_.json)))
+      }
     }
 
   def foldStats(stats: Seq[RouteStats]) = {
@@ -327,12 +320,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
           )
         )
 
+        // Read the draft straight from the datastore (not proxyState, whose
+        // cache lags behind writes) so a draft is visible right after it is
+        // POSTed — keeping draft mode consistent with the non-draft path.
         def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
-          env.proxyState
-            .allDrafts()
-            .find(_.id == id)
-            .flatMap(draft => fmt.reads(draft.content).asOpt)
-            .future
+          env.datastores.draftsDataStore
+            .findById(id)
+            .map(_.flatMap(draft => fmt.reads(draft.content).asOpt))
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
@@ -391,7 +385,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
         def getPlanDraftSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
             env: Env
         ): Future[Seq[JsValue]] = {
-          implicit val ec = env.otoroshiExecutionContext
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.draftsDataStore
             .streamedFindAndMat(
@@ -412,7 +406,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
         def getPlanSubscriptions(page: Int, plan: ApiDocumentationPlan)(implicit
             env: Env
         ): Future[Seq[ApiSubscription]] = {
-          implicit val ec = env.otoroshiExecutionContext
+          implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
           env.datastores.apiSubscriptionDataStore
             .streamedFindAndMat(_.planRef == plan.id, fetchSize = 50, page = page)(using ec, env.otoroshiMaterializer, env)
@@ -464,12 +458,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
+        // Read the draft straight from the datastore (not proxyState, whose
+        // cache lags behind writes) so a draft is visible right after it is
+        // POSTed — keeping draft mode consistent with the non-draft path.
         def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
-          env.proxyState
-            .allDrafts()
-            .find(_.id == id)
-            .flatMap(draft => fmt.reads(draft.content).asOpt)
-            .future
+          env.datastores.draftsDataStore
+            .findById(id)
+            .map(_.flatMap(draft => fmt.reads(draft.content).asOpt))
 
         def findApi(): Future[Option[Api]] =
           if (isDraft) findDraft(apiId, Api.format)
@@ -539,12 +534,13 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
         val isDraft = ctx.request.getQueryString("version").contains("Draft")
 
+        // Read the draft straight from the datastore (not proxyState, whose
+        // cache lags behind writes) so a draft is visible right after it is
+        // POSTed — keeping draft mode consistent with the non-draft path.
         def findDraft[A](id: String, fmt: Reads[A]): Future[Option[A]] =
-          env.proxyState
-            .allDrafts()
-            .find(_.id == id)
-            .flatMap(draft => fmt.reads(draft.content).asOpt)
-            .future
+          env.datastores.draftsDataStore
+            .findById(id)
+            .map(_.flatMap(draft => fmt.reads(draft.content).asOpt))
 
         def findApi(): Future[Option[Api]] =
           if (isDraft) findDraft(apiId, Api.format)
@@ -556,7 +552,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
         def enableSubscription(subscription: ApiSubscription): Future[Boolean] =
           if (isDraft) {
-            env.proxyState.allDrafts().find(_.id == subscriptionId) match {
+            env.datastores.draftsDataStore.findById(subscriptionId).flatMap {
               case None        => false.future
               case Some(draft) =>
                 val updated = draft.copy(
@@ -680,50 +676,50 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
                             )
                             .future
                         } else {
-                        // Slim "design" snapshot of the deployed draft: only the production-locked
-                        // fields (routes, backends, flows, documentation) are useful for rollback/audit.
-                        // Trims subscriptions/clients/plans/testing/metadata noise out of the stored payload.
-                        val slimApiDefinition: JsValue = Json.obj(
-                          "routes"        -> JsArray(apiDraft.routes.map(ApiRoute._fmt.writes)),
-                          "backends"      -> JsArray(apiDraft.backends.map(ApiBackend._fmt.writes)),
-                          "flows"         -> JsArray(apiDraft.flows.map(ApiFlows._fmt.writes)),
-                          "documentation" -> apiDraft.documentation
-                            .map(ApiDocumentation._fmt.writes)
-                            .getOrElse[JsValue](JsNull)
-                        )
-                        val slimDeployment = deployment.copy(apiDefinition = slimApiDefinition)
-                        val updatedApi     = apiDraft.copy(
-                          deployments = (Seq(slimDeployment) ++ api.deployments).slice(0, 5),
-                          id = api.id,
-                          routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
-                          state = targetState,
-                          documentation = api.documentation,
-                          clients = api.clients
-                        )
+                          // Slim "design" snapshot of the deployed draft: only the production-locked
+                          // fields (routes, backends, flows, documentation) are useful for rollback/audit.
+                          // Trims subscriptions/clients/plans/testing/metadata noise out of the stored payload.
+                          val slimApiDefinition: JsValue = Json.obj(
+                            "routes"        -> JsArray(apiDraft.routes.map(ApiRoute._fmt.writes)),
+                            "backends"      -> JsArray(apiDraft.backends.map(ApiBackend._fmt.writes)),
+                            "flows"         -> JsArray(apiDraft.flows.map(ApiFlows._fmt.writes)),
+                            "documentation" -> apiDraft.documentation
+                              .map(ApiDocumentation._fmt.writes)
+                              .getOrElse[JsValue](JsNull)
+                          )
+                          val slimDeployment             = deployment.copy(apiDefinition = slimApiDefinition)
+                          val updatedApi                 = apiDraft.copy(
+                            deployments = (Seq(slimDeployment) ++ api.deployments).slice(0, 5),
+                            id = api.id,
+                            routes = apiDraft.routes.map(route => route.copy(id = s"${route.id}_prod")),
+                            state = targetState,
+                            documentation = api.documentation,
+                            clients = api.clients
+                          )
 
-                        env.datastores.apiDataStore
-                          .set(updatedApi)
-                          .map(result => {
-                            ApiDeploymentEvent(
-                              `@id` = env.snowflakeGenerator.nextIdStr(),
-                              `@timestamp` = DateTime.now(),
-                              apiRef = slimDeployment.apiRef,
-                              owner =
-                                if (slimDeployment.owner.isEmpty)
-                                  ctx.user.map(user => Json.stringify(user)).getOrElse(slimDeployment.owner)
-                                else slimDeployment.owner,
-                              at = slimDeployment.at,
-                              apiDefinition = slimDeployment.apiDefinition,
-                              version = api.version,
-                              `@service` = api.name,
-                              `@serviceId` = apiId
-                            ).toAnalytics()
+                          env.datastores.apiDataStore
+                            .set(updatedApi)
+                            .map(result => {
+                              ApiDeploymentEvent(
+                                `@id` = env.snowflakeGenerator.nextIdStr(),
+                                `@timestamp` = DateTime.now(),
+                                apiRef = slimDeployment.apiRef,
+                                owner =
+                                  if (slimDeployment.owner.isEmpty)
+                                    ctx.user.map(user => Json.stringify(user)).getOrElse(slimDeployment.owner)
+                                  else slimDeployment.owner,
+                                at = slimDeployment.at,
+                                apiDefinition = slimDeployment.apiDefinition,
+                                version = api.version,
+                                `@service` = api.name,
+                                `@serviceId` = apiId
+                              ).toAnalytics()
 
-                            if (result) {
-                              Results.Created(updatedApi.json)
-                            } else
-                              Results.BadRequest(Json.obj("error" -> "something wrong happened"))
-                          })
+                              if (result) {
+                                Results.Created(updatedApi.json)
+                              } else
+                                Results.BadRequest(Json.obj("error" -> "something wrong happened"))
+                            })
                         }
                     }
                 }

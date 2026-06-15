@@ -247,7 +247,7 @@ class ReactivePgDataStores(
     .connectingTo(connectOptions)
     .build()
 
-  lazy val redis = new ReactivePgRedis(
+  lazy val redis: ReactivePgRedis = new ReactivePgRedis(
     client,
     reactivePgActorSystem,
     env,
@@ -450,7 +450,7 @@ class ReactivePgDataStores(
   private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
-  private lazy val _userAlertDataStore                                                =
+  private lazy val _userAlertDataStore                                               =
     new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 
@@ -1175,7 +1175,7 @@ class ReactivePgRedis(
       val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
       if (avoidJsonPath) {
         getArray(key).map(
-          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+          _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
         ) // awful but not supported in some cases like cockroachdb
       } else {
         queryOne(
@@ -1187,7 +1187,7 @@ class ReactivePgRedis(
           case ex: io.vertx.pgclient.PgException
             if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
             getArray(key).map(
-              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)
+              _.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty).toSeq
             ) // awful but not supported in some cases like cockroachdb
           }
         }
@@ -1275,7 +1275,7 @@ class ReactivePgRedis(
         Seq(key)
       ) { row =>
         row.optJsObject("svalue").map(_.keys.toSeq.map(ByteString.apply))
-      }.map(_.getOrElse(Seq.empty))
+      }.map(_.getOrElse(Seq.empty).toSeq)
     }
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString)*)

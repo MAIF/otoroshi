@@ -63,7 +63,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
           lastTrustedCA =
             env.datastores.globalConfigDataStore.latestSafe
               .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
         } yield {
           if (
             last != lastUpdatedRef.get()

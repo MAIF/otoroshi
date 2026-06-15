@@ -155,7 +155,12 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
+                style={{
+                  padding: '0 4px',
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                }}
                 title="Move up"
                 disabled={this.props.isFirst}
                 onClick={() => this.props.onMove(widget.id, 'up')}
@@ -167,7 +172,12 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
+                style={{
+                  padding: '0 4px',
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                }}
                 title="Move down"
                 disabled={this.props.isLast}
                 onClick={() => this.props.onMove(widget.id, 'down')}
@@ -178,7 +188,12 @@ export class WidgetWrapper extends Component {
             <button
               type="button"
               className="btn btn-sm"
-              style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
+              style={{
+                padding: '0 4px',
+                color: 'var(--text-muted)',
+                background: 'transparent',
+                border: 'none',
+              }}
               title="Refresh"
               onClick={this.fetchData}
             >
@@ -188,7 +203,12 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
+                style={{
+                  padding: '0 4px',
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                }}
                 title="Edit widget"
                 onClick={() => this.props.onEdit(widget.id)}
               >
@@ -199,7 +219,12 @@ export class WidgetWrapper extends Component {
               <button
                 type="button"
                 className="btn btn-sm"
-                style={{ padding: '0 4px', color: 'var(--text-muted)', background: 'transparent', border: 'none' }}
+                style={{
+                  padding: '0 4px',
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                }}
                 title="Remove widget"
                 onClick={() => this.props.onRemove(widget.id)}
               >
@@ -210,12 +235,28 @@ export class WidgetWrapper extends Component {
         </div>
         <div style={{ flex: 1, position: 'relative' }}>
           {status === 'loading' && (
-            <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div
+              style={{
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
               <i className="fas fa-spinner fa-spin" />
             </div>
           )}
           {status === 'empty' && (
-            <div style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <div
+              style={{
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
               No data for this range
             </div>
           )}

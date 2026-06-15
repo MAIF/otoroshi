@@ -132,8 +132,19 @@ object LegacyPgMigrator {
                       )
                     } else {
                       val insertSql = EventDenormalizer.insertSql(settings)
-                      logger.info(s"[user-analytics-migrator] starting migration $sourceTable → $targetTable, $total source rows")
-                      runBatches(sourcePool, sourceTable, targetPool, insertSql, batchSize, lastId = "", processed = 0L, inserted = 0L)
+                      logger.info(
+                        s"[user-analytics-migrator] starting migration $sourceTable → $targetTable, $total source rows"
+                      )
+                      runBatches(
+                        sourcePool,
+                        sourceTable,
+                        targetPool,
+                        insertSql,
+                        batchSize,
+                        lastId = "",
+                        processed = 0L,
+                        inserted = 0L
+                      )
                         .map { case (processed, inserted) =>
                           Right(MigrationResult(sourceTable, targetTable, total, processed, inserted, dryRun = false))
                         }
@@ -167,18 +178,25 @@ object LegacyPgMigrator {
           logger.info(s"[user-analytics-migrator] done: processed=$processed inserted=$inserted")
           Future.successful((processed, inserted))
         } else {
-          val newLastId = rows.last.getString("id")
-          val tuples: java.util.List[VertxTuple] = rows
-            .flatMap { r =>
-              parseEvent(r).map { ev =>
-                val stripped = EventStripper.stripGatewayEvent(ev)
-                val drow     = EventDenormalizer.extractColumns(stripped)
-                EventDenormalizer.toTuple(drow)
-              }
+          val newLastId                          = rows.last.getString("id")
+          val tuples: java.util.List[VertxTuple] = rows.flatMap { r =>
+            parseEvent(r).map { ev =>
+              val stripped = EventStripper.stripGatewayEvent(ev)
+              val drow     = EventDenormalizer.extractColumns(stripped)
+              EventDenormalizer.toTuple(drow)
             }
-            .asJava
+          }.asJava
           if (tuples.isEmpty) {
-            runBatches(sourcePool, sourceTable, targetPool, insertSql, batchSize, newLastId, processed + rows.size, inserted)
+            runBatches(
+              sourcePool,
+              sourceTable,
+              targetPool,
+              insertSql,
+              batchSize,
+              newLastId,
+              processed + rows.size,
+              inserted
+            )
           } else {
             targetPool
               .preparedQuery(insertSql)
@@ -192,7 +210,16 @@ object LegacyPgMigrator {
                     s"[user-analytics-migrator] progress: processed=$nextProcessed inserted=$nextInserted lastId=$newLastId"
                   )
                 }
-                runBatches(sourcePool, sourceTable, targetPool, insertSql, batchSize, newLastId, nextProcessed, nextInserted)
+                runBatches(
+                  sourcePool,
+                  sourceTable,
+                  targetPool,
+                  insertSql,
+                  batchSize,
+                  newLastId,
+                  nextProcessed,
+                  nextInserted
+                )
               }
           }
         }

@@ -41,7 +41,7 @@ class StaticResponseTests(parent: PluginsTestSpec) {
 
   resp.status mustBe Status.OK
   getOutHeader(resp, "baz") mustBe Some("bar")
-  Json.parse(resp.body) mustEqual Json.obj("foo" -> "client value")
+  Json.parse(resp.body[String]) mustEqual Json.obj("foo" -> "client value")
 
   deleteOtoroshiRoute(route).futureValue
 }

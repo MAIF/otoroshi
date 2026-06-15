@@ -43,7 +43,7 @@ class HTTPStaticAssetTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body) mustEqual Json.obj("foo" -> "bar_from_child")
+  Json.parse(resp.body[String]) mustEqual Json.obj("foo" -> "bar_from_child")
 
   {
     val resp = ws
@@ -55,7 +55,7 @@ class HTTPStaticAssetTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.OK
-    Json.parse(resp.body).selectAsOptString("path").isDefined mustBe true
+    Json.parse(resp.body[String]).selectAsOptString("path").isDefined mustBe true
   }
 
   deleteOtoroshiRoute(staticAssetRoute).futureValue

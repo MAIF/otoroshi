@@ -221,7 +221,7 @@ object RemoveCookiesInConfig {
   val format: Format[RemoveCookiesInConfig] = new Format[RemoveCookiesInConfig] {
     override def reads(json: JsValue): JsResult[RemoveCookiesInConfig] = Try {
       RemoveCookiesInConfig(
-        names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty)
+        names = json.select("names").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

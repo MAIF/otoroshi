@@ -107,8 +107,8 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
 
     resp2.status mustBe Status.SERVICE_UNAVAILABLE
 
-    Json.parse(resp2.body).selectAsString("otoroshi-cause") mustEqual "maintenance mode enabled"
-    Json.parse(resp2.body).selectAsString("otoroshi-error") mustEqual "Service in maintenance mode"
+    Json.parse(resp2.body[String]).selectAsString("otoroshi-cause") mustEqual "maintenance mode enabled"
+    Json.parse(resp2.body[String]).selectAsString("otoroshi-error") mustEqual "Service in maintenance mode"
   }
 
   deleteOtoroshiErrorTemplate(error).futureValue

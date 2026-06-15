@@ -60,7 +60,7 @@ class WorkflowBackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body) mustBe Json.obj("foo" -> "bar")
+  Json.parse(resp.body[String]) mustBe Json.obj("foo" -> "bar")
 
   deleteOtoroshiWorkflow(workflow).futureValue
   deleteOtoroshiRoute(route).futureValue

@@ -754,26 +754,34 @@ export function ThrottlingStrategy({ value, onChange }) {
 
   return (
     <>
-      <NgForm
-        schema={{
-          id: {
-            type: 'select',
-            label: 'Strategy',
-            props: {
-              defaultValue: 'LegacyThrottlingStrategyConfig',
-              options: [
-                { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
-                { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
-                { value: 'DistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy' },
-                { value: 'LuaDistributedRedisThrottlingStrategyConfig', label: 'Distributed throttling strategy (using Lua scripts)' },
-                { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
-              ],
+      <div data-testid="throttling-strategy-select">
+        <NgForm
+          schema={{
+            id: {
+              type: 'select',
+              label: 'Strategy',
+              props: {
+                defaultValue: 'LegacyThrottlingStrategyConfig',
+                options: [
+                  { value: 'LocalTokensBucketStrategyConfig', label: 'Local tokens bucket' },
+                  { value: 'LegacyThrottlingStrategyConfig', label: 'Legacy throttling strategy' },
+                  {
+                    value: 'DistributedRedisThrottlingStrategyConfig',
+                    label: 'Distributed throttling strategy',
+                  },
+                  {
+                    value: 'LuaDistributedRedisThrottlingStrategyConfig',
+                    label: 'Distributed throttling strategy (using Lua scripts)',
+                  },
+                  { value: 'FixedWindowStrategyConfig', label: 'Fixed window' },
+                ],
+              },
             },
-          },
-        }}
-        value={value}
-        onChange={onChange}
-      />
+          }}
+          value={value}
+          onChange={onChange}
+        />
+      </div>
 
       {Component && <Component value={value} onChange={onChange} />}
     </>

@@ -797,7 +797,7 @@ class ScriptManager(env: Env) {
       //   "java.*",
       //   "javax.*",
       //   "aix.*",
-      //   "akka.*",
+      //   "org.apache.pekko.*",
       //   "cats.*",
       //   "ch.qos.logback.*",
       //   "com.auth0.*",
@@ -1590,7 +1590,7 @@ object Script {
           desc = (json \ "desc").as[String],
           code = (json \ "code").as[String],
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           `type` = scriptType
         )
       } map { case sd =>

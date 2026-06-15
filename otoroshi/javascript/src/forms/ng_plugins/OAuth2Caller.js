@@ -12,6 +12,7 @@ export default {
     'clientSecret',
     'scope',
     'audience',
+    'resource',
     'user',
     'password',
     'cacheTokenSeconds',
@@ -78,6 +79,10 @@ export default {
     audience: {
       type: 'string',
       label: 'Audience',
+    },
+    resource: {
+      type: 'string',
+      label: 'Resource',
     },
     user: {
       type: 'string',

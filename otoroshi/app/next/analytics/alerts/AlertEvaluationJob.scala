@@ -55,10 +55,13 @@ class AlertEvaluationJob extends Job {
     if (alerts.isEmpty) FastFuture.successful(())
     else {
       Future
-        .sequence(alerts.map(a => processAlert(a).recover {
-          case e: Throwable =>
-            logger.error(s"error while processing alert '${a.id}'", e)
-        }))
+        .sequence(
+          alerts.map(a =>
+            processAlert(a).recover { case e: Throwable =>
+              logger.error(s"error while processing alert '${a.id}'", e)
+            }
+          )
+        )
         .map(_ => ())
     }
   }

@@ -5,7 +5,7 @@ import CodeInput from '../../components/inputs/CodeInput';
 import { INFORMATION_FIELDS, splitInformationAndContent } from './WorkflowsDesigner';
 import { getNodeFromKind } from './models/Functions';
 import { MarkdownInput } from '../../components/nginputs/MarkdownInput';
-import { TextInput } from '../../components/inputs';
+import { MonacoInput, TextInput } from '../../components/inputs';
 
 function setEnabled(state) {
   if (state?.enabled === undefined)
@@ -98,7 +98,16 @@ export function ModalEditor({ node }) {
               return (
                 <div className="d-flex flex-column" style={{ flex: 1 }} key={idx}>
                   <TextInput flex={true} value={key} onChange={onChangeKey} />
-                  <CodeInput
+                  <MonacoInput
+                    language="json"
+                    key={`debug${i}`}
+                    height="100%"
+                    value={JSON.stringify(value, null, 2)}
+                    onChange={onChangeValue}
+                    editorOnly={true}
+                    label={null}
+                  />
+                  {/*<CodeInput
                     value={value}
                     editorOnly
                     rawSchema={{
@@ -110,7 +119,7 @@ export function ModalEditor({ node }) {
                       },
                     }}
                     onChange={onChangeValue}
-                  />
+                  />*/}
                 </div>
               );
             }, []),
@@ -268,6 +277,7 @@ export function ModalEditor({ node }) {
                 spread: true,
               }}
               mode="jsonOrPlaintext"
+              language="json"
               height="100%"
               value={getCodeInputValue()}
               onChange={handleCodeInputChange}

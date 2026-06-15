@@ -26,7 +26,7 @@ class OtoroshiJWKSEndpointTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsOptArray("keys").isDefined mustBe true
+  Json.parse(resp.body[String]).selectAsOptArray("keys").isDefined mustBe true
 
   deleteOtoroshiRoute(route).futureValue
 

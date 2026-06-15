@@ -23,31 +23,55 @@ export function VersionBadge({ size, className }) {
   );
 }
 
-export function VersionToggle({ isDraft }) {
-  const switchVersion = () => {
-    const target = isDraft ? 'Published' : 'Draft';
-    const queryParams = new URLSearchParams(window.location.search);
-    queryParams.set('version', target);
-    window.history.replaceState(null, null, '?' + queryParams.toString());
-    window.location.reload();
-  };
+export function switchToVersion(target) {
+  const queryParams = new URLSearchParams(window.location.search);
+  queryParams.set('version', target);
+  window.history.replaceState(null, null, '?' + queryParams.toString());
+  window.location.reload();
+}
 
+export function EditInDraftButton() {
   return (
     <button
       type="button"
-      className={`dashboard-version-toggle ${isDraft ? 'dashboard-version-toggle--draft' : 'dashboard-version-toggle--prod'}`}
-      onClick={switchVersion}
-      data-testid="version-toggle"
+      className="version-banner-action"
+      onClick={() => switchToVersion('Draft')}
     >
-      <span
-        className={`dashboard-version-toggle-indicator ${isDraft ? 'dashboard-version-toggle-indicator--draft' : 'dashboard-version-toggle-indicator--prod'}`}
-      >
-        {isDraft ? 'DEV' : 'PROD'}
-      </span>
-      <span className="dashboard-version-toggle-label">
-        {isDraft ? 'View Production' : 'Edit in Draft Mode'}
-      </span>
-      <i className={`fas ${isDraft ? 'fa-arrow-right' : 'fa-arrow-right'}`} />
+      <i className="fas fa-pen me-2" />
+      Edit in draft
     </button>
+  );
+}
+
+export function VersionBanner({ showAction = true }) {
+  const version = useSignalValue(signalVersion);
+
+  if (!version || version === 'staging') return null;
+
+  const isDraft = version === 'Draft';
+
+  return (
+    <div className={`version-banner version-banner--${isDraft ? 'draft' : 'prod'}`}>
+      <div className="version-banner-info">
+        <span className="version-banner-tag">
+          <i className={`fas ${isDraft ? 'fa-pen' : 'fa-circle'}`} />
+          {isDraft ? 'DRAFT' : 'PRODUCTION'}
+        </span>
+        <span className="version-banner-text">
+          {isDraft ? 'your edits go live once published' : 'live config — edit through the draft'}
+        </span>
+      </div>
+      {showAction && (
+        <button
+          type="button"
+          className="version-banner-action"
+          onClick={() => switchToVersion(isDraft ? 'Published' : 'Draft')}
+          data-testid="version-banner-switch"
+        >
+          {isDraft ? 'View production' : 'Edit in draft'}
+          <i className="fas fa-arrow-right" />
+        </button>
+      )}
+    </div>
   );
 }

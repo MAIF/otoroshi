@@ -205,7 +205,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))
@@ -295,7 +295,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
       val configs: Seq[ThirdPartyApiKeyConfig] = {
         (pluginConfiguration.config match {
           case Some(r: JsObject)  => Seq(r)
-          case Some(arr: JsArray) => arr.value
+          case Some(arr: JsArray) => arr.value.toSeq
           case _                  => Seq.empty
         })
           .map(v => ThirdPartyApiKeyConfig.format.reads(v))

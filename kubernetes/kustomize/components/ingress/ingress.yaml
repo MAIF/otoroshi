@@ -1,0 +1,59 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otoroshi
+  annotations:
+    # Most ingress controllers need to be told to talk HTTPS to the upstream
+    # (Otoroshi terminates TLS itself + serves HTTP/2 + may want client certs).
+    # The two most common annotations are listed — keep the one for your
+    # controller, drop the rest, or patch in your overlay.
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  # ingressClassName is set by your cluster's ingress controller (e.g. `nginx`,
+  # `traefik`). Override via a patch in your overlay if your controller uses
+  # a different class name.
+  ingressClassName: nginx
+  rules:
+    # Three default hostnames mirror what the bundled Certificate covers.
+    # Replace `oto.tools` with your real domain.
+    - host: otoroshi.oto.tools
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otoroshi-service
+                port:
+                  number: 8443
+    - host: otoroshi-api.oto.tools
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otoroshi-service
+                port:
+                  number: 8443
+    - host: privateapps.oto.tools
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otoroshi-service
+                port:
+                  number: 8443
+  tls:
+    # The cluster ingress controller terminates TLS using whatever cert it can
+    # find. Two common patterns:
+    #   1. cert-manager / external Certificate stored in a Secret you reference here.
+    #   2. The ingress controller's wildcard cert (just drop the `secretName`).
+    - hosts:
+        - otoroshi.oto.tools
+        - otoroshi-api.oto.tools
+        - privateapps.oto.tools
+      # secretName: otoroshi-ingress-tls

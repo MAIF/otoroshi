@@ -108,7 +108,7 @@ class NgExternalValidator extends NgAccessValidator {
         attrs = ctx.attrs,
         env = env
       )
-    )
+    ).toMap
     env.Ws
       .url(url)
       .withRequestTimeout(config.timeout)

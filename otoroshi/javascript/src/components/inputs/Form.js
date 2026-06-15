@@ -268,11 +268,12 @@ export class Form extends Component {
             <MonacoInput
               disabled={disabled}
               key={name}
+              language="json"
               {...props}
               value={JSON.stringify(this.getValue(name, '{}'), null, 2)}
               onChange={(v) => {
                 try {
-                  this.changeValue(name, JSON.parse(v))
+                  this.changeValue(name, JSON.parse(v));
                 } catch (e) {}
               }}
             />

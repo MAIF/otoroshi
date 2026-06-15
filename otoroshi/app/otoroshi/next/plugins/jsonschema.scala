@@ -169,7 +169,8 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
                 .left
             } else {
               JsonSchemaValidator.logger.warn(
-                s"request body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting request through: ${errors.mkString(", ")}"
+                s"request body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting request through: ${errors
+                  .mkString(", ")}"
               )
               ctx.otoroshiRequest.copy(body = Source.single(rawBody)).right
             }
@@ -231,7 +232,8 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
                 .left
             } else {
               JsonSchemaValidator.logger.warn(
-                s"response body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting response through: ${errors.mkString(", ")}"
+                s"response body schema validation failed on route '${ctx.route.id}' but fail_on_validation_error is disabled, letting response through: ${errors
+                  .mkString(", ")}"
               )
               ctx.otoroshiResponse.copy(body = Source.single(rawBody)).right
             }

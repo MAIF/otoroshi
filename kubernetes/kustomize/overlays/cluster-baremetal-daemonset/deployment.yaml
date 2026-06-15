@@ -7,15 +7,14 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-leader-deployment
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   template:
     metadata:
       labels:
         run: otoroshi-leader-deployment
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 1
-        maxSurge: 1
     spec:
       affinity:
         nodeAffinity:
@@ -34,7 +33,7 @@ spec:
       hostNetwork: false
       restartPolicy: Always
       containers:
-      - image: maif/otoroshi:17.16.0-dev-jdk11
+      - image: maif/otoroshi:17.17.0-dev-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-leader
         ports:
@@ -47,17 +46,14 @@ spec:
             name: "https"
             protocol: TCP
         env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: APP_STORAGE_ROOT
             value: otoroshi
-          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
-            value: ${password}
-          - name: APP_DOMAIN
-            value: ${domain}
           - name: APP_STORAGE
             value: lettuce
-          - name: REDIS_URL
-            value: ${redisUrl}
-            # value: redis://redis-leader-service:6379/0
           - name: CLUSTER_MODE
             value: Leader
           - name: CLUSTER_AUTO_UPDATE_STATE
@@ -68,108 +64,74 @@ spec:
             value: 'true'
           - name: CLUSTER_MTLS_TRUST_ALL
             value: 'true'
-          - name: CLUSTER_LEADER_URL
-            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
-          - name: CLUSTER_LEADER_HOST
-            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
-          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
-            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
-          - name: ADMIN_API_CLIENT_ID
-            value: ${clientId}
-          - name: CLUSTER_LEADER_CLIENT_ID
-            value: ${clientId}
-          - name: ADMIN_API_CLIENT_SECRET
-            value: ${clientSecret}
-          - name: CLUSTER_LEADER_CLIENT_SECRET
-            value: ${clientSecret}
-          - name: OTOROSHI_SECRET
-            value: ${otoroshiSecret}
           - name: HEALTH_LIMIT
             value: "5000"
           - name: SSL_OUTSIDE_CLIENT_AUTH
             value: Want
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
-          - name: OTOROSHI_INITIAL_CUSTOMIZATION
-            value: >
-              {
-                "config":{
-                  "tlsSettings": {
-                    "defaultDomain": "www.${domain}",
-                    "randomIfNotFound": false
-                  },
-                  "scripts":{
-                    "enabled":true,
-                    "sinkRefs":[
-                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator",
-                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
-                    ],
-                    "sinkConfig": {},
-                    "jobRefs":[
-                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"
-                    ],
-                    "jobConfig":{
-                      "KubernetesConfig": {
-                        "trust": false,
-                        "namespaces": [
-                          "*"
-                        ],
-                        "labels": {},
-                        "namespacesLabels": {},
-                        "ingressClasses": [
-                          "otoroshi"
-                        ],
-                        "defaultGroup": "default",
-                        "ingresses": false,
-                        "crds": true,
-                        "coreDnsIntegration": false,
-                        "coreDnsIntegrationDryRun": false,
-                        "kubeLeader": false,
-                        "restartDependantDeployments": false,
-                        "watch": false,
-                        "syncDaikokuApikeysOnly": false,
-                        "kubeSystemNamespace": "kube-system",
-                        "coreDnsConfigMapName": "coredns",
-                        "coreDnsDeploymentName": "coredns",
-                        "corednsPort": 53,
-                        "otoroshiServiceName": "otoroshi-worker-service",
-                        "otoroshiNamespace": "${namespace}",
-                        "clusterDomain": "cluster.local",
-                        "syncIntervalSeconds": 60,
-                        "coreDnsEnv": null,
-                        "watchTimeoutSeconds": 60,
-                        "watchGracePeriodSeconds": 5,
-                        "mutatingWebhookName": "otoroshi-admission-webhook-injector",
-                        "validatingWebhookName": "otoroshi-admission-webhook-validation",
-                        "templates": {
-                          "service-group": {},
-                          "service-descriptor": {},
-                          "apikeys": {},
-                          "global-config": {},
-                          "jwt-verifier": {},
-                          "tcp-service": {},
-                          "certificate": {},
-                          "auth-module": {},
-                          "script": {},
-                          "organizations": {},
-                          "teams": {},
-                          "webhooks": {
-                            "flags": {
-                              "requestCert": true,
-                              "originCheck": true,
-                              "tokensCheck": true,
-                              "displayEnv": false,
-                              "tlsTrace": false
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }  
           - name: JAVA_OPTS
-            value: '-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
+            value: '-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0'
+          - name: APP_DOMAIN
+            valueFrom:
+              configMapKeyRef:
+                name: otoroshi-config
+                key: domain
+          - name: REDIS_URL
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-redis-secret
+                key: redisUrl
+          - name: OTOROSHI_INITIAL_ADMIN_LOGIN
+            valueFrom:
+              configMapKeyRef:
+                name: otoroshi-config
+                key: adminLogin
+                # If the key is absent from the ConfigMap, Otoroshi falls back
+                # to its built-in default login (admin@otoroshi.io).
+                optional: true
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: password
+          - name: ADMIN_API_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientId
+          - name: CLUSTER_LEADER_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientId
+          - name: ADMIN_API_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientSecret
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientSecret
+          - name: OTOROSHI_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: otoroshiSecret
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local
+          - name: OTOROSHI_INITIAL_CUSTOMIZATION
+            value: file:///etc/otoroshi/initial-customization.json
+        volumeMounts:
+          - name: initial-customization
+            mountPath: /etc/otoroshi
+            readOnly: true
         readinessProbe:
           httpGet:
             path: /ready
@@ -188,6 +150,13 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 2
+      volumes:
+        - name: initial-customization
+          configMap:
+            name: otoroshi-initial-customization
+            items:
+              - key: initial-customization.json
+                path: initial-customization.json
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -197,12 +166,10 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-worker-deployment
-  replicas: 2
-  strategy:
+  updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      maxSurge: 1
   template:
     metadata:
       labels:
@@ -223,9 +190,9 @@ spec:
       serviceAccountName: otoroshi-admin-user
       terminationGracePeriodSeconds: 60
       hostNetwork: false
-      restartPolicy: Always   
+      restartPolicy: Always
       containers:
-      - image: maif/otoroshi:16.20.1-dev-dev
+      - image: maif/otoroshi:17.16.1-dev-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi-worker
         ports:
@@ -238,12 +205,12 @@ spec:
             name: "https"
             protocol: TCP
         env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: APP_STORAGE_ROOT
             value: otoroshi
-          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
-            value: ${password}
-          - name: APP_DOMAIN
-            value: ${domain}
           - name: CLUSTER_MODE
             value: Worker
           - name: CLUSTER_AUTO_UPDATE_STATE
@@ -254,20 +221,6 @@ spec:
             value: 'true'
           - name: CLUSTER_MTLS_TRUST_ALL
             value: 'true'
-          - name: CLUSTER_LEADER_URL
-            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
-          - name: CLUSTER_LEADER_HOST
-            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
-          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
-            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
-          - name: ADMIN_API_CLIENT_ID
-            value: ${clientId}
-          - name: CLUSTER_LEADER_CLIENT_ID
-            value: ${clientId}
-          - name: ADMIN_API_CLIENT_SECRET
-            value: ${clientSecret}
-          - name: CLUSTER_LEADER_CLIENT_SECRET
-            value: ${clientSecret}
           - name: HEALTH_LIMIT
             value: "5000"
           - name: SSL_OUTSIDE_CLIENT_AUTH
@@ -275,7 +228,56 @@ spec:
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
           - name: JAVA_OPTS
-            value: '-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
+            value: '-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0'
+          - name: APP_DOMAIN
+            valueFrom:
+              configMapKeyRef:
+                name: otoroshi-config
+                key: domain
+          - name: OTOROSHI_INITIAL_ADMIN_LOGIN
+            valueFrom:
+              configMapKeyRef:
+                name: otoroshi-config
+                key: adminLogin
+                # If the key is absent from the ConfigMap, Otoroshi falls back
+                # to its built-in default login (admin@otoroshi.io).
+                optional: true
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: password
+          - name: ADMIN_API_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientId
+          - name: CLUSTER_LEADER_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientId
+          - name: ADMIN_API_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientSecret
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: clientSecret
+          - name: OTOROSHI_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: otoroshi-admin-secret
+                key: otoroshiSecret
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.$(POD_NAMESPACE).svc.cluster.local
         readinessProbe:
           httpGet:
             path: /ready
@@ -349,13 +351,13 @@ spec:
   autoRenew: true
   csr:
     issuer: CN=Otoroshi Root
-    hosts: 
-    - otoroshi-service
-    - otoroshi-service.${namespace}.svc.cluster.local
-    - otoroshi-api-service.${namespace}.svc.cluster.local
-    - otoroshi.${domain}
-    - otoroshi-api.${domain}
-    - privateapps.${domain}
+    hosts:
+      - otoroshi-service
+      - otoroshi-service.otoroshi.svc.cluster.local
+      - otoroshi-api-service.otoroshi.svc.cluster.local
+      - otoroshi.oto.tools
+      - otoroshi-api.oto.tools
+      - privateapps.oto.tools
     key:
       algo: rsa
       size: 2048

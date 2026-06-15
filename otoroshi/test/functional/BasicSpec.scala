@@ -87,7 +87,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse1.status mustBe 200
-      basicTestResponse1.body mustBe basicTestExpectedBody
+      basicTestResponse1.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 1
     }
 
@@ -117,7 +117,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 2
     }
 
@@ -134,7 +134,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("Service in maintenance mode") mustBe true
+      basicTestResponse2.body[String].contains("Service in maintenance mode") mustBe true
       callCounter.get() mustBe 2
 
       updateOtoroshiService(initialDescriptor.copy(maintenanceMode = false)).futureValue
@@ -148,7 +148,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 3
     }
 
@@ -165,7 +165,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse2.status mustBe 503
-      basicTestResponse2.body.contains("Service under construction") mustBe true
+      basicTestResponse2.body[String].contains("Service under construction") mustBe true
       callCounter.get() mustBe 3
 
       updateOtoroshiService(initialDescriptor.copy(buildMode = false)).futureValue
@@ -179,7 +179,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 4
     }
 
@@ -211,7 +211,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       basicTestResponse3.status mustBe 200
-      basicTestResponse3.body mustBe basicTestExpectedBody
+      basicTestResponse3.body[String] mustBe basicTestExpectedBody
       callCounter.get() mustBe 5
     }
 
@@ -290,7 +290,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -344,7 +344,7 @@ class BasicSpec() extends OtoroshiSpec {
 
       resp1.status mustBe 404
       resp2.status mustBe 200
-      resp2.body mustBe body
+      resp2.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -907,7 +907,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body2
+      resp1.body[String] mustBe body2
 
       Future
           .traverse(allBotUserAgents.toList) { ua =>
@@ -990,7 +990,7 @@ class BasicSpec() extends OtoroshiSpec {
       resp1.status mustBe 404
       resp2.status mustBe 404
       resp3.status mustBe 200
-      resp3.body mustBe body
+      resp3.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1035,7 +1035,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1080,7 +1080,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1138,11 +1138,11 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
       resp2.status mustBe 200
-      resp3.body mustBe body
+      resp3.body[String] mustBe body
       resp3.status mustBe 200
-      resp3.body mustBe body
+      resp3.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1189,7 +1189,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1253,7 +1253,7 @@ class BasicSpec() extends OtoroshiSpec {
           .futureValue
 
       resp1.status mustBe 200
-      resp1.body mustBe body
+      resp1.body[String] mustBe body
 
       deleteOtoroshiService(service).futureValue
       server.stop()
@@ -1301,7 +1301,7 @@ class BasicSpec() extends OtoroshiSpec {
         .futureValue
 
       resp1.status mustBe 502
-      resp1.body.contains("Backend server does not seems to be secured. Cancelling request !") mustBe true
+      resp1.body[String].contains("Backend server does not seems to be secured. Cancelling request !") mustBe true
 
       deleteOtoroshiService(service).futureValue
       server.stop()

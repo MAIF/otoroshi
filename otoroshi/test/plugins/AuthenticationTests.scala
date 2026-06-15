@@ -103,7 +103,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
 
     page.content().contains("GET") mustBe true
 
-    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,
@@ -122,8 +122,8 @@ class AuthenticationTests(parent: PluginsTestSpec) {
       .futureValue
 
     callWithUser.status mustBe 200
-    Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
-    Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+    Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "user@oto.tools"
+    Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "foo"
 
     val apikey = ApiKey(
       clientId = s"client-${IdGenerator.uuid}",
@@ -229,7 +229,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
 
     page.content().contains("GET") mustBe true
 
-    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+    val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,
@@ -248,8 +248,8 @@ class AuthenticationTests(parent: PluginsTestSpec) {
       .futureValue
 
     callWithUser.status mustBe 200
-    Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
-    Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+    Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "user@oto.tools"
+    Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "foo"
 
     val callWithoutCookies = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")

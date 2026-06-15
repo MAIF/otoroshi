@@ -102,10 +102,10 @@ object CorsSettings extends FromJson[CorsSettings] {
         CorsSettings(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           allowOrigin = json.multiSelect("allow_origin").asOpt[String].getOrElse("*"),
-          exposeHeaders = json.multiSelect("expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowHeaders = json.multiSelect("allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          allowMethods = json.multiSelect("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          excludedPatterns = json.multiSelect("excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          exposeHeaders = json.multiSelect("expose_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          allowHeaders = json.multiSelect("allow_headers").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          allowMethods = json.multiSelect("allow_methods").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          excludedPatterns = json.multiSelect("excluded_patterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           maxAge = json.multiSelect("max_age").asOpt[Long].map(a => FiniteDuration(a, TimeUnit.SECONDS)),
           allowCredentials = json.multiSelect("allow_credentials").asOpt[Boolean].getOrElse(true)
         )

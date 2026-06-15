@@ -49,7 +49,7 @@ class BasicAuthCallerTests(parent: PluginsTestSpec) {
           )
         ),
         id = IdGenerator.uuid,
-        domain = "basiauth.oto.tools".some
+        domain = "basicauthcaller.oto.tools".some
       )
     }
 

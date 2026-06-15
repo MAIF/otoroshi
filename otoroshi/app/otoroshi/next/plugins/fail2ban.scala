@@ -157,11 +157,11 @@ object Fail2BanConfig {
       val banMs      = parseDurationMillis((js \ "ban_time").asOpt[JsValue].getOrElse(JsString("15m")))
       val identifier = (js \ "identifier").asOpt[String].getOrElse("${req.ip}")
       val maxRetry   = (js \ "max_retry").asOpt[Int].getOrElse(5)
-      val regexes    = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { obj => RegexRule(obj) }
+      val regexes    = (js \ "url_regex").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { obj => RegexRule(obj) }
       val scodes     = (js \ "status_codes").asOpt[Seq[String]].getOrElse(Seq("401", "403", "429", "500-599"))
       val ranges     = parseStatusRanges(scodes).getOrElse(defaultRanges)
-      val ignored    = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val blocked    = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val ignored    = (js \ "ignored").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+      val blocked    = (js \ "blocked").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       Fail2BanConfig(
         identifier = identifier,
         detectTimeMs = detectMs,

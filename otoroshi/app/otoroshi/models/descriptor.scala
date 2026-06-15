@@ -591,7 +591,7 @@ object TargetPredicate {
                 .map(_.map(_.split(";").toList.map(_.trim)).collect { case lat :: lng :: radius :: Nil =>
                   GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
                 })
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
             )
           )
         case "NetworkLocationMatch" =>
@@ -823,7 +823,7 @@ object Target {
           backup = (json \ "backup").asOpt[Boolean].getOrElse(false),
           predicate = (json \ "predicate").asOpt(using TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(m => m.filter(_._1.nonEmpty))
@@ -934,12 +934,12 @@ object HealthCheck {
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         url = json.select("url").asOpt[String].getOrElse(""),
         timeout = json.select("timeout").asOpt[Int].getOrElse(5000),
-        healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
-        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
+        healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty).toSeq,
+        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty).toSeq,
         blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false),
         logicCheck = json.select("logicCheck").asOpt[Boolean].getOrElse(true),
-        healthyRegexChecks = json.select("healthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty),
-        unhealthyRegexChecks = json.select("unhealthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty)
+        healthyRegexChecks = json.select("healthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        unhealthyRegexChecks = json.select("unhealthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -1479,15 +1479,15 @@ object ApiKeyRouteMatcher {
       Try {
         JsSuccess(
           ApiKeyRouteMatcher(
-            noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-            noneMetaKeysIn = (json \ "noneMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            oneMetaKeyIn = (json \ "oneMetaKeyIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            noneMetaKeysIn = (json \ "noneMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            oneMetaKeyIn = (json \ "oneMetaKeyIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -2150,7 +2150,7 @@ case class ServiceDescriptor(
             .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       val refs                  = (plugs ++ gScripts.validatorRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
@@ -2278,7 +2278,7 @@ case class ServiceDescriptor(
             .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       val refs                  = (plugs ++ gScripts.preRouteRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
@@ -2350,7 +2350,7 @@ object ServiceDescriptor {
             val groupId: Seq[String] =
               (json \ "groupId").asOpt[String].toSeq
             val groups: Seq[String]  =
-              (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+              (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
             (groupId ++ groups).distinct
           },
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
@@ -2403,11 +2403,11 @@ object ServiceDescriptor {
             .asOpt[String]
             .flatMap(SecComInfoTokenVersion.apply)
             .getOrElse(SecComInfoTokenVersion.Legacy),
-          secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           securityExcludedPatterns =
-            (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          privatePatterns = (json \ "privatePatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          privatePatterns = (json \ "privatePatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           additionalHeaders =
             (json \ "additionalHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           additionalHeadersOut =
@@ -2455,7 +2455,7 @@ object ServiceDescriptor {
             .asOpt[Seq[String]]
             .orElse((json \ "transformerRef").asOpt[String].map(r => Seq(r)))
             .map(_.filterNot(_.trim.isEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           transformerConfig = (json \ "transformerConfig").asOpt[JsObject].getOrElse(Json.obj()),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings()),
           redirection = RedirectionSettings.format
@@ -2479,8 +2479,8 @@ object ServiceDescriptor {
           preRouting = PreRoutingRef.format
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),
-          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           handleLegacyDomain = (json \ "handleLegacyDomain").asOpt[Boolean].getOrElse(true),
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
           issueCertCA = (json \ "issueCertCA").asOpt[String]

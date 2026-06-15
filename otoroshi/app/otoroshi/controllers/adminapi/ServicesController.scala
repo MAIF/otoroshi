@@ -220,7 +220,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
           val actualTargets = JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}")))
           val newTargets    = patchJson(body, actualTargets)
             .as[JsArray]
-            .value
+            .value.toSeq
             .map(_.as[String])
             .map(s => s.split("://"))
             .map(arr => Target(scheme = arr(0), host = arr(1)))
@@ -273,7 +273,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
                 desc.targets :+ tgt
             case None         => desc.targets
           }
-          val newDesc    = desc.copy(targets = newTargets)
+          val newDesc    = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(
@@ -322,7 +322,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
                 desc.targets
             case None         => desc.targets
           }
-          val newDesc    = desc.copy(targets = newTargets)
+          val newDesc    = desc.copy(targets = newTargets.toSeq)
           Audit.send(event)
           Alerts.send(
             ServiceUpdatedAlert(

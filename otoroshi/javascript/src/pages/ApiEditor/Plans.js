@@ -498,6 +498,8 @@ function AccessModeConfigurationExceptApikey({ value, hide, onConfirm, accessMod
 function PlanForm({ plan, onChange }) {
   const [openAccessModeModal, setAccessModeModal] = useState(false);
 
+  const isApikeyPlan = plan?.access_mode_configuration_type === 'apikey';
+
   const schema = useMemo(
     () => ({
       name: { type: 'string', label: 'Name' },
@@ -559,7 +561,7 @@ function PlanForm({ plan, onChange }) {
             label: 'Custom group via expression (header, JWT claim)',
           },
         },
-        flow: ['strategy', 'perIp', 'customPattern'],
+        flow: isApikeyPlan ? ['strategy'] : ['strategy', 'perIp', 'customPattern'],
       },
       pricing: {
         type: 'form',
@@ -667,7 +669,7 @@ function PlanForm({ plan, onChange }) {
         flow: ['kind', 'config'],
       },
     }),
-    [setAccessModeModal]
+    [setAccessModeModal, isApikeyPlan]
   );
 
   const flow = useMemo(
@@ -880,7 +882,7 @@ export function Plans(props) {
         navigateOnEdit={(plan) =>
           history.push(`/apis/${params.apiId}/plans/${plan.id}/edit?version=${version}`)
         }
-        selfUrl="plans"
+        selfUrl={`apis/${params.apiId}/plans`}
         defaultTitle="Plans"
         itemName="Plan"
         formSchema={null}

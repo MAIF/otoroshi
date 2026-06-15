@@ -39,7 +39,7 @@ case class NgDiscoverySelfRegistrationConfig(
 
   def legacy: SelfRegistrationConfig = SelfRegistrationConfig(raw)
 
-  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val targetTemplate: JsObject        = raw
     .select("targetTemplate")
     .asOpt[JsObject]

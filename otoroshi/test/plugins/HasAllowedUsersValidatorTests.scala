@@ -55,7 +55,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
     page.fill("input[name='password']", "password")
     page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
 
-    context.cookies.asScala.map { c =>
+    context.cookies.asScala.toSeq.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,

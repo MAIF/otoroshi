@@ -81,7 +81,7 @@ object BasicAuthUser {
           "tags"                  -> o.tags,
           "webauthn"              -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
           "rights"                -> o.rights.json,
-          "adminEntityValidators" -> o.adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json)))
+          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
         )
       override def reads(json: JsValue)     =
         Try {
@@ -92,7 +92,7 @@ object BasicAuthUser {
               email = (json \ "email").as[String],
               webauthn = (json \ "webauthn").asOpt(using WebAuthnDetails.fmt),
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-              tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+              tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
               rights = UserRights.readFromObject(json),
               adminEntityValidators = json
                 .select("adminEntityValidators")
@@ -152,19 +152,19 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
           users = (json \ "users").asOpt(using Reads.seq(using BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq,
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
       )
     } recover { case e =>

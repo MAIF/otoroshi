@@ -263,7 +263,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
         .execute()
         .map { response =>
           if (response.status != 200) {
-            logger.error(response.body)
+            logger.error(response.body[String])
           }
           (response.json, response.status)
         }
@@ -277,7 +277,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
         .execute()
         .map { response =>
           if (response.status != 200) {
-            logger.error(response.body)
+            logger.error(response.body[String])
           }
           (response.json, response.status)
         }
@@ -297,7 +297,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .get()
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -317,7 +317,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .put(Json.stringify(config.toJson))
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -341,10 +341,10 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       response <- fetch()
     } yield {
       // if (response.status != 200) {
-      //   println(response.body)
+      //   println(response.body[String])
       // }
       try {
-        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ServiceDescriptor.fromJsons(e))
       } catch {
         case e: Throwable => Seq.empty
       }
@@ -420,7 +420,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => Outage.fmt.reads(e).get)
+        response.json.as[JsArray].value.toSeq.map(e => Outage.fmt.reads(e).get)
       }
   }
 
@@ -434,7 +434,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ServiceGroup.fromJsons(e))
       }
   }
 
@@ -448,7 +448,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ApiKey.fromJsons(e))
       }
   }
 
@@ -1092,7 +1092,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .get()
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -1141,7 +1141,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       .put(Json.stringify(config.toJson))
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -1163,7 +1163,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       response <- fetch()
     } yield {
       // if (response.status != 200) {
-      //   println(response.body)
+      //   println(response.body[String])
       // }
       try {
         response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e)).toSeq
@@ -1188,7 +1188,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
       response <- fetch()
     } yield {
       // if (response.status != 200) {
-      //   println(response.body)
+      //   println(response.body[String])
       // }
       try {
         response.json.as[JsArray].value.map(e => NgRoute.fromJsons(e)).toSeq
@@ -1811,7 +1811,7 @@ trait OtoroshiSpec extends AnyWordSpec with Matchers with OptionValues with Scal
 
   def getInHeader(resp: WSRequest#Self#Response, headerName: String) = {
     val headers = Json
-      .parse(resp.body)
+      .parse(resp.body[String])
       .as[JsValue]
       .select("headers")
       .as[Map[String, String]]
@@ -2071,8 +2071,8 @@ class AnalyticsServer(counter: AtomicInteger) {
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
       val body   = bodyByteString.utf8String
-      val events = Json.parse(body).as[JsArray].value
-      // println(Json.parse(body).as[JsArray].value.filter(a => (a \ "@type").as[String] == "AlertEvent").map(a => (a \ "alert").as[String]))
+      val events = Json.parse(body).as[JsArray].value.toSeq
+      // println(Json.parse(body).as[JsArray].value.toSeq.filter(a => (a \ "@type").as[String] == "AlertEvent").map(a => (a \ "alert").as[String]))
       counter.addAndGet(events.size)
       HttpResponse(
         200,
@@ -2447,7 +2447,7 @@ trait ApiTester[Entity] {
           }
         } else {
           logger.error(s"[$entityName] testCreateEntity: bad status code: ${resp.status}, expected 201 or 200")
-          logger.error(s"[$entityName] testCreateEntity: ${resp.body}")
+          logger.error(s"[$entityName] testCreateEntity: ${resp.body[String]}")
           false.future
         }
       }
@@ -2551,7 +2551,7 @@ trait ApiTester[Entity] {
       .execute()
       .map { resp =>
         if (resp.status == 200) {
-          val arr         = resp.json.as[JsArray].value
+          val arr         = resp.json.as[JsArray].value.toSeq
           if (arr.isEmpty) logger.info(s"[$entityName] ${ctx.getOrElse("testFindAll")}: empty collection")
           val retEntities = arr.map(readEntityFromJson)
           // logger.info(s"$retEntities - $entities")

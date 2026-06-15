@@ -65,6 +65,188 @@ Otoroshi produces several categories of events:
 
 Each event is enriched before export with additional context: geolocation data derived from client IP, parsed user-agent details, Otoroshi instance metadata (name, zone, region, datacenter), and cluster information.
 
+## Event shapes
+
+This section gives a **rough** overview of the JSON shape of the most common events so you know what to expect on the receiving end (Elasticsearch, Kafka, a webhook, etc.). The shapes below are not exhaustive &mdash; events carry more fields than shown, and the exact payload may evolve between versions &mdash; but the key fields are stable. All field names use the literal casing emitted by Otoroshi (note the leading `@` on the envelope fields).
+
+### Common envelope
+
+Every event, whatever its type, starts from the same small envelope:
+
+```json
+{
+  "@id": "1516...",          // unique snowflake id of the event
+  "@timestamp": 1717238400000, // event time, epoch milliseconds
+  "@type": "GatewayEvent",   // discriminator: GatewayEvent, AuditEvent, AlertEvent, HealthCheckEvent, ...
+  "@product": "otoroshi",    // product/events name
+  "@serviceId": "route_xxx", // id of the route/service, or "--" when not applicable
+  "@service": "my-api",      // name of the route/service, or "Otoroshi" for admin events
+  "@env": "prod"             // environment
+}
+```
+
+`@type` is the field you filter on (see [Filtering](#filtering)). On top of the envelope, **enrichment fields are added at export time** (only when the corresponding feature is enabled):
+
+```json
+{
+  "user-agent-details": { /* parsed UA, or null */ },
+  "origin-details":     { /* geolocation derived from the client IP, or null */ },
+  "instance-number": 0,
+  "instance-name": "otoroshi",
+  "instance-zone": "...",
+  "instance-region": "...",
+  "instance-dc": "...",
+  "instance-provider": "...",
+  "instance-rack": "...",
+  "cluster-mode": "Leader",
+  "cluster-name": "..."
+}
+```
+
+### GatewayEvent &mdash; one per proxied HTTP request
+
+The highest-volume event. It describes a full request/response round-trip with timings, sizes, identity and the matched route:
+
+```json
+{
+  "@type": "GatewayEvent",
+  "@id": "...", "@timestamp": 1717238400000,
+  "@callAt": 1717238399950,
+  "reqId": "...",
+  "parentReqId": null,
+  "protocol": "HTTP/1.1",
+  "method": "GET",
+  "url": "https://api.foo.bar/users",
+  "from": "10.0.0.4",                  // client IP
+  "to":     { "host": "api.foo.bar", "scheme": "https", "uri": "/users" },
+  "target": { "host": "backend.svc",  "scheme": "https", "uri": "/users" },
+  "status": 200,
+  "duration": 42,                      // total time (ms)
+  "overhead": 3,                       // time spent in Otoroshi itself (ms)
+  "backendDuration": 39,               // time spent calling the backend (ms)
+  "cbDuration": 0, "overheadWoCb": 3, "callAttempts": 1,
+  "data": { "dataIn": 0, "dataOut": 1234 }, // bytes in / out
+  "responseChunked": false,
+  "headers":    [ { "key": "Host", "value": "api.foo.bar" } ],      // incoming headers
+  "headersOut": [ { "key": "Content-Type", "value": "application/json" } ], // response headers
+  "otoroshiHeadersIn":  [ /* headers Otoroshi added/changed before the backend */ ],
+  "otoroshiHeadersOut": [ /* headers Otoroshi added/changed before the client */ ],
+  "identity": {                        // caller identity, or null
+    "identityType": "APIKEY",          // "APIKEY" or "PRIVATEAPP"
+    "identity": "client-id",
+    "label": "my-apikey",
+    "metadata": { },
+    "tags": [ ]
+  },
+  "remainingQuotas": { /* per-window / per-day / per-month quota counters */ },
+  "gwError": null,                     // gateway error message, or null
+  "err": false,
+  "@serviceId": "route_xxx", "@service": "my-api",
+  "route": { /* the matched NgRoute, or null */ },
+  "descriptor": null,                  // legacy ServiceDescriptor, or null
+  "clientCertChain": [ ],
+  "extraInfos": null
+}
+```
+
+### AuditEvent &mdash; admin / operational actions
+
+All audit events share `@type: "AuditEvent"` and carry an `audit` field naming the specific action. The two most common ones:
+
+**`BackOfficeEvent`** &mdash; something done in the admin UI:
+
+```json
+{
+  "@type": "AuditEvent",
+  "@service": "Otoroshi", "@serviceId": "--",
+  "audit": "BackOfficeEvent",
+  "action": "UPDATE_ROUTE",
+  "message": "User updated a route",
+  "userName": "admin@otoroshi.io",
+  "userEmail": "admin@otoroshi.io",
+  "user": { /* user profile */ },
+  "userRandomId": "...",
+  "from": "10.0.0.4",
+  "metadata": { /* action-specific details */ }
+}
+```
+
+**`AdminApiEvent`** &mdash; a call to the admin API:
+
+```json
+{
+  "@type": "AuditEvent",
+  "@service": "Otoroshi", "@serviceId": "--",
+  "audit": "AdminApiEvent",
+  "action": "ACCESS_ADMIN_API",
+  "message": "...",
+  "user": { /* or null */ },
+  "apiKey": { /* the api key used, or null */ },
+  "from": "10.0.0.4",
+  "metadata": { }
+}
+```
+
+Other audit subtypes (same envelope, different `audit` value and extra fields) include `CircuitBreakerOpenedEvent`, `CircuitBreakerClosedEvent`, `MaxConcurrentRequestReachedEvent`, the `Job*` events (`JobStartedEvent`, `JobRunEvent`, `JobErrorEvent`&hellip;) and `SnowMonkeyOutageRegisteredEvent`.
+
+### AlertEvent &mdash; notable conditions
+
+All alert events share `@type: "AlertEvent"` and carry an `alert` field naming the specific alert, plus alert-specific fields. Example for an API key whose secret is about to rotate:
+
+```json
+{
+  "@type": "AlertEvent",
+  "@service": "Otoroshi", "@serviceId": "--",
+  "alert": "ApiKeySecretWillRotate",
+  "inHoursOrLess": 168,
+  "apikey": { /* the api key */ }
+}
+```
+
+A few notable `alert` values and their extra fields:
+
+| `alert` | Extra fields |
+|---|---|
+| `MaxConcurrentRequestReachedAlert` | `limit`, `current` |
+| `CircuitBreakerOpenedAlert` / `CircuitBreakerClosedAlert` | `target`, `service` |
+| `HighOverheadAlert` | `limit`, `overhead`, `target`, `service` |
+| `ApiKeyQuotasAlmostExceededAlert` / `ApiKeyQuotasExceededAlert` | `apikey`, `remaining`, `reason` |
+| `CertExpiredAlert` / `CertAlmostExpiredAlert` / `CertRenewalAlert` | `certificate` |
+| `AdminLoggedInAlert` / `AdminLoggedOutAlert` | `userName`, `userEmail`, `user` |
+| Entity CRUD (`ServiceCreatedAlert`, `ApiKeyDeletedAlert`, &hellip;) | `adminApiAlert: true`, `user`, `audit_payload` |
+
+### HealthCheckEvent &mdash; backend health probes
+
+```json
+{
+  "@type": "HealthCheckEvent",
+  "@id": "...", "@timestamp": 1717238400000,
+  "@service": "my-api", "@serviceId": "route_xxx", "@product": "otoroshi",
+  "url": "https://backend.svc/health",
+  "status": 200,
+  "duration": 12,
+  "logicCheck": true,
+  "error": null,
+  "health": "UP"            // "UP" or "DOWN" (null if unknown)
+}
+```
+
+### Body & capture events
+
+`TrafficCaptureEvent` (enabled per-route via the `capture` flag, used with GoReplay) carries the full exchange under `request`, `backend_request`, `backend_response` and `response` (each with headers and a decoded `body`), plus a small `route` object. The legacy `RequestBodyEvent` / `ResponseBodyEvent` (from the BodyLogger plugin) carry `reqId`, `method`, `url`, `headers`, a base64-encoded `body` (and `status` for the response one).
+
+### Other events
+
+- **`TcpEvent`** &mdash; TCP proxy traffic: `reqId`, `protocol`, `port`, `to`, `target`, `remote`, `local`, `duration`, `overhead`, `data` (`dataIn`/`dataOut`), `gwError`, `service`.
+- **`WebsocketEvent`** &mdash; WebSocket frames: `reqId`, `protocol`, `to`, `target`, `statusCode`, `reason`, `frame`, `frameSize`.
+- **`WasmLogEvent`** &mdash; logs emitted by WASM plugins: `route`, `message`, `level`.
+- **`ApiDeploymentEvent`** &mdash; API deployment tracking: `apiRef`, `owner`, `at`, `apiDefinition`, `version`.
+- **Plugin / extension events** &mdash; custom plugins and extensions can emit their own events; they always carry the common envelope and a distinctive `@type`.
+
+:::tip
+The simplest way to discover the exact shape of an event in your own setup is to configure a **console** exporter (or a webhook to a request-bin) with no projection: every event is printed as JSON, so you can inspect the real fields produced by your Otoroshi version.
+:::
+
 ## How the pipeline works
 
 Each data exporter runs an independent streaming pipeline built on top of Akka Streams:

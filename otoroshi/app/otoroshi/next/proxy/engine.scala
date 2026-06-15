@@ -96,7 +96,7 @@ object ProxyEngineConfig {
       if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*"))
       else Seq.empty[String]
     val denyDomains                =
-      if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty) else Seq.empty[String]
+      if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq else Seq.empty[String]
     val reporting                  = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val pluginMerge                = config
       .select("merge_sync_steps")
@@ -1092,7 +1092,7 @@ class ProxyEngine() extends RequestHandler {
         }
         attrs.put(Keys.RouteKey -> route.route)
         attrs.put(Keys.MatchedRouteKey -> route)
-        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String])
+        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String]).toSeq
         report.setContext(
           Json.obj(
             "found_route"    -> route.route.json,
@@ -3231,7 +3231,7 @@ class ProxyEngine() extends RequestHandler {
                   case _                              => hds
                 }
               },
-              cookies = response.safeCookies(env),
+              cookies = response.safeCookies(env).toSeq,
               body = fbody
             ),
             response.some
@@ -3262,13 +3262,13 @@ class ProxyEngine() extends RequestHandler {
 
     val rawResponse      = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.view.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
     val otoroshiResponse = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.view.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/

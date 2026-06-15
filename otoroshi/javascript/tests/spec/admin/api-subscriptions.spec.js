@@ -13,19 +13,18 @@
 //              - Closed: subscription deleted on update, the apikey credentials
 //                no longer authenticate
 
-const { test, expect } = require('@playwright/test');
-const {
+import { test, expect } from '@playwright/test';
+import {
     PROXY_ANY,
-    createApiViaUI,
     createApiViaApi,
     createPublishedApi,
-    deleteApiViaApi,
+    cleanupApi,
     getProd,
-    putProd,
+    putProdWithRetry,
     putDraft,
     getDraft,
     uniqueName,
-} = require('./_apiHelpers');
+} from './_apiHelpers';
 
 test.setTimeout(30_000);
 
@@ -44,7 +43,7 @@ test.afterEach(async () => {
         await page.request.delete(`${PROXY_ANY}/apikeys/${id}`).catch(() => { });
     }
     for (const id of trackedApis) {
-        await deleteApiViaApi(page, id);
+        await cleanupApi(page, id);
     }
     trackedApis.clear();
     trackedApikeys.clear();
@@ -139,14 +138,17 @@ const FLOW_WITH_OVERRIDE_HOST = (id) => ({
     }],
 });
 
+// Build a fully-configured API entirely via the admin API — route, backend,
+// flow, gateway domain, testing, optional plan — and POST its draft.
+// IMPORTANT: this must run BEFORE any UI page is opened for this apiId.
+// useDraftOfAPI auto-creates the draft on dashboard mount; doing all the
+// API setup first means nothing races our POST /drafts.
 async function setUpFullApi(page, apiId, { domain, headerValue, plan }) {
-    // Stuff a Draft with everything the stepper expects: route + non-default
-    // backend + non-default flow + gateway config + testing + plan. Then PUT it.
-    const draft = await getDraft(page, apiId);
     const backendId = 'be_' + apiId.split('_').pop();
     const flowId = 'flow_' + apiId.split('_').pop();
-    const newContent = {
-        ...draft.content,
+    const api = await getProd(page, apiId);
+    const content = {
+        ...api,
         domain,
         contextPath: '/v1',
         backends: [BACKEND(backendId)],
@@ -155,41 +157,47 @@ async function setUpFullApi(page, apiId, { domain, headerValue, plan }) {
         testing: { enabled: true, headerKey: 'X-OTOROSHI-TESTING', headerValue },
         plans: plan ? [plan] : [],
     };
-    const res = await putDraft(page, apiId, { ...draft, content: newContent });
-    expect(res.status()).toBeLessThan(400);
+    const draftTpl = await (await page.request.get(`${PROXY_ANY}/drafts/_template`)).json();
+    const res = await page.request.post(`${PROXY_ANY}/drafts`, {
+        data: {
+            ...draftTpl,
+            id: apiId,
+            kind: apiId.split('_')[0],
+            name: api.name,
+            content,
+        },
+    });
+    expect(
+        res.status(),
+        `setUpFullApi POST /drafts/${apiId} failed: ${await res.text().catch(() => '')}`
+    ).toBeLessThan(400);
 }
 
 // Tests ---------------------------------------------------------------
 
-test('keyless plan: stepper click navigates, then X-OTOROSHI-TESTING gates traffic', async () => {
+test('keyless plan: stepper reflects setup, X-OTOROSHI-TESTING gates traffic', async () => {
     const page = await context.newPage();
-    const apiId = await createApiViaUI(page);
+
+    // --- Setup: 100% admin API, no UI page mounted yet → no draft race. ---
+    const apiId = await createApiViaApi(page);
     trackedApis.add(apiId);
-
-    // Stepper visible on a fresh staging API.
-    await expect(page.getByTestId('gs-stepper')).toBeVisible();
-
-    // Click step 1 ("Create an endpoint") — assert it navigates to the
-    // endpoints/new wizard. We don't fill the form (fragile); we rely on
-    // API calls for the actual data setup.
-    await page.getByTestId('gs-step-1').click();
-    await expect(page).toHaveURL(/\/endpoints\/new/);
-
     const headerValue = 'subs-keyless-' + Math.random().toString(36).slice(2, 10);
     const domain = `subs-keyless-${apiId.slice(-8)}.oto.tools`;
     await setUpFullApi(page, apiId, { domain, headerValue, plan: KEYLESS_PLAN() });
 
-    // Back on the dashboard, the stepper should reflect progress on the
-    // steps we just populated (1=routes, 2=backends, 4=gateway, 5=testing,
-    // 6=plan). 3=plugin-chain is showOnlyIfPublished, 7=deploy needs a
-    // deploy action.
+    // --- UI: the draft already exists, useDraftOfAPI just loads it. ---
     await page.goto(`/bo/dashboard/apis/${apiId}?version=Draft`);
-    for (const n of [1, 2, 4, 5, 6]) {
+
+    // The stepper reflects the steps we populated (1=routes, 2=backends,
+    // 4=gateway, 5=testing, 6=plan). Completed steps render with the
+    // --done modifier (and are disabled — can't be re-clicked).
+    await expect(page.getByTestId('gs-stepper')).toBeVisible();
+    for (const n of [1, 2, 3, 4, 5]) {
         await expect(page.getByTestId(`gs-step-${n}`)).toHaveClass(/gs-stepper-step--done/);
     }
 
     // Gateway call: API is still in staging, so only requests bearing the
-    // X-OTOROSHI-TESTING header should reach the draft route.
+    // X-OTOROSHI-TESTING header reach the draft route.
     await expect
         .poll(async () => (await page.request.get(`http://${domain}:9999/v1/hello`, {
             headers: { 'X-OTOROSHI-TESTING': headerValue },
@@ -204,37 +212,17 @@ test('keyless plan: stepper click navigates, then X-OTOROSHI-TESTING gates traff
 
 test('apikey plan lifecycle: published → deprecated → closed gates new subs / kills tokens', async () => {
     const page = await context.newPage();
-    const apiId = await createPublishedApi(page);
+    const apiId = await createPublishedApi(page, {
+        setup: (api, id) => ({
+            domain: `subs-apikey-${id.slice(-8)}.oto.tools`,
+            contextPath: '/v1',
+            plans: [APIKEY_PLAN()],
+        }),
+    });
     trackedApis.add(apiId);
 
-    // Drop in a fresh apikey plan + route + backend + testing config, all in
-    // one PUT. The API is published — `plans` is not a locked field so this
-    // is permitted by writeValidator.
-    const headerValue = 'subs-apikey-' + Math.random().toString(36).slice(2, 10);
-    const domain = `subs-apikey-${apiId.slice(-8)}.oto.tools`;
-    const prod = await getProd(page, apiId);
-    const backendId = 'be_apk_' + apiId.split('_').pop();
-    const flowId = 'flow_apk_' + apiId.split('_').pop();
-    const updated = {
-        ...prod,
-        domain,
-        contextPath: '/v1',
-        plans: [APIKEY_PLAN()],
-        // The rest is locked in prod (routes/backends/flows/testing). For this
-        // lifecycle test we don't actually need to call the route — what we
-        // care about is the validate() behaviour on subscription writes per
-        // plan status. So we only update the plan + domain/contextPath.
-    };
-    const updateRes = await putProd(page, apiId, updated);
-    expect(updateRes.status()).toBeLessThan(400);
-
-    // ------------------------------------------------------------------
-    // Published: a fresh subscription is accepted and yields an apikey.
-    // ------------------------------------------------------------------
     const subTpl = await page.request.get(`${PROXY_ANY}/apisubscriptions/_template`);
     const subTemplate = await subTpl.json();
-    // ApiSubscription JSON uses snake_case keys (api_ref, plan_ref, etc.) —
-    // camelCase variants are silently dropped at deserialization.
     const subBody = {
         ...subTemplate,
         id: uniqueName('apisub'),
@@ -252,20 +240,16 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
         trackedApikeys.add(sub.tokenRefs[0].clientId);
     }
 
-    // ------------------------------------------------------------------
-    // Deprecated: new subscriptions are refused, the existing apikey is
-    // not deleted.
-    // ------------------------------------------------------------------
-    const deprecated = await getProd(page, apiId);
-    deprecated.plans = [{ ...APIKEY_PLAN(), status: 'deprecated' }];
-    const depRes = await putProd(page, apiId, deprecated);
+    const depRes = await putProdWithRetry(page, apiId, (prod) => ({
+        ...prod,
+        plans: [{ ...APIKEY_PLAN(), status: 'deprecated' }],
+    }));
     expect(depRes.status()).toBeLessThan(400);
 
     const newSubBody = { ...subBody, id: uniqueName('apisub'), name: 'should fail' };
     const newSub = await page.request.post(`${PROXY_ANY}/apisubscriptions`, { data: newSubBody });
     expect(newSub.status(), 'new subscription should be refused on deprecated plan').toBeGreaterThanOrEqual(400);
 
-    // Existing subscription still resolvable and apikey still in the store.
     const stillThere = await page.request.get(`${PROXY_ANY}/apisubscriptions/${sub.id}`);
     expect(stillThere.status()).toBeLessThan(400);
     if (sub.tokenRefs?.[0]?.clientId) {
@@ -273,22 +257,15 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
         expect(apikey.status(), 'existing apikey should remain in the store on deprecated').toBeLessThan(400);
     }
 
-    // ------------------------------------------------------------------
-    // Closed: an Update on the subscription deletes it.
-    // ------------------------------------------------------------------
-    const closed = await getProd(page, apiId);
-    closed.plans = [{ ...APIKEY_PLAN(), status: 'closed' }];
-    const closeRes = await putProd(page, apiId, closed);
+    const closeRes = await putProdWithRetry(page, apiId, (prod) => ({
+        ...prod,
+        plans: [{ ...APIKEY_PLAN(), status: 'closed' }],
+    }));
     expect(closeRes.status()).toBeLessThan(400);
 
-    // Trigger the Update path on the existing subscription — the validator
-    // for Closed plans deletes the subscription (Api.scala:1045-1049).
     const touchSub = await page.request.put(`${PROXY_ANY}/apisubscriptions/${sub.id}`, {
         data: { ...sub, name: 'touch' },
     });
-    // Either the PUT succeeds and the sub disappears, or the framework
-    // returns 4xx because the sub no longer exists after the validator
-    // ran. Both are acceptable signals.
     expect([200, 404].includes(touchSub.status()) || touchSub.status() >= 400).toBe(true);
 
     await expect
@@ -298,22 +275,6 @@ test('apikey plan lifecycle: published → deprecated → closed gates new subs 
     await page.close();
 });
 
-// Test 3 — UI subscribe path (the whole plan + client + subscribe flow driven
-// via the dashboard). Drives:
-//   1. Create a Client (the future subscription owner) via the Clients tab UI.
-//   2. Create an apikey plan via the Plans tab UI, set the access mode to
-//      "API Key" and configure the "ApiKey Name Pattern" with EL syntax.
-//   3. Click Subscribe on the plan row, pick the owner, hit Create.
-// Then verifies via the admin API that:
-//   - the subscription was created with owner_ref pointing at our client
-//   - subscription.token_refs[0].apikey is a real apikey id
-//   - the apikey clientName has the EL evaluated ("<plan.name>-foo-bar")
-//   - apikey.enabled is false (template-default sub.status = disabled →
-//     generateNewApikeyFromPlan picks enabled = false)
-//
-// Plan + Client forms use custom NgForm renderers (status dots, access-mode
-// modal). Selectors below depend on the exact rendered structure — flagging
-// inline where they're fragile.
 test('UI subscribe: client + apikey plan with EL clientNamePattern, generated key linked to sub', async () => {
     const page = await context.newPage();
     const apiId = await createPublishedApi(page);
@@ -327,9 +288,6 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
             .locator('input:not([disabled])')
             .first();
 
-    // ------------------------------------------------------------------
-    // (1) Create a Client via the UI.
-    // ------------------------------------------------------------------
     await page.goto(`/bo/dashboard/apis/${apiId}/clients?version=Published`);
     await page.getByRole('link', { name: /Create new client/ }).click();
     await fieldInput('Name').fill(clientName);
@@ -337,26 +295,16 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
     await page.waitForURL(/\/clients(\?|$)/, { timeout: 10_000 });
     await expect(page.locator('#content-scroll-container')).toContainText(clientName);
 
-    // ------------------------------------------------------------------
-    // (2) Create an apikey plan via the UI. The Plan form uses a custom
-    //     renderer for access_mode_configuration_type that opens a modal
-    //     with the apikey config (we set the clientNamePattern there).
-    // ------------------------------------------------------------------
     await page.goto(`/bo/dashboard/apis/${apiId}/plans?version=Published`);
     await page.getByRole('link', { name: /Create new plan/ }).click();
 
     await fieldInput('Name').fill(planName);
 
-    // Status: published. The dots renderer wraps each option in a <button>
-    // whose accessible name is exactly the option value. Scope to the Status
-    // Row so we don't pick a "published" label elsewhere on the page.
     const statusRow = page
         .locator('div.row', { has: page.locator('label', { hasText: /^\s*Status\s*$/ }) })
         .first();
     await statusRow.getByRole('button', { name: 'published', exact: true }).click();
 
-    // Access mode is already 'apikey' by default (PlanEditor initial state at
-    // Plans.js:929). Open the access-mode config modal then fill the pattern.
     await page.getByTestId('access-mode-edit').click();
     await fieldInput('ApiKey Name Pattern').fill('${plan.name}-foo-bar');
     await page.getByTestId('access-mode-save').click();
@@ -380,13 +328,6 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
     await page.getByTestId('subscription-create').click();
     await page.waitForURL(/\/subscriptions(\?|$)/, { timeout: 10_000 });
 
-    // ------------------------------------------------------------------
-    // (4) Backend assertions.
-    // ------------------------------------------------------------------
-    // The admin API lists subscriptions via the proxy state cache, which
-    // refreshes async after a write — poll until our newly-created sub
-    // appears (with tokenRefs populated, so we know createNewApikeyFromPlan
-    // also ran to completion).
     let sub;
     await expect.poll(
         async () => {
@@ -411,6 +352,259 @@ test('UI subscribe: client + apikey plan with EL clientNamePattern, generated ke
     const apikey = await apikeyRes.json();
     expect(apikey.clientName, 'clientName should have the EL evaluated').toBe(`${planName}-foo-bar`);
     expect(apikey.enabled, 'apikey starts disabled (sub.status defaults to disabled)').toBe(false);
+
+    await page.close();
+});
+
+test('publish flow + apikey plan in draft only gates draft route but not prod', async () => {
+    const page = await context.newPage();
+
+    const apiId = await createApiViaApi(page);
+    trackedApis.add(apiId);
+    const headerValue = 'pub-' + Math.random().toString(36).slice(2, 10);
+    const domain = `pub-${apiId.slice(-8)}.oto.tools`;
+    await setUpFullApi(page, apiId, { domain, headerValue, plan: null });
+
+    await page.goto(`/bo/dashboard/apis/${apiId}?version=staging`);
+    await page.getByTestId('publish-this-version').click();
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    await expect.poll(async () => (await getProd(page, apiId)).state).toBe('published');
+
+    await expect
+        .poll(async () => (await page.request.get(`http://${domain}:9999/v1/hello`)).status(),
+            { timeout: 15_000, intervals: [500, 1000, 2000] })
+        .toBe(200);
+
+    const withHeader = await page.request.get(`http://${domain}:9999/v1/hello`, {
+        headers: { 'X-OTOROSHI-TESTING': headerValue },
+    });
+    expect(withHeader.status()).toBe(200);
+
+    const draft = await getDraft(page, apiId);
+    const draftWithPlan = {
+        ...draft,
+        content: {
+            ...draft.content,
+            plans: [
+                {
+                    id: 'plan_apikey_draft',
+                    name: 'Apikey plan (draft)',
+                    type: 'free',
+                    access_mode_configuration_type: 'apikey',
+                    access_mode_configuration: { enabled: true },
+                    consumerKind: 'apikey',
+                    visibility: 'public',
+                    documentation: null,
+                    autoValidation: true,
+                    subscriptionProcess: [],
+                    integrationProcess: 'apikey',
+                    status: 'published',
+                },
+            ],
+        },
+    };
+    const putRes = await putDraft(page, apiId, draftWithPlan);
+    expect(putRes.status()).toBeLessThan(400);
+
+    await expect
+        .poll(
+            async () => (await page.request.get(`http://${domain}:9999/v1/hello`, {
+                headers: { 'X-OTOROSHI-TESTING': headerValue },
+            })).status(),
+            { timeout: 30_000, intervals: [1000, 2000, 3000, 4000, 5000, 10000, 15000, 20000, 25000] }
+        )
+        .toBe(401);
+
+    const stillProd = await page.request.get(`http://${domain}:9999/v1/hello`);
+    expect(stillProd.status()).toBe(200);
+
+    await page.close();
+});
+
+// Plan access-mode config (EL clientName, description, validUntil, metadata, tags) must propagate to the generated apikey.
+test('apikey plan: EL clientName + description + validUntil + metadata propagate to the apikey', async () => {
+    test.setTimeout(60_000);
+    const page = await context.newPage();
+
+    const apiId = await createApiViaApi(page);
+    trackedApis.add(apiId);
+
+    const planName = uniqueName('el-plan');
+    const ownerName = uniqueName('el-owner');
+    const planDescription = 'description from the plan access-mode config';
+    const validUntilMs = Date.UTC(2030, 0, 15, 12, 0, 0);
+
+    const api = await getProd(page, apiId);
+    const draftContent = {
+        ...api,
+        clients: [
+            ...(api.clients || []),
+            { id: 'client_el_owner', name: ownerName, description: null, tags: [], metadata: {} },
+        ],
+        plans: [
+            {
+                id: 'plan_el',
+                name: planName,
+                type: 'free',
+                access_mode_configuration_type: 'apikey',
+                access_mode_configuration: {
+                    enabled: true,
+                    clientNamePattern: '${plan.name}-foo-bar',
+                    description: planDescription,
+                    validUntil: validUntilMs,
+                    metadata: { tier: 'gold' },
+                    tags: ['plan-tag'],
+                },
+                consumerKind: 'apikey',
+                visibility: 'public',
+                documentation: null,
+                autoValidation: true,
+                subscriptionProcess: [],
+                integrationProcess: 'apikey',
+                status: 'published',
+            },
+        ],
+    };
+    const draftTpl = await (await page.request.get(`${PROXY_ANY}/drafts/_template`)).json();
+    const draftRes = await page.request.post(`${PROXY_ANY}/drafts`, {
+        data: { ...draftTpl, id: apiId, kind: apiId.split('_')[0], name: api.name, content: draftContent },
+    });
+    expect(
+        draftRes.status(),
+        `draft seed failed: ${await draftRes.text().catch(() => '')}`
+    ).toBeLessThan(400);
+
+    // Subscribe via the same endpoint the UI calls (draft mode). The apikey is
+    // generated synchronously from the plan access-mode config at subscribe.
+    const subName = uniqueName('el-sub');
+    const subTpl = await (await page.request.get(`${PROXY_ANY}/apisubscriptions/_template`)).json();
+    const subBody = {
+        ...subTpl,
+        id: uniqueName('el-sub-id'),
+        name: subName,
+        api_ref: apiId,
+        plan_ref: 'plan_el',
+        owner_ref: 'client_el_owner',
+        subscription_kind: 'apikey',
+    };
+    // ApiSubscription.validate reads the API from proxyState, which lags the
+    // draft POST and briefly 400s with "wrong status api" — retry until it lands.
+    let subscribeRes;
+    await expect
+        .poll(async () => {
+            subscribeRes = await page.request.post(
+                `/bo/api/proxy/apis/apis.otoroshi.io/v1/apis/${apiId}/plans/plan_el/subscribe?version=Draft`,
+                { data: subBody }
+            );
+            return subscribeRes.status();
+        }, { timeout: 20_000, intervals: [500, 1000, 2000] })
+        .toBeLessThan(400);
+
+    let apikey;
+    await expect.poll(
+        async () => {
+            const res = await page.request.get(`${PROXY_ANY}/apikeys`);
+            if (res.status() >= 400) return false;
+            const all = await res.json();
+            apikey = (Array.isArray(all) ? all : []).find(
+                (k) => k.clientName === `${planName}-foo-bar`
+            );
+            return !!apikey;
+        },
+        { timeout: 15_000, intervals: [500, 1000, 2000] }
+    ).toBe(true);
+
+    expect(apikey.clientName).toBe(`${planName}-foo-bar`);
+    expect(apikey.description).toBe(planDescription);
+    expect(apikey.validUntil).toBe(validUntilMs);
+    expect(apikey.metadata?.tier).toBe('gold');
+    expect(apikey.tags).toContain('plan-tag');
+
+    trackedApikeys.add(apikey.clientId);
+    await page.close();
+});
+
+// The plan's rateLimiting strategy must propagate to the apikey generated by a subscription.
+test('apikey plan: throttling strategy from the plan propagates to the generated apikey', async () => {
+    const page = await context.newPage();
+
+    const apiId = await createPublishedApi(page, {
+        setup: (api, id) => ({
+            domain: `subs-throttle-${id.slice(-8)}.oto.tools`,
+            contextPath: '/v1',
+        }),
+    });
+    trackedApis.add(apiId);
+
+    const seedRes = await putProdWithRetry(page, apiId, (prod) => ({
+        ...prod,
+        clients: [{
+            id: "9f5c9b46-8631-4e1c-bd43-f115d2e44953",
+            name: "New client",
+            description: "New client description",
+        }],
+    }));
+    expect(seedRes.status()).toBeLessThan(400);
+
+    // Wait until proxyState reflects the seeded client, else the plans page loads
+    // item.clients=[] and creating a plan ({...item, plans}) wipes the client.
+    await expect.poll(
+        async () => ((await getProd(page, apiId)).clients || []).some((c) => c.name === 'New client'),
+        { timeout: 15_000, intervals: [500, 1000, 2000] }
+    ).toBe(true);
+
+    await page.goto(`/bo/dashboard/apis/${apiId}/plans?version=Published`);
+
+    await page.getByText('create new plan').click();
+
+    const statusRow = page
+        .locator('div.row', { has: page.locator('label', { hasText: /^\s*Status\s*$/ }) })
+        .first();
+    await statusRow.getByRole('button', { name: 'published', exact: true }).click();
+
+    await page.getByTestId('throttling-strategy-select').click();
+    await page.getByRole('option', { name: 'Fixed window' }).click();
+    await page.getByRole('spinbutton', { name: 'The time span of each fixed' }).click();
+    await page.getByRole('spinbutton', { name: 'The time span of each fixed' }).fill('1000');
+    await page.getByRole('spinbutton', { name: 'The maximum number of requests allowed within each fixed window. Once this' }).click();
+    await page.getByRole('spinbutton', { name: 'The maximum number of requests allowed within each fixed window. Once this' }).fill('2000');
+    await page.getByRole('spinbutton', { name: 'The maximum number of requests allowed per day. Once this limit is reached,' }).click();
+    await page.getByRole('spinbutton', { name: 'The maximum number of requests allowed per day. Once this limit is reached,' }).fill('3000');
+    await page.getByRole('spinbutton', { name: 'The maximum number of requests allowed per month. Once this limit is reached,' }).click();
+    await page.getByRole('spinbutton', { name: 'The maximum number of requests allowed per month. Once this limit is reached,' }).fill('4000');
+    await page.getByRole('button', { name: 'Create PROD' }).click();
+
+    await page.getByTestId('plan-subscribe').click();
+
+    const ownerRow = page
+        .locator('div.row', { has: page.locator('label', { hasText: /^\s*Owner\s*$/ }) })
+        .first();
+    await expect(ownerRow).toBeVisible({ timeout: 10_000 });
+    await ownerRow.locator('div').filter({ hasText: /^Select\.\.\.$/ }).first().click();
+    await page.getByText('New client', { exact: true }).click();
+    await page.getByTestId('subscription-create').click();
+
+    // apikey id is generated server-side: fetch it (proxyState catches up in ~2s) and open its edit page directly.
+    let apikeyId;
+    await expect.poll(async () => {
+        const res = await page.request.get(`${PROXY_ANY}/apisubscriptions`);
+        if (res.status() >= 400) return false;
+        const all = await res.json();
+        const sub = (Array.isArray(all) ? all : []).find(
+            (s) => s.api_ref === apiId && s.token_refs?.length > 0
+        );
+        apikeyId = sub?.token_refs?.[0]?.apikey;
+        return !!apikeyId;
+    }, { timeout: 15_000, intervals: [500, 1000, 2000] }).toBe(true);
+    trackedApikeys.add(apikeyId);
+
+    await page.goto(`/bo/dashboard/apikeys/edit/${apikeyId}`);
+    await page.locator('div').filter({ hasText: /^Throttling strategy$/ }).first().click();
+    await expect(page.getByText('Fixed window')).toBeVisible();
+    await expect(page.getByRole('spinbutton', { name: 'The time span of each fixed' })).toHaveValue('1000');
+    await expect(page.getByRole('spinbutton', { name: 'The maximum number of requests allowed within each fixed window. Once this' })).toHaveValue('2000');
+    await expect(page.getByRole('spinbutton', { name: 'The maximum number of requests allowed per day. Once this limit is reached,' })).toHaveValue('3000');
+    await expect(page.getByRole('spinbutton', { name: 'The maximum number of requests allowed per month. Once this limit is reached,' })).toHaveValue('4000');
 
     await page.close();
 });

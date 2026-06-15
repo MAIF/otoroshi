@@ -26,8 +26,18 @@ class WorkflowEngine(env: Env) {
       node: Node,
       input: JsObject,
       attrs: TypedMap,
+      functions: Map[String, JsObject]
+  ): Future[WorkflowResult] = {
+    run(wfRef, node, input, attrs, functions, noRunEvent = false)
+  }
+
+  def run(
+      wfRef: String,
+      node: Node,
+      input: JsObject,
+      attrs: TypedMap,
       functions: Map[String, JsObject] = Map.empty,
-      noRunEvent: Boolean = false,
+      noRunEvent: Boolean
   ): Future[WorkflowResult] = {
     val wfRun = WorkflowRun(
       ULID.random(),
@@ -95,7 +105,13 @@ class WorkflowEngine(env: Env) {
       }
   }
 
-  def resume(node: Node, wfr: WorkflowRun, from: Seq[Int], attrs: TypedMap, noRunEvent: Boolean = false): Future[WorkflowResult] = {
+  def resume(
+      node: Node,
+      wfr: WorkflowRun,
+      from: Seq[Int],
+      attrs: TypedMap,
+      noRunEvent: Boolean = false
+  ): Future[WorkflowResult] = {
     val wfRun = wfr.copy(attrs = attrs)
     val input = wfr.memory.get("workflow_input").map(_.asObject).getOrElse(Json.obj())
     node
@@ -273,8 +289,9 @@ case class WorkflowRun(
   ): WorkflowRun = {
     copy(attrs = attrs, env = env)
   }
-  def json: JsValue      = WorkflowRun.format.writes(this)
-  def lightJson: JsValue = json.asObject - "log" - "functions"
+  def json: JsValue             = WorkflowRun.format.writes(this)
+  def lightJson: JsValue        = json.asObject - "log" - "functions"
+  override def toString: String = s"WorkflowRun($id, ref=$workflow_ref)"
 }
 
 object WorkflowRun {

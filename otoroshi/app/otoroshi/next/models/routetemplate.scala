@@ -46,7 +46,7 @@ object RouteTemplate {
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
         description = json.selectAsString("description"),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         route = json.select("route").asOpt[NgRoute](using NgRoute.fmt).getOrElse(NgRoute.empty)
       )

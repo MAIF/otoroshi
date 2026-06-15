@@ -748,11 +748,11 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
       createOtoroshiService(service3).futureValue
     }
     "check services number with different users" in {
-      call("GET", "/api/services", TenantId("test-teams"), adminUser).futureValue.as[JsArray].value.size mustBe 4
-      call("GET", "/api/services", TenantId("test-teams"), tenantAdminUser).futureValue.as[JsArray].value.size mustBe 3
-      call("GET", "/api/services", TenantId("test-teams"), team1User).futureValue.as[JsArray].value.size mustBe 1
-      call("GET", "/api/services", TenantId("test-teams"), team2User).futureValue.as[JsArray].value.size mustBe 1
-      call("GET", "/api/services", TenantId("test-teams"), team1and2User).futureValue.as[JsArray].value.size mustBe 2
+      call("GET", "/api/services", TenantId("test-teams"), adminUser).futureValue.as[JsArray].value.toSeq.size mustBe 4
+      call("GET", "/api/services", TenantId("test-teams"), tenantAdminUser).futureValue.as[JsArray].value.toSeq.size mustBe 3
+      call("GET", "/api/services", TenantId("test-teams"), team1User).futureValue.as[JsArray].value.toSeq.size mustBe 1
+      call("GET", "/api/services", TenantId("test-teams"), team2User).futureValue.as[JsArray].value.toSeq.size mustBe 1
+      call("GET", "/api/services", TenantId("test-teams"), team1and2User).futureValue.as[JsArray].value.toSeq.size mustBe 2
     }
     "shutdown" in {
       stopAll()

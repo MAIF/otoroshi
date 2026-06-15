@@ -37,3 +37,148 @@ label {
   color: var(--text-muted);
   opacity: 1;
 }
+
+.ng-ro-line {
+  border-bottom: 1px solid var(--border-color);
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
+.ng-ro-line:last-child {
+  border-bottom: none;
+}
+
+.ng-ro-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ng-ro-label i {
+  color: var(--color_level2);
+}
+
+.col-form-label .fa-question-circle {
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.ng-v2-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color_level2);
+  color: var(--color_level2);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.ng-v2-toggle:hover {
+  background: var(--bg-color_level3);
+  color: var(--color_level1);
+  border-color: var(--border-color-strong);
+}
+
+.ng-ro-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: calc(1.5em + 0.75rem + 2px);
+  padding: calc(0.375rem + 1px) 0;
+  color: var(--color_level1);
+  font-size: 0.875rem;
+  word-break: break-word;
+}
+
+.ng-ro-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.ng-ro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color_level2);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.ng-ro-badge .ng-ro-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ng-ro-badge--on {
+  color: var(--color-green);
+}
+
+.ng-ro-badge--off {
+  color: var(--text-muted);
+}
+
+.ng-ro-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color_level2);
+  font-size: 0.8rem;
+}
+
+.ng-ro-code {
+  width: 100%;
+  margin: calc(0.375rem + 1px) 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color_level1);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.ng-ro-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: calc(0.375rem + 1px) 0;
+  font-size: 0.875rem;
+}
+
+.ng-ro-kv-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ng-ro-kv-key {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.ng-ro-kv-val {
+  color: var(--color_level1);
+  word-break: break-word;
+}

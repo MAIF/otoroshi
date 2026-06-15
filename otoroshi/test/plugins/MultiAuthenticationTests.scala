@@ -193,7 +193,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
           )
         )
         .futureValue
-      Json.parse(tokenResponse.body).selectAsString("access_token")
+      Json.parse(tokenResponse.body[String]).selectAsString("access_token")
     }
 
     def createKeycloakClient(keycloakUrl: String, adminToken: String, clientConfig: String): Unit = {
@@ -333,7 +333,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         .futureValue
 
       response.status mustBe 200
-      val accessToken = Json.parse(response.body).selectAsString("access_token")
+      val accessToken = Json.parse(response.body[String]).selectAsString("access_token")
       accessToken.isEmpty mustBe false
     }
 
@@ -378,7 +378,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def extractCookies(context: BrowserContext): Seq[DefaultWSCookie] = {
-      context.cookies.asScala.map { c =>
+      context.cookies.asScala.toSeq.map { c =>
         DefaultWSCookie(
           name = c.name,
           value = c.value,
@@ -399,8 +399,8 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         .futureValue
 
       callWithUser.status mustBe 200
-      Json.parse(callWithUser.body).selectAsString("email") mustBe "test@example.com"
-      Json.parse(callWithUser.body).selectAsString("name") mustBe "Test User"
+      Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "test@example.com"
+      Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "Test User"
     }
 
     def verifyUnauthenticatedAccess(route: NgRoute): Unit = {
@@ -659,7 +659,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
           )
         )
         .futureValue
-      Json.parse(tokenResponse.body).selectAsString("access_token")
+      Json.parse(tokenResponse.body[String]).selectAsString("access_token")
     }
 
     def createKeycloakClient(keycloakUrl: String, adminToken: String, clientConfig: String): Unit = {
@@ -791,7 +791,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         .futureValue
 
       response.status mustBe 200
-      val accessToken = Json.parse(response.body).selectAsString("access_token")
+      val accessToken = Json.parse(response.body[String]).selectAsString("access_token")
       accessToken.isEmpty mustBe false
     }
 
@@ -812,7 +812,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def extractCookies(context: BrowserContext): Seq[DefaultWSCookie] = {
-      context.cookies.asScala.map { c =>
+      context.cookies.asScala.toSeq.map { c =>
         DefaultWSCookie(
           name = c.name,
           value = c.value,
@@ -833,8 +833,8 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         .futureValue
 
       callWithUser.status mustBe 200
-      Json.parse(callWithUser.body).selectAsString("email") mustBe "test@example.com"
-      Json.parse(callWithUser.body).selectAsString("name") mustBe "Test User"
+      Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "test@example.com"
+      Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "Test User"
     }
 
     def verifyUnauthenticatedAccess(route: NgRoute): Unit = {
@@ -1092,7 +1092,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
           )
         )
         .futureValue
-      Json.parse(tokenResponse.body).selectAsString("access_token")
+      Json.parse(tokenResponse.body[String]).selectAsString("access_token")
     }
 
     def createKeycloakClient(keycloakUrl: String, adminToken: String, clientConfig: String): Unit = {
@@ -1205,7 +1205,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         .futureValue
 
       response.status mustBe 200
-      val accessToken = Json.parse(response.body).selectAsString("access_token")
+      val accessToken = Json.parse(response.body[String]).selectAsString("access_token")
       accessToken.isEmpty mustBe false
     }
 
@@ -1226,7 +1226,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     }
 
     def extractCookies(context: BrowserContext): Seq[DefaultWSCookie] = {
-      context.cookies.asScala.map { c =>
+      context.cookies.asScala.toSeq.map { c =>
         DefaultWSCookie(
           name = c.name,
           value = c.value,
@@ -1247,8 +1247,8 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
         .futureValue
 
       callWithUser.status mustBe 200
-      Json.parse(callWithUser.body).selectAsString("email") mustBe "test@example.com"
-      Json.parse(callWithUser.body).selectAsString("name") mustBe "Test User"
+      Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "test@example.com"
+      Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "Test User"
     }
 
     def verifyUnauthenticatedAccess(route: NgRoute): Unit = {
@@ -1383,8 +1383,8 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       .futureValue
 
     callWithUser.status mustBe 200
-    Json.parse(callWithUser.body).selectAsString("email") mustBe "user@oto.tools"
-    Json.parse(callWithUser.body).selectAsString("name") mustBe "foo"
+    Json.parse(callWithUser.body[String]).selectAsString("email") mustBe "user@oto.tools"
+    Json.parse(callWithUser.body[String]).selectAsString("name") mustBe "foo"
 
     val callWithoutCookies = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")

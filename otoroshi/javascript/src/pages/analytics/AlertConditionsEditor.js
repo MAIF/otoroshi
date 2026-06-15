@@ -57,13 +57,22 @@ export class AlertConditionsEditor extends Component {
 
   loadEntities = () => {
     Promise.all([
-      nextClient.forEntity(nextClient.ENTITIES.ROUTES).findAll().catch(() => []),
+      nextClient
+        .forEntity(nextClient.ENTITIES.ROUTES)
+        .findAll()
+        .catch(() => []),
       nextClient
         .forEntityNextWithGroup('apis.otoroshi.io', nextClient.ENTITIES.APIS)
         .findAll()
         .catch(() => []),
-      nextClient.forEntity(nextClient.ENTITIES.APIKEYS).findAll().catch(() => []),
-      nextClient.forEntity(nextClient.ENTITIES.GROUPS).findAll().catch(() => []),
+      nextClient
+        .forEntity(nextClient.ENTITIES.APIKEYS)
+        .findAll()
+        .catch(() => []),
+      nextClient
+        .forEntity(nextClient.ENTITIES.GROUPS)
+        .findAll()
+        .catch(() => []),
     ]).then(([routes, apis, apikeys, groups]) => {
       this.setState({
         routes: Array.isArray(routes) ? routes : [],
@@ -340,21 +349,20 @@ export class AlertConditionsEditor extends Component {
                   <i className="fas fa-spinner fa-spin" /> Loading query catalogue…
                 </div>
               )}
-              {schemaLoaded &&
-                conditions.length === 0 && (
-                  <div
-                    style={{
-                      color: 'var(--text-muted)',
-                      padding: 24,
-                      textAlign: 'center',
-                      border: '1px dashed var(--border-color)',
-                      borderRadius: 4,
-                      marginBottom: 8,
-                    }}
-                  >
-                    No condition yet — add one below.
-                  </div>
-                )}
+              {schemaLoaded && conditions.length === 0 && (
+                <div
+                  style={{
+                    color: 'var(--text-muted)',
+                    padding: 24,
+                    textAlign: 'center',
+                    border: '1px dashed var(--border-color)',
+                    borderRadius: 4,
+                    marginBottom: 8,
+                  }}
+                >
+                  No condition yet — add one below.
+                </div>
+              )}
               {schemaLoaded && conditions.map((c, i) => this.renderConditionCard(c, i))}
               <button
                 type="button"

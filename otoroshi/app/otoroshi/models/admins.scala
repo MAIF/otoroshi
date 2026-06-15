@@ -83,7 +83,7 @@ case class SimpleOtoroshiAdmin(
       "metadata"              -> metadata,
       "tags"                  -> JsArray(tags.map(JsString.apply)),
       "rights"                -> rights.json,
-      "adminEntityValidators" -> adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json)))
+      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
     )
 }
 
@@ -103,14 +103,14 @@ object SimpleOtoroshiAdmin {
         typ =
           (json \ "type").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         rights = UserRights.readFromObject(json),
         adminEntityValidators = json
           .select("adminEntityValidators")
           .asOpt[JsObject]
           .map { obj =>
-            obj.value.view.mapValues { arr =>
-              arr.asArray.value
+            obj.value.mapValues { arr =>
+              arr.asArray.value.toSeq
                 .map { item =>
                   JsonValidator.format.reads(item)
                 }
@@ -162,7 +162,7 @@ case class WebAuthnOtoroshiAdmin(
       "metadata"              -> metadata,
       "tags"                  -> JsArray(tags.map(JsString.apply)),
       "rights"                -> rights.json,
-      "adminEntityValidators" -> adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json)))
+      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
     )
 }
 
@@ -187,14 +187,14 @@ object WebAuthnOtoroshiAdmin {
         typ =
           (json \ "type").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         rights = UserRights.readFromObject(json),
         adminEntityValidators = json
           .select("adminEntityValidators")
           .asOpt[JsObject]
           .map { obj =>
-            obj.value.view.mapValues { arr =>
-              arr.asArray.value
+            obj.value.mapValues { arr =>
+              arr.asArray.value.toSeq
                 .map { item =>
                   JsonValidator.format.reads(item)
                 }

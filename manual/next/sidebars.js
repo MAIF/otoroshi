@@ -91,6 +91,7 @@ const sidebars = {
         'topics/circuit-breaker',
         'topics/durations',
         'topics/workflows',
+        'topics/workflows-input',
         'topics/workflows-editor',
         'topics/remote-catalogs',
         'topics/kubernetes-gateway-api',
@@ -152,6 +153,7 @@ const sidebars = {
         'tutorials/custom-initial-state',
         'tutorials/setup-ai-gateway-with-otoroshictl',
         'tutorials/oauth2-token-exchange',
+        'tutorials/http-message-signatures-rfc9421',
       ],
     },
     {

@@ -80,7 +80,13 @@ export class UserDashboardViewPage extends Component {
               ? queryToFilters(defaults)
               : this.state.filters;
           this.setState(
-            { dashboard: d, loading: false, editMode: d.widgets.length === 0, error: null, filters: nextFilters },
+            {
+              dashboard: d,
+              loading: false,
+              editMode: d.widgets.length === 0,
+              error: null,
+              filters: nextFilters,
+            },
             () => this.setupAutoRefresh()
           );
         }
@@ -136,9 +142,7 @@ export class UserDashboardViewPage extends Component {
     window
       .wizard(
         'Add a widget',
-        (ok, cancel, state, setState) => (
-          <WidgetWizard onChange={(widget) => setState(widget)} />
-        ),
+        (ok, cancel, state, setState) => <WidgetWizard onChange={(widget) => setState(widget)} />,
         { additionalClass: 'modal-lg', okLabel: 'Add widget' }
       )
       .then((widget) => {

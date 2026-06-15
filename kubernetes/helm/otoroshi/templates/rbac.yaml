@@ -1,21 +1,70 @@
+{{- if .Values.serviceAccount.create }}
 ---
 kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Values.serviceAccount.clusterRole }}
+  labels:
+    {{- include "otoroshi.labels" . | nindent 4 }}
+rules:
+  # Core resources
+  - apiGroups: [""]
+    resources: [services, endpoints, secrets, configmaps, namespaces, pods]
+    verbs: [get, list, watch]
+  - apiGroups: ["apps"]
+    resources: [deployments]
+    verbs: [get, list, watch]
+  # EndpointSlices for pod-level target resolution
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [get, list, watch]
+  # Secret/configmap export (apikeys, certs, coredns patching, ...)
+  - apiGroups: [""]
+    resources: [secrets, configmaps]
+    verbs: [update, create, delete]
+  # Ingress
+  - apiGroups: [extensions, networking.k8s.io]
+    resources: [ingresses, ingressclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [extensions, networking.k8s.io]
+    resources: [ingresses/status]
+    verbs: [update]
+  # Admission webhooks (caBundle patched at runtime by Otoroshi)
+  - apiGroups: [admissionregistration.k8s.io]
+    resources: [validatingwebhookconfigurations, mutatingwebhookconfigurations]
+    verbs: [get, update, patch]
+  # Otoroshi CRDs
+  - apiGroups: [proxy.otoroshi.io]
+    resources: ["*"]
+    verbs: [get, list, watch]
+  # Gateway API — read resources
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses, gateways, httproutes, grpcroutes, referencegrants, backendtlspolicies]
+    verbs: [get, list, watch]
+  # Gateway API — update status subresources
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses/status, gateways/status, httproutes/status, grpcroutes/status]
+    verbs: [get, update, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ .Values.serviceAccount.clusterRoleBinding }}
   labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
+    {{- include "otoroshi.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -24,110 +73,3 @@ subjects:
 - kind: ServiceAccount
   name: {{ .Values.serviceAccount.name }}
   namespace: {{ .Release.Namespace }}
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ .Values.serviceAccount.clusterRole }}
-  labels:
-    app.kubernetes.io/managed-by: "Helm"
-    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
-    meta.helm.sh/release-name: {{ .Release.Name }}
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - services
-      - endpoints
-      - secrets
-      - configmaps
-      - deployments
-      - pods
-      - namespaces
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - "apps"
-    resources:
-      - deployments
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - discovery.k8s.io
-    resources:
-      - endpointslices
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-      - configmaps
-    verbs:
-      - update
-      - update
-      - create
-      - delete
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses
-      - ingressclasses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses/status
-    verbs:
-      - update
-  - apiGroups:
-      - admissionregistration.k8s.io
-    resources:
-      - validatingwebhookconfigurations
-      - mutatingwebhookconfigurations
-    verbs:
-      - get
-      - update
-      - patch
-  - apiGroups:
-      - proxy.otoroshi.io
-    resources:
-      - routes
-      - backends
-      - route-compositions
-      - service-descriptors
-      - tcp-services
-      - error-templates
-      - apikeys
-      - certificates
-      - jwt-verifiers
-      - auth-modules
-      - admin-sessions
-      - admins
-      - auth-module-users
-      - service-groups
-      - organizations
-      - tenants
-      - teams
-      - data-exporters
-      - scripts
-      - wasm-plugins
-      - global-configs
-      - green-scores
-      - coraza-configs
-      - http-listeners
-    verbs:
-      - get
-      - list
-      - watch

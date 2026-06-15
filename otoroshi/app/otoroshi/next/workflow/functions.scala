@@ -137,7 +137,7 @@ class MemorySetFunction extends WorkflowFunction {
       "required"   -> Seq("name", "value"),
       "properties" -> Json.obj(
         "name"  -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
-        "value" -> Json.obj("type" -> "any", "description" -> "The value to set in the memory")
+        "value" -> Json.obj("description" -> "The value to set in the memory")
       )
     )
   )
@@ -169,7 +169,7 @@ class MemoryGetFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("name", "path"),
+      "required"   -> Seq("name"),
       "properties" -> Json.obj(
         "name" -> Json.obj("type" -> "string", "description" -> "The name of the memory"),
         "path" -> Json.obj("type" -> "string", "description" -> "The path of the memory")
@@ -231,7 +231,7 @@ class ConfigReadFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("path"),
+      "required"   -> Seq.empty[String],
       "properties" -> Json.obj(
         "path" -> Json.obj("type" -> "string", "description" -> "The path of the config. to read")
       )
@@ -263,7 +263,7 @@ class EnvGetFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("name"),
+      "required"   -> Seq.empty[String],
       "properties" -> Json.obj(
         "name" -> Json.obj("type" -> "string", "description" -> "The environment variable name")
       )
@@ -326,7 +326,7 @@ class SendMailFunction extends WorkflowFunction {
     val config                 = args.select("mailer_config").asOpt[JsObject].getOrElse(Json.obj())
     val from: EmailLocation    = EmailLocation.format.reads(args.select("from").asValue).get
     val to: Seq[EmailLocation] =
-      args.select("to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty)
+      args.select("to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v).get)).getOrElse(Seq.empty).toSeq
     val subject                = args.select("subject").asString
     val html                   = args.select("html").asString
 
@@ -358,7 +358,24 @@ class SendMailFunction extends WorkflowFunction {
           SendgridSettings.format.reads(config).get
         )
         sendMail(mailer)
-      case "generic" =>
+      }
+      case "scaleway" => {
+        val mailer = new ScalewayTEMMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          ScalewayTEMSettings.format.reads(config).get
+        )
+        sendMail(mailer)
+      }
+      case "mailpace" => {
+        val mailer = new MailPaceMailer(
+          env,
+          env.datastores.globalConfigDataStore.latest(),
+          MailPaceSettings.format.reads(config).get
+        )
+        sendMail(mailer)
+      }
+      case "generic"  => {
         val mailer = new GenericMailer(
           env,
           env.datastores.globalConfigDataStore.latest(),
@@ -378,7 +395,7 @@ class StateGetAllFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("name", "group", "version"),
+      "required"   -> Seq("name"),
       "properties" -> Json.obj(
         "name"    -> Json.obj("type" -> "string", "description" -> "The name of the resource"),
         "group"   -> Json.obj("type" -> "string", "description" -> "The group of the resource"),
@@ -424,7 +441,7 @@ class StateGetOneFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("id", "name", "group", "version"),
+      "required"   -> Seq("id", "name"),
       "properties" -> Json.obj(
         "id"      -> Json.obj("type" -> "string", "description" -> "The ID of the resource"),
         "name"    -> Json.obj("type" -> "string", "description" -> "The name of the resource"),
@@ -436,7 +453,7 @@ class StateGetOneFunction extends WorkflowFunction {
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "kind"     -> "call",
-      "function" -> "core.state_get_one",
+      "function" -> "core.state_get",
       "args"     -> Json.obj(
         "id"      -> "my_id",
         "name"    -> "my_resource",
@@ -465,7 +482,7 @@ class StateGetOneFunction extends WorkflowFunction {
 }
 
 class FileDeleteFunction extends WorkflowFunction {
-  override def documentationName: String                  = "core.file_delete"
+  override def documentationName: String                  = "core.file_del"
   override def documentationDisplayName: String           = "Delete a file"
   override def documentationIcon: String                  = "fas fa-trash"
   override def documentationDescription: String           = "This function deletes a file"
@@ -481,7 +498,7 @@ class FileDeleteFunction extends WorkflowFunction {
   override def documentationExample: Option[JsObject]     = Some(
     Json.obj(
       "kind"     -> "call",
-      "function" -> "core.file_delete",
+      "function" -> "core.file_del",
       "args"     -> Json.obj(
         "path" -> "/path/to/file.txt"
       )
@@ -556,7 +573,7 @@ class FileWriteFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("path", "value"),
+      "required"   -> Seq("value"),
       "properties" -> Json.obj(
         "path"        -> Json.obj("type" -> "string", "description" -> "The path of the file to write"),
         "value"       -> Json.obj("type" -> "string", "description" -> "The value to write"),
@@ -696,7 +713,7 @@ class LogFunction extends WorkflowFunction {
       "required"   -> Seq("message"),
       "properties" -> Json.obj(
         "message" -> Json.obj("type" -> "string", "description" -> "The message to log"),
-        "params"  -> Json.obj("type" -> "array", "description" -> "The parameters to log")
+        "params"  -> Json.obj("type" -> "array", "items" -> Json.obj(), "description" -> "The parameters to log")
       )
     )
   )
@@ -713,7 +730,7 @@ class LogFunction extends WorkflowFunction {
 
   override def call(args: JsObject)(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val message = args.select("message").asOptString.getOrElse("no message")
-    val params  = args.select("params").asOpt[Seq[JsValue]].getOrElse(Seq.empty).map(_.stringify).mkString(" ")
+    val params  = args.select("params").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq.map(_.stringify).mkString(" ")
     LogFunction.logger.info(message + " " + params)
     JsNull.rightf
   }
@@ -738,7 +755,7 @@ class HelloFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("name"),
+      "required"   -> Seq.empty[String],
       "properties" -> Json.obj(
         "name" -> Json.obj("type" -> "string", "description" -> "The name of the person to greet")
       )
@@ -777,27 +794,40 @@ class HttpClientFunction extends WorkflowFunction {
         "type"  -> "number",
         "props" -> Json.obj("description" -> "The timeout in milliseconds")
       ),
-      "body"              -> Json
-        .obj("label" -> "Body", "type" -> "string", "props" -> Json.obj("description" -> "The body (string) to send")),
-      "body_str"          -> Json.obj(
-        "label" -> "String Body",
-        "type"  -> "string",
-        "props" -> Json.obj("description" -> "The body (string) to send")
+      "body"              -> Json.obj(
+        "label" -> "Body",
+        "type"  -> "any",
+        "props" -> Json.obj(
+          "height"      -> 100,
+          "description" -> "The body (string) to send"
+        )
       ),
+      // "body_str"          -> Json.obj(
+      //   "label" -> "String Body",
+      //   "type"  -> "string",
+      //   "props" -> Json.obj("description" -> "The body (string) to send")
+      // ),
       "body_json"         -> Json.obj(
         "label" -> "JSON Body",
-        "type"  -> "object",
-        "props" -> Json.obj("description" -> "The body (json) to send")
+        "type"  -> "any",
+        "props" -> Json.obj(
+          "language"    -> "json",
+          "height"      -> 100,
+          "description" -> "The body (json) to send"
+        )
       ),
-      "body_bytes"        -> Json.obj(
-        "label" -> "Bytes Body",
-        "type"  -> "array",
-        "props" -> Json.obj("description" -> "The body (bytes array) to send")
-      ),
+      //"body_bytes"        -> Json.obj(
+      //  "label" -> "Bytes Body",
+      //  "type"  -> "array",
+      //  "props" -> Json.obj("description" -> "The body (bytes array) to send")
+      //),
       "body_base64"       -> Json.obj(
         "label" -> "Base64 body",
-        "type"  -> "string",
-        "props" -> Json.obj("description" -> "The body (base64) to send")
+        "type"  -> "any",
+        "props" -> Json.obj(
+          "height"      -> 100,
+          "description" -> "The body (base64) to send"
+        )
       ),
       "tls_config"        -> Json.obj(
         "label" -> "TLS Configuration",
@@ -821,7 +851,7 @@ class HttpClientFunction extends WorkflowFunction {
         "headers"           -> Json.obj("type" -> "object", "description" -> "The headers to send"),
         "timeout"           -> Json.obj("type" -> "number", "description" -> "The timeout in milliseconds"),
         "body"              -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
-        "body_str"          -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
+        //"body_str"          -> Json.obj("type" -> "string", "description" -> "The body (string) to send"),
         "body_json"         -> Json.obj("type" -> "object", "description" -> "The body (json) to send"),
         "body_bytes"        -> Json.obj("type" -> "array", "description" -> "The body (bytes array) to send"),
         "body_base64"       -> Json.obj("type" -> "string", "description" -> "The body (base64) to send"),
@@ -870,7 +900,7 @@ class HttpClientFunction extends WorkflowFunction {
           .obj(
             "status"    -> resp.status,
             "headers"   -> resp.headers,
-            "cookies"   -> JsArray(resp.safeCookies(env).map(_.json)),
+            "cookies"   -> JsArray(resp.safeCookies(env).toSeq.map(_.json)),
             "body_str"  -> body_str,
             "body_json" -> body_json
           )
@@ -894,7 +924,7 @@ class WorkflowCallFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("workflow_id", "input"),
+      "required"   -> Seq("workflow_id"),
       "properties" -> Json.obj(
         "workflow_id" -> Json.obj("type" -> "string", "description" -> "The ID of the workflow to call"),
         "input"       -> Json.obj("type" -> "object", "description" -> "The input of the workflow")
@@ -943,7 +973,7 @@ class SystemCallFunction extends WorkflowFunction {
   override def documentationFormSchema: Option[JsObject]  = Json
     .obj(
       "async"   -> Json.obj(
-        "type"  -> "bool",
+        "type"  -> "boolean",
         "label" -> "async",
         "props" -> Json.obj(
           "description" -> "Do not block until the end of the process"
@@ -963,8 +993,9 @@ class SystemCallFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("command"),
       "properties" -> Json.obj(
-        "command" -> Json.obj("type" -> "array", "description" -> "The command to execute"),
-        "async"   -> Json.obj("type" -> "bool", "description" -> "Run the command in async mode")
+        "command" -> Json
+          .obj("type" -> "array", "items" -> Json.obj("type" -> "string"), "description" -> "The command to execute"),
+        "async"   -> Json.obj("type" -> "boolean", "description" -> "Run the command in async mode")
       )
     )
   )
@@ -982,7 +1013,7 @@ class SystemCallFunction extends WorkflowFunction {
     try {
       var stdout        = ""
       var stderr        = ""
-      val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val command       = args.select("command").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val async         = args.select("async").asOpt[Boolean].getOrElse(false)
       val processLogger = ProcessLogger(
         out => {
@@ -1040,7 +1071,7 @@ class WasmCallFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("wasm_plugin", "function"),
+      "required"   -> Seq("wasm_plugin"),
       "properties" -> Json.obj(
         "wasm_plugin" -> Json.obj("type" -> "string", "description" -> "The wasm plugin to use"),
         "function"    -> Json.obj("type" -> "string", "description" -> "The function to call"),
@@ -1159,7 +1190,11 @@ class StoreGetAllFunction extends WorkflowFunction {
       "type"       -> "object",
       "required"   -> Seq("keys"),
       "properties" -> Json.obj(
-        "keys" -> Json.obj("type" -> "string", "description" -> "The keys to get")
+        "keys" -> Json.obj(
+          "type"        -> "array",
+          "items"       -> Json.obj("type" -> "string"),
+          "description" -> "The keys to get"
+        )
       )
     )
   )
@@ -1173,7 +1208,7 @@ class StoreGetAllFunction extends WorkflowFunction {
     )
   )
   override def call(args: JsObject)(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
-    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val keys = args.select("keys").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     Future
       .sequence(keys.map(key => env.datastores.rawDataStore.get(key)))
       .map(values =>
@@ -1206,7 +1241,7 @@ class StoreGetFunction extends WorkflowFunction {
   override def documentationInputSchema: Option[JsObject] = Some(
     Json.obj(
       "type"       -> "object",
-      "required"   -> Seq("key"),
+      "required"   -> Seq.empty[String],
       "properties" -> Json.obj(
         "key" -> Json.obj("type" -> "string", "description" -> "The key to get")
       )
@@ -1258,7 +1293,7 @@ class StoreSetFunction extends WorkflowFunction {
         "type"  -> "number",
         "label" -> "TTL",
         "props" -> Json.obj(
-          "description" -> "The optional time to live in seconds"
+          "description" -> "The optional time to live in milliseconds"
         )
       )
     )
@@ -1270,7 +1305,7 @@ class StoreSetFunction extends WorkflowFunction {
       "properties" -> Json.obj(
         "key"   -> Json.obj("type" -> "string", "description" -> "The key to set"),
         "value" -> Json.obj("type" -> "string", "description" -> "The value to set"),
-        "ttl"   -> Json.obj("type" -> "number", "description" -> "The optional time to live in seconds")
+        "ttl"   -> Json.obj("type" -> "number", "description" -> "The optional time to live in milliseconds")
       )
     )
   )
@@ -1281,7 +1316,7 @@ class StoreSetFunction extends WorkflowFunction {
       "args"     -> Json.obj(
         "key"   -> "my_key",
         "value" -> "my_value",
-        "ttl"   -> 3600
+        "ttl"   -> 60000
       )
     )
   )

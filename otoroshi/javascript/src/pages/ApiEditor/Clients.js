@@ -86,7 +86,7 @@ export function Clients(props) {
         navigateOnEdit={(client) =>
           history.push(`/apis/${params.apiId}/clients/${client.id}/edit?version=${version}`)
         }
-        selfUrl="clients"
+        selfUrl={`apis/${params.apiId}/clients`}
         defaultTitle="Clients"
         itemName="Client"
         formSchema={null}

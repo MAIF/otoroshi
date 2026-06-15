@@ -1,28 +1,31 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Framing, Sink, Source}
-import org.apache.pekko.util.ByteString
-import otoroshi.env.Env
-import otoroshi.models.*
-import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
-import otoroshi.utils.UrlSanitizer
-import otoroshi.utils.http.Implicits.given
-import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits.given
-import play.api.Logger
-import play.api.libs.json.*
-import play.api.libs.ws.WSBodyWritables.*
-import play.api.libs.ws.WSRequest
-
-import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.*
-import scala.concurrent.{ExecutionContext, Future}
+import java.util.regex.Pattern
+import org.apache.pekko.{Done, NotUsed}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Concat, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
+import otoroshi.env.Env
+import otoroshi.models._
+import org.joda.time.DateTime
+import otoroshi.security.IdGenerator
+import otoroshi.utils.UrlSanitizer
+import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.syntax.implicits._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.ws.{WSRequest, WSResponse}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, PemHeaders}
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
+import otoroshi.utils.http.Implicits._
+
+import java.nio.charset.StandardCharsets
+import scala.collection.concurrent.TrieMap
 
 object KubernetesClientNotifications {
 
@@ -38,11 +41,11 @@ object KubernetesClientNotifications {
       logger.warn(s"""
            |it seems that you cannot access the following Kubernetes entities:
            |
-           |${forbiddenEntities1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - $e").mkString("\n")}
+           |${forbiddenEntities1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - ${e}").mkString("\n")}
            |
            |You have to create/update the rbac definition for you otoroshi cluster.
            |You can use otoroshictl from Cloud APIM to do it (https://cloud-apim.github.io/otoroshictl/).
-           |You can find the documentation on how to do it here: https://maif.github.io/otoroshi/manual/deploy/kubernetes.html#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
+           |You can find the documentation on how to do it here: https://www.otoroshi.io/docs/deploy/kubernetes#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
            |Basically something like `$$ otoroshictl resources rbac --namespace mynamespace | kubectl apply -f -` should be enough.
            |
            |""".stripMargin)
@@ -53,11 +56,11 @@ object KubernetesClientNotifications {
       logger.warn(s"""
            |it seems that you did not deploy the following Kubernetes Custom Resource Defintitions:
            |
-           |${missingCustomResourceDefinition1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - $e").mkString("\n")}
+           |${missingCustomResourceDefinition1.sortWith((a, b) => a.compareTo(b) < 1).map(e => s"  - ${e}").mkString("\n")}
            |
            |You have to create/update the CRDs definition for you otoroshi cluster.
            |You can use otoroshictl from Cloud APIM to do it (https://cloud-apim.github.io/otoroshictl/).
-           |You can find the documentation on how to do it here: https://maif.github.io/otoroshi/manual/deploy/kubernetes.html#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
+           |You can find the documentation on how to do it here: https://www.otoroshi.io/docs/deploy/kubernetes#updating-rbac-and-crds-when-upgrading-otoroshi-using-otoroshictl
            |Basically something like `$$ otoroshictl resources crds | kubectl apply -f -` should be enough.
            |
            |""".stripMargin)
@@ -88,7 +91,7 @@ object KubernetesClientNotifications {
     if (started.compareAndSet(false, true)) {
       env.otoroshiScheduler.scheduleWithFixedDelay(1.seconds, 10.seconds) { () =>
         printErrors()
-      }(using env.otoroshiExecutionContext)
+      }(env.otoroshiExecutionContext)
     }
   }
 }
@@ -98,8 +101,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-client")
 
-  given ec: ExecutionContext = env.otoroshiExecutionContext
-  given mat: Materializer    = env.otoroshiMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   KubernetesClientNotifications.startIfNeeded(env)
 
@@ -111,22 +114,18 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           cert
         } else {
           Try(new String(Base64.getDecoder.decode(cert), StandardCharsets.UTF_8)) match {
-            case Failure(_)           => cert
+            case Failure(e)           => cert
             case Success(decodedCert) => decodedCert
           }
         }
       }
       val caCert = Cert.apply("kubernetes-ca-cert", decoded, "").copy(id = "kubernetes-ca-cert")
-      DynamicSSLEngineProvider.certificates.find { case (_, c) =>
+      DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-ca-cert"
       } match {
-        case None         => caCert.enrich().save()(using ec, env)
-        case Some((_, c)) =>
-          if (c.contentHash == caCert.contentHash) {
-            ()
-          } else {
-            caCert.enrich().save()(using ec, env)
-          }
+        case None                                                => caCert.enrich().save()(ec, env)
+        case Some((k, c)) if c.contentHash == caCert.contentHash => ()
+        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
       }
     } catch {
       case e: Throwable => logger.error("error while reading ca-cert", e)
@@ -136,16 +135,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     try {
       val caCert =
         Cert.apply("kubernetes-client-cert", cert, config.clientCertKey.get).copy(id = "kubernetes-client-cert")
-      DynamicSSLEngineProvider.certificates.find { case (_, c) =>
+      DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-client-cert"
       } match {
-        case None         => caCert.enrich().save()(using ec, env)
-        case Some((_, c)) =>
-          if (c.contentHash == caCert.contentHash) {
-            ()
-          } else {
-            caCert.enrich().save()(using ec, env)
-          }
+        case None                                                => caCert.enrich().save()(ec, env)
+        case Some((k, c)) if c.contentHash == caCert.contentHash => ()
+        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
       }
     } catch {
       case e: Throwable => logger.error("error while reading kubernetes-client-cert", e)
@@ -177,8 +172,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             mtls = true,
             loose = config.trust,
             trustAll = config.trust,
-            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty),
-            trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
+            certs = config.clientCert.map(_ => Seq("kubernetes-client-cert")).getOrElse(Seq.empty).toSeq,
+            trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty).toSeq
           )
         ),
         clientConfig
@@ -191,7 +186,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           case None        => req
           case Some(token) =>
             req.withHttpHeaders(
-              "Authorization" -> s"Bearer $token"
+              "Authorization" -> s"Bearer ${token}"
             )
         }
       )
@@ -233,15 +228,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          filterLabels(
-            (resp.json \ "items")
-              .as[JsArray]
-              .value
-              .map { item =>
-                KubernetesNamespace(item)
-              }
-              .toSeq
-          )
+          filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map { item =>
+            KubernetesNamespace(item)
+          })
         } else if (resp.status == 403) {
           KubernetesClientNotifications.registerForbiddenEntities("namespaces")
           resp.ignore()
@@ -268,7 +257,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesService(item)
               }
             } else if (resp.status == 403) {
@@ -288,7 +277,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
   def fetchService(namespace: String, name: String): Future[Option[KubernetesService]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -313,7 +302,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       }
   }
   def fetchSecret(namespace: String, name: String): Future[Option[KubernetesSecret]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -348,7 +337,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesEndpoint(item)
               }
             } else if (resp.status == 403) {
@@ -368,7 +357,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
   def fetchEndpoint(namespace: String, name: String): Future[Option[KubernetesEndpoint]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/endpoints/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/endpoints/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -392,100 +381,93 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         }
       }
   }
+  // networking.k8s.io/v1beta1 (Ingress & IngressClass) was deprecated in Kubernetes 1.19 and
+  // removed in 1.22. We always query the stable networking.k8s.io/v1 endpoint first and only
+  // fall back to the legacy v1beta1 one when v1 is not served (404), i.e. on clusters older
+  // than 1.19. A 403 is an RBAC issue shared by both versions, so it does not trigger a fallback.
+  private def fetchIngressJson(v1Url: String, v1beta1Url: String, entityName: String): Future[Option[JsValue]] = {
+    def get(url: String): Future[WSResponse] =
+      client(url).addHttpHeaders("Accept" -> "application/json").get()
+
+    def handleLegacy(resp: WSResponse): Option[JsValue] = {
+      if (resp.status == 200) {
+        Some(resp.json)
+      } else if (resp.status == 403) {
+        KubernetesClientNotifications.registerForbiddenEntities(entityName)
+        resp.ignore()
+        None
+      } else if (resp.status == 404) {
+        KubernetesClientNotifications.registerMissionCustomResourceDefinition(entityName)
+        resp.ignore()
+        None
+      } else {
+        resp.ignore()
+        logger.error(s"bad http status while fetching $entityName (v1beta1): ${resp.status}")
+        None
+      }
+    }
+
+    get(v1Url).flatMap { resp =>
+      if (resp.status == 200) {
+        Some(resp.json).vfuture
+      } else if (resp.status == 403) {
+        KubernetesClientNotifications.registerForbiddenEntities(entityName)
+        resp.ignore()
+        None.vfuture
+      } else if (resp.status == 404) {
+        // v1 not served by this cluster: fall back to the legacy v1beta1 endpoint
+        resp.ignore()
+        get(v1beta1Url).map(handleLegacy)
+      } else {
+        resp.ignore()
+        logger.error(s"bad http status while fetching $entityName (v1): ${resp.status}")
+        None.vfuture
+      }
+    }
+  }
   def fetchIngressesAndFilterLabels(): Future[Seq[KubernetesIngress]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              filterLabels(
-                (resp.json \ "items")
-                  .as[JsArray]
-                  .value
-                  .map { item =>
-                    KubernetesIngress(item)
-                  }
-                  .toSeq
-              )
-            } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else {
-              resp.ignore()
-              logger.error(s"bad http status while fetching ingresses: ${resp.status}")
-              Seq.empty
-            }
-          }
+    asyncSequence(config.namespaces.map { namespace => () =>
+      fetchIngressJson(
+        s"/apis/networking.k8s.io/v1/namespaces/$namespace/ingresses",
+        s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses",
+        "networking.k8s.io/ingresses"
+      ).map {
+        case Some(json) =>
+          filterLabels((json \ "items").as[JsArray].value.toSeq.map { item =>
+            KubernetesIngress(item)
+          })
+        case None       => Seq.empty
+      }
     }).map(_.flatten)
   }
   def fetchIngresses(): Future[Seq[KubernetesIngress]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
-                KubernetesIngress(item)
-              }
-            } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingresses")
-              resp.ignore()
-              Seq.empty
-            } else {
-              resp.ignore()
-              logger.error(s"bad http status while fetching ingresses: ${resp.status}")
-              Seq.empty
-            }
+    asyncSequence(config.namespaces.map { namespace => () =>
+      fetchIngressJson(
+        s"/apis/networking.k8s.io/v1/namespaces/$namespace/ingresses",
+        s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses",
+        "networking.k8s.io/ingresses"
+      ).map {
+        case Some(json) =>
+          (json \ "items").as[JsArray].value.toSeq.map { item =>
+            KubernetesIngress(item)
           }
+        case None       => Seq.empty
+      }
     }).map(_.flatten)
   }
   def fetchIngressClasses(): Future[Seq[KubernetesIngressClass]] = {
-    asyncSequence(config.namespaces.map { namespace =>
-      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingressclasses")
-      () =>
-        cli
-          .addHttpHeaders(
-            "Accept" -> "application/json"
-          )
-          .get()
-          .map { resp =>
-            if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
-                KubernetesIngressClass(item)
-              }
-            } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities("networking.k8s.io/ingressClasses")
-              resp.ignore()
-              Seq.empty
-            } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition("networking.k8s.io/ingressClasses")
-              resp.ignore()
-              Seq.empty
-            } else {
-              resp.ignore()
-              logger.error(s"bad http status while fetching ingresses-classes: ${resp.status}")
-              Seq.empty
-            }
+    asyncSequence(config.namespaces.map { namespace => () =>
+      fetchIngressJson(
+        s"/apis/networking.k8s.io/v1/namespaces/$namespace/ingressclasses",
+        s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingressclasses",
+        "networking.k8s.io/ingressClasses"
+      ).map {
+        case Some(json) =>
+          (json \ "items").as[JsArray].value.toSeq.map { item =>
+            KubernetesIngressClass(item)
           }
+        case None       => Seq.empty
+      }
     }).map(_.flatten)
   }
   def fetchDeployments(): Future[Seq[KubernetesDeployment]] = {
@@ -499,7 +481,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesDeployment(item)
               }
             } else if (resp.status == 403) {
@@ -529,7 +511,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesPod(item)
               }
             } else if (resp.status == 403) {
@@ -565,7 +547,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map { item =>
+              (resp.json \ "items").as[JsArray].value.toSeq.map { item =>
                 KubernetesSecret(item)
               }
             } else if (resp.status == 403) {
@@ -595,15 +577,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels(
-                (resp.json \ "items")
-                  .as[JsArray]
-                  .value
-                  .map { item =>
-                    KubernetesSecret(item)
-                  }
-                  .toSeq
-              )
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map { item =>
+                KubernetesSecret(item)
+              })
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("secrets")
               resp.ignore()
@@ -622,7 +598,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def fetchDeployment(namespace: String, name: String): Future[Option[KubernetesDeployment]] = {
-    val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", wildcard = false)
+    val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -648,7 +624,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def fetchConfigMap(namespace: String, name: String): Future[Option[KubernetesConfigMap]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -678,7 +654,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       name: String,
       newValue: KubernetesConfigMap
   ): Future[Either[(Int, String), KubernetesConfigMap]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
     val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
@@ -700,7 +676,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             Left((0, e.getMessage))
         }
       }
-      .andThen { case Failure(_) =>
+      .andThen { case Failure(exception) =>
         req.ignore()
       }
   }
@@ -708,7 +684,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   def fetchOtoroshiResources[T](
       pluralName: String,
       reader: Reads[T],
-      customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, _) => a
+      customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a
   ): Future[Seq[OtoResHolder[T]]] = {
     asyncSequence(config.namespaces.flatMap { namespace =>
       Seq(
@@ -723,7 +699,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       namespace: String,
       version: String,
       reader: Reads[T],
-      customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, _) => a
+      customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a
   ): () => Future[Seq[OtoResHolder[T]]] = {
     val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/$version/namespaces/$namespace/$pluralName")
     () => {
@@ -735,7 +711,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         .map { resp =>
           Try {
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(v => KubernetesOtoroshiResource(v)))
                 .map { item =>
                   val spec                      = (item.raw \ "spec").as[JsValue]
                   val (failed, err, customSpec) = Try(customize(spec, item)) match {
@@ -745,7 +721,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                   Try {
                     (reader.reads(customSpec), item.raw)
                   }.debug {
-                    case Success(_) if failed =>
+                    case Success(_) if failed => {
                       logger.error(s"error while customizing spec entity of type $pluralName", err.get)
                       FailedCrdParsing(
                         `@id` = env.snowflakeGenerator.nextIdStr(),
@@ -755,7 +731,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         crd = item.raw,
                         customizedSpec = customSpec,
                         error = err.map(_.getMessage).getOrElse("--")
-                      ).toAnalytics()(using env)
+                      ).toAnalytics()(env)
+                    }
                     case Success(_)           => ()
                     case Failure(e)           =>
                       logger.error(s"error while reading entity of type $pluralName", e)
@@ -767,29 +744,29 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         crd = item.raw,
                         customizedSpec = customSpec,
                         error = e.getMessage
-                      ).toAnalytics()(using env)
+                      ).toAnalytics()(env)
                   }
                 }
                 .collect { case Success((JsSuccess(item, _), raw)) =>
                   OtoResHolder(raw, item)
                 }
             } else if (resp.status == 403) {
-              KubernetesClientNotifications.registerForbiddenEntities(s"proxy.otoroshi.io/$pluralName")
+              KubernetesClientNotifications.registerForbiddenEntities(s"proxy.otoroshi.io/${pluralName}")
               resp.ignore()
               Seq.empty
             } else if (resp.status == 404) {
-              KubernetesClientNotifications.registerMissionCustomResourceDefinition(s"proxy.otoroshi.io/$pluralName")
+              KubernetesClientNotifications.registerMissionCustomResourceDefinition(s"proxy.otoroshi.io/${pluralName}")
               resp.ignore()
               Seq.empty
             } else {
               resp.ignore()
               if (logger.isDebugEnabled)
-                logger.debug(s"fetchOtoroshiResources $pluralName: bad status ${resp.status}")
+                logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
               Seq.empty
             }
           } match {
             case Success(r) => r
-            case Failure(_) => Seq.empty
+            case Failure(e) => Seq.empty
           }
         }
     }
@@ -803,7 +780,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       kind: String,
       id: String
   ): Future[Option[KubernetesSecret]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets", false)
     val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
@@ -836,7 +813,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           }
         } match {
           case Success(r) => r
-          case Failure(_) =>
+          case Failure(e) =>
             // logger.error(s"error create cert", e)
             resp.ignore()
             None
@@ -855,7 +832,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       kind: String,
       id: String
   ): Future[Option[KubernetesSecret]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
     val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
@@ -888,7 +865,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           }
         } match {
           case Success(r) => r
-          case Failure(_) =>
+          case Failure(e) =>
             resp.ignore()
             // logger.error(s"error update cert", e)
             None
@@ -900,7 +877,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def deleteSecret(namespace: String, name: String): Future[Either[String, Unit]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", wildcard = false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
     val req            = cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -913,7 +890,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             resp.ignore()
             ().right
           } else {
-            resp.body(using play.api.libs.ws.DefaultBodyReadables.readableAsString).left
+            resp.body[String].left
           }
         } match {
           case Success(r) => r
@@ -925,7 +902,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def patchDeployment(namespace: String, name: String, body: JsValue): Future[Option[KubernetesDeployment]] = {
-    val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", wildcard = false)
+    val cli: WSRequest = client(s"/apis/apps/v1/namespaces/$namespace/deployments/$name", false)
     val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
@@ -944,7 +921,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           }
         } match {
           case Success(r) => r
-          case Failure(_) =>
+          case Failure(e) =>
             resp.ignore()
             None
         }
@@ -955,7 +932,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def fetchOpenshiftDnsOperator(): Future[Option[KubernetesOpenshiftDnsOperator]] = {
-    val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", wildcard = false)
+    val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -985,8 +962,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   ): Future[Option[KubernetesOpenshiftDnsOperator]] = {
     fetchOpenshiftDnsOperator().flatMap {
       case None      => None.future
-      case Some(dns) =>
-        val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", wildcard = false)
+      case Some(dns) => {
+        val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
         val req            = cli
           .addHttpHeaders(
             "Accept" -> "application/json"
@@ -1005,12 +982,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .andThen { case Failure(_) =>
             req.ignore()
           }
+      }
     }
   }
 
   def fetchMutatingWebhookConfiguration(name: String): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
-    val cli: WSRequest =
-      client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", wildcard = false)
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -1043,8 +1020,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       name: String,
       body: JsValue
   ): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
-    val cli: WSRequest =
-      client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", wildcard = false)
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
     val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
@@ -1063,7 +1039,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           }
         } match {
           case Success(r) => r
-          case Failure(_) =>
+          case Failure(e) =>
             resp.ignore()
             None
         }
@@ -1074,8 +1050,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def fetchValidatingWebhookConfiguration(name: String): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
-    val cli: WSRequest =
-      client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", wildcard = false)
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
     cli
       .addHttpHeaders(
         "Accept" -> "application/json"
@@ -1108,8 +1083,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       name: String,
       body: JsValue
   ): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
-    val cli: WSRequest =
-      client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", wildcard = false)
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
     val req            = cli
       .addHttpHeaders(
         "Accept"       -> "application/json",
@@ -1128,7 +1102,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           }
         } match {
           case Success(r) => r
-          case Failure(_) =>
+          case Failure(e) =>
             resp.ignore()
             None
         }
@@ -1144,7 +1118,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector)
     // Source.combine(
     //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
@@ -1158,7 +1132,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
   }
 
@@ -1168,7 +1142,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "v1", timeout, stop, labelSelector, "/api")
   }
 
@@ -1180,7 +1154,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None,
       root: String = "/apis"
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
     if (namespaces.contains("*")) {
       resources
         .map(r => watchResource("*", r, api, timeout, stop, labelSelector, root))
@@ -1200,9 +1174,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None,
       root: String = "/apis"
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
 
-    import otoroshi.utils.http.Implicits.given
+    import otoroshi.utils.http.Implicits._
 
     val lastTime = new AtomicLong(0L)
     val last     = new AtomicReference[String]("0")
@@ -1216,10 +1190,10 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         } else {
           lastTime.set(now)
           if (logger.isDebugEnabled)
-            logger.debug(s"watch on $api / $namespace / $resource for $timeout seconds ! ")
+            logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
           val lblStart                              = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
-          val cliStart: WSRequest                   = client(s"$root/$api/namespaces/$namespace/$resource$lblStart")
-          val f: Future[Source[Seq[ByteString], ?]] = cliStart
+          val cliStart: WSRequest                   = client(s"${root}/$api/namespaces/$namespace/$resource$lblStart")
+          val f: Future[Source[Seq[ByteString], _]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
             )
@@ -1232,7 +1206,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 last.set(resourceVersionStart)
                 val lbl                  = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
                 val cli: WSRequest       = client(
-                  s"$root/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl"
+                  s"${root}/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl"
                 )
                 cli
                   .addHttpHeaders(
@@ -1244,7 +1218,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                   .map { resp =>
                     if (resp.status == 200) {
                       resp.bodyAsSource
-                        .via(Framing.delimiter("\n".byteString, Int.MaxValue, allowTruncation = true))
+                        .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
                         .map(_.utf8String)
                         .filterNot(_.trim.isEmpty)
                         .map { line =>
@@ -1255,7 +1229,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                           val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
                           if (logger.isDebugEnabled)
                             logger.debug(
-                              s"received event for $api/$namespace/$resource - $typ - $ns/$name($resourceVersion)"
+                              s"received event for ${api}/${namespace}/${resource} - $typ - $ns/$name($resourceVersion)"
                             )
                           resourceVersion.foreach(v => last.set(v))
                           ByteString(line)
@@ -1267,14 +1241,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                     }
                   }
                   .recover { case e =>
-                    logger.error(s"error while watching $api/$namespace/$resource", e)
+                    logger.error(s"error while watching ${api}/${namespace}/${resource}", e)
                     Source.empty
                   }
               } else if (list.status == 404) {
                 if (api.startsWith("proxy.otoroshi.io/")) {
                   KubernetesClientNotifications.registerMissionCustomResourceDefinition(s"$api/$resource")
                 } else {
-                  logger.error(s"resource $resource of api $api does not exists on namespace $namespace")
+                  logger.error(s"resource ${resource} of api ${api} does not exists on namespace ${namespace}")
                 }
                 list.ignore()
                 Source.empty.future
@@ -1285,13 +1259,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               } else {
                 list.ignore()
                 logger.error(
-                  s"error while trying to get $resource of api $api on namespace $namespace: ${list.status} - ${list.body}"
+                  s"error while trying to get ${resource} of api ${api} on namespace ${namespace}: ${list.status} - ${list.body}"
                 )
                 Source.empty.future
               }
             }
             .recover { case e =>
-              logger.error(s"error while fetching latest version of $api/$namespace/$resource", e)
+              logger.error(s"error while fetching latest version of ${api}/${namespace}/${resource}", e)
               Source.empty
             }
           Source.future(f).flatMapConcat(v => v)
@@ -1307,7 +1281,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       root: String = "/apis"
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
 
     import otoroshi.utils.http.Implicits._
 
@@ -1325,7 +1299,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (logger.isDebugEnabled)
             logger.debug(s"watch on ${api} / ${resource} (cluster-scoped) for ${timeout} seconds ! ")
           val cliStart: WSRequest                   = client(s"${root}/$api/$resource")
-          val f: Future[Source[Seq[ByteString], ?]] = cliStart
+          val f: Future[Source[Seq[ByteString], _]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
             )
@@ -1405,7 +1379,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       namespaces: Seq[String],
       timeout: Int,
       stop: => Boolean
-  ): Source[Seq[ByteString], ?] = {
+  ): Source[Seq[ByteString], _] = {
     val gatewayClassSource     = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
     val v1NamespacedSource     = watchResources(
       namespaces,
@@ -1467,7 +1441,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          (resp.json \ "items").as[JsArray].value.map(item => KubernetesGatewayClass(item)).toSeq
+          (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesGatewayClass(item)).toSeq
         } else if (resp.status == 403) {
           KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gatewayclasses")
           resp.ignore()
@@ -1498,7 +1472,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGateway(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesGateway(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/gateways")
               resp.ignore()
@@ -1530,7 +1504,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesHTTPRoute(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesHTTPRoute(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/httproutes")
               resp.ignore()
@@ -1562,7 +1536,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesGRPCRoute(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesGRPCRoute(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/grpcroutes")
               resp.ignore()
@@ -1593,7 +1567,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .map { resp =>
             if (resp.status == 200) {
               filterLabels(
-                (resp.json \ "items").as[JsArray].value.map(item => KubernetesReferenceGrant(item)).toSeq
+                (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesReferenceGrant(item)).toSeq
               )
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/referencegrants")
@@ -1625,7 +1599,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .map { resp =>
             if (resp.status == 200) {
               filterLabels(
-                (resp.json \ "items").as[JsArray].value.map(item => KubernetesBackendTLSPolicy(item)).toSeq
+                (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesBackendTLSPolicy(item)).toSeq
               )
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("gateway.networking.k8s.io/backendtlspolicies")
@@ -1656,7 +1630,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              filterLabels((resp.json \ "items").as[JsArray].value.map(item => KubernetesPlugin(item)).toSeq)
+              filterLabels((resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesPlugin(item)).toSeq)
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("proxy.otoroshi.io/plugins")
               resp.ignore()
@@ -1686,7 +1660,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           .get()
           .map { resp =>
             if (resp.status == 200) {
-              (resp.json \ "items").as[JsArray].value.map(item => KubernetesEndpointSlice(item)).toSeq
+              (resp.json \ "items").as[JsArray].value.toSeq.map(item => KubernetesEndpointSlice(item)).toSeq
             } else if (resp.status == 403) {
               KubernetesClientNotifications.registerForbiddenEntities("discovery.k8s.io/endpointslices")
               resp.ignore()

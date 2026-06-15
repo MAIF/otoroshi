@@ -5,10 +5,10 @@ import { FeedbackButton } from '../RouteDesigner/FeedbackButton';
 import InfoCollapse from '../../components/InfoCollapse';
 import { Row } from '../../components/Row';
 import { useDraftOfAPI } from './hooks';
-import { DraftOnly, VersionBadge } from './DraftOnly';
+import { VersionBadge, EditInDraftButton } from './DraftOnly';
 
 export function APIGateway(props) {
-  const { item, updateItem } = useDraftOfAPI();
+  const { item, updateItem, isDraft } = useDraftOfAPI();
 
   const [state, setState] = useState();
 
@@ -88,8 +88,8 @@ export function APIGateway(props) {
     <div className="page">
       <PageTitle title="API Gateway" {...props} />
 
-      <DraftOnly>
-        <div className="displayGroupBtn">
+      <div className="displayGroupBtn">
+        {isDraft ? (
           <FeedbackButton
             type="success"
             onPress={() =>
@@ -104,11 +104,14 @@ export function APIGateway(props) {
               </div>
             }
           />
-        </div>
-      </DraftOnly>
+        ) : (
+          <EditInDraftButton />
+        )}
+      </div>
 
       <div className="actions-page mt-3">
         <NgForm
+          readOnly={!isDraft}
           value={state}
           onChange={setState}
           schema={schema}

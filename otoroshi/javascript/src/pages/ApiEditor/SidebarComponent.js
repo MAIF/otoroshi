@@ -6,30 +6,20 @@ import Sidebar from './Sidebar';
 import { signalVersion } from './VersionSignal';
 
 function SidebarWithVersion({ params, state }) {
-  const queryParams = new URLSearchParams(window.location.search);
   const queryVersion =
     state === 'staging'
       ? 'staging'
-      : queryParams.get('version')
-        ? queryParams.get('version')
-        : 'Published';
+      : new URLSearchParams(window.location.search).get('version') || 'Published';
+
+  if (signalVersion.peek() !== queryVersion) {
+    signalVersion.value = queryVersion;
+  }
 
   useEffect(() => {
-    if (queryVersion) {
-      updateQueryParams(queryVersion);
-      updateSignal(queryVersion);
-    }
-  }, [queryVersion]);
-
-  const updateSignal = (version) => {
-    signalVersion.value = version;
-  };
-
-  const updateQueryParams = (version) => {
     const queryParams = new URLSearchParams(window.location.search);
-    queryParams.set('version', version);
+    queryParams.set('version', queryVersion);
     history.replaceState(null, null, '?' + queryParams.toString());
-  };
+  }, [queryVersion]);
 
   return <Sidebar params={params} />;
 }

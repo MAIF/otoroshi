@@ -31,8 +31,9 @@ import scala.util.{Failure, Success, Try}
 object BodyHelper {
   def extractBodyFrom(doc: JsValue): ByteString = extractBodyFromOpt(doc).getOrElse(ByteString.empty)
   def extractBodyFromOpt(doc: JsValue): Option[ByteString] = {
-    val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
-    val bodyBase64  = doc.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
+    val bodyAsBytes = doc.select("body_bytes").asOpt[Array[Byte]].filterNot(_.isEmpty).map(bytes => ByteString(bytes))
+    val bodyBase64  =
+      doc.select("body_base64").asOpt[String].filterNot(_.trim.isEmpty).map(str => ByteString(str).decodeBase64)
 
     val bodyJson = doc
       .select("body_json")
@@ -46,6 +47,7 @@ object BodyHelper {
       .select("body_str")
       .asOpt[String]
       .orElse(doc.select("body").asOpt[String])
+      .filterNot(_.trim.isEmpty)
       .map(str => ByteString(str))
     bodyStr
       .orElse(bodyJson)
@@ -59,7 +61,7 @@ object AttrsHelper {
   def updateAttrs(attrs: TypedMap, from: JsValue): Unit = try {
     from.select("attrs").asOpt[JsObject].foreach { attrsJson =>
       val setAttrs   = attrsJson.select("set").asOpt[JsObject].getOrElse(Json.obj())
-      val delAttrs   = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val delAttrs   = attrsJson.select("del").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       val clearAttrs = attrsJson.select("clear").asOpt[Boolean].getOrElse(false)
       if (clearAttrs) {
         attrs.clear()
@@ -467,7 +469,7 @@ class WasmRequestTransformer extends NgRequestTransformer {
                 if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                   val status      = response.select("status").asOpt[Int].getOrElse(500)
                   val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty).toSeq
                   val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
                   val body        = BodyHelper.extractBodyFrom(response)
                   Left(
@@ -557,7 +559,7 @@ class WasmResponseTransformer extends NgRequestTransformer {
                 if (response.select("error").asOpt[Boolean].getOrElse(false)) {
                   val status      = response.select("status").asOpt[Int].getOrElse(500)
                   val headers     = (response \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
-                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty)
+                  val cookies     = WasmUtils.convertJsonPlayCookies(response).getOrElse(Seq.empty).toSeq
                   val contentType = headers.getIgnoreCase("Content-Type").getOrElse("application/octet-stream")
                   val body        = BodyHelper.extractBodyFrom(response)
                   Left(
@@ -729,7 +731,7 @@ class WasmRequestHandler extends RequestHandler {
       .select(configRoot.get)
       .asOpt[JsObject]
       .map(v => v.value.keys.toSeq)
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 
   private def requestToWasmJson(

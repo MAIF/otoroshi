@@ -23,10 +23,12 @@ export const SendMailFunction = {
       props: { description: 'The email subject' },
     },
     html: {
-      type: 'code',
+      type: 'any',
       label: 'HTML',
       props: {
+        language: 'html',
         editorOnly: true,
+        height: 300,
         description: 'The email HTML content',
       },
     },
@@ -40,6 +42,8 @@ export const SendMailFunction = {
             mailjet: MAILERS_FORM.mailjetFormFlow,
             mailgun: MAILERS_FORM.mailgunFormFlow,
             sendgrid: MAILERS_FORM.sendgridFormFlow,
+            scaleway: MAILERS_FORM.scalewayFormFlow,
+            mailpace: MAILERS_FORM.mailpaceFormFlow,
             generic: MAILERS_FORM.genericFormFlow,
           }[kind] || [];
 
@@ -56,6 +60,8 @@ export const SendMailFunction = {
                       { label: 'Mailjet', value: 'mailjet' },
                       { label: 'Mailgun', value: 'mailgun' },
                       { label: 'SendGrid', value: 'sendgrid' },
+                      { label: 'Scaleway TEM', value: 'scaleway' },
+                      { label: 'MailPace', value: 'mailpace' },
                       { label: 'Generic', value: 'generic' },
                     ],
                   },
@@ -64,6 +70,8 @@ export const SendMailFunction = {
                   mailjet: MAILERS_FORM.mailjetFormSchema,
                   mailgun: MAILERS_FORM.mailgunFormSchema,
                   sendgrid: MAILERS_FORM.sendgridFormSchema,
+                  scaleway: MAILERS_FORM.scalewayFormSchema,
+                  mailpace: MAILERS_FORM.mailpaceFormSchema,
                   generic: MAILERS_FORM.genericFormSchema,
                 }[kind],
               }}

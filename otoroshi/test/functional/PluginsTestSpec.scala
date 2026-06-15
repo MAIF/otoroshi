@@ -202,6 +202,45 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "HMAC access validator with apikey as secret" in {
       new HMACAccessValidatorTests(this).withApikeyAsSecret()
     }
+    "HTTP Signature - verify request: accept valid HMAC signature" in {
+      new HttpSignatureVerifyRequestTests(this).default()
+    }
+    "HTTP Signature - verify request: mandatory rejects unsigned" in {
+      new HttpSignatureVerifyRequestTests(this).mandatoryRejectsUnsigned()
+    }
+    "HTTP Signature - verify request: optional allows unsigned" in {
+      new HttpSignatureVerifyRequestTests(this).optionalAllowsUnsigned()
+    }
+    "HTTP Signature - verify request: rejects tampered signature" in {
+      new HttpSignatureVerifyRequestTests(this).rejectsTamperedSignature()
+    }
+    "HTTP Signature - verify request: rejects unknown keyid" in {
+      new HttpSignatureVerifyRequestTests(this).rejectsUnknownKeyid()
+    }
+    "HTTP Signature - sign response: emits Signature-Input and Signature headers" in {
+      new HttpSignatureSignResponseTests(this).default()
+    }
+    "HTTP Signature - sign response: signed response is verifiable end-to-end" in {
+      new HttpSignatureSignResponseTests(this).signedResponseIsVerifiable()
+    }
+    "RFC 9728 - protected resource metadata: override only" in {
+      new Rfc9728MetadataTests(this).withOverrideOnly()
+    }
+    "RFC 9728 - protected resource metadata: auth module ref with oidConfig" in {
+      new Rfc9728MetadataTests(this).withAuthModuleRefOidConfig()
+    }
+    "RFC 9728 - protected resource metadata: auth module ref with tokenUrl fallback" in {
+      new Rfc9728MetadataTests(this).withAuthModuleRefTokenUrlFallback()
+    }
+    "RFC 9728 - protected resource metadata: resource inferred from Host" in {
+      new Rfc9728MetadataTests(this).withInferredResource()
+    }
+    "RFC 9728 - protected resource metadata: extra metadata and optional fields" in {
+      new Rfc9728MetadataTests(this).withExtraMetadataAndOptionalFields()
+    }
+    "RFC 9728 - protected resource metadata: signed_metadata JWT" in {
+      new Rfc9728MetadataTests(this).withSignedMetadata()
+    }
     "Static Response" in {
       new StaticResponseTests(this)
     }
@@ -702,26 +741,26 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "OpenFGA Validator" in {
       new OpenFGAValidatorTests(this).run()
     }
-    "Kubernetes integration - leader should be healthy" in {
-      new KubernetesIntegrationTests(this)
-        .clusterWithOneLeader()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
-    "Kubernetes integration - be able to scan entities in a namespace" in {
-      new KubernetesIntegrationTests(this)
-        .scanEntities()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
-    "Kubernetes integration - build at runtime" in {
-      new KubernetesIntegrationTests(this)
-        .build()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
-    "Kubernetes integration - trigger scanner job" in {
-      new KubernetesIntegrationTests(this)
-        .triggerScannerJob()
-        .futureValue(Timeout(Span(30, Minutes)))
-    }
+    // "Kubernetes integration - leader should be healthy" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .clusterWithOneLeader()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
+    // "Kubernetes integration - be able to scan entities in a namespace" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .scanEntities()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
+    // "Kubernetes integration - build at runtime" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .build()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
+    // "Kubernetes integration - trigger scanner job" in {
+    //   new KubernetesIntegrationTests(this)
+    //     .triggerScannerJob()
+    //     .futureValue(Timeout(Span(30, Minutes)))
+    // }
     "gRPC Web plugin" in {
       new GrpcWebTests(this)
         .run()

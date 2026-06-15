@@ -54,8 +54,8 @@ object NgAllowedMethodsConfig {
   val format: Format[NgAllowedMethodsConfig] = new Format[NgAllowedMethodsConfig] {
     override def reads(json: JsValue): JsResult[NgAllowedMethodsConfig] = Try {
       NgAllowedMethodsConfig(
-        allowed = json.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase),
-        forbidden = json.select("forbidden").asOpt[Seq[String]].getOrElse(Seq.empty).map(_.toLowerCase)
+        allowed = json.select("allowed").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq.map(_.toLowerCase),
+        forbidden = json.select("forbidden").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq.map(_.toLowerCase)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

@@ -304,7 +304,9 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
 
     await(2.seconds)
 
-    // POST to the route to trigger deploy
+    // POST to the route to trigger deploy. RemoteCatalogDeployMany reads the
+    // catalogs to deploy from the request body (an array of { id, args }),
+    // filtered by the plugin's catalog_refs config, and returns an array of reports.
     val resp = ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders("Host" -> "remote-catalog-trigger.oto.tools")
@@ -313,11 +315,13 @@ class RemoteCatalogsTests(parent: PluginsTestSpec) {
 
     resp.status.mustBe(200)
 
-    val respJson = resp.json
-    val pluginCreated = (respJson \ "results")
+    val respJson      = resp.json
+    val pluginCreated = respJson
       .asOpt[Seq[JsObject]]
       .getOrElse(Seq.empty)
-      .map(rr => (rr \ "created").asOpt[Int].getOrElse(0))
+      .flatMap(r =>
+        (r \ "results").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(rr => (rr \ "created").asOpt[Int].getOrElse(0))
+      )
       .sum
     (pluginCreated > 0).mustBe(true)
 

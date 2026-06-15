@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { WorkflowFunctions } from './WorkflowFunctions';
 import { WorkflowFunctionsDesigner } from './WorkflowFunctionsDesigner';
 import { WorkflowNewFunction } from './WorkflowNewFunction';
+import { MonacoInput } from '../../components/inputs';
 
 const extensionId = 'otoroshi.extensions.Workflows';
 
@@ -72,8 +73,8 @@ export function setupWorkflowsExtension(registerExtension) {
       render() {
         return (
           <>
-            <CodeInput
-              mode="json"
+            <MonacoInput
+              language="json"
               label="Input"
               height="150px"
               value={this.state.input}
@@ -103,8 +104,8 @@ export function setupWorkflowsExtension(registerExtension) {
               </div>
             </div>
             {(this.state.result || this.state.error) && (
-              <CodeInput
-                mode="json"
+              <MonacoInput
+                language="json"
                 label="Result"
                 height="150px"
                 value={JSON.stringify(
@@ -118,19 +119,19 @@ export function setupWorkflowsExtension(registerExtension) {
               />
             )}
             {this.state.run && (
-              <CodeInput
-                mode="json"
+              <MonacoInput
+                language="json"
                 label="Memory"
                 height="400px"
                 value={JSON.stringify(this.state.run.memory, null, 2)}
               />
             )}
             {this.state.run && (
-              <CodeInput
-                mode="json"
+              <MonacoInput
+                language="json"
                 label="Log"
                 height="400px"
-                value={JSON.stringify(this.state.run, null, 2)}
+                value={JSON.stringify(this.state.run.run, null, 2)}
               />
             )}
           </>
@@ -162,14 +163,14 @@ export function setupWorkflowsExtension(registerExtension) {
           props: { label: 'Tags' },
         },
         config: {
-          type: 'jsonobjectcode',
+          type: 'monaco-json',
           props: {
             label: 'Workflow',
             height: '40vh',
           },
         },
         orphans: {
-          type: 'jsonobjectcode',
+          type: 'monaco-json',
           props: {
             label: 'Orphans',
             height: '40vh',
@@ -238,21 +239,24 @@ export function setupWorkflowsExtension(registerExtension) {
           },
         },
         'job.config': {
-          type: 'jsonobjectcode',
+          type: 'monaco-json',
           props: {
             label: 'Workflow input',
+            height: 150,
           },
         },
         functions: {
-          type: 'jsonobjectcode',
+          type: 'monaco-json',
           props: {
             label: 'Functions',
+            height: 150,
           },
         },
         notes: {
-          type: 'jsonobjectcode',
+          type: 'monaco-json',
           props: {
             label: 'Notes',
+            height: 150,
           },
         },
       };
@@ -441,9 +445,10 @@ export function setupWorkflowsExtension(registerExtension) {
         return (
           <>
             <div className="modal-body">
-              <CodeInput
+              <MonacoInput
                 label="Input data"
-                mode="json"
+                language="json"
+                height={200}
                 value={this.state.data}
                 onChange={(e) => {
                   this.setState({ data: e });
@@ -473,9 +478,10 @@ export function setupWorkflowsExtension(registerExtension) {
                 </div>
               )}
               {this.state.result && (
-                <CodeInput
+                <MonacoInput
                   label="result"
-                  mode="json"
+                  language="json"
+                  height={200}
                   value={JSON.stringify(this.state.result, null, 2)}
                   onChange={(e) => ({})}
                 />
@@ -613,6 +619,7 @@ export function setupWorkflowsExtension(registerExtension) {
               link: '/extensions/workflows',
               display: () => true,
               icon: () => 'fa-cubes',
+              tag: <span className="badge bg-xs bg-warning">ALPHA</span>,
             },
           ],
         },

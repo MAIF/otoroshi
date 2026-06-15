@@ -142,19 +142,19 @@ object Xml {
         val value      = fields.toList.find(p => p._1 == "$")
 
         if (value.isEmpty)
-          XmlNode(name, children, getAttributes(attributes))
+          new XmlNode(name, children, getAttributes(attributes))
         else
-          XmlElemWithAttributes(name, value.get._2.toString(), getAttributes(attributes))
+          new XmlElemWithAttributes(name, value.get._2.toString(), getAttributes(attributes))
       case JsArray(xs)      =>
-        XmlNode(name, xs.flatMap { v => toXml(v) }, xml.Null)
+        new XmlNode(name, xs.flatMap { v => toXml(v) }, xml.Null)
       case JsNumber(v)      =>
-        XmlElem(name, v.toString())
+        new XmlElem(name, v.toString())
       case JsBoolean(v)     =>
-        XmlElem(name, v.toString)
+        new XmlElem(name, v.toString)
       case JsString(v)      =>
-        XmlElem(name, v)
+        new XmlElem(name, v)
       case JsNull           =>
-        XmlElem(name, "null")
+        new XmlElem(name, "null")
     }
 
     json match {

@@ -1008,7 +1008,7 @@ object OpenApi {
             val filteredPaths    = JsObject(paths.value.filter(_._1.startsWith(s"/apis/$group")))
             val needTags         = filteredPaths.values.flatMap { path =>
               path.asObject.values.flatMap { endpoint =>
-                endpoint.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+                endpoint.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
               }
             }.toSet
             val filteredTags     = JsArray(

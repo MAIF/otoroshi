@@ -120,8 +120,8 @@ class RedisCPDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientPool                  = RedisClientPool(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisClientPool = RedisClientPool(
       members
     )(using redisActorSystem)
     cli
@@ -159,8 +159,8 @@ class RedisMCPDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientMutablePool           = RedisClientMutablePool(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisClientMutablePool = RedisClientMutablePool(
       members
     )(using redisActorSystem)
     cli
@@ -219,8 +219,8 @@ class RedisLFDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisClientMasterSlaves          = RedisClientMasterSlaves(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
       master,
       slaves
     )(using redisActorSystem)
@@ -304,7 +304,7 @@ class RedisSentinelLFDataStores(
           .map(RedisMember.fromList)
           .map(_.map(m => (m.host, m.port)))
       }
-      .getOrElse(Seq.empty[(String, Int)])
+      .getOrElse(Seq.empty[(String, Int)]).toSeq
     val master                                        = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.lf.master").get
     val cli: SentinelMonitoredRedisClientMasterSlaves = SentinelMonitoredRedisClientMasterSlaves(
       members,
@@ -346,8 +346,8 @@ class RedisClusterDataStores(
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
-      .getOrElse(Seq.empty[RedisServer])
-    val cli: RedisCluster                     = RedisCluster(
+      .getOrElse(Seq.empty[RedisServer]).toSeq
+    val cli: RedisCluster = RedisCluster(
       members
     )(using redisActorSystem)
     cli
@@ -490,7 +490,7 @@ abstract class AbstractRedisDataStores(
   private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
-  private lazy val _userAlertDataStore                                                =
+  private lazy val _userAlertDataStore                                               =
     new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 

@@ -36,10 +36,10 @@ object Plugins {
           Plugins(
             refs = (json \ "refs")
               .asOpt[Seq[String]]
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
-            excluded = (json \ "excluded").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            excluded = (json \ "excluded").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>

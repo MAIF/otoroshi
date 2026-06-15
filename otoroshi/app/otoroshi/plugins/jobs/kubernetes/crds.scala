@@ -1561,7 +1561,7 @@ object KubernetesCRDsJob {
         env.logger.warn(s"##   version of Otoroshi will remove support for Service Descriptors   ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"##   for more information about that, please read                      ##")
-        env.logger.warn(s"##   https://maif.github.io/otoroshi/manual/topics/deprecating-sd.html ##")
+        env.logger.warn(s"##   https://www.otoroshi.io/docs/topics/deprecating-sd                ##")
         env.logger.warn(s"##                                                                     ##")
         env.logger.warn(s"-------------------------------------------------------------------------")
         env.logger.warn("")
@@ -2098,20 +2098,20 @@ object KubernetesCRDsJob {
             val volumeSecrets       = (deployment.raw \ "spec" \ "template" \ "spec" \ "volumes")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter(item => (item \ "secret").isDefined)
               .map(item => (item \ "secret" \ "secretName").as[String])
 
             val envSecrets: Seq[String] = (deployment.raw \ "spec" \ "template" \ "spec" \ "containers")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.exists(v => (v \ "valueFrom" \ "secretKeyRef").isDefined)
               }
               .flatMap { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.map(v => (v \ "valueFrom" \ "secretKeyRef" \ "name").as[String])
               }
               .toSeq

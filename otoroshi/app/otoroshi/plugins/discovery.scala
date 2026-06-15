@@ -36,7 +36,7 @@ private object DiscoveryHeartbeatLegacy {
 }
 
 case class SelfRegistrationConfig(raw: JsValue) {
-  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val targetTemplate: JsObject        = raw.select("targetTemplate").asOpt[JsObject].getOrElse(Json.obj())
   lazy val registrationTtl: FiniteDuration =
     raw.select("registrationTtl").asOpt[Long].map(_.millis).getOrElse(60.seconds)

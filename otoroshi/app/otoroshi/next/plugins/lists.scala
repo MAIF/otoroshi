@@ -25,7 +25,7 @@ object NgGenericListConfig {
     override def reads(json: JsValue): JsResult[NgGenericListConfig] = Try {
       NgGenericListConfig(
         expression = json.select("expression").asOpt[String].filterNot(_.isBlank),
-        values = json.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
+        values = json.select("values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

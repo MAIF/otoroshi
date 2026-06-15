@@ -29,7 +29,7 @@ class MaintenanceModeTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.SERVICE_UNAVAILABLE
-  resp.body.contains("Service in maintenance mode") mustBe true
+  resp.body[String].contains("Service in maintenance mode") mustBe true
 
   deleteOtoroshiRoute(route).futureValue
 }

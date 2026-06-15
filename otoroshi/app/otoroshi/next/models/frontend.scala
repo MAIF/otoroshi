@@ -53,13 +53,13 @@ object NgFrontend {
           domains = optDomain
             .map(d => Seq(d))
             .orElse(obj.select("domains").asOpt[Seq[String]].map(_.map(NgDomainAndPath.apply)))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           stripPath = obj.select("strip_path").asOpt[Boolean].getOrElse(true),
           exact = obj.select("exact").asOpt[Boolean].getOrElse(false),
           headers = obj.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty),
           cookies = obj.select("cookies").asOpt[Map[String, String]].getOrElse(Map.empty),
           query = obj.select("query").asOpt[Map[String, String]].getOrElse(Map.empty),
-          methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+          methods = obj.select("methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
         )
     }
   }

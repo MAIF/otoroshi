@@ -1,0 +1,127 @@
+{{- $externalSvc := ternary .Values.cluster.workerExternalServiceName .Values.loadbalancer.name .Values.cluster.enabled -}}
+{{- $internalSvc := ternary .Values.cluster.leaderServiceName .Values.service.name .Values.cluster.enabled -}}
+{{- $lbType := include "otoroshi.loadBalancerType" . -}}
+Otoroshi {{ .Chart.AppVersion }} has been deployed to namespace "{{ .Release.Namespace }}".
+
+============================================================
+1. Accessing the admin UI
+============================================================
+{{- if eq $lbType "LoadBalancer" }}
+The external service "{{ $externalSvc }}" is of type LoadBalancer. Wait for an external IP:
+
+    kubectl -n {{ .Release.Namespace }} get svc {{ $externalSvc }} -w
+
+Once an EXTERNAL-IP appears, point the following DNS names at it (CNAME or A record):
+
+    otoroshi.{{ .Values.env.domain }}
+    otoroshi-api.{{ .Values.env.domain }}
+    privateapps.{{ .Values.env.domain }}
+
+Then open https://otoroshi.{{ .Values.env.domain }}/
+{{- else if eq $lbType "NodePort" }}
+The external service "{{ $externalSvc }}" is of type NodePort:
+
+    HTTP  → node:{{ .Values.loadbalancer.nodePort.http }}
+    HTTPS → node:{{ .Values.loadbalancer.nodePort.https }}
+
+Put your own loadbalancer (MetalLB, HAProxy, NGINX, …) in front of the cluster nodes.
+{{- else }}
+The external service "{{ $externalSvc }}" is of type ClusterIP — Otoroshi is not directly
+exposed outside the cluster. Either point your own Ingress / Gateway at this service, or
+use port-forwarding (see below).
+{{- end }}
+
+Or run a quick port-forward:
+
+    kubectl -n {{ .Release.Namespace }} port-forward svc/{{ $internalSvc }} 8080:{{ .Values.service.http }}
+
+then open http://otoroshi.{{ .Values.env.domain }}:8080/ (with /etc/hosts → 127.0.0.1 if needed).
+
+============================================================
+2. Initial admin credentials
+============================================================
+{{- if .Values.env.existingSecret }}
+Credentials are read from the user-provided Secret "{{ .Values.env.existingSecret }}" (keys: password, clientId, clientSecret, otoroshiSecret).
+{{- else }}
+{{- if not .Values.env.password }}
+The admin password was auto-generated on first install and stored in the Secret "{{ .Values.name }}-admin-secret".
+On subsequent `helm upgrade`s, the existing value is preserved (via Helm `lookup`).
+{{- else }}
+WARNING: env.password is set in values.yaml — anyone with read access to that file can see it.
+Prefer leaving env.password empty (auto-gen) or wiring env.existingSecret to a Secret you manage.
+{{- end }}
+
+Retrieve credentials:
+
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.password}' | base64 -d
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.clientId}' | base64 -d
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Values.name }}-admin-secret -o jsonpath='{.data.clientSecret}' | base64 -d
+{{- end }}
+{{- if and .Values.redis.deploy .Values.redis.auth.enabled }}
+
+The bundled Redis subchart (cloudpirates/redis) runs WITH authentication. The
+Secret "{{ .Release.Name }}-redis" holds both the password (`redis-password`
+key) and the full connection URL (`uri` key — `redis://default:<pwd>@<host>:6379`).
+Otoroshi is wired to consume the `uri` key directly via REDIS_URL — the Lettuce
+driver requires the password inside the URI, so a separate REDIS_PASSWORD env
+var would be ignored anyway.
+
+Read the password (e.g. for redis-cli):
+
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-redis -o jsonpath='{.data.redis-password}' | base64 -d
+
+Read the full connection URL:
+
+    kubectl -n {{ .Release.Namespace }} get secret {{ .Release.Name }}-redis -o jsonpath='{.data.uri}' | base64 -d
+{{- end }}
+
+============================================================
+3. Upgrading CRDs
+============================================================
+Helm does NOT upgrade resources under `crds/` on `helm upgrade` (by design — Helm v3 limitation).
+When upgrading Otoroshi, re-apply the CRDs manually:
+
+    # From this chart's source tree:
+    kubectl apply -f kubernetes/helm/otoroshi/crds/
+
+    # Or via otoroshictl (recommended — includes extensions):
+    otoroshictl resources crds | kubectl apply -f -
+
+============================================================
+4. Bundled Certificate (eventual consistency)
+============================================================
+The chart applies an Otoroshi `Certificate` CR named "{{ .Values.service.name }}-certificate".
+Kubernetes accepts it immediately (the CRD ships in this chart), but Otoroshi only materializes
+the certificate once its Kubernetes controller job runs after pod startup (≤ 60s by default).
+{{- if .Values.gatewayApi.enabled }}
+
+============================================================
+5. Kubernetes Gateway API
+============================================================
+Gateway API support is enabled (`gatewayApi.enabled=true`).
+
+Install the upstream Gateway API CRDs on the cluster if you haven't already:
+
+    kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+
+Otoroshi will reconcile `GatewayClass` / `Gateway` / `HTTPRoute` / `GRPCRoute` resources whose
+`controllerName` matches "{{ .Values.gatewayApi.controllerName }}".
+{{- end }}
+{{- if and .Values.cluster .Values.cluster.enabled }}
+
+============================================================
+6. Cluster mode (Leader / Worker)
+============================================================
+Otoroshi is running in cluster mode:
+- Leader deployment: {{ .Values.cluster.leader.name }} ({{ .Values.cluster.leader.replicas }} replicas)
+- Worker deployment: {{ .Values.cluster.worker.name }} ({{ .Values.cluster.worker.replicas }} replicas)
+
+Workers connect to the leader API service at:
+    https://{{ .Values.cluster.leaderApiServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.https }}
+{{- end }}
+
+============================================================
+More
+============================================================
+Docs:  https://maif.github.io/otoroshi/manual/deploy/kubernetes
+Issues: https://github.com/MAIF/otoroshi/issues
