@@ -1848,7 +1848,6 @@ object ApiKeyHelper {
         var location                                        = ApikeyLocation(ApikeyLocationKind.Header, "--")
         val authByOtoBearerToken: Option[ApikeyTuple]       =
           OtoroshiBearerToken.extractTokenFromRequest(req, constraints, attrs).map { bearer =>
-            println("there")
             val clientId = OtoroshiBearerToken.extractClientId(bearer)
             ApikeyTuple(
               clientId = clientId,
