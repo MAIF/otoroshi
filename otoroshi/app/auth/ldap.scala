@@ -1,7 +1,7 @@
 package otoroshi.auth
 
 import java.util
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
 import org.apache.pulsar.client.api.PulsarClientException.AuthenticationException
 import otoroshi.auth.LdapAuthModuleConfig.fromJson
@@ -48,7 +48,7 @@ object LdapAuthUser {
           "metadata"              -> o.metadata,
           "ldapProfile"           -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
           "userRights"            -> o.userRights.map(UserRights.format.writes),
-          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json)))
+          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
         )
       override def reads(json: JsValue)    =
         Try {
@@ -64,13 +64,13 @@ object LdapAuthUser {
                 .asOpt[JsObject]
                 .map { obj =>
                   obj.value.mapValues { arr =>
-                    arr.asArray.value
+                    arr.asArray.value.toSeq
                       .map { item =>
                         JsonValidator.format.reads(item)
                       }
                       .collect { case JsSuccess(v, _) =>
                         v
-                      }
+                      }.toSeq
                   }.toMap
                 }
                 .getOrElse(Map.empty[String, Seq[JsonValidator]])
@@ -122,7 +122,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
           serverUrls = (json \ "serverUrl").asOpt[String] match {
             case Some(url) => Seq(url)
-            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            case None      => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           },
           searchBase = (json \ "searchBase").as[String],
           userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
@@ -132,10 +132,10 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
             case None         =>
               (json \ "groupFilters")
                 .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
-                .getOrElse(Seq.empty[GroupFilter])
+                .getOrElse(Seq.empty[GroupFilter]).toSeq
           },
-          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
@@ -144,45 +144,45 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
-          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty),
-          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty),
+          extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+          extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray))
+            .map(_.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.mapValues(GroupRights.reads).collect { case (key, Some(v)) =>
+            .map(_.mapValues(GroupRights.reads).toMap.collect { case (key, Some(v)) =>
               (key, v)
             })
             .getOrElse(Map.empty),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           remoteValidators = (json \ "remoteValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           adminEntityValidatorsOverride = json
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
               o.value.mapValues { obj =>
                 obj.asObject.value.mapValues { arr =>
-                  arr.asArray.value
+                  arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
                     }
                     .collect { case JsSuccess(v, _) =>
                       v
-                    }
+                    }.toSeq
                 }.toMap
               }.toMap
             }
@@ -210,7 +210,7 @@ object GroupRights {
         JsSuccess(
           GroupRights(
             userRights = (json \ "rights").asOpt[UserRights](UserRights.format).getOrElse(UserRights(Seq.empty)),
-            users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -327,14 +327,14 @@ case class LdapAuthModuleConfig(
       "extractProfile"                -> extractProfile,
       "extractProfileFilter"          -> extractProfileFilter,
       "extractProfileFilterNot"       -> extractProfileFilterNot,
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json)),
+      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json).toMap),
       "dataOverride"                  -> JsObject(dataOverride),
       "allowedUsers"                  -> allowedUsers,
       "deniedUsers"                   -> deniedUsers,
-      "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes)),
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues { o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))))
-      })
+      "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes).toMap),
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
+        JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
+      }.toMap)
     )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)

@@ -8,7 +8,7 @@ import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 object WorkflowOperatorsInitializer {
@@ -123,7 +123,7 @@ class ContainsIgnoreCaseOperator extends WorkflowOperator {
         case v @ JsNumber(_)  => Seq(v.toString())
         case v @ JsBoolean(_) => Seq(v.toString())
         case JsArray(values)  =>
-          values.collect {
+          values.toSeq.collect {
             case JsString(str)    => str
             case v @ JsNumber(_)  => v.toString()
             case v @ JsBoolean(_) => v.toString()
@@ -185,7 +185,7 @@ class FirstTruthyOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val values = opts.select("values").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
+    val values = opts.select("values").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
     values.find(v => IsTruthyOperator.isTruthy(v)).getOrElse(JsNull)
   }
 }
@@ -398,8 +398,8 @@ class MergeObjectsOperator extends WorkflowOperator {
         val path = opts.select("path").asOptString
         wfr.memory.get(name) match {
           case None                          => Seq.empty
-          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty)
-          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          case Some(value) if path.isEmpty   => value.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
+          case Some(value) if path.isDefined => value.at(path.get).asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
         }
       }
     }
@@ -2428,7 +2428,7 @@ class ContainsOperator extends WorkflowOperator {
         case JsArray(values)  => values
         case _                => Seq.empty[JsValue]
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val container: JsValue   = opts.select("container").asOpt[JsValue] match {
       case Some(v) => v
       case None    => {
@@ -2759,7 +2759,7 @@ class StrConcatOperator extends WorkflowOperator {
     )
   )
   override def process(opts: JsValue, wfr: WorkflowRun, env: Env): JsValue = {
-    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val values    = opts.select("values").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val separator = opts.select("separator").asOptString.getOrElse(" ")
     values.mkString(separator).json
   }
@@ -2875,7 +2875,7 @@ class MapDelOperator extends WorkflowOperator {
       .map(s => Seq(s))
       .orElse(opts.select("key").asOpt[Seq[String]])
       .orElse(opts.select("keys").asOpt[Seq[String]])
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val value: JsValue    = opts.select("map").asOpt[JsObject] match {
       case Some(v) => v
       case None    => {
@@ -3154,7 +3154,7 @@ class ArrayDelOperator extends WorkflowOperator {
       }
     }
     value match {
-      case arr @ JsArray(_) => JsArray(arr.value.zipWithIndex.filterNot(_._2 == idx).map(_._1))
+      case arr @ JsArray(_) => JsArray(arr.value.toSeq.zipWithIndex.filterNot(_._2 == idx).map(_._1))
       case _                => JsNull
     }
   }

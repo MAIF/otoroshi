@@ -11,12 +11,12 @@ import org.apache.kafka.common.serialization.{
   StringDeserializer,
   StringSerializer
 }
-import akka.Done
-import akka.actor.{Actor, ActorSystem, Props}
-import akka.http.scaladsl.util.FastFuture._
-import akka.http.scaladsl.util.FastFuture
-import akka.kafka.{ConsumerSettings, ProducerSettings}
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.{Actor, ActorSystem, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.kafka.{ConsumerSettings, ProducerSettings}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.common.config.{SaslConfigs, SslConfigs}
 import play.api.libs.json._
@@ -54,7 +54,7 @@ case class SaslConfig(
 )
 
 object SaslConfig {
-  implicit val format = new Format[SaslConfig] { // Json.format[KafkaConfig]
+  implicit val format: play.api.libs.json.Format[SaslConfig] = new Format[SaslConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: SaslConfig): JsValue =
       Json.obj(
@@ -81,7 +81,7 @@ object SaslConfig {
 
 object KafkaConfig {
 
-  implicit val format = new Format[KafkaConfig] { // Json.format[KafkaConfig]
+  implicit val format: play.api.libs.json.Format[KafkaConfig] = new Format[KafkaConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: KafkaConfig): JsValue =
       Json.obj(
@@ -101,7 +101,7 @@ object KafkaConfig {
     override def reads(json: JsValue): JsResult[KafkaConfig] =
       Try {
         KafkaConfig(
-          servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           keyPass = (json \ "keyPass").asOpt[String],
           keystore = (json \ "keystore").asOpt[String],
           truststore = (json \ "truststore").asOpt[String],
@@ -254,7 +254,7 @@ class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfi
 
 class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends Actor {
 
-  implicit val ec = env.analyticsExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
   var config: Option[KafkaConfig]               = None
   var eventProducer: Option[KafkaEventProducer] = None
@@ -302,7 +302,7 @@ object KafkaWrapperActor {
 
 class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
 
-  implicit val ec = _env.analyticsExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = _env.analyticsExecutionContext
 
   lazy val logger = play.api.Logger("otoroshi-kafka-connector")
 

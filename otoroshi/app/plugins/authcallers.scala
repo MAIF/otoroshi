@@ -1,8 +1,8 @@
 package otoroshi.plugins.authcallers
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.env.Env
@@ -189,7 +189,7 @@ class OAuth2Caller extends RequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(body.mapValues(JsString.apply))
+            val jsonBody         = JsObject(body.mapValues(JsString.apply).toMap)
             val token            = body.getOrElse("access_token", "--")
             val expires_in: Long = body.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime

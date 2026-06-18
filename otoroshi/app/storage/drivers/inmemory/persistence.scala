@@ -1,15 +1,15 @@
 package otoroshi.storage.drivers.inmemory
 
-import akka.NotUsed
-import akka.actor.Cancellable
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.alpakka.s3.headers.CannedAcl
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.{Framing, Keep, Sink, Source}
-import akka.stream.{Attributes, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.Cancellable
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.{Framing, Keep, Sink, Source}
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginConfig
@@ -124,12 +124,12 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -139,12 +139,12 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -199,8 +199,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using HttpDb DataStores (loading from '$stateUrl')"
 
   override def onStart(): Future[Unit] = {
-    implicit val ec  = ds.actorSystem.dispatcher
-    implicit val mat = ds.materializer
+    implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+    implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
     readStateFromHttp().map { _ =>
       cancelRef.set(
         Source
@@ -222,8 +222,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def readStateFromHttp(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug("Reading state from http db ...")
-    implicit val ec  = ds.actorSystem.dispatcher
-    implicit val mat = ds.materializer
+    implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+    implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
     val store        = new UnboundedConcurrentHashMap[String, Any]()
     val expirations  = new UnboundedConcurrentHashMap[String, Long]()
     val headers      = stateHeaders.toSeq ++ Seq(
@@ -269,12 +269,12 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -284,12 +284,12 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {
@@ -302,8 +302,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   }
 
   private def writeStateToHttp(): Future[Unit] = {
-    implicit val ec  = ds.actorSystem.dispatcher
-    implicit val mat = ds.materializer
+    implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+    implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
     val source       = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
       ByteString(Json.stringify(item) + "\n")
     }
@@ -407,8 +407,8 @@ object S3Configuration {
 
 class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
-  private implicit val ec  = ds.actorSystem.dispatcher
-  private implicit val mat = ds.materializer
+  private implicit val ec: scala.concurrent.ExecutionContext = ds.actorSystem.dispatcher
+  private implicit val mat: org.apache.pekko.stream.Materializer = ds.materializer
 
   private val logger    = Logger("otoroshi-s3-datastores")
   private val cancelRef = new AtomicReference[Cancellable]()
@@ -527,12 +527,12 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       case "string"         => Some(ByteString(value.as[String]))
       case "set" if modern  => {
         val list = scala.collection.mutable.HashSet.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "list" if modern => {
-        val list = scala.collection.mutable.MutableList.empty[ByteString]
-        list.++=(value.as[JsArray].value.map(a => ByteString(a.as[String])))
+        val list = scala.collection.mutable.ListBuffer.empty[ByteString]
+        list.++=(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])))
         Some(list)
       }
       case "hash" if modern => {
@@ -542,12 +542,12 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       }
       case "set"            => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "list"           => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
-        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        list.addAll(value.as[JsArray].value.toSeq.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
       case "hash"           => {

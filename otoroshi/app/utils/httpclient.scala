@@ -1,22 +1,22 @@
 package otoroshi.utils.http
 
-import akka.Done
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
-import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
-import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
-import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
+import org.apache.pekko.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
+import org.apache.pekko.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.akka.AkkaSSLConfig
+import com.typesafe.sslconfig.pekko.PekkoSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
 import otoroshi.models.{ClientConfig, Target}
@@ -158,11 +158,11 @@ object MtlsConfig {
             .asOpt[Seq[String]]
             .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           trustedCerts = (json \ "trustedCerts")
             .asOpt[Seq[String]]
             .map(_.filter(_.trim.nonEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           mtls = (json \ "mtls").asOpt[Boolean].orElse((json \ "tls").asOpt[Boolean]).getOrElse(false),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           trustAll = (json \ "trustAll").asOpt[Boolean].getOrElse(false)
@@ -679,7 +679,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
-  private[utils] val akkaSSLConfig: AkkaSSLConfig   = AkkaSSLConfig(system).withSettings(
+  private[utils] val akkaSSLConfig: PekkoSSLConfig   = PekkoSSLConfig(system).withSettings(
     config.ssl
       // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
@@ -689,7 +689,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       )
       .withDefault(false)
   )
-  private[utils] val akkaSSLLooseConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
+  private[utils] val akkaSSLLooseConfig: PekkoSSLConfig = PekkoSSLConfig(system).withSettings(
     config.ssl
       // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
@@ -735,7 +735,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
     // TODO: fix warning with
-    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/AkkaSSLConfig.scala#L83-L109
+    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/PekkoSSLConfig.scala#L83-L109
     // https://github.com/lightbend/ssl-config/blob/master/ssl-config-core/src/main/scala/com/typesafe/sslconfig/ssl/SSLContextBuilder.scala#L99-L127
     clientCerts match {
       case certs if (clientCerts ++ trustedCerts).isEmpty  => {
@@ -943,7 +943,7 @@ case class AkkWsClientStreamedResponse(
 ) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers                        = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers                        = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     )
     val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
@@ -1017,7 +1017,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
-    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
+    val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     ) /*++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
@@ -1119,7 +1119,7 @@ case class AkkaWsClientRequest(
 )(implicit materializer: Materializer)
     extends WSRequest {
 
-  implicit val ec = client.ec
+  implicit val ec: scala.concurrent.ExecutionContext = client.ec
 
   override type Self = WSRequest
 
@@ -1135,7 +1135,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort
-                // host = akka.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
+                // host = org.apache.pekko.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
               )
             )
           }
@@ -1144,7 +1144,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(addr)
+                host = org.apache.pekko.http.scaladsl.model.Uri.Host(addr)
               )
             )
           }
@@ -1152,7 +1152,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress))
+                host = org.apache.pekko.http.scaladsl.model.Uri.Host(InetAddress.getByName(ipAddress))
               )
             )
           }
@@ -1167,13 +1167,13 @@ case class AkkaWsClientRequest(
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
       .filter(p =>
-        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
+        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty).toSeq)
       )
       .map { proxySettings =>
         val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
         val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
           case (Some(principal), Some(password)) => {
-            val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+            val auth = org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
             //val realmBuilder = new Realm.Builder(proxySettings.principal.orNull, proxySettings.password.orNull)
             //val scheme: Realm.AuthScheme = proxySettings.protocol.getOrElse("http").toLowerCase(java.util.Locale.ENGLISH) match {
             //  case "http" | "https" => Realm.AuthScheme.BASIC
@@ -1254,6 +1254,8 @@ case class AkkaWsClientRequest(
     copy(body = evidence$1.transform(body))
 
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
 
   def stream(): Future[WSResponse] = {
     val certs: Seq[Cert]        = targetOpt
@@ -1484,7 +1486,7 @@ case class AkkaWsClientRequest(
 
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"

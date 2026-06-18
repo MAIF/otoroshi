@@ -1,9 +1,9 @@
 package otoroshi.next.proxy
 
-import akka.Done
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.cluster.{ClusterMode, MemberView, RelayRouting}
 import otoroshi.env.Env
@@ -54,7 +54,7 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
     val setCookie                      = resp.headers
       .get("Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
       .map(vs => vs.flatMap(v => Cookies.decodeSetCookieHeader(v)))
-      .getOrElse(Seq.empty[Cookie])
+      .getOrElse(Seq.empty[Cookie]).toSeq
     val headers: Seq[(String, String)] = resp.headers
       .filterNot(_._1 == "Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
       .filter(_._1.startsWith("Otoroshi-Relay-Routing-Response-Header-"))
@@ -77,7 +77,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       env: Env,
       report: NgExecutionReport
   ): Future[Either[NgProxyEngineError, Done]] = {
-    implicit val sched = env.otoroshiScheduler
+    implicit val sched: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     Retry.retry(
       times = env.clusterConfig.worker.retries,
       delay = env.clusterConfig.retryDelay,

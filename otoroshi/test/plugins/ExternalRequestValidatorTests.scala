@@ -58,7 +58,7 @@ class ExternalRequestValidatorTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.UNAUTHORIZED
-    resp.body.contains("you shall not pass") mustBe true
+    resp.body[String].contains("you shall not pass") mustBe true
 
     deleteOtoroshiRoute(invalidRoute).futureValue
     deleteOtoroshiRoute(route).futureValue

@@ -1,7 +1,7 @@
 package otoroshi.utils
 
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 

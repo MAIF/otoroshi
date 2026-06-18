@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.next.catalogs.RemoteCatalogJob
@@ -36,8 +36,8 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     with BulkControllerHelper[Script, JsValue]
     with CrudControllerHelper[Script, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val logger = Logger("otoroshi-scripts-api")
 
@@ -73,7 +73,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val excludedTypes: Seq[String] = ctx.request
         .getQueryString("excluded_types")
         .map(a => a.split(",").toList)
-        .getOrElse(Seq.empty[String])
+        .getOrElse(Seq.empty[String]).toSeq
 
       val cpTransformers  = typ match {
         case None                => transformersNames

@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthConfigsDataStore, AuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.models._

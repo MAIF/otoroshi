@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture.EnhancedFuture
+import org.apache.pekko.util.ByteString
 import io.lettuce.core.ScriptOutputType
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -1226,11 +1226,11 @@ class RateLimiter(_env: Env) {
       .getOrElse(false),
     uris = (_env.configuration
       .getOptionalWithFileSupport[Seq[String]]("otoroshi.rate-limiter.distributed-redis.uris")
-      .getOrElse(Seq.empty) ++
+      .getOrElse(Seq.empty).toSeq ++
       _env.configuration
         .getOptionalWithFileSupport[String]("otoroshi.rate-limiter.distributed-redis.urisStr")
         .map(_.split(";").map(_.trim).toSeq)
-        .getOrElse(Seq.empty))
+        .getOrElse(Seq.empty).toSeq)
   )
 
   def adhocRateLimiterRedis: otoroshi.storage.RedisLike = distributedRedisSettings.uris match {

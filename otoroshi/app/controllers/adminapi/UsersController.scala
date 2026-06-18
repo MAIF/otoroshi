@@ -1,7 +1,7 @@
 package otoroshi.controllers.adminapi
 
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.{BackOfficeUser, PrivateAppsUser}
@@ -21,7 +21,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     extends AbstractController(cc)
     with AdminApiHelper {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   private val fakeBackOfficeUser = BackOfficeUser(
     randomId = IdGenerator.token,

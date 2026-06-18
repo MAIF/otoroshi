@@ -2,7 +2,7 @@ package otoroshi.actions
 
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicReference
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
@@ -333,7 +333,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     extends ActionBuilder[ApiActionContext, AnyContent]
     with ActionFunction[Request, ApiActionContext] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-api-action")
 
@@ -443,7 +443,7 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     extends ActionBuilder[UnAuthApiActionContent, AnyContent]
     with ActionFunction[Request, UnAuthApiActionContent] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-api-action")
 

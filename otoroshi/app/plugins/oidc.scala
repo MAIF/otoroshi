@@ -2,9 +2,9 @@ package otoroshi.plugins.oidc
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
@@ -230,7 +230,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
                   c
                 }
               )
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           }
         }
       }
@@ -334,7 +334,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
                   c
                 }
               )
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           }
         }
       }
@@ -593,7 +593,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                 val possibleMoreTags: Seq[String]           = (tokenBody \ oidcAuth.apiKeyTagsField)
                                   .asOpt[JsArray]
                                   .getOrElse(JsArray())
-                                  .value
+                                  .value.toSeq
                                   .collect {
                                     case JsString(str)     => str
                                     case JsNumber(nbr)     => nbr.toString()
@@ -633,7 +633,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                   .asOpt[String]
                                   .filterNot(_.trim.isEmpty)
                                   .map(_.split(" ").toSeq)
-                                  .getOrElse(Seq.empty[String])
+                                  .getOrElse(Seq.empty[String]).toSeq
                                 val tokenRoles: Seq[String]                 = rolesPath
                                   .flatMap(p => findAt(tokenBody, p))
                                   .collect {
@@ -777,7 +777,7 @@ object OIDCThirdPartyApiKeyConfig {
 
   val cache: TrieMap[String, (Long, Boolean)] = new UnboundedTrieMap[String, (Long, Boolean)]()
 
-  implicit val format = new Format[OIDCThirdPartyApiKeyConfig] {
+  implicit val format: play.api.libs.json.Format[OIDCThirdPartyApiKeyConfig] = new Format[OIDCThirdPartyApiKeyConfig] {
 
     override def reads(json: JsValue): JsResult[OIDCThirdPartyApiKeyConfig] =
       Try {
@@ -796,10 +796,10 @@ object OIDCThirdPartyApiKeyConfig {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(100L),
           dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
           monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          scopes = (json \ "scopes").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -832,7 +832,7 @@ object OIDCThirdPartyApiKeyConfig {
 
 object ThirdPartyApiKeyConfig {
 
-  implicit val format = new Format[ThirdPartyApiKeyConfig] {
+  implicit val format: play.api.libs.json.Format[ThirdPartyApiKeyConfig] = new Format[ThirdPartyApiKeyConfig] {
 
     override def reads(json: JsValue): JsResult[ThirdPartyApiKeyConfig] =
       Try {

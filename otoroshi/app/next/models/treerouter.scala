@@ -67,7 +67,7 @@ case class NgMatchedRoute(
 }
 
 object NgTreeRouter {
-  def empty = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), scala.collection.mutable.MutableList.empty)
+  def empty = NgTreeRouter(new UnboundedTrieMap[String, NgTreeNodePath](), scala.collection.mutable.ListBuffer.empty)
   def build(routes: Seq[NgRoute]): NgTreeRouter = {
     val root = NgTreeRouter.empty
     routes.foreach { route =>
@@ -88,11 +88,11 @@ case class NgRouteDomainAndPathWrapper(route: NgRoute, domain: String, path: Str
 
 case class NgTreeRouter(
     tree: TrieMap[String, NgTreeNodePath],
-    wildcards: scala.collection.mutable.MutableList[NgRouteDomainAndPathWrapper]
+    wildcards: scala.collection.mutable.ListBuffer[NgRouteDomainAndPathWrapper]
 ) {
 
   def json: JsValue = Json.obj(
-    "tree"      -> JsObject(tree.toMap.mapValues(_.json)),
+    "tree"      -> JsObject(tree.toMap.mapValues(_.json).toMap),
     "wildcards" -> JsArray(wildcards.map(r => JsString(r.route.name)))
   )
 
@@ -189,11 +189,11 @@ object NgTreeNodePath {
   }
 
   def empty: NgTreeNodePath =
-    NgTreeNodePath(scala.collection.mutable.MutableList.empty, new UnboundedTrieMap[String, NgTreeNodePath])
+    NgTreeNodePath(scala.collection.mutable.ListBuffer.empty, new UnboundedTrieMap[String, NgTreeNodePath])
 }
 
 case class NgTreeNodePath(
-    routes: scala.collection.mutable.MutableList[NgRoute],
+    routes: scala.collection.mutable.ListBuffer[NgRoute],
     tree: TrieMap[String, NgTreeNodePath]
 ) {
   lazy val wildcardCache                         =
@@ -224,7 +224,7 @@ case class NgTreeNodePath(
   def json: JsValue                                                    = Json.obj(
     "routes" -> routes.map(r => JsString(r.name)),
     "leaf"   -> isLeaf,
-    "tree"   -> JsObject(tree.toMap.mapValues(_.json))
+    "tree"   -> JsObject(tree.toMap.mapValues(_.json).toMap)
   )
   def find(
       segments: Seq[String],
@@ -235,7 +235,7 @@ case class NgTreeNodePath(
   ): Option[NgMatchedRoutes] = {
     segments.headOption match {
       case None if routes.isEmpty => None
-      case None                   => NgMatchedRoutes(routes, path, pathParams, noMoreSegments = true).some
+      case None                   => NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = true).some
       case Some(head)             => {
         val mptree = tree
           .get(head)
@@ -268,8 +268,8 @@ case class NgTreeNodePath(
         mptree match {
           case None if endsWithSlash && routes.isEmpty              => None
           case None if endsWithSlash && routes.nonEmpty             =>
-            // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
-            NgMatchedRoutes(routes, path, pathParams, noMoreSegments = segments.tail.isEmpty).some
+            // NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.isEmpty).some
+            NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = segments.tail.isEmpty).some
           case None if !endsWithSlash                               => {
             // here is one of the worst case scenario where the user wants to use '/api/999' to match calls on '/api/999-foo'
             segmentStartsWithCache.get(
@@ -288,8 +288,8 @@ case class NgTreeNodePath(
                 mSubTree match {
                   case None if routes.isEmpty => None
                   case None                   =>
-                    // NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
-                    NgMatchedRoutes(routes, path, pathParams, noMoreSegments = false).some
+                    // NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
+                    NgMatchedRoutes(routes.toSeq, path, pathParams, noMoreSegments = false).some
                   case Some(ptree)            =>
                     ptree
                       .applyOnIf(sw) { pt =>
@@ -314,7 +314,7 @@ case class NgTreeNodePath(
                         trailingSlashMeansExactSegments
                       ) match {
                       case None if routes.isEmpty => None
-                      case None                   => NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = false).some
+                      case None                   => NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = false).some
                       case s                      => s
                     }
                 }
@@ -323,10 +323,10 @@ case class NgTreeNodePath(
           }
           case Some(ptree) if ptree.isEmpty && routes.isEmpty       => None
           case Some(ptree) if ptree.isEmpty && routes.nonEmpty      =>
-            NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+            NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree) if ptree.isLeaf && ptree.routes.isEmpty  => None
           case Some(ptree) if ptree.isLeaf && ptree.routes.nonEmpty =>
-            NgMatchedRoutes(ptree.routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+            NgMatchedRoutes(ptree.routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
           case Some(ptree)                                          =>
             ptree.find(
               segments.tail,
@@ -337,7 +337,7 @@ case class NgTreeNodePath(
             ) match {
               case None if routes.isEmpty => None
               case None                   =>
-                NgMatchedRoutes(routes, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
+                NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
               case s                      => s
             }
         }
@@ -461,7 +461,7 @@ object NgTreeRouter_Test {
       sum.addAndGet(duration_ns)
       if (print) {
         val found = f_route.isDefined && f_route.map(_.route.name).contains(idx)
-        println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+        println((path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms"))
       }
     }
 
@@ -517,7 +517,7 @@ object NgTreeRouter_Test {
       if (print) {
         val found =
           f_routes.isDefined && f_routes.exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(idx)
-        println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+        println((path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms"))
       }
     }
 
@@ -604,7 +604,7 @@ object NgTreeRouter_Test {
         if (print) {
           val found = f_routes.isDefined && f_routes
             .exists(_.routes.size == 1) && f_routes.map(_.routes.head.name).contains(rpath)
-          println(path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms")
+          println((path, found, duration_ns + " nanos", duration_ns.nanos.toMillis + " ms"))
         }
       }
     }

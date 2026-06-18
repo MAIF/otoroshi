@@ -1,6 +1,6 @@
 package otoroshi.script
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.{Errors, GwError}
 import otoroshi.models._
@@ -37,10 +37,10 @@ object AccessValidatorRef {
             refs = (json \ "refs")
               .asOpt[Seq[String]]
               .orElse((json \ "ref").asOpt[String].map(r => Seq(r)))
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
-            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>

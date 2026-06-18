@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
@@ -458,7 +458,7 @@ class OAuth2Caller extends NgRequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(body.mapValues(JsString.apply))
+            val jsonBody         = JsObject(body.mapValues(JsString.apply).toMap)
             val token            = body.getOrElse("access_token", "--")
             val expires_in: Long = body.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime
@@ -826,7 +826,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
                 (parts.head, parts.last)
               }
               .toMap
-            val jsonBody         = JsObject(parsed.mapValues(JsString.apply))
+            val jsonBody         = JsObject(parsed.mapValues(JsString.apply).toMap)
             val token            = parsed.getOrElse("access_token", "--")
             val expires_in: Long = parsed.getOrElse("expires_in", config.cacheTokenSeconds.toSeconds.toString).toLong
             val expiration_date  = DateTime.now().plusSeconds(expires_in.toInt).toDate.getTime

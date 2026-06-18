@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AuditEvent
@@ -114,7 +114,7 @@ case class NgMirroringEvent(
         "mirroredBody"            -> ctx.mirroredBody.get().utf8String,
         "mirroredResponse"        -> Json.obj(
           "status"  -> ctx.mirroredResp.get().status,
-          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last),
+          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last).toMap,
           "cookies" -> JsArray(
             ctx.mirroredResp
               .get()
@@ -164,9 +164,9 @@ case class NgRequestContext(
 
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
-    implicit val ec       = env.otoroshiExecutionContext
-    implicit val ev       = env
-    implicit val mat      = env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val req               = request
     val currentReqHasBody = req.theHasBody
     val httpRequest       = otoRequest.get()
@@ -251,7 +251,7 @@ case class NgRequestContext(
         }
       }
       .recover { case e =>
-        println("[ERROR]", e.getMessage)
+        println(("[ERROR]", e.getMessage))
       }
   }
 }

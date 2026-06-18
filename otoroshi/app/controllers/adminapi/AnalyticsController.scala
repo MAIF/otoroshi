@@ -1,9 +1,9 @@
 package otoroshi.controllers.adminapi
 
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
 import otoroshi.actions._
 import otoroshi.env.Env
@@ -69,8 +69,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     env: Env
 ) extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-analytics-api")
 
@@ -669,7 +669,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         val toDate   = to.map(f => new DateTime(f.toLong))
 
         val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
-          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]))
+          case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]).toSeq)
           case None           => env.datastores.serviceDescriptorDataStore.findAll()
         }
 

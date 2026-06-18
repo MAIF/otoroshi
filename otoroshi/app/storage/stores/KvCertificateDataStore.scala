@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import akka.actor.Cancellable
+import org.apache.pekko.actor.Cancellable
 import otoroshi.env.Env
 import otoroshi.ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 import otoroshi.storage.{RedisLike, RedisLikeStore}
@@ -34,9 +34,9 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
   val cancelCreateRef       = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
-    implicit val ec  = _env.otoroshiExecutionContext
-    implicit val mat = _env.otoroshiMaterializer
-    implicit val env = _env
+    implicit val ec: scala.concurrent.ExecutionContext = _env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = _env.otoroshiMaterializer
+    implicit val env: otoroshi.env.Env = _env
     importInitialCerts(logger)
     cancelRenewRef.set(
       _env.otoroshiActorSystem.scheduler
@@ -62,7 +62,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
           lastTrustedCA =
             env.datastores.globalConfigDataStore.latestSafe
               .map(_.tlsSettings.trustedCAsServerWithLocalCAs(env))
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
         } yield {
           if (
             last != lastUpdatedRef.get()

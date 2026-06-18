@@ -93,11 +93,11 @@ class React2SShellDetectorTests(parent: PluginsTestSpec) {
     .futureValue
 
   passingResp1.status mustBe Status.OK
-  println(s"passingResp1.body: ${passingResp2.status} - ${passingResp1.body}")
+  println(s"passingResp1.body[String]: ${passingResp2.status} - ${passingResp1.body[String]}")
   passingResp2.status mustBe Status.OK
-  println(s"passingResp2.body: ${passingResp2.status} - ${passingResp2.body}")
+  println(s"passingResp2.body[String]: ${passingResp2.status} - ${passingResp2.body[String]}")
   blockedResp.status mustBe Status.UNAUTHORIZED
-  println(s"blockedResp.body: ${blockedResp.status} - ${blockedResp.body}")
+  println(s"blockedResp.body[String]: ${blockedResp.status} - ${blockedResp.body[String]}")
 
   deleteOtoroshiRoute(route).futureValue
 }

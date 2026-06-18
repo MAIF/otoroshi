@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -29,7 +29,7 @@ import play.api.mvc.Result
 import java.util.concurrent.TimeUnit
 import java.{lang, util}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.asJavaIterableConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object NoopSpanExporter {
@@ -216,7 +216,7 @@ class W3CTracing extends NgRequestTransformer {
 
   private val setter = new TextMapSetter[NgTransformerRequestContext] {
     override def set(carrier: NgTransformerRequestContext, key: String, value: String): Unit = {
-      val seq: Seq[(String, String)] = carrier.attrs.get(TraceKey).getOrElse(Seq.empty)
+      val seq: Seq[(String, String)] = carrier.attrs.get(TraceKey).getOrElse(Seq.empty).toSeq
       carrier.attrs.put(TraceKey -> (seq :+ (key, value)))
     }
   }

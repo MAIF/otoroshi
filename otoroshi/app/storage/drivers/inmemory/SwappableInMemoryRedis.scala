@@ -1,8 +1,8 @@
 package otoroshi.storage.drivers.inmemory
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.cluster.Cluster
 import otoroshi.env.Env
 import otoroshi.storage._
@@ -318,7 +318,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     new java.util.concurrent.CopyOnWriteArrayList[ByteString]
 
   override def llen(key: String): Future[Long] = {
-    val value = Option(store.get(key)).map(_.asInstanceOf[Seq[ByteString]]).getOrElse(Seq.empty[ByteString]).size.toLong
+    val value = Option(store.get(key)).map(_.asInstanceOf[Seq[ByteString]]).getOrElse(Seq.empty[ByteString]).toSeq.size.toLong
     FastFuture.successful(value)
   }
 
@@ -339,7 +339,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     val seq    = Option(store.get(key)).map(_.asInstanceOf[java.util.List[ByteString]]).getOrElse(emptySeq())
     val result = seq.asScala.slice(start.toInt, stop.toInt - start.toInt)
-    FastFuture.successful(result)
+    FastFuture.successful(result.toSeq)
   }
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
@@ -620,9 +620,9 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  type MutableSeq[A] = scala.collection.mutable.MutableList[A]
+  type MutableSeq[A] = scala.collection.mutable.ListBuffer[A]
 
-  private def emptySeq(): MutableSeq[ByteString] = scala.collection.mutable.MutableList.empty[ByteString]
+  private def emptySeq(): MutableSeq[ByteString] = scala.collection.mutable.ListBuffer.empty[ByteString]
 
   override def llen(key: String): Future[Long] = {
     memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq()).size.toLong.future
@@ -641,7 +641,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
-    seq.slice(start.toInt, stop.toInt - start.toInt).future
+    seq.slice(start.toInt, stop.toInt - start.toInt).toSeq.future
   }
 
   override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {

@@ -1,7 +1,7 @@
 package otoroshi.models
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Flow
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.Flow
 import com.auth0.jwt.{JWT, RegisteredClaims}
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
@@ -57,9 +57,9 @@ case class JwtInjection(
   def asJson: JsValue =
     Json.obj(
       "token"             -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
-      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
+      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply).toMap),
       "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
-      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
+      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply).toMap),
       "removeCookies"     -> JsArray(this.removeCookies.map(JsString.apply))
     )
 }
@@ -507,7 +507,7 @@ case class JWKSAlgoSettings(
       env: Env
   ): Future[Option[Algorithm]] = {
     import otoroshi.utils.http.Implicits._
-    implicit val s = env.otoroshiScheduler
+    implicit val s: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
     Retry
@@ -813,7 +813,7 @@ object MappingSettings                                                          
         MappingSettings(
           (json \ "map").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           (json \ "values").asOpt[JsObject].getOrElse(Json.obj()),
-          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -827,7 +827,7 @@ case class MappingSettings(
 )                                                                                          extends AsJson                      {
   override def asJson =
     Json.obj(
-      "map"    -> JsObject(map.mapValues(JsString.apply)),
+      "map"    -> JsObject(map.mapValues(JsString.apply).toMap),
       "values" -> values,
       "remove" -> JsArray(remove.map(JsString.apply))
     )
@@ -873,7 +873,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(jwt)((a, b) => {
       val values: Set[String]         = (token \ b._1)
         .as[JsArray]
-        .value
+        .value.toSeq
         .collect {
           case JsNumber(nbr) => nbr.toString()
           case JsBoolean(b)  => b.toString
@@ -891,7 +891,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
   }
   def asVerification(algorithm: Algorithm, attrs: TypedMap)(implicit env: Env): Verification = {
     val verification = fields
-      .mapValues(_.evaluateEl(attrs))
+      .mapValues(_.evaluateEl(attrs)).toMap
       .foldLeft(
         JWT
           .require(algorithm)
@@ -1063,8 +1063,8 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
 
   override def asJson =
     Json.obj(
-      "fields"      -> JsObject(this.fields.mapValues(JsString.apply)),
-      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply))
+      "fields"      -> JsObject(this.fields.mapValues(JsString.apply).toMap),
+      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply).toMap)
     )
 }
 
@@ -1996,7 +1996,7 @@ case class RefJwtVerifier(
   )(
       f: JwtInjection => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _              => {
@@ -2265,12 +2265,12 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
         .asOpt[JsArray]
         .map(_.value.map(_.as[String]))
         .orElse((json \ "id").asOpt[String].map(v => Seq(v)))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       Right[Throwable, RefJwtVerifier](
         RefJwtVerifier(
           ids = refs,
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
         )
       )
     } recover { case e =>
@@ -2289,7 +2289,7 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
         LocalJwtVerifier(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -2386,7 +2386,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           source = source,
           algoSettings = algoSettings,
           strategy = strategy

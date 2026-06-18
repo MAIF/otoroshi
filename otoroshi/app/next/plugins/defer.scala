@@ -1,6 +1,6 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import ch.qos.logback.core.util.TimeUtil
 import org.joda.time.DateTime
 import otoroshi.env.Env

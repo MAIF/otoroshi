@@ -31,8 +31,8 @@ object NgPublicPrivatePathsConfig {
   val format = new Format[NgPublicPrivatePathsConfig] {
     override def reads(json: JsValue): JsResult[NgPublicPrivatePathsConfig] = Try {
       NgPublicPrivatePathsConfig(
-        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty),
+        privatePatterns = json.select("private_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        publicPatterns = json.select("public_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         strict = json.select("strict").asOpt[Boolean].getOrElse(false)
       )
     } match {

@@ -1,7 +1,7 @@
 package otoroshi.netty
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpRequest
@@ -103,11 +103,11 @@ class ReactorNettyRemoteConnection(req: HttpServerRequest, val secure: Boolean, 
 }
 
 class ReactorNettyRequestTarget(req: HttpServerRequest) extends RequestTarget {
-  lazy val kUri                               = akka.http.scaladsl.model.Uri(uriString)
+  lazy val kUri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = req.fullPath()
-  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
+  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq).toMap
 }
 
 class ReactorNettyRequest(
@@ -230,7 +230,7 @@ class ReactorNettyRequestHeader(
       Seq(
         ("Tls-Session-Info", s.toString)
       )
-    )): _*
+    )).toSeq: _*
   )
   lazy val connection: RemoteConnection = new ReactorNettyRemoteConnection(req, secure, sessionOpt)
   lazy val target: RequestTarget        = new ReactorNettyRequestTarget(req)
@@ -291,11 +291,11 @@ class NettyRemoteConnection(
 }
 
 class NettyRequestTarget(req: HttpRequest) extends RequestTarget {
-  lazy val kUri                               = akka.http.scaladsl.model.Uri(uriString)
+  lazy val kUri                               = org.apache.pekko.http.scaladsl.model.Uri(uriString)
   lazy val uri: URI                           = new URI(uriString)
   lazy val uriString: String                  = req.uri()
   lazy val path: String                       = kUri.path.toString()
-  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq)
+  lazy val queryMap: Map[String, Seq[String]] = kUri.query().toMultiMap.mapValues(_.toSeq).toMap
 }
 
 class NettyRequest(
@@ -339,7 +339,7 @@ class NettyRequestHeader(
 ) extends RequestHeader {
 
   lazy val _cookies                     = Option(req.headers().get("Cookie"))
-    .map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).mapValues(_.toSeq))
+    .map(c => ServerCookieDecoder.LAX.decode(c).asScala.groupBy(_.name()).mapValues(_.toSeq).toMap)
     .getOrElse(Map.empty[String, Seq[io.netty.handler.codec.http.cookie.DefaultCookie]])
 
   lazy val zeSession: Session = {
@@ -419,7 +419,7 @@ class NettyRequestHeader(
       Seq(
         ("Tls-Session-Info", s.toString)
       )
-    )): _*
+    )).toSeq: _*
   )
   lazy val connection: RemoteConnection = new NettyRemoteConnection(req, ctx, secure, sessionOpt, addressGet)
   lazy val target: RequestTarget        = new NettyRequestTarget(req)

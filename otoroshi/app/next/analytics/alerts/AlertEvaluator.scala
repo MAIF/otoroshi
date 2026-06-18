@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.alerts
 
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.UserAnalyticsExporterRegistry
 import otoroshi.next.analytics.models.{AlertCondition, UserAlert}
@@ -131,12 +131,12 @@ object AlertEvaluator {
           (result.data \ "series").asOpt[Seq[JsValue]].flatMap(_.headOption).flatMap { s =>
             (s \ "points").asOpt[Seq[JsValue]]
           }
-        val points            = singlePoints.orElse(firstSeriesPoints).getOrElse(Seq.empty)
+        val points            = singlePoints.orElse(firstSeriesPoints).getOrElse(Seq.empty).toSeq
         val values            = points.flatMap(p => (p \ "value").asOpt[Double])
         reduceValues(values, reducer)
 
       case AnalyticsShape.TopN | AnalyticsShape.Pie =>
-        val items  = (result.data \ "items").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
+        val items  = (result.data \ "items").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
         val values = items.flatMap(i => (i \ "value").asOpt[Double])
         reduceValues(values, reducer)
 

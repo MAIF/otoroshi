@@ -1,7 +1,7 @@
 package otoroshi.greenscore
 
-import akka.actor.{Actor, ActorRef, Props}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
+import org.apache.pekko.util.ByteString
 import org.joda.time.{DateTime, Days}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
@@ -105,7 +105,7 @@ object GreenScoreEntity {
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads),
         routes = json
           .select("routes")
@@ -123,7 +123,7 @@ object GreenScoreEntity {
                 .get
             })
           })
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         efficiency = json.select("efficiency").asOpt(Efficiency.reads).getOrElse(Efficiency())
       )
     } match {
@@ -185,8 +185,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
   }
 
   override def syncStates(): Future[Unit] = {
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
     for {
       scores <- datastores.greenscoresDatastore.findAll()
     } yield {
@@ -201,9 +201,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score",
       false,
       (ctx, request, apk, _) => {
-        implicit val ec = env.otoroshiExecutionContext
-        implicit val ev = env
-
+        implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+        implicit val ev: otoroshi.env.Env = env
         for {
           groups <- datastores.greenscoresDatastore.findAll()
         } yield {
@@ -223,9 +222,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score",
       wantsBody = true,
       (ctx, request, apk, body) => {
-        implicit val ec = env.otoroshiExecutionContext
-        implicit val ev = env
-
+        implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+        implicit val ev: otoroshi.env.Env = env
         body
           .map(
             _.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
@@ -265,8 +263,8 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
       "/api/extensions/green-score/efficiency/:group/:route",
       false,
       (routerCtx, request, _, _) => {
-        implicit val e   = env
-        implicit val ctx = env.analyticsExecutionContext
+        implicit val e: otoroshi.env.Env = env
+        implicit val ctx: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
 
         val fromAndTo = request
           .getQueryString("day")

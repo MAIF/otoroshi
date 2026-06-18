@@ -68,7 +68,7 @@ object TimeRestrictedAccessPluginConfig {
       val rules    = (json \ "rules")
         .asOpt[Seq[JsObject]]
         .map(_.flatMap(o => TimeRestrictedAccessPluginConfigRule.format.reads(o).asOpt))
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       val timezone = json.select("timezone").asOptString.filter(_.trim.nonEmpty)
       TimeRestrictedAccessPluginConfig(rules, timezone)
     } match {

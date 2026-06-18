@@ -1,7 +1,7 @@
 package otoroshi.next.utils
 
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import otoroshi.next.plugins.api.{NgPluginHttpRequest, NgPluginHttpResponse}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.DN
@@ -80,7 +80,7 @@ object JsonHelpers {
     val pathparams: JsObject = JsObject(
       attrs
         .get(otoroshi.next.plugins.Keys.MatchedRouteKey)
-        .map(_.pathParams.toMap.mapValues(_.json))
+        .map(_.pathParams.toMap.mapValues(_.json).toMap)
         .getOrElse(Map.empty[String, JsValue])
     )
     Json.obj(

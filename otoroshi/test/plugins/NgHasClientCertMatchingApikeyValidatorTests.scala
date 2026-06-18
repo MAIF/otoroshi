@@ -1,6 +1,6 @@
 package plugins
 
-import akka.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import functional.{CustomInetNameResolver, PluginsTestSpec, TargetService}
 import io.netty.handler.ssl.SslContextBuilder
@@ -381,7 +381,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
       status: Int
   ): Unit = {
 
-    println(s"Calling ${route.frontend.domains.head.domain}, expected $status")
+    println((s"Calling ${route.frontend.domains.head.domain}, expected $status"))
 
     val pureNettyClient = HttpClient
       .create()
@@ -411,7 +411,7 @@ class NgHasClientCertMatchingApikeyValidatorTests(parent: PluginsTestSpec) {
           h.set("Otoroshi-Client-Secret", apikey.clientSecret)
         })
         .get()
-        .uri("/foo")
+        .uri("/foo").asInstanceOf[reactor.netty.http.client.HttpClient.ResponseReceiver[?]]
         .response()
         .doOnNext(response => {
           promise.success(response.status().code())

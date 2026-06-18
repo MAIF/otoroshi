@@ -24,8 +24,8 @@ class TenantsController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     with BulkControllerHelper[Tenant, JsValue]
     with CrudControllerHelper[Tenant, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-tenants-api")
 

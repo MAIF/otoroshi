@@ -26,8 +26,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
     with BulkControllerHelper[AuthModuleConfig, JsValue]
     with CrudControllerHelper[AuthModuleConfig, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-auth-modules-api")
 

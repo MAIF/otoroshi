@@ -1,6 +1,6 @@
 package otoroshi.netty
 
-import akka.util.ByteString
+import org.apache.pekko.util.ByteString
 import io.netty.buffer.{ByteBuf, ByteBufHolder}
 import io.netty.channel.epoll.EpollDomainSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup

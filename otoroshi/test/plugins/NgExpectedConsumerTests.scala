@@ -14,7 +14,7 @@ import play.api.http.Status
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 
 class NgExpectedConsumerTests(parent: PluginsTestSpec) {
 
@@ -106,7 +106,7 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
 
   page.content().contains("GET") mustBe true
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,

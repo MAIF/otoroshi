@@ -3,9 +3,9 @@ package otoroshi.utils.workflow
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.ReplaceAllWith
@@ -40,7 +40,7 @@ object WorkFlowSpec                                                             
             value
           }
       )
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 }
 sealed trait WorkFlowRequest                                                                          {
@@ -150,7 +150,7 @@ object WorkFlowTask {
 
 object WorkFlowEl {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   import collection.JavaConverters._
 
@@ -402,7 +402,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
     applyEl(applyTransformation(requestSpec.select("url").as[JsValue], ctx, env).as[String], ctx, env)
   lazy val timeout: FiniteDuration                                     = requestSpec.select("timeout").asOpt[Long].getOrElse(10000L).millis
   def headers(ctx: WorkFlowTaskContext, env: Env): Map[String, String] =
-    requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).mapValues(v => applyEl(v, ctx, env))
+    requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).mapValues(v => applyEl(v, ctx, env)).toMap
   lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(MtlsConfig.format).getOrElse(MtlsConfig())
   def bodyOpt(ctx: WorkFlowTaskContext, env: Env): Option[ByteString]  =
     requestSpec.select("body").asOpt[JsValue].map { body =>

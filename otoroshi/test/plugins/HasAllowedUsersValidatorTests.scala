@@ -14,7 +14,7 @@ import play.api.http.Status
 import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 
 class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
 
@@ -55,7 +55,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
     page.fill("input[name='password']", "password")
     page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Login")).nth(0).click()
 
-    context.cookies.asScala.map { c =>
+    context.cookies.asScala.toSeq.map { c =>
       DefaultWSCookie(
         name = c.name,
         value = c.value,

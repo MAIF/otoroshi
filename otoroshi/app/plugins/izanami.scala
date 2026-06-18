@@ -1,10 +1,10 @@
 package otoroshi.plugins.izanami
 
 import java.util.concurrent.atomic.AtomicBoolean
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -180,7 +180,7 @@ class IzanamiProxy extends RequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -202,7 +202,7 @@ class IzanamiProxy extends RequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -240,7 +240,7 @@ class IzanamiProxy extends RequestTransformer {
                 .Status(resp.status)(resp.json)
                 .withHeaders(
                   resp.headers
-                    .mapValues(_.last)
+                    .mapValues(_.last).toMap
                     .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                     .toSeq: _*
                 )
@@ -273,7 +273,7 @@ class IzanamiProxy extends RequestTransformer {
           .Status(resp.status)(resp.json)
           .withHeaders(
             resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
               .toSeq: _*
           )
@@ -318,7 +318,7 @@ case class IzanamiCanaryRoutingConfig(
 object IzanamiCanaryRoutingConfig {
   def fromJson(json: JsValue): IzanamiCanaryRoutingConfig = {
     IzanamiCanaryRoutingConfig(
-      routes = json.select("routes").asArray.value.map { item =>
+      routes = json.select("routes").asArray.value.toSeq.map { item =>
         IzanamiCanaryRoutingConfigRoute(
           route = item.select("route").asString,
           default = item.select("default").asString,

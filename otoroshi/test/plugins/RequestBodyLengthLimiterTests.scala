@@ -107,7 +107,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
       .post("Hello from client!")
       .futureValue
 
-    Json.parse(resp.body).selectAsString("body") mustBe "Hello"
+    Json.parse(resp.body[String]).selectAsString("body") mustBe "Hello"
     deleteOtoroshiRoute(route).futureValue
   }
 }

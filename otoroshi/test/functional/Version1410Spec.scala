@@ -2,8 +2,8 @@ package functional
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.hash.Hashing
@@ -21,8 +21,8 @@ import scala.util.Try
 
 class Version1410Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system   = ActorSystem("otoroshi-test")
-  implicit lazy val env = otoroshiComponents.env
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
+  implicit lazy val env: otoroshi.env.Env = otoroshiComponents.env
 
   import scala.concurrent.duration._
 

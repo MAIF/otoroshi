@@ -1,9 +1,9 @@
 package otoroshi.next.proxy
 
-import akka.Done
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
@@ -95,7 +95,7 @@ object ProxyEngineConfig {
       if (enabled) config.select("domains").asOpt[Seq[String]].getOrElse(Seq("*"))
       else Seq.empty[String]
     val denyDomains                =
-      if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty) else Seq.empty[String]
+      if (enabled) config.select("deny_domains").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq else Seq.empty[String]
     val reporting                  = config.select("reporting").asOpt[Boolean].getOrElse(true)
     val pluginMerge                = config
       .select("merge_sync_steps")
@@ -305,7 +305,7 @@ class ProxyEngine() extends RequestHandler {
       defaultRouting: Request[Source[ByteString, _]] => Future[Result],
       forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+    implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
@@ -322,7 +322,7 @@ class ProxyEngine() extends RequestHandler {
       defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
       forCurrentListenerOnly: Boolean
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    implicit val globalConfig = env.datastores.globalConfigDataStore.latest()
+    implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
       if (config.denyDomains.isEmpty) false
@@ -353,7 +353,7 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                                      = NgExecutionReport(requestId, reporting)
     report.start("start-handling")
 
-    implicit val mat       = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val snowflake          = env.snowflakeGenerator.nextIdStr()
     val callDate           = DateTime.now()
     val requestTimestamp   = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
@@ -575,7 +575,7 @@ class ProxyEngine() extends RequestHandler {
     implicit val report                                                                       = NgExecutionReport(requestId, reporting)
 
     report.start("start-handling")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     val snowflake        = env.snowflakeGenerator.nextIdStr()
     val callDate         = DateTime.now()
@@ -1095,7 +1095,7 @@ class ProxyEngine() extends RequestHandler {
         }
         attrs.put(Keys.RouteKey -> route.route)
         attrs.put(Keys.MatchedRouteKey -> route)
-        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String])
+        val rts: Seq[String] = attrs.get(Keys.MatchedRoutesKey).getOrElse(Seq.empty[String]).toSeq
         report.setContext(
           Json.obj(
             "found_route"    -> route.route.json,
@@ -2252,7 +2252,7 @@ class ProxyEngine() extends RequestHandler {
         }
       }
 
-      implicit val scheduler = env.otoroshiScheduler
+      implicit val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
       FEither(
         env.circuitBeakersHolder
@@ -2494,7 +2494,7 @@ class ProxyEngine() extends RequestHandler {
         }
       }
 
-      implicit val scheduler = env.otoroshiScheduler
+      implicit val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
       FEither(
         env.circuitBeakersHolder
           .get(
@@ -3172,7 +3172,7 @@ class ProxyEngine() extends RequestHandler {
           route.backend.client.proxy.orElse(globalConfig.proxies.services)
         )
       val requestStreamStart                             = System.currentTimeMillis()
-      val theBody                                        = request.body
+      val theBody                                        = (request.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
         .applyOn { source =>
           source.alsoTo(Sink.onComplete { case _ =>
             val requestStreamDuration = System.currentTimeMillis() - requestStreamStart
@@ -3242,13 +3242,13 @@ class ProxyEngine() extends RequestHandler {
           BackendCallResponse(
             NgPluginHttpResponse(
               status = response.status,
-              headers = response.headers.mapValues(_.last).applyOnIf(shouldHaveTrailers) { hds =>
+              headers = response.headers.mapValues(_.last).toMap.applyOnIf(shouldHaveTrailers) { hds =>
                 idOpt match {
                   case Some(id) if shouldHaveTrailers => hds ++ Map("otoroshi-netty-trailers" -> id)
                   case _                              => hds
                 }
               },
-              cookies = response.safeCookies(env),
+              cookies = response.safeCookies(env).toSeq,
               body = fbody
             ),
             response.some
@@ -3279,13 +3279,13 @@ class ProxyEngine() extends RequestHandler {
 
     val rawResponse      = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
     val otoroshiResponse = response.response.copy() /*NgPluginHttpResponse(
       status = response.status,
-      headers = response.headers.mapValues(_.last),
+      headers = response.headers.mapValues(_.last).toMap,
       cookies = response.cookies,
       body = response.bodyAsSource
     )*/
@@ -3625,7 +3625,7 @@ class ProxyEngine() extends RequestHandler {
       }
       .toSeq // ++ Seq(("Connection" -> "keep-alive"), ("X-Connection" -> "keep-alive"))
 
-    val theBody = response.body
+    val theBody = (response.body: org.apache.pekko.stream.scaladsl.Source[org.apache.pekko.util.ByteString, Any])
       .applyOnIf(env.dynamicBodySizeCompute && contentLength.isEmpty) { body =>
         body.map { chunk =>
           counterOut.addAndGet(chunk.size)
@@ -4013,7 +4013,7 @@ class ProxyEngine() extends RequestHandler {
           ),
           status = rawResponse.status,
           headers = rawRequest.headers.toSimpleMap.toSeq.map(Header.apply),
-          headersOut = rawResponse.headers.mapValues(_.last).toSeq.map(Header.apply),
+          headersOut = rawResponse.headers.mapValues(_.last).toMap.toSeq.map(Header.apply),
           otoroshiHeadersIn = request.headers.toSeq.map(Header.apply),
           otoroshiHeadersOut = response.headers.toSeq.map(Header.apply),
           extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),

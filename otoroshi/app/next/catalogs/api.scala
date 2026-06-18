@@ -168,7 +168,7 @@ object RemoteContentParser {
   }
 
   private def parseArray(arr: JsArray, sourceName: String): Seq[RemoteEntity] = {
-    arr.value.flatMap {
+    arr.value.toSeq.flatMap {
       case obj: JsObject => RemoteEntity.fromJson(sourceName, obj)
       case _             => None
     }

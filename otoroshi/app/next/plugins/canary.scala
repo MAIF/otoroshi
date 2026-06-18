@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.Done
-import akka.http.scaladsl.model.HttpProtocols
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.stream.Materializer
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.HttpProtocols
+import org.apache.pekko.http.scaladsl.util.FastFuture.EnhancedFuture
+import org.apache.pekko.stream.Materializer
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.models.{AlwaysMatch, Canary}
@@ -49,7 +49,7 @@ object NgCanarySettings {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => NgTarget.readFrom(e)))
-            .getOrElse(Seq.empty[NgTarget]),
+            .getOrElse(Seq.empty[NgTarget]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } match {
@@ -178,7 +178,7 @@ object TimeControlledCanaryModeConfig {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => NgTarget.readFrom(e)))
-            .getOrElse(Seq.empty[NgTarget]),
+            .getOrElse(Seq.empty[NgTarget]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } match {

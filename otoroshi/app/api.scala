@@ -1,9 +1,9 @@
 package otoroshi.api
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.{Appender, Context}
@@ -41,7 +41,7 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
-import play.core.server.{AkkaHttpServerComponents, ServerConfig}
+import play.core.server.{PekkoHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 
@@ -83,9 +83,9 @@ object OtoroshiLoaderHelper {
 
     import scala.concurrent.duration._
 
-    implicit val ec        = components.env.otoroshiExecutionContext
-    implicit val scheduler = components.env.otoroshiScheduler
-    implicit val mat       = components.env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = components.env.otoroshiExecutionContext
+    implicit val scheduler: org.apache.pekko.actor.Scheduler = components.env.otoroshiScheduler
+    implicit val mat: org.apache.pekko.stream.Materializer = components.env.otoroshiMaterializer
 
     val failOnTimeout                        =
       components.env.configuration.betterGetOptional[Boolean]("app.boot.failOnTimeout").getOrElse(false)
@@ -398,7 +398,7 @@ object OtoroshiEnvHolder {
 }
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
-    extends AkkaHttpServerComponents
+    extends PekkoHttpServerComponents
     with BuiltInComponents
     with AssetsComponents
     with AhcWSComponents

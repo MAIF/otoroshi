@@ -1,6 +1,6 @@
 package otoroshi.utils.http
 
-import akka.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.ssl.PemHeaders
@@ -126,7 +126,7 @@ object RequestImplicits {
           // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
           }
         )
-        .getOrElse(Seq.empty[String])
+        .getOrElse(Seq.empty[String]).toSeq
     }
     @inline
     def clientCertChainPemString: String     = clientCertChainPem.mkString("\n")

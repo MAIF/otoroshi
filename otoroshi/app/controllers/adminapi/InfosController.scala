@@ -12,8 +12,8 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val logger = Logger("otoroshi-infos-api")
 
@@ -39,7 +39,7 @@ class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def version() = ApiAction { ctx =>
+  def version() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
     Ok(env.otoroshiVersionSem.json)
   }
 }

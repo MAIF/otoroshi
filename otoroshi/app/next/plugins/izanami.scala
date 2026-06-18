@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
@@ -122,7 +122,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -144,7 +144,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -175,7 +175,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             .Status(resp.status)(resp.json)
             .withHeaders(
               resp.headers
-                .mapValues(_.last)
+                .mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
                 .toSeq: _*
             )
@@ -204,7 +204,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
           .Status(resp.status)(resp.json)
           .withHeaders(
             resp.headers
-              .mapValues(_.last)
+              .mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
               .toSeq: _*
           )
@@ -323,7 +323,7 @@ object NgIzanamiV1CanaryRoutingConfig {
           .select("routes")
           .asOpt[Seq[JsValue]]
           .map(_.map(NgIzanamiV1CanaryRoutingConfigRoute.format.reads).collect { case JsSuccess(e, _) => e })
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -593,7 +593,7 @@ class IzanamiV2Proxy extends NgBackendCall {
       )
 
     val method   = ctx.request.method
-    val response = if (method == "GET") {
+    val response: scala.concurrent.Future[Either[otoroshi.next.proxy.NgProxyEngineError, play.api.libs.ws.WSResponse]] = if (method == "GET") {
       baseRequest.get().map(r => r.right)
     } else if (method == "POST") {
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
@@ -621,7 +621,7 @@ class IzanamiV2Proxy extends NgBackendCall {
           BackendCallResponse(
             NgPluginHttpResponse(
               resp.status,
-              resp.headers.mapValues(_.last),
+              resp.headers.mapValues(_.last).toMap,
               Seq.empty,
               ByteString(Json.stringify(resp.json)).chunks(16 * 1024)
             ),

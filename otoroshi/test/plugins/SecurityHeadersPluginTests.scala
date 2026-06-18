@@ -48,7 +48,7 @@ class SecurityHeadersPluginTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
       .headers
-      .mapValues(_.last)
+      .mapValues(_.last).toMap
   }
 
   val headers = call()

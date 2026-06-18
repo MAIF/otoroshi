@@ -43,10 +43,10 @@ class OpenapiToJson(spec: JsValue) {
       }
   }
 
-  def containsOnlyRef(values: IndexedSeq[JsValue]): Boolean =
+  def containsOnlyRef(values: scala.collection.IndexedSeq[JsValue]): Boolean =
     values.forall(p => (p \ "$ref").as[String] != nullType)
 
-  def containsNullAndRef(values: IndexedSeq[JsValue]): Boolean =
+  def containsNullAndRef(values: scala.collection.IndexedSeq[JsValue]): Boolean =
     values.exists(p => (p \ "$ref").as[String] == nullType) &&
     values.exists(p => (p \ "$ref").as[String] != nullType)
 

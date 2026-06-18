@@ -192,7 +192,7 @@ class NgProxyState(env: Env) {
       .flatMap(r => r.frontend.domains.map(d => NgRouteDomainAndPathWrapper(r, d.domainLowerCase, d.path)))
       .filterNot(_.domain.contains("*"))
       .groupBy(_.domain)
-      .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route))
+      .mapValues(_.sortWith((r1, r2) => r1.path.length.compareTo(r2.path.length) > 0).map(_.route)).toMap
     routesByDomain.addAll(routesByDomainRaw).remAll(routesByDomain.keySet.toSeq.diff(routesByDomainRaw.keySet.toSeq))
     val s                                            = System.currentTimeMillis()
     domainPathTreeRef.set(NgTreeRouter.build(values))
@@ -593,7 +593,7 @@ class NgProxyState(env: Env) {
   }
 
   def sync()(implicit ec: ExecutionContext): Future[Unit] = {
-    implicit val ev  = env
+    implicit val ev: otoroshi.env.Env = env
     val start        = System.currentTimeMillis()
     val gc           = env.datastores.globalConfigDataStore.latest()
     val config       = gc.plugins.config

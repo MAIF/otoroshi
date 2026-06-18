@@ -1,10 +1,10 @@
 package otoroshi.utils.gzip
 
-import akka.http.scaladsl.util.FastFuture
-import akka.stream._
-import akka.stream.scaladsl._
-import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream._
+import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
+import org.apache.pekko.util.ByteString
 import otoroshi.utils.RegexPool
 import play.api.Logger
 import play.api.http._
@@ -23,9 +23,9 @@ object GzipConfig {
       Try {
         GzipConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          whiteList = (json \ "whiteList").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          blackList = (json \ "blackList").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          whiteList = (json \ "whiteList").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          blackList = (json \ "blackList").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(8192),
           chunkedThreshold = (json \ "chunkedThreshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compressionLevel").asOpt[Int].getOrElse(5)
@@ -82,7 +82,7 @@ case class GzipConfig(
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Result] = {
-    implicit val ec = mat.executionContext
+    implicit val ec: scala.concurrent.ExecutionContext = mat.executionContext
 
     if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
       if (mayCompress(request) && shouldCompress(result) && shouldGzip(request, result)) {
@@ -198,7 +198,7 @@ case class GzipConfig(
   private def varyWith(rh: ResponseHeader, headerValues: String*): (String, String) = {
     val newValue = rh.headers.get(VARY) match {
       case Some(existing) if existing.nonEmpty =>
-        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase)(collection.breakOut)
+        val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase).toSet
         val newValuesToAdd           = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
         s"$existing${newValuesToAdd.map(v => s",$v").mkString}"
       case _                                   =>

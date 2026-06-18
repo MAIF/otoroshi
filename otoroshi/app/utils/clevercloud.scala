@@ -3,9 +3,9 @@ package otoroshi.utils.clevercloud
 import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
+import org.apache.pekko.NotUsed
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
@@ -76,7 +76,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   import CleverCloudClient._
 
-  implicit val mat = env.otoroshiMaterializer
+  implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-clevercloud-client")
 
@@ -278,6 +278,6 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   def appEnv(orga: String, id: String)(implicit ec: ExecutionContext): Future[Map[String, String]] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/env").fast
-      .map(_.json.as[JsArray].value.map(obj => ((obj \ "name").as[String], (obj \ "value").as[String])).toMap)
+      .map(_.json.as[JsArray].value.toSeq.map(obj => ((obj \ "name").as[String], (obj \ "value").as[String])).toMap)
 
 }

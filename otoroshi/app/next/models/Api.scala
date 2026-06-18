@@ -1,7 +1,7 @@
 package next.models
 
-import akka.http.scaladsl.model.Uri
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.api.WriteAction.{Create, Update}
 import otoroshi.api.{DeleteAction, WriteAction}
@@ -219,7 +219,7 @@ case class ApiDocumentationSidebarCategory(raw: JsObject) extends ApiDocumentati
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
   lazy val label: String                           = raw.select("label").asOptString.getOrElse("No label")
   lazy val links: Seq[ApiDocumentationSidebarLink] =
-    raw.select("links").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebarLink(o))
+    raw.select("links").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationSidebarLink(o))
 }
 case class ApiDocumentationSidebarLink(raw: JsObject)     extends ApiDocumentationSidebarItem {
   lazy val icon: Option[ApiDocumentationResource] =
@@ -233,9 +233,9 @@ case class ApiDocumentationSidebar(raw: JsObject) {
   lazy val icon: Option[ApiDocumentationResource]  =
     raw.select("icon").asOpt[JsObject].map(o => ApiDocumentationResource(o))
   lazy val path: Seq[String]                       =
-    raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty)
+    raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty).toSeq
   lazy val items: Seq[ApiDocumentationSidebarItem] =
-    raw.select("items").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { v =>
+    raw.select("items").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { v =>
       v.select("kind").asOptString.getOrElse("link") match {
         case "category" => ApiDocumentationSidebarCategory(v.asObject)
         case _          => ApiDocumentationSidebarLink(v.asObject)
@@ -245,7 +245,7 @@ case class ApiDocumentationSidebar(raw: JsObject) {
 
 case class ApiDocumentationResource(raw: JsObject) {
   lazy val path: Seq[String]                  =
-    raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty)
+    raw.select("path").asOpt[Seq[String]].orElse(raw.select("path").asOptString.map(s => Seq(s))).getOrElse(Seq.empty).toSeq
   lazy val title: Option[String]              = raw.select("title").asOptString
   lazy val description: Option[String]        = raw.select("description").asOptString
   lazy val contentType: String                = raw.select("content_type").asOpt[String].getOrElse("text/markdown")
@@ -332,8 +332,8 @@ object MtlsAccessModeConfiguration {
   def fmt = new Format[MtlsAccessModeConfiguration] {
     override def reads(json: JsValue): JsResult[MtlsAccessModeConfiguration] = Try {
       MtlsAccessModeConfiguration(
-        regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty),
-        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty)
+        regexSubjectDNs = json.select("regex_subject_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        regexIssuerDNs = json.select("regex_issuer_dns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -438,7 +438,7 @@ case class ApikeyAccessModeConfiguration(
       "rotation"                -> rotation.json,
       "validUntil"              -> validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
       "tags"                    -> JsArray(tags.map(JsString.apply)),
-      "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+      "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap)
     )
   }
 }
@@ -464,7 +464,7 @@ object ApikeyAccessModeConfiguration {
                     id
                   }
               }
-              .getOrElse(Seq.empty[EntityIdentifier])
+              .getOrElse(Seq.empty[EntityIdentifier]).toSeq
             val authorizedGroup: Seq[EntityIdentifier]    =
               (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
             val authorizedEntities: Seq[EntityIdentifier] =
@@ -475,7 +475,7 @@ object ApikeyAccessModeConfiguration {
                     id
                   }
                 }
-                .getOrElse(Seq.empty[EntityIdentifier])
+                .getOrElse(Seq.empty[EntityIdentifier]).toSeq
             (authorizations ++ authorizedEntities ++ authorizedGroup).distinct
           },
           enabled = json.selectAsOptBoolean("enabled").getOrElse(true),
@@ -504,7 +504,7 @@ object ApikeyAccessModeConfiguration {
             .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(ApiKeyRotation()),
           validUntil = (json \ "validUntil").asOpt[Long].map(l => new DateTime(l)),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(m => m.filter(_._1.nonEmpty))
@@ -641,7 +641,7 @@ case class ApiDocumentationPlan(raw: JsObject) {
     case "deprecated" => ApiPlanStatus.Deprecated
     case _            => ApiPlanStatus.Closed
   }
-  lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val tags: Seq[String]                                                        = raw.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val metadata: Map[String, String]                                            = raw.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val validation: ApiDocumentationPlanValidation                               = raw
     .select("validation")
@@ -725,7 +725,7 @@ object ApiClient {
         name = json.selectAsString("name"),
         description = json.selectAsOptString("description"),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -748,20 +748,20 @@ object ApiDocumentation {
       ApiDocumentation(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(true),
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         source = json.select("source").asOpt[JsObject].map(o => ApiDocumentationSource(o)),
         home = ApiDocumentationResource(json.select("home").asOpt[JsObject].getOrElse(Json.obj())),
         logo = ApiDocumentationResource(json.select("logo").asOpt[JsObject].getOrElse(Json.obj())),
         references =
-          json.select("references").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResourceRef(o)),
+          json.select("references").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationResourceRef(o)),
         resources =
-          json.select("resources").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationResource(o)),
+          json.select("resources").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationResource(o)),
         navigation =
-          json.select("navigation").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationSidebar(o)),
+          json.select("navigation").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationSidebar(o)),
         redirections = json
           .select("redirections")
           .asOpt[Seq[JsObject]]
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(o => ApiDocumentationRedirection(o)),
         footer = json.select("footer").asOpt[JsObject].map(o => ApiDocumentationResource(o)),
         search = json
@@ -971,13 +971,13 @@ object ApiSubscription {
 
   private def removeManagedMetadata(currentApikeyMetadata: Map[String, String]): Map[String, String] = {
     val managed_keys: Seq[String] =
-      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
+      currentApikeyMetadata.get(PLAN_METADATA_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String]) ++
       currentApikeyMetadata
         .get(SUBSCRIPTION_METADATA_KEY)
         .map(_.split(SUBSCRIPTION_METADATA_KEY))
-        .getOrElse(Array.empty)
+        .getOrElse(Array.empty[String])
 
-    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key))
+    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key)).toMap
   }
 
   private def removeManagedTags(
@@ -985,8 +985,8 @@ object ApiSubscription {
       currentApikeyTags: Seq[String]
   ): Seq[String] = {
     val managed_keys: Seq[String] =
-      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty) ++
-      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty)
+      currentApikeyMetadata.get(PLAN_TAGS_KEY).map(_.split(METADATA_AND_TAGS_SEPARATOR)).getOrElse(Array.empty[String]) ++
+      currentApikeyMetadata.get(SUBSCRIPTION_TAGS_KEY).map(_.split(SUBSCRIPTION_METADATA_KEY)).getOrElse(Array.empty[String])
 
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }
@@ -1119,9 +1119,8 @@ object ApiSubscription {
       env: Env
   ): Future[Either[JsValue, ApiSubscription]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val e  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: otoroshi.env.Env = env
     def onError(error: String): Either[JsValue, ApiSubscription] = Json
       .obj(
         "error"            -> error,
@@ -1157,7 +1156,7 @@ object ApiSubscription {
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asString,
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         status = (json \ "status").asOptString
           .map {
@@ -1181,7 +1180,7 @@ object ApiSubscription {
           case "jwt"           => ApiKind.JWT
         },
         apiRef = json.select("api_ref").asString,
-        tokenRefs = json.select("token_refs").asOpt[Seq[JsValue]].getOrElse(Seq.empty)
+        tokenRefs = json.select("token_refs").asOpt[Seq[JsValue]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -1529,7 +1528,7 @@ case class Api(
   }
 
   private def buildDraftRoutes()(implicit env: Env): Future[Seq[RouteWithApi]] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     env.datastores.draftsDataStore
       .findById(id)
@@ -1688,7 +1687,7 @@ case class Api(
   }
 
   def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
-    implicit val ec = env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     val isRemovedOrDisabled = state == ApiRemoved || !enabled
 
@@ -1851,9 +1850,8 @@ object Api {
       env: Env
   ): Future[Either[JsValue, Api]] = {
 
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val e  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val e: otoroshi.env.Env = env
     oldEntity match {
       case None      =>
         // Create path: API must start in staging.
@@ -1910,7 +1908,7 @@ object Api {
       val name        = json.select("info").select("title").asOpt[String].getOrElse("unknown-name")
       val description = json.select("info").select("description").asOpt[String].getOrElse("")
       val version     = json.select("info").select("version").asOpt[String].getOrElse("")
-      val targets     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map { server =>
+      val targets     = json.select("servers").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map { server =>
         val serverUrl = server.selectAsOptString("url").getOrElse("/")
         val serverUri = Uri(serverUrl)
 
@@ -2033,7 +2031,7 @@ object Api {
         domain = (json \ "domain").asOpt[String].getOrElse(""),
         contextPath = (json \ "contextPath").asOpt[String].getOrElse(""),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
         visibility = (json \ "visibility")
           .asOpt[JsObject]
           .flatMap(o => ApiVisibility.format.reads(o).asOpt)
@@ -2042,12 +2040,12 @@ object Api {
         members = (json \ "members")
           .asOpt[Seq[JsObject]]
           .map(seq => seq.flatMap(o => UserRef.format.reads(o).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         version = (json \ "version").asOptString.getOrElse("0.0.1"),
         debugFlow = (json \ "debug_flow").asOpt[Boolean].getOrElse(false),
         capture = (json \ "capture").asOpt[Boolean].getOrElse(false),
         exportReporting = (json \ "export_reporting").asOpt[Boolean].getOrElse(false),
-        groups = (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty),
+        groups = (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         state = (json \ "state").asOptString
           .map {
             case "staging"    => ApiStaging
@@ -2072,15 +2070,15 @@ object Api {
         routes = (json \ "routes")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiRoute._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         backends = (json \ "backends")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackend._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         flows = (json \ "flows")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiFlows._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         clientsBackendConfig = (json \ "clients_backend_config")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
@@ -2090,11 +2088,11 @@ object Api {
         deployments = (json \ "deployments")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiDeployment._fmt.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         versions = json
           .select("versions")
           .asOpt[Seq[String]]
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         testing = json
           .select("testing")
           .asOpt(ApiTesting._fmt.reads)
@@ -2102,12 +2100,12 @@ object Api {
         clients = (json \ "clients")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiClient.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         hooks = (json \ "hooks")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiStateHook.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
-        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).map(o => ApiDocumentationPlan(o))
+          .getOrElse(Seq.empty).toSeq,
+        plans = json.select("plans").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.map(o => ApiDocumentationPlan(o))
       )
     } match {
       case Failure(ex)    =>

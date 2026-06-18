@@ -1,19 +1,19 @@
 package functional
 
-import akka.NotUsed
-import akka.actor.{ActorSystem, Scheduler}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ws, _}
-import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.{ActorSystem, Scheduler}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.{ws, _}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import io.netty.resolver.InetNameResolver
 import io.netty.util.concurrent.{EventExecutor, Promise => NettyPromise}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
@@ -114,7 +114,7 @@ trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents wi
 /*
 trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
-  lazy implicit val ec = otoroshiComponents.env.otoroshiExecutionContext
+  lazy implicit val ec: scala.concurrent.ExecutionContext = otoroshiComponents.env.otoroshiExecutionContext
   lazy val logger      = Logger("otoroshi-spec-helper")
 
   private var _servers: Set[TargetService] = Set.empty
@@ -260,7 +260,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
         .execute()
         .map { response =>
           if (response.status != 200) {
-            logger.error(response.body)
+            logger.error(response.body[String])
           }
           (response.json, response.status)
         }
@@ -274,7 +274,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
         .execute()
         .map { response =>
           if (response.status != 200) {
-            logger.error(response.body)
+            logger.error(response.body[String])
           }
           (response.json, response.status)
         }
@@ -294,7 +294,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .get()
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -314,7 +314,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .put(Json.stringify(config.toJson))
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -338,10 +338,10 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       response <- fetch()
     } yield {
       // if (response.status != 200) {
-      //   println(response.body)
+      //   println(response.body[String])
       // }
       try {
-        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ServiceDescriptor.fromJsons(e))
       } catch {
         case e: Throwable => Seq.empty
       }
@@ -417,7 +417,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => Outage.fmt.reads(e).get)
+        response.json.as[JsArray].value.toSeq.map(e => Outage.fmt.reads(e).get)
       }
   }
 
@@ -431,7 +431,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ServiceGroup.fromJsons(e))
       }
   }
 
@@ -445,7 +445,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ApiKey.fromJsons(e))
       }
   }
 
@@ -547,7 +547,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 }
  */
 
-trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues with ScalaFutures with IntegrationPatience {
 
   import Implicits._
 
@@ -1059,7 +1059,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         .execute()
         .map { response =>
           if (response.status != 200 && response.status != 201) {
-            logger.error(response.status + " - " + response.body)
+            logger.error(response.status + " - " + response.body[String])
           }
           (response.json, response.status)
         }
@@ -1074,7 +1074,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         .execute()
         .map { response =>
           if (response.status != 200 && response.status != 201) {
-            logger.error(response.status + " - " + response.body)
+            logger.error(response.status + " - " + response.body[String])
           }
           (response.json, response.status)
         }
@@ -1092,7 +1092,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .get()
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -1141,7 +1141,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .put(Json.stringify(config.toJson))
       .map { response =>
         //if (response.status != 200) {
-        //  println(response.body)
+        //  println(response.body[String])
         //}
         GlobalConfig.fromJsons(response.json)
       }
@@ -1163,10 +1163,10 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       response <- fetch()
     } yield {
       // if (response.status != 200) {
-      //   println(response.body)
+      //   println(response.body[String])
       // }
       try {
-        response.json.as[JsArray].value.map(e => ServiceDescriptor.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ServiceDescriptor.fromJsons(e))
       } catch {
         case e: Throwable => Seq.empty
       }
@@ -1188,10 +1188,10 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       response <- fetch()
     } yield {
       // if (response.status != 200) {
-      //   println(response.body)
+      //   println(response.body[String])
       // }
       try {
-        response.json.as[JsArray].value.map(e => NgRoute.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => NgRoute.fromJsons(e))
       } catch {
         case e: Throwable => Seq.empty
       }
@@ -1270,7 +1270,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => Outage.fmt.reads(e).get)
+        response.json.as[JsArray].value.toSeq.map(e => Outage.fmt.reads(e).get)
       }
   }
 
@@ -1284,7 +1284,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ServiceGroup.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ServiceGroup.fromJsons(e))
       }
   }
 
@@ -1298,7 +1298,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .map { response =>
-        response.json.as[JsArray].value.map(e => ApiKey.fromJsons(e))
+        response.json.as[JsArray].value.toSeq.map(e => ApiKey.fromJsons(e))
       }
   }
 
@@ -1811,7 +1811,7 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
 
   def getInHeader(resp: WSRequest#Self#Response, headerName: String) = {
     val headers = Json
-      .parse(resp.body)
+      .parse(resp.body[String])
       .as[JsValue]
       .select("headers")
       .as[Map[String, String]]
@@ -1893,10 +1893,10 @@ class TargetService(
     result: HttpRequest => (Int, String, Option[Source[ByteString, _]], List[HttpHeader])
 ) {
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+  implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+  implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+  implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
 
@@ -1992,10 +1992,10 @@ class SimpleTargetService(host: Option[String], path: String, contentType: Strin
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+  implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+  implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+  implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
 
@@ -2033,10 +2033,10 @@ class AlertServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+  implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+  implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+  implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
 
@@ -2069,18 +2069,18 @@ class AnalyticsServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+  implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+  implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+  implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
     request.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map { bodyByteString =>
       val body   = bodyByteString.utf8String
-      val events = Json.parse(body).as[JsArray].value
-      // println(Json.parse(body).as[JsArray].value.filter(a => (a \ "@type").as[String] == "AlertEvent").map(a => (a \ "alert").as[String]))
+      val events = Json.parse(body).as[JsArray].value.toSeq
+      // println(Json.parse(body).as[JsArray].value.toSeq.filter(a => (a \ "@type").as[String] == "AlertEvent").map(a => (a \ "alert").as[String]))
       counter.addAndGet(events.size)
       HttpResponse(
         200,
@@ -2107,10 +2107,10 @@ class WebsocketServer(counter: AtomicInteger) {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+  implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+  implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+  implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
 
@@ -2148,7 +2148,7 @@ class WebsocketBackend(
     callback: String => Message = text => TextMessage(s"Echo: $text"),
     streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
 ) {
-  import akka.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
+  import org.apache.pekko.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
 
   implicit val system: ActorSystem = ActorSystem("otoroshi-test")
   implicit val mat: Materializer   = Materializer(system)
@@ -2303,10 +2303,10 @@ class BodySizeService() {
 
   val port = TargetService.freePort
 
-  implicit val system = ActorSystem()
-  implicit val ec     = system.dispatcher
-  implicit val mat    = Materializer(system)
-  implicit val http   = Http(system)
+  implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+  implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+  implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
+  implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
 
@@ -2418,8 +2418,8 @@ trait ApiTester[Entity] {
       body: Source[ByteString, _],
       name: String
   ): Boolean = {
-    implicit val ec           = env.otoroshiExecutionContext
-    implicit val mat          = env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val indexedEntities       = entities.map(v => (extractId(v), v)).toMap
     val indexedResultEntities = Await.result(
       body
@@ -2460,7 +2460,7 @@ trait ApiTester[Entity] {
           }
         } else {
           logger.error(s"[$entityName] testCreateEntity: bad status code: ${resp.status}, expected 201 or 200")
-          logger.error(s"[$entityName] testCreateEntity: ${resp.body}")
+          logger.error(s"[$entityName] testCreateEntity: ${resp.body[String]}")
           false.future
         }
       }
@@ -2567,7 +2567,7 @@ trait ApiTester[Entity] {
       .execute()
       .map { resp =>
         if (resp.status == 200) {
-          val arr         = resp.json.as[JsArray].value
+          val arr         = resp.json.as[JsArray].value.toSeq
           if (arr.isEmpty) logger.info(s"[$entityName] ${ctx.getOrElse("testFindAll")}: empty collection")
           val retEntities = arr.map(readEntityFromJson)
           // logger.info(s"$retEntities - $entities")

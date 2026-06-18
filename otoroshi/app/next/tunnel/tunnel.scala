@@ -1,12 +1,12 @@
 package otoroshi.next.tunnel
 
-import akka.actor.{Actor, ActorRef, Props}
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
-import akka.http.scaladsl.model.{HttpProtocols, Uri}
-import akka.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{Materializer, OverflowStrategy}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.ws.{InvalidUpgradeResponse, ValidUpgrade, WebSocketRequest}
+import org.apache.pekko.http.scaladsl.model.{HttpProtocols, Uri}
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComplete}
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import org.joda.time.DateTime
 import otoroshi.actions.ApiAction
@@ -37,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.cluster.ClusterConfig
 import play.api.libs.ws.DefaultWSProxyServer
-import akka.http.scaladsl.ClientTransport
+import org.apache.pekko.http.scaladsl.ClientTransport
 import otoroshi.utils.cache.types.UnboundedTrieMap
 
 case class TunnelPluginConfig(tunnelId: String) extends NgPluginConfig {
@@ -95,7 +95,7 @@ class TunnelPlugin extends NgBackendCall {
           .map { sc =>
             Cookies.decodeSetCookieHeader(sc)
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
           .map(_.wsCookie)
         if (logger.isDebugEnabled) logger.debug(s"response status '${result.header.status}'")
         Right(
@@ -169,10 +169,10 @@ class TunnelAgent(env: Env) {
                   val trustAll     =
                     conf.getOptionalWithFileSupport[Boolean]("tls.trustAll").getOrElse(false)
                   val certs        =
-                    conf.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty)
+                    conf.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty).toSeq
                   val trustedCerts = conf
                     .getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts")
-                    .getOrElse(Seq.empty)
+                    .getOrElse(Seq.empty).toSeq
                   MtlsConfig(
                     certs = certs,
                     trustedCerts = trustedCerts,
@@ -222,21 +222,20 @@ class TunnelAgent(env: Env) {
       waiting: Long
   ): Future[Unit] = {
 
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     logger.info(s"connecting tunnel '${tunnelId}' ...")
 
     val promise                                                                                                     = Promise[Unit]()
-    val metadataSource: Source[akka.http.scaladsl.model.ws.Message, _]                                              = Source
+    val metadataSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                              = Source
       .tick(1.seconds, 10.seconds, ())
       .map { _ =>
         Try {
           if (exportMeta) {
             val allRoutes = env.proxyState.allRoutes()
             val routes    = exportTag.map(t => allRoutes.filter(_.tags.contains(t))).getOrElse(allRoutes)
-            akka.http.scaladsl.model.ws.BinaryMessage.Strict(
+            org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(
               Json
                 .obj(
                   "tunnel_id" -> tunnelId,
@@ -251,7 +250,7 @@ class TunnelAgent(env: Env) {
             )
 
           } else {
-            akka.http.scaladsl.model.ws.BinaryMessage
+            org.apache.pekko.http.scaladsl.model.ws.BinaryMessage
               .Strict(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString)
           }
         }
@@ -259,20 +258,20 @@ class TunnelAgent(env: Env) {
       .collect { case Success(value) =>
         value
       }
-    val pingSource: Source[akka.http.scaladsl.model.ws.Message, _]                                                  = Source
+    val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                  = Source
       .tick(10.seconds, 10.seconds, ())
       .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
       .map { pm =>
-        akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
+        org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
       }
-    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+    val queueRef                                                                                                    = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
     val pushSource
-        : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-      Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+        : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
+      Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
         queueRef.set(q)
         q
       }
-    val source: Source[akka.http.scaladsl.model.ws.Message, _]                                                      = pushSource.merge(pingSource.merge(metadataSource))
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource.merge(pingSource.merge(metadataSource))
 
     def handleRequest(rawRequest: ByteString): Unit = Try {
       val obj = Json.parse(rawRequest.toArray)
@@ -306,7 +305,7 @@ class TunnelAgent(env: Env) {
               )
             }
           }
-          .getOrElse(Seq.empty)
+          .getOrElse(Seq.empty).toSeq
         val certs             = obj.select("client_cert_chain").asOpt[Seq[String]].map(_.map(_.trim.toCertificate))
         val body              = obj.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
           case None    => Source.empty[ByteString]
@@ -332,7 +331,7 @@ class TunnelAgent(env: Env) {
               logger.debug(s"sending response back to server on tunnel '${tunnelId}' - ${requestId}")
             Option(queueRef.get()).foreach(queue =>
               queue
-                .offer(akka.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024)))
+                .offer(org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(res.stringify.byteString.chunks(16 * 1024)))
             )
           }
         }
@@ -371,15 +370,15 @@ class TunnelAgent(env: Env) {
       mtlsConfigOpt = tls,
       clientFlow = Flow
         .fromSinkAndSource(
-          Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-            case akka.http.scaladsl.model.ws.TextMessage.Strict(data)       =>
+          Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(data)       =>
               if (logger.isDebugEnabled) logger.debug(s"invalid text message: '${data}'")
-            case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+            case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
               source
                 .runFold("")(_ + _)
                 .map(b => if (logger.isDebugEnabled) logger.debug(s"invalid text message: '${b}'"))
-            case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleRequest(data)
-            case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleRequest(data)
+            case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
               source.runFold(ByteString.empty)(_ ++ _).map(b => handleRequest(b))
           },
           source
@@ -443,7 +442,7 @@ class TunnelAgent(env: Env) {
               case (Some(principal), Some(password)) =>
                 ClientTransport.httpsProxy(
                   proxyAddress,
-                  akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
+                  org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
                 )
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
@@ -482,9 +481,8 @@ class TunnelManager(env: Env) {
   private val workerWs       = env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-ws").getOrElse(true)
   private val logger         = Logger(s"otoroshi-tunnel-manager")
 
-  private implicit val ec = env.otoroshiExecutionContext
-  private implicit val ev = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val ev: otoroshi.env.Env = env
   def currentTunnels: Set[String] = tunnels.asMap().keySet.toSet
 
   private def whenEnabled(f: => Unit): Unit = {
@@ -641,10 +639,9 @@ class TunnelManager(env: Env) {
       secured: Boolean,
       member: MemberView
   ): Future[Result] = {
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
-    implicit val ev  = env
-
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
     val requestId: String = TunnelActor.genRequestId(env) // legit
     val requestJson       = TunnelActor.requestToJson(request, addr, secured, requestId).stringify.byteString
 
@@ -676,9 +673,9 @@ class LeaderConnection(
 ) {
 
   private val logger           = Logger("otoroshi-tunnel-leader-connection")
-  private implicit val ec      = env.otoroshiExecutionContext
-  private implicit val mat     = env.otoroshiMaterializer
-  private implicit val factory = env.otoroshiActorSystem
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val factory: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
 
   private val useInternalPorts =
     env.configuration.getOptional[Boolean]("otoroshi.tunnels.worker-use-internal-ports").getOrElse(false)
@@ -688,20 +685,20 @@ class LeaderConnection(
   def location: String = member.location
 
   private val ref                                                                                                 = new AtomicLong(0L)
-  private val pingSource: Source[akka.http.scaladsl.model.ws.Message, _]                                          = Source
+  private val pingSource: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                          = Source
     .tick(10.seconds, 10.seconds, ())
     .map(_ => BinaryMessage(Json.obj("tunnel_id" -> tunnelId, "type" -> "ping").stringify.byteString))
     .map { pm =>
-      akka.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
+      org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(pm.data)
     }
-  private val queueRef                                                                                            = new AtomicReference[SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]]()
+  private val queueRef                                                                                            = new AtomicReference[SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]]()
   private val pushSource
-      : Source[akka.http.scaladsl.model.ws.Message, SourceQueueWithComplete[akka.http.scaladsl.model.ws.Message]] =
-    Source.queue[akka.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
+      : Source[org.apache.pekko.http.scaladsl.model.ws.Message, SourceQueueWithComplete[org.apache.pekko.http.scaladsl.model.ws.Message]] =
+    Source.queue[org.apache.pekko.http.scaladsl.model.ws.Message](512, OverflowStrategy.dropHead).mapMaterializedValue { q =>
       queueRef.set(q)
       q
     }
-  private val source: Source[akka.http.scaladsl.model.ws.Message, _]                                              = pushSource.merge(pingSource)
+  private val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                              = pushSource.merge(pingSource)
   private val awaitingResponse                                                                                    = new UnboundedTrieMap[String, Promise[Result]]()
 
   def close(): Unit = {
@@ -718,7 +715,7 @@ class LeaderConnection(
       )
     val promise = Promise.apply[Result]()
     awaitingResponse.put(requestId, promise)
-    Option(queueRef.get()).foreach(_.offer(akka.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
+    Option(queueRef.get()).foreach(_.offer(org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(req)))
     promise.future
   }
 
@@ -762,9 +759,9 @@ class LeaderConnection(
         mtlsConfigOpt = env.clusterConfig.mtlsConfig.some.filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSource(
-            Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-              case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
-              case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                 source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
               case _                                                          =>
             },
@@ -829,9 +826,9 @@ class LeaderConnection(
         mtlsConfigOpt = env.clusterConfig.mtlsConfig.some.filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSource(
-            Sink.foreach[akka.http.scaladsl.model.ws.Message] {
-              case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
-              case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+            Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] {
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => handleResponse(data)
+              case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
                 source.runFold(ByteString.empty)(_ ++ _).map(b => handleResponse(b))
               case _                                                          =>
             },
@@ -905,9 +902,9 @@ class LeaderConnection(
 class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
     extends AbstractController(cc) {
 
-  implicit lazy val ec      = env.otoroshiExecutionContext
-  implicit lazy val mat     = env.otoroshiMaterializer
-  implicit lazy val factory = env.otoroshiActorSystem
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  implicit lazy val factory: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
 
   private val tunnelsEnabled = env.configuration.getOptional[Boolean]("otoroshi.tunnels.enabled").getOrElse(false)
 
@@ -1041,8 +1038,8 @@ object TunnelRelayActor {
 class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor {
 
   private val logger       = Logger("otoroshi-tunnel-relay-actor")
-  private implicit val ec  = env.otoroshiExecutionContext
-  private implicit val mat = env.otoroshiMaterializer
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   def handleRequest(data: ByteString): Unit = Try {
     val request = Json.parse(data.toArray)
@@ -1109,7 +1106,7 @@ object TunnelActor {
       .map { c =>
         Cookies.decodeCookieHeader(c)
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>
       Json.obj(
         "request_id" -> requestId,
@@ -1162,7 +1159,7 @@ object TunnelActor {
           )
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
     val body                               = response.select("body").asOpt[String].map(b => ByteString(b).decodeBase64) match {
       case None    => Source.empty[ByteString]
       case Some(b) => Source.single(b)

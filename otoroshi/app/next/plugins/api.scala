@@ -1,10 +1,10 @@
 package otoroshi.next.plugins.api
 
-import akka.Done
-import akka.http.scaladsl.model.{ContentType, StatusCodes, Uri}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.{ContentType, StatusCodes, Uri}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -405,7 +405,7 @@ trait NgCachedConfigContext {
   def extractBody(
       request: NgPluginHttpRequest
   )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
         Some((b, request.contentType.getOrElse("application/octet-stream")))
@@ -432,7 +432,7 @@ trait NgCachedConfigContext {
   def extractBody(
       response: NgPluginHttpResponse
   )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       Some((b, response.contentType.getOrElse("application/octet-stream")))
     }
@@ -656,7 +656,7 @@ case class NgTransformerRequestContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.requestBody(otoroshiRequest).map { case (body, bodyBytesOut) =>
       (
         json.asObject ++ Json.obj(
@@ -709,7 +709,7 @@ case class NgTransformerResponseContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -766,7 +766,7 @@ case class NgTransformerErrorContext(
     "attrs"             -> attrs.json
   )
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -1025,7 +1025,7 @@ case class NgbBackendCallContext(
   )
 
   def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.requestBody(request).map { case (body, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -1058,7 +1058,7 @@ case class BackendCallResponse(response: NgPluginHttpResponse, rawResponse: Opti
   def status: Int                          = rawResponse.map(_.status).getOrElse(response.status)
   def contentLengthStr: Option[String]     = rawResponse.flatMap(_.contentLengthStr).orElse(response.contentLengthStr)
   def contentLength: Option[Long]          = rawResponse.map(_.contentLength).getOrElse(response.contentLength)
-  def headers: Map[String, Seq[String]]    = rawResponse.map(_.headers).getOrElse(response.headers.mapValues(v => Seq(v)))
+  def headers: Map[String, Seq[String]]    = rawResponse.map(_.headers.view.mapValues(_.toSeq).toMap).getOrElse(response.headers.mapValues(v => Seq(v)).toMap)
   def header(name: String): Option[String] =
     rawResponse.map(_.header(name)).getOrElse(response.headers.getIgnoreCase(name))
   def isChunked(): Option[Boolean]         = rawResponse.map(_.isChunked()).getOrElse(response.isChunked.some)
@@ -1473,27 +1473,27 @@ sealed trait WebsocketMessage {
   def isBinary: Boolean
   def isText: Boolean = !isBinary
   def asPlay(implicit env: Env): Future[play.api.http.websocket.Message]
-  def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message]
+  def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message]
 }
 
 object WebsocketMessage {
-  case class AkkaMessage(data: akka.http.scaladsl.model.ws.Message) extends WebsocketMessage {
+  case class AkkaMessage(data: org.apache.pekko.http.scaladsl.model.ws.Message) extends WebsocketMessage {
     override def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
-      case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.byteString.future
-      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+      case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.byteString.future
+      case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
         source.runFold(ByteString.empty)((concat, str) => concat ++ str.byteString)
-      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => data.future
-      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+      case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => data.future
+      case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
       case _                                                          => ByteString.empty.future
     }
     override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]       = data match {
-      case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
-      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+      case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
+      case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
         source.runFold("")((concat, str) => concat + str)
-      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => data.utf8String.future
-      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+      case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => data.utf8String.future
+      case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.utf8String)
@@ -1501,11 +1501,11 @@ object WebsocketMessage {
     }
 
     override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
-      case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.length.future
-      case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+      case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.length.future
+      case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
         source.runFold("")((concat, str) => concat + str).map(_.length)
-      case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => data.size.future
-      case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+      case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => data.size.future
+      case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
         source
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
           .map(_.size)
@@ -1515,21 +1515,21 @@ object WebsocketMessage {
     override def isBinary: Boolean = !data.isText
 
     override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
-      implicit val ec  = env.otoroshiExecutionContext
-      implicit val mat = env.otoroshiMaterializer
+      implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       data match {
-        case akka.http.scaladsl.model.ws.TextMessage.Strict(text)       => PlayWSTextMessage(text).vfuture
-        case akka.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
+        case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => PlayWSTextMessage(text).vfuture
+        case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
           source.runFold("")((concat, str) => concat + str).map(text => PlayWSTextMessage(text))
-        case akka.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => PlayWSBinaryMessage(data).vfuture
-        case akka.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
+        case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Strict(data)     => PlayWSBinaryMessage(data).vfuture
+        case org.apache.pekko.http.scaladsl.model.ws.BinaryMessage.Streamed(source) =>
           source
             .runFold(ByteString.empty)((concat, str) => concat ++ str)
             .map(data => PlayWSBinaryMessage(data))
         case other                                                      => throw new RuntimeException(s"Unkown message type ${other}")
       }
     }
-    override def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message] = {
+    override def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
       data.vfuture
     }
   }
@@ -1564,12 +1564,12 @@ object WebsocketMessage {
       data.vfuture
     }
 
-    override def asAkka(implicit env: Env): Future[akka.http.scaladsl.model.ws.Message] = {
+    override def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
       data match {
-        case msg: PlayWSBinaryMessage => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
-        case msg: PlayWSTextMessage   => akka.http.scaladsl.model.ws.TextMessage(msg.data).vfuture
-        case msg: PingMessage         => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
-        case msg: PongMessage         => akka.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
+        case msg: PlayWSBinaryMessage => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
+        case msg: PlayWSTextMessage   => org.apache.pekko.http.scaladsl.model.ws.TextMessage(msg.data).vfuture
+        case msg: PingMessage         => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
+        case msg: PongMessage         => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
         case other                    => throw new RuntimeException(s"Unkown message type ${other}")
       }
     }
@@ -1674,7 +1674,7 @@ class YesWebsocketBackend extends NgWebsocketBackendPlugin {
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
   )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.request.getQueryString("fail") match {
       case Some("yes") =>
         NgProxyEngineError.NgResultProxyEngineError(Results.InternalServerError(Json.obj("error" -> "fail !"))).leftf

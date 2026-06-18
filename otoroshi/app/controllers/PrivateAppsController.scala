@@ -1,8 +1,8 @@
 package otoroshi.controllers
 
 import otoroshi.actions.{ApiAction, PrivateAppsAction}
-import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.util.ByteString
 import otoroshi.auth.{BasicAuthModule, BasicAuthUser}
 import otoroshi.env.Env
 
@@ -24,16 +24,16 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   private lazy val secret = new SecretKeySpec(env.secretSession.getBytes, "AES")
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   def home =
-    PrivateAppsAction { ctx =>
+    PrivateAppsAction { (ctx: otoroshi.actions.PrivateAppsActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.privateapps.home(ctx.users.headOption, env))
     }
 
   def redirect =
-    PrivateAppsAction { ctx =>
+    PrivateAppsAction { (ctx: otoroshi.actions.PrivateAppsActionContext[play.api.mvc.AnyContent]) =>
       implicit val request = ctx.request
       Redirect(
         //request.session
@@ -45,7 +45,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     }
 
   def error(message: Option[String] = None) =
-    PrivateAppsAction { ctx =>
+    PrivateAppsAction { (ctx: otoroshi.actions.PrivateAppsActionContext[play.api.mvc.AnyContent]) =>
       Ok(otoroshi.views.html.oto.error(message.getOrElse(""), env))
     }
 

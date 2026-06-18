@@ -15,7 +15,7 @@ import play.api.libs.json._
 import play.api.libs.ws.DefaultWSCookie
 
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.jdk.CollectionConverters._
 
 class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
 
@@ -113,7 +113,7 @@ class NgAuthModuleUserExtractorTests(parent: PluginsTestSpec) {
     id = IdGenerator.uuid
   ).futureValue
 
-  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.map { c =>
+  val wsCookies: Seq[DefaultWSCookie] = context.cookies.asScala.toSeq.map { c =>
     DefaultWSCookie(
       name = c.name,
       value = c.value,

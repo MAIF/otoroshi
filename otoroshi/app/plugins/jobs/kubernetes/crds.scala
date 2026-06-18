@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import akka.http.scaladsl.model.Uri
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient
@@ -170,7 +170,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   ): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
       env.otoroshiScheduler.scheduleOnce(5.minutes) {
@@ -1481,7 +1481,7 @@ object KubernetesCRDsJob {
                      .resources()
                      .map(r => (r, r.access.allJson()))
                      .groupBy(_._1)
-                     .mapValues(_.map(_._2).flatten)
+                     .mapValues(_.map(_._2).flatten).toMap
                      .vfuture
 
       services           <- clientSupport.client.fetchServices()
@@ -1630,7 +1630,7 @@ object KubernetesCRDsJob {
       env: Env,
       ec: ExecutionContext
   ): Future[SyncReport] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     if (ctx.kubernetes.globalConfigs.size > 1) {
       Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
@@ -1781,7 +1781,7 @@ object KubernetesCRDsJob {
             successCount = successCount,
             failureCount = failureCount,
             durationMs = duration,
-            entityResults = results
+            entityResults = results.toSeq
           )
         }
     }
@@ -1964,7 +1964,7 @@ object KubernetesCRDsJob {
       updatedSecrets: AtomicReference[Seq[(String, String)]]
   )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${apikeys.size} apikeys as secrets")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(apikeys.toList)
       .mapAsync(1) { case (namespace, name, apikey) =>
         clientSupport.client.fetchSecret(namespace, name).flatMap {
@@ -2037,7 +2037,7 @@ object KubernetesCRDsJob {
     import otoroshi.ssl.SSLImplicits._
 
     logger.info(s"will export ${certs.size} certificates as secrets")
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(certs.toList)
       .mapAsync(1) { case (namespace, name, cert) =>
         clientSupport.client.fetchSecret(namespace, name).flatMap {
@@ -2095,7 +2095,7 @@ object KubernetesCRDsJob {
       _updatedSecrets: Seq[(String, String)]
   )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     if (conf.restartDependantDeployments) {
-      implicit val mat = env.otoroshiMaterializer
+      implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       clientSupport.client.fetchDeployments().flatMap { deployments =>
         Source(deployments.toList)
           .mapAsync(1) { deployment =>
@@ -2106,20 +2106,20 @@ object KubernetesCRDsJob {
             val volumeSecrets       = (deployment.raw \ "spec" \ "template" \ "spec" \ "volumes")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter(item => (item \ "secret").isDefined)
               .map(item => (item \ "secret" \ "secretName").as[String])
 
             val envSecrets: Seq[String] = (deployment.raw \ "spec" \ "template" \ "spec" \ "containers")
               .asOpt[JsArray]
               .map(_.value)
-              .getOrElse(Seq.empty[JsValue])
+              .getOrElse(Seq.empty[JsValue]).toSeq
               .filter { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.exists(v => (v \ "valueFrom" \ "secretKeyRef").isDefined)
               }
               .flatMap { item =>
-                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty).toSeq
                 envs.map(v => (v \ "valueFrom" \ "secretKeyRef" \ "name").as[String])
               }
               .distinct
@@ -2165,7 +2165,7 @@ object KubernetesCRDsJob {
       ctx: CRDContext,
       updatedSecretsRef: AtomicReference[Seq[(String, String)]]
   )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val lastSecrets  = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
     clientSupport.client.fetchSecrets().flatMap { allSecretsRaw =>
       val allSecrets = allSecretsRaw.filter(_.metaId.isDefined).map(_.path)

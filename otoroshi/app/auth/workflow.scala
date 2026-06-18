@@ -56,19 +56,19 @@ object WorkflowAuthModuleConfig {
         clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
         sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-        allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
-        deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+        allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         sessionCookieValues =
           (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
         userValidators = (json \ "userValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         remoteValidators = (json \ "remoteValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => RemoteUserValidatorSettings.format.reads(v).asOpt))
-          .getOrElse(Seq.empty),
+          .getOrElse(Seq.empty).toSeq,
         workflowRef = json.select("workflowRef").asOpt[String].filter(_.trim.nonEmpty)
       )
     } match {

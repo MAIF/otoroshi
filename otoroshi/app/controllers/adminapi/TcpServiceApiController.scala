@@ -24,8 +24,8 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
     with BulkControllerHelper[TcpService, JsValue]
     with CrudControllerHelper[TcpService, JsValue] {
 
-  implicit lazy val ec  = env.otoroshiExecutionContext
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   val logger = Logger("otoroshi-tcp-service-api")
 

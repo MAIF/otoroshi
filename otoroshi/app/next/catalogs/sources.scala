@@ -1,10 +1,10 @@
 package otoroshi.next.catalogs
 
-import akka.stream.alpakka.s3.scaladsl.S3
-import akka.stream.alpakka.s3._
-import akka.stream.scaladsl.Sink
-import akka.stream.{Attributes, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.{Attributes, Materializer}
+import org.apache.pekko.util.ByteString
 import otoroshi.api.Resource
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
@@ -33,7 +33,7 @@ object SourceUtils {
   }
 
   private def isStringArray(value: JsValue): Option[JsArray] = value match {
-    case arr: JsArray if arr.value.nonEmpty && arr.value.forall(_.isInstanceOf[JsString]) => Some(arr)
+    case arr: JsArray if arr.value.nonEmpty && arr.value.toSeq.forall(_.isInstanceOf[JsString]) => Some(arr)
     case _                                                                                => None
   }
 
@@ -66,7 +66,7 @@ object SourceUtils {
       allResources: Seq[Resource],
       resolveGlob: Option[String => Future[Either[JsValue, Seq[String]]]] = None
   )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
-    val rawPaths = deployArray.value.flatMap(_.asOpt[String])
+    val rawPaths = deployArray.value.flatMap(_.asOpt[String]).toSeq
     rawPaths
       .mapAsync { path =>
         if (isGlobPattern(path) && resolveGlob.isDefined) {
@@ -143,7 +143,7 @@ object SourceUtils {
         .filter(p => matcher.matches(p) && isEntityFile(p.getFileName.toString))
         .map(_.toString)
         .toSeq
-    }.getOrElse(Seq.empty)
+    }.getOrElse(Seq.empty).toSeq
   }
 
   def resolveRemoteGlob(allFiles: Seq[String], basePath: String, globPattern: String): Seq[String] = {
@@ -188,7 +188,7 @@ class CatalogSourceFile extends CatalogSource {
     Json.obj("error" -> "file source does not support webhooks").leftf
 
   private def runPreCommand(catalog: RemoteCatalog): Either[String, Unit] = {
-    val preCommand = catalog.sourceConfig.select("pre_command").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val preCommand = catalog.sourceConfig.select("pre_command").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (preCommand.nonEmpty) {
       Try {
         var stdout        = ""
@@ -333,9 +333,9 @@ class CatalogSourceHttp extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
-          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body.take(500)}")): Either[JsValue, String]
+          Left(Json.obj("error" -> s"HTTP ${resp.status}: ${resp.body[String].take(500)}")): Either[JsValue, String]
         }
       }
       .recover { case e: Throwable =>
@@ -396,7 +396,7 @@ class CatalogSourceGithub extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -423,13 +423,13 @@ class CatalogSourceGithub extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val files = tree.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             if (itemType == "blob") Some(itemPath) else None
           }
-          Right(files): Either[JsValue, Seq[String]]
+          Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"GitHub API returned ${resp.status} for recursive tree listing")): Either[
             JsValue,
@@ -470,7 +470,7 @@ class CatalogSourceGithub extends CatalogSource {
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitHub API did not return an array for directory listing")): Either[
                 JsValue,
@@ -533,8 +533,8 @@ class CatalogSourceGithub extends CatalogSource {
       .get()
       .flatMap { resp =>
         if (resp.status == 200) {
-          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
-          (Right(repos): Either[JsValue, Seq[String]]).vfuture
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
+          (Right(repos.toSeq): Either[JsValue, Seq[String]]).vfuture
         } else {
           val userUrl = s"$apiBase/users/$org/repos"
           env.Ws
@@ -546,7 +546,7 @@ class CatalogSourceGithub extends CatalogSource {
             .map { resp2 =>
               if (resp2.status == 200) {
                 Right(
-                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
                 ): Either[JsValue, Seq[String]]
               } else {
                 Left(Json.obj("error" -> s"Cannot list repos for '$org'")): Either[JsValue, Seq[String]]
@@ -627,7 +627,7 @@ class CatalogSourceGithub extends CatalogSource {
     val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.github.com").stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -698,7 +698,7 @@ class CatalogSourceGitlab extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"GitLab API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -731,7 +731,7 @@ class CatalogSourceGitlab extends CatalogSource {
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "blob") Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for recursive tree listing")): Either[
                 JsValue,
@@ -775,7 +775,7 @@ class CatalogSourceGitlab extends CatalogSource {
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "blob" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for tree listing")): Either[JsValue, Seq[
                 String
@@ -835,7 +835,7 @@ class CatalogSourceGitlab extends CatalogSource {
           resp.json match {
             case arr: JsArray =>
               val projects = arr.value.flatMap(_.select("path_with_namespace").asOpt[String])
-              Right(projects): Either[JsValue, Seq[String]]
+              Right(projects.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "GitLab API did not return an array for group projects")): Either[
                 JsValue,
@@ -921,7 +921,7 @@ class CatalogSourceGitlab extends CatalogSource {
     val token        = catalog.sourceConfig.select("token").asOpt[String].getOrElse("")
     val baseUrl      = catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://gitlab.com")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     if (isGroup(repoUrl)) {
@@ -1106,7 +1106,7 @@ class CatalogSourceConsulKv extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Consul KV returned ${resp.status} for key $key")): Either[JsValue, String]
         }
@@ -1131,7 +1131,7 @@ class CatalogSourceConsulKv extends CatalogSource {
         if (resp.status == 200) {
           resp.json match {
             case arr: JsArray =>
-              Right(arr.value.flatMap(_.asOpt[String])): Either[JsValue, Seq[String]]
+              Right(arr.value.flatMap(_.asOpt[String]).toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[
                 String
@@ -1169,7 +1169,7 @@ class CatalogSourceConsulKv extends CatalogSource {
                 val name = key.split("/").lastOption.getOrElse("")
                 name.nonEmpty && SourceUtils.isEntityFile(name)
               }
-              Right(keys): Either[JsValue, Seq[String]]
+              Right(keys.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> "Consul KV did not return an array for key listing")): Either[JsValue, Seq[
                 String
@@ -1301,7 +1301,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -1332,13 +1332,13 @@ class CatalogSourceBitbucket extends CatalogSource {
       .map { resp =>
         if (resp.status == 200) {
           val json  = resp.json
-          val files = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap { item =>
+          val files = json.select("values").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             val itemName = itemPath.split("/").lastOption.getOrElse("")
             if (itemType == "commit_file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
           }
-          Right(files): Either[JsValue, Seq[String]]
+          Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for directory listing")): Either[
             JsValue,
@@ -1356,7 +1356,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
     val repoFullName = payload.select("repository").select("full_name").asOpt[String].getOrElse("")
-    val changes      = payload.select("push").select("changes").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+    val changes      = payload.select("push").select("changes").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
     val branches     = changes.flatMap(c => c.select("new").select("name").asOpt[String]).toSet
     val matched      = possibleCatalogs.filter { catalog =>
       catalog.sourceKind == "bitbucket" && {
@@ -1399,9 +1399,9 @@ class CatalogSourceBitbucket extends CatalogSource {
           val repos = resp.json
             .select("values")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .flatMap(_.select("slug").asOpt[String])
-          Right(repos): Either[JsValue, Seq[String]]
+          Right(repos.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"Bitbucket API returned ${resp.status} for workspace repos")): Either[
             JsValue,
@@ -1485,7 +1485,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     val apiBase      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse("https://api.bitbucket.org").stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -1569,7 +1569,7 @@ class CatalogSourceGiteaCompat(
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          Right(resp.body): Either[JsValue, String]
+          Right(resp.body[String]): Either[JsValue, String]
         } else {
           Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for $filePath")): Either[JsValue, String]
         }
@@ -1599,13 +1599,13 @@ class CatalogSourceGiteaCompat(
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty)
+          val tree  = resp.json.select("tree").asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq
           val files = tree.flatMap { item =>
             val itemType = item.select("type").asOpt[String].getOrElse("")
             val itemPath = item.select("path").asOpt[String].getOrElse("")
             if (itemType == "blob") Some(itemPath) else None
           }
-          Right(files): Either[JsValue, Seq[String]]
+          Right(files.toSeq): Either[JsValue, Seq[String]]
         } else {
           Left(Json.obj("error" -> s"$sourceKind API returned ${resp.status} for recursive tree listing")): Either[
             JsValue,
@@ -1645,7 +1645,7 @@ class CatalogSourceGiteaCompat(
                 val itemPath = item.select("path").asOpt[String].getOrElse("")
                 if (itemType == "file" && SourceUtils.isEntityFile(itemName)) Some(itemPath) else None
               }
-              Right(files): Either[JsValue, Seq[String]]
+              Right(files.toSeq): Either[JsValue, Seq[String]]
             case _            =>
               Left(Json.obj("error" -> s"$sourceKind API did not return an array for directory listing")): Either[
                 JsValue,
@@ -1700,8 +1700,8 @@ class CatalogSourceGiteaCompat(
       .get()
       .flatMap { resp =>
         if (resp.status == 200) {
-          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
-          (Right(repos): Either[JsValue, Seq[String]]).vfuture
+          val repos = resp.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
+          (Right(repos.toSeq): Either[JsValue, Seq[String]]).vfuture
         } else {
           val userUrl = s"$baseUrl/api/v1/users/$org/repos"
           env.Ws
@@ -1713,7 +1713,7 @@ class CatalogSourceGiteaCompat(
             .map { resp2 =>
               if (resp2.status == 200) {
                 Right(
-                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).flatMap(_.select("name").asOpt[String])
+                  resp2.json.asOpt[Seq[JsObject]].getOrElse(Seq.empty).toSeq.flatMap(_.select("name").asOpt[String])
                 ): Either[JsValue, Seq[String]]
               } else {
                 Left(Json.obj("error" -> s"Cannot list repos for '$org' on $sourceKind")): Either[JsValue, Seq[String]]
@@ -1797,7 +1797,7 @@ class CatalogSourceGiteaCompat(
     val baseUrl      =
       catalog.sourceConfig.select("base_url").asOpt[String].getOrElse(defaultBaseUrl).stripSuffix("/")
     val repoPatterns =
-      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty)
+      catalog.sourceConfig.select("repo_patterns").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val allRes       = env.allResources.resources ++ env.adminExtensions.resources()
 
     parseRepo(repoUrl) match {
@@ -1955,7 +1955,7 @@ class CatalogSourceGit extends CatalogSource {
                 Seq(relativePath)
               }
             }
-            val entities: Seq[RemoteEntity] = resolved.flatMap { relativePath =>
+            val entities: Seq[RemoteEntity] = resolved.toSeq.flatMap { relativePath =>
               Try {
                 val relFile    = new File(basePath, relativePath)
                 val relContent = new String(Files.readAllBytes(relFile.toPath), StandardCharsets.UTF_8)

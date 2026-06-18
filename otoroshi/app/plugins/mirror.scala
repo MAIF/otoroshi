@@ -1,10 +1,10 @@
 package otoroshi.plugins.mirror
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import akka.http.scaladsl.model.Uri
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import otoroshi.models.{ServiceDescriptor, Target}
@@ -52,9 +52,9 @@ case class RequestContext(
 
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
-    implicit val ec         = env.otoroshiExecutionContext
-    implicit val ev         = env
-    implicit val mat        = env.otoroshiMaterializer
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val ev: otoroshi.env.Env = env
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val req                 = request
     val currentReqHasBody   = req.theHasBody
     val httpRequest         = otoRequest.get()
@@ -182,7 +182,7 @@ case class MirroringEvent(`@id`: String, `@env`: String, ctx: RequestContext, `@
         "mirroredBody"            -> ctx.mirroredBody.get().utf8String,
         "mirroredResponse"        -> Json.obj(
           "status"  -> ctx.mirroredResp.get().status,
-          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last),
+          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last).toMap,
           "cookies" -> JsArray(
             ctx.mirroredResp
               .get()

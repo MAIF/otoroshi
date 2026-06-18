@@ -1,9 +1,9 @@
 package functional
 
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import otoroshi.jobs.updates.Version
 
-class VersionSpec extends WordSpec with MustMatchers with OptionValues {
+class VersionSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues {
   "Version api" should {
     "work" in {
       Version("1.0.0").isEquals(Version("1.1.0")) mustBe false

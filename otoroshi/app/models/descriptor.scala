@@ -2,10 +2,10 @@ package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.{Materializer, OverflowStrategy}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.{Materializer, OverflowStrategy}
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source}
 import otoroshi.auth._
 import com.auth0.jwt.JWT
 import com.comcast.ip4s.{Cidr, IpAddress}
@@ -169,7 +169,7 @@ case class ApiDescriptor(exposeApi: Boolean = false, openApiDescriptorUrl: Optio
 }
 
 object ApiDescriptor {
-  implicit val format = Json.format[ApiDescriptor]
+  implicit val format: play.api.libs.json.OFormat[ApiDescriptor] = Json.format[ApiDescriptor]
 }
 
 case class BaseQuotas(
@@ -181,7 +181,7 @@ case class BaseQuotas(
 }
 
 object BaseQuotas {
-  implicit val format = Json.format[BaseQuotas]
+  implicit val format: play.api.libs.json.OFormat[BaseQuotas] = Json.format[BaseQuotas]
   val MaxValue: Long  = RemainingQuotas.MaxValue
 }
 
@@ -546,7 +546,7 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
       val cleanRatio: Double                   = if (ratio < 0.0) 0.0 else if (ratio > 0.99) 0.99 else ratio
       val times: Int                           = Math.round(targets.size / (1 - cleanRatio)).toInt - targets.size
       val bestTarget: Option[Target]           = targets.find(t => s"${descId}-${t.asKey}" == key)
-      val fill: Seq[Target]                    = bestTarget.map(t => Seq.fill(times)(t)).getOrElse(Seq.empty[Target])
+      val fill: Seq[Target]                    = bestTarget.map(t => Seq.fill(times)(t)).getOrElse(Seq.empty[Target]).toSeq
       val newTargets: Seq[Target]              = targets ++ fill
       val index: Int                           = BestResponseTime.random.nextInt(newTargets.length)
       newTargets.apply(index)
@@ -592,7 +592,7 @@ object TargetPredicate {
                 .map(_.map(_.split(";").toList.map(_.trim)).collect { case lat :: lng :: radius :: Nil =>
                   GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
                 })
-                .getOrElse(Seq.empty)
+                .getOrElse(Seq.empty).toSeq
             )
           )
         case "NetworkLocationMatch" =>
@@ -720,12 +720,12 @@ case class HttpProtocol(value: String) {
   def isHttp3: Boolean                              = value.toLowerCase().startsWith("http/3")
   def isHttp2OrHttp3: Boolean                       = isHttp2 || isHttp3
   def json: JsValue                                 = JsString(value)
-  def asAkka: akka.http.scaladsl.model.HttpProtocol = value.toLowerCase().trim() match {
-    case "http/1.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
-    case "http/1.1" => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
-    case "http/2.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
-    case "http/3.0" => akka.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
-    case _          => akka.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
+  def asAkka: org.apache.pekko.http.scaladsl.model.HttpProtocol = value.toLowerCase().trim() match {
+    case "http/1.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.0`
+    case "http/1.1" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
+    case "http/2.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
+    case "http/3.0" => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/2.0`
+    case _          => org.apache.pekko.http.scaladsl.model.HttpProtocols.`HTTP/1.1`
   }
 }
 
@@ -798,7 +798,7 @@ object Target {
         "weight"     -> o.weight,
         "mtlsConfig" -> o.mtlsConfig.json,
         "tags"       -> JsArray(o.tags.map(JsString.apply)),
-        "metadata"   -> JsObject(o.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
+        "metadata"   -> JsObject(o.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap),
         // "loose"     -> o.loose,
         // "mtls"      -> o.mtls,
         // "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -825,7 +825,7 @@ object Target {
           backup = (json \ "backup").asOpt[Boolean].getOrElse(false),
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(m => m.filter(_._1.nonEmpty))
@@ -897,7 +897,7 @@ class CidrOfString(cdr: String) {
 }
 
 object IpFiltering {
-  implicit val format             = Json.format[IpFiltering]
+  implicit val format: play.api.libs.json.OFormat[IpFiltering] = Json.format[IpFiltering]
   private val cidrCache           = Caches.bounded[String, CidrOfString](10000)
   private[models] val ipaddrCache = Caches.bounded[String, Option[IpAddress]](10000)
   def cidr(cdr: String): CidrOfString = {
@@ -930,18 +930,18 @@ case class HealthCheck(
 }
 
 object HealthCheck {
-  implicit val format = new Format[HealthCheck] {
+  implicit val format: play.api.libs.json.Format[HealthCheck] = new Format[HealthCheck] {
     override def reads(json: JsValue): JsResult[HealthCheck] = Try {
       HealthCheck(
         enabled = json.select("enabled").asOpt[Boolean].getOrElse(false),
         url = json.select("url").asOpt[String].getOrElse(""),
         timeout = json.select("timeout").asOpt[Int].getOrElse(5000),
-        healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
-        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty),
+        healthyStatuses = json.select("healthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty).toSeq,
+        unhealthyStatuses = json.select("unhealthyStatuses").asOpt[Seq[Int]].getOrElse(Seq.empty).toSeq,
         blockOnRed = json.select("blockOnRed").asOpt[Boolean].getOrElse(false),
         logicCheck = json.select("logicCheck").asOpt[Boolean].getOrElse(true),
-        healthyRegexChecks = json.select("healthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty),
-        unhealthyRegexChecks = json.select("unhealthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty)
+        healthyRegexChecks = json.select("healthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
+        unhealthyRegexChecks = json.select("unhealthyRegexChecks").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -968,7 +968,7 @@ object CustomTimeouts {
 
   lazy val logger = Logger("otoroshi-custom-timeouts")
 
-  implicit val format = new Format[CustomTimeouts] {
+  implicit val format: play.api.libs.json.Format[CustomTimeouts] = new Format[CustomTimeouts] {
 
     override def reads(json: JsValue): JsResult[CustomTimeouts] =
       Try {
@@ -1103,7 +1103,7 @@ object ClientConfig {
 
   lazy val logger = Logger("otoroshi-client-config")
 
-  implicit val format = new Format[ClientConfig] {
+  implicit val format: play.api.libs.json.Format[ClientConfig] = new Format[ClientConfig] {
 
     override def reads(json: JsValue): JsResult[ClientConfig] =
       Try {
@@ -1128,7 +1128,7 @@ object ClientConfig {
           customTimeouts = (json \ "customTimeouts")
             .asOpt[JsArray]
             .map(_.value.map(e => CustomTimeouts.format.reads(e).get))
-            .getOrElse(Seq.empty[CustomTimeouts])
+            .getOrElse(Seq.empty[CustomTimeouts]).toSeq
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -1170,7 +1170,7 @@ object Canary {
 
   lazy val logger = Logger("otoroshi-canary")
 
-  implicit val format = new Format[Canary] {
+  implicit val format: play.api.libs.json.Format[Canary] = new Format[Canary] {
     override def reads(json: JsValue): JsResult[Canary] =
       Try {
         Canary(
@@ -1179,7 +1179,7 @@ object Canary {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => Target.format.reads(e).get))
-            .getOrElse(Seq.empty[Target]),
+            .getOrElse(Seq.empty[Target]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
       } map { case sd =>
@@ -1218,7 +1218,7 @@ object RedirectionSettings {
 
   val validRedirectionCodes = Seq(301, 308, 302, 303, 307)
 
-  implicit val format = new Format[RedirectionSettings] {
+  implicit val format: play.api.libs.json.Format[RedirectionSettings] = new Format[RedirectionSettings] {
     override def reads(json: JsValue): JsResult[RedirectionSettings] =
       Try {
         RedirectionSettings(
@@ -1471,9 +1471,9 @@ object ApiKeyRouteMatcher {
         "noneTagIn"      -> JsArray(o.noneTagIn.map(JsString.apply)),
         "oneTagIn"       -> JsArray(o.oneTagIn.map(JsString.apply)),
         "allTagsIn"      -> JsArray(o.allTagsIn.map(JsString.apply)),
-        "noneMetaIn"     -> JsObject(o.noneMetaIn.mapValues(JsString.apply)),
-        "oneMetaIn"      -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
-        "allMetaIn"      -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
+        "noneMetaIn"     -> JsObject(o.noneMetaIn.mapValues(JsString.apply).toMap),
+        "oneMetaIn"      -> JsObject(o.oneMetaIn.mapValues(JsString.apply).toMap),
+        "allMetaIn"      -> JsObject(o.allMetaIn.mapValues(JsString.apply).toMap),
         "noneMetaKeysIn" -> JsArray(o.noneMetaKeysIn.map(JsString.apply)),
         "oneMetaKeyIn"   -> JsArray(o.oneMetaKeyIn.map(JsString.apply)),
         "allMetaKeysIn"  -> JsArray(o.allMetaKeysIn.map(JsString.apply))
@@ -1482,15 +1482,15 @@ object ApiKeyRouteMatcher {
       Try {
         JsSuccess(
           ApiKeyRouteMatcher(
-            noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            noneTagIn = (json \ "noneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            oneTagIn = (json \ "oneTagIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            allTagsIn = (json \ "allTagsIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
             noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-            noneMetaKeysIn = (json \ "noneMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            oneMetaKeyIn = (json \ "oneMetaKeyIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            noneMetaKeysIn = (json \ "noneMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            oneMetaKeyIn = (json \ "oneMetaKeyIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -1881,19 +1881,19 @@ object Restrictions {
               .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
                 rp
               })
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             forbidden = (json \ "forbidden")
               .asOpt[JsArray]
               .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
                 rp
               })
-              .getOrElse(Seq.empty),
+              .getOrElse(Seq.empty).toSeq,
             notFound = (json \ "notFound")
               .asOpt[JsArray]
               .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
                 rp
               })
-              .getOrElse(Seq.empty)
+              .getOrElse(Seq.empty).toSeq
           )
         )
       } recover { case e =>
@@ -2139,7 +2139,7 @@ case class ServiceDescriptor(
             .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       val refs                  = (plugs ++ gScripts.validatorRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
@@ -2267,7 +2267,7 @@ case class ServiceDescriptor(
             .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
       val refs                  = (plugs ++ gScripts.preRouteRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
@@ -2339,7 +2339,7 @@ object ServiceDescriptor {
             val groupId: Seq[String] =
               (json \ "groupId").asOpt[String].toSeq
             val groups: Seq[String]  =
-              (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+              (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
             (groupId ++ groups).distinct
           },
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
@@ -2351,7 +2351,7 @@ object ServiceDescriptor {
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => Target.format.reads(e).get))
-            .getOrElse(Seq.empty[Target]),
+            .getOrElse(Seq.empty[Target]).toSeq,
           root = (json \ "root").asOpt[String].getOrElse("/"),
           matchingRoot = (json \ "matchingRoot").asOpt[String].filter(_.nonEmpty),
           localHost = (json \ "localHost").asOpt[String].getOrElse("localhost:8080"),
@@ -2392,11 +2392,11 @@ object ServiceDescriptor {
             .asOpt[String]
             .flatMap(SecComInfoTokenVersion.apply)
             .getOrElse(SecComInfoTokenVersion.Legacy),
-          secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           securityExcludedPatterns =
-            (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          privatePatterns = (json \ "privatePatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          privatePatterns = (json \ "privatePatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           additionalHeaders =
             (json \ "additionalHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           additionalHeadersOut =
@@ -2408,15 +2408,15 @@ object ServiceDescriptor {
           headersVerification =
             (json \ "headersVerification").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           matchingHeaders = (json \ "matchingHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
-          removeHeadersIn = (json \ "removeHeadersIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          removeHeadersOut = (json \ "removeHeadersOut").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          removeHeadersIn = (json \ "removeHeadersIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          removeHeadersOut = (json \ "removeHeadersOut").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           ipFiltering = (json \ "ipFiltering").asOpt(IpFiltering.format).getOrElse(IpFiltering()),
           api = (json \ "api").asOpt(ApiDescriptor.format).getOrElse(ApiDescriptor(false, None)),
           healthCheck = (json \ "healthCheck").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
           clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
           gzip = (json \ "gzip").asOpt(GzipConfig._fmt).getOrElse(GzipConfig()),
-          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(_.filter(_._1.nonEmpty))
@@ -2444,7 +2444,7 @@ object ServiceDescriptor {
             .asOpt[Seq[String]]
             .orElse((json \ "transformerRef").asOpt[String].map(r => Seq(r)))
             .map(_.filterNot(_.trim.isEmpty))
-            .getOrElse(Seq.empty),
+            .getOrElse(Seq.empty).toSeq,
           transformerConfig = (json \ "transformerConfig").asOpt[JsObject].getOrElse(Json.obj()),
           cors = CorsSettings.fromJson((json \ "cors").asOpt[JsValue].getOrElse(JsNull)).getOrElse(CorsSettings(false)),
           redirection = RedirectionSettings.format
@@ -2468,8 +2468,8 @@ object ServiceDescriptor {
           preRouting = PreRoutingRef.format
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),
-          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
+          paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           handleLegacyDomain = (json \ "handleLegacyDomain").asOpt[Boolean].getOrElse(true),
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
           issueCertCA = (json \ "issueCertCA").asOpt[String]
@@ -2529,21 +2529,21 @@ object ServiceDescriptor {
         "securityExcludedPatterns"     -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
         "publicPatterns"               -> JsArray(sd.publicPatterns.map(JsString.apply)),
         "privatePatterns"              -> JsArray(sd.privatePatterns.map(JsString.apply)),
-        "additionalHeaders"            -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),
-        "additionalHeadersOut"         -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply)),
-        "missingOnlyHeadersIn"         -> JsObject(sd.missingOnlyHeadersIn.mapValues(JsString.apply)),
-        "missingOnlyHeadersOut"        -> JsObject(sd.missingOnlyHeadersOut.mapValues(JsString.apply)),
+        "additionalHeaders"            -> JsObject(sd.additionalHeaders.mapValues(JsString.apply).toMap),
+        "additionalHeadersOut"         -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply).toMap),
+        "missingOnlyHeadersIn"         -> JsObject(sd.missingOnlyHeadersIn.mapValues(JsString.apply).toMap),
+        "missingOnlyHeadersOut"        -> JsObject(sd.missingOnlyHeadersOut.mapValues(JsString.apply).toMap),
         "removeHeadersIn"              -> JsArray(sd.removeHeadersIn.map(JsString.apply)),
         "removeHeadersOut"             -> JsArray(sd.removeHeadersOut.map(JsString.apply)),
-        "headersVerification"          -> JsObject(sd.headersVerification.mapValues(JsString.apply)),
-        "matchingHeaders"              -> JsObject(sd.matchingHeaders.mapValues(JsString.apply)),
+        "headersVerification"          -> JsObject(sd.headersVerification.mapValues(JsString.apply).toMap),
+        "matchingHeaders"              -> JsObject(sd.matchingHeaders.mapValues(JsString.apply).toMap),
         "ipFiltering"                  -> sd.ipFiltering.toJson,
         "api"                          -> sd.api.toJson,
         "healthCheck"                  -> sd.healthCheck.toJson,
         "clientConfig"                 -> sd.clientConfig.toJson,
         "canary"                       -> sd.canary.toJson,
         "gzip"                         -> sd.gzip.asJson,
-        "metadata"                     -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
+        "metadata"                     -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap),
         "tags"                         -> JsArray(sd.tags.map(JsString.apply)),
         "chaosConfig"                  -> sd.chaosConfig.asJson,
         "jwtVerifier"                  -> sd.jwtVerifier.asJson,

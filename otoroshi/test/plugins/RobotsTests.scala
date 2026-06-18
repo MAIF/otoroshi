@@ -44,8 +44,8 @@ class RobotsTests(parent: PluginsTestSpec) {
     .futureValue
 
   authorizedCall.status mustBe Status.OK
-  authorizedCall.body must include("User-agent: *")
-  authorizedCall.body must include("Disallow: /admin")
+  authorizedCall.body[String] must include("User-agent: *")
+  authorizedCall.body[String] must include("Disallow: /admin")
 
   val htmlResp = ws
     .url(s"http://127.0.0.1:$port/api")

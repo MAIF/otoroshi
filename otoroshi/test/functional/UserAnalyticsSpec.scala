@@ -1,6 +1,6 @@
 package functional
 
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import otoroshi.next.analytics.alerts.AlertEvaluator
 import otoroshi.next.analytics.exporter.{EventDenormalizer, EventStripper}
 import otoroshi.next.analytics.models.{AlertCondition, UserAlert, UserDashboard, Widget}
@@ -19,7 +19,7 @@ import java.time.Instant
  *   - AlertEvaluator reducers and operator comparison
  *   - JSON round-trips for entity case classes
  */
-class UserAnalyticsSpec extends WordSpec with MustMatchers with OptionValues {
+class UserAnalyticsSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues {
 
   // ---------------------------------------------------------------------------
   // Test fixtures

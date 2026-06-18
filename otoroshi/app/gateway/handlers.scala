@@ -2,11 +2,11 @@ package otoroshi.gateway
 
 import java.net.URLEncoder
 import java.util.concurrent.atomic.AtomicInteger
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Flow, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Flow, Source}
+import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
@@ -56,7 +56,7 @@ case class ProxyDone(
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
-  implicit val ec = env.otoroshiExecutionContext
+  implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-error-handler")
 
@@ -307,8 +307,8 @@ class GatewayRequestHandler(
 )(implicit env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
 
-  implicit lazy val ec        = env.otoroshiExecutionContext
-  implicit lazy val scheduler = env.otoroshiScheduler
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  implicit lazy val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
 
   lazy val logger = Logger("otoroshi-http-handler")
   // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
@@ -1026,17 +1026,17 @@ class GatewayRequestHandler(
     }
 
   def forbidden() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       Forbidden(Json.obj("error" -> "forbidden"))
     }
 
   def adminApiNotExposed() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       NotFound(Json.obj("error" -> "resource not found"))
     }
 
   def redirectToHttps() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       val domain   = req.theDomain
       val protocol = req.theProtocol
       if (logger.isTraceEnabled)
@@ -1047,7 +1047,7 @@ class GatewayRequestHandler(
     }
 
   def redirectToMainDomain() =
-    actionBuilder { req =>
+    actionBuilder { (req: play.api.mvc.Request[play.api.mvc.AnyContent]) =>
       val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
       val protocol       = req.theProtocol
       if (logger.isDebugEnabled)

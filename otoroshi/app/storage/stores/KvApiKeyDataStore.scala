@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
-import akka.http.scaladsl.util.FastFuture._
-import akka.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime

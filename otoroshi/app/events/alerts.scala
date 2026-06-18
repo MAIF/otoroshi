@@ -1,13 +1,13 @@
 package otoroshi.events
 
 import java.util.concurrent.{Executors, TimeUnit}
-import akka.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
-import akka.actor.SupervisorStrategy._
-import akka.http.scaladsl.util.FastFuture._
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
+import org.apache.pekko.actor.SupervisorStrategy._
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.{QuotasAlmostExceededSettings, _}
 import org.joda.time.DateTime
@@ -342,7 +342,7 @@ case class OtoroshiExportAlert(
     `@env`: String,
     user: JsValue,
     event: AdminApiEvent,
-    export: JsValue,
+    `export`: JsValue,
     from: String,
     ua: String,
     `@timestamp`: DateTime = DateTime.now()
@@ -366,7 +366,7 @@ case class OtoroshiExportAlert(
       "alert"      -> "OtoroshiExportAlert",
       "user"       -> user,
       "event"      -> event.toJson,
-      "export"     -> export
+      "export"     -> `export`
     )
 }
 
@@ -1359,8 +1359,8 @@ class AlertsActor(implicit env: Env) extends Actor {
   import otoroshi.events.KafkaWrapper
   import otoroshi.utils.http.Implicits._
 
-  implicit val ec  = env.analyticsExecutionContext
-  implicit val mat = env.analyticsMaterializer
+  implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
+  implicit val mat: org.apache.pekko.stream.Materializer = env.analyticsMaterializer
 
   lazy val logger = Logger("otoroshi-alert-actor")
 

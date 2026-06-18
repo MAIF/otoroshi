@@ -68,7 +68,7 @@ class ApikeysTests(parent: PluginsTestSpec) {
       .get()
       .futureValue
 
-    println(authorizedCall.body)
+    println(authorizedCall.body[String])
     authorizedCall.status mustBe Status.OK
 
     deleteOtoroshiApiKey(apikey)

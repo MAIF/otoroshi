@@ -45,7 +45,7 @@ object RouteTemplate {
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
         description = json.selectAsString("description"),
-        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+        tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         route = json.select("route").asOpt(NgRoute.fmt).getOrElse(NgRoute.empty)
       )
@@ -70,8 +70,7 @@ object RouteTemplate {
 
 trait RouteTemplateDataStore extends BasicStore[RouteTemplate] {
   def template(env: Env): RouteTemplate = {
-    implicit val e = env
-
+    implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
       .latest()(env.otoroshiExecutionContext, env)
       .templates

@@ -4,14 +4,14 @@ import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
 import otoroshi.actions.{ApiAction, ApiActionContext}
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.settings.ServerSettings
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.TLSProtocol.NegotiateNewSession
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
-import akka.stream.{IgnoreComplete, Materializer}
-import akka.util.ByteString
-import akka.{AwesomeIncomingConnection, Done, TcpUtils}
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.settings.ServerSettings
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.TLSProtocol.NegotiateNewSession
+import org.apache.pekko.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
+import org.apache.pekko.stream.{IgnoreComplete, Materializer}
+import org.apache.pekko.util.ByteString
+import org.apache.pekko.{AwesomeIncomingConnection, Done, TcpUtils}
 import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
@@ -167,7 +167,7 @@ object TcpRule {
           JsSuccess(
             TcpRule(
               domain = (json \ "domain").asOpt[String].getOrElse("*"),
-              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
+              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty).toSeq
             )
           )
         } recover { case e =>
@@ -223,7 +223,7 @@ object TcpService {
       }
     }
 
-  def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], TcpService] =
+  def fromJsonSafe(value: JsValue): Either[scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])], TcpService] =
     fmt.reads(value).asEither
 
   val fmt: Format[TcpService] = new Format[TcpService] {
@@ -241,9 +241,9 @@ object TcpService {
             tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
             sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
-            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
+            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty).toSeq,
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )
       } recover { case e =>
@@ -707,7 +707,7 @@ class TcpProxy(
 ) {
 
   private val log         = Logger("otoroshi-tcp-proxy")
-  private implicit val ec = system.dispatcher
+  private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
   private val provider    = new TcpEngineProvider()
 
   private def debugger(title: String): Sink[ByteString, Future[Done]] =
@@ -833,7 +833,7 @@ class TcpProxy(
             flow = incomingConnection.flow.alsoTo(Sink.foreach { bs =>
               if (firstChunk.compareAndSet(false, true)) {
                 val packetString = bs.utf8String
-                val matcher      = akka.TcpUtils.domainNamePattern.matcher(packetString)
+                val matcher      = org.apache.pekko.TcpUtils.domainNamePattern.matcher(packetString)
                 while (matcher.find()) {
                   val matchResult: MatchResult = matcher.toMatchResult
                   val expression: String       = matchResult.group()
@@ -891,10 +891,10 @@ class RunningServers(env: Env) {
 
   import scala.concurrent.duration._
 
-  private implicit val system = env.otoroshiActorSystem
-  private implicit val ec     = env.otoroshiExecutionContext
-  private implicit val mat    = env.otoroshiMaterializer
-  private implicit val ev     = env
+  private implicit val system: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val ev: otoroshi.env.Env = env
   private val ref             = new AtomicReference[Cancellable]()
   private val running         = new AtomicBoolean(false)
   private val syncing         = new AtomicBoolean(false)

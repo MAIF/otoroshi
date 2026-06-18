@@ -1,10 +1,10 @@
 package otoroshi.netty
 
-import akka.http.scaladsl.model.HttpHeader.ParsingResult
-import akka.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
-import akka.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
+import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-Type`, `User-Agent`, RawHeader}
+import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, StatusCode, Uri}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import com.google.common.base.Charsets
 import io.netty
 import io.netty.bootstrap.Bootstrap
@@ -240,7 +240,7 @@ class NettyHttp3Client(val env: Env) {
               .headers()
               .names()
               .asScala
-              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString)))
+              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString).toSeq))
               .toMap
             trailerPromise.trySuccess(trailerHeaders)
             ReferenceCountUtil.release(frame)
@@ -251,7 +251,7 @@ class NettyHttp3Client(val env: Env) {
               .headers()
               .names()
               .asScala
-              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString)))
+              .map(name => (name.toString, frame.headers().getAll(name).asScala.map(_.toString).toSeq))
               .toMap
             promise.trySuccess(Http3Response(status, headers, hotFlux, trailerPromise.future))
             ReferenceCountUtil.release(frame)
@@ -365,7 +365,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
           )
         }
       }
-      .getOrElse(Seq.empty)
+      .getOrElse(Seq.empty).toSeq
   }
 
   override def bodyAsSource: Source[ByteString, _]    = _body
@@ -439,6 +439,8 @@ case class NettyHttp3ClientWsRequest(
   override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest                     =
     copy(body = evidence$1.transform(body))
   override def withMethod(method: String): WSRequest                                                     = copy(method = method)
+  override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
+  override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
   override def get(): Future[WSResponse]                                                                 = copy(method = "GET").execute()
   override def delete(): Future[WSResponse]                                                              = copy(method = "DELETE").execute()
   override def head(): Future[WSResponse]                                                                = copy(method = "HEAD").execute()
@@ -516,7 +518,7 @@ case class NettyHttp3ClientWsRequest(
       .execute()
   override def withCookies(cookies: WSCookie*): WSRequest = {
     if (cookies.nonEmpty) {
-      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
+      val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String]).toSeq
       val newCookies = oldCookies :+ cookies.toList
         .map { c =>
           s"${c.name}=${c.value}"
@@ -595,7 +597,7 @@ case class NettyHttp3ClientWsRequest(
     stream().map(_.asInstanceOf[NettyHttp3ClientWsResponse].toStrict())(env.otoroshiExecutionContext)
   }
   override def stream(): Future[WSResponse] = {
-    implicit val ec = client.env.otoroshiExecutionContext
+    implicit val ec: scala.concurrent.ExecutionContext = client.env.otoroshiExecutionContext
     val uri         = new URI(url)
     val thePort     = uri.getPort match {
       case -1 =>

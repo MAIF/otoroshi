@@ -1,6 +1,6 @@
 package otoroshi.auth
 
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.models.{UserRights, _}
@@ -365,7 +365,7 @@ object Form {
     override def reads(json: JsValue): JsResult[Form] = Try {
 
       Form(
-        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty),
+        flow = (json \ "flow").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         schema = (json \ "schema").asOpt[JsValue].getOrElse(Json.obj())
       )
     } match {

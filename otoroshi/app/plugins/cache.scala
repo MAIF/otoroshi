@@ -1,11 +1,11 @@
 package otoroshi.plugins.cache
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-import akka.actor.{ActorSystem, Cancellable}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext, TransformerResponseBodyContext}
@@ -30,9 +30,9 @@ case class ResponseCacheFilterConfig(json: JsValue) {
   lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
-    .getOrElse(Seq.empty)
-  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+    .getOrElse(Seq.empty).toSeq
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 }
 
 case class ResponseCacheConfig(json: JsValue) {
@@ -115,7 +115,7 @@ class ResponseCache extends RequestTransformer {
 
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("cache-redis")
-    implicit val ec = actorSystem.dispatcher
+    implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
     jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(1.minute, 10.minutes) {
       //jobRef.set(env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 10.seconds) {
       SchedulerHelper.runnable(
@@ -139,7 +139,7 @@ class ResponseCache extends RequestTransformer {
           )
           val slaves = (conf.scripts.transformersConfig \ "ResponseCache" \ "redis" \ "slaves")
             .asOpt[Seq[JsObject]]
-            .getOrElse(Seq.empty)
+            .getOrElse(Seq.empty).toSeq
             .map { config =>
               RedisServer(
                 host = (config \ "host").asOpt[String].getOrElse("localhost"),
@@ -147,7 +147,7 @@ class ResponseCache extends RequestTransformer {
                 password = (config \ "password").asOpt[String]
               )
             }
-          RedisClientMasterSlaves(master, slaves)(actorSystem)
+          RedisClientMasterSlaves(master, slaves)(using actorSystem)
         }
         ref.set((redis, actorSystem))
       }
@@ -162,9 +162,9 @@ class ResponseCache extends RequestTransformer {
   }
 
   private def cleanCache(env: Env): Future[Unit] = {
-    implicit val ev  = env
-    implicit val ec  = env.otoroshiExecutionContext
-    implicit val mat = env.otoroshiMaterializer
+    implicit val ev: otoroshi.env.Env = env
+    implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
       val possibleServices = services.filter(s =>
         s.transformerRefs.nonEmpty && s.transformerRefs.contains("cp:otoroshi.plugins.cache.ResponseCache")

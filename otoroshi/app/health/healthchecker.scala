@@ -1,10 +1,10 @@
 package otoroshi.health
 
-import akka.actor.{Actor, Props}
-import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
+import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
@@ -238,8 +238,8 @@ object HealthCheckerActor {
 
 class HealthCheckerActor()(implicit env: Env) extends Actor {
 
-  implicit lazy val ec  = context.dispatcher
-  implicit lazy val mat = env.otoroshiMaterializer
+  implicit lazy val ec: scala.concurrent.ExecutionContext = context.dispatcher
+  implicit lazy val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-health-checker")
 
@@ -340,7 +340,7 @@ class HealthCheckJob extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat      = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val parallelChecks    = env.healtCheckWorkers
     val services          = env.proxyState.allServices()
     val routes            = env.proxyState.allRawRoutes()

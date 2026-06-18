@@ -59,8 +59,8 @@ object AnonymousReportingJobConfig {
         .getOrElse(default.timeout),
       tlsConfig = NgTlsConfig.fromLegacy(
         MtlsConfig(
-          certs = configuration.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty),
-          trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts").getOrElse(Seq.empty),
+          certs = configuration.getOptionalWithFileSupport[Seq[String]]("tls.certs").getOrElse(Seq.empty).toSeq,
+          trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("tls.trustedCerts").getOrElse(Seq.empty).toSeq,
           loose = configuration.getOptionalWithFileSupport[Boolean]("tls.loose").getOrElse(false),
           trustAll = configuration.getOptionalWithFileSupport[Boolean]("tls.trustAll").getOrElse(false),
           mtls = configuration.getOptionalWithFileSupport[Boolean]("tls.enabled").getOrElse(false)
@@ -155,7 +155,7 @@ object AnonymousReportingJob {
         else Seq.empty
       val pluginsPlugins             = if (globalConfig.plugins.enabled) globalConfig.plugins.refs else Seq.empty
       val plugins                    = routePlugins ++ scriptPlugins ++ pluginsPlugins
-      val counting                   = plugins.groupBy(identity).mapValues(v => JsNumber(v.size))
+      val counting                   = plugins.groupBy(identity).mapValues(v => JsNumber(v.size)).toMap
       val genericEntities            = JsObject(env.allResources.resources.map { res =>
         (s"${res.group}/${res.pluralName}", res.access.all().size.json)
       }.toMap)

@@ -1,12 +1,12 @@
 package functional
 
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import otoroshi.events.DataExporter
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, Exporter, NoneExporter}
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, Json}
 
-class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
+class MapFilterSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues {
 
   val source = Json.parse("""
       |{
@@ -875,7 +875,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
   }
 }
 
-class JsonPathSpec extends WordSpec with MustMatchers with OptionValues {
+class JsonPathSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues {
 
   "json-path" should {
     "work in projection" in {
@@ -888,7 +888,7 @@ class JsonPathSpec extends WordSpec with MustMatchers with OptionValues {
         "$.otoroshiHeadersIn.*.key"
       )
 
-      println("res", res)
+      println(("res", res))
     }
   }
 }

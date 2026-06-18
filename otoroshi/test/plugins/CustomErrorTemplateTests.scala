@@ -67,7 +67,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.SERVICE_UNAVAILABLE
-    resp.body mustEqual "build mode enabled, bye"
+    resp.body[String] mustEqual "build mode enabled, bye"
 
     val resp2 = ws
       .url(s"http://127.0.0.1:$port/api")
@@ -79,8 +79,8 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
 
     resp2.status mustBe Status.SERVICE_UNAVAILABLE
 
-    Json.parse(resp2.body).selectAsString("otoroshi-cause") mustEqual "build mode enabled"
-    Json.parse(resp2.body).selectAsString("otoroshi-error") mustEqual "Service under construction"
+    Json.parse(resp2.body[String]).selectAsString("otoroshi-cause") mustEqual "build mode enabled"
+    Json.parse(resp2.body[String]).selectAsString("otoroshi-error") mustEqual "Service under construction"
   }
 
   {
@@ -94,7 +94,7 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
       .futureValue
 
     resp.status mustBe Status.SERVICE_UNAVAILABLE
-    resp.body mustEqual "maintenance mode enabled, bye"
+    resp.body[String] mustEqual "maintenance mode enabled, bye"
 
     val resp2 = ws
       .url(s"http://127.0.0.1:$port/api")
@@ -106,8 +106,8 @@ class CustomErrorTemplateTests(parent: PluginsTestSpec) {
 
     resp2.status mustBe Status.SERVICE_UNAVAILABLE
 
-    Json.parse(resp2.body).selectAsString("otoroshi-cause") mustEqual "maintenance mode enabled"
-    Json.parse(resp2.body).selectAsString("otoroshi-error") mustEqual "Service in maintenance mode"
+    Json.parse(resp2.body[String]).selectAsString("otoroshi-cause") mustEqual "maintenance mode enabled"
+    Json.parse(resp2.body[String]).selectAsString("otoroshi-error") mustEqual "Service in maintenance mode"
   }
 
   deleteOtoroshiErrorTemplate(error).futureValue

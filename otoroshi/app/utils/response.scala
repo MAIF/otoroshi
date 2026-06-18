@@ -46,7 +46,7 @@ object ResponseImplicits {
             }
           }
         }
-        .getOrElse(Seq.empty)
+        .getOrElse(Seq.empty).toSeq
     }
 
     def safeCookies(env: Env): scala.collection.Seq[WSCookie] = try {
@@ -56,7 +56,7 @@ object ResponseImplicits {
           if t.getMessage.contains(
             "Cannot invoke \"play.shaded.ahc.io.netty.handler.codec.http.cookie.Cookie.name()\" because \"c\" is null"
           ) =>
-        Try(buildCookies(response.headers, env)).getOrElse(Seq.empty[WSCookie])
+        Try(buildCookies(response.headers, env)).getOrElse(Seq.empty[WSCookie]).toSeq
       case t: Throwable =>
         env.logger.error("error while parsing http client response cookies, ignoring them", t)
         Seq.empty[WSCookie]

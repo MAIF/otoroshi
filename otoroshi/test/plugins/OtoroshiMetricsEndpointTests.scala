@@ -26,7 +26,7 @@ class OtoroshiMetricsEndpointTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).isInstanceOf[JsArray] mustBe true
+  Json.parse(resp.body[String]).isInstanceOf[JsArray] mustBe true
 
   deleteOtoroshiRoute(route).futureValue
 

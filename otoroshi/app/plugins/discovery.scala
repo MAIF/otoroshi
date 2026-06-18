@@ -1,8 +1,8 @@
 package otoroshi.plugins.discovery
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.Target
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 case class SelfRegistrationConfig(raw: JsValue) {
-  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val hosts: Seq[String]              = raw.select("hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
   lazy val targetTemplate: JsObject        = raw.select("targetTemplate").asOpt[JsObject].getOrElse(Json.obj())
   lazy val registrationTtl: FiniteDuration =
     raw.select("registrationTtl").asOpt[Long].map(_.millis).getOrElse(60.seconds)
@@ -39,7 +39,7 @@ object DiscoveryHelper {
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       val json      = bodyRaw.utf8String.parseJson.asObject
       val serviceId = json.select("serviceId").asOpt[String].orElse(serviceIdOpt).get
@@ -185,7 +185,7 @@ object DiscoveryHelper {
 // MIGRATED
 class DiscoverySelfRegistrationSink extends RequestSink {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   override def name: String = "Global self registration endpoints (service discovery)"
 
@@ -239,7 +239,7 @@ class DiscoverySelfRegistrationSink extends RequestSink {
 // MIGRATED
 class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
-  import kaleidoscope._
+  import otoroshi.utils.KaleidoscopeShim._
 
   private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
 

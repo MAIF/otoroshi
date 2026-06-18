@@ -1,7 +1,7 @@
 package otoroshi.next.extensions
 
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.api.Resource
 import otoroshi.env.Env
@@ -218,10 +218,9 @@ object AdminExtensions {
 
 class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
 
-  private implicit val ec  = env.otoroshiExecutionContext
-  private implicit val mat = env.otoroshiMaterializer
-  private implicit val ev  = env
-
+  private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
+  private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val ev: otoroshi.env.Env = env
   private val hasExtensions = _extensions.nonEmpty
 
   private val extensions: Seq[AdminExtension] = _extensions.filter(_.enabled)
@@ -613,7 +612,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
         source.asOpt[Map[String, Map[String, Seq[JsValue]]]].getOrElse(Map.empty[String, Map[String, Seq[JsValue]]])
       Source(
         extensions
-          .mapValues(_.toSeq)
+          .mapValues(_.toSeq).toMap
           .toSeq
           .flatMap { case (key, items) =>
             items.map(tuple => (key, tuple._1, tuple._2))

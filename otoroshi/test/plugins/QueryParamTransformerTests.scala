@@ -41,7 +41,7 @@ class QueryParamTransformerTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp.status mustBe Status.OK
-  Json.parse(resp.body).selectAsObject("query_params") mustEqual Json.obj(
+  Json.parse(resp.body[String]).selectAsObject("query_params") mustEqual Json.obj(
     "baz"       -> "foo",
     "new_query" -> "value"
   )

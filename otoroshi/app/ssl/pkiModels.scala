@@ -51,7 +51,7 @@ object GenCsrQuery {
     override def reads(json: JsValue): JsResult[GenCsrQuery] =
       Try {
         GenCsrQuery(
-          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty),
+          hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           key = (json \ "key")
             .asOpt[JsValue]
             .flatMap(v => GenKeyPairQuery.fromJson(v).toOption)

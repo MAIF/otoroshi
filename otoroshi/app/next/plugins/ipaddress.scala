@@ -1,8 +1,8 @@
 package otoroshi.next.plugins
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.IpFiltering
@@ -25,7 +25,7 @@ object NgIpAddressesConfig {
   val format = new Format[NgIpAddressesConfig] {
     override def reads(json: JsValue): JsResult[NgIpAddressesConfig] = Try {
       NgIpAddressesConfig(
-        addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
+        addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -53,7 +53,7 @@ class IpAddressAllowedList extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
-    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
+    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
     val shouldPass                     = if (addresses.nonEmpty) {
       addresses.exists { ip =>
@@ -104,7 +104,7 @@ class IpAddressBlockList extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val remoteAddress                  = ctx.request.theIpAddress
-    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
+    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     val NgIpAddressesConfig(addresses) = ctx.cachedConfig(internalName)(configReads).getOrElse(NgIpAddressesConfig())
     val shouldNotPass                  = if (addresses.nonEmpty) {
       addresses.exists { ip =>
@@ -149,7 +149,7 @@ object NgEndlessHttpResponseConfig {
   val format = new Format[NgEndlessHttpResponseConfig] {
     override def reads(json: JsValue): JsResult[NgEndlessHttpResponseConfig] = Try {
       NgEndlessHttpResponseConfig(
-        addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty),
+        addresses = json.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         finger = json.select("finger").asOpt[Boolean].getOrElse(false),
         isDebug = json.select("is_debug").asOpt[Boolean].getOrElse(false)
       )
@@ -187,7 +187,7 @@ class EndlessHttpResponse extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val remoteAddress                                           = ctx.request.theIpAddress
-    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty)
+    // val addresses = ctx.config.select("addresses").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     // val finger = ctx.config.select("finger").asOpt[Boolean].getOrElse(false)
     val NgEndlessHttpResponseConfig(finger, addresses, isDebug) =
       ctx.cachedConfig(internalName)(configReads).getOrElse(NgEndlessHttpResponseConfig())

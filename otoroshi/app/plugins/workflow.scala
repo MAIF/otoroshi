@@ -1,9 +1,9 @@
 package otoroshi.plugins.workflow
 
 import java.util.concurrent.atomic.AtomicBoolean
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script._
@@ -98,7 +98,7 @@ class WorkflowJob extends Job {
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    implicit val mat = env.otoroshiMaterializer
+    implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val input        = ctx.configFor("WorkflowJob").select("input").asOpt[JsObject].getOrElse(Json.obj())
     val specJson     = ctx.configFor("WorkflowJob").select("workflow").asOpt[JsObject].getOrElse(Json.obj())
     val spec         = WorkFlowSpec.inline(specJson)

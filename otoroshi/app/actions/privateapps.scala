@@ -1,9 +1,9 @@
 package otoroshi.actions
 
 import java.util.concurrent.TimeUnit
-import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.http.scaladsl.util.FastFuture
+import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.cluster._
 import otoroshi.env.Env
@@ -29,7 +29,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
     extends ActionBuilder[PrivateAppsActionContext, AnyContent]
     with ActionFunction[Request, PrivateAppsActionContext] {
 
-  implicit lazy val ec = env.otoroshiExecutionContext
+  implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
   override def invokeBlock[A](
       request: Request[A],

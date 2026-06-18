@@ -1,8 +1,8 @@
 package otoroshi.plugins.jq
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -83,8 +83,8 @@ class JqBodyTransformer extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val config   = ctx.configFor("JqBodyTransformer").select("response")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
-    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (shouldApply(included, excluded, ctx.request.thePath)) {
       val newHeaders =
         ctx.otoroshiResponse.headers.-("Content-Length").-("content-length").+("Transfer-Encoding" -> "chunked")
@@ -114,7 +114,7 @@ class JqBodyTransformer extends RequestTransformer {
           .applyOnWithOpt(ctx.apikey) { case (builder, user) =>
             builder.putArgJson("apikey", user.lightJson.stringify)
           }
-          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply)).stringify)
+          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply).toMap).stringify)
           .putArgJson(
             "headers",
             JsObject(ctx.request.headers.toSimpleMap.map { case (key, value) =>
@@ -151,8 +151,8 @@ class JqBodyTransformer extends RequestTransformer {
     ctx.attrs.put(requestKey -> promise.future)
     val config   = ctx.configFor("JqBodyTransformer").select("request")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
-    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty)
-    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
+    val excluded = config.select("excluded").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
     if (BodyUtils.hasBody(ctx.request) && shouldApply(included, excluded, ctx.request.thePath)) {
       ctx.rawRequest.body().runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
         val bodyStr  = bodyRaw.utf8String
@@ -180,7 +180,7 @@ class JqBodyTransformer extends RequestTransformer {
           .applyOnWithOpt(ctx.apikey) { case (builder, user) =>
             builder.putArgJson("apikey", user.lightJson.stringify)
           }
-          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply)).stringify)
+          .putArgJson("queryParams", JsObject(ctx.request.theUri.query().toMap.mapValues(JsString.apply).toMap).stringify)
           .putArgJson(
             "headers",
             JsObject(ctx.request.headers.toSimpleMap.map { case (key, value) =>

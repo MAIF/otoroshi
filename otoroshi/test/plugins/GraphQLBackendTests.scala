@@ -47,7 +47,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
         .futureValue
 
       resp.status mustBe Status.BAD_REQUEST
-      Json.parse(resp.body).selectAsString("error") mustBe "query field missing"
+      Json.parse(resp.body[String]).selectAsString("error") mustBe "query field missing"
     }
 
     {
@@ -68,8 +68,8 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
         .futureValue
 
       resp.status mustBe Status.OK
-      Json.parse(resp.body).selectAsOptObject("data").isDefined mustBe true
-      Json.parse(resp.body).selectAsObject("data").selectAsArray("users").value.length mustBe 2
+      Json.parse(resp.body[String]).selectAsOptObject("data").isDefined mustBe true
+      Json.parse(resp.body[String]).selectAsObject("data").selectAsArray("users").value.length mustBe 2
     }
 
     deleteOtoroshiRoute(route).futureValue
@@ -152,10 +152,10 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
         .futureValue
 
       resp.status mustBe Status.OK
-      Json.parse(resp.body).selectAsOptObject("data").isDefined mustBe true
-      Json.parse(resp.body).selectAsObject("data").selectAsArray("users").value.length mustBe 2
-      Json.stringify(Json.parse(resp.body).selectAsObject("data").selectAsArray("users")).contains("foo") mustBe true
-      Json.stringify(Json.parse(resp.body).selectAsObject("data").selectAsArray("users")).contains("baz") mustBe true
+      Json.parse(resp.body[String]).selectAsOptObject("data").isDefined mustBe true
+      Json.parse(resp.body[String]).selectAsObject("data").selectAsArray("users").value.length mustBe 2
+      Json.stringify(Json.parse(resp.body[String]).selectAsObject("data").selectAsArray("users")).contains("foo") mustBe true
+      Json.stringify(Json.parse(resp.body[String]).selectAsObject("data").selectAsArray("users")).contains("baz") mustBe true
     }
 
     {
@@ -176,7 +176,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
         .futureValue
 
       resp.status mustBe Status.OK
-      Json.parse(resp.body).selectAsObject("data").selectAsOptObject("user").isDefined mustBe true
+      Json.parse(resp.body[String]).selectAsObject("data").selectAsOptObject("user").isDefined mustBe true
     }
 
     deleteOtoroshiRoute(route).futureValue
@@ -227,7 +227,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
         .futureValue
 
       resp.status mustBe Status.OK
-      resp.body.contains("You're not authorized") mustBe true
+      resp.body[String].contains("You're not authorized") mustBe true
     }
 
     {
@@ -248,7 +248,7 @@ class GraphQLBackendTests(parent: PluginsTestSpec) {
         .futureValue
 
       resp.status mustBe Status.OK
-      resp.body.contains("You're not authorized") mustBe false
+      resp.body[String].contains("You're not authorized") mustBe false
     }
 
     deleteOtoroshiRoute(route).futureValue

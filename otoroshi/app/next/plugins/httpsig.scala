@@ -1,9 +1,9 @@
 package otoroshi.next.plugins
 
-import akka.http.scaladsl.model.ContentType
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.ContentType
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.{ECKey, JWK, OctetKeyPair, RSAKey}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api._
@@ -826,7 +826,7 @@ object HttpSigKeyResolver {
             else
               Try {
                 val obj  = Json.parse(resp.body).as[JsObject]
-                val arr  = (obj \ "keys").as[JsArray].value.toList
+                val arr  = (obj \ "keys").as[JsArray].value.toSeq.toList
                 val keys = arr.flatMap { k =>
                   val jwk = JWK.parse(Json.stringify(k))
                   Option(jwk.getKeyID).map(kid => kid -> jwk)

