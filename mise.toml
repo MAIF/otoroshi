@@ -38,7 +38,7 @@ run = [
 [tasks.dev-backend]
 description = "Run otoroshi backend in dev mode (sbt ~reStart, hot reload)"
 dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME ~reStart"
+run = "sbt -J-Xmx2G --java-home $JAVA_HOME ~reStart"
 
 [tasks.dev-backend.env]
 #OTOROSHI_INITIAL_ADMIN_LOGIN = "admin@otoroshi.io"
