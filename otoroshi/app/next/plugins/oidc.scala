@@ -586,38 +586,36 @@ object OIDCAuthToken {
       }
       .flatMap { r =>
         if (config.validateAudience) {
+          def unauthorized(): Future[Either[Result, NgAccess]] =
+            Errors
+              .craftResponseResult(
+                "unauthorized",
+                Results.Unauthorized,
+                ctx.request,
+                None,
+                None,
+                attrs = ctx.attrs
+              )
+              .map(v => Left(v))
           val profile = token.split("\\.")(1).decodeBase64.parseJson
-          val aud     = profile.select("aud").asOpt[String].getOrElse("--")
-          Try(Uri.apply(aud)) match {
-            case Failure(e)   =>
-              Errors
-                .craftResponseResult(
-                  "unauthorized",
-                  Results.Unauthorized,
-                  ctx.request,
-                  None,
-                  None,
-                  attrs = ctx.attrs
-                )
-                .map(v => Left(v))
-            case Success(uri) => {
-              val currentUrl = s"${ctx.request.theProtocol}://${ctx.request.theDomain}${ctx.request.thePath}"
-              if (currentUrl.startsWith(uri.toString())) {
-                r.vfuture
-              } else {
-                Errors
-                  .craftResponseResult(
-                    "unauthorized",
-                    Results.Unauthorized,
-                    ctx.request,
-                    None,
-                    None,
-                    attrs = ctx.attrs
-                  )
-                  .map(v => Left(v))
-              }
+          // the `aud` claim (RFC 7519) may be either a single string or an array of strings - support both
+          val audiences: Seq[String] = profile
+            .select("aud")
+            .asOpt[String]
+            .map(a => Seq(a))
+            .orElse(profile.select("aud").asOpt[Seq[String]])
+            .getOrElse(Seq.empty)
+            .map(_.trim)
+            .filter(_.nonEmpty)
+          val currentUrl             =
+            s"${ctx.request.theProtocol}://${ctx.request.theDomain}${ctx.request.thePath}"
+          val matches                = audiences.exists { aud =>
+            Try(Uri.apply(aud)) match {
+              case Success(uri) => currentUrl.startsWith(uri.toString())
+              case Failure(_)   => false
             }
           }
+          if (matches) r.vfuture else unauthorized()
         } else {
           r.vfuture
         }
