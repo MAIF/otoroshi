@@ -348,14 +348,18 @@ case class OIDCAuthTokenConfig(
     opaque: Boolean,
     fetchUserProfile: Boolean,
     validateAudience: Boolean,
-    headerName: String
+    headerName: String,
+    // when true (and fetchUserProfile is true), validate the token via the auth module's RFC 7662
+    // introspection endpoint instead of the userinfo endpoint. Defaults to false (backward compatible).
+    useIntrospection: Boolean = false
 ) extends NgPluginConfig {
   def json: JsValue = OIDCAuthTokenConfig.format.writes(this)
 }
 
 object OIDCAuthTokenConfig {
   val default                        = OIDCAuthTokenConfig("", true, true, false, "Authorization")
-  val configFlow: Seq[String]        = Seq("ref", "header_name", "opaque", "fetch_user_profile", "validate_audience")
+  val configFlow: Seq[String]        =
+    Seq("ref", "header_name", "opaque", "fetch_user_profile", "validate_audience", "use_introspection")
   val configSchema: Option[JsObject] = Some(
     Json.obj(
       "header_name"        -> Json.obj(
@@ -373,6 +377,10 @@ object OIDCAuthTokenConfig {
       "validate_audience"  -> Json.obj(
         "type"  -> "bool",
         "label" -> "Validate audience"
+      ),
+      "use_introspection"  -> Json.obj(
+        "type"  -> "bool",
+        "label" -> "Validate token via RFC 7662 introspection"
       ),
       "ref"                -> Json.obj(
         "type"  -> "select",
@@ -394,7 +402,8 @@ object OIDCAuthTokenConfig {
         opaque = json.select("opaque").asOpt[Boolean].getOrElse(false),
         fetchUserProfile = json.select("fetch_user_profile").asOpt[Boolean].getOrElse(false),
         validateAudience = json.select("validate_audience").asOpt[Boolean].getOrElse(false),
-        headerName = json.select("header_name").asOpt[String].getOrElse("Authorization")
+        headerName = json.select("header_name").asOpt[String].getOrElse("Authorization"),
+        useIntrospection = json.select("use_introspection").asOpt[Boolean].getOrElse(false)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -405,7 +414,8 @@ object OIDCAuthTokenConfig {
       "opaque"             -> o.opaque,
       "fetch_user_profile" -> o.fetchUserProfile,
       "validate_audience"  -> o.validateAudience,
-      "header_name"        -> o.headerName
+      "header_name"        -> o.headerName,
+      "use_introspection"  -> o.useIntrospection
     )
   }
 }
@@ -429,7 +439,12 @@ object OIDCAuthToken {
 
     def createSession(): Future[Either[Result, NgAccess]] = {
       if (config.fetchUserProfile) {
-        authModule.getUserInfoSafe(token, env.datastores.globalConfigDataStore.latest()).flatMap {
+        val userInfoF =
+          if (config.useIntrospection)
+            authModule.introspectTokenSafe(token, env.datastores.globalConfigDataStore.latest())
+          else
+            authModule.getUserInfoSafe(token, env.datastores.globalConfigDataStore.latest())
+        userInfoF.flatMap {
           case Left(err)      =>
             Errors
               .craftResponseResult(
