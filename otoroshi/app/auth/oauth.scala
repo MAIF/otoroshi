@@ -655,6 +655,42 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
+  // RFC 7662 token introspection: POST the (possibly opaque) access token to the configured
+  // `introspectionUrl` with client credentials, and consider it valid only when the response is
+  // 200 and `active == true`. Returns the introspection response as the "profile" on success.
+  def introspectTokenSafe(accessToken: String, config: GlobalConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Either[String, JsValue]] = {
+    val clientSecret = Option(authConfig.clientSecret).filterNot(_.trim.isEmpty)
+    val builder      = env.MtlsWs
+      .url(authConfig.introspectionUrl, authConfig.mtlsConfig)
+      .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+    val future       = if (authConfig.useJson) {
+      builder.post(
+        Json.obj(
+          "token"     -> accessToken,
+          "client_id" -> authConfig.clientId
+        ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+      )
+    } else {
+      builder.post(
+        Map(
+          "token"     -> accessToken,
+          "client_id" -> authConfig.clientId
+        ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+      )(writeableOf_urlEncodedSimpleForm)
+    }
+    future.map {
+      case resp if resp.status == 200 && (resp.json \ "active").asOpt[Boolean].getOrElse(false) =>
+        Right(resp.json)
+      case resp if resp.status == 200                                                           =>
+        Left("token is not active")
+      case resp                                                                                 =>
+        Left(s"bad status code: ${resp.status}")
+    }
+  }
+
   def readProfileFromToken(accessToken: String)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
     val tokenHeader  =
