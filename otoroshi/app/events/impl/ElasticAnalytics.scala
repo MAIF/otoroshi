@@ -477,7 +477,18 @@ object ElasticWritesAnalytics {
   }
 
   def initialized(config: ElasticAnalyticsConfig, version: ElasticVersion): Unit = {
-    clusterInitializedCache.putIfAbsent(toKey(config), (true, version))
+    val versionIsKnown = version ne ElasticVersion.default
+    if (versionIsKnown) {
+      clusterInitializedCache.putIfAbsent(toKey(config), (true, version))
+    }
+  }
+
+  def shouldAddLegacyType(
+      config: ElasticAnalyticsConfig,
+      versionConfirmed: Boolean,
+      version: ElasticVersion
+  ): Boolean = {
+    version.underSeven && (versionConfirmed || config.version.isDefined)
   }
 
   def isInitialized(config: ElasticAnalyticsConfig): (Boolean, ElasticVersion) = {
@@ -655,6 +666,7 @@ object ElasticUtils {
     val numberOfShards: String   = config.indexSettings.numberOfShards.toString
     val numberOfReplicas: String = config.indexSettings.numberOfReplicas.toString
     getElasticVersion(config, logger, env).flatMap { version =>
+      ElasticWritesAnalytics.initialized(config, version)
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
       val (strTpl, indexTemplatePath) = version match {
         case ElasticVersion.UnderSeven(_)        => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
@@ -863,8 +875,9 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   }
 
   private def bulkRequest(source: JsValue): String = {
-    val version: ElasticVersion = ElasticWritesAnalytics.isInitialized(config)._2
-    val df                      = if (config.indexSettings.clientSide) {
+    val (versionConfirmed, version) = ElasticWritesAnalytics.isInitialized(config)
+    val mustAddLegacyType           = ElasticWritesAnalytics.shouldAddLegacyType(config, versionConfirmed, version)
+    val df                          = if (config.indexSettings.clientSide) {
       config.indexSettings.interval match {
         case IndexSettingsInterval.Day   => ISODateTimeFormat.date().print(DateTime.now())
         case IndexSettingsInterval.Week  => ISODateTimeFormat.weekyearWeek().print(DateTime.now())
@@ -880,7 +893,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       Json.obj(
         config.indexSettings.action -> Json
           .obj("_index" -> indexWithDate)
-          .applyOnIf(version.underSeven)(_ ++ Json.obj("_type" -> `type`))
+          .applyOnIf(mustAddLegacyType)(_ ++ Json.obj("_type" -> `type`))
       )
     )
     val sourceClause            = Json.stringify(source)
