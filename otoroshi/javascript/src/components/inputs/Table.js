@@ -1120,9 +1120,7 @@ class TableComponent extends Component {
             <hr />
             {!this.props.hideAllActions && (
               <>
-                <div
-                  className={`displayGroupBtn ${!this.props.parentProps?.openedSidebar ? 'displayGroupBtn--small' : ''}`}
-                >
+                <div className="displayGroupBtn">
                   {this.props.stayAfterSave && (
                     <button
                       type="button"

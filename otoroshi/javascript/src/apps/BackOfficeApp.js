@@ -402,6 +402,7 @@ class BackOfficeAppContainer extends Component {
           )}
           <div
             id="otoroshi-container"
+            className={sidebarMode === 'expanded' ? 'sidebar--expanded' : ''}
             style={{ height: 'calc(100vh - 52px)' /*, overflow: 'hidden'*/ }}
           >
             <div className="d-flex" style={{ position: 'relative' }}>
