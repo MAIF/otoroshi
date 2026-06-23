@@ -3,7 +3,7 @@ import { Table, Form } from '../components/inputs';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import isFunction from 'lodash/isFunction';
-import AceEditor from 'react-ace';
+import CodeInput from '../components/inputs/CodeInput';
 
 export class ErrorTemplatesPage extends Component {
   state = { list: [], fetched: false };
@@ -272,23 +272,16 @@ export class ErrorTemplatesPage extends Component {
               />
             </div>
             <div style={{ width: '50%' }}>
-              <AceEditor
-                theme={document.body.classList.contains('white-mode') ? 'xcode' : 'monokai'}
+              <CodeInput
+                editorOnly={true}
                 mode="html"
                 onChange={(e) => {
-                  console.log(e);
                   onChange({ target: { value: e } });
                 }}
                 value={value || ''}
-                name="scriptParam"
-                editorProps={{ $blockScrolling: true }}
-                height={'300px'}
+                height="300px"
                 width="100%"
                 showGutter={true}
-                highlightActiveLine={true}
-                tabSize={2}
-                enableBasicAutocompletion={true}
-                enableLiveAutocompletion={true}
               />
             </div>
           </div>

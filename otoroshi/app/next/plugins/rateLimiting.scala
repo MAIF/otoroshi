@@ -197,7 +197,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     }
   }
 
-  override def reset(key: String, expirationSeconds: Int)(implicit
+  override def reset(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(implicit
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
@@ -218,9 +218,9 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
              redisCli.expire(monthlyQuotaKey(key), (toMonthEnd / 1000).toInt)
            }
     } yield QuotaState(
-      window = Quota(limit = config.quota.window, consumed = 0, resetsAt = 0),
-      daily = Quota(limit = config.quota.daily, consumed = 0, resetsAt = dayEnd.getMillis),
-      monthly = Quota(limit = config.quota.monthly, consumed = 0, resetsAt = monthEnd.getMillis)
+      window = Quota(limit = allowedQuotas.window, consumed = 0, resetsAt = 0),
+      daily = Quota(limit = allowedQuotas.daily, consumed = 0, resetsAt = dayEnd.getMillis),
+      monthly = Quota(limit = allowedQuotas.monthly, consumed = 0, resetsAt = monthEnd.getMillis)
     )
   }
 }
@@ -582,7 +582,7 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
           )
         }
     } else {
-      quotas(key, expirationSeconds)
+      quotas(key, config.quota, expirationSeconds)
         .map(quotas =>
           ThrottlingResult(
             allowed = false,
@@ -1037,7 +1037,10 @@ trait ThrottlingStrategy {
     }
   }
 
-  def quotas(key: String, expirationSeconds: Int)(implicit ec: ExecutionContext, env: Env): Future[QuotaState] = {
+  def quotas(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[QuotaState] = {
     val redisCli = client()
 
     val dayEnd   = DateTime.now().secondOfDay().withMaximumValue()
@@ -1056,17 +1059,17 @@ trait ThrottlingStrategy {
     } yield {
       QuotaState(
         window = Quota(
-          limit = config.quota.window,
+          limit = allowedQuotas.window,
           consumed = throttlingCallsPerWindow,
           resetsAt = now + windowTTL
         ),
         daily = Quota(
-          limit = config.quota.daily,
+          limit = allowedQuotas.daily,
           consumed = dailyCalls,
           resetsAt = dayEnd.getMillis
         ),
         monthly = Quota(
-          limit = config.quota.monthly,
+          limit = allowedQuotas.monthly,
           consumed = monthlyCalls,
           resetsAt = monthEnd.getMillis
         )
@@ -1116,7 +1119,10 @@ trait ThrottlingStrategy {
     }
   }
 
-  def reset(key: String, expirationSeconds: Int)(implicit env: Env, ec: ExecutionContext): Future[QuotaState] = {
+  def reset(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[QuotaState] = {
     val redisCli = client()
 
     val now        = System.currentTimeMillis()
@@ -1144,9 +1150,9 @@ trait ThrottlingStrategy {
                      redisCli.expire(monthlyQuotaKey(key), (toMonthEnd / 1000).toInt)
                    }
     } yield QuotaState(
-      window = Quota(limit = config.quota.window, consumed = 0, resetsAt = now + windowTTL),
-      daily = Quota(limit = config.quota.daily, consumed = 0, resetsAt = dayEnd.getMillis),
-      monthly = Quota(limit = config.quota.monthly, consumed = 0, resetsAt = monthEnd.getMillis)
+      window = Quota(limit = allowedQuotas.window, consumed = 0, resetsAt = now + windowTTL),
+      daily = Quota(limit = allowedQuotas.daily, consumed = 0, resetsAt = dayEnd.getMillis),
+      monthly = Quota(limit = allowedQuotas.monthly, consumed = 0, resetsAt = monthEnd.getMillis)
     )
   }
 

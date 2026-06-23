@@ -1,3 +1,11 @@
+#otoroshi-container {
+  --sidebar-offset: 52px;
+}
+
+#otoroshi-container.sidebar--expanded {
+  --sidebar-offset: 250px;
+}
+
 .sidebar {
   position: relative;
   min-width: 250px;
@@ -250,6 +258,10 @@
 }
 
 @media screen and (max-width: 767px) {
+  #otoroshi-container {
+    --sidebar-offset: 0px !important;
+  }
+
   .sidebar {
     display: none;
     top: 141px;

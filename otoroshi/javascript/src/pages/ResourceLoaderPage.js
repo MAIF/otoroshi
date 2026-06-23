@@ -1,10 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import AceEditor from 'react-ace';
+import CodeInput from '../components/inputs/CodeInput';
 import { PillButton } from '../components/PillButton';
-
-import 'ace-builds/src-noconflict/mode-json';
-import 'ace-builds/src-noconflict/mode-yaml';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { SimpleBooleanInput } from '../components/inputs';
@@ -68,8 +65,6 @@ export function ResourceLoaderPage({ setTitle }) {
   const [rawResources, setRawResources] = useState('');
 
   const [loadedResources, setLoadedResources] = useState([]);
-
-  const aceRef = useRef();
 
   useEffect(() => {
     setTitle('Resources loader');
@@ -299,27 +294,21 @@ export function ResourceLoaderPage({ setTitle }) {
       <div className="mb-3">
         <div className="row">
           <div
+            id="resources-loader"
             className="col-sm-8"
             style={{ paddingRight: 0 }}
             onDrop={onDrop}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
           >
-            <AceEditor
-              ref={aceRef}
-              name="resources-loader"
+            <CodeInput
+              editorOnly={true}
               mode={format}
-              theme="monokai"
               onChange={setResources}
               value={rawResources}
-              editorProps={{ $blockScrolling: true }}
               width="100%"
               height="440px"
               showGutter={true}
-              highlightActiveLine={true}
-              tabSize={2}
-              enableBasicAutocompletion={true}
-              placeholder="Write, paste or drag your text here"
             />
           </div>
           <div className="col-sm-4" style={{ paddingLeft: 1 }}>
@@ -337,16 +326,15 @@ export function ResourceLoaderPage({ setTitle }) {
             >
               Example
             </div>
-            <AceEditor
+            <CodeInput
+              editorOnly={true}
               mode="json"
-              theme="monokai"
               readOnly={true}
               showGutter={false}
               value={EXAMPLE}
-              name="example"
+              onChange={() => {}}
               height="410px"
               width="100%"
-              tabSize={2}
             />
           </div>
         </div>

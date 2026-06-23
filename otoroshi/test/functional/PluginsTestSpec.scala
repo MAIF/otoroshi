@@ -543,6 +543,9 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey quotas" in {
       new ApikeyQuotasTests(this)
     }
+    "Apikey legacy quotas reporting" in {
+      new LegacyQuotasReportingTests(this)
+    }
     "RBAC - allow" in {
       new RBACTests(this).allow()
     }

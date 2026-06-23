@@ -1,0 +1,11 @@
+#resources-loader {
+  &.dragEffect {
+    background-color: rgba(249, 176, 0, 0.2);
+
+    .monaco-editor,
+    .monaco-editor .margin,
+    .monaco-editor .monaco-editor-background {
+      background-color: rgba(249, 176, 0, 0.2);
+    }
+  }
+}
