@@ -317,6 +317,11 @@ case class ApiKey(
       "tags"       -> tags
     )
 
+  def allowedQuota: AllowedQuota =
+    throttlingStrategy
+      .map(_.quota)
+      .getOrElse(AllowedQuota(window = throttlingQuota, daily = dailyQuota, monthly = monthlyQuota))
+
   def matchRouting(sr: ServiceDescriptor): Boolean = matchRouting(sr.apiKeyConstraints)
 
   def matchRouting(apiKeyConstraints: ApiKeyConstraints): Boolean = matchRouting(apiKeyConstraints.routing)
@@ -2409,15 +2414,7 @@ object ApiKeyHelper {
                   .checkAndIncrement(
                     apikey.clientId,
                     1,
-                    apikey.throttlingStrategy
-                      .map(_.quota)
-                      .getOrElse(
-                        AllowedQuota(
-                          window = apikey.throttlingQuota,
-                          daily = apikey.dailyQuota,
-                          monthly = apikey.monthlyQuota
-                        )
-                      ),
+                    apikey.allowedQuota,
                     env.throttlingWindow
                   )
                   .flatMap {
@@ -2442,14 +2439,8 @@ object ApiKeyHelper {
                 strategy
                   .check(
                     apikey.clientId,
-                    AllowedQuota(
-                      window = apikey.throttlingQuota,
-                      daily = apikey.dailyQuota,
-                      monthly = apikey.monthlyQuota
-                    )
+                    apikey.allowedQuota
                   )
-                  //              env.datastores.apiKeyDataStore
-                  //                .remainingQuotas(apikey)
                   .flatMap { result =>
                     if (result.allowed) {
                       attrs.put(otoroshi.plugins.Keys.ApiKeyRemainingQuotasKey -> result.quotas.legacy())

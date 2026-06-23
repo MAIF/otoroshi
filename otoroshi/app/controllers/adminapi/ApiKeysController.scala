@@ -853,8 +853,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             TypedMap.empty,
             apiKey.throttlingStrategy
           )
-          strategy.quotas(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
-//          apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
+          strategy.quotas(clientId, apiKey.allowedQuota, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
         }
       }
     }
@@ -876,8 +875,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
             TypedMap.empty,
             apiKey.throttlingStrategy
           )
-          strategy.reset(clientId, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
-//          env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
+          strategy.reset(clientId, apiKey.allowedQuota, env.throttlingWindow).map(rq => Ok(rq.legacy().toJson))
         }
       }
     }
