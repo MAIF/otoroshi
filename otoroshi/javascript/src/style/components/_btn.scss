@@ -4,16 +4,13 @@
   border: 1px solid var(--input-border) !important;
 }
 
-.displayGroupBtn--small {
-  left: 0 !important;
-}
-
 .displayGroupBtn {
   text-align: center;
   position: fixed;
   bottom: 0;
-  left: 250px;
+  left: var(--sidebar-offset, 250px);
   right: 0;
+  transition: left 200ms cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--bg-color_level2);
   border-top: 1px solid var(--border-color);
   border-right: 1px solid var(--border-color);

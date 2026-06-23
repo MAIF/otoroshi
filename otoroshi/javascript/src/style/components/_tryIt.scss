@@ -65,15 +65,9 @@
     border-radius: 2px;
   }
 
-  .ace_editor,
-  .ace_scroller,
-  .ace_content,
-  .ace_gutter {
-    background: none !important;
-  }
-
-  .ace_marker-layer,
-  .ace_print-margin {
+  .monaco-editor,
+  .monaco-editor .margin,
+  .monaco-editor .monaco-editor-background {
     background: none !important;
   }
 

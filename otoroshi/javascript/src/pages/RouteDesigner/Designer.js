@@ -2483,22 +2483,17 @@ class EditView extends React.Component {
   };
 
   onJsonInputChange = (value) => {
-    const { form } = this.state;
-    this.onValidate(JSON.parse(value));
-    // validate([], form.schema, value)
-    //   .then(() => {
-    //     this.setState({
-    //       errors: [],
-    //     });
-    //     this.onValidate(JSON.parse(value));
-    //   })
-    //   .catch((err) => {
-    //     if (err.inner && Array.isArray(err.inner)) {
-    //       this.setState({
-    //         errors: err.inner.map((r) => r.message),
-    //       });
-    //     }
-    //   });
+    let parsed = value;
+    if (typeof value === 'string') {
+      try {
+        parsed = JSON.parse(value);
+      } catch (err) {
+        this.setState({ errors: ['Invalid JSON'] });
+        return;
+      }
+    }
+    this.setState({ errors: [] });
+    this.onValidate(parsed);
   };
 
   toggleJsonFormat = (value) => {
