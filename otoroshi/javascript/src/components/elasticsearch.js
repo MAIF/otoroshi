@@ -29,6 +29,22 @@ export class CheckElasticsearchConnection extends Component {
       });
   };
 
+  fillVersion = () => {
+    fetch('/bo/api/elastic/_check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(this.props.rawValue),
+    })
+      .then((r) => r.json())
+      .then((r) => {
+        if (!r.none) {
+          this.props.rawOnChange({ ...this.props.rawValue, version: r.version });
+        }
+      })
+  }
+
   applyTemplate = () => {
     fetch('/bo/api/elastic/_apply_template', {
       method: 'POST',
@@ -72,6 +88,7 @@ export class CheckElasticsearchConnection extends Component {
   };
 
   render() {
+    console.log("ES props:", this.props);
     return (
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label"></label>
@@ -84,6 +101,14 @@ export class CheckElasticsearchConnection extends Component {
               onClick={this.checkConnection}
             >
               Check connection
+            </button>
+            <button
+              className="btn btn-sm btn-success"
+              style={{ marginRight: 0 }}
+              type="button"
+              onClick={this.fillVersion}
+            >
+              Fill cluster version
             </button>
             <button
               className="btn btn-sm btn-success"
