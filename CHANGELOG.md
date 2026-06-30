@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [17.17.0] - 2026-06-30
+
+
+https://github.com/MAIF/otoroshi/milestone/140?closed=1
+https://github.com/MAIF/otoroshi/compare/v17.16.1...v17.17.0
+https://github.com/MAIF/otoroshi/releases/tag/v17.17.0
+
+
+### Added 
+
+- Support generate initial admin user password in a temporary file (#2590 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Support RFC 7662 introspection flow for opaque tokens (#2608 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Button to fill ES cluster version (#2614 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Changed 
+
+- NgErrorRewriter plugin enhancements (#2591 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+### Fixed 
+
+- better handling of default values in Expression Language (#2593 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- fetch ingresses on the right api group (#2594 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- Disabled apikeys accepted on client-id-only (#2596 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- ordering issue in expression language for `ctx.geolocation.*` and `ctx.useragent.*` (#2597 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- client_id only apikey bypass bearer signature validation (#2598 fixed by [mathieuancelin](https://github.com/mathieuancelin))
+- OIDCJwtVerifier should be able to read audience from an array (#2607 fixed by [mathieuancelin](https://github.com/mathieuancelin))       
+      
+
+### Contributors
+
+* @mathieuancelin
+
 ## [17.16.1] - 2026-06-01
 
 
