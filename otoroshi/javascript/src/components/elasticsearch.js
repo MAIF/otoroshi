@@ -41,7 +41,16 @@ export class CheckElasticsearchConnection extends Component {
       .then((r) => {
         if (!r.none) {
           this.props.rawOnChange({ ...this.props.rawValue, version: r.version });
+        } else {
+          window.newAlert(
+            'Unable to get informations from the Elasticsearch cluster'
+          );
         }
+      })
+      .catch((err) => {
+        window.newAlert(
+          'Unable to connect to the Elasticsearch cluster'
+        );
       })
   }
 
