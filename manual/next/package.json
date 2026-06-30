@@ -1,6 +1,6 @@
 {
   "name": "otoroshi-documentation",
-  "version": "17.17.0-dev",
+  "version": "17.17.0",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
