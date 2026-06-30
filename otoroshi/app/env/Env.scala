@@ -514,14 +514,14 @@ class Env(
   lazy val maxHeaderNameLength: Long         =
     Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderNameLength")).map(_.toLong).getOrElse(128L)
 
-  lazy val healthAccessKey: Option[String] = configuration.getOptionalWithFileSupport[String]("app.health.accessKey")
-  lazy val overheadThreshold: Double       =
+  lazy val healthAccessKey: Option[String]          = configuration.getOptionalWithFileSupport[String]("app.health.accessKey")
+  lazy val overheadThreshold: Double                =
     configuration.getOptionalWithFileSupport[Double]("app.overheadThreshold").getOrElse(500.0)
-  lazy val healthLimit: Double             = configuration.getOptionalWithFileSupport[Double]("app.health.limit").getOrElse(1000.0)
-  lazy val throttlingWindow: Int           = configuration.getOptionalWithFileSupport[Int]("app.throttlingWindow").getOrElse(10)
-  lazy val analyticsWindow: Int            = configuration.getOptionalWithFileSupport[Int]("app.analyticsWindow").getOrElse(30)
-  lazy val eventsName: String              = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
-  lazy val storageRoot: String             =
+  lazy val healthLimit: Double                      = configuration.getOptionalWithFileSupport[Double]("app.health.limit").getOrElse(1000.0)
+  lazy val throttlingWindow: Int                    = configuration.getOptionalWithFileSupport[Int]("app.throttlingWindow").getOrElse(10)
+  lazy val analyticsWindow: Int                     = configuration.getOptionalWithFileSupport[Int]("app.analyticsWindow").getOrElse(30)
+  lazy val eventsName: String                       = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
+  lazy val storageRoot: String                      =
     configuration.getOptionalWithFileSupport[String]("app.storageRoot").getOrElse("otoroshi")
   lazy val hideInitialAdminPassword: Boolean        =
     configuration.getOptionalWithFileSupport[Boolean]("app.hideInitialAdminPassword").getOrElse(false)
@@ -530,25 +530,25 @@ class Env(
   lazy val initialAdminPasswordFile: String         = configuration
     .getOptionalWithFileSupport[String]("app.initialAdminPasswordFile")
     .getOrElse("/etc/otoroshi/initial_admin_password")
-  lazy val useCache: Boolean               =
+  lazy val useCache: Boolean                        =
     configuration.getOptionalWithFileSupport[Boolean]("otoroshi.cache.enabled").getOrElse(false)
-  lazy val cacheTtl: Int                   =
+  lazy val cacheTtl: Int                            =
     configuration.getOptionalWithFileSupport[Int]("otoroshi.cache.ttl").filter(_ >= 2000).getOrElse(2000)
-  lazy val useRedisScan: Boolean           =
+  lazy val useRedisScan: Boolean                    =
     configuration.getOptionalWithFileSupport[Boolean]("app.redis.useScan").getOrElse(false)
-  lazy val secret: String                  = configuration.getOptionalWithFileSupport[String]("play.crypto.secret").get
-  lazy val secretSession: String           =
+  lazy val secret: String                           = configuration.getOptionalWithFileSupport[String]("play.crypto.secret").get
+  lazy val secretSession: String                    =
     configuration
       .getOptionalWithFileSupport[String]("otoroshi.sessions.secret")
       .map(_.padTo(16, "0").mkString("").take(16))
       .get
-  lazy val sharedKey: String               = configuration.getOptionalWithFileSupport[String]("app.claim.sharedKey").get
-  lazy val env: String                     = configuration.getOptionalWithFileSupport[String]("app.env").getOrElse("prod")
-  lazy val isDev: Boolean                  = env == "dev"
-  lazy val isProd: Boolean                 = !isDev
-  lazy val number: Int                     = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
-  lazy val name: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
-  lazy val title: String                   = configuration
+  lazy val sharedKey: String                        = configuration.getOptionalWithFileSupport[String]("app.claim.sharedKey").get
+  lazy val env: String                              = configuration.getOptionalWithFileSupport[String]("app.env").getOrElse("prod")
+  lazy val isDev: Boolean                           = env == "dev"
+  lazy val isProd: Boolean                          = !isDev
+  lazy val number: Int                              = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
+  lazy val name: String                             = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
+  lazy val title: String                            = configuration
     .getOptionalWithFileSupport[String]("app.instance.title")
     .map {
       case v if v.startsWith("ReplaceAll(") => v.substring(11, v.length).init
@@ -561,18 +561,18 @@ class Env(
   // lazy val dataCenter: String              = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
   // lazy val zone: String                    = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
   // lazy val region: String                  = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
-  lazy val rack: String                    = clusterConfig.relay.location.rack
-  lazy val infraProvider: String           = clusterConfig.relay.location.provider
-  lazy val dataCenter: String              = clusterConfig.relay.location.datacenter
-  lazy val zone: String                    = clusterConfig.relay.location.zone
-  lazy val region: String                  = clusterConfig.relay.location.region
-  lazy val liveJs: Boolean                 = configuration
+  lazy val rack: String                             = clusterConfig.relay.location.rack
+  lazy val infraProvider: String                    = clusterConfig.relay.location.provider
+  lazy val dataCenter: String                       = clusterConfig.relay.location.datacenter
+  lazy val zone: String                             = clusterConfig.relay.location.zone
+  lazy val region: String                           = clusterConfig.relay.location.region
+  lazy val liveJs: Boolean                          = configuration
     .getOptionalWithFileSupport[String]("app.env")
     .filter(_ == "dev")
     .map(_ => true)
     .orElse(configuration.getOptionalWithFileSupport[Boolean]("app.liveJs"))
     .getOrElse(false)
-  lazy val revolver: Boolean               = configuration.getOptionalWithFileSupport[Boolean]("app.revolver").getOrElse(false)
+  lazy val revolver: Boolean                        = configuration.getOptionalWithFileSupport[Boolean]("app.revolver").getOrElse(false)
 
   lazy val exposeAdminApi: Boolean                         =
     if (clusterConfig.mode.isWorker) false

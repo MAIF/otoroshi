@@ -83,7 +83,7 @@ class ElasticWritesAnalyticsSpec extends WordSpec with MustMatchers {
     }
 
     "cache a genuine detected version" in {
-      val cfg = config("http://es-genuine:9200")
+      val cfg                  = config("http://es-genuine:9200")
       ElasticWritesAnalytics.initialized(cfg, ElasticVersion.AboveEight("8.5.0"))
       val (confirmed, version) = ElasticWritesAnalytics.isInitialized(cfg)
       confirmed mustBe true
@@ -95,17 +95,17 @@ class ElasticWritesAnalyticsSpec extends WordSpec with MustMatchers {
 
     "classify an explicitly configured version by thresholds" in {
       ElasticWritesAnalytics.isInitialized(config("http://es-v6:9200", Some("6.8.1")))._2 mustBe
-        ElasticVersion.UnderSeven("6.8.1")
+      ElasticVersion.UnderSeven("6.8.1")
       ElasticWritesAnalytics.isInitialized(config("http://es-v7:9200", Some("7.1.0")))._2 mustBe
-        ElasticVersion.AboveSeven("7.1.0")
+      ElasticVersion.AboveSeven("7.1.0")
       ElasticWritesAnalytics.isInitialized(config("http://es-v78:9200", Some("7.8.0")))._2 mustBe
-        ElasticVersion.AboveSevenEight("7.8.0")
+      ElasticVersion.AboveSevenEight("7.8.0")
       ElasticWritesAnalytics.isInitialized(config("http://es-v8:9200", Some("8.0.0")))._2 mustBe
-        ElasticVersion.AboveEight("8.0.0")
+      ElasticVersion.AboveEight("8.0.0")
       ElasticWritesAnalytics.isInitialized(config("http://es-v89:9200", Some("8.9.0")))._2 mustBe
-        ElasticVersion.AboveEightNine("8.9.0")
+      ElasticVersion.AboveEightNine("8.9.0")
       ElasticWritesAnalytics.isInitialized(config("http://es-v815:9200", Some("8.15.0")))._2 mustBe
-        ElasticVersion.AboveEightFifteen("8.15.0")
+      ElasticVersion.AboveEightFifteen("8.15.0")
     }
   }
 }

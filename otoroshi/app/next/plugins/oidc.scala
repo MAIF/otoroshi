@@ -612,9 +612,9 @@ object OIDCAuthToken {
                 attrs = ctx.attrs
               )
               .map(v => Left(v))
-          val profile = token.split("\\.")(1).decodeBase64.parseJson
+          val profile                                          = token.split("\\.")(1).decodeBase64.parseJson
           // the `aud` claim (RFC 7519) may be either a single string or an array of strings - support both
-          val audiences: Seq[String] = profile
+          val audiences: Seq[String]                           = profile
             .select("aud")
             .asOpt[String]
             .map(a => Seq(a))
@@ -622,9 +622,9 @@ object OIDCAuthToken {
             .getOrElse(Seq.empty)
             .map(_.trim)
             .filter(_.nonEmpty)
-          val currentUrl             =
+          val currentUrl                                       =
             s"${ctx.request.theProtocol}://${ctx.request.theDomain}${ctx.request.thePath}"
-          val matches                = audiences.exists { aud =>
+          val matches                                          = audiences.exists { aud =>
             Try(Uri.apply(aud)) match {
               case Success(uri) => currentUrl.startsWith(uri.toString())
               case Failure(_)   => false

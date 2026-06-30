@@ -42,17 +42,13 @@ export class CheckElasticsearchConnection extends Component {
         if (!r.none) {
           this.props.rawOnChange({ ...this.props.rawValue, version: r.version });
         } else {
-          window.newAlert(
-            'Unable to get informations from the Elasticsearch cluster'
-          );
+          window.newAlert('Unable to get informations from the Elasticsearch cluster');
         }
       })
       .catch((err) => {
-        window.newAlert(
-          'Unable to connect to the Elasticsearch cluster'
-        );
-      })
-  }
+        window.newAlert('Unable to connect to the Elasticsearch cluster');
+      });
+  };
 
   applyTemplate = () => {
     fetch('/bo/api/elastic/_apply_template', {
@@ -97,7 +93,7 @@ export class CheckElasticsearchConnection extends Component {
   };
 
   render() {
-    console.log("ES props:", this.props);
+    console.log('ES props:', this.props);
     return (
       <div className="row mb-3">
         <label className="col-sm-2 col-form-label"></label>

@@ -2124,7 +2124,9 @@ object ApiKeyHelper {
           case Some(apikey) =>
             apikeyTuple match {
               case ApikeyTuple(_, None, None, _, None) if apikey.allowClientIdOnly && apikey.enabled                => apikey.right
-              case ApikeyTuple(_, None, None, _, Some(otoBearer)) if apikey.allowClientIdOnly && apikey.enabled && apikey.checkBearer(otoBearer) => apikey.right
+              case ApikeyTuple(_, None, None, _, Some(otoBearer))
+                  if apikey.allowClientIdOnly && apikey.enabled && apikey.checkBearer(otoBearer) =>
+                apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isValid(secret)                               => apikey.right
               case ApikeyTuple(_, Some(secret), None, _, _) if apikey.isInvalid(secret)                             =>
                 (
