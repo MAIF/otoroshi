@@ -1,10 +1,11 @@
 package functional
 
-import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import otoroshi.events.impl.{ElasticVersion, ElasticWritesAnalytics}
 import otoroshi.models.ElasticAnalyticsConfig
 
-class ElasticWritesAnalyticsSpec extends WordSpec with MustMatchers {
+class ElasticWritesAnalyticsSpec extends AnyWordSpec with Matchers {
 
   private def config(uri: String, version: Option[String] = None): ElasticAnalyticsConfig =
     ElasticAnalyticsConfig(
