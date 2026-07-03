@@ -65,7 +65,7 @@ object SourceUtils {
       sourceName: String,
       allResources: Seq[Resource],
       resolveGlob: Option[String => Future[Either[JsValue, Seq[String]]]] = None
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     val rawPaths = deployArray.value.flatMap(_.asOpt[String]).toSeq
     rawPaths
       .mapAsync { path =>
@@ -175,13 +175,13 @@ class CatalogSourceFile extends CatalogSource {
   override def sourceKind: String       = "file"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "file source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -209,7 +209,7 @@ class CatalogSourceFile extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -278,19 +278,19 @@ class CatalogSourceHttp extends CatalogSource {
   override def sourceKind: String       = "http"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "http source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
     Json.obj("error" -> "http source does not support webhooks").leftf
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -323,7 +323,7 @@ class CatalogSourceHttp extends CatalogSource {
     }
   }
 
-  private def fetchUrl(url: String, headers: Map[String, String], timeout: Long, env: Env)(implicit
+  private def fetchUrl(url: String, headers: Map[String, String], timeout: Long, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     env.Ws
@@ -384,7 +384,7 @@ class CatalogSourceGithub extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit
+  )(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     val apiUrl = s"$apiBase/repos/$owner/$repo/contents/$filePath"
@@ -413,7 +413,7 @@ class CatalogSourceGithub extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/repos/$owner/$repo/git/trees/$branch"
     env.Ws
       .url(apiUrl)
@@ -450,7 +450,7 @@ class CatalogSourceGithub extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit
+  )(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/repos/$owner/$repo/contents/$dirPath"
@@ -488,7 +488,7 @@ class CatalogSourceGithub extends CatalogSource {
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -507,7 +507,7 @@ class CatalogSourceGithub extends CatalogSource {
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
@@ -521,7 +521,7 @@ class CatalogSourceGithub extends CatalogSource {
     if (parts.length == 1) Some(parts(0)) else None
   }
 
-  private def listOrgRepos(apiBase: String, org: String, token: String, env: Env)(implicit
+  private def listOrgRepos(apiBase: String, org: String, token: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val orgUrl = s"$apiBase/orgs/$org/repos"
@@ -568,7 +568,7 @@ class CatalogSourceGithub extends CatalogSource {
       token: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, owner, repo, path, branch, token, env).flatMap {
         case Left(err)         => err.leftf
@@ -616,7 +616,7 @@ class CatalogSourceGithub extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -688,7 +688,7 @@ class CatalogSourceGitlab extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/files/$filePath/raw"
     env.Ws
       .url(apiUrl)
@@ -714,7 +714,7 @@ class CatalogSourceGitlab extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/tree"
     env.Ws
       .url(apiUrl)
@@ -757,7 +757,7 @@ class CatalogSourceGitlab extends CatalogSource {
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$baseUrl/api/v4/projects/$encodedProject/repository/tree"
     env.Ws
       .url(apiUrl)
@@ -792,7 +792,7 @@ class CatalogSourceGitlab extends CatalogSource {
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -809,7 +809,7 @@ class CatalogSourceGitlab extends CatalogSource {
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
@@ -819,7 +819,7 @@ class CatalogSourceGitlab extends CatalogSource {
     !cleaned.contains("/")
   }
 
-  private def listGroupProjects(baseUrl: String, group: String, token: String, env: Env)(implicit
+  private def listGroupProjects(baseUrl: String, group: String, token: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val encodedGroup = java.net.URLEncoder.encode(group, "UTF-8")
@@ -862,7 +862,7 @@ class CatalogSourceGitlab extends CatalogSource {
       token: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     val encodedProject = java.net.URLEncoder.encode(projectPath, "UTF-8")
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(baseUrl, encodedProject, path, branch, token, env).flatMap {
@@ -911,7 +911,7 @@ class CatalogSourceGitlab extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -962,13 +962,13 @@ class CatalogSourceS3 extends CatalogSource {
   override def sourceKind: String       = "s3"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "s3 source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -992,7 +992,7 @@ class CatalogSourceS3 extends CatalogSource {
     S3Attributes.settings(settings)
   }
 
-  private def listAllKeys(bucket: String, prefix: String, config: JsObject, env: Env)(implicit
+  private def listAllKeys(bucket: String, prefix: String, config: JsObject, env: Env)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[JsValue, Seq[String]]] = {
@@ -1006,7 +1006,7 @@ class CatalogSourceS3 extends CatalogSource {
       }
   }
 
-  private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(implicit
+  private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Either[JsValue, String]] = {
@@ -1026,7 +1026,7 @@ class CatalogSourceS3 extends CatalogSource {
       }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1077,13 +1077,13 @@ class CatalogSourceConsulKv extends CatalogSource {
   override def sourceKind: String       = "consulkv"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "consulkv source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -1094,7 +1094,7 @@ class CatalogSourceConsulKv extends CatalogSource {
     (if (token.nonEmpty) Seq("X-Consul-Token" -> token) else Seq.empty)
   }
 
-  private def fetchRawKey(endpoint: String, key: String, token: String, dc: String, env: Env)(implicit
+  private def fetchRawKey(endpoint: String, key: String, token: String, dc: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, String]] = {
     val params = Seq("raw" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
@@ -1116,7 +1116,7 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
   }
 
-  private def listAllKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(implicit
+  private def listAllKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val cleanPrefix = prefix.stripSuffix("/") + "/"
@@ -1150,7 +1150,7 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
   }
 
-  private def listKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(implicit
+  private def listKeys(endpoint: String, prefix: String, token: String, dc: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val cleanPrefix = prefix.stripSuffix("/") + "/"
@@ -1188,7 +1188,7 @@ class CatalogSourceConsulKv extends CatalogSource {
       }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1292,7 +1292,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       token: String,
       username: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace/$repo/src/$branch/$filePath"
     env.Ws
       .url(apiUrl)
@@ -1320,7 +1320,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       token: String,
       username: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val path   = if (dirPath.isEmpty || dirPath == "/") "" else dirPath.stripSuffix("/")
     val apiUrl = s"$apiBase/2.0/repositories/$workspace/$repo/src/$branch/$path"
     env.Ws
@@ -1351,7 +1351,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -1370,7 +1370,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
@@ -1384,7 +1384,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     if (parts.length == 1) Some(parts(0)) else None
   }
 
-  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(implicit
+  private def listWorkspaceRepos(apiBase: String, workspace: String, token: String, username: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace"
@@ -1427,7 +1427,7 @@ class CatalogSourceBitbucket extends CatalogSource {
       username: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(apiBase, workspace, repo, path, branch, token, username, env).flatMap {
         case Left(err)         => err.leftf
@@ -1473,7 +1473,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1559,7 +1559,7 @@ class CatalogSourceGiteaCompat(
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, String]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, String]] = {
     val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/raw/$filePath"
     env.Ws
       .url(apiUrl)
@@ -1589,7 +1589,7 @@ class CatalogSourceGiteaCompat(
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/git/trees/$branch"
     env.Ws
       .url(apiUrl)
@@ -1626,7 +1626,7 @@ class CatalogSourceGiteaCompat(
       branch: String,
       token: String,
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[String]]] = {
     val path   = if (dirPath.isEmpty || dirPath == "/") "" else dirPath.stripSuffix("/")
     val apiUrl = s"$baseUrl/api/v1/repos/$owner/$repo/contents/$path"
     env.Ws
@@ -1664,7 +1664,7 @@ class CatalogSourceGiteaCompat(
       }
   }
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] = {
@@ -1683,12 +1683,12 @@ class CatalogSourceGiteaCompat(
     matched.rightf
   }
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]] = Json.obj().rightf
 
-  private def listOrgRepos(baseUrl: String, org: String, token: String, env: Env)(implicit
+  private def listOrgRepos(baseUrl: String, org: String, token: String, env: Env)(using
       ec: ExecutionContext
   ): Future[Either[JsValue, Seq[String]]] = {
     val orgUrl = s"$baseUrl/api/v1/orgs/$org/repos"
@@ -1738,7 +1738,7 @@ class CatalogSourceGiteaCompat(
       token: String,
       allRes: Seq[Resource],
       env: Env
-  )(implicit ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
+  )(using ec: ExecutionContext): Future[Either[JsValue, Seq[RemoteEntity]]] = {
     if (SourceUtils.hasFileExtension(path)) {
       fetchFileContent(baseUrl, owner, repo, path, branch, token, env).flatMap {
         case Left(err)         => err.leftf
@@ -1786,7 +1786,7 @@ class CatalogSourceGiteaCompat(
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {
@@ -1843,13 +1843,13 @@ class CatalogSourceGit extends CatalogSource {
   override def sourceKind: String       = "git"
   override def supportsWebhook: Boolean = false
 
-  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  override def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]] =
     Json.obj("error" -> "git source does not support webhooks").leftf
 
-  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  override def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]           =
@@ -1979,7 +1979,7 @@ class CatalogSourceGit extends CatalogSource {
     }
   }
 
-  override def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  override def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]] = {

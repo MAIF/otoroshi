@@ -50,7 +50,7 @@ class AlertEvaluationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val alerts = env.proxyState.allUserAlerts().filter(_.enabled)
     if (alerts.isEmpty) FastFuture.successful(())
     else {
@@ -73,7 +73,7 @@ class AlertEvaluationJob extends Job {
   private case class AlertState(lastEvaluatedAt: Long, lastFiredAt: Long)
   private val ZERO_STATE = AlertState(0L, 0L)
 
-  private def processAlert(alert: UserAlert)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def processAlert(alert: UserAlert)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val now = System.currentTimeMillis()
     loadState(alert.id).flatMap { st =>
       val nextEvaluation = st.lastEvaluatedAt + alert.evaluationIntervalSeconds * 1000L
@@ -87,8 +87,8 @@ class AlertEvaluationJob extends Job {
               alertConfig = alert,
               evaluations = evals,
               `@id` = env.snowflakeGenerator.nextIdStr()
-            )(env)
-            Try(Alerts.send(ev)(env)).recover { case e: Throwable =>
+            )(using env)
+            Try(Alerts.send(ev)(using env)).recover { case e: Throwable =>
               logger.error(s"failed to send alert '${alert.id}'", e)
             }
             saveState(alert.id, AlertState(lastEvaluatedAt = now, lastFiredAt = now)).map(_ => ())
@@ -104,10 +104,10 @@ class AlertEvaluationJob extends Job {
   // State persistence
   // --------------------------------------------------------------------------
 
-  private def stateKey(id: String)(implicit env: Env): String =
+  private def stateKey(id: String)(using env: Env): String =
     s"${env.storageRoot}:analytics:alert-state:$id"
 
-  private def loadState(id: String)(implicit env: Env, ec: ExecutionContext): Future[AlertState] = {
+  private def loadState(id: String)(using env: Env, ec: ExecutionContext): Future[AlertState] = {
     env.datastores.rawDataStore.get(stateKey(id)).map { opt =>
       opt
         .flatMap(bs => Try(Json.parse(bs.utf8String)).toOption)
@@ -121,7 +121,7 @@ class AlertEvaluationJob extends Job {
     }
   }
 
-  private def saveState(id: String, st: AlertState)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  private def saveState(id: String, st: AlertState)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val payload = Json.obj(
       "lastEvaluatedAt" -> st.lastEvaluatedAt,
       "lastFiredAt"     -> st.lastFiredAt

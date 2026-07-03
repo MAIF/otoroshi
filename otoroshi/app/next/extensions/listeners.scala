@@ -152,8 +152,8 @@ case class HttpListener(
 
 object HttpListener {
   val logger                                                              = Logger("otoroshi-http-listeners")
-  def default(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env) = HttpListener(
-    location = EntityLocation.ownEntityLocation(ctx)(env),
+  def default(ctx: Option[ApiActionContext[_]] = None)(using env: Env) = HttpListener(
+    location = EntityLocation.ownEntityLocation(ctx)(using env),
     id = "http-listener_" + UUID.randomUUID().toString,
     name = "http listener",
     description = "A new http listener",
@@ -193,7 +193,7 @@ class KvHttpListenerDataStore(extensionId: AdminExtensionId, redisCli: RedisLike
     extends HttpListenerDataStore
     with RedisLikeStore[HttpListener] {
   override def fmt: Format[HttpListener]               = HttpListener.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:httplisteners:$id"
   override def extractId(value: HttpListener): String  = value.id
 }
@@ -350,7 +350,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
             c => datastores.httpListenerDatastore.extractId(c),
             json => json.select("id").asString,
             () => "id",
-            tmpl = (a, b, ctx) => HttpListener.default(ctx)(env).json,
+            tmpl = (a, b, ctx) => HttpListener.default(ctx)(using env).json,
             stateAll = () => states.allHttpListeners(),
             stateOne = id => states.httpListener(id),
             stateUpdate = values => states.updateHttpListeners(values)

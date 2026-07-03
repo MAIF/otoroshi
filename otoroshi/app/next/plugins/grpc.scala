@@ -102,7 +102,7 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
 
     val config = ctx
       .cachedConfig(internalName)(GrpcWebConfig.fmt.reads)
@@ -162,7 +162,7 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
 
     val requestContentType = ctx.request.headers.get("Content-Type").getOrElse("")
     val isGrpcWebText      = requestContentType.contains("application/grpc-web-text")

@@ -12,7 +12,7 @@ object ReactiveStreamImplicits {
     def toScala: Future[T] = ReactiveStreamUtils.MonoUtils.toFuture(mono)
   }
   implicit class FluxOps[T](val flux: reactor.core.publisher.Flux[T]) extends AnyVal {
-    def toScala(implicit mat: Materializer): Future[Seq[T]] = {
+    def toScala(using mat: Materializer): Future[Seq[T]] = {
       Source.fromPublisher(flux).runWith(Sink.seq)
     }
   }
@@ -21,7 +21,7 @@ object ReactiveStreamImplicits {
 object ReactiveStreamUtils {
   object MonoUtils {
     import reactor.core.publisher.Mono
-    def fromFuture[A](future: => Future[A])(implicit ec: ExecutionContext): Mono[A] = {
+    def fromFuture[A](future: => Future[A])(using ec: ExecutionContext): Mono[A] = {
       Mono.create[A] { sink =>
         future.andThen {
           case Success(value)     => sink.success(value)
@@ -45,7 +45,7 @@ object ReactiveStreamUtils {
   }
   object FluxUtils {
     import reactor.core.publisher._
-    def fromFPublisher[A](future: => Future[Publisher[A]])(implicit ec: ExecutionContext): Flux[A] = {
+    def fromFPublisher[A](future: => Future[Publisher[A]])(using ec: ExecutionContext): Flux[A] = {
       Mono
         .create[Publisher[A]] { sink =>
           future.andThen {

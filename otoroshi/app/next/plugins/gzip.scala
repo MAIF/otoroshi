@@ -99,7 +99,7 @@ class GzipResponseCompressor extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config                                    = ctx.cachedConfig(internalName)(configReads).getOrElse(NgGzipConfig())
     def transform(result: Result): Future[Result] = config.legacy.handleResult(ctx.request, result)
     ctx.attrs.put(otoroshi.next.plugins.Keys.ResultTransformerKey -> transform)

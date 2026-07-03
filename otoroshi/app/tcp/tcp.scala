@@ -85,7 +85,7 @@ case class TcpService(
 ) extends otoroshi.models.EntityLocationSupport {
   def internalId: String                              = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
   def theDescription: String                          = description
   def theMetadata: Map[String, String]                = metadata
   def theName: String                                 = name
@@ -271,16 +271,16 @@ object TcpService {
     new RunningServers(env).start()
   }
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
+  def findAll()(using ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
     env.datastores.tcpServiceDataStore.findAll()
 
-  def findByPort(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
+  def findByPort(port: Int)(using ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
     findAll().map(_.find(_.port == port))
 
-  def findAllFromState()(implicit ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
+  def findAllFromState()(using ec: ExecutionContext, env: Env): Future[Seq[TcpService]] =
     env.proxyState.allTcpServices().vfuture
 
-  def findByPortFromState(port: Int)(implicit ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
+  def findByPortFromState(port: Int)(using ec: ExecutionContext, env: Env): Future[Option[TcpService]] =
     findAllFromState().map(_.find(_.port == port))
 
   def domainMatch(matchRule: String, domain: String): Boolean = {
@@ -294,7 +294,7 @@ object TcpService {
       tls: Boolean,
       start: Long,
       debugger: String => Sink[ByteString, Future[Done]]
-  )(cb: (Long, Long) => Unit)(implicit
+  )(cb: (Long, Long) => Unit)(using
       ec: ExecutionContext,
       actorSystem: ActorSystem,
       materializer: Materializer,
@@ -452,7 +452,7 @@ object TcpService {
       tls: Boolean,
       start: Long,
       debugger: String => Sink[ByteString, Future[Done]]
-  )(cb: (Long, Long) => Unit)(implicit
+  )(cb: (Long, Long) => Unit)(using
       ec: ExecutionContext,
       actorSystem: ActorSystem,
       materializer: Materializer,
@@ -685,13 +685,13 @@ class TcpEngineProvider {
 }
 
 object TcpProxy {
-  def apply(tcp: TcpService)(implicit system: ActorSystem, mat: Materializer): TcpProxy =
-    new TcpProxy(tcp.interface, tcp.port, tcp.tls, tcp.sni.enabled, tcp.clientAuth, false)(system, mat)
+  def apply(tcp: TcpService)(using system: ActorSystem, mat: Materializer): TcpProxy =
+    new TcpProxy(tcp.interface, tcp.port, tcp.tls, tcp.sni.enabled, tcp.clientAuth, false)(using system, mat)
   def apply(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientAuth: ClientAuth, debug: Boolean = false)(
-      implicit
+      using
       system: ActorSystem,
       mat: Materializer
-  ): TcpProxy                                                                           = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(system, mat)
+  ): TcpProxy                                                                           = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(using system, mat)
 }
 
 class TcpProxy(
@@ -701,7 +701,7 @@ class TcpProxy(
     sni: Boolean,
     clientAuth: ClientAuth,
     debug: Boolean = false
-)(implicit
+)(using
     system: ActorSystem,
     mat: Materializer
 ) {
@@ -741,8 +741,8 @@ class TcpProxy(
             ref
               .get()
               .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              .toAnalytics()(env)
-          }(ec, system, mat, env)
+              .toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -776,8 +776,8 @@ class TcpProxy(
             ref
               .get()
               .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              .toAnalytics()(env)
-          }(ec, system, mat, env)
+              .toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -805,8 +805,8 @@ class TcpProxy(
             ref
               .get()
               .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              .toAnalytics()(env)
-          }(ec, system, mat, env)
+              .toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -856,8 +856,8 @@ class TcpProxy(
           .routeWithSNI(incoming, port, id, false, start, debugger) { case (in, out) =>
             val e = ref.get().copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
             // println(Json.prettyPrint(e.toJson(env)))
-            e.toAnalytics()(env)
-          }(ec, system, mat, env)
+            e.toAnalytics()(using env)
+          }(using ec, system, mat, env)
           .andThen { case Success(evt) =>
             ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
@@ -1008,9 +1008,9 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
         )
       )
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .tcpService
       .map { template =>
@@ -1027,7 +1027,7 @@ class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
     with RedisLikeStore[TcpService] {
 
   override def fmt: Format[TcpService]                 = TcpService.fmt
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${env.storageRoot}:tcp:services:$id"
   override def extractId(value: TcpService): String    = value.id
 }

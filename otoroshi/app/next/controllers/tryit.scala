@@ -24,7 +24,7 @@ import scala.util.Try
 class TryItController(
     BackOfficeActionAuth: BackOfficeActionAuth,
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 

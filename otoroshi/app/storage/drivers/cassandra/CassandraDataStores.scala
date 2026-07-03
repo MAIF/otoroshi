@@ -62,7 +62,7 @@ class CassandraDataStores(
   lazy val redis: RedisLike with RawGetRedis = new NewCassandraRedis(
     actorSystem,
     configuration
-  )(actorSystem.dispatcher, mat, env)
+  )(using actorSystem.dispatcher, mat, env)
 
   override def before(
       configuration: Configuration,
@@ -184,14 +184,14 @@ class CassandraDataStores(
   override def errorTemplateDataStore: ErrorTemplateDataStore                   = _errorTemplateDataStore
   override def requestsDataStore: RequestsDataStore                             = _requestsDataStore
   override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(using ec)
   override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _globalOAuth2ConfigDataStore
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -325,7 +325,7 @@ class CassandraDataStores(
       }
   }
 
-  private def fetchValueForType(key: String, typ: String, value: Any)(implicit
+  private def fetchValueForType(key: String, typ: String, value: Any)(using
       ec: ExecutionContext
   ): Future[JsValue] = {
     (typ, value) match {

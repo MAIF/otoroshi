@@ -87,7 +87,7 @@ object LegacyPgMigrator {
    * @param batchSize number of rows fetched + inserted per round-trip
    * @param dryRun if true, do not insert; just count source rows
    */
-  def migrate(source: PostgresExporterSettings, batchSize: Int, dryRun: Boolean)(implicit
+  def migrate(source: PostgresExporterSettings, batchSize: Int, dryRun: Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, MigrationResult]] = {
@@ -165,7 +165,7 @@ object LegacyPgMigrator {
       lastId: String,
       processed: Long,
       inserted: Long
-  )(implicit env: Env, ec: ExecutionContext): Future[(Long, Long)] = {
+  )(using env: Env, ec: ExecutionContext): Future[(Long, Long)] = {
     val sql =
       s"SELECT id, event FROM $sourceTable WHERE id > $$1 ORDER BY id ASC LIMIT $$2"
     sourcePool

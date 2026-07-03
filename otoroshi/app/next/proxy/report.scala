@@ -124,7 +124,7 @@ case class NgExecutionReportStep(task: String, start: Long, stop: Long, duration
   )
   def duration: Long      = duration_ns.nanos.toMillis
   def durationStr: String = DurationHelper.nanoDurationToString(duration_ns)
-  def markDuration()(implicit env: Env): Unit = {
+  def markDuration()(using env: Env): Unit = {
     env.metrics.timerUpdate("ng-report-request-step-" + task, duration_ns, TimeUnit.NANOSECONDS)
   }
 }
@@ -157,7 +157,7 @@ class NgExecutionReport(val id: String, val creation: DateTime, val reporting: B
       })
   }
 
-  def markDurations()(implicit env: Env): Unit = {
+  def markDurations()(using env: Env): Unit = {
     env.metrics.timerUpdate("ng-report-request-duration", gduration_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead", overheadIn_ns + overheadOut_ns, TimeUnit.NANOSECONDS)
     env.metrics.timerUpdate("ng-report-request-overhead-in", overheadIn_ns, TimeUnit.NANOSECONDS)
@@ -359,7 +359,7 @@ case class RequestFlowReport(report: NgExecutionReport, route: NgRoute) extends 
 
   val timestamp = DateTime.now()
 
-  override def toJson(implicit env: Env): JsValue =
+  override def toJson(using env: Env): JsValue =
     Json.obj(
       "@id"        -> `@id`,
       "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(timestamp),

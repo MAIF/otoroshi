@@ -34,7 +34,7 @@ class U2FController(
     BackOfficeAction: BackOfficeAction,
     BackOfficeActionAuth: BackOfficeActionAuth,
     cc: ControllerComponents
-)(implicit env: Env)
+)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

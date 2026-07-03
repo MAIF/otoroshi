@@ -104,7 +104,7 @@ class RequestBodyLengthLimiter extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config    = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
     val max: Long = config.maxLength.getOrElse(4 * 1024 * 1024)
 
@@ -175,7 +175,7 @@ class ResponseBodyLengthLimiter extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config    = ctx.cachedConfig(internalName)(BodyLengthLimiterConfig.format).getOrElse(BodyLengthLimiterConfig())
     val max: Long = config.maxLength.getOrElse(4 * 1024 * 1024)
 
@@ -353,7 +353,7 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
 
   private val defaultExpr = "RequestBandwidthThrottling-bytes"
 
-  private def throttlingKey(name: String, group: String, attrs: TypedMap, local: Boolean)(implicit env: Env): String = {
+  private def throttlingKey(name: String, group: String, attrs: TypedMap, local: Boolean)(using env: Env): String = {
     if (local) {
       NgCustomThrottling.localThrottlingKey(computeExpr(name, attrs, env), computeExpr(group, attrs, env))
     } else {
@@ -373,7 +373,7 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
       attrs: TypedMap,
       qconf: BandwidthThrottlingConfig,
       local: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     val value = qconf.throttlingQuota(attrs, env)
     val group = computeExpr(qconf.groupExpr, attrs, env)
     val key   = throttlingKey(computeExpr(defaultExpr, attrs, env), group, attrs, local)
@@ -385,7 +385,7 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
       }
   }
 
-  private def updateQuotas(increment: Long, attrs: TypedMap, qconf: BandwidthThrottlingConfig, local: Boolean)(implicit
+  private def updateQuotas(increment: Long, attrs: TypedMap, qconf: BandwidthThrottlingConfig, local: Boolean)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -401,7 +401,7 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
     }
   }
 
-  private def error(request: RequestHeader, report: NgExecutionReport, attrs: TypedMap, route: NgRoute)(implicit
+  private def error(request: RequestHeader, report: NgExecutionReport, attrs: TypedMap, route: NgRoute)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -419,7 +419,7 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
       )
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx.cachedConfig(internalName)(BandwidthThrottlingConfig.format).getOrElse(BandwidthThrottlingConfig.default)
     config.kind match {
@@ -439,7 +439,7 @@ class RequestBandwidthThrottling extends NgAccessValidator with NgRequestTransfo
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config       =
       ctx.cachedConfig(internalName)(BandwidthThrottlingConfig.format).getOrElse(BandwidthThrottlingConfig.default)
     val windowMillis = computeExpr(config.windowMillis, ctx.attrs, env).trim.toLong.millis
@@ -514,7 +514,7 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
 
   private val defaultExpr = "ResponseBandwidthThrottling-bytes"
 
-  private def throttlingKey(name: String, group: String, attrs: TypedMap, local: Boolean)(implicit env: Env): String = {
+  private def throttlingKey(name: String, group: String, attrs: TypedMap, local: Boolean)(using env: Env): String = {
     if (local) {
       NgCustomThrottling.localThrottlingKey(computeExpr(name, attrs, env), computeExpr(group, attrs, env))
     } else {
@@ -534,7 +534,7 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
       attrs: TypedMap,
       qconf: BandwidthThrottlingConfig,
       local: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  )(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     val value = qconf.throttlingQuota(attrs, env)
     val group = computeExpr(qconf.groupExpr, attrs, env)
     val key   = throttlingKey(computeExpr(defaultExpr, attrs, env), group, attrs, local)
@@ -546,7 +546,7 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
       }
   }
 
-  private def updateQuotas(increment: Long, attrs: TypedMap, qconf: BandwidthThrottlingConfig, local: Boolean)(implicit
+  private def updateQuotas(increment: Long, attrs: TypedMap, qconf: BandwidthThrottlingConfig, local: Boolean)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -562,7 +562,7 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
     }
   }
 
-  private def error(request: RequestHeader, report: NgExecutionReport, attrs: TypedMap, route: NgRoute)(implicit
+  private def error(request: RequestHeader, report: NgExecutionReport, attrs: TypedMap, route: NgRoute)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -580,7 +580,7 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
       )
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx.cachedConfig(internalName)(BandwidthThrottlingConfig.format).getOrElse(BandwidthThrottlingConfig.default)
     config.kind match {
@@ -600,7 +600,7 @@ class ResponseBandwidthThrottling extends NgAccessValidator with NgRequestTransf
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config       =
       ctx.cachedConfig(internalName)(BandwidthThrottlingConfig.format).getOrElse(BandwidthThrottlingConfig.default)
     val windowMillis = computeExpr(config.windowMillis, ctx.attrs, env).trim.toLong.millis

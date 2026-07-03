@@ -176,7 +176,7 @@ object KafkaSettings {
           if config.mtlsConfig.mtls && (config.mtlsConfig.certs.nonEmpty || config.mtlsConfig.trustedCerts.nonEmpty) => {
         // AWAIT: valid
         Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
-        val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
+        val (jks1, jks2, password) = config.mtlsConfig.toJKS(using _env)
         entity
           .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, config.securityProtocol)
           .withProperty(

@@ -23,14 +23,14 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
 
   override def findByUsername(
       username: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[SimpleOtoroshiAdmin]] =
+  )(using ec: ExecutionContext, env: Env): Future[Option[SimpleOtoroshiAdmin]] =
     redisCli
       .get(key(username))
       .map(_.map(v => Json.parse(v.utf8String)).flatMap { user =>
         SimpleOtoroshiAdmin.reads(user).asOpt
       })
 
-  override def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[SimpleOtoroshiAdmin]] =
+  override def findAll()(using ec: ExecutionContext, env: Env): Future[Seq[SimpleOtoroshiAdmin]] =
     redisCli
       .keys(key("*"))
       .flatMap(keys =>
@@ -43,10 +43,10 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
         }
       )
 
-  override def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def deleteUser(username: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.del(key(username))
 
-  def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+  def deleteUsers(usernames: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long] = {
     if (usernames.isEmpty) {
       FastFuture.successful(0L)
     } else {
@@ -54,7 +54,7 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
     }
   }
 
-  override def registerUser(user: SimpleOtoroshiAdmin)(implicit
+  override def registerUser(user: SimpleOtoroshiAdmin)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -64,10 +64,10 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
     )
   }
 
-  override def hasAlreadyLoggedIn(username: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def hasAlreadyLoggedIn(username: String)(using ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli.sismember(s"${env.storageRoot}:users:alreadyloggedin", username)
 
-  override def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+  override def alreadyLoggedIn(email: String)(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.sadd(s"${env.storageRoot}:users:alreadyloggedin", email)
 
   override def extractId(value: SimpleOtoroshiAdmin): String = value.theId

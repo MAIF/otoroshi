@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 
-class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

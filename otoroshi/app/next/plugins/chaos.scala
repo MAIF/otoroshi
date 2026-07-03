@@ -250,9 +250,9 @@ class SnowMonkeyChaos extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
-    val snowMonkey   = snowMonkeyRef.get("singleton", _ => new SnowMonkey()(env))
+    val snowMonkey   = snowMonkeyRef.get("singleton", _ => new SnowMonkey(using env))
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val reqNumber    = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
     snowMonkey.introduceChaosGen[NgPluginHttpRequest](
@@ -277,7 +277,7 @@ class SnowMonkeyChaos extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     // val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ChaosConfig(enabled = true))
     ctx.attrs.get(SnowMonkeyChaos.ContextKey) match {
       case None                => ctx.otoroshiResponse.right

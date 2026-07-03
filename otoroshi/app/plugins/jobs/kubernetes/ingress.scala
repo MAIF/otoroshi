@@ -86,7 +86,7 @@ class KubernetesIngressControllerJob extends Job {
         //   .asOpt[JsValue]
         //   .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
         //   .getOrElse(Json.obj())
-        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
+        (env, KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -102,10 +102,10 @@ class KubernetesIngressControllerJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] =
-    KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
+    KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(e) =>
         e.printStackTrace()
         Some(false)
@@ -113,7 +113,7 @@ class KubernetesIngressControllerJob extends Job {
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
     lastWatchStopped.set(true)
     watchCommand.set(false)
@@ -164,7 +164,7 @@ class KubernetesIngressControllerJob extends Job {
     ().future
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
     stopCommand.set(true)
     watchCommand.set(false)
@@ -174,7 +174,7 @@ class KubernetesIngressControllerJob extends Job {
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.ingresses) {
       if (conf.kubeLeader) {
@@ -193,7 +193,7 @@ class KubernetesIngressControllerJob extends Job {
     }
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -206,7 +206,7 @@ class KubernetesIngressControllerJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(using env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
@@ -261,7 +261,7 @@ class KubernetesIngressControllerJob extends Job {
 
   override def defaultConfig: Option[JsObject] = None
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val conf = KubernetesConfig.theConfig(ctx)
     val host = conf.triggerHost.getOrElse("kubernetes-controllers.oto.tools")
     val path = conf.triggerPath.getOrElse("/.well-known/otoroshi/plugins/kubernetes/controllers/trigger")
@@ -272,7 +272,7 @@ class KubernetesIngressControllerJob extends Job {
     ctx.request.theDomain.toLowerCase().equals(host) && ctx.request.relativeUri.startsWith(path) && keyMatch
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     if (conf.crds) {
@@ -631,7 +631,7 @@ object KubernetesIngressSyncJob {
     OtoAnnotationConfig(annotations)
   }
 
-  def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
+  def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(using env: Env, ec: ExecutionContext): Future[Unit] =
     env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync") {
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       val syncedServiceDescriptors = new AtomicLong(0L)
@@ -797,7 +797,7 @@ object KubernetesIngressSyncJob {
 
   private val callsCounter = new AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def warnAboutServiceDescriptorUsage(counter: AtomicLong)(using env: Env, ec: ExecutionContext): Unit = {
     val count = counter.get()
     if (count > 0) {
       val calls = callsCounter.incrementAndGet()
@@ -823,7 +823,7 @@ object KubernetesIngressSyncJob {
 object KubernetesIngressToDescriptor {
   def asDescriptors(
       obj: KubernetesIngress
-  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
+  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[ServiceDescriptor]] = {
@@ -831,12 +831,12 @@ object KubernetesIngressToDescriptor {
     val name      = obj.name
     val namespace = obj.namespace
     val ingress   = obj.ingress
-    asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
+    asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
   }
 
   def asRoutes(
       obj: KubernetesIngress
-  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit
+  )(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[NgRoute]] = {
@@ -844,7 +844,7 @@ object KubernetesIngressToDescriptor {
     val name      = obj.name
     val namespace = obj.namespace
     val ingress   = obj.ingress
-    asRoutes(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
+    asRoutes(uid, name, namespace, ingress, conf, otoConfig, client, logger)(using env, ec)
   }
 
   def asDescriptors(
@@ -856,7 +856,7 @@ object KubernetesIngressToDescriptor {
       otoConfig: OtoAnnotationConfig,
       client: KubernetesClient,
       logger: Logger
-  )(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
@@ -1004,7 +1004,7 @@ object KubernetesIngressToDescriptor {
       otoConfig: OtoAnnotationConfig,
       client: KubernetesClient,
       logger: Logger
-  )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
       .mapAsync(1) {
@@ -1254,7 +1254,7 @@ object KubernetesIngressToDescriptor {
       template: JsObject,
       client: KubernetesClient,
       logger: Logger
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
     client.fetchService(namespace, name).flatMap {
       case None              =>
         logger.info(s"Service $name not found on namespace $namespace")
@@ -1374,7 +1374,7 @@ object IngressSupport {
         otoConfig: OtoAnnotationConfig,
         client: KubernetesClient,
         logger: Logger
-    )(implicit env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
+    )(using env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
       val ingress = IngressSupport.NetworkingV1beta1IngressItem(
         spec = NetworkingV1beta1IngressSpec(
           backend = None,
@@ -1396,7 +1396,7 @@ object IngressSupport {
         status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
       )
       KubernetesIngressToDescriptor
-        .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(
+        .asDescriptors("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(using 
           env,
           ec
         )
@@ -1408,7 +1408,7 @@ object IngressSupport {
         otoConfig: OtoAnnotationConfig,
         client: KubernetesClient,
         logger: Logger
-    )(implicit env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
+    )(using env: Env, ec: ExecutionContext): Future[Option[NgRoute]] = {
       val ingress = IngressSupport.NetworkingV1beta1IngressItem(
         spec = NetworkingV1beta1IngressSpec(
           backend = None,
@@ -1430,7 +1430,7 @@ object IngressSupport {
         status = NetworkingV1beta1IngressStatus(V1LoadBalancerStatus(Seq.empty))
       )
       KubernetesIngressToDescriptor
-        .asRoutes("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(
+        .asRoutes("default-backend", "default-backend", namespace, ingress, conf, otoConfig, client, logger)(using 
           env,
           ec
         )

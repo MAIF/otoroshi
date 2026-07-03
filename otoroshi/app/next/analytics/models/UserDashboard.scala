@@ -104,7 +104,7 @@ object UserDashboard {
       "defaults"    -> o.defaults
     )
   }
-  def defaultUserDashboardTemplate(implicit env: Env): UserDashboard = UserDashboard(
+  def defaultUserDashboardTemplate(using env: Env): UserDashboard = UserDashboard(
     location = EntityLocation.default,
     id = IdGenerator.namedId("user-dashboard", env),
     name = "New user dashboard",
@@ -121,7 +121,7 @@ trait UserDashboardDataStore extends BasicStore[UserDashboard] {
   def template(env: Env): UserDashboard = {
     implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .userDashboardTemplate
       .map { template =>
@@ -137,7 +137,7 @@ class KvUserDashboardDataStore(redisCli: RedisLike, _env: Env)
     extends UserDashboardDataStore
     with RedisLikeStore[UserDashboard] {
   override def fmt: Format[UserDashboard]              = UserDashboard.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:user-dashboards:$id"
   override def extractId(value: UserDashboard): String = value.id
 }

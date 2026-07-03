@@ -56,7 +56,7 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   def info(): Future[String] = redis.info().toScala
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] =
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] =
     redis.info().toScala.map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -278,7 +278,7 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -305,7 +305,7 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 
   def info(): Future[String] = redis.info().toScala
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] =
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] =
     redis.info().toScala.map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -422,7 +422,7 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -451,7 +451,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
   lazy val maxTotal             = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
 
-  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
+  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(using actorSystem.dispatcher, env)
 
   logger.info(s"Using lettuce async connections pooling - ${maxTotal}")
 
@@ -471,7 +471,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     redis.info().toScala
   }
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = withRedis { redis =>
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = withRedis { redis =>
     redis.info().toScala.map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -746,7 +746,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
     redis.get(key).toScala.map(Option.apply)
   }
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = withRedis { redis =>
@@ -781,7 +781,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     env.configuration.getOptional[Boolean]("otoroshi.redis.lettuce.shim-set-commands").getOrElse(false)
   lazy val maxTotal             = env.configuration.getOptional[Int]("otoroshi.redis.lettuce.pooling.maxTotal").getOrElse(8)
 
-  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(actorSystem.dispatcher, env)
+  lazy val pool = new DumbRedisConnectionPool(client, new ByteStringRedisCodec(), maxTotal)(using actorSystem.dispatcher, env)
 
   logger.info(s"Using reactive lettuce connections pooling - ${maxTotal}")
 
@@ -801,7 +801,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     redis.info().toScala
   }
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = withRedis { redis =>
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = withRedis { redis =>
     redis.info().toScala.map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -1074,7 +1074,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
     redis.get(key).toScala.map(Option.apply)
   }
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = withRedis { redis =>

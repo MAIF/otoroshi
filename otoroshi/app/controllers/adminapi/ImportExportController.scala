@@ -13,7 +13,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 
-class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

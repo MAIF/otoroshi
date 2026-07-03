@@ -46,7 +46,7 @@ class SoftwareUpdatesJobs extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val otoroshiVersion = env.otoroshiVersion
     if (env.checkForUpdates) {
       logger.info("checking otoroshi updates ...")

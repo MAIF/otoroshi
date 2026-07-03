@@ -328,14 +328,14 @@ class LettuceDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover { case _ =>
       Unreachable
     }
   }
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -465,7 +465,7 @@ class LettuceDataStores(
       }
   }
 
-  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
+  private def fetchValueForType(typ: String, key: String)(using ec: ExecutionContext): Future[JsValue] = {
     typ match {
       case "hash"   => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list"   => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))

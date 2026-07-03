@@ -48,7 +48,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
-class WebSocketHandler()(implicit env: Env) {
+class WebSocketHandler()(using env: Env) {
 
   type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
 
@@ -307,7 +307,7 @@ class WebSocketHandler()(implicit env: Env) {
             )
             evt.toAnalytics()
             if (descriptor.logAnalyticsOnServer) {
-              evt.log()(env, env.analyticsExecutionContext) // pressure EC
+              evt.log()(using env, env.analyticsExecutionContext) // pressure EC
             }
           }
         }(env.analyticsExecutionContext) // pressure EC
@@ -671,7 +671,7 @@ object WebSocketProxyActor {
       target: Target,
       rawRequest: RequestHeader,
       route: Option[NgRoute] = None
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -993,7 +993,7 @@ class WebsocketEngine(
       applyResponseFilter: Boolean = false
   )(
       closeConnection: NgWebsocketResponse => Unit
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
 
     val promise = Promise[Either[NgWebsocketError, WebsocketMessage]]()
 
@@ -1047,7 +1047,7 @@ class WebsocketEngine(
 
   def handleRequest(data: play.api.http.websocket.Message)(
       closeConnection: NgWebsocketResponse => Unit
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       val r: Either[NgWebsocketError, WebsocketMessage] =
         Right[NgWebsocketError, WebsocketMessage](WebsocketMessage.PlayMessage(data))
@@ -1061,7 +1061,7 @@ class WebsocketEngine(
 
   def handleResponse(data: org.apache.pekko.http.scaladsl.model.ws.Message)(
       closeConnection: NgWebsocketResponse => Unit
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     if (ctxPlugins.hasNoWebsocketPlugins) {
       WebsocketMessage.AkkaMessage(data).rightf[NgWebsocketError]
     } else {

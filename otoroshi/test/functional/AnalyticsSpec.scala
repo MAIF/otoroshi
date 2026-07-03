@@ -253,7 +253,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
 
   }
 
-  private def testHistoValues[T](vals: Seq[JsValue], name: String, value: T)(implicit reads: Reads[T]): Unit = {
+  private def testHistoValues[T](vals: Seq[JsValue], name: String, value: T)(using reads: Reads[T]): Unit = {
     val v = vals
       .find(j => (j \ "name").as[String] == name)
       .getOrElse(throw new IllegalArgumentException(s"$name not found in $vals"))

@@ -160,7 +160,7 @@ class Log4ShellFilter extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config    = ctx.configFor("Log4ShellFilter")
     val status    = config.select("status").asOpt[Int].getOrElse(200)
     val body      = config.select("body").asOpt[String].getOrElse("")
@@ -197,7 +197,7 @@ class Log4ShellFilter extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     ctx.attrs.get(requestBodyKey) match {
       case None       => ctx.body
       case Some(body) => Source.future(body).flatMapConcat(b => b)

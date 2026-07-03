@@ -53,7 +53,7 @@ object UserAgentHelper {
     }
   }
 
-  def userAgentDetails(ua: String)(implicit env: Env): Future[Option[JsObject]] = {
+  def userAgentDetails(ua: String)(using env: Env): Future[Option[JsObject]] = {
     env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       cache.getIfPresent(ua) match {
         case details @ Some(_) => details.flatten.future
@@ -110,7 +110,7 @@ class UserAgentExtractor extends PreRouting {
       |```
     """.stripMargin)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = ctx.configFor("UserAgentInfo")
     val log    = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
@@ -149,7 +149,7 @@ class UserAgentInfoEndpoint extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/user-agent") =>
         ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
@@ -197,7 +197,7 @@ class UserAgentInfoHeader extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config     = ctx.configFor("UserAgentInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {

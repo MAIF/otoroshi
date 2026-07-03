@@ -141,7 +141,7 @@ class JsonSchemaRequestValidator extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
       .cachedConfig(internalName)(JsonSchemaValidatorConfig.format)
       .getOrElse(JsonSchemaValidatorConfig())
@@ -201,7 +201,7 @@ class JsonSchemaResponseValidator extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
       .cachedConfig(internalName)(JsonSchemaValidatorConfig.format)
       .getOrElse(JsonSchemaValidatorConfig())

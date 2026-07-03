@@ -436,7 +436,7 @@ case class NettyHttp3ClientWsRequest(
   override def withFollowRedirects(follow: Boolean): WSRequest                                           = copy(followRedirects = Some(follow))
   override def withRequestTimeout(timeout: Duration): WSRequest                                          = copy(requestTimeout = Some(timeout))
   override def withProxyServer(proxyServer: WSProxyServer): WSRequest                                    = copy(proxy = Some(proxyServer))
-  override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest                     =
+  override def withBody[T](body: T)(using evidence$1: BodyWritable[T]): WSRequest                     =
     copy(body = evidence$1.transform(body))
   override def withMethod(method: String): WSRequest                                                     = copy(method = method)
   override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
@@ -486,7 +486,7 @@ case class NettyHttp3ClientWsRequest(
     patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
   override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   =
     put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse]                =
+  override def post[T](body: T)(using evidence$2: BodyWritable[T]): Future[WSResponse]                =
     withMethod("POST")
       .withBody(evidence$2.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$2.contentType)
@@ -496,7 +496,7 @@ case class NettyHttp3ClientWsRequest(
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse]               =
+  override def patch[T](body: T)(using evidence$3: BodyWritable[T]): Future[WSResponse]               =
     withMethod("PATCH")
       .withBody(evidence$3.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$3.contentType)
@@ -506,7 +506,7 @@ case class NettyHttp3ClientWsRequest(
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse]                 =
+  override def put[T](body: T)(using evidence$4: BodyWritable[T]): Future[WSResponse]                 =
     withMethod("PUT")
       .withBody(evidence$4.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$4.contentType)

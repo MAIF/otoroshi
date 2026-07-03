@@ -40,8 +40,8 @@ class ModernMemory(
 ) {
   def size: Int                                                              = store.size
   def get(key: String): Option[Any]                                          = store.get(key)
-  def getTyped[A](key: String)(implicit c: ClassTag[A]): Option[A]           = store.get(key).map(_.asInstanceOf[A])
-  def getTypedOrUpdate[A](key: String, up: => A)(implicit c: ClassTag[A]): A =
+  def getTyped[A](key: String)(using c: ClassTag[A]): Option[A]           = store.get(key).map(_.asInstanceOf[A])
+  def getTypedOrUpdate[A](key: String, up: => A)(using c: ClassTag[A]): A =
     store.getOrElseUpdate(key, up).asInstanceOf[A]
   def put(key: String, value: Any): Option[Any]                              = store.put(key, value)
   def putIfAbsent(key: String, value: Any): Option[Any]                      = store.putIfAbsent(key, value)
@@ -430,7 +430,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     FastFuture.successful(seq.size.toLong)
   }
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 }
 
 class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem)
@@ -721,5 +721,5 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
     seq.size.toLong.future
   }
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = Healthy.future
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = Healthy.future
 }

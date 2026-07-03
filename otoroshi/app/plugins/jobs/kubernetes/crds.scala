@@ -83,7 +83,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         //  .asOpt[JsValue]
         //  .orElse(c.plugins.config.select("KubernetesConfig").asOpt[JsValue])
         //  .getOrElse(Json.obj())
-        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
+        (env, KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -99,10 +99,10 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] =
-    KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
+    KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(e) =>
         e.printStackTrace()
         Some(false)
@@ -110,7 +110,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("start")
     stopCommand.set(false)
     lastWatchStopped.set(true)
@@ -151,7 +151,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     ().future
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -164,7 +164,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Unit = {
@@ -226,7 +226,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
     logger.info("stopping kubernetes controller job")
     stopCommand.set(true)
@@ -237,7 +237,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("run")
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.crds) {
@@ -286,7 +286,7 @@ class ClientSupportTest extends Job {
   override def instantiation: JobInstantiation      = JobInstantiation.OneInstancePerOtoroshiInstance
   override def initialDelay: Option[FiniteDuration] = Some(FiniteDuration(5000, TimeUnit.MILLISECONDS))
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     println("running ClientSupportTest")
     Try {
       val cliSupport = new ClientSupport(new KubernetesClient(KubernetesConfig.theConfig(Json.obj(
@@ -326,7 +326,7 @@ class ClientSupportTest extends Job {
   }
 }*/
 
-class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env) {
+class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: ExecutionContext, env: Env) {
 
   private[kubernetes] def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
     spec
@@ -1423,7 +1423,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -1442,7 +1442,7 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       registerApkToExport: Function3[String, String, ApiKey, Unit],
       registerCertToExport: Function3[String, String, Cert, Unit]
-  )(implicit env: Env, ec: ExecutionContext): Future[CRDContext] = {
+  )(using env: Env, ec: ExecutionContext): Future[CRDContext] = {
     val useProxyState = conf.useProxyState
     for {
 
@@ -1554,7 +1554,7 @@ object KubernetesCRDsJob {
 
   private val callsCounter = new java.util.concurrent.atomic.AtomicLong(0L)
 
-  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def warnAboutServiceDescriptorUsage(ctx: CRDContext)(using env: Env, ec: ExecutionContext): Unit = {
     if (ctx.kubernetes.serviceDescriptors.nonEmpty) {
       val calls = callsCounter.incrementAndGet()
       if (calls == 1 || calls % 10 == 0) {
@@ -1626,7 +1626,7 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       ctx: CRDContext,
       verboseLogging: Boolean = false
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[SyncReport] = {
@@ -1787,7 +1787,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def deleteOutDatedEntities(conf: KubernetesConfig, attrs: TypedMap, ctx: CRDContext)(implicit
+  def deleteOutDatedEntities(conf: KubernetesConfig, attrs: TypedMap, ctx: CRDContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -1962,7 +1962,7 @@ object KubernetesCRDsJob {
       ctx: CRDContext,
       apikeys: Seq[(String, String, ApiKey)],
       updatedSecrets: AtomicReference[Seq[(String, String)]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${apikeys.size} apikeys as secrets")
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     Source(apikeys.toList)
@@ -2032,7 +2032,7 @@ object KubernetesCRDsJob {
       ctx: CRDContext,
       certs: Seq[(String, String, Cert)],
       updatedSecrets: AtomicReference[Seq[(String, String)]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
     import otoroshi.ssl.SSLImplicits._
 
@@ -2093,7 +2093,7 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       ctx: CRDContext,
       _updatedSecrets: Seq[(String, String)]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (conf.restartDependantDeployments) {
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       clientSupport.client.fetchDeployments().flatMap { deployments =>
@@ -2164,7 +2164,7 @@ object KubernetesCRDsJob {
       clientSupport: ClientSupport,
       ctx: CRDContext,
       updatedSecretsRef: AtomicReference[Seq[(String, String)]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val lastSecrets  = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
     clientSupport.client.fetchSecrets().flatMap { allSecretsRaw =>
@@ -2189,7 +2189,7 @@ object KubernetesCRDsJob {
       jobRunning: => Boolean,
       namespaces: Option[Seq[String]] = None,
       verboseLogging: Boolean = false
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[SyncReport]] =
@@ -2267,7 +2267,7 @@ object KubernetesCRDsJob {
       }
     }
 
-  def patchCoreDnsConfig(_conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchCoreDnsConfig(_conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2516,7 +2516,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchKubeDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchKubeDnsConfig(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2575,7 +2575,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2681,7 +2681,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(implicit
+  def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2735,7 +2735,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def createMeshCerts(config: KubernetesConfig, ctx: JobContext)(implicit
+  def createMeshCerts(config: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2791,7 +2791,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -2842,7 +2842,7 @@ object KubernetesCRDsJob {
       }
   }
 
-  def patchMutatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit
+  def patchMutatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {

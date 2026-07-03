@@ -603,7 +603,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           if (logger.isDebugEnabled) logger.debug(s"sni domain: ${domain}")
           if (domain == null) {
             env.datastores.globalConfigDataStore
-              .latest()(env.otoroshiExecutionContext, env)
+              .latest()(using env.otoroshiExecutionContext, env)
               .tlsSettings
               .defaultDomain match {
               case None      => fakeCtx

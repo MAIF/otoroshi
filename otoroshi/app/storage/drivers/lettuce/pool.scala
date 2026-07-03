@@ -18,7 +18,7 @@ class DumbRedisConnectionPool[K, V](
     client: RedisClient,
     codec: RedisCodec[K, V],
     maxSize: Int
-)(implicit ec: ExecutionContext, env: Env) {
+)(using ec: ExecutionContext, env: Env) {
 
   private val counter                                                = new AtomicInteger(0)
   private val connections: Seq[(Int, StatefulRedisConnection[K, V])] = (1 to maxSize).map { idx =>

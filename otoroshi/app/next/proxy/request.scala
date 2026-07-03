@@ -123,12 +123,12 @@ class BackOfficeRequest(
       issuer = None,
       sub = None,
       addFields = None
-    )(env)
-    .serialize(HSAlgoSettings(256, env.sharedKey))(env)
+    )(using env)
+    .serialize(HSAlgoSettings(256, env.sharedKey))(using env)
   private val addHeaders = Seq(
     env.Headers.OtoroshiClaim        -> otoClaim,
     "Host"                           -> host,
-    "X-Forwarded-For"                -> request.theIpAddress(env),
+    "X-Forwarded-For"                -> request.theIpAddress(using env),
     env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
     env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
     env.Headers.OtoroshiClientId     -> apikey.clientId,

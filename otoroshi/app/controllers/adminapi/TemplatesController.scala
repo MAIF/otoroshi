@@ -25,7 +25,7 @@ import play.api.mvc._
 
 import scala.concurrent.Future
 
-class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -92,7 +92,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       ctx.checkRights(RightsChecker.Anyone) {
         val desc = env.datastores.serviceDescriptorDataStore
           .initiateNewDescriptor()
-          .copy(location = EntityLocation.ownEntityLocation(ctx.some)(env))
+          .copy(location = EntityLocation.ownEntityLocation(ctx.some)(using env))
 //        val finaldesc =
 //          desc.copy(location = desc.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
         Ok(process(desc.toJson, ctx.request)).future

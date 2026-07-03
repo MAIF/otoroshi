@@ -52,7 +52,7 @@ class ImageReplacer extends NgRequestTransformer {
   override def transformsRequest: Boolean                  = true
   override def transformsResponse: Boolean                 = true
 
-  private def reload(config: ImageReplacerConfig)(implicit env: Env, ec: ExecutionContext): Unit = {
+  private def reload(config: ImageReplacerConfig)(using env: Env, ec: ExecutionContext): Unit = {
     val promise = Promise[Image]()
     env.Ws.url(config.url).get().map { resp =>
       promise.trySuccess(
@@ -69,7 +69,7 @@ class ImageReplacer extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     if (ctx.otoroshiResponse.contentType.exists(_.startsWith("image/"))) {
       val config = ctx.cachedConfig(internalName)(configReads).getOrElse(ImageReplacerConfig())
       refs.get(config.url) match {

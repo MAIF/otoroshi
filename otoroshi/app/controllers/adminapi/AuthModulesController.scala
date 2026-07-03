@@ -21,7 +21,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[AuthModuleConfig, JsValue]
     with CrudControllerHelper[AuthModuleConfig, JsValue] {
@@ -46,7 +46,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   override def writeEntity(entity: AuthModuleConfig): JsValue = AuthModuleConfig._fmt(env).writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[AuthModuleConfig]]] = {
@@ -63,7 +63,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
     }
   }
 
-  override def findAllOps(req: RequestHeader)(implicit
+  override def findAllOps(req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[AuthModuleConfig]]] = {
@@ -88,7 +88,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   override def createEntityOps(
       entity: AuthModuleConfig,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[AuthModuleConfig]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -115,7 +115,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   override def updateEntityOps(
       entity: AuthModuleConfig,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[AuthModuleConfig]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.set(entity).map {
       case true  => {
         Right(
@@ -139,7 +139,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
     }
   }
 
-  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[AuthModuleConfig]]] = {

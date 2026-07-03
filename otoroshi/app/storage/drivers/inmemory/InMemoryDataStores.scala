@@ -208,10 +208,10 @@ class InMemoryDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(using ec)
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")

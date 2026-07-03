@@ -233,7 +233,7 @@ class GenericDataStores(
 
   override def canaryDataStore: CanaryDataStore = _canaryDataStore
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(ec)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(using ec)
 
   override def chaosDataStore: ChaosDataStore = _chaosDataStore
 
@@ -245,7 +245,7 @@ class GenericDataStores(
 
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -359,7 +359,7 @@ class GenericDataStores(
       }
   }
 
-  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
+  private def fetchValueForType(typ: String, key: String)(using ec: ExecutionContext): Future[JsValue] = {
     typ match {
       case "hash"   => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list"   => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))

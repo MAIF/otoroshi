@@ -19,7 +19,7 @@ import otoroshi.utils.future.Implicits._
 import scala.concurrent.Future
 
 class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateAppsAction, cc: ControllerComponents)(
-    implicit env: Env
+    using env: Env
 ) extends AbstractController(cc) {
 
   private lazy val secret = new SecretKeySpec(env.secretSession.getBytes, "AES")

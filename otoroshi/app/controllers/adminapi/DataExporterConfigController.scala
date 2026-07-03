@@ -20,7 +20,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[DataExporterConfig, JsValue]
     with CrudControllerHelper[DataExporterConfig, JsValue] {
@@ -52,7 +52,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
 
   override def writeEntity(entity: DataExporterConfig): JsValue = DataExporterConfig.format.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[DataExporterConfig]]] = {
@@ -69,7 +69,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def findAllOps(req: RequestHeader)(implicit
+  override def findAllOps(req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[DataExporterConfig]]] = {
@@ -86,7 +86,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def createEntityOps(entity: DataExporterConfig, req: RequestHeader)(implicit
+  override def createEntityOps(entity: DataExporterConfig, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
@@ -114,7 +114,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def updateEntityOps(entity: DataExporterConfig, req: RequestHeader)(implicit
+  override def updateEntityOps(entity: DataExporterConfig, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
@@ -142,7 +142,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
     }
   }
 
-  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[DataExporterConfig]]] = {

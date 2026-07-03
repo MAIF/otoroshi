@@ -29,7 +29,7 @@ object KubernetesSupport {
 
     def buildController[T, L](name: String, informerFactory: SharedInformerFactory)(
         f: CallGeneratorParams => Call
-    )(implicit c1: ClassTag[T], c2: ClassTag[L]): Controller = {
+    )(using c1: ClassTag[T], c2: ClassTag[L]): Controller = {
       val informer   = informerFactory.sharedIndexInformerFor(
         (params: CallGeneratorParams) => f(params),
         c1.runtimeClass,

@@ -60,7 +60,7 @@ case class BreakPointNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     wfr.attrs.get(WorkflowAdminExtension.workflowDebuggerKey) match {
       case None           => JsNull.rightf
       case Some(debugger) =>
@@ -105,7 +105,7 @@ case class AsyncNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty && from.head > 0) {
       WorkflowError(
         s"Async Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
@@ -170,7 +170,7 @@ case class TryNode(json: JsObject) extends Node {
       prefix: Seq[Int],
       from: Seq[Int],
       error: WorkflowError
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     wfr.memory.set("caught_error", error.json)
     catchNode
       .internalRun(wfr, prefix :+ 1, from)
@@ -186,7 +186,7 @@ case class TryNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty && from.head > 0) {
       WorkflowError(
         s"Try Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
@@ -245,7 +245,7 @@ case class JumpNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val rawPredicate = json.select("predicate").asOpt[JsValue]
     val predicate    =
       rawPredicate.flatMap(pre => WorkflowOperator.processOperators(pre, wfr, env).asOptBoolean).getOrElse(true)
@@ -319,7 +319,7 @@ case class WhileNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"While Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
@@ -390,7 +390,7 @@ case class EndNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     WorkflowError(
       message = "_____otoroshi_workflow_ended",
       details = None,
@@ -421,7 +421,7 @@ case class PauseNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
     val session = PausedWorkflowSession(
       id = wfr.id,
@@ -477,7 +477,7 @@ case class ValueNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
     val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
     // println("return value", value)
@@ -528,7 +528,7 @@ case class ErrorNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
     val message = json.select("message").asOpt[String].getOrElse("")
     val details = json.select("details").asOpt[JsObject]
@@ -575,7 +575,7 @@ case class WaitNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
     val duration = json.select("duration").asOpt[Long].getOrElse(0L).millis
     val promise  = Promise[Either[WorkflowError, JsValue]]()
@@ -597,7 +597,7 @@ case class NoopNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (env.isDev) println(s"running: ${prefix.mkString(".")} - ${kind} / ${id}")
     // println("noop, doing nothing")
     JsNull.rightf
@@ -644,7 +644,7 @@ case class WorkflowNode(json: JsObject) extends Node {
     )
   )
 
-  def next(nodes: Seq[Node], wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int], idx: Int)(implicit
+  def next(nodes: Seq[Node], wfr: WorkflowRun, prefix: Seq[Int], from: Seq[Int], idx: Int)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[WorkflowError, JsValue]] = {
@@ -672,7 +672,7 @@ case class WorkflowNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       val head      = from.head
       val lastSteps = steps.drop(head)
@@ -722,7 +722,7 @@ case class CallNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"Call Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
@@ -755,7 +755,7 @@ case class CallNode(json: JsObject) extends Node {
           case None           =>
             WorkflowError(s"function '${functionName}' not supported in task '${id}'", None, None, id.some).leftf
           case Some(function) =>
-            val r = function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(env, ec, wfr)
+            val r = function.callWithRun(WorkflowOperator.processOperators(args, wfr, env).asObject)(using env, ec, wfr)
             if (async) {
               JsNull.rightf
             } else {
@@ -771,7 +771,7 @@ case class CallNode(json: JsObject) extends Node {
 }
 
 case class AssignOperation(json: JsObject) {
-  def execute(wfr: WorkflowRun)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def execute(wfr: WorkflowRun)(using env: Env, ec: ExecutionContext): Unit = {
     try {
       val name  = json.select("name").asString
       val value = WorkflowOperator.processOperators(json.select("value").asValue, wfr, env)
@@ -841,7 +841,7 @@ case class AssignNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"Assign Node (${prefix.mkString(".")}) cannot resume sub nodes: ${from.mkString(".")}",
@@ -924,7 +924,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"Parallel Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
@@ -1042,7 +1042,7 @@ case class SwitchNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"Switch Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
@@ -1114,7 +1114,7 @@ case class IfThenElseNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     val pass    = if (from.nonEmpty) {
       from.head == 0
     } else {
@@ -1190,7 +1190,7 @@ case class ForEachNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"ForEach Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
@@ -1317,7 +1317,7 @@ case class MapNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"Map Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
@@ -1418,7 +1418,7 @@ case class FlatMapNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"FlatMap Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",
@@ -1524,7 +1524,7 @@ case class FilterNode(json: JsObject) extends Node {
       wfr: WorkflowRun,
       prefix: Seq[Int],
       from: Seq[Int]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[WorkflowError, JsValue]] = {
     if (from.nonEmpty) {
       WorkflowError(
         s"Filter Node (${prefix.mkString(".")}) does not support resume: ${from.mkString(".")}",

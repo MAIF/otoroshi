@@ -48,7 +48,7 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 
 class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
-  override def asResult()(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def asResult()(using ec: ExecutionContext, env: Env): Future[Result] = {
     val cl                             = resp.headers.getIgnoreCase("Content-Length").map(_.last).map(_.toLong)
     val ct                             = resp.headers.getIgnoreCase("Content-Type").map(_.last)
     val setCookie                      = resp.headers
@@ -72,7 +72,7 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
 }
 
 case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInteger) {
-  def call(req: RequestHeader, body: Source[ByteString, _])(implicit
+  def call(req: RequestHeader, body: Source[ByteString, _])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport
@@ -161,7 +161,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
 }
 
 class PossibleLeaders(members: Seq[MemberView], route: NgRoute) {
-  def chooseNext(counter: AtomicInteger)(implicit env: Env): SelectedLeader = {
+  def chooseNext(counter: AtomicInteger)(using env: Env): SelectedLeader = {
     val useLeader = env.clusterConfig.mode.isWorker && env.clusterConfig.relay.leaderOnly
     if (useLeader) {
       SelectedLeader(

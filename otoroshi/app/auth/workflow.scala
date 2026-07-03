@@ -99,11 +99,11 @@ case class WorkflowAuthModuleConfig(
 
   override def form: Option[Form]                                               = None
   override def cookieSuffix(desc: ServiceDescriptor): String                    = s"workflow-auth-$id"
-  override def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  override def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.authConfigsDataStore.set(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig         = copy(location = location)
   override def asJson: JsValue                                                  = WorkflowAuthModuleConfig.format.writes(this)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]              = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]              = AuthModuleConfig._fmt(env)
   override def `type`: String                                                   = "workflow"
   override def humanName: String                                                = "Workflow auth. module provider"
   override def desc: String                                                     = description
@@ -121,7 +121,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
 
   def this() = this(WorkflowAuthModuleConfig.defaultConfig)
 
-  private def runWorkflowPhase(phase: String, input: JsObject)(implicit
+  private def runWorkflowPhase(phase: String, input: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[String, JsValue]] = {
@@ -173,7 +173,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val route = NgRoute.fromServiceDescriptor(descriptor, false)
     val input = Json.obj(
       "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
@@ -194,7 +194,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     val route = NgRoute.fromServiceDescriptor(descriptor, false)
     val input = Json.obj(
       "request"       -> JsonHelpers.requestToJson(request, TypedMap.empty),
@@ -214,7 +214,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -240,7 +240,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -255,7 +255,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -275,7 +275,7 @@ class WorkflowAuthModule(val authConfig: WorkflowAuthModuleConfig) extends AuthM
     }
   }
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] = {

@@ -36,7 +36,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
-class HttpHandler()(implicit env: Env) {
+class HttpHandler()(using env: Env) {
 
   implicit lazy val currentEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val currentScheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
@@ -380,7 +380,7 @@ class HttpHandler()(implicit env: Env) {
             )
             evt.toAnalytics()
             if (descriptor.logAnalyticsOnServer) {
-              evt.log()(env, env.analyticsExecutionContext) // pressure EC
+              evt.log()(using env, env.analyticsExecutionContext) // pressure EC
             }
           }
         }(env.analyticsExecutionContext) // pressure EC

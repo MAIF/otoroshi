@@ -6,7 +6,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 
-class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

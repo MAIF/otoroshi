@@ -10,7 +10,7 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 class NgPluginsController(
     ApiAction: ApiAction,
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 

@@ -15,7 +15,7 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[NgRouteComposition, JsValue]
     with CrudControllerHelper[NgRouteComposition, JsValue] {
@@ -43,7 +43,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[NgRouteComposition]]] = {
@@ -62,7 +62,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[NgRouteComposition]]] = {
@@ -82,7 +82,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def createEntityOps(
       entity: NgRouteComposition,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
@@ -112,7 +112,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def updateEntityOps(
       entity: NgRouteComposition,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], EntityAndContext[NgRouteComposition]]] = {
@@ -142,7 +142,7 @@ class NgRouteCompositionsController(val ApiAction: ApiAction, val cc: Controller
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[NgRouteComposition]]] = {

@@ -19,7 +19,7 @@ import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[Team, JsValue]
     with CrudControllerHelper[Team, JsValue] {
@@ -51,7 +51,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Team]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Team]]] = {
     env.datastores.teamDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -67,7 +67,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Team]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Team]]] = {
     env.datastores.teamDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -84,7 +84,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   override def createEntityOps(
       entity: Team,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
     env.datastores.teamDataStore.set(entity).map {
       case true  => {
         Right(
@@ -111,7 +111,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   override def updateEntityOps(
       entity: Team,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Team]]] = {
     env.datastores.teamDataStore.set(entity).map {
       case true  => {
         Right(
@@ -138,7 +138,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(im
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Team]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Team]]] = {
     env.datastores.teamDataStore.delete(id).map {
       case true  => {
         Right(

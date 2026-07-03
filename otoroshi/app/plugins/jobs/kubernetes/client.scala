@@ -123,9 +123,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-ca-cert"
       } match {
-        case None                                                => caCert.enrich().save()(ec, env)
+        case None                                                => caCert.enrich().save()(using ec, env)
         case Some((k, c)) if c.contentHash == caCert.contentHash => ()
-        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
+        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(using ec, env)
       }
     } catch {
       case e: Throwable => logger.error("error while reading ca-cert", e)
@@ -138,9 +138,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       DynamicSSLEngineProvider.certificates.find { case (k, c) =>
         c.id == "kubernetes-client-cert"
       } match {
-        case None                                                => caCert.enrich().save()(ec, env)
+        case None                                                => caCert.enrich().save()(using ec, env)
         case Some((k, c)) if c.contentHash == caCert.contentHash => ()
-        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(ec, env)
+        case Some((k, c)) if c.contentHash != caCert.contentHash => caCert.enrich().save()(using ec, env)
       }
     } catch {
       case e: Throwable => logger.error("error while reading kubernetes-client-cert", e)
@@ -731,7 +731,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         crd = item.raw,
                         customizedSpec = customSpec,
                         error = err.map(_.getMessage).getOrElse("--")
-                      ).toAnalytics()(env)
+                      ).toAnalytics()(using env)
                     }
                     case Success(_)           => ()
                     case Failure(e)           =>
@@ -744,7 +744,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         crd = item.raw,
                         customizedSpec = customSpec,
                         error = e.getMessage
-                      ).toAnalytics()(env)
+                      ).toAnalytics()(using env)
                   }
                 }
                 .collect { case Success((JsSuccess(item, _), raw)) =>

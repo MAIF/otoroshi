@@ -170,7 +170,7 @@ class KvWorkflowConfigDataStore(extensionId: AdminExtensionId, redisCli: RedisLi
     extends WorkflowConfigDataStore
     with RedisLikeStore[Workflow] {
   override def fmt: Format[Workflow]                   = Workflow.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflows:$id"
   override def extractId(value: Workflow): String      = value.id
 }
@@ -183,7 +183,7 @@ class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: 
 
   def fromJsonSafe(value: JsValue): JsResult[PausedWorkflowSession] = fmt.reads(value)
   def fmt: Format[PausedWorkflowSession]                            = PausedWorkflowSession.format
-  def redisLike(implicit env: Env): RedisLike                       = redisCli
+  def redisLike(using env: Env): RedisLike                       = redisCli
   def keyAll(): String                                              = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:*"
   def key(wfId: String, id: String): String                         =
     s"${_env.storageRoot}:extensions:${extensionId.cleanup}:workflow-sessions:$wfId:$id"
@@ -595,7 +595,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
   }
 }
 
-class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class WorkflowsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

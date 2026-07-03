@@ -69,7 +69,7 @@ class KvFooDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, _env: E
     extends FooDataStore
     with RedisLikeStore[Foo] {
   override def fmt: Format[Foo]                        = Foo.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:foos:$id"
   override def extractId(value: Foo): String           = value.id
 }
@@ -97,7 +97,7 @@ class FooRedisLike(env: Env, actorSystem: ActorSystem) extends GenericRedisLike 
 
   override def setCounter(key: String, value: Long): Future[Unit]               = redis.set(key, value.toString).map(_ => ())
   override def rawGet(key: String): Future[Option[Any]]                         = redis.rawGet(key)
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()
   override def stop(): Unit                                                     = redis.stop()
   override def flushall(): Future[Boolean]                                      = redis.flushall()
 
@@ -359,7 +359,7 @@ class FooPlugin extends NgAccessValidator {
   override def defaultConfigObject: Option[NgPluginConfig] = Some(FooPluginConfig("--"))
   override def multiInstance: Boolean = true
 
-  override def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
+  override def accessSync(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): NgAccess = NgAccess.NgAllowed
 }
 
  */

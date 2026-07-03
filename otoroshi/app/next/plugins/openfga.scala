@@ -128,7 +128,7 @@ class OpenFGAValidator extends NgAccessValidator {
       "Enforces fine-grained authorizations using OpenFGA"
     )
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(OpenFGAValidatorConfig.format)
       .getOrElse(OpenFGAValidatorConfig.default)

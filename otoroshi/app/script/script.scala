@@ -273,7 +273,7 @@ trait ContextWithConfig {
       case _              => None
     }
   }
-  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+  private def confAt[A](key: String, prefix: String = "config-")(using fjs: Reads[A]): Option[A] = {
     val conf = config match {
       case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]
@@ -300,7 +300,7 @@ sealed trait TransformerContext extends ContextWithConfig {
       case _              => None
     }
   }
-  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+  private def confAt[A](key: String, prefix: String = "config-")(using fjs: Reads[A]): Option[A] = {
     val conf = config match {
       case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]
@@ -411,25 +411,25 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 
   def beforeRequest(
       context: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     FastFuture.successful(())
   }
 
   def afterRequest(
       context: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     FastFuture.successful(())
   }
 
   def transformErrorWithCtx(
       context: TransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     FastFuture.successful(context.otoroshiResult)
   }
 
   def transformRequestWithCtx(
       context: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     transformRequest(
       context.snowflake,
       context.rawRequest,
@@ -437,12 +437,12 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       context.descriptor,
       context.apikey,
       context.user
-    )(env, ec, mat)
+    )(using env, ec, mat)
   }
 
   def transformResponseWithCtx(
       context: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     transformResponse(
       context.snowflake,
       context.rawResponse,
@@ -450,12 +450,12 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       context.descriptor,
       context.apikey,
       context.user
-    )(env, ec, mat)
+    )(using env, ec, mat)
   }
 
   def transformRequestBodyWithCtx(
       context: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     transformRequestBody(
       context.snowflake,
       context.otoroshiRequest.body.apply(),
@@ -464,12 +464,12 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       context.descriptor,
       context.apikey,
       context.user
-    )(env, ec, mat)
+    )(using env, ec, mat)
   }
 
   def transformResponseBodyWithCtx(
       context: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     transformResponseBody(
       context.snowflake,
       context.otoroshiResponse.body.apply(),
@@ -478,7 +478,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       context.descriptor,
       context.apikey,
       context.user
-    )(env, ec, mat)
+    )(using env, ec, mat)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -490,7 +490,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
     Right(otoroshiRequest)
   }
 
@@ -501,9 +501,9 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     FastFuture.successful(
-      transformRequestSync(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat)
+      transformRequestSync(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(using env, ec, mat)
     )
   }
 
@@ -514,7 +514,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpResponse] = {
     Right(otoroshiResponse)
   }
 
@@ -525,9 +525,9 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     FastFuture.successful(
-      transformResponseSync(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat)
+      transformResponseSync(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(using env, ec, mat)
     )
   }
 
@@ -539,7 +539,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     body
   }
 
@@ -551,7 +551,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     body
   }
 }
@@ -570,7 +570,7 @@ object CompilingRequestTransformer extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val accept = ctx.rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
     ctx.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))
     if (accept.contains("text/html")) { // in a browser
@@ -606,21 +606,21 @@ trait NanoApp extends RequestTransformer {
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed                          = new AtomicBoolean(false)
       val bodySource: Source[ByteString, _] = Source
@@ -642,7 +642,7 @@ trait NanoApp extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -650,14 +650,14 @@ trait NanoApp extends RequestTransformer {
   def route(
       request: HttpRequest,
       body: Source[ByteString, _]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     FastFuture.successful(routeSync(request, body))
   }
 
   def routeSync(
       request: HttpRequest,
       body: Source[ByteString, _]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Result = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Result = {
     Results.Ok(Json.obj("message" -> "Hello World!"))
   }
 }
@@ -1163,7 +1163,7 @@ class ScriptManager(env: Env) {
     }
   }
 
-  def getScript(ref: String)(implicit ec: ExecutionContext): RequestTransformer = {
+  def getScript(ref: String)(using ec: ExecutionContext): RequestTransformer = {
     getAnyScript[RequestTransformer](ref) match {
       case Left("compiling") => CompilingRequestTransformer
       case Left(_)           => DefaultRequestTransformer
@@ -1171,7 +1171,7 @@ class ScriptManager(env: Env) {
     }
   }
 
-  def getAnyScript[A](ref: String)(implicit ec: ExecutionContext): Either[String, A] = {
+  def getAnyScript[A](ref: String)(using ec: ExecutionContext): Either[String, A] = {
     if (env.blacklistedPlugins.contains(ref)) {
       Left(s"blacklisted plugin '${ref}'")
     } else {
@@ -1219,7 +1219,7 @@ class ScriptManager(env: Env) {
     }
   }
 
-  def preCompileScript(script: Script)(implicit ec: ExecutionContext): Unit = {
+  def preCompileScript(script: Script)(using ec: ExecutionContext): Unit = {
     compileAndUpdateIfNeeded(script)
   }
 
@@ -1228,7 +1228,7 @@ class ScriptManager(env: Env) {
     compiling.remove(id)
   }
 
-  def dispatchEvent(evt: OtoroshiEvent)(implicit ec: ExecutionContext): Unit = {
+  def dispatchEvent(evt: OtoroshiEvent)(using ec: ExecutionContext): Unit = {
     if (env.useEventStreamForScriptEvents) {
       env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
         env.analyticsActorSystem.eventStream.publish(evt)
@@ -1238,13 +1238,13 @@ class ScriptManager(env: Env) {
         env.metrics.withTimer("otoroshi.core.proxy.event-dispatch") {
           val pluginListeners = listeningCpScripts.get()
           if (pluginListeners.nonEmpty) {
-            pluginListeners.foreach(l => l.onEvent(evt)(env))
+            pluginListeners.foreach(l => l.onEvent(evt)(using env))
           }
           val scriptListeners = cache.values.map(_._3).collect {
             case listener: InternalEventListener if listener.listening => listener
           }
           if (scriptListeners.nonEmpty) {
-            scriptListeners.foreach(l => l.onEvent(evt)(env))
+            scriptListeners.foreach(l => l.onEvent(evt)(using env))
           }
         }
         evt
@@ -1259,7 +1259,7 @@ object Implicits {
 
     def beforeRequest(
         ctx: BeforeRequestContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
       env.metrics.withTimerAsync("otoroshi.core.proxy.before-request") {
         val plugs    = desc.plugins.requestTransformers(ctx.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1280,7 +1280,7 @@ object Implicits {
                   ),
                   config = ConfigUtils.merge(ctx.config, desc.plugins.config)
                 )
-              )(env, ec, mat)
+              )(using env, ec, mat)
           }
         } else {
           FastFuture.successful(Done)
@@ -1290,7 +1290,7 @@ object Implicits {
 
     def afterRequest(
         ctx: AfterRequestContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
       env.metrics.withTimerAsync("otoroshi.core.proxy.after-request") {
         val plugs    = desc.plugins.requestTransformers(ctx.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1311,7 +1311,7 @@ object Implicits {
                   ),
                   config = ConfigUtils.merge(ctx.config, desc.plugins.config)
                 )
-              )(env, ec, mat)
+              )(using env, ec, mat)
           }
         } else {
           FastFuture.successful(Done)
@@ -1321,7 +1321,7 @@ object Implicits {
 
     def transformRequest(
         context: TransformerRequestContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] =
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] =
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
         val plugs    = desc.plugins.requestTransformers(context.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1346,7 +1346,7 @@ object Implicits {
                     ),
                     config = ConfigUtils.merge(context.config, desc.plugins.config)
                   )
-                )(env, ec, mat)
+                )(using env, ec, mat)
           }
         } else {
           FastFuture.successful(Right(context.otoroshiRequest))
@@ -1355,7 +1355,7 @@ object Implicits {
 
     def transformResponse(
         context: TransformerResponseContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] =
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] =
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
         val plugs    = desc.plugins.requestTransformers(context.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1380,7 +1380,7 @@ object Implicits {
                     ),
                     config = ConfigUtils.merge(context.config, desc.plugins.config)
                   )
-                )(env, ec, mat)
+                )(using env, ec, mat)
           }
         } else {
           FastFuture.successful(Right(context.otoroshiResponse))
@@ -1389,7 +1389,7 @@ object Implicits {
 
     def transformError(
         context: TransformerErrorContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] =
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] =
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
         val plugs    = desc.plugins.requestTransformers(context.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1428,7 +1428,7 @@ object Implicits {
                   ),
                   config = ConfigUtils.merge(context.config, desc.plugins.config)
                 )
-              )(env, ec, mat)
+              )(using env, ec, mat)
           }
         } else {
           FastFuture.successful(context.otoroshiResult)
@@ -1437,7 +1437,7 @@ object Implicits {
 
     def transformRequestBody(
         context: TransformerRequestBodyContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
       env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
         val plugs    = desc.plugins.requestTransformers(context.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1459,7 +1459,7 @@ object Implicits {
                   ),
                   config = ConfigUtils.merge(context.config, desc.plugins.config)
                 )
-              )(env, ec, mat)
+              )(using env, ec, mat)
           })
         } else {
           context.body
@@ -1468,7 +1468,7 @@ object Implicits {
 
     def transformResponseBody(
         context: TransformerResponseBodyContext
-    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
+    )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
       env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
         val plugs    = desc.plugins.requestTransformers(context.request)
         val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1490,7 +1490,7 @@ object Implicits {
                   ),
                   config = ConfigUtils.merge(context.config, desc.plugins.config)
                 )
-              )(env, ec, mat)
+              )(using env, ec, mat)
           })
         } else {
           context.body
@@ -1509,9 +1509,9 @@ case class Script(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
-  def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
+  def save()(using ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
+  def delete()(using ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
+  def exists()(using ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
   def toJson                                            = Script.toJson(this)
   def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
   def json: JsValue                                     = toJson
@@ -1608,7 +1608,7 @@ trait ScriptDataStore extends BasicStore[Script] {
              |
              |  override def transformRequestWithCtx(
              |    ctx: TransformerRequestContext
-             |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+             |  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
              |    logger.info(s"Request incoming with id: ${ctx.snowflake}")
              |    // Here add a new header to the request between otoroshi and the target
              |    Right(ctx.otoroshiRequest.copy(
@@ -1624,7 +1624,7 @@ trait ScriptDataStore extends BasicStore[Script] {
       metadata = Map.empty
     )
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .script
       .map { template =>
@@ -1638,7 +1638,7 @@ trait ScriptDataStore extends BasicStore[Script] {
 
 class KvScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptDataStore with RedisLikeStore[Script] {
   override def fmt: Format[Script]                     = Script._fmt
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:scripts:$id"
   override def extractId(value: Script): String        = value.id
 }

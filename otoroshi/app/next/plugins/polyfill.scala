@@ -59,7 +59,7 @@ class PolyfillIoReplacer extends NgRequestTransformer {
     "This plugin replaces compromised cdn.polyfill.io script tags in html resource with the cloudflare equivalent. For each occurence of a cdn.polyfill.io script tag, a CdnPolyfillIoReplacedAlert will be sent".some
   override def noJsForm: Boolean                 = true
 
-  private def sendAlert(ctx: NgTransformerResponseContext, payload: String, occurences: Seq[String])(implicit
+  private def sendAlert(ctx: NgTransformerResponseContext, payload: String, occurences: Seq[String])(using
       env: Env
   ): Unit = {
     CdnPolyfillIoReplacedAlert(UUID.randomUUID().toString, ctx, payload, occurences).toAnalytics()
@@ -67,7 +67,7 @@ class PolyfillIoReplacer extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val isHtml  = ctx.otoroshiResponse.header("Content-Type").exists(_.toLowerCase().contains("text/html"))
     val isNoCsp = ctx.otoroshiResponse.header("Content-Security-Policy").isEmpty
     if (isHtml && isNoCsp) {
@@ -124,7 +124,7 @@ class PolyfillIoDetector extends NgRequestTransformer {
     "This plugin detects compromised cdn.polyfill.io script tags in html resource with the cloudflare equivalent and send an alert event. For each occurence of a cdn.polyfill.io script tag, a CdnPolyfillIoDetectedAlert will be sent".some
   override def noJsForm: Boolean                 = true
 
-  private def sendAlert(ctx: NgTransformerResponseContext, payload: String, occurences: Seq[String])(implicit
+  private def sendAlert(ctx: NgTransformerResponseContext, payload: String, occurences: Seq[String])(using
       env: Env
   ): Unit = {
     CdnPolyfillIoDetectedAlert(UUID.randomUUID().toString, ctx, payload, occurences).toAnalytics()
@@ -132,7 +132,7 @@ class PolyfillIoDetector extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val isHtml  = ctx.otoroshiResponse.header("Content-Type").exists(_.toLowerCase().contains("text/html"))
     val isNoCsp = ctx.otoroshiResponse.header("Content-Security-Policy").isEmpty
     if (isHtml && isNoCsp) {
@@ -172,7 +172,7 @@ case class CdnPolyfillIoDetectedAlert(
 
   val `@timestamp`: DateTime = DateTime.now()
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"            -> `@id`,
       "@timestamp"     -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -203,7 +203,7 @@ case class CdnPolyfillIoReplacedAlert(
   override def fromUserAgent: Option[String] = None
   val `@timestamp`: DateTime                 = DateTime.now()
 
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"            -> `@id`,
       "@timestamp"     -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),

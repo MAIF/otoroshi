@@ -121,7 +121,7 @@ object AnonymousReportingJob {
     }
   }
 
-  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(implicit
+  def buildReport(globalConfig: GlobalConfig, reportingConfig: AnonymousReportingJobConfig, attrs: TypedMap)(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
@@ -474,7 +474,7 @@ class AnonymousReportingJob extends Job {
     )
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val cfg_config   = AnonymousReportingJobConfig.fromEnv(env)
     val prog_config  = AnonymousReportingJob.programmaticConfig()

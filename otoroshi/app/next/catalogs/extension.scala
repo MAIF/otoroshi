@@ -144,7 +144,7 @@ class KvRemoteCatalogDataStore(extensionId: AdminExtensionId, redisCli: RedisLik
     extends RemoteCatalogDataStore
     with RedisLikeStore[RemoteCatalog] {
   override def fmt: Format[RemoteCatalog]              = RemoteCatalog.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 =
     s"${_env.storageRoot}:extensions:${extensionId.cleanup}:remote-catalogs:$id"
   override def extractId(value: RemoteCatalog): String = value.id
@@ -396,7 +396,7 @@ class RemoteCatalogJob(ref: String, config: RemoteCatalogScheduling) extends Job
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = Try {
     env.adminExtensions
       .extension[RemoteCatalogAdminExtension]
       .map { ext =>

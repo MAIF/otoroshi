@@ -91,7 +91,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config     = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCanarySettings())
     val gconfig    = env.datastores.globalConfigDataStore.latest()
     val reqNumber  = ctx.attrs.get(otoroshi.plugins.Keys.RequestNumberKey).get
@@ -139,7 +139,7 @@ class CanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right
       case Some(canaryId) => {
@@ -239,7 +239,7 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(TimeControlledCanaryModeConfig())
     val now    = DateTime.now()
     if (now.isBefore(config.start)) {
@@ -304,7 +304,7 @@ class TimeControlledCanaryMode extends NgPreRouting with NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     ctx.attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey) match {
       case None           => ctx.otoroshiResponse.right
       case Some(canaryId) => {

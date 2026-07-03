@@ -33,7 +33,7 @@ class PreRoutingWrapper extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[PreRouting](pluginId) match {
       case Left(err)     =>
@@ -94,7 +94,7 @@ class AccessValidatorWrapper extends NgAccessValidator {
     )
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[AccessValidator](pluginId) match {
       case Left(err)     =>
@@ -141,7 +141,7 @@ class RequestSinkWrapper extends NgRequestSink {
       body = ctx.body
     )
   }
-  override def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestSink](pluginId) match {
       case Left(err)     => false
@@ -151,7 +151,7 @@ class RequestSinkWrapper extends NgRequestSink {
       }
     }
   }
-  override def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestSink](pluginId) match {
       case Left(err)     =>
@@ -184,7 +184,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     => ().vfuture
@@ -205,7 +205,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     => ().vfuture
@@ -226,7 +226,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     =>
@@ -370,7 +370,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     =>
@@ -440,7 +440,7 @@ class RequestTransformerWrapper extends NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager.getAnyScript[RequestTransformer](pluginId) match {
       case Left(err)     =>
@@ -516,7 +516,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)
@@ -553,7 +553,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
     }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)
@@ -585,7 +585,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
 
   override def beforeRequest(
       ctx: NgBeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)
@@ -608,7 +608,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
 
   override def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)
@@ -631,7 +631,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)
@@ -778,7 +778,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)
@@ -838,7 +838,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val pluginId = ctx.config.select("plugin").as[String]
     env.scriptManager
       .getAnyScript[NamedPlugin](pluginId)

@@ -22,7 +22,7 @@ case class SnowMonkeyContext(
     trailingResponseBodySize: Int = 0
 )
 
-class SnowMonkey(implicit env: Env) {
+class SnowMonkey(using env: Env) {
 
   private val logger = Logger("otoroshi-snowmonkey")
   private val random = new scala.util.Random
@@ -71,7 +71,7 @@ class SnowMonkey(implicit env: Env) {
 
   private def applyChaosConfig[A](reqNumber: Long, config: ChaosConfig, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     config.latencyInjectionFaultConfig
       .filter(c => inRatio(c.ratio, reqNumber))
       .map { conf =>
@@ -140,14 +140,14 @@ class SnowMonkey(implicit env: Env) {
       }
   }
 
-  private def isCurrentOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit
+  private def isCurrentOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     env.datastores.chaosDataStore.serviceAlreadyOutage(descriptor.id)
   }
 
   private def needMoreOutageForToday(isCurrentOutage: Boolean, descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(
-      implicit ec: ExecutionContext
+      using ec: ExecutionContext
   ): Future[Boolean] = {
     if (isCurrentOutage) {
       FastFuture.successful(true)
@@ -238,7 +238,7 @@ class SnowMonkey(implicit env: Env) {
     }
   }
 
-  private def isOutage(descriptor: ServiceDescriptor, config: SnowMonkeyConfig)(implicit
+  private def isOutage(descriptor: ServiceDescriptor, config: SnowMonkeyConfig)(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     for {
@@ -254,7 +254,7 @@ class SnowMonkey(implicit env: Env) {
 
   private def introduceServiceDefinedChaos[A](reqNumber: Long, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     applyChaosConfig(reqNumber, desc.chaosConfig, hasBody)(f)
   }
 
@@ -268,7 +268,7 @@ class SnowMonkey(implicit env: Env) {
       hasBody: Boolean
   )(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     isOutage(desc, config).flatMap {
       case true if !config.dryRun && config.includeUserFacingDescriptors                         =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
@@ -286,7 +286,7 @@ class SnowMonkey(implicit env: Env) {
 
   def introduceChaos(reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Result]
-  )(implicit ec: ExecutionContext): Future[Result] = {
+  )(using ec: ExecutionContext): Future[Result] = {
     introduceChaosGen(reqNumber, config, desc, hasBody)(m => f(m).map(Right.apply)).map {
       case Left(r)  => r
       case Right(r) => r
@@ -295,7 +295,7 @@ class SnowMonkey(implicit env: Env) {
 
   def introduceChaosGen[A](reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext): Future[Either[Result, A]] = {
     if (desc.id == env.backOfficeServiceId) {
       f(
         SnowMonkeyContext(

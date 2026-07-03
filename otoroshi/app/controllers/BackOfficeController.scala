@@ -104,14 +104,14 @@ case class BackofficeFlags(
 
 object BackofficeFlags {
   private val ref                                                                         = new AtomicReference[(Long, BackofficeFlags)]()
-  def fromJson(json: JsValue)(implicit env: Env): BackofficeFlags = {
+  def fromJson(json: JsValue)(using env: Env): BackofficeFlags = {
     val useAkkaHttpClient = json.select("useAkkaHttpClient").asOpt[Boolean]
     val logUrl            = json.select("logUrl").asOpt[Boolean]
     val logStats          = json.select("logStats").asOpt[Boolean]
     val requestTimeout    = json.select("requestTimeout").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
     BackofficeFlags(env, useAkkaHttpClient, logUrl, logStats, requestTimeout)
   }
-  def fill()(implicit ec: ExecutionContext, env: Env): Unit = {
+  def fill()(using ec: ExecutionContext, env: Env): Unit = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:backoffice:flags").map {
       case None          =>
         ref.set((System.currentTimeMillis(), BackofficeFlags(env)))
@@ -121,7 +121,7 @@ object BackofficeFlags {
       }
     }
   }
-  def latest(implicit ec: ExecutionContext, env: Env): BackofficeFlags = {
+  def latest(using ec: ExecutionContext, env: Env): BackofficeFlags = {
     Option(ref.get()) match {
       case None                                                               =>
         fill()
@@ -133,8 +133,8 @@ object BackofficeFlags {
         flags
     }
   }
-  def writeJson(flags: JsValue)(implicit ec: ExecutionContext, env: Env): BackofficeFlags = write(fromJson(flags))
-  def write(flags: BackofficeFlags)(implicit ec: ExecutionContext, env: Env): BackofficeFlags = {
+  def writeJson(flags: JsValue)(using ec: ExecutionContext, env: Env): BackofficeFlags = write(fromJson(flags))
+  def write(flags: BackofficeFlags)(using ec: ExecutionContext, env: Env): BackofficeFlags = {
     env.datastores.rawDataStore.set(s"${env.storageRoot}:backoffice:flags", flags.rawJson.stringify.byteString, None)
     flags
   }
@@ -145,7 +145,7 @@ class BackOfficeController(
     BackOfficeActionAuth: BackOfficeActionAuth,
     handlerRef: AtomicReference[HttpRequestHandler],
     cc: ControllerComponents
-)(implicit
+)(using
     env: Env
 ) extends AbstractController(cc) {
 
@@ -599,7 +599,7 @@ class BackOfficeController(
             exp = DateTime.now().plusSeconds(30).toDate.getTime,
             iat = DateTime.now().toDate.getTime,
             jti = IdGenerator.uuid
-          ).serialize(service.algoInfoFromOtoToBack)(env)
+          ).serialize(service.algoInfoFromOtoToBack)(using env)
           val url   = service.api.openApiDescriptorUrl.get match {
             case uri if uri.startsWith("/") => s"${service.target.scheme}://${service.target.host}${uri}"
             case url                        => url
@@ -1001,7 +1001,7 @@ class BackOfficeController(
                 metadata = Map.empty,
                 sessionCookieValues = sessionCookieValues,
                 clientSideSessionEnabled = true,
-                location = EntityLocation.fromBackOffice(ctx)(env)
+                location = EntityLocation.fromBackOffice(ctx)(using env)
               ).asJson
             )
           )
@@ -1081,7 +1081,7 @@ class BackOfficeController(
                             MtlsConfig.default
                           )
                         ),
-                        location = EntityLocation.fromBackOffice(ctx)(env)
+                        location = EntityLocation.fromBackOffice(ctx)(using env)
                       )
                       .asJson
                   )
@@ -1099,7 +1099,7 @@ class BackOfficeController(
                       metadata = Map.empty,
                       sessionCookieValues = sessionCookieValues,
                       clientSideSessionEnabled = true,
-                      location = EntityLocation.fromBackOffice(ctx)(env)
+                      location = EntityLocation.fromBackOffice(ctx)(using env)
                     ).asJson
                   )
                 }
@@ -1117,7 +1117,7 @@ class BackOfficeController(
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues,
                     clientSideSessionEnabled = true,
-                    location = EntityLocation.fromBackOffice(ctx)(env)
+                    location = EntityLocation.fromBackOffice(ctx)(using env)
                   ).asJson
                 )
               }

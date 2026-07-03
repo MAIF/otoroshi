@@ -90,7 +90,7 @@ class HMACValidator extends NgAccessValidator {
       NgAccess.NgDenied(BadRequest)
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val HMACValidatorConfig(secret, authorizationHeader) =
       ctx.cachedConfig(internalName)(HMACValidatorConfig.format).getOrElse(HMACValidatorConfig())
 
@@ -175,7 +175,7 @@ class HMACCaller extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val HMACCallerConfig(secret, algo, authorizationHeader) =
       ctx.cachedConfig(internalName)(HMACCallerConfig.format).getOrElse(HMACCallerConfig())
 

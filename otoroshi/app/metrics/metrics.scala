@@ -42,7 +42,7 @@ import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {
   def withTimer[T](name: String, display: Boolean = false)(f: => T): T = f
-  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit
+  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(using
       ec: ExecutionContext
   ): Future[T]                                                         = f
 }
@@ -264,7 +264,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   override def withTimerAsync[T](name: String, display: Boolean = false)(
       f: => Future[T]
-  )(implicit ec: ExecutionContext): Future[T] = {
+  )(using ec: ExecutionContext): Future[T] = {
     val jmxCtx = jmxRegistry.timer(name).time()
     val ctx    = metricRegistry.timer(MetricId.build(name)).time()
     f.andThen { case r =>

@@ -54,7 +54,7 @@ case class ProxyDone(
     otoroshiHeadersIn: Seq[Header]
 )
 
-class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
+class ErrorHandler()(using env: Env) extends HttpErrorHandler {
 
   implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
@@ -152,8 +152,8 @@ class AnalyticsQueue(env: Env) extends Actor {
   override def receive: Receive = {
     case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
       descriptor
-        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
+        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(using context.dispatcher, env)
+      env.datastores.globalConfigDataStore.updateQuotas(config)(using context.dispatcher, env)
     }
   }
 }
@@ -162,7 +162,7 @@ object GatewayRequestHandler {
 
   lazy val logger = Logger("otoroshi-http-handler")
 
-  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(implicit
+  def removePrivateAppsCookies(route: NgRoute, req: RequestHeader, attrs: TypedMap)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -234,7 +234,7 @@ object GatewayRequestHandler {
 
   def withAuthConfig(route: NgRoute, req: RequestHeader, attrs: TypedMap)(
       f: AuthModuleConfig => Future[Result]
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext): Future[Result] = {
 
     lazy val missingAuthRefError = Errors.craftResponseResult(
       "Auth. config. ref not found on the route",
@@ -304,7 +304,7 @@ class GatewayRequestHandler(
     backofficeActionBuilder: BackOfficeAction,
     privateActionBuilder: PrivateAppsAction,
     healthController: HealthController
-)(implicit env: Env, mat: Materializer)
+)(using env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

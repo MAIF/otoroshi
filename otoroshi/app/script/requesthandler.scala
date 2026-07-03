@@ -25,15 +25,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestHandler extends StartableAndStoppable with NamedPlugin {
   override def pluginType: PluginType                                                                       = PluginType.RequestHandlerType
-  def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String]                                  = Seq.empty[String]
+  def handledDomains(using ec: ExecutionContext, env: Env): Seq[String]                                  = Seq.empty[String]
   def handle(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result]                                                = defaultRouting(request)
+  )(using ec: ExecutionContext, env: Env): Future[Result]                                                = defaultRouting(request)
   def handleWs(
       request: RequestHeader,
       defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
     defaultRouting(request)
 }
 
@@ -69,7 +69,7 @@ class ForwardTrafficHandler extends RequestHandler {
 
   def hasBody(request: Request[_]): Boolean = request.theHasBody
 
-  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  override def handledDomains(using ec: ExecutionContext, env: Env): Seq[String] = {
     val config                         = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
     val domains: Map[String, JsObject] = config.select("domains").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
     domains.keys.toSeq
@@ -78,7 +78,7 @@ class ForwardTrafficHandler extends RequestHandler {
   override def handle(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val config                         = env.datastores.globalConfigDataStore.latest().plugins.config.select(configRoot.get)
     val domains: Map[String, JsObject] = config.select("domains").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
     domains.get(request.theDomain) match {

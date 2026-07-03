@@ -77,7 +77,7 @@ object pgimplicits {
   }
 
   implicit class EnhancedRow(val row: Row) extends AnyVal {
-    def opt[A](name: String, typ: String, extractor: (Row, String) => A)(implicit logger: Logger): Option[A] = {
+    def opt[A](name: String, typ: String, extractor: (Row, String) => A)(using logger: Logger): Option[A] = {
       Try(extractor(row, name)) match {
         case Failure(ex)    => {
           logger.error(s"error while getting column '$name' of type $typ", ex)
@@ -86,16 +86,16 @@ object pgimplicits {
         case Success(value) => Some(value)
       }
     }
-    def optString(name: String)(implicit logger: Logger): Option[String]                 = opt(name, "String", (a, b) => a.getString(b))
-    def optLong(name: String)(implicit logger: Logger): Option[Long]                     =
+    def optString(name: String)(using logger: Logger): Option[String]                 = opt(name, "String", (a, b) => a.getString(b))
+    def optLong(name: String)(using logger: Logger): Option[Long]                     =
       opt(name, "Long", (a, b) => a.getLong(b).longValue())
-    def optOffsetDatetime(name: String)(implicit logger: Logger): Option[OffsetDateTime] =
+    def optOffsetDatetime(name: String)(using logger: Logger): Option[OffsetDateTime] =
       opt(name, "OffsetDateTime", (a, b) => a.getOffsetDateTime(b))
 
-    def optInterval(name: String)(implicit logger: Logger): Option[io.vertx.pgclient.data.Interval] =
+    def optInterval(name: String)(using logger: Logger): Option[io.vertx.pgclient.data.Interval] =
       opt(name, "Interval", (a, b) => a.get(classOf[io.vertx.pgclient.data.Interval], b))
 
-    def optJsObject(name: String)(implicit logger: Logger): Option[JsObject] =
+    def optJsObject(name: String)(using logger: Logger): Option[JsObject] =
       opt(
         name,
         "JsObject",
@@ -108,7 +108,7 @@ object pgimplicits {
           }
         }
       )
-    def optJsArray(name: String)(implicit logger: Logger): Option[JsArray]   =
+    def optJsArray(name: String)(using logger: Logger): Option[JsArray]   =
       opt(
         name,
         "JsArray",
@@ -334,7 +334,7 @@ class ReactivePgDataStores(
         targets = Seq(
           Target("mirror.otoroshi.io")
         )
-      ).save()(reactivePgActorSystem.dispatcher, env)
+      ).save()(using reactivePgActorSystem.dispatcher, env)
     }(reactivePgActorSystem.dispatcher)
   }
 
@@ -465,7 +465,7 @@ class ReactivePgDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover { case _ =>
       Unreachable
     }
@@ -494,7 +494,7 @@ class ReactivePgDataStores(
   }
   override def rawExport(
       group: Int
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -690,7 +690,7 @@ class ReactivePgRedis(
     }.map { rows =>
       Source(rows.toList)
         .mapAsync(1) { case (key, value) =>
-          KindExtractorHelper.findKind(key)(env) match {
+          KindExtractorHelper.findKind(key)(using env) match {
             case Some(kind) => setEntityKind(key, kind, value)
             case None       => ().vfuture
           }
@@ -718,7 +718,7 @@ class ReactivePgRedis(
 
   override val optimized: Boolean = _optimized
 
-  override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = {
     info().map(_ => Healthy).recover { case _ => Unreachable }
   }
 
@@ -768,7 +768,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByHost(
       query: ServiceDescriptorQuery
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-host") {
       val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
       querySeq(
@@ -782,7 +782,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByEnv(
       ev: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.services-find-by-env") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();"
@@ -795,7 +795,7 @@ class ReactivePgRedis(
 
   override def serviceDescriptors_findByGroup(
       id: String
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -809,7 +809,7 @@ class ReactivePgRedis(
 
   override def apiKeys_findByService(
       service: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  )(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-service") {
 
       var params     = Seq[Any]()
@@ -831,7 +831,7 @@ class ReactivePgRedis(
       }
     }
 
-  override def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
+  override def apiKeys_findByGroup(groupId: String)(using ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-group") {
       querySeq(
         s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? $$1 and (ttl_starting_at + ttl) > NOW();",
@@ -1331,7 +1331,7 @@ class SetMissingEntityKind extends OneTimeJob {
 
   override def uniqueId: JobId = JobId("io.otoroshi.core.storage.pg.SetMissingEntityKind")
 
-  override def singleRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def singleRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores match {
       case ds: ReactivePgDataStores => ds.setMissingEntityKind()
       case _                        => funit

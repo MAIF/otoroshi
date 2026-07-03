@@ -139,7 +139,7 @@ class KvGreenScoreDataStore(extensionId: AdminExtensionId, redisCli: RedisLike, 
     extends GreenScoreDataStore
     with RedisLikeStore[GreenScoreEntity] {
   override def fmt: Format[GreenScoreEntity]              = GreenScoreEntity.format
-  override def redisLike(implicit env: Env): RedisLike    = redisCli
+  override def redisLike(using env: Env): RedisLike    = redisCli
   override def key(id: String): String                    = s"${_env.storageRoot}:extensions:${extensionId.cleanup}:greenscores:$id"
   override def extractId(value: GreenScoreEntity): String = value.id
 }

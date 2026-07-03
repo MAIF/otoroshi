@@ -20,7 +20,7 @@ import utils.EntityFiltering
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
-  def call(req: RequestHeader)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
+  def call(req: RequestHeader)(using ec: ExecutionContext, mat: Materializer, env: Env): Future[JsObject] = {
     req.getQueryString("fields") match {
       case None                                                                                          =>
         f().map {
@@ -51,7 +51,7 @@ class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[
   override def receive: Receive = {
     case evt: OtoroshiEvent =>
       //println(s"forward event: ${evt.`@id`}")
-      val json = evt.toJson(env)
+      val json = evt.toJson(using env)
       filter match {
         case Some(value) => {
           json.select("@type").asOptString match {
@@ -65,7 +65,7 @@ class AnalyticsTmpListenerActor(sink: Sinks.Many[String], ctx: ApiActionContext[
   }
 }
 
-class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
 ) extends AbstractController(cc) {
 

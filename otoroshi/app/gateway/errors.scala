@@ -50,7 +50,7 @@ object Errors {
       sendEvent: Boolean = true,
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None
-  )(implicit env: Env, ec: ExecutionContext): Unit = {
+  )(using env: Env, ec: ExecutionContext): Unit = {
     val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
     (maybeDescriptor, finalMaybeRoute) match {
       case (Some(descriptor), _) => {
@@ -147,7 +147,7 @@ object Errors {
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
           matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
-        ).toAnalytics()(env)
+        ).toAnalytics()(using env)
       }
       case (_, Some(route))      => {
         val descriptor       = route.serviceDescriptor
@@ -242,7 +242,7 @@ object Errors {
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
           matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
-        ).toAnalytics()(env)
+        ).toAnalytics()(using env)
       }
       case _                     => {
         val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
@@ -301,7 +301,7 @@ object Errors {
           geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
           extraAnalyticsData = attrs.get(otoroshi.plugins.Keys.ExtraAnalyticsDataKey),
           matchedJwtVerifier = attrs.get(otoroshi.plugins.Keys.JwtVerifierKey)
-        ).toAnalytics()(env)
+        ).toAnalytics()(using env)
       }
     }
     ()
@@ -314,7 +314,7 @@ object Errors {
       maybeCauseId: Option[String],
       emptyBody: Boolean,
       modern: Boolean
-  )(implicit env: Env): Result = {
+  )(using env: Env): Result = {
     val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
     if (accept.contains("text/html")) { // in a browser
       if (maybeCauseId.contains("errors.service.in.maintenance")) {
@@ -381,7 +381,7 @@ object Errors {
       maybeCauseId: Option[String],
       emptyBody: Boolean,
       errorId: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext): Future[Result] = {
     env.datastores.errorTemplateDataStore
       .findById(descriptorId)
       .flatMap {
@@ -419,7 +419,7 @@ object Errors {
       }
   }
 
-  private def errorTemplate(descriptorId: String)(implicit env: Env, ec: ExecutionContext): Option[ErrorTemplate] = {
+  private def errorTemplate(descriptorId: String)(using env: Env, ec: ExecutionContext): Option[ErrorTemplate] = {
     env.proxyState.errorTemplate(descriptorId).orElse(env.proxyState.errorTemplate("global"))
   }
 
@@ -432,7 +432,7 @@ object Errors {
       emptyBody: Boolean,
       errorId: String,
       modern: Boolean
-  )(implicit env: Env, ec: ExecutionContext): Result = {
+  )(using env: Env, ec: ExecutionContext): Result = {
     errorTemplate(descriptorId) match {
       case None                => standardResult(req, status, message, maybeCauseId, emptyBody, modern)
       case Some(errorTemplate) => {
@@ -479,7 +479,7 @@ object Errors {
       sendEvent: Boolean = true,
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val errorId                          = env.snowflakeGenerator.nextIdStr()
     val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
     ((maybeDescriptor, finalMaybeRoute) match {
@@ -515,7 +515,7 @@ object Errors {
             config = Json.obj(),
             attrs = attrs
           )
-          desc.transformError(ctx)(env, ec, env.otoroshiMaterializer)
+          desc.transformError(ctx)(using env, ec, env.otoroshiMaterializer)
         }
       }
       case (_, Some(route)) => {
@@ -553,7 +553,7 @@ object Errors {
                 NgExecutionReport(s"${DateTime.now()}-error", false)
               ) // TODO - when logout failed, ReportKey is undefined
           )
-          route.transformError(ctx)(env, ec, env.otoroshiMaterializer)
+          route.transformError(ctx)(using env, ec, env.otoroshiMaterializer)
         }
       }
       case _                =>
@@ -600,7 +600,7 @@ object Errors {
       attrs: TypedMap,
       maybeRoute: Option[NgRoute] = None,
       modern: Boolean = false
-  )(implicit ec: ExecutionContext, env: Env): Result = {
+  )(using ec: ExecutionContext, env: Env): Result = {
     val errorId                          = env.snowflakeGenerator.nextIdStr()
     val finalMaybeRoute: Option[NgRoute] = maybeRoute.orElse(attrs.get(otoroshi.next.plugins.Keys.RouteKey))
     (maybeDescriptor, finalMaybeRoute) match {
@@ -745,7 +745,7 @@ object Errors {
       sendEvent: Boolean = true,
       route: NgRoute,
       target: Target
-  )(implicit ec: ExecutionContext, env: Env): Result = {
+  )(using ec: ExecutionContext, env: Env): Result = {
     val errorId = env.snowflakeGenerator.nextIdStr()
 
     val finalRes = customResultSync(
@@ -780,7 +780,7 @@ object Errors {
         reason = reason,
         `@serviceId` = route.id,
         `@service` = route.name
-      ).toAnalytics()(env)
+      ).toAnalytics()(using env)
     }
     finalRes
   }

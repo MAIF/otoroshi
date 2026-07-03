@@ -36,7 +36,7 @@ class ApikeysSecretsRotationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
       Source(apikeys.toList)
         .mapAsync(1)(apikey => env.datastores.apiKeyDataStore.keyRotation(apikey))

@@ -9,7 +9,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 
-class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class InfosApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

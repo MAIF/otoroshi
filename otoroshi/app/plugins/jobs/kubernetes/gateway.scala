@@ -60,7 +60,7 @@ class KubernetesGatewayApiControllerJob extends Job {
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, _) =>
-        (env, KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext))
+        (env, KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext))
       }
       .map { case (env, cfg) =>
         env.clusterConfig.mode match {
@@ -76,20 +76,20 @@ class KubernetesGatewayApiControllerJob extends Job {
   override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Success(conf) => conf.gatewayApiSyncIntervalSeconds.seconds.some
       case Failure(_)    => 60.seconds.some
     }
   }
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = {
-    Try(KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext)) match {
+    Try(KubernetesConfig.theConfig(ctx)(using env, env.otoroshiExecutionContext)) match {
       case Failure(_)    => Some(false)
       case Success(conf) => if (conf.gatewayApi) None else Some(false)
     }
   }
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStart(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("Starting Kubernetes Gateway API controller job")
     stopCommand.set(false)
     lastWatchStopped.set(true)
@@ -99,7 +99,7 @@ class KubernetesGatewayApiControllerJob extends Job {
     ().future
   }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobStop(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("Stopping Kubernetes Gateway API controller job")
     stopCommand.set(true)
     watchCommand.set(false)
@@ -107,7 +107,7 @@ class KubernetesGatewayApiControllerJob extends Job {
     ().future
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     Try(KubernetesConfig.theConfig(ctx)) match {
       case Failure(e)                       =>
         logger.error(s"Failed to read KubernetesConfig: ${e.getMessage}")
@@ -120,7 +120,7 @@ class KubernetesGatewayApiControllerJob extends Job {
     }
   }
 
-  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[String]] = {
@@ -133,7 +133,7 @@ class KubernetesGatewayApiControllerJob extends Job {
     }
   }
 
-  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(using env: Env, ec: ExecutionContext): Unit = {
     if (config.gatewayApiWatch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting gateway api watch ...")
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
@@ -198,7 +198,7 @@ object KubernetesGatewayApiJob {
       conf: KubernetesConfig,
       attrs: TypedMap,
       jobRunning: => Boolean
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
     if (!jobRunning) { running.set(false) }
     if (jobRunning && running.compareAndSet(false, true)) {
@@ -312,7 +312,7 @@ object KubernetesGatewayApiJob {
       client: KubernetesClient,
       gatewayClasses: Seq[KubernetesGatewayClass],
       conf: KubernetesConfig
-  )(implicit ec: ExecutionContext): Future[Unit] = {
+  )(using ec: ExecutionContext): Future[Unit] = {
     val ours = gatewayClasses.filter(_.controllerName == conf.gatewayApiControllerName)
     Future
       .sequence(ours.map { gc =>
@@ -348,7 +348,7 @@ object KubernetesGatewayApiJob {
       gateways: Seq[KubernetesGateway],
       gatewayClasses: Seq[KubernetesGatewayClass],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Set[String]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Set[String]] = {
     val acceptedClassNames = gatewayClasses
       .filter(_.controllerName == conf.gatewayApiControllerName)
       .map(_.name)
@@ -423,7 +423,7 @@ object KubernetesGatewayApiJob {
       client: KubernetesClient,
       backendTLSPolicies: Seq[KubernetesBackendTLSPolicy],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Map[String, String]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Map[String, String]] = {
 
     // Collect unique (namespace, name) pairs from all caCertificateRefs
     val certRefs: Seq[(String, String)] = backendTLSPolicies.flatMap { policy =>
@@ -519,7 +519,7 @@ object KubernetesGatewayApiJob {
   private def resolveGatewayAddresses(
       client: KubernetesClient,
       conf: KubernetesConfig
-  )(implicit ec: ExecutionContext): Future[JsArray] = {
+  )(using ec: ExecutionContext): Future[JsArray] = {
     if (conf.gatewayApiAddresses.nonEmpty) {
       Future.successful(JsArray(conf.gatewayApiAddresses))
     } else {
@@ -560,7 +560,7 @@ object KubernetesGatewayApiJob {
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig,
       resolvedCerts: Set[String]
-  )(implicit ec: ExecutionContext): Future[Seq[KubernetesGateway]] = {
+  )(using ec: ExecutionContext): Future[Seq[KubernetesGateway]] = {
     val acceptedClassNames = gatewayClasses
       .filter(_.controllerName == conf.gatewayApiControllerName)
       .map(_.name)
@@ -819,7 +819,7 @@ object KubernetesGatewayApiJob {
       plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(httpRoutes.toList)
@@ -906,7 +906,7 @@ object KubernetesGatewayApiJob {
       plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Seq[NgRoute]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
     Source(grpcRoutes.toList)
@@ -980,7 +980,7 @@ object KubernetesGatewayApiJob {
   private def saveGeneratedRoutes(
       generatedRoutes: Seq[NgRoute],
       existingManagedRoutes: Seq[NgRoute]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val existingMap  = existingManagedRoutes.map(r => (r.id, r)).toMap
     val toSave       = generatedRoutes.filter { route =>
       existingMap.get(route.id) match {
@@ -1006,7 +1006,7 @@ object KubernetesGatewayApiJob {
   private def deleteOrphanedRoutes(
       generatedRoutes: Seq[NgRoute],
       existingManagedRoutes: Seq[NgRoute]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val generatedIds = generatedRoutes.map(_.id).toSet
     val toDelete     = existingManagedRoutes
       .filter(r => r.metadata.get("otoroshi-provider").contains(PROVIDER))
@@ -1043,7 +1043,7 @@ object KubernetesGatewayApiJob {
 }
 
 object KubernetesGatewayApiJobTest {
-  def functionTestRouteConversion()(implicit env: Env, ec: ExecutionContext): Unit = {
+  def functionTestRouteConversion()(using env: Env, ec: ExecutionContext): Unit = {
     val result = GatewayApiConverter.httpRouteToNgRoutes(
       httpRoute = KubernetesHTTPRoute(
         Yaml

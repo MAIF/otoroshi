@@ -61,7 +61,7 @@ object GatewayApiConverter {
       plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
+  )(using env: Env, ec: ExecutionContext): RouteConversionResult = {
 
     val matchingGateways = resolveParentRefs(httpRoute.parentRefs, httpRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
@@ -120,7 +120,7 @@ object GatewayApiConverter {
       plugins: Seq[KubernetesPlugin],
       namespaces: Seq[KubernetesNamespace],
       conf: KubernetesConfig
-  )(implicit env: Env, ec: ExecutionContext): RouteConversionResult = {
+  )(using env: Env, ec: ExecutionContext): RouteConversionResult = {
 
     val matchingGateways = resolveParentRefs(grpcRoute.parentRefs, grpcRoute.namespace, gateways, namespaces, conf)
     if (matchingGateways.isEmpty) {
@@ -301,7 +301,7 @@ object GatewayApiConverter {
       resolvedCaCertIds: Map[String, String],
       k8sPlugins: Seq[KubernetesPlugin],
       conf: KubernetesConfig
-  )(implicit env: Env): Seq[NgRoute] = {
+  )(using env: Env): Seq[NgRoute] = {
 
     rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
       val routeId   = s"kubernetes-gateway-api-${httpRoute.namespace}-${httpRoute.name}-rule-$ruleIdx-match-${mtchIdx}"
@@ -433,7 +433,7 @@ object GatewayApiConverter {
       resolvedCaCertIds: Map[String, String],
       k8sPlugins: Seq[KubernetesPlugin],
       conf: KubernetesConfig
-  )(implicit env: Env): Seq[NgRoute] = {
+  )(using env: Env): Seq[NgRoute] = {
 
     rule.matches.zipWithIndex.flatMap { case (mtch, mtchIdx) =>
       val routeId   =

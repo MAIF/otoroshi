@@ -141,7 +141,7 @@ case class TrafficCaptureEvent(
     // )
   }
 
-  override def toJson(implicit env: Env): JsValue = {
+  override def toJson(using env: Env): JsValue = {
     val inputBody         = attrs.get(otoroshi.plugins.Keys.CaptureRequestBodyKey).map(_.utf8String).getOrElse("")
     val id                = attrs.get(otoroshi.plugins.Keys.SnowFlakeKey).getOrElse("").padTo(24, "0").mkString("")
     val responseChunkUtf8 = responseChunks.utf8String

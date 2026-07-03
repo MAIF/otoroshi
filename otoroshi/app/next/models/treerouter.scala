@@ -96,7 +96,7 @@ case class NgTreeRouter(
     "wildcards" -> JsArray(wildcards.map(r => JsString(r.route.name)))
   )
 
-  def findRoute(request: RequestHeader, attrs: TypedMap)(implicit env: Env): Option[NgMatchedRoute] = {
+  def findRoute(request: RequestHeader, attrs: TypedMap)(using env: Env): Option[NgMatchedRoute] = {
     find(request.theDomain, request.thePath, env.trailingSlashMeansExactSegments)
       .flatMap { routes =>
         val forCurrentListenerOnly = request.attrs
@@ -455,7 +455,7 @@ object NgTreeRouter_Test {
       val path                   = s"/api/${idx}/foo"
       val request: RequestHeader = new NgFakeRequestHeader(test_domain, path)
       val start_ns               = System.nanoTime()
-      val f_route                = router.findRoute(request, attrs)(env)
+      val f_route                = router.findRoute(request, attrs)(using env)
       val duration_ns            = System.nanoTime() - start_ns
       counter.incrementAndGet()
       sum.addAndGet(duration_ns)

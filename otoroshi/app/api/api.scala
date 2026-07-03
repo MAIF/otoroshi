@@ -85,7 +85,7 @@ case class ResourceVersion(
     "schema"     -> schema
   )
 
-  def jsonWithSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = Json.obj(
+  def jsonWithSchema(kind: String, clazz: Class[_])(using env: Env): JsValue = Json.obj(
     "name"       -> name,
     "served"     -> served,
     "deprecated" -> deprecated,
@@ -93,7 +93,7 @@ case class ResourceVersion(
     "schema"     -> finalSchema(kind, clazz)
   )
 
-  def finalSchema(kind: String, clazz: Class[_])(implicit env: Env): JsValue = {
+  def finalSchema(kind: String, clazz: Class[_])(using env: Env): JsValue = {
     schema.getOrElse {
       Try {
         env.metrics.withTimer("generate json schema") {
@@ -145,7 +145,7 @@ case class Resource(
     "version"       -> version.json
   )
 
-  def jsonWithSchema(implicit env: Env): JsValue = Json.obj(
+  def jsonWithSchema(using env: Env): JsValue = Json.obj(
     "kind"          -> kind,
     "plural_name"   -> pluralName,
     "singular_name" -> singularName,
@@ -202,7 +202,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       env: Env
   ): Future[Either[JsValue, Unit]] = ().rightf
 
-  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(implicit
+  def validateToJson(json: JsValue, singularName: String, f: => Either[String, Option[BackOfficeUser]])(using
       env: Env
   ): JsResult[JsValue] = {
     def readEntity(): JsResult[JsValue] = format.reads(json) match {
@@ -242,7 +242,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       body: JsValue,
       action: WriteAction,
       oldEntity: Option[JsValue]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsValue]] = {
@@ -286,7 +286,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def findAll(version: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
+  def findAll(version: String)(using ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
     env.datastores.rawDataStore
       .allMatching(key("*"))
       .map { rawItems =>
@@ -311,7 +311,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(implicit
+  def deleteAll(version: String, singularName: String, canWrite: JsValue => Boolean)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Unit]] = {
@@ -357,7 +357,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
       }
   }
 
-  def deleteOne(version: String, id: String, singularName: String)(implicit
+  def deleteOne(version: String, id: String, singularName: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Unit]] = {
@@ -382,7 +382,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
   }
 
   // no validation as it's only used by kubernetes jobs
-  def deleteMany(version: String, ids: Seq[String])(implicit
+  def deleteMany(version: String, ids: Seq[String])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -393,7 +393,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
     }
   }
 
-  def findOne(version: String, id: String)(implicit
+  def findOne(version: String, id: String)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Option[JsValue]] = {
@@ -554,7 +554,7 @@ class OtoroshiResources(env: Env) {
         json => json.select("id").asString,
         () => "id",
         tmpl = (v, p, ctx) => {
-          env.datastores.routeDataStore.template(ctx)(env).json
+          env.datastores.routeDataStore.template(ctx)(using env).json
         },
         stateAll = () => env.proxyState.allRawRoutes(),
         stateOne = id => env.proxyState.rawRoute(id),
@@ -704,8 +704,8 @@ class OtoroshiResources(env: Env) {
         () => "id",
         (v, p, ctx) =>
           env.datastores.certificatesDataStore
-            .template(ctx)(env.otoroshiExecutionContext, env)
-            .awaitf(10.seconds)(env.otoroshiExecutionContext)
+            .template(ctx)(using env.otoroshiExecutionContext, env)
+            .awaitf(10.seconds)(using env.otoroshiExecutionContext)
             .json,
         stateAll = () => env.proxyState.allCertificates(),
         stateOne = id => env.proxyState.certificate(id),
@@ -746,7 +746,7 @@ class OtoroshiResources(env: Env) {
         json => json.select("id").asString,
         () => "id",
         (v, p, ctx) =>
-          env.datastores.authConfigsDataStore.template(p.get("type"), env, ctx)(env.otoroshiExecutionContext).json,
+          env.datastores.authConfigsDataStore.template(p.get("type"), env, ctx)(using env.otoroshiExecutionContext).json,
         stateAll = () => env.proxyState.allAuthModules(),
         stateOne = id => env.proxyState.authModule(id),
         stateUpdate = seq => env.proxyState.updateAuthModules(seq)
@@ -1110,7 +1110,7 @@ class OtoroshiResources(env: Env) {
 
 }
 
-class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: ControllerComponents)(implicit env: Env)
+class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   private val sourceBodyParser = BodyParser("GenericApiController BodyParser") { _ =>
@@ -1131,7 +1131,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       message: String,
       meta: JsValue,
       alert: Option[String]
-  )(implicit env: Env): Unit = {
+  )(using env: Env): Unit = {
     val event: AdminApiEvent = AdminApiEvent(
       env.snowflakeGenerator.nextIdStr(),
       env.env,
@@ -2767,7 +2767,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
 case class DocActionCtx[A](request: Request[A], sec: String)
 
-class DocAction(val parser: BodyParser[AnyContent])(implicit env: Env)
+class DocAction(val parser: BodyParser[AnyContent])(using env: Env)
     extends ActionBuilder[DocActionCtx, AnyContent]
     with ActionFunction[Request, DocActionCtx] {
 
@@ -2794,7 +2794,7 @@ class DocAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                     .Unauthorized(Json.obj("error" -> "unauthorized"))
                     .withHeaders(
                       "WWW-Authenticate" -> s"""Basic realm="otoroshi-doc-${env.datastores.globalConfigDataStore
-                        .latest()(env.otoroshiExecutionContext, env)
+                        .latest()(using env.otoroshiExecutionContext, env)
                         .otoroshiId}""""
                     )
                     .vfuture

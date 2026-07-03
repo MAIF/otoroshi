@@ -38,7 +38,7 @@ import scala.reflect.ClassTag
 import scala.util.{Either, Failure, Success, Try}
 
 object NgPluginHelper {
-  def pluginId[A](implicit ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
+  def pluginId[A](using ct: ClassTag[A]): String = s"cp:${ct.runtimeClass.getName}"
 }
 
 object NgPluginHttpRequest {
@@ -404,7 +404,7 @@ trait NgCachedConfigContext {
   def rawConfigFn[A](reads: JsValue => Option[A]): Option[A]                    = reads(config)
   def extractBody(
       request: NgPluginHttpRequest
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     if (request.hasBody) {
       request.body.runFold(ByteString.empty)(_ ++ _).map { b =>
@@ -417,7 +417,7 @@ trait NgCachedConfigContext {
 
   def extractTypedBody(
       request: NgPluginHttpRequest
-  )(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
+  )(using env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(request).map {
       case None                                              => (Json.obj(), None)
       case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
@@ -431,7 +431,7 @@ trait NgCachedConfigContext {
   }
   def extractBody(
       response: NgPluginHttpResponse
-  )(implicit env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Option[(ByteString, String)]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     response.body.runFold(ByteString.empty)(_ ++ _).map { b =>
       Some((b, response.contentType.getOrElse("application/octet-stream")))
@@ -440,7 +440,7 @@ trait NgCachedConfigContext {
 
   def extractTypedBody(
       response: NgPluginHttpResponse
-  )(implicit env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
+  )(using env: Env, ec: ExecutionContext): Future[(JsObject, Option[ByteString])] = {
     extractBody(response).map {
       case None                                              => (Json.obj(), None)
       case Some((bytes, "application/json"))                 => (Json.obj("body_json" -> Json.parse(bytes.toArray)), bytes.some)
@@ -537,11 +537,11 @@ object NgPreRouting {
 
 trait NgPreRouting extends NgPlugin {
   def isPreRouteAsync: Boolean                                                                                         = true
-  def preRouteSync(ctx: NgPreRoutingContext)(implicit env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] =
+  def preRouteSync(ctx: NgPreRoutingContext)(using env: Env, ec: ExecutionContext): Either[NgPreRoutingError, Done] =
     NgPreRouting.done
   def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]]                                  = preRouteSync(ctx).vfuture
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]]                                  = preRouteSync(ctx).vfuture
 }
 
 case class NgRouterContext(
@@ -557,7 +557,7 @@ case class NgRouterContext(
 }
 
 trait NgRouter extends NgPlugin {
-  def findRoute(ctx: NgRouterContext)(implicit env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = None
+  def findRoute(ctx: NgRouterContext)(using env: Env, ec: ExecutionContext): Option[NgMatchedRoute] = None
 }
 
 trait RequestTransformerErrors {
@@ -567,7 +567,7 @@ trait RequestTransformerErrors {
   def attrs: TypedMap
   def report: NgExecutionReport
 
-  def errorResponse[A](status: Results.Status, message: String)(implicit
+  def errorResponse[A](status: Results.Status, message: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[Result, A]] = {
@@ -655,7 +655,7 @@ case class NgTransformerRequestContext(
     "attrs"            -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.requestBody(otoroshiRequest).map { case (body, bodyBytesOut) =>
       (
@@ -667,7 +667,7 @@ case class NgTransformerRequestContext(
       )
     }
   }
-  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
@@ -708,7 +708,7 @@ case class NgTransformerResponseContext(
     "attrs"             -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
       (
@@ -721,7 +721,7 @@ case class NgTransformerResponseContext(
     }
   }
 
-  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     val baseObject = json.asObject ++ Json.obj(
       "route" -> route.json
     )
@@ -765,7 +765,7 @@ case class NgTransformerErrorContext(
     "global_config"     -> globalConfig,
     "attrs"             -> attrs.json
   )
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.responseBody(otoroshiResponse).map { case (bodyOut, bodyBytesOpt) =>
       (
@@ -793,39 +793,39 @@ trait NgRequestTransformer extends NgPlugin {
 
   def beforeRequest(
       ctx: NgBeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
   def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = ().vfuture
 
   def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     ctx.otoroshiResponse.vfuture
   }
 
   def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     Right(ctx.otoroshiRequest)
   }
 
   def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     transformRequestSync(ctx).vfuture
   }
 
   def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     Right(ctx.otoroshiResponse)
   }
 
   def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     transformResponseSync(ctx).vfuture
   }
 }
@@ -837,7 +837,7 @@ trait NgAccessContextErrors {
   def attrs: TypedMap
   def report: NgExecutionReport
 
-  def deniedAccess(status: Results.Status, message: String)(implicit
+  def deniedAccess(status: Results.Status, message: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -884,7 +884,7 @@ case class NgAccessContext(
     "attrs"         -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = {
+  def wasmJson(using env: Env, ec: ExecutionContext): JsObject = {
     (json.asObject ++ Json.obj(
       "route" -> route.json
     ))
@@ -899,8 +899,8 @@ object NgAccess {
 
 trait NgAccessValidator extends NgPlugin {
   def isAccessAsync: Boolean                                                                  = true
-  def accessSync(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): NgAccess     = NgAccess.NgAllowed
-  def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
+  def accessSync(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): NgAccess     = NgAccess.NgAllowed
+  def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = accessSync(ctx).vfuture
 }
 
 sealed trait NgRequestOrigin {
@@ -935,10 +935,10 @@ case class NgRequestSinkContext(
 
 trait NgRequestSink extends NgPlugin {
   def isSinkAsync: Boolean                                                                       = true
-  def matches(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
-  def handleSync(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Result     =
+  def matches(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean       = false
+  def handleSync(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Result     =
     Results.NotImplemented(Json.obj("error" -> "not implemented yet"))
-  def handle(ctx: NgRequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
+  def handle(ctx: NgRequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] =
     handleSync(ctx).vfuture
 }
 
@@ -968,7 +968,7 @@ case class NgRouteMatcherContext(
 }
 
 trait NgRouteMatcher extends NgPlugin {
-  def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean
+  def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean
 }
 
 case class NgTunnelHandlerContext(
@@ -988,7 +988,7 @@ case class NgTunnelHandlerContext(
 }
 
 trait NgTunnelHandler extends NgPlugin with NgAccessValidator {
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val isWebsocket = ctx.request.headers.get("Sec-WebSocket-Version").isDefined
     if (isWebsocket) {
       NgAccess.NgAllowed.vfuture
@@ -996,7 +996,7 @@ trait NgTunnelHandler extends NgPlugin with NgAccessValidator {
       NgAccess.NgDenied(Results.NotFound(Json.obj("error" -> "not_found"))).vfuture
     }
   }
-  def handle(ctx: NgTunnelHandlerContext)(implicit env: Env, ec: ExecutionContext): Flow[Message, Message, _]
+  def handle(ctx: NgTunnelHandlerContext)(using env: Env, ec: ExecutionContext): Flow[Message, Message, _]
 }
 
 case class NgbBackendCallContext(
@@ -1024,7 +1024,7 @@ case class NgbBackendCallContext(
     "attrs"         -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def wasmJson(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     JsonHelpers.requestBody(request).map { case (body, bodyBytesOpt) =>
       (
@@ -1038,7 +1038,7 @@ case class NgbBackendCallContext(
     }
   }
 
-  def jsonWithTypedBody(implicit env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
+  def jsonWithTypedBody(using env: Env, ec: ExecutionContext): Future[(JsValue, Option[ByteString])] = {
     extractTypedBody(request).map { case (obj, bodyBytesOpt) =>
       (
         json.asObject ++ Json.obj(
@@ -1114,7 +1114,7 @@ trait NgBackendCall extends NgPlugin {
     ).right[NgProxyEngineError]
   }
   def callBackend(ctx: NgbBackendCallContext, delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]])(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -1137,7 +1137,7 @@ class NgMergedRequestTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWrap
   override def isTransformResponseAsync: Boolean           = true
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     def next(
         _ctx: NgTransformerRequestContext,
         plugins: Seq[NgPluginWrapper[NgRequestTransformer]],
@@ -1222,7 +1222,7 @@ class NgMergedResponseTransformer(plugins: Seq[NgPluginWrapper.NgSimplePluginWra
   override def isTransformResponseAsync: Boolean = true
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     def next(
         _ctx: NgTransformerResponseContext,
         plugins: Seq[NgPluginWrapper[NgRequestTransformer]],
@@ -1304,7 +1304,7 @@ class NgMergedPreRouting(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper[NgPr
   override def isPreRouteAsync: Boolean = true
   override def preRoute(
       _ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     def next(plugins: Seq[NgPluginWrapper[NgPreRouting]], pluginIndex: Int): Future[Either[NgPreRoutingError, Done]] = {
       plugins.headOption match {
         case None          => Right(Done).vfuture
@@ -1384,7 +1384,7 @@ class NgMergedAccessValidator(plugins: Seq[NgPluginWrapper.NgSimplePluginWrapper
 
   override def multiInstance: Boolean = true
   override def isAccessAsync: Boolean = true
-  override def access(_ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(_ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     def next(plugins: Seq[NgPluginWrapper[NgAccessValidator]], pluginIndex: Int): Future[NgAccess] = {
       plugins.headOption match {
         case None          => NgAccess.NgAllowed.vfuture
@@ -1467,18 +1467,18 @@ case class NgWebsocketPluginContext(
 }
 
 sealed trait WebsocketMessage {
-  def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString]
-  def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]
-  def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int]
+  def bytes()(using m: Materializer, ec: ExecutionContext): Future[ByteString]
+  def str()(using m: Materializer, ec: ExecutionContext): Future[String]
+  def size()(using m: Materializer, ec: ExecutionContext): Future[Int]
   def isBinary: Boolean
   def isText: Boolean = !isBinary
-  def asPlay(implicit env: Env): Future[play.api.http.websocket.Message]
-  def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message]
+  def asPlay(using env: Env): Future[play.api.http.websocket.Message]
+  def asAkka(using env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message]
 }
 
 object WebsocketMessage {
   case class AkkaMessage(data: org.apache.pekko.http.scaladsl.model.ws.Message) extends WebsocketMessage {
-    override def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
+    override def bytes()(using m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.byteString.future
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
         source.runFold(ByteString.empty)((concat, str) => concat ++ str.byteString)
@@ -1488,7 +1488,7 @@ object WebsocketMessage {
           .runFold(ByteString.empty)((concat, str) => concat ++ str)
       case _                                                          => ByteString.empty.future
     }
-    override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]       = data match {
+    override def str()(using m: Materializer, ec: ExecutionContext): Future[String]       = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.future
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
         source.runFold("")((concat, str) => concat + str)
@@ -1500,7 +1500,7 @@ object WebsocketMessage {
       case _                                                          => "".future
     }
 
-    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = data match {
+    override def size()(using m: Materializer, ec: ExecutionContext): Future[Int] = data match {
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Strict(text)       => text.length.future
       case org.apache.pekko.http.scaladsl.model.ws.TextMessage.Streamed(source)   =>
         source.runFold("")((concat, str) => concat + str).map(_.length)
@@ -1514,7 +1514,7 @@ object WebsocketMessage {
 
     override def isBinary: Boolean = !data.isText
 
-    override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
+    override def asPlay(using env: Env): Future[play.api.http.websocket.Message] = {
       implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
       data match {
@@ -1529,20 +1529,20 @@ object WebsocketMessage {
         case other                                                      => throw new RuntimeException(s"Unkown message type ${other}")
       }
     }
-    override def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
+    override def asAkka(using env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
       data.vfuture
     }
   }
   case class PlayMessage(data: play.api.http.websocket.Message)     extends WebsocketMessage {
 
-    override def bytes()(implicit m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
+    override def bytes()(using m: Materializer, ec: ExecutionContext): Future[ByteString] = data match {
       case PlayWSTextMessage(data)   => data.byteString.vfuture
       case PlayWSBinaryMessage(data) => data.vfuture
       case CloseMessage(_, _)        => ByteString.empty.vfuture
       case PingMessage(data)         => data.vfuture
       case PongMessage(data)         => data.vfuture
     }
-    override def str()(implicit m: Materializer, ec: ExecutionContext): Future[String]       = (data match {
+    override def str()(using m: Materializer, ec: ExecutionContext): Future[String]       = (data match {
       case PlayWSTextMessage(data)   => data
       case PlayWSBinaryMessage(data) => data.utf8String
       case CloseMessage(_, _)        => ""
@@ -1550,7 +1550,7 @@ object WebsocketMessage {
       case PongMessage(data)         => data.utf8String
     }).future
 
-    override def size()(implicit m: Materializer, ec: ExecutionContext): Future[Int] = (data match {
+    override def size()(using m: Materializer, ec: ExecutionContext): Future[Int] = (data match {
       case PlayWSTextMessage(data)   => data.length
       case PlayWSBinaryMessage(data) => data.size
       case CloseMessage(_, _)        => 0
@@ -1560,11 +1560,11 @@ object WebsocketMessage {
 
     override def isBinary: Boolean = data.isInstanceOf[play.api.http.websocket.BinaryMessage]
 
-    override def asPlay(implicit env: Env): Future[play.api.http.websocket.Message] = {
+    override def asPlay(using env: Env): Future[play.api.http.websocket.Message] = {
       data.vfuture
     }
 
-    override def asAkka(implicit env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
+    override def asAkka(using env: Env): Future[org.apache.pekko.http.scaladsl.model.ws.Message] = {
       data match {
         case msg: PlayWSBinaryMessage => org.apache.pekko.http.scaladsl.model.ws.BinaryMessage(msg.data).vfuture
         case msg: PlayWSTextMessage   => org.apache.pekko.http.scaladsl.model.ws.TextMessage(msg.data).vfuture
@@ -1584,7 +1584,7 @@ case class NgWebsocketResponse(
 
 object NgWebsocketResponse {
   def default: Future[NgWebsocketResponse]                            = NgWebsocketResponse().future
-  def error(ctx: NgWebsocketPluginContext, message: WebsocketMessage, statusCode: Int, reason: String)(implicit
+  def error(ctx: NgWebsocketPluginContext, message: WebsocketMessage, statusCode: Int, reason: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgWebsocketResponse] = {
@@ -1618,11 +1618,11 @@ trait NgWebsocketPlugin extends NgPlugin {
   def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
   def onRequestFlow: Boolean                                        = false
   def onResponseFlow: Boolean                                       = false
-  def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]]             = message.rightf
-  def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]]             = message.rightf
@@ -1634,7 +1634,7 @@ trait NgWebsocketBackendPlugin extends NgPlugin {
 
   def callBackendOrError(
       ctx: NgWebsocketPluginContext
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
@@ -1643,7 +1643,7 @@ trait NgWebsocketBackendPlugin extends NgPlugin {
 
   def callBackend(
       ctx: NgWebsocketPluginContext
-  )(implicit env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, _] = {
+  )(using env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, _] = {
     Flow.fromSinkAndSource(Sink.ignore, Source.empty)
   }
 }
@@ -1673,7 +1673,7 @@ class YesWebsocketBackend extends NgWebsocketBackendPlugin {
 
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.request.getQueryString("fail") match {
       case Some("yes") =>
@@ -1698,7 +1698,7 @@ class YesWebsocketBackend extends NgWebsocketBackendPlugin {
 }
 
 trait NgIncomingRequestValidator extends NgPlugin {
-  def access(ctx: NgIncomingRequestValidatorContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] =
+  def access(ctx: NgIncomingRequestValidatorContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] =
     NgAccess.NgAllowed.vfuture
 }
 
@@ -1722,7 +1722,7 @@ case class NgIncomingRequestValidatorContext(
     "attrs"         -> attrs.json
   )
 
-  def wasmJson(implicit env: Env, ec: ExecutionContext): JsObject = json.asObject
+  def wasmJson(using env: Env, ec: ExecutionContext): JsObject = json.asObject
 }
 
 case class NgPresetPluginContext(

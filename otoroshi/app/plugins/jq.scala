@@ -80,7 +80,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformResponseWithCtx(
       ctx: TransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val config   = ctx.configFor("JqBodyTransformer").select("response")
     val filter   = config.select("filter").asOpt[String].getOrElse(".")
     val included = config.select("included").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
@@ -146,7 +146,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val promise = Promise[Source[ByteString, _]]()
     ctx.attrs.put(requestKey -> promise.future)
     val config   = ctx.configFor("JqBodyTransformer").select("request")
@@ -218,7 +218,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     ctx.attrs.get(responseKey) match {
       case None       => Source.empty
       case Some(body) => body
@@ -227,7 +227,7 @@ class JqBodyTransformer extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     ctx.attrs.get(requestKey) match {
       case None       => Source.empty
       case Some(body) => Source.future(body).flatMapConcat(b => b)

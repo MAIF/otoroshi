@@ -187,7 +187,7 @@ case class HttpCallSettings(
     )
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -299,7 +299,7 @@ case class SplunkCallSettings(
       }
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -406,7 +406,7 @@ case class DatadogCallSettings(
       }
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -482,7 +482,7 @@ case class NewRelicCallSettings(
       }
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -573,7 +573,7 @@ case class WorkflowCallSettings(ref: String) extends Exporter {
     )
   }
 
-  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(implicit
+  def call(events: Seq[JsValue], config: DataExporterConfig, globalConfig: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ExportResult] = {
@@ -1173,11 +1173,11 @@ case class DataExporterConfig(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.dataExporterConfigDataStore.set(this)
   }
 
-  def exporter()(implicit ec: ExecutionContext, env: Env): DataExporter = {
+  def exporter()(using ec: ExecutionContext, env: Env): DataExporter = {
     config match {
       case c: KafkaConfig                                                    => new KafkaExporter(this)
       case c: PulsarConfig                                                   => new PulsarExporter(this)
@@ -1368,7 +1368,7 @@ class DataExporterConfigMigrationJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     DataExporterConfigMigrationJob
       .extractExporters(env)
       .flatMap(configs => DataExporterConfigMigrationJob.saveExporters(configs, env))

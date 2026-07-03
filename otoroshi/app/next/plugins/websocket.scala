@@ -138,7 +138,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean = false
   override def onRequestFlow: Boolean  = true
 
-  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  private def validate(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Boolean] = {
@@ -156,7 +156,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
       })
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -188,7 +188,7 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean = false
   override def onRequestFlow: Boolean  = true
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -280,7 +280,7 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
   override def onResponseFlow: Boolean = false
   override def onRequestFlow: Boolean  = true
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -369,7 +369,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
   override def onRequestFlow: Boolean  = true
 
   private def internalCanAccess(ctx: NgWebsocketPluginContext, message: WebsocketMessage, maxSize: Int, reason: String)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -384,7 +384,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
       }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -400,7 +400,7 @@ class WebsocketSizeValidator extends NgWebsocketValidatorPlugin {
     config.rejectStrategy
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -451,7 +451,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
   override def onResponseFlow: Boolean                                       = true
   override def rejectStrategy(ctx: NgWebsocketPluginContext): RejectStrategy = RejectStrategy.Drop
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -461,7 +461,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
     onMessage(ctx, message, config.requestFilter)
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -471,7 +471,7 @@ class JqWebsocketMessageTransformer extends NgWebsocketPlugin {
     onMessage(ctx, message, config.responseFilter)
   }
 
-  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(implicit
+  def onMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage, filter: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -529,7 +529,7 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
       ctx: NgWebsocketPluginContext,
       message: WebsocketMessage,
       functionName: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     val config       = ctx
       .cachedConfig(internalName)(WasmConfig.format)
@@ -609,14 +609,14 @@ class WasmWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     onMessage(ctx, message, "on_request_message".some)
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -696,7 +696,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
       message: WebsocketMessage,
       workflowId: String,
       action: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgWebsocketError, WebsocketMessage]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     (if (message.isText) {
        message.str().map { str =>
@@ -764,7 +764,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onRequestMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -777,7 +777,7 @@ class WorkflowWebsocketTransformer extends NgWebsocketPlugin {
     }
   }
 
-  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(implicit
+  override def onResponseMessage(ctx: NgWebsocketPluginContext, message: WebsocketMessage)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[NgWebsocketError, WebsocketMessage]] = {
@@ -834,7 +834,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
 
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
     val config  = ctx
       .cachedConfig(internalName)(WebsocketMirrorBackendConfig.format)
       .getOrElse(WebsocketMirrorBackendConfig())

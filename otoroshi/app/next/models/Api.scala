@@ -107,7 +107,7 @@ object ApiRoute {
 case class ApiFlows(id: String, name: String, plugins: NgPlugins)
 
 object ApiFlows {
-  def empty(implicit env: Env): ApiFlows = ApiFlows(
+  def empty(using env: Env): ApiFlows = ApiFlows(
     "default_plugin_chain",
     "default_plugin_chain",
     plugins = NgPlugins.apply(
@@ -660,7 +660,7 @@ case class ApiDocumentationSource(raw: JsObject) {
   lazy val httpHeaders: Map[String, String] = raw.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val httpTimeout: FiniteDuration      = raw.select("timeout").asOpt[Long].getOrElse(30000L).millis
   lazy val httpFollowRedirects: Boolean     = raw.select("follow_redirects").asOpt[Boolean].getOrElse(true)
-  def resolve(doc: ApiDocumentation)(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
+  def resolve(doc: ApiDocumentation)(using env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     url match {
       case None      => None.vfuture
       case Some(url) => {
@@ -914,7 +914,7 @@ object ApiSubscription {
   val METADATA_AND_TAGS_SEPARATOR = " | "
   val CORE_METADATA               = Seq("updated_at")
 
-  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+  private def generateNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
       env: Env
   ) = {
     val configPlan = plan.accessModeConfiguration
@@ -931,7 +931,7 @@ object ApiSubscription {
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
       clientName = configPlan.clientNamePattern
-        .map(_.evaluateEl(attrs)(env))
+        .map(_.evaluateEl(attrs)(using env))
         .getOrElse(IdGenerator.lowerCaseToken(22)),
       description = configPlan.description.getOrElse(""),
       validUntil = configPlan.validUntil,
@@ -953,7 +953,7 @@ object ApiSubscription {
       .copy(enabled = subscription.status != ApiSubscriptionDisabled)
   }
 
-  private def createNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+  private def createNewApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
       env: Env
   ) = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -991,7 +991,7 @@ object ApiSubscription {
     currentApikeyTags.filter(key => !managed_keys.contains(key))
   }
 
-  private def updateApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(implicit
+  private def updateApikeyFromPlan(api: Api, plan: ApiDocumentationPlan, subscription: ApiSubscription)(using
       env: Env
   ): Future[Seq[Either[String, Boolean]]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -1030,7 +1030,7 @@ object ApiSubscription {
       subscription: ApiSubscription,
       action: WriteAction,
       isDraft: Boolean
-  )(implicit
+  )(using
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -1072,19 +1072,19 @@ object ApiSubscription {
     }
   }
 
-  private def findDraft[A](id: String, fmt: Reads[A])(implicit env: Env): Future[Option[A]] =
+  private def findDraft[A](id: String, fmt: Reads[A])(using env: Env): Future[Option[A]] =
     env.proxyState
       .allDrafts()
       .find(_.id == id)
       .flatMap(draft => fmt.reads(draft.content).asOpt)
       .future
 
-  private def findApi(apiId: String, isDraft: Boolean)(implicit env: Env, ec: ExecutionContext): Future[Option[Api]] = {
+  private def findApi(apiId: String, isDraft: Boolean)(using env: Env, ec: ExecutionContext): Future[Option[Api]] = {
     if (isDraft) findDraft(apiId, Api.format)
     else env.datastores.apiDataStore.findById(apiId)
   }
 
-  def validate(apiRef: String, entity: ApiSubscription, action: WriteAction, isDraft: Boolean)(implicit
+  def validate(apiRef: String, entity: ApiSubscription, action: WriteAction, isDraft: Boolean)(using
       env: Env
   ): Future[Either[String, ApiSubscription]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
@@ -1255,7 +1255,7 @@ object ApiPlanStatus {
 case class ApiBackend(id: String, name: String, backend: NgBackend, client: String)
 
 object ApiBackend {
-  def empty(implicit env: Env): ApiBackend = ApiBackend(
+  def empty(using env: Env): ApiBackend = ApiBackend(
     IdGenerator.namedId("api_backend", env),
     name = "default_backend",
     backend = NgBackend.empty.copy(
@@ -1501,7 +1501,7 @@ case class Api(
 
   override def theMetadata: Map[String, String] = metadata
 
-  def resolveDocumentation()(implicit env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
+  def resolveDocumentation()(using env: Env, ec: ExecutionContext): Future[Option[ApiDocumentation]] = {
     documentation.flatMap(_.source) match {
       case None         => documentation.vfuture
       case Some(source) => source.resolve(documentation.get)
@@ -1527,7 +1527,7 @@ case class Api(
     )
   }
 
-  private def buildDraftRoutes()(implicit env: Env): Future[Seq[RouteWithApi]] = {
+  private def buildDraftRoutes()(using env: Env): Future[Seq[RouteWithApi]] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     env.datastores.draftsDataStore
@@ -1686,7 +1686,7 @@ case class Api(
 
   }
 
-  def toRoutes(implicit env: Env): Future[Seq[NgRoute]] = {
+  def toRoutes(using env: Env): Future[Seq[NgRoute]] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
     val isRemovedOrDisabled = state == ApiRemoved || !enabled
@@ -1736,7 +1736,7 @@ case class Api(
     ).legacy
   }
 
-  def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(implicit env: Env): Future[Option[NgRoute]] = {
+  def routeToNgRoute(apiRoute: ApiRoute, optApi: Option[Api] = None)(using env: Env): Future[Option[NgRoute]] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     val api: Api = optApi.map(api => api).getOrElse(this)
@@ -1785,7 +1785,7 @@ case class Api(
     }
   }
 
-  def apiRouteToNgRoute(routeId: String)(implicit env: Env): Future[Option[NgRoute]] = {
+  def apiRouteToNgRoute(routeId: String)(using env: Env): Future[Option[NgRoute]] = {
     routes.find(_.id == routeId) match {
       case Some(apiRoute) => routeToNgRoute(apiRoute)
       case None           => None.vfuture
@@ -1890,7 +1890,7 @@ object Api {
   }
 
   def fromOpenApi(domain: String, openapi: String, contextPath: String, backendHostname: String, backendPath: String)(
-      implicit
+      using
       ec: ExecutionContext,
       env: Env
   ): Future[Api] = {
@@ -1975,7 +1975,7 @@ object Api {
         blueprint = ApiBlueprint.REST,
         state = ApiStaging,
         backends = Seq(backend),
-        flows = Seq(ApiFlows.empty(env)),
+        flows = Seq(ApiFlows.empty(using env)),
         groups = Seq.empty
       )
     }
@@ -2135,8 +2135,8 @@ trait ApiDataStore extends BasicStore[Api] {
       state = ApiStaging,
       blueprint = ApiBlueprint.REST,
       routes = Seq.empty,
-      backends = Seq(ApiBackend.empty(env)),
-      flows = Seq(ApiFlows.empty(env)),
+      backends = Seq(ApiBackend.empty(using env)),
+      flows = Seq(ApiFlows.empty(using env)),
       clients = Seq.empty,
       clientsBackendConfig = Seq(ApiBackendClient.defaultClient),
       documentation = None,
@@ -2144,7 +2144,7 @@ trait ApiDataStore extends BasicStore[Api] {
       testing = ApiTesting()
     )
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .api
       .map { template =>
@@ -2158,7 +2158,7 @@ trait ApiDataStore extends BasicStore[Api] {
 
 class KvApiDataStore(redisCli: RedisLike, _env: Env) extends ApiDataStore with RedisLikeStore[Api] {
   override def fmt: Format[Api]                        = Api.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:apis:$id"
   override def extractId(value: Api): String           = value.id
 }
@@ -2189,7 +2189,7 @@ trait ApiSubscriptionDataStore extends BasicStore[ApiSubscription] {
     )
 
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .apiSubscription
       .map { template =>
@@ -2205,7 +2205,7 @@ class KvApiSubscriptionDataStore(redisCli: RedisLike, _env: Env)
     extends ApiSubscriptionDataStore
     with RedisLikeStore[ApiSubscription] {
   override def fmt: Format[ApiSubscription]              = ApiSubscription.format
-  override def redisLike(implicit env: Env): RedisLike   = redisCli
+  override def redisLike(using env: Env): RedisLike   = redisCli
   override def key(id: String): String                   = s"${_env.storageRoot}:apisubscriptions:$id"
   override def extractId(value: ApiSubscription): String = value.id
 }

@@ -73,25 +73,25 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
     "This plugin expects to find an apikey to allow the request to pass. This plugin behaves exactly like the service descriptor does".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgLegacyApikeyCallConfig.default.some
 
-  override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
+  override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
     val plugin = env.scriptManager
-      .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
+      .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
       .right
       .get
-    plugin.matches(ctx)(env)
+    plugin.matches(ctx)(using env)
   }
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val plugin = env.scriptManager
-      .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
+      .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
       .right
       .get
-    plugin.transformRequestSync(ctx)(env, ec, mat)
+    plugin.transformRequestSync(ctx)(using env, ec, mat)
   }
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val plugin     = env.scriptManager
-      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(env.otoroshiExecutionContext)
+      .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
       .right
       .get
     val config     = configCache.get(
@@ -108,12 +108,12 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
         env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
           .detectApiKey(req, descriptor, ctx.attrs)
       ) {
-        plugin.access(ctx)(env, ec)
+        plugin.access(ctx)(using env, ec)
       } else {
         NgAccess.NgAllowed.vfuture
       }
     } else {
-      plugin.access(ctx)(env, ec)
+      plugin.access(ctx)(using env, ec)
     }
   }
 }
@@ -144,7 +144,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
   override def description: Option[String]                 = "This plugin expects to find an apikey to allow the request to pass".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgApikeyCallsConfig().some
 
-  override def matches(ctx: NgRouteMatcherContext)(implicit env: Env): Boolean = {
+  override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
     val config =
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.routing.enabled) {
@@ -170,7 +170,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
     }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config    =
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     val maybeUser = ctx.attrs.get(otoroshi.plugins.Keys.UserKey)
@@ -265,7 +265,7 @@ class ApikeyCalls extends NgAccessValidator with NgRequestTransformer with NgRou
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config =
       configCache.get(ctx.route.cacheableId, _ => configReads.reads(ctx.config).getOrElse(NgApikeyCallsConfig()))
     if (config.wipeBackendRequest) {
@@ -862,7 +862,7 @@ class ApikeyAuthModule extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
 
     val config = ctx
       .cachedConfig(internalName)(ApikeyAuthModuleConfig.format)
@@ -920,7 +920,7 @@ class NgApikeyMandatoryTags extends NgAccessValidator {
   override def description: Option[String]                 =
     "This plugin checks that if an apikey is provided, there is one or more tags on it".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgApikeyMandatoryTagsConfig.format)
       .getOrElse(NgApikeyMandatoryTagsConfig())
@@ -980,7 +980,7 @@ class NgApikeyMandatoryMetadata extends NgAccessValidator {
   override def description: Option[String]                 =
     "This plugin checks that if an apikey is provided, there is one or more metadata on it".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgApikeyMandatoryMetadataConfig.format)
       .getOrElse(NgApikeyMandatoryMetadataConfig())

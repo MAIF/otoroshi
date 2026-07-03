@@ -12,7 +12,7 @@ trait JsonValidator {
   def kind: String
   def json: JsValue
   def error: Option[String]
-  def validate(ctx: JsValue)(implicit env: Env): Boolean
+  def validate(ctx: JsValue)(using env: Env): Boolean
 }
 
 object JsonValidator {
@@ -60,7 +60,7 @@ case class WasmPluginValidator(ref: String, error: Option[String] = None) extend
     "ref"  -> ref
   )
 
-  override def validate(ctx: JsValue)(implicit env: Env): Boolean = {
+  override def validate(ctx: JsValue)(using env: Env): Boolean = {
     val fu = env.wasmIntegration.withPooledVm(config) { vm =>
       vm.callExtismFunction("validate", ctx.prettify)(env.otoroshiExecutionContext)
         .map {
@@ -103,7 +103,7 @@ case class OpaPluginValidator(ref: String, error: Option[String] = None) extends
     "ref"  -> ref
   )
 
-  override def validate(ctx: JsValue)(implicit env: Env): Boolean = {
+  override def validate(ctx: JsValue)(using env: Env): Boolean = {
     val fu = env.wasmIntegration.withPooledVm(config) { vm =>
       vm.callOpa("execute", ctx.prettify)(env.otoroshiExecutionContext)
         .map {

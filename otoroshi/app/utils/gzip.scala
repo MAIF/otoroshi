@@ -78,7 +78,7 @@ case class GzipConfig(
 
   private def createGzipFlow: Flow[ByteString, ByteString, _] = GzipFlow.gzip(bufferSize, compressionLevel)
 
-  def handleResult(request: RequestHeader, result: Result)(implicit
+  def handleResult(request: RequestHeader, result: Result)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[Result] = {
@@ -152,7 +152,7 @@ case class GzipConfig(
     }
   }
 
-  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(implicit
+  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(using
       ec: ExecutionContext,
       mat: Materializer
   ) = {

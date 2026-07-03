@@ -139,7 +139,7 @@ case class NgPluginInstance(
       true
     }
   }
-  def getPlugin[A](implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
+  def getPlugin[A](using ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
     env.scriptManager.getAnyScript[NgNamedPlugin](plugin) match {
       case Right(validator) if ct.runtimeClass.isAssignableFrom(validator.getClass) => validator.asInstanceOf[A].some
       case _                                                                        => None
@@ -157,16 +157,16 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def json: JsValue = JsArray(slots.map(_.json))
 
-  def hasPlugin[A](implicit ct: ClassTag[A]): Boolean = getPluginByClass[A](ct).isDefined
+  def hasPlugin[A](using ct: ClassTag[A]): Boolean = getPluginByClass[A](using ct).isDefined
 
-  def getPluginByClass[A](implicit ct: ClassTag[A]): Option[NgPluginInstance] = {
+  def getPluginByClass[A](using ct: ClassTag[A]): Option[NgPluginInstance] = {
     val name = s"cp:${ct.runtimeClass.getName}"
     slots.find(pi => pi.plugin == name).filter(_.enabled)
   }
 
   def routerPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouter]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouter]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -182,7 +182,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def requestSinkPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestSink]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -198,7 +198,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def routeMatcherPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRouteMatcher]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -214,7 +214,7 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def transformerPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     val pls                                = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -244,13 +244,13 @@ case class NgPlugins(slots: Seq[NgPluginInstance]) extends AnyVal {
 
   def transformerPluginsThatTransformsError(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgRequestTransformer]] = {
     transformerPlugins(request).filter(_.plugin.transformsError)
   }
 
   def incomingRequestValidatorPlugins(
       request: RequestHeader
-  )(implicit ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgIncomingRequestValidator]] = {
+  )(using ec: ExecutionContext, env: Env): Seq[NgPluginWrapper[NgIncomingRequestValidator]] = {
     val pls                             = slots
       .filter(_.enabled)
       .filter(_.matches(request))
@@ -640,7 +640,7 @@ case class NgContextualPlugins(
 }
 
 object NgContextualPlugins {
-  def empty(request: RequestHeader)(implicit env: Env, ec: ExecutionContext): NgContextualPlugins = {
+  def empty(request: RequestHeader)(using env: Env, ec: ExecutionContext): NgContextualPlugins = {
     NgContextualPlugins(
       plugins = NgPlugins.empty,
       global_plugins = NgPlugins.empty,

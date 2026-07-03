@@ -87,7 +87,7 @@ object UserAnalyticsExporterSettings {
    * Only one exporter at a time is expected to carry the flag (see UI promote
    * button). If multiple do, we keep the first one (stable order by id).
    */
-  def findActiveAnalyticsExporter(implicit env: Env, ec: ExecutionContext): Future[Option[DataExporterConfig]] = {
+  def findActiveAnalyticsExporter(using env: Env, ec: ExecutionContext): Future[Option[DataExporterConfig]] = {
     env.datastores.dataExporterConfigDataStore.findAll().map { all =>
       all
         .filter(_.enabled)
@@ -122,7 +122,7 @@ object UserAnalyticsExporterRegistry {
    * Returns the live PgPool of the currently active analytics exporter
    * (the one carrying the `otoroshi:user-analytics:active=true` metadata).
    */
-  def activeRunningPool(implicit env: Env, ec: ExecutionContext): Future[Option[PgPool]] = {
+  def activeRunningPool(using env: Env, ec: ExecutionContext): Future[Option[PgPool]] = {
     UserAnalyticsExporterSettings.findActiveAnalyticsExporter.map { configOpt =>
       configOpt.flatMap(c => Option(running.get(c.id))).flatMap(_.pool)
     }
@@ -132,7 +132,7 @@ object UserAnalyticsExporterRegistry {
    * Returns the active exporter settings AND its live pool, both required to
    * execute a query against the right table/schema.
    */
-  def activeRunning(implicit
+  def activeRunning(using
       env: Env,
       ec: ExecutionContext
   ): Future[Option[(UserAnalyticsExporterSettings, PgPool)]] = {
@@ -242,7 +242,7 @@ object AnalyticsSchema {
     )
   }
 
-  def migrate(pool: PgPool, settings: UserAnalyticsExporterSettings)(implicit ec: ExecutionContext): Future[Unit] = {
+  def migrate(pool: PgPool, settings: UserAnalyticsExporterSettings)(using ec: ExecutionContext): Future[Unit] = {
     val createSchema      = pool.query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};").executeAsync()
     val createTable       = createSchema.flatMap(_ => pool.query(createTableSql(settings)).executeAsync())
     val withEventsIndexes = indexStatements(settings).foldLeft(createTable.map(_ => ())) { (acc, ddl) =>
@@ -469,8 +469,8 @@ object FiredAlertDenormalizer {
   }
 }
 
-class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env)
-    extends DefaultDataExporter(config)(ec, env) {
+class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
+    extends DefaultDataExporter(config)(using ec, env) {
 
   private val poolRef = new AtomicReference[PgPool](null)
 
@@ -513,7 +513,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(implicit ec: ExecutionCo
                 config.metadata.get(UserAnalyticsExporterSettings.ActiveMetadataKey).contains("true")
               if (isActive) {
                 otoroshi.next.analytics.defaults.DefaultDashboards
-                  .seedIfMissing()(env, ec)
+                  .seedIfMissing()(using env, ec)
                   .map(_ => ())
                   .recover { case e: Throwable =>
                     logger.error(s"[user-analytics-exporter] error while seeding default dashboards", e)

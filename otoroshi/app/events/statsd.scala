@@ -104,7 +104,7 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
   //   if (optConfig.isEmpty) close()
   // }
 
-  def metric(name: String, value: Any)(implicit optConfig: Option[StatsdConfig]): Unit = {
+  def metric(name: String, value: Any)(using optConfig: Option[StatsdConfig]): Unit = {
     optConfig.foreach(config =>
       value match {
         case b: Boolean => statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, false, config)
@@ -214,11 +214,11 @@ class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporte
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registry.getGauges
         .forEach((name: MetricId, gauge: Gauge[_]) =>
-          env.statsd.metric(name.getKey, gauge.getValue)(config.statsdConfig)
+          env.statsd.metric(name.getKey, gauge.getValue)(using config.statsdConfig)
         )
       registry.getCounters
         .forEach((name: MetricId, gauge: Counter) =>
-          env.statsd.metric(name.getKey, gauge.getCount)(config.statsdConfig)
+          env.statsd.metric(name.getKey, gauge.getCount)(using config.statsdConfig)
         )
     }
   }

@@ -28,7 +28,7 @@ class JwtApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -219,7 +219,7 @@ class BasicAuthApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -285,7 +285,7 @@ class CustomHeadersApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {
@@ -337,7 +337,7 @@ class ClientIdApikeyExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq.empty
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
       case None    => {

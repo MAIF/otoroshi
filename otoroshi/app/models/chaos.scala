@@ -235,7 +235,7 @@ case class SnowMonkeyConfig(
     )
 ) {
   def asJson: JsValue                                                  = SnowMonkeyConfig._fmt.writes(this)
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.singleton().flatMap { conf =>
       conf.copy(snowMonkeyConfig = this).save()
     }
@@ -375,15 +375,15 @@ object Outage {
 }
 
 trait ChaosDataStore {
-  def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def serviceOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
-  def groupOutages(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
-  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit
+  def serviceAlreadyOutage(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def serviceOutages(serviceId: String)(using ec: ExecutionContext, env: Env): Future[Int]
+  def groupOutages(groupId: String)(using ec: ExecutionContext, env: Env): Future[Int]
+  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[FiniteDuration]
-  def resetOutages()(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def startSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def stopSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def getOutages()(implicit ec: ExecutionContext, env: Env): Future[Seq[Outage]]
+  def resetOutages()(using ec: ExecutionContext, env: Env): Future[Unit]
+  def startSnowMonkey()(using ec: ExecutionContext, env: Env): Future[Unit]
+  def stopSnowMonkey()(using ec: ExecutionContext, env: Env): Future[Unit]
+  def getOutages()(using ec: ExecutionContext, env: Env): Future[Seq[Outage]]
 }

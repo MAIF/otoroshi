@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
  *   POST   /api/analytics/alerts/:alertId/events/:eventId/seen
  *   POST   /api/analytics/alerts/:alertId/events/:eventId/unseen
  */
-class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class AlertEventsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

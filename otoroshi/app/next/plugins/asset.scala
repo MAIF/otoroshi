@@ -64,7 +64,7 @@ class StaticAssetEndpoint extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx
       .cachedConfig(internalName)(StaticAssetEndpointConfiguration.format)
       .getOrElse(StaticAssetEndpointConfiguration.default)

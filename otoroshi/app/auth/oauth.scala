@@ -205,7 +205,7 @@ case class GenericOauth2ModuleConfig(
   def humanName: String                                                 = "OAuth2 / OIDC provider"
   override def authModule(config: GlobalConfig): AuthModule             = GenericOauth2Module(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def form: Option[Form]                                       = None
   override def asJson                                                   =
     location.jsonWithKey ++ Json.obj(
@@ -258,7 +258,7 @@ case class GenericOauth2ModuleConfig(
         JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
       }.toMap)
     )
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"global-oauth-$id"
 }
 
@@ -272,7 +272,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   def this() = this(GenericOauth2Module.defaultConfig)
 
-  private def encryptState(signingObject: JsValue)(implicit env: Env) = {
+  private def encryptState(signingObject: JsValue)(using env: Env) = {
     val cipher: Cipher = Cipher.getInstance("AES")
     cipher.init(
       Cipher.ENCRYPT_MODE,
@@ -287,7 +287,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -387,7 +387,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -454,7 +454,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -468,7 +468,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       .asFuture
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -489,7 +489,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       redirectUri: String,
       config: GlobalConfig,
       codeVerifier: Option[String] = None
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
@@ -534,7 +534,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       clientSecret: Option[String],
       redirectUri: String,
       config: GlobalConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  )(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val builder =
       env.MtlsWs
         .url(authConfig.tokenUrl, authConfig.mtlsConfig)
@@ -562,7 +562,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     future1.map(_.json)
   }
 
-  def getUserInfoRaw(accessToken: String, config: GlobalConfig)(implicit
+  def getUserInfoRaw(accessToken: String, config: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[WSResponse] = {
@@ -638,14 +638,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  def getUserInfo(accessToken: String, config: GlobalConfig)(implicit
+  def getUserInfo(accessToken: String, config: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[JsValue] = {
     getUserInfoRaw(accessToken, config).map(_.json)
   }
 
-  def getUserInfoSafe(accessToken: String, config: GlobalConfig)(implicit
+  def getUserInfoSafe(accessToken: String, config: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, JsValue]] = {
@@ -658,7 +658,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   // RFC 7662 token introspection: POST the (possibly opaque) access token to the configured
   // `introspectionUrl` with client credentials, and consider it valid only when the response is
   // 200 and `active == true`. Returns the introspection response as the "profile" on success.
-  def introspectTokenSafe(accessToken: String, config: GlobalConfig)(implicit
+  def introspectTokenSafe(accessToken: String, config: GlobalConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, JsValue]] = {
@@ -691,7 +691,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  def readProfileFromToken(accessToken: String)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def readProfileFromToken(accessToken: String)(using env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
     val tokenHeader  =
       Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
@@ -711,7 +711,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -790,7 +790,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
     val clientId     = authConfig.clientId
     val clientSecret = Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty)
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
@@ -877,7 +877,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   private def isAccessTokenAValidJwtToken(
       accessToken: String
-  )(f: Option[Boolean] => Future[Unit])(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
+  )(f: Option[Boolean] => Future[Unit])(using executionContext: ExecutionContext, env: Env): Future[Unit] = {
     Try {
       val algoSettings = authConfig.jwtVerifier.get
       val tokenHeader  =
@@ -901,7 +901,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  private def renewToken(refreshToken: String, user: RefreshableUser)(implicit
+  private def renewToken(refreshToken: String, user: RefreshableUser)(using
       executionContext: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -921,7 +921,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   // https://auth0.com/docs/tokens/guides/get-refresh-tokens
   // https://auth0.com/docs/tokens/guides/use-refresh-tokens
   // https://auth0.com/docs/tokens/concepts/refresh-tokens
-  def handleTokenRefresh(auth: OAuth2ModuleConfig, user: RefreshableUser)(implicit
+  def handleTokenRefresh(auth: OAuth2ModuleConfig, user: RefreshableUser)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -960,7 +960,7 @@ object GenericOauth2Module {
     clientSideSessionEnabled = true
   )
 
-  def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(implicit
+  def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {

@@ -35,7 +35,7 @@ object SelfRegistrationConfig {
 
 object DiscoveryHelper {
 
-  def register(serviceIdOpt: Option[String], body: Source[ByteString, _], config: SelfRegistrationConfig)(implicit
+  def register(serviceIdOpt: Option[String], body: Source[ByteString, _], config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -53,7 +53,7 @@ object DiscoveryHelper {
   }
 
   def unregister(registrationId: String, serviceId: Option[String], req: RequestHeader, config: SelfRegistrationConfig)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -78,7 +78,7 @@ object DiscoveryHelper {
   }
 
   def heartbeat(registrationId: String, serviceId: Option[String], req: RequestHeader, config: SelfRegistrationConfig)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -108,7 +108,7 @@ object DiscoveryHelper {
     }
   }
 
-  def getTargetsFor(serviceId: String, config: SelfRegistrationConfig)(implicit
+  def getTargetsFor(serviceId: String, config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Seq[(DiscoveryJobRegistrationId, Target)]] = {
@@ -124,7 +124,7 @@ object DiscoveryHelper {
     }
   }
 
-  def getAllTargets(config: SelfRegistrationConfig)(implicit
+  def getAllTargets(config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Map[DiscoveryJobServiceId, Seq[(DiscoveryJobRegistrationId, Target)]]] = {
@@ -143,7 +143,7 @@ object DiscoveryHelper {
     }
   }
 
-  def unregisterTarget(id: String, target: Target, registrationId: String, config: SelfRegistrationConfig)(implicit
+  def unregisterTarget(id: String, target: Target, registrationId: String, config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -151,7 +151,7 @@ object DiscoveryHelper {
     env.datastores.rawDataStore.del(Seq(key)).map(_ => ())
   }
 
-  def registerTarget(id: String, target: Target, config: SelfRegistrationConfig)(implicit
+  def registerTarget(id: String, target: Target, config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[String] = {
@@ -174,7 +174,7 @@ object DiscoveryHelper {
       }
   }
 
-  def registerTargets(id: String, targets: Seq[Target], config: SelfRegistrationConfig)(implicit
+  def registerTargets(id: String, targets: Seq[Target], config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -218,12 +218,12 @@ class DiscoverySelfRegistrationSink extends RequestSink {
     )
   }
 
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  override def matches(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Boolean = {
     val config = SelfRegistrationConfig.from(ctx)
     config.hosts.contains(ctx.request.theDomain)
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  override def handle(ctx: RequestSinkContext)(using env: Env, ec: ExecutionContext): Future[Result] = {
     val config = SelfRegistrationConfig.from(ctx)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => DiscoveryHelper.register(None, ctx.body, config)
@@ -276,28 +276,28 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   override def beforeRequest(
       ctx: BeforeRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
     funit
   }
 
   override def afterRequest(
       ctx: AfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = SelfRegistrationConfig.from(ctx)
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => {
@@ -356,7 +356,7 @@ class DiscoveryTargetsSelector extends PreRouting {
     )
   }
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = SelfRegistrationConfig.from(ctx)
     DiscoveryHelper.getTargetsFor(ctx.descriptor.id, config).map {
       case targets if targets.isEmpty => ()
@@ -397,12 +397,12 @@ trait DiscoveryJob extends Job {
   )
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
-  def fetchAllTargets(ctx: JobContext, config: SelfRegistrationConfig)(implicit
+  def fetchAllTargets(ctx: JobContext, config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Map[DiscoveryJobServiceId, Seq[(DiscoveryJobRegistrationId, Target)]]]
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = SelfRegistrationConfig.from(ctx)
     for {
       allTargets <- DiscoveryHelper.getAllTargets(config)

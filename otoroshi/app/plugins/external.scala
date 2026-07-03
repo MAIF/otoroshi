@@ -136,18 +136,18 @@ class ExternalHttpValidator extends AccessValidator {
     chain.map(computeFingerPrint).mkString("-")
   }
 
-  private def getLocalValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+  private def getLocalValidation(key: String)(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     env.datastores.clientCertificateValidationDataStore.getValidation(key)
   }
 
-  private def setGoodLocalValidation(key: String, goodTtl: Long)(implicit
+  private def setGoodLocalValidation(key: String, goodTtl: Long)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
     env.datastores.clientCertificateValidationDataStore.setValidation(key, true, goodTtl).map(_ => ())
   }
 
-  private def setBadLocalValidation(key: String, badTtl: Long)(implicit
+  private def setBadLocalValidation(key: String, badTtl: Long)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -160,7 +160,7 @@ class ExternalHttpValidator extends AccessValidator {
       apikey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None,
       cfg: ExternalHttpValidatorConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     import otoroshi.ssl.SSLImplicits._
     val globalConfig                        = env.datastores.globalConfigDataStore.latest()
     val certPayload                         = chain
@@ -202,7 +202,7 @@ class ExternalHttpValidator extends AccessValidator {
               .asOpt[String]
               .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
           case _   =>
-            resp.ignore()(env.otoroshiMaterializer)
+            resp.ignore()(using env.otoroshiMaterializer)
             None
         }
       }
@@ -216,7 +216,7 @@ class ExternalHttpValidator extends AccessValidator {
       chain: Seq[X509Certificate],
       context: AccessContext,
       valCfg: ExternalHttpValidatorConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  )(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val apikey = context.apikey
     val user   = context.user
     val desc   = context.descriptor
@@ -244,7 +244,7 @@ class ExternalHttpValidator extends AccessValidator {
     }
   }
 
-  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = (context.config \ "ExternalHttpValidator")
       .asOpt[JsValue]
       .orElse((context.config \ "ExternalHttpValidator").asOpt[JsValue])

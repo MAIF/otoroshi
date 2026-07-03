@@ -143,7 +143,7 @@ object UserAlert {
     )
   }
 
-  def defaultUserAlertTemplate(implicit env: Env): UserAlert = UserAlert(
+  def defaultUserAlertTemplate(using env: Env): UserAlert = UserAlert(
     location = EntityLocation.default,
     id = IdGenerator.namedId("user-alert", env),
     name = "New user alert",
@@ -172,7 +172,7 @@ trait UserAlertDataStore extends BasicStore[UserAlert] {
   def template(env: Env): UserAlert = {
     implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .userAlertTemplate
       .map { template =>
@@ -186,7 +186,7 @@ trait UserAlertDataStore extends BasicStore[UserAlert] {
 
 class KvUserAlertDataStore(redisCli: RedisLike, _env: Env) extends UserAlertDataStore with RedisLikeStore[UserAlert] {
   override def fmt: Format[UserAlert]                  = UserAlert.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:user-alerts:$id"
   override def extractId(value: UserAlert): String     = value.id
 }

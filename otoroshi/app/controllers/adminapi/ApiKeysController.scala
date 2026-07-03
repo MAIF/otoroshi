@@ -25,7 +25,7 @@ import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
@@ -369,7 +369,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
     }
 }
 
-class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 
@@ -669,7 +669,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
     }
 }
 
-class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ApiKey, JsValue]
     with CrudControllerHelper[ApiKey, JsValue]
@@ -698,7 +698,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -714,7 +714,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -731,7 +731,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def createEntityOps(
       entity: ApiKey,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
@@ -758,7 +758,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def updateEntityOps(
       entity: ApiKey,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.set(entity).map {
       case true  => {
         Right(
@@ -785,7 +785,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ApiKey]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.delete(id).map {
       case true  => {
         Right(

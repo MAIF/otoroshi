@@ -338,7 +338,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
   // configured cert/algorithm combination is not signable.
   private def resolveSigningAlgo(
       config: OAuthProtectedResourceMetadataConfig
-  )(implicit env: Env): Either[String, (Algorithm, String)] = {
+  )(using env: Env): Either[String, (Algorithm, String)] = {
     config.signingCertRef match {
       case None        => Left("signed_metadata is enabled but no signing keypair was configured")
       case Some(refId) =>
@@ -367,7 +367,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
       config: OAuthProtectedResourceMetadataConfig,
       claims: JsObject,
       resourceId: String
-  )(implicit env: Env): Either[String, String] = {
+  )(using env: Env): Either[String, String] = {
     resolveSigningAlgo(config).map { case (algo, kid) =>
       val now     = System.currentTimeMillis() / 1000L
       // The JWT carries the metadata claims plus `iss` (the resource itself, per §3.1), `iat`, and `sub`=resource.
@@ -403,7 +403,7 @@ class OAuthProtectedResourceMetadata extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

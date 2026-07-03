@@ -80,7 +80,7 @@ class Robots extends NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(RobotConfig())
     if (config.robotEnabled && ctx.request.thePath == "/robots.txt") {
       Results.Ok(config.robotTxtContent).left
@@ -91,7 +91,7 @@ class Robots extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(RobotConfig())
     if (config.metaEnabled && ctx.otoroshiResponse.contentType.exists(v => v.contains("text/html"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>

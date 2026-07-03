@@ -217,14 +217,14 @@ case class BasicAuthModuleConfig(
       "deniedUsers"              -> this.deniedUsers,
       "remoteValidators"         -> JsArray(remoteValidators.map(_.json))
     )
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"basic-auth-$id"
   def theDescription: String                                            = desc
   def theMetadata: Map[String, String]                                  = metadata
   def theName: String                                                   = name
   def theTags: Seq[String]                                              = tags
 
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig] = AuthModuleConfig._fmt(env)
 }
 
 object BasicAuthModule {
@@ -255,7 +255,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   }
 
-  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+  def bindUser(username: String, password: String, descriptor: ServiceDescriptor)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -284,7 +284,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(implicit
+  def bindAdminUser(username: String, password: String, descriptor: ServiceDescriptor)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
@@ -319,7 +319,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -399,12 +399,12 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ) = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -473,7 +473,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -524,7 +524,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       }
     }
   }
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ) =
@@ -533,7 +533,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   override def boCallback(
       request: Request[AnyContent],
       config: GlobalConfig
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, BackOfficeUser]] = {
     implicit val req = request
     if (req.method == "GET" && authConfig.basicAuth) {
       req.getQueryString("token") match {
@@ -580,7 +580,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   def webAuthnLoginStart(
       body: JsValue,
       descriptor: ServiceDescriptor
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
@@ -649,7 +649,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnAdminLoginStart(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
@@ -719,7 +719,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
   def webAuthnLoginFinish(
       body: JsValue,
       descriptor: ServiceDescriptor
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
 
     import collection.JavaConverters._
 
@@ -804,7 +804,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnAdminLoginFinish(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
 
     import collection.JavaConverters._
 
@@ -889,7 +889,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnRegistrationStart(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
@@ -957,7 +957,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnRegistrationFinish(
       body: JsValue
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
     import collection.JavaConverters._
 
@@ -1057,7 +1057,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def webAuthnRegistrationDelete(
       user: BasicAuthUser
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
     val conf = authConfig.copy(users = authConfig.users.filterNot(_.email == user.email) :+ user.copy(webauthn = None))
     conf.save().map { _ =>
       Right(Json.obj("username" -> user.email))

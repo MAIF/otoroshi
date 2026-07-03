@@ -10,7 +10,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 
-class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 

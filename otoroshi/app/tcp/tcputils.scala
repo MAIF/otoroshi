@@ -43,7 +43,7 @@ object TcpUtils {
       idleTimeout: Duration = Duration.Inf,
       verifySession: SSLSession => Try[Unit],
       closing: TLSClosing = IgnoreComplete
-  )(implicit system: ActorSystem): Source[IncomingConnection, Future[ServerBinding]] = {
+  )(using system: ActorSystem): Source[IncomingConnection, Future[ServerBinding]] = {
     Tcp().bindWithTls(
       interface = interface,
       port = port,
@@ -65,7 +65,7 @@ object TcpUtils {
       idleTimeout: Duration = Duration.Inf,
       verifySession: SSLSession => Try[Unit],
       closing: TLSClosing = IgnoreComplete
-  )(implicit system: ActorSystem): Source[AwesomeIncomingConnection, Future[ServerBinding]] = {
+  )(using system: ActorSystem): Source[AwesomeIncomingConnection, Future[ServerBinding]] = {
     val tls = tlsWrapping.atop(TLS(createSSLEngine, verifySession, closing)).reversed
     val tcp = Tcp()
     tcp.bind(interface, port, backlog, options, true, idleTimeout).map { incomingConnection =>

@@ -74,7 +74,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -133,7 +133,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Option[String]]] = {
     getLogoutRequest(env, authConfig, user.map(_.metadata.getOrElse("saml-id", ""))).map {
       case Left(_)        => Right(None)
       case Right(encoded) =>
@@ -156,7 +156,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = {
@@ -225,7 +225,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -247,7 +247,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[Result, Option[String]]] = {
@@ -273,7 +273,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] = {
@@ -798,7 +798,7 @@ case class SamlAuthModuleConfig(
   override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = new SAMLModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
   override def cookieSuffix(desc: ServiceDescriptor)                    = s"saml-auth-$id"
   override def asJson                                                   = location.jsonWithKey ++ Json.obj(
     "type"                          -> "saml",
@@ -834,7 +834,7 @@ case class SamlAuthModuleConfig(
     }.toMap)
   )
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.authConfigsDataStore.set(this)
   }
 }
@@ -998,7 +998,7 @@ object SAMLModule {
     credential match {
       case Credential(_, _, Some(certId), true)                      =>
         env.datastores.certificatesDataStore
-          .findById(certId)(ec, env)
+          .findById(certId)(using ec, env)
           .map { optCert =>
             optCert
               .map { cert =>
@@ -1108,7 +1108,7 @@ object SAMLModule {
 
         case Credential(_, _, Some(certId), true) =>
           env.datastores.certificatesDataStore
-            .findById(certId)(ec, env)
+            .findById(certId)(using ec, env)
             .map { optCert =>
               optCert.map { cert =>
                 DynamicSSLEngineProvider.readPrivateKeyUniversal("test", cert.privateKey, cert.password) match {

@@ -30,7 +30,7 @@ import play.api.mvc.Results.Status
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[ServiceDescriptor, JsValue]
     with CrudControllerHelper[ServiceDescriptor, JsValue]
@@ -60,7 +60,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def writeEntity(entity: ServiceDescriptor): JsValue = ServiceDescriptor._fmt.writes(entity)
 
-  override def findByIdOps(id: String, req: RequestHeader)(implicit
+  override def findByIdOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceDescriptor]]] = {
@@ -77,7 +77,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  override def findAllOps(req: RequestHeader)(implicit
+  override def findAllOps(req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], SeqEntityAndContext[ServiceDescriptor]]] = {
@@ -97,7 +97,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def createEntityOps(
       entity: ServiceDescriptor,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  => {
         Right(
@@ -124,7 +124,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   override def updateEntityOps(
       entity: ServiceDescriptor,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.set(entity).map {
       case true  => {
         Right(
@@ -148,7 +148,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  override def deleteEntityOps(id: String, req: RequestHeader)(implicit
+  override def deleteEntityOps(id: String, req: RequestHeader)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[ApiError[JsValue], NoEntityAndContext[ServiceDescriptor]]] = {

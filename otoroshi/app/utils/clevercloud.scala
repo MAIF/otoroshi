@@ -203,22 +203,22 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  def summary()(implicit ec: ExecutionContext): Future[JsObject] =
+  def summary()(using ec: ExecutionContext): Future[JsObject] =
     cleverCall(endpoint = "/summary").fast.map(_.json.as[JsObject])
 
-  def app(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsObject] =
+  def app(orga: String, id: String)(using ec: ExecutionContext): Future[JsObject] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id").fast.map(_.json.as[JsObject])
 
-  def apps(orga: String)(implicit ec: ExecutionContext): Future[JsArray] =
+  def apps(orga: String)(using ec: ExecutionContext): Future[JsArray] =
     cleverCall(endpoint = s"/organisations/$orga/applications").fast.map(_.json.as[JsArray])
 
-  def addon(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsObject] =
+  def addon(orga: String, id: String)(using ec: ExecutionContext): Future[JsObject] =
     cleverCall(endpoint = s"/organisations/$orga/addons/$id").fast.map(_.json.as[JsObject])
 
-  def appTags(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsValue] =
+  def appTags(orga: String, id: String)(using ec: ExecutionContext): Future[JsValue] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/tags").fast.map(_.json.as[JsValue])
 
-  def createTagsForApp(orga: String, id: String, tags: Seq[String])(implicit ec: ExecutionContext): Future[NotUsed] =
+  def createTagsForApp(orga: String, id: String, tags: Seq[String])(using ec: ExecutionContext): Future[NotUsed] =
     Future
       .sequence(tags.map { tag =>
         cleverCall(method = CleverCloudClient.PUT, endpoint = s"/organisations/$orga/applications/$id/tags/$tag")
@@ -231,7 +231,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       })
       .map(_ => NotUsed)
 
-  def deleteTagsForApp(orga: String, id: String)(implicit ec: ExecutionContext): Future[NotUsed] =
+  def deleteTagsForApp(orga: String, id: String)(using ec: ExecutionContext): Future[NotUsed] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/tags").fast.map(_.json.as[JsArray]).flatMap { seq =>
       FastFuture
         .sequence(seq.value.map(_.as[String]).map { tag =>
@@ -246,7 +246,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
         .map(_ => NotUsed)
     }
 
-  def createTagsForAddon(orga: String, id: String, tags: Seq[String])(implicit ec: ExecutionContext): Future[NotUsed] =
+  def createTagsForAddon(orga: String, id: String, tags: Seq[String])(using ec: ExecutionContext): Future[NotUsed] =
     FastFuture
       .sequence(tags.map { tag =>
         cleverCall(method = CleverCloudClient.PUT, endpoint = s"/organisations/$orga/addons/$id/tags/$tag").andThen {
@@ -258,7 +258,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       })
       .map(_ => NotUsed)
 
-  def deleteTagsForAddon(orga: String, id: String)(implicit ec: ExecutionContext): Future[NotUsed] =
+  def deleteTagsForAddon(orga: String, id: String)(using ec: ExecutionContext): Future[NotUsed] =
     cleverCall(endpoint = s"/organisations/$orga/addons/$id/tags").fast.map(_.json.as[JsArray]).flatMap { seq =>
       FastFuture
         .sequence(seq.value.map(_.as[String]).map { tag =>
@@ -273,10 +273,10 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
         .map(_ => NotUsed)
     }
 
-  def addonTags(orga: String, id: String)(implicit ec: ExecutionContext): Future[JsValue] =
+  def addonTags(orga: String, id: String)(using ec: ExecutionContext): Future[JsValue] =
     cleverCall(endpoint = s"/organisations/$orga/addons/$id/tags").fast.map(_.json.as[JsValue])
 
-  def appEnv(orga: String, id: String)(implicit ec: ExecutionContext): Future[Map[String, String]] =
+  def appEnv(orga: String, id: String)(using ec: ExecutionContext): Future[Map[String, String]] =
     cleverCall(endpoint = s"/organisations/$orga/applications/$id/env").fast
       .map(_.json.as[JsArray].value.toSeq.map(obj => ((obj \ "name").as[String], (obj \ "value").as[String])).toMap)
 

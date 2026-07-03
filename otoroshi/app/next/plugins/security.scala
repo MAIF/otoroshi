@@ -123,7 +123,7 @@ class NgSecurityTxt extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/security.txt") => {
         val config  = ctx.cachedConfig(internalName)(NgSecurityTxtConfig.format).getOrElse(NgSecurityTxtConfig())
@@ -525,7 +525,7 @@ class SecurityHeadersPlugin extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf         =
       ctx.cachedConfig(internalName)(SecurityHeadersPluginConfig.format).getOrElse(SecurityHeadersPluginConfig.default)
     val initial      = ctx.otoroshiResponse.headers

@@ -131,7 +131,7 @@ class TimeRestrictedAccessPlugin extends NgAccessValidator {
   override def configFlow: Seq[String]                     = TimeRestrictedAccessPluginConfig.configFlow
   override def configSchema: Option[JsObject]              = TimeRestrictedAccessPluginConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(TimeRestrictedAccessPluginConfig.format)
       .getOrElse(TimeRestrictedAccessPluginConfig())

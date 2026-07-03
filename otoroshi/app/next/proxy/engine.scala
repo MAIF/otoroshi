@@ -239,7 +239,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def getConfig()(implicit ec: ExecutionContext, env: Env): ProxyEngineConfig = {
+  def getConfig()(using ec: ExecutionContext, env: Env): ProxyEngineConfig = {
     configCache.get(
       "config",
       _ => {
@@ -265,7 +265,7 @@ class ProxyEngine() extends RequestHandler {
       route: Option[NgRoute],
       attrs: TypedMap,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Result = {
+  )(using env: Env, ec: ExecutionContext): Result = {
     if (env.isDev) {
       logger.error(s"proxy engine error on route '${route.map(_.id).getOrElse("")}/${route
         .map(_.name)
@@ -281,7 +281,7 @@ class ProxyEngine() extends RequestHandler {
     )
   }
 
-  override def handledDomains(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  override def handledDomains(using ec: ExecutionContext, env: Env): Seq[String] = {
     val config = getConfig()
     enabledDomains.get()
   }
@@ -289,14 +289,14 @@ class ProxyEngine() extends RequestHandler {
   override def handle(
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result]
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     handleWithListener(request, defaultRouting, false)
   }
 
   override def handleWs(
       request: RequestHeader,
       defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     handleWsWithListener(request, defaultRouting, false)
   }
 
@@ -304,7 +304,7 @@ class ProxyEngine() extends RequestHandler {
       request: Request[Source[ByteString, _]],
       defaultRouting: Request[Source[ByteString, _]] => Future[Result],
       forCurrentListenerOnly: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  )(using ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
@@ -321,7 +321,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       defaultRouting: RequestHeader => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]],
       forCurrentListenerOnly: Boolean
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     implicit val globalConfig: otoroshi.models.GlobalConfig = env.datastores.globalConfigDataStore.latest()
     val config                = getConfig()
     val shouldNotHandle       =
@@ -339,7 +339,7 @@ class ProxyEngine() extends RequestHandler {
       request: Request[Source[ByteString, _]],
       _config: ProxyEngineConfig,
       forCurrentListenerOnly: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -561,7 +561,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   @inline
-  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(implicit
+  def handleWsRequest(request: RequestHeader, _config: ProxyEngineConfig, forCurrentListenerOnly: Boolean)(using
       ec: ExecutionContext,
       env: Env,
       globalConfig: GlobalConfig
@@ -711,7 +711,7 @@ class ProxyEngine() extends RequestHandler {
       }
   }
 
-  def handleRelayTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, _])(implicit
+  def handleRelayTraffic(route: NgRoute, req: RequestHeader, body: Source[ByteString, _])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -745,7 +745,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: NgRoute)(implicit
+  def extractTrackingId(snowflake: String, req: RequestHeader, reqNumber: Int, route: NgRoute)(using
       attrs: TypedMap
   ): Unit = {
     if (route.backend.loadBalancing.needTrackingCookie) {
@@ -757,7 +757,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleHighOverhead(req: RequestHeader, route: Option[NgRoute])(implicit
+  def handleHighOverhead(req: RequestHeader, route: Option[NgRoute])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -782,7 +782,7 @@ class ProxyEngine() extends RequestHandler {
     FEither.right(Done)
   }
 
-  def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(implicit
+  def applyIncomingRequestValidation(request: RequestHeader, snowflake: String)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -955,7 +955,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def handleConcurrentRequest(request: RequestHeader)(implicit
+  def handleConcurrentRequest(request: RequestHeader)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1006,7 +1006,7 @@ class ProxyEngine() extends RequestHandler {
     env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
   }
 
-  def handleTenantCheck(route: NgRoute, request: RequestHeader)(implicit
+  def handleTenantCheck(route: NgRoute, request: RequestHeader)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1042,7 +1042,7 @@ class ProxyEngine() extends RequestHandler {
       body: Source[ByteString, _],
       global_plugins: NgPlugins,
       tryIt: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1110,7 +1110,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(implicit
+  def callRequestSinkPlugins(request: RequestHeader, body: Source[ByteString, _], global_plugins: NgPlugins)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1197,7 +1197,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def checkGlobalMaintenance(route: NgRoute, request: RequestHeader, config: ProxyEngineConfig)(implicit
+  def checkGlobalMaintenance(route: NgRoute, request: RequestHeader, config: ProxyEngineConfig)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1233,7 +1233,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       route: NgRoute,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1406,7 +1406,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       route: NgRoute,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1575,7 +1575,7 @@ class ProxyEngine() extends RequestHandler {
   }
 
   def callPreRoutePlugins(snowflake: String, request: RequestHeader, route: NgRoute, plugins: NgContextualPlugins)(
-      implicit
+      using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1782,7 +1782,7 @@ class ProxyEngine() extends RequestHandler {
       request: RequestHeader,
       route: NgRoute,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -1985,7 +1985,7 @@ class ProxyEngine() extends RequestHandler {
   //   // }
   // }
 
-  def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(implicit
+  def handleLegacyChecks(request: RequestHeader, route: NgRoute, config: ProxyEngineConfig)(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2073,7 +2073,7 @@ class ProxyEngine() extends RequestHandler {
     }
   }
 
-  def getBackend(target: Target, route: NgRoute, attrs: TypedMap)(implicit env: Env): NgTarget = {
+  def getBackend(target: Target, route: NgRoute, attrs: TypedMap)(using env: Env): NgTarget = {
     attrs
       .get(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey)
       .getOrElse(route.backend.allTargets)
@@ -2083,7 +2083,7 @@ class ProxyEngine() extends RequestHandler {
 
   def callTarget(snowflake: String, reqNumber: Long, request: Request[Source[ByteString, _]], _route: NgRoute)(
       f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Result]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2322,7 +2322,7 @@ class ProxyEngine() extends RequestHandler {
 
   def callWsTarget(snowflake: String, reqNumber: Long, request: RequestHeader, _route: NgRoute)(
       f: NgSelectedBackendTarget => FEither[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2611,7 +2611,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -2887,7 +2887,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       ctxPlugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3030,7 +3030,7 @@ class ProxyEngine() extends RequestHandler {
       backend: NgTarget,
       plugins: NgContextualPlugins,
       engineConfig: ProxyEngineConfig
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3268,7 +3268,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       plugins: NgContextualPlugins
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3489,7 +3489,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       engineConfig: ProxyEngineConfig
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3744,7 +3744,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       sb: NgSelectedBackendTarget
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,
@@ -3891,7 +3891,7 @@ class ProxyEngine() extends RequestHandler {
       route: NgRoute,
       backend: NgTarget,
       sb: NgSelectedBackendTarget
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport,

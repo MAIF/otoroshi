@@ -98,7 +98,7 @@ class StatefulClientsManager(env: Env) {
       .getOrElse(Seq.empty).toSeq
       .toList
     val dynConfigs        = env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .plugins
       .config
       .select("stateful-clients")

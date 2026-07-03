@@ -20,7 +20,7 @@ object JWKSHelper {
       includeAlg: Boolean,
       rsaAlgorithms: Seq[com.nimbusds.jose.Algorithm],
       esAlgorithms: Seq[com.nimbusds.jose.Algorithm]
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[JsValue]]] = {

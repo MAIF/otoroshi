@@ -17,7 +17,7 @@ import otoroshi.security.IdGenerator
 
 import scala.concurrent.Future
 
-class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 

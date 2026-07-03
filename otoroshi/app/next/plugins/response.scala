@@ -70,7 +70,7 @@ class StaticResponse extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -312,7 +312,7 @@ class MockResponses extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -515,7 +515,7 @@ class NgErrorRewriter extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(NgErrorRewriterConfig.fmt).getOrElse(NgErrorRewriterConfig.default)
     if (config.matching(ctx.otoroshiResponse.status)) {
       val errorId    = UUID.randomUUID().toString
@@ -557,7 +557,7 @@ class NgErrorRewriter extends NgRequestTransformer {
             responseBody
           )
           if (config.log) {
-            logger.error(s"new error rewritten with id: ${errorId}, event: ${event.toJson(env).prettify}")
+            logger.error(s"new error rewritten with id: ${errorId}, event: ${event.toJson(using env).prettify}")
           }
           if (config.`export`) {
             event.toAnalytics()
@@ -576,7 +576,7 @@ class NgErrorRewriter extends NgRequestTransformer {
       status: Int,
       statusText: String,
       errorId: String
-  )(implicit env: Env): String = {
+  )(using env: Env): String = {
     val withTokens = tmpl
       .replace("${error_id}", errorId)
       .replace("${snowflake}", ctx.snowflake)
@@ -591,7 +591,7 @@ class NgErrorRewriter extends NgRequestTransformer {
       status: Int,
       statusText: String,
       errorId: String
-  )(implicit env: Env): (String, String) = {
+  )(using env: Env): (String, String) = {
     val wantsHtml = ctx.request.accepts("text/html")
     env.proxyState
       .errorTemplate(ctx.route.id)
@@ -619,7 +619,7 @@ class NgErrorRewriter extends NgRequestTransformer {
       status: Int,
       statusText: String,
       errorId: String
-  )(implicit env: Env): (String, String) = {
+  )(using env: Env): (String, String) = {
     val parsedKeys: Seq[(String, (Option[Int], Option[String]))] =
       config.templates.keys.toSeq.map(k => (k, NgErrorRewriterConfig.parseTemplateKey(k)))
     def render(rawKey: String): String                           =
@@ -675,7 +675,7 @@ case class ErrorRewriteReport(
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = Json.obj(
+  override def toJson(using _env: Env): JsValue = Json.obj(
     "@id"               -> `@id`,
     "@timestamp"        -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"             -> `@type`,

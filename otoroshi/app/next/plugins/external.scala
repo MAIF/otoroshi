@@ -81,7 +81,7 @@ class NgExternalValidator extends NgAccessValidator {
       rawUrl: String,
       config: NgExternalValidatorConfig,
       cacheKey: Option[String]
-  )(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = cache.synchronized {
+  )(using env: Env, ec: ExecutionContext): Future[NgAccess] = cache.synchronized {
     val promise = Promise[Boolean]()
     cacheKey.foreach(key => cache.put(key, (config.ttl, promise)))
     val url     = GlobalExpressionLanguage.apply(
@@ -176,7 +176,7 @@ class NgExternalValidator extends NgAccessValidator {
       }
   }
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(NgExternalValidatorConfig.format)
       .getOrElse(NgExternalValidatorConfig())

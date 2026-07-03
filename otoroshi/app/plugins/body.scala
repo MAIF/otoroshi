@@ -75,7 +75,7 @@ case class RequestBodyEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  def toJson(implicit _env: Env): JsValue =
+  def toJson(using _env: Env): JsValue =
     Json.obj(
       "@type"      -> "RequestBodyEvent",
       "@id"        -> `@id`,
@@ -110,7 +110,7 @@ case class ResponseBodyEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  def toJson(implicit _env: Env): JsValue =
+  def toJson(using _env: Env): JsValue =
     Json.obj(
       "@type"      -> "ResponseBodyEvent",
       "@id"        -> `@id`,
@@ -202,7 +202,7 @@ class BodyLogger extends RequestTransformer {
   override def start(env: Env): Future[Unit] = {
     val actorSystem = ActorSystem("body-logger-redis")
     implicit val ec: scala.concurrent.ExecutionContext = actorSystem.dispatcher
-    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+    env.datastores.globalConfigDataStore.singleton()(using ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "BodyLogger").isDefined) {
         val redis: RedisClientMasterSlaves = {
           val master = RedisServer(
@@ -245,7 +245,7 @@ class BodyLogger extends RequestTransformer {
       .flatMap(a => a.headOption.map(head => (head, a.tail.mkString(":"))))
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+  private def set(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -255,7 +255,7 @@ class BodyLogger extends RequestTransformer {
     }
   }
 
-  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(implicit
+  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env,
       mat: Materializer
@@ -296,7 +296,7 @@ class BodyLogger extends RequestTransformer {
     }
   }
 
-  private def deleteAll(pattern: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+  private def deleteAll(pattern: String)(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     ref.get() match {
       case null  =>
         env.datastores.rawDataStore.keys(pattern).flatMap(keys => env.datastores.rawDataStore.del(keys)).map(_ => ())
@@ -304,7 +304,7 @@ class BodyLogger extends RequestTransformer {
     }
   }
 
-  private def getAll(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
+  private def getAll(pattern: String)(using ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
     ref.get() match {
       case null  =>
         env.datastores.rawDataStore
@@ -329,7 +329,7 @@ class BodyLogger extends RequestTransformer {
     }
   }
 
-  private def getOne(key: String)(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
+  private def getOne(key: String)(using ec: ExecutionContext, env: Env): Future[JsValue] = {
     ref.get() match {
       case null  =>
         env.datastores.rawDataStore.get(key).map {
@@ -379,7 +379,7 @@ class BodyLogger extends RequestTransformer {
 
   private def passWithAuth(config: BodyLoggerConfig, ctx: TransformerRequestContext)(
       f: => Future[Either[Result, HttpRequest]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[Result, HttpRequest]] = {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Basic ") =>
         extractUsernamePassword(auth) match {
@@ -403,7 +403,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/bodylogger")                           =>
@@ -613,7 +613,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     if (config.enabled && filter(ctx.request, config)) {
       val size = new AtomicLong(0L)
@@ -666,7 +666,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     if (config.enabled && filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       val size = new AtomicLong(0L)

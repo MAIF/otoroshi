@@ -48,7 +48,7 @@ class StaticResponse extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config           = ctx.configFor("StaticResponse")
     val status           = config.select("status").asOpt[Int].getOrElse(200)
     val _headers         =

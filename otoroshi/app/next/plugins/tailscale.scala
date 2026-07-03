@@ -234,7 +234,7 @@ class TailscaleTargetsJob extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val cli = client(env)
     cli.status().map { status =>
       Future.sequence(status.onlinePeers.map { peer =>
@@ -300,7 +300,7 @@ class TailscaleSelectTargetByName extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val useIpAddress = ctx.config.select("use_ip_address").asOpt[Boolean].getOrElse(false)
     ctx.config.select("machine_name").asOpt[String] match {
       case None           =>
@@ -399,7 +399,7 @@ class TailscaleCertificatesFetcherJob extends Job {
     }
   }
 
-  def certAlreadyExistsFor(domain: String)(implicit env: Env, ec: ExecutionContext): Boolean = {
+  def certAlreadyExistsFor(domain: String)(using env: Env, ec: ExecutionContext): Boolean = {
     env.proxyState
       .allCertificates()
       .filter(_.notExpired)
@@ -407,7 +407,7 @@ class TailscaleCertificatesFetcherJob extends Job {
       .exists(_.allDomains.contains(domain))
   }
 
-  def syncTailscaleCerts(ctx: JobContext, magicDNSSuffix: String)(implicit
+  def syncTailscaleCerts(ctx: JobContext, magicDNSSuffix: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Unit] = {
@@ -442,7 +442,7 @@ class TailscaleCertificatesFetcherJob extends Job {
       .map(_ => ())
   }
 
-  def syncSelf(ctx: JobContext, self: TailscaleStatusPeer)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def syncSelf(ctx: JobContext, self: TailscaleStatusPeer)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     if (!certAlreadyExistsFor(self.dnsname)) {
       client(env)
         .fetchCert(self.dnsname)
@@ -465,7 +465,7 @@ class TailscaleCertificatesFetcherJob extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val cli = client(env)
     cli.status().flatMap { status =>
       status.magicDNSSuffix match {

@@ -79,7 +79,7 @@ class TunnelPlugin extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -899,7 +899,7 @@ class LeaderConnection(
   }
 }
 
-class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class TunnelController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -1074,7 +1074,7 @@ object TunnelActor {
   private val counter = new AtomicLong(0L)
 
   def genRequestId(env: Env): String = {
-    val otoroshiId    = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env).otoroshiId
+    val otoroshiId    = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env).otoroshiId
     val clusterNodeId = env.clusterConfig.id
     val requestId     = IdGenerator.uuid
     s"${otoroshiId}-${clusterNodeId}-${requestId}-${counter.incrementAndGet()}"
@@ -1095,7 +1095,7 @@ object TunnelActor {
     }
   }
 
-  def resultToJson(result: Result, requestId: String)(implicit
+  def resultToJson(result: Result, requestId: String)(using
       ec: ExecutionContext,
       mat: Materializer
   ): Future[JsValue] = {
@@ -1256,7 +1256,7 @@ class TunnelActor(
           s"${env.storageRoot}:tunnels:${tunnelId}:meta",
           updatedData,
           120.seconds.toMillis.some
-        )(env.otoroshiExecutionContext, env)
+        )(using env.otoroshiExecutionContext, env)
       }
       case "response"    =>
         Try {

@@ -75,7 +75,7 @@ class WorkflowJob(ref: String, config: WorkflowJobConfig) extends Job {
   override def cronExpression(ctx: JobContext, env: Env): Option[String]       = config.cronExpression
   override def predicate(ctx: JobContext, env: Env): Option[Boolean]           = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Try {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = Try {
     env.adminExtensions
       .extension[WorkflowAdminExtension]
       .map { ext =>

@@ -125,7 +125,7 @@ class OIDCHeaders extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) => {
 
@@ -208,7 +208,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.ValidateAccess)
 
-  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(using env: Env, ec: ExecutionContext): Future[Boolean] = {
     val conf       = ctx.configFor("OIDCAccessTokenValidators")
     val enabled    = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
     // val useDescriptorConfig = (conf \ "useDescriptorConfig").asOpt[Boolean].getOrElse(false)
@@ -315,7 +315,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf       = ctx.configFor("OIDCAccessTokenAsApikey")
     val enabled    = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
     val atLeastOne = (conf \ "atLeastOne").asOpt[Boolean].getOrElse(false)
@@ -391,7 +391,7 @@ sealed trait ThirdPartyApiKeyConfig {
   def toJson: JsValue
   def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]]
 }
 
 sealed trait OIDCThirdPartyApiKeyConfigMode {
@@ -466,7 +466,7 @@ case class OIDCThirdPartyApiKeyConfig(
 
   def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, A]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     handleInternal(req, descriptor, config, attrs)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
@@ -483,7 +483,7 @@ case class OIDCThirdPartyApiKeyConfig(
       attrs: TypedMap
   )(
       f: Option[ApiKey] => Future[A]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     shouldBeVerified(req.path) match {
       case false => f(None).fright[Result]
       case true  => {
@@ -654,7 +654,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                         case Some(apk) => FastFuture.successful(apk)
                                         case None      =>
                                           if (env.clusterConfig.mode.isWorker) {
-                                            ClusterAgent.clusterSaveApikey(env, _apiKey)(ec, env.otoroshiMaterializer)
+                                            ClusterAgent.clusterSaveApikey(env, _apiKey)(using ec, env.otoroshiMaterializer)
                                           }
                                           _apiKey.save().map { _ =>
                                             _apiKey

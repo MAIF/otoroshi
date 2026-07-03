@@ -262,7 +262,7 @@ class RegexResponseBodyRewriter extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(RegexBodyRewriterConfig.format)
       .getOrElse(RegexBodyRewriterConfig())
@@ -414,7 +414,7 @@ class RegexRequestBodyRewriter extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val conf = ctx
       .cachedConfig(internalName)(RegexBodyRewriterConfig.format)
       .getOrElse(RegexBodyRewriterConfig())
@@ -570,7 +570,7 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
       originalHeaders: Map[String, String],
       rules: Seq[RegexHeaderReplacementRule],
       attrs: TypedMap
-  )(implicit env: Env): Map[String, String] = {
+  )(using env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
       val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
@@ -586,7 +586,7 @@ class RegexRequestHeadersRewriter extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())
@@ -638,7 +638,7 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
       originalHeaders: Map[String, String],
       rules: Seq[RegexHeaderReplacementRule],
       attrs: TypedMap
-  )(implicit env: Env): Map[String, String] = {
+  )(using env: Env): Map[String, String] = {
     var headers = Map.empty[String, String] ++ originalHeaders
     rules.foreach { _rule =>
       val rule = RegexHeaderReplacementRule.format.reads(_rule.json.stringify.evaluateEl(attrs).parseJson).get
@@ -654,7 +654,7 @@ class RegexResponseHeadersRewriter extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val conf       = ctx
       .cachedConfig(internalName)(RegexHeadersRewriterConfig.format)
       .getOrElse(RegexHeadersRewriterConfig())

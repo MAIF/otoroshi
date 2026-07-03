@@ -15,7 +15,7 @@ import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponent
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

@@ -73,7 +73,7 @@ object PulsarConfig {
 object PulsarSetting {
   def client(_env: otoroshi.env.Env, config: PulsarConfig): PulsarClient = {
     if (config.mtlsConfig.mtls) {
-      val (_, jks, password) = config.mtlsConfig.toJKS(_env)
+      val (_, jks, password) = config.mtlsConfig.toJKS(using _env)
 
       val builder = org.apache.pulsar.client.api.PulsarClient
         .builder()

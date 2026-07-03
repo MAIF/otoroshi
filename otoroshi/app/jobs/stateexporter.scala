@@ -82,7 +82,7 @@ class StateExporter extends Job {
     }
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = currentConfig("StateExporter", ctx, env)
     val format = config.flatMap(_.select("format").asOpt[String]).getOrElse("json")
     format match {
@@ -110,7 +110,7 @@ case class FullStateExport(id: String, timestamp: DateTime, format: String, `exp
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = Json.obj(
+  override def toJson(using _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,
     "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
     "@type"      -> `@type`,

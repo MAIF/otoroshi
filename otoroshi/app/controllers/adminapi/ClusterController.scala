@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic._
 import scala.concurrent.duration._
 
-class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
+class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
     env: Env
 ) extends AbstractController(cc) {
 
@@ -575,11 +575,11 @@ class ClusterStateActor(out: ActorRef, env: Env) extends Actor {
         case JsSuccess(msgfw, _) =>
           ClusterLeaderUpdateMessage.read(msgfw.payload) match {
             case Some(msg: ClusterLeaderUpdateMessage.ApikeyCallIncr)     =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.RouteCallIncr)      =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case Some(msg: ClusterLeaderUpdateMessage.GlobalStatusUpdate) =>
-              msg.update(msgfw.member)(env, env.otoroshiExecutionContext)
+              msg.update(msgfw.member)(using env, env.otoroshiExecutionContext)
             case _                                                        =>
           }
         case JsError(err)        => Cluster.logger.error(s"ws error while reading ClusterMessageFromWorker: $err")

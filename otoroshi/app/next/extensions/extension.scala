@@ -307,7 +307,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
 
   def vault(name: String): Option[AdminExtensionVault] = vaults.find(_.name == name)
 
-  def extension[A](implicit ct: ClassTag[A]): Option[A] = {
+  def extension[A](using ct: ClassTag[A]): Option[A] = {
     if (hasExtensions) {
       extCache.get(ct.runtimeClass) match {
         case Some(any) => any.asInstanceOf[A].some

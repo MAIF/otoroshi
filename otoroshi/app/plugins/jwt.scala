@@ -73,7 +73,7 @@ class JwtUserExtractor extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Authentication)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(ctx: PreRoutingContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config        = ctx.configFor("JwtUserExtractor")
     val jwtVerifierId = (config \ "verifier").as[String]
     val strict        = (config \ "strict").asOpt[Boolean].getOrElse(true)

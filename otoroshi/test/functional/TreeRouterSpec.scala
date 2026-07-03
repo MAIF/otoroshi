@@ -110,7 +110,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
         .fromOpenApi(
           "api.oto.tools",
           "https://raw.githubusercontent.com/MAIF/otoroshi/master/otoroshi/public/openapi.json"
-        )(otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env)
+        )(using otoroshiComponents.env.otoroshiExecutionContext, otoroshiComponents.env)
         .map { route =>
           val router       = NgTreeRouter.build(route.toRoutes.debug(r => println(r.size)))
           val attrs        = TypedMap.empty.put(otoroshi.plugins.Keys.SnowFlakeKey -> "1")

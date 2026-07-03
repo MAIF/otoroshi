@@ -326,7 +326,7 @@ object HttpSigMessage {
   // Build a signing-base message from the inbound RequestHeader. Used both by the verify-request plugin (the inbound
   // request itself) and by the sign-response plugin (when a covered component carries `;req` and needs to reference
   // the originating request).
-  def fromRequest(req: play.api.mvc.RequestHeader)(implicit env: Env): SimpleSigMessage = SimpleSigMessage(
+  def fromRequest(req: play.api.mvc.RequestHeader)(using env: Env): SimpleSigMessage = SimpleSigMessage(
     method = req.method,
     fullUri = req.theProtocol + "://" + req.theHost + req.relativeUri,
     headers = req.headers.toMap.toSeq.flatMap { case (k, vs) => vs.map(v => (k, v)) },
@@ -678,7 +678,7 @@ object HttpSigKeyResolver {
   private val jwksTtl: FiniteDuration = 10.minutes
 
   // Public key lookup for verification.
-  def publicKey(source: HttpSigKeySource, alg: String, kid: Option[String])(implicit
+  def publicKey(source: HttpSigKeySource, alg: String, kid: Option[String])(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Either[Array[Byte], PublicKey]]] = {
@@ -727,7 +727,7 @@ object HttpSigKeyResolver {
   }
 
   // Private key lookup for signing.
-  def privateKey(source: HttpSigKeySource, alg: String)(implicit
+  def privateKey(source: HttpSigKeySource, alg: String)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Either[String, Either[Array[Byte], PrivateKey]]] = {
@@ -812,7 +812,7 @@ object HttpSigKeyResolver {
 
   private def fetchJwks(
       url: String
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, Map[String, JWK]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, Map[String, JWK]]] = {
     val now = System.currentTimeMillis()
     Option(jwksCache.get(url)) match {
       case Some((stop, keys)) if stop > now => Future.successful(Right(keys))
@@ -1012,7 +1012,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
   private def joinHeader(values: Seq[String]): Option[String] =
     if (values.isEmpty) None else Some(values.mkString(", "))
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx
         .cachedConfig(internalName)(HttpSignatureVerifyRequestConfig.format)
@@ -1068,7 +1068,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
       sigMap: Map[String, Array[Byte]],
       config: HttpSignatureVerifyRequestConfig,
       ctx: NgAccessContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
     def loop(
         remaining: List[(String, HttpSigStructuredFields.SignatureInputValue)],
         lastErr: String
@@ -1092,7 +1092,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
       input: HttpSigStructuredFields.SignatureInputValue,
       sigMap: Map[String, Array[Byte]],
       config: HttpSignatureVerifyRequestConfig
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[String, Boolean]] = {
     val now = System.currentTimeMillis() / 1000L
 
     // 1. Required components present?
@@ -1203,7 +1203,7 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
   // operator switch to disable this: if a signer asserted body integrity via content-digest, we MUST check it.
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val pending = ctx.attrs.get(HttpSigAttrs.PendingDigestKey)
     if (pending.isEmpty) {
       Future.successful(Right(ctx.otoroshiRequest))
@@ -1382,7 +1382,7 @@ class HttpSignatureSignResponse extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config =
       ctx
         .cachedConfig(internalName)(HttpSignatureSignResponseConfig.format)

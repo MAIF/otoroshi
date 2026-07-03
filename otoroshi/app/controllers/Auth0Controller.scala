@@ -42,7 +42,7 @@ class AuthController(
     PrivateAppsAction: PrivateAppsAction,
     BackOfficeAction: BackOfficeAction,
     cc: ControllerComponents
-)(implicit env: Env)
+)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -333,7 +333,7 @@ class AuthController(
       auth: AuthModuleConfig,
       descriptor: ServiceDescriptor,
       ctx: PrivateAppsActionContext[AnyContent]
-  )(implicit req: Request[AnyContent]) = {
+  )(using req: Request[AnyContent]) = {
     val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
     req.cookies.find(c => c.name == expectedCookieName) match {
       case Some(cookie) => {
@@ -445,7 +445,7 @@ class AuthController(
   }
 
   private def multiAuthCallback(auth: AuthModuleConfig, route: NgRoute, ctx: PrivateAppsActionContext[AnyContent])(
-      implicit req: Request[AnyContent]
+      using req: Request[AnyContent]
   ) = {
     val legacy             = route.legacy
     val expectedCookieName = s"oto-papps-${auth.routeCookieSuffix(route)}"
@@ -590,7 +590,7 @@ class AuthController(
       implicit val req = ctx.request
 
       def saveUser(user: PrivateAppsUser, auth: AuthModuleConfig, descriptor: ServiceDescriptor, webauthn: Boolean)(
-          implicit req: RequestHeader
+          using req: RequestHeader
       ): Future[Result] = {
         user
           .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
@@ -771,7 +771,7 @@ class AuthController(
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
-                        case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, descriptor, true)(using ctx.request)
                       }
                     }
                     case _              =>
@@ -796,7 +796,7 @@ class AuthController(
                             )
                         ).vfuture
                       }
-                      case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, descriptor, false)(using ctx.request)
                     }
                 }
               }
@@ -833,7 +833,7 @@ class AuthController(
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
-                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(using ctx.request)
                       }
                     }
                     case _              =>
@@ -858,7 +858,7 @@ class AuthController(
                             )
                         ).vfuture
                       }
-                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(using ctx.request)
                     }
                 }
               }
@@ -884,7 +884,7 @@ class AuthController(
                           )
                           BadRequest(Json.obj("error" -> error.display)).vfuture
                         }
-                        case Right(user) => saveUser(user, auth, route.legacy, true)(ctx.request)
+                        case Right(user) => saveUser(user, auth, route.legacy, true)(using ctx.request)
                       }
                     }
                     case _              =>
@@ -909,7 +909,7 @@ class AuthController(
                             )
                         ).vfuture
                       }
-                      case Right(user) => saveUser(user, auth, route.legacy, false)(ctx.request)
+                      case Right(user) => saveUser(user, auth, route.legacy, false)(using ctx.request)
                     }
                 }
               }
@@ -1090,7 +1090,7 @@ class AuthController(
     BackOfficeAction.async { ctx =>
       implicit val request = ctx.request
 
-      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(implicit req: RequestHeader) = {
+      def saveUser(user: BackOfficeUser, auth: AuthModuleConfig, webauthn: Boolean)(using req: RequestHeader) = {
         user
           .save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS))
           .map { boUser =>
@@ -1156,7 +1156,7 @@ class AuthController(
                                   )
                                   BadRequest(Json.obj("error" -> error.display)).future
                                 }
-                                case Right(user) => saveUser(user, auth, true)(ctx.request)
+                                case Right(user) => saveUser(user, auth, true)(using ctx.request)
                               }
                             }
                             case _              =>
@@ -1181,7 +1181,7 @@ class AuthController(
                               )
                             case Right(user) =>
                               if (logger.isDebugEnabled) logger.debug(s"Login successful for user '${user.email}'")
-                              saveUser(user, auth, false)(ctx.request)
+                              saveUser(user, auth, false)(using ctx.request)
                           }
                         }
                       }

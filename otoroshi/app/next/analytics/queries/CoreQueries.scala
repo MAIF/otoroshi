@@ -15,7 +15,7 @@ object QueryHelpers {
 
   def tupleOf(values: Seq[AnyRef]): VertxTuple = VertxTuple.from(values.toArray)
 
-  def runSelect(pool: PgPool, sql: String, values: Seq[AnyRef])(implicit
+  def runSelect(pool: PgPool, sql: String, values: Seq[AnyRef])(using
       ec: ExecutionContext
   ): Future[Seq[Row]] = {
     pool
@@ -75,7 +75,7 @@ object ScalarQueries {
       filters: Filters,
       settings: UserAnalyticsExporterSettings,
       pool: PgPool
-  )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
+  )(using ec: ExecutionContext, env: Env): Future[QueryResult] = {
     val (where, vals)  = FilterSql.whereClause(filters)
     val whereWithExtra =
       if (filtersExtra.isEmpty) where
@@ -99,7 +99,7 @@ object ScalarQueries {
     val shape                    = AnalyticsShape.Scalar
     val defaultWidget            = "metric"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]       = scalar("COUNT(*)", "Total requests")(f, s, pool)
@@ -112,7 +112,7 @@ object ScalarQueries {
     val shape                    = AnalyticsShape.Scalar
     val defaultWidget            = "metric"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]       = scalar("COUNT(*)", "Total errors", "err = true")(f, s, pool)
@@ -131,7 +131,7 @@ object PieQueries {
       filters: Filters,
       settings: UserAnalyticsExporterSettings,
       pool: PgPool
-  )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
+  )(using ec: ExecutionContext, env: Env): Future[QueryResult] = {
     val (where, vals) = FilterSql.whereClause(filters)
     val key           = if (castToText) s"$field::text" else field
     val sql           =
@@ -160,7 +160,7 @@ object PieQueries {
     val description        = "Distribution of requests by HTTP status code."
     val shape              = AnalyticsShape.Pie
     val defaultWidget      = "pie"
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = groupBy("status", "Status code", castToText = true)(f, s, pool)
@@ -172,7 +172,7 @@ object PieQueries {
     val description        = "Distribution of requests by HTTP method."
     val shape              = AnalyticsShape.Pie
     val defaultWidget      = "pie"
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = groupBy("method", "Method")(f, s, pool)
@@ -199,7 +199,7 @@ object TopNQueries {
       params: JsObject,
       settings: UserAnalyticsExporterSettings,
       pool: PgPool
-  )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
+  )(using ec: ExecutionContext, env: Env): Future[QueryResult] = {
     val topN          = (params \ "top_n").asOpt[Int].getOrElse(10).max(1).min(1000)
     val (where, vals) = FilterSql.whereClause(filters)
     val whereFull     = (where, whereExtra) match {
@@ -232,7 +232,7 @@ object TopNQueries {
     val shape                            = AnalyticsShape.TopN
     val defaultWidget                    = "bar"
     override val params: Seq[QueryParam] = Seq(TopNParam)
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]               = topNQuery(field, labelField, extra)(f, p, s, pool)
@@ -325,7 +325,7 @@ object TimeseriesQueries {
       bucket: Bucket,
       settings: UserAnalyticsExporterSettings,
       pool: PgPool
-  )(implicit ec: ExecutionContext, env: Env): Future[QueryResult] = {
+  )(using ec: ExecutionContext, env: Env): Future[QueryResult] = {
     val (where, vals) = FilterSql.whereClause(filters)
     val sql           = buildSeriesQuery(s"$aggExpr AS value", bucket, where, AnalyticsSchema.fullTable(settings))
     QueryHelpers.runSelect(pool, sql, vals).map { rows =>
@@ -352,7 +352,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "line"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]       =
@@ -366,7 +366,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "line"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]       =
@@ -388,7 +388,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "line"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]       =
@@ -402,7 +402,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "line"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, b: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult]       =
@@ -416,7 +416,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "line"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = {
@@ -453,7 +453,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "area"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = {
@@ -486,7 +486,7 @@ object TimeseriesQueries {
     val shape                    = AnalyticsShape.Timeseries
     val defaultWidget            = "area"
     override val supportsCompare = true
-    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = {
@@ -542,7 +542,7 @@ object HeatmapQueries {
     val description   = "Heatmap of duration buckets over time."
     val shape         = AnalyticsShape.Heatmap
     val defaultWidget = "heatmap"
-    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(implicit
+    def execute(f: Filters, p: JsObject, bucket: Bucket, s: UserAnalyticsExporterSettings, pool: PgPool)(using
         ec: ExecutionContext,
         env: Env
     ): Future[QueryResult] = {

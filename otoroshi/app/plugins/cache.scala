@@ -127,7 +127,7 @@ class ResponseCache extends RequestTransformer {
         }
       )
     })
-    env.datastores.globalConfigDataStore.singleton()(ec, env).map { conf =>
+    env.datastores.globalConfigDataStore.singleton()(using ec, env).map { conf =>
       if ((conf.scripts.transformersConfig \ "ResponseCache").isDefined) {
         val redis: RedisClientMasterSlaves = {
           val master = RedisServer(
@@ -223,14 +223,14 @@ class ResponseCache extends RequestTransformer {
     }
   }
 
-  private def get(key: String)(implicit env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
+  private def get(key: String)(using env: Env, ec: ExecutionContext): Future[Option[ByteString]] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.get(key)
       case redis => redis._1.get(key)
     }
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+  private def set(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -291,7 +291,7 @@ class ResponseCache extends RequestTransformer {
   private def cachedResponse(
       ctx: TransformerRequestContext,
       config: ResponseCacheConfig
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Unit, Option[JsValue]]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Unit, Option[JsValue]]] = {
     if (filter(ctx.request, config)) {
       get(
         s"${env.storageRoot}:noclustersync:cache:${ctx.descriptor.id}:${ctx.request.method.toLowerCase()}-${ctx.request.relativeUri}"
@@ -306,7 +306,7 @@ class ResponseCache extends RequestTransformer {
 
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled) {
       cachedResponse(ctx, config).map {
@@ -336,7 +336,7 @@ class ResponseCache extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled && couldCacheResponse(ctx, config)) {
       val size = new AtomicLong(0L)

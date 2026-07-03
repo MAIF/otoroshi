@@ -292,7 +292,7 @@ class WasmVmPoolCleaner extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 60.seconds.some
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = env.datastores.globalConfigDataStore
       .latest()
       .plugins

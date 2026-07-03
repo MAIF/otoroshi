@@ -83,7 +83,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       // AWAIT: valid
-      Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
+      Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     })(ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
@@ -91,7 +91,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def onStop(): Future[Unit] = {
     cancelRef.get().cancel()
     // AWAIT: valid
-    Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
+    Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     FastFuture.successful(())
   }
 
@@ -156,7 +156,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def writeStateToDisk()(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  private def writeStateToDisk()(using ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val file = new File(dbPath)
     Source
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
@@ -559,7 +559,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
   }
 
-  private def writeStateToS3()(implicit ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
+  private def writeStateToS3()(using ec: ExecutionContext, mat: Materializer): Future[MultipartUploadResult] = {
     Source
       .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
       .map { item =>

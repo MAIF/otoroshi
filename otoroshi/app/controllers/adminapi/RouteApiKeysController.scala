@@ -27,7 +27,7 @@ import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with AdminApiHelper {
 

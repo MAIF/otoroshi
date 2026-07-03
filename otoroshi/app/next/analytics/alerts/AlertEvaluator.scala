@@ -26,7 +26,7 @@ object AlertEvaluator {
 
   def evaluate(
       alert: UserAlert
-  )(implicit env: Env, ec: ExecutionContext): Future[(Boolean, Seq[AlertConditionEval])] = {
+  )(using env: Env, ec: ExecutionContext): Future[(Boolean, Seq[AlertConditionEval])] = {
     if (alert.conditions.isEmpty) FastFuture.successful((false, Seq.empty))
     else {
       Future.sequence(alert.conditions.map(c => evaluateCondition(c, alert))).map { evals =>
@@ -43,7 +43,7 @@ object AlertEvaluator {
   // Per-condition evaluation
   // --------------------------------------------------------------------------
 
-  def evaluateCondition(cond: AlertCondition, alert: UserAlert)(implicit
+  def evaluateCondition(cond: AlertCondition, alert: UserAlert)(using
       env: Env,
       ec: ExecutionContext
   ): Future[AlertConditionEval] = {

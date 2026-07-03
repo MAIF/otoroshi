@@ -377,19 +377,19 @@ object GeolocationSettings {
 
 sealed trait GeolocationSettings {
   def enabled: Boolean
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]]
   def json: JsValue
 }
 
 case object NoneGeolocationSettings extends GeolocationSettings {
   def enabled: Boolean                                                                   = false
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = FastFuture.successful(None)
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = FastFuture.successful(None)
   def json: JsValue                                                                      = Json.obj("type" -> "none")
 }
 
 case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends GeolocationSettings {
   def json: JsValue = Json.obj("type" -> "maxmind", "path" -> path, "enabled" -> enabled)
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     enabled match {
       case false => FastFuture.successful(None)
       case true  => MaxMindGeolocationHelper.find(ip, path)
@@ -399,7 +399,7 @@ case class MaxmindGeolocationSettings(enabled: Boolean, path: String) extends Ge
 
 case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout: Long) extends GeolocationSettings {
   def json: JsValue = Json.obj("type" -> "ipstack", "apikey" -> apikey, "timeout" -> timeout, "enabled" -> enabled)
-  def find(ip: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String)(using env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
     enabled match {
       case false => FastFuture.successful(None)
       case true  => IpStackGeolocationHelper.find(ip, apikey, timeout)
@@ -425,7 +425,7 @@ object UserAgentSettings {
 
 case class UserAgentSettings(enabled: Boolean) {
   def json: JsValue = Json.obj("enabled" -> enabled)
-  def find(ua: String)(implicit env: Env): Future[Option[JsValue]] = {
+  def find(ua: String)(using env: Env): Future[Option[JsValue]] = {
     enabled match {
       case false => None.future
       case true  => UserAgentHelper.userAgentDetails(ua)
@@ -722,18 +722,18 @@ case class GlobalConfig(
 
   def theName: String = "otoroshi-global-config"
 
-  def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.set(this)
 
-  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
+  def delete()(using ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
 
-  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.exists(this)
+  def exists()(using ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.exists(this)
 
   def toJson = GlobalConfig.toJson(this)
 
-  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def withinThrottlingQuota()(using ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.withinThrottlingQuota()
 
-  def cleverClient(implicit env: Env): Option[CleverCloudClient] =
+  def cleverClient(using env: Env): Option[CleverCloudClient] =
     cleverSettings match {
       case None           => None
       case Some(settings) => {
@@ -1055,20 +1055,20 @@ object GlobalConfig {
 }
 
 trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
-  def incrementCallsForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Long]
-  def quotaForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Option[Long]]
-  def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean]
-  def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def updateQuotas(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
-  def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
+  def incrementCallsForIpAddress(ip: String)(using ec: ExecutionContext): Future[Long]
+  def quotaForIpAddress(ip: String)(using ec: ExecutionContext): Future[Option[Long]]
+  def isOtoroshiEmpty()(using ec: ExecutionContext): Future[Boolean]
+  def withinThrottlingQuota()(using ec: ExecutionContext, env: Env): Future[Boolean]
+  def updateQuotas(config: otoroshi.models.GlobalConfig)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def singleton()(using ec: ExecutionContext, env: Env): Future[GlobalConfig]
+  def latest()(using ec: ExecutionContext, env: Env): GlobalConfig
   def latestSafe: Option[GlobalConfig]
   def latestUnsafe: GlobalConfig
-  def fullImport(exportSource: JsObject)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue]
-  def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
-  def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
-  def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def fullImport(exportSource: JsObject)(using ec: ExecutionContext, env: Env): Future[Unit]
+  def fullExport()(using ec: ExecutionContext, env: Env): Future[JsValue]
+  def allEnv()(using ec: ExecutionContext, env: Env): Future[Set[String]]
+  def quotasValidationFor(from: String)(using ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
+  def migrate()(using ec: ExecutionContext, env: Env): Future[Unit]
   def template: GlobalConfig = GlobalConfig()
 }
 
@@ -1134,7 +1134,7 @@ case class OtoroshiExport(
     already ++ ex ++ add
   }
 
-  def customizeWith(customization: JsObject)(implicit env: Env): OtoroshiExport = {
+  def customizeWith(customization: JsObject)(using env: Env): OtoroshiExport = {
     val cconfig     = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
     val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
     copy(

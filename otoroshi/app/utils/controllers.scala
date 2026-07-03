@@ -62,7 +62,7 @@ case class GenericAlert(
   override def `@serviceId`: String                = "--"
   override def fromOrigin: Option[String]          = Some(from)
   override def fromUserAgent: Option[String]       = Some(ua)
-  override def toJson(implicit _env: Env): JsValue =
+  override def toJson(using _env: Env): JsValue =
     Json.obj(
       "@id"           -> `@id`,
       "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
@@ -87,15 +87,15 @@ case class SendAuditAndAlert(
 )
 
 trait AdminApiHelper {
-  def sendAudit(action: String, message: String, meta: JsObject, ctx: ApiActionContext[_])(implicit env: Env): Unit = {
-    sendAuditAndAlert(SendAuditAndAlert(action, message, None, meta, ctx))(env)
+  def sendAudit(action: String, message: String, meta: JsObject, ctx: ApiActionContext[_])(using env: Env): Unit = {
+    sendAuditAndAlert(SendAuditAndAlert(action, message, None, meta, ctx))(using env)
   }
   def sendAuditAndAlert(action: String, message: String, alert: String, meta: JsObject, ctx: ApiActionContext[_])(
-      implicit env: Env
+      using env: Env
   ): Unit = {
-    sendAuditAndAlert(SendAuditAndAlert(action, message, alert.some, meta, ctx))(env)
+    sendAuditAndAlert(SendAuditAndAlert(action, message, alert.some, meta, ctx))(using env)
   }
-  def sendAuditAndAlert(options: SendAuditAndAlert)(implicit env: Env): Unit = {
+  def sendAuditAndAlert(options: SendAuditAndAlert)(using env: Env): Unit = {
     val SendAuditAndAlert(action, message, alertOpt, meta, ctx) = options
     val event: AdminApiEvent                                    = AdminApiEvent(
       env.snowflakeGenerator.nextIdStr(),
@@ -130,7 +130,7 @@ trait AdminApiHelper {
       audit: SendAuditAndAlert
   )(
       findAllOps: => Future[Either[ApiError[Error], Seq[Entity]]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], Seq[Entity]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], Seq[Entity]]] = {
 
     val paginationPage: Int     = ctx.request.queryString
       .get("page")
@@ -196,7 +196,7 @@ trait AdminApiHelper {
       audit: SendAuditAndAlert
   )(
       findAllOps: => Future[Either[ApiError[Error], Seq[Entity]]]
-  )(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext): Future[Result] = {
     fetchWithPaginationAndFiltering[Entity, Error](ctx, filterPrefix, writeEntity, audit)(findAllOps).map {
       case Left(error)       =>
         Results.Status(error.status)(Json.obj("error" -> "fetch_error", "error_description" -> error.bodyAsJson))
@@ -227,7 +227,7 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   }
   def extractId(entity: Entity): String
   def readEntity(json: JsValue): Either[JsValue, Entity]
-  def readAndValidateEntity(json: JsValue, f: => Either[String, Option[BackOfficeUser]])(implicit
+  def readAndValidateEntity(json: JsValue, f: => Either[String, Option[BackOfficeUser]])(using
       env: Env
   ): Either[JsValue, Entity] = {
     f match {
@@ -259,22 +259,22 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
   def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], SeqEntityAndContext[Entity]]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], SeqEntityAndContext[Entity]]]
   def createEntityOps(
       entity: Entity,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def updateEntityOps(
       entity: Entity,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
   // def canRead[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity)
   // def canWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserWrite(entity)
   // def canReadWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity) && ctx.canUserWrite(entity)

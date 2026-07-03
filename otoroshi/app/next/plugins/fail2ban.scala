@@ -297,7 +297,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
       "Temporarily bans client when too many failed requests occur within a detection window (fail2ban-like). Client is identified by the 'identifier' that can use the Otoroshi expression language to extract informations like user id, apikey, ip address, etc."
     )
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
@@ -334,7 +334,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
@@ -363,7 +363,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val conf = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)
@@ -391,7 +391,7 @@ class Fail2BanPlugin extends NgAccessValidator with NgRequestTransformer {
 
   override def afterRequest(
       ctx: NgAfterRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val conf           = ctx
       .cachedConfig(internalName)(Fail2BanConfig.format)
       .getOrElse(Fail2BanConfig.default)

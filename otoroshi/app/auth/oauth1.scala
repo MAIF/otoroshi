@@ -188,7 +188,7 @@ case class Oauth1ModuleConfig(
   override def form: Option[Form]                                       = None
   override def authModule(config: GlobalConfig): AuthModule             = Oauth1AuthModule(this)
   override def withLocation(location: EntityLocation): AuthModuleConfig = copy(location = location)
-  override def _fmt()(implicit env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
+  override def _fmt()(using env: Env): Format[AuthModuleConfig]      = AuthModuleConfig._fmt(env)
 
   override def asJson =
     location.jsonWithKey ++ Json.obj(
@@ -220,7 +220,7 @@ case class Oauth1ModuleConfig(
       }.toMap)
     )
 
-  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
+  def save()(using ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
   override def cookieSuffix(desc: ServiceDescriptor) = s"ldap-auth-$id"
 }
@@ -312,7 +312,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       config: GlobalConfig,
       descriptor: ServiceDescriptor,
       isRoute: Boolean
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -377,18 +377,18 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       user: Option[PrivateAppsUser],
       config: GlobalConfig,
       descriptor: ServiceDescriptor
-  )(implicit
+  )(using
       ec: ExecutionContext,
       env: Env
   ) = FastFuture.successful(Right(None))
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, PrivateAppsUser]] = callback(request, config, isBoLogin = false, Some(descriptor))
     .asInstanceOf[Future[Either[ErrorReason, PrivateAppsUser]]]
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Result] = {
@@ -435,13 +435,13 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
 
   }
 
-  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ) =
     FastFuture.successful(Right(None))
 
-  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+  override def boCallback(request: Request[AnyContent], config: GlobalConfig)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[ErrorReason, BackOfficeUser]] =
@@ -452,7 +452,7 @@ case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
       config: GlobalConfig,
       isBoLogin: Boolean,
       descriptor: Option[ServiceDescriptor] = None
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[ErrorReason, RefreshableUser]] = {
+  )(using ec: ExecutionContext, env: Env): Future[Either[ErrorReason, RefreshableUser]] = {
 
     val method  = authConfig.httpMethod.methods.accessToken
     val queries = mapOfSeqToMap(request.queryString)

@@ -77,7 +77,7 @@ class BrotliResponseCompressor extends NgRequestTransformer {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config  = ctx.cachedConfig(internalName)(configReads).getOrElse(NgBrotliConfig())
     val request = ctx.request
     if (

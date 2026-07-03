@@ -73,7 +73,7 @@ class XmlToJsonRequest extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (
       ctx.request.hasBody && ctx.otoroshiRequest.contentType
@@ -123,7 +123,7 @@ class JsonToXmlRequest extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.request.hasBody && ctx.otoroshiRequest.contentType.exists(_.contains("application/json"))) {
       ctx.otoroshiRequest.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -169,7 +169,7 @@ class XmlToJsonResponse extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.otoroshiResponse.contentType.exists(c => c.contains("text/xml") || c.contains("application/xml"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -216,7 +216,7 @@ class JsonToXmlResponse extends NgRequestTransformer with JsonTransform {
   override def transformsError: Boolean    = false
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(JsonTransformConfig())
     if (ctx.otoroshiResponse.contentType.exists(_.contains("application/json"))) {
       ctx.otoroshiResponse.body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
@@ -371,7 +371,7 @@ class SOAPAction extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -384,7 +384,7 @@ class SOAPAction extends NgBackendCall {
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]],
       config: SOAPActionConfig
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

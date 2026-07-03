@@ -97,7 +97,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
   override def defaultConfigObject: Option[NgPluginConfig] = NgCorsSettings().some
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val req  = ctx.request
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 
@@ -136,7 +136,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   override def transformResponseSync(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val req  = ctx.request
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 
@@ -165,7 +165,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
 
   override def transformError(
       ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[NgPluginHttpResponse] = {
     val req  = ctx.request
     val cors = ctx.cachedConfig(internalName)(configReads).getOrElse(NgCorsSettings())
 

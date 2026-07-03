@@ -106,7 +106,7 @@ class NgProxyState(env: Env) {
     domainPathTreeRef.get().find(domain, path, env.trailingSlashMeansExactSegments).map(_.routes)
 
   def findRoute(request: RequestHeader, attrs: TypedMap): Option[NgMatchedRoute] =
-    domainPathTreeRef.get().findRoute(request, attrs)(env)
+    domainPathTreeRef.get().findRoute(request, attrs)(using env)
 
   def getDomainRoutes(domain: String, path: String): Option[Seq[NgRoute]] = routesByDomain.get(domain) match {
     case s @ Some(_) => s
@@ -592,7 +592,7 @@ class NgProxyState(env: Env) {
     }
   }
 
-  def sync()(implicit ec: ExecutionContext): Future[Unit] = {
+  def sync()(using ec: ExecutionContext): Future[Unit] = {
     implicit val ev: otoroshi.env.Env = env
     val start        = System.currentTimeMillis()
     val gc           = env.datastores.globalConfigDataStore.latest()
@@ -744,7 +744,7 @@ class NgProxyStateLoaderJob extends Job {
 
   override def predicate(ctx: JobContext, env: Env): Option[Boolean] = None
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     env.proxyState.sync()
   }
 }
@@ -793,7 +793,7 @@ class NgInternalStateMonitor extends Job {
     if (logger.isDebugEnabled) logger.debug(s"datastore: ${total.toMegabytes} mb, in ${duration}")
   }
 
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def jobRun(ctx: JobContext)(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val monitorState     = env.configuration.getOptional[Boolean]("otoroshi.next.monitor-proxy-state-size").getOrElse(false)
     val monitorDatastore =
       env.configuration.getOptional[Boolean]("otoroshi.next.monitor-datastore-size").getOrElse(false)

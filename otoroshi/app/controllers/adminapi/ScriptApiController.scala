@@ -31,7 +31,7 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(using val env: Env)
     extends AbstractController(cc)
     with BulkControllerHelper[Script, JsValue]
     with CrudControllerHelper[Script, JsValue] {
@@ -256,7 +256,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   override def findByIdOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Script]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.findById(id).map { opt =>
       Right(
         OptionalEntityAndContext(
@@ -272,7 +272,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   override def findAllOps(
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Script]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.findAll().map { seq =>
       Right(
         SeqEntityAndContext(
@@ -289,7 +289,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   override def createEntityOps(
       entity: Script,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.set(entity).map {
       case true  => {
         Right(
@@ -316,7 +316,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   override def updateEntityOps(
       entity: Script,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.set(entity).map {
       case true  => {
         Right(
@@ -343,7 +343,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   override def deleteEntityOps(
       id: String,
       req: RequestHeader
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Script]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Script]]] = {
     env.datastores.scriptDataStore.delete(id).map {
       case true  => {
         Right(

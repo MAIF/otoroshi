@@ -41,7 +41,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       )
     ).flatten
 
-  override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def publish(event: Seq[JsValue])(using env: Env, ec: ExecutionContext): Future[Unit] = {
     val state = IdGenerator.extendedToken(128)
     val claim = OtoroshiClaim(
       iss = env.Headers.OtoroshiIssuer,
@@ -50,7 +50,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       exp = DateTime.now().plusSeconds(30).toDate.getTime,
       iat = DateTime.now().toDate.getTime,
       jti = IdGenerator.uuid
-    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false))(
+    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false))(using
       env
     ) // TODO : maybe we need some config here ?
     val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(

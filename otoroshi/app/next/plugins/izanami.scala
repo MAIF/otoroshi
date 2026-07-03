@@ -93,7 +93,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                          = Seq(NgStep.TransformRequest)
 
-  private def getFeatures(ctx: NgTransformerRequestContext, config: NgIzanamiV1ProxyConfig)(implicit
+  private def getFeatures(ctx: NgTransformerRequestContext, config: NgIzanamiV1ProxyConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -158,7 +158,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
       ctx: NgTransformerRequestContext,
       config: NgIzanamiV1ProxyConfig,
       body: Source[ByteString, _]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       env.Ws
         .url(s"${config.izanamiUrl}/api/tree/features?pattern=${config.featurePattern}")
@@ -185,7 +185,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
     }
   }
 
-  private def getConfig(ctx: NgTransformerRequestContext, config: NgIzanamiV1ProxyConfig)(implicit
+  private def getConfig(ctx: NgTransformerRequestContext, config: NgIzanamiV1ProxyConfig)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -215,7 +215,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgIzanamiV1ProxyConfig.format).getOrElse(NgIzanamiV1ProxyConfig())
     (ctx.request.method.toLowerCase, ctx.request.path) match {
       case ("get", path) if path == config.path + "/features" && config.featuresEnabled             => getFeatures(ctx, config)
@@ -352,7 +352,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
     .maximumSize(1000)
     .build()
 
-  def canaryId(ctx: NgTransformerRequestContext)(implicit env: Env): String = {
+  def canaryId(ctx: NgTransformerRequestContext)(using env: Env): String = {
     val attrs                         = ctx.attrs
     val reqNumber: Option[Int]        = attrs.get(otoroshi.plugins.Keys.RequestNumberKey)
     val maybeCanaryId: Option[String] = attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey)
@@ -360,7 +360,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
     canaryId
   }
 
-  def canaryCookie(cid: String, ctx: NgTransformerRequestContext)(implicit env: Env): WSCookie = {
+  def canaryCookie(cid: String, ctx: NgTransformerRequestContext)(using env: Env): WSCookie = {
     ctx.request.cookies.get("otoroshi-canary").map { cookie =>
       WSCookieWithSameSite(
         name = cookie.name,
@@ -386,7 +386,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
     }
   }
 
-  def withCache(key: String)(f: String => Future[JsValue])(implicit ec: ExecutionContext): Future[JsValue] = {
+  def withCache(key: String)(f: String => Future[JsValue])(using ec: ExecutionContext): Future[JsValue] = {
     cache.getIfPresent(key).map(_.future).getOrElse {
       f(key).andThen { case Success(v) =>
         cache.put(key, v)
@@ -394,7 +394,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
     }
   }
 
-  def fetchIzanamiVariant(cid: String, config: NgIzanamiV1CanaryConfig, ctx: NgTransformerRequestContext)(implicit
+  def fetchIzanamiVariant(cid: String, config: NgIzanamiV1CanaryConfig, ctx: NgTransformerRequestContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[String] = {
@@ -413,7 +413,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
     }.map(r => r.asObject.select("variant").select("id").asOpt[String].getOrElse(IdGenerator.uuid))
   }
 
-  def fetchIzanamiRoutingConfig(config: NgIzanamiV1CanaryConfig, ctx: NgTransformerRequestContext)(implicit
+  def fetchIzanamiRoutingConfig(config: NgIzanamiV1CanaryConfig, ctx: NgTransformerRequestContext)(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgIzanamiV1CanaryRoutingConfig] = {
@@ -441,7 +441,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgIzanamiV1CanaryConfig.format).getOrElse(NgIzanamiV1CanaryConfig())
     val cid    = canaryId(ctx)
     val cookie = canaryCookie(cid, ctx)
@@ -480,7 +480,7 @@ class NgIzanamiV1Canary extends NgRequestTransformer {
 
   override def transformResponse(
       ctx: NgTransformerResponseContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     cookieJar.get(ctx.snowflake).map { cookie =>
       val allCookies = ctx.otoroshiResponse.cookies :+ cookie
       val cookies    = allCookies.distinct
@@ -545,7 +545,7 @@ class IzanamiV2Proxy extends NgBackendCall {
   override def categories: Seq[NgPluginCategory]           = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                          = Seq(NgStep.CallBackend)
 
-  private def applyExpressionLangage(value: String, ctx: NgbBackendCallContext)(implicit env: Env): String = {
+  private def applyExpressionLangage(value: String, ctx: NgbBackendCallContext)(using env: Env): String = {
     GlobalExpressionLanguage.apply(
       value = value,
       req = ctx.rawRequest.some,
@@ -562,7 +562,7 @@ class IzanamiV2Proxy extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer

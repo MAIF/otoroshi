@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ApiConsistencyService {
 
-  def applyApiChanges(oldApi: Api, newApi: Api, isDraft: Boolean)(implicit env: Env): Future[Api] = {
+  def applyApiChanges(oldApi: Api, newApi: Api, isDraft: Boolean)(using env: Env): Future[Api] = {
     implicit val ec: ExecutionContext = env.otoroshiExecutionContext
 
     val oldPlans = oldApi.plans
@@ -48,7 +48,7 @@ object ApiConsistencyService {
     }
   }
 
-  def deleteSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(implicit
+  def deleteSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Api] = {
@@ -76,7 +76,7 @@ object ApiConsistencyService {
       api: Api,
       fn: Seq[A] => Future[Any],
       store: BasicStore[A]
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
     val pageSize = 50
 
@@ -88,7 +88,7 @@ object ApiConsistencyService {
         },
         fetchSize = pageSize,
         page = page
-      )(ec, env.otoroshiMaterializer, env)
+      )(using ec, env.otoroshiMaterializer, env)
       .flatMap { subscriptions =>
         if (subscriptions.isEmpty) {
           Future.unit
@@ -110,7 +110,7 @@ object ApiConsistencyService {
       api: Api,
       fnDraft: Option[Seq[Draft] => Future[Any]],
       fnSub: Option[Seq[ApiSubscription] => Future[Any]] = None
-  )(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  )(using env: Env, ec: ExecutionContext): Future[Unit] = {
     fnDraft match {
       case Some(fn) => _batchSubscriptionsUpdates[Draft](0, plan, api, fn, env.datastores.draftsDataStore)
       case None     =>
@@ -124,7 +124,7 @@ object ApiConsistencyService {
     }
   }
 
-  def updateSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(implicit
+  def updateSubscriptionsByPlan(api: Api, plan: ApiDocumentationPlan, isDraft: Boolean)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Api] = {

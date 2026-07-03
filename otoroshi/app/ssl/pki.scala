@@ -48,14 +48,14 @@ import otoroshi.utils.http.DN
 trait Pki {
 
   // genkeypair          generate a public key / private key pair
-  def genKeyPair(query: ByteString)(implicit ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] =
+  def genKeyPair(query: ByteString)(using ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] =
     GenKeyPairQuery.fromJson(Json.parse(query.utf8String)) match {
       case Left(err) => Left(err).future
       case Right(q)  => genKeyPair(q)
     }
 
   // gencsr           generate a private key and a certificate request
-  def genCsr(query: ByteString, caCert: Option[X509Certificate])(implicit
+  def genCsr(query: ByteString, caCert: Option[X509Certificate])(using
       ec: ExecutionContext
   ): Future[Either[String, GenCsrResponse]] =
     GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
@@ -64,7 +64,7 @@ trait Pki {
     }
 
   // gencert          generate a private key and a certificate
-  def genCert(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(implicit
+  def genCert(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(using
       ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] =
     GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
@@ -79,7 +79,7 @@ trait Pki {
       caCert: X509Certificate,
       caKey: PrivateKey,
       existingSerialNumber: Option[Long]
-  )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
+  )(using ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     val pemReader = new PemReader(new StringReader(csr.utf8String))
     val pemObject = pemReader.readPemObject()
     val _csr      = new PKCS10CertificationRequest(pemObject.getContent)
@@ -88,7 +88,7 @@ trait Pki {
   }
 
   // selfsign         generates a self-signed certificate
-  def genSelfSignedCert(query: ByteString)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] =
+  def genSelfSignedCert(query: ByteString)(using ec: ExecutionContext): Future[Either[String, GenCertResponse]] =
     GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
       case Left(err) => Left(err).future
       case Right(q)  => genSelfSignedCert(q)
@@ -96,13 +96,13 @@ trait Pki {
 
   def genSelfSignedCA(
       query: ByteString
-  )(implicit ec: ExecutionContext, mat: Materializer): Future[Either[String, GenCertResponse]] =
+  )(using ec: ExecutionContext, mat: Materializer): Future[Either[String, GenCertResponse]] =
     GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
       case Left(err) => Left(err).future
       case Right(q)  => genSelfSignedCA(q)
     }
 
-  def genSubCA(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(implicit
+  def genSubCA(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(using
       ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] =
     GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
@@ -115,15 +115,15 @@ trait Pki {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // genkeypair          generate a public key / private key pair
-  def genKeyPair(query: GenKeyPairQuery)(implicit ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]]
+  def genKeyPair(query: GenKeyPairQuery)(using ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]]
 
   // gencsr           generate a private key and a certificate request
-  def genCsr(query: GenCsrQuery, caCert: Option[X509Certificate])(implicit
+  def genCsr(query: GenCsrQuery, caCert: Option[X509Certificate])(using
       ec: ExecutionContext
   ): Future[Either[String, GenCsrResponse]]
 
   // gencert          generate a private key and a certificate
-  def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(implicit
+  def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(using
       ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]]
 
@@ -135,13 +135,13 @@ trait Pki {
       caKey: PrivateKey,
       existingSerialNumber: Option[Long],
       originalQuery: Option[GenCsrQuery]
-  )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]]
+  )(using ec: ExecutionContext): Future[Either[String, SignCertResponse]]
 
-  def genSelfSignedCA(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
+  def genSelfSignedCA(query: GenCsrQuery)(using ec: ExecutionContext): Future[Either[String, GenCertResponse]]
 
-  def genSelfSignedCert(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
+  def genSelfSignedCert(query: GenCsrQuery)(using ec: ExecutionContext): Future[Either[String, GenCertResponse]]
 
-  def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(implicit
+  def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(using
       ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]]
 }
@@ -157,7 +157,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
   // genkeypair          generate a public key / private key pair
   override def genKeyPair(
       query: GenKeyPairQuery
-  )(implicit ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] = {
+  )(using ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] = {
     Try {
       if (query.algo == "ecdsa") {
         val curve            = query.size match {
@@ -182,7 +182,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
   }
 
   // gencsr           generate a private key and a certificate request
-  override def genCsr(query: GenCsrQuery, caCert: Option[X509Certificate])(implicit
+  override def genCsr(query: GenCsrQuery, caCert: Option[X509Certificate])(using
       ec: ExecutionContext
   ): Future[Either[String, GenCsrResponse]] = {
     genKeyPair(query.key).flatMap {
@@ -280,7 +280,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
       caKey: PrivateKey,
       existingSerialNumber: Option[Long],
       originalQuery: Option[GenCsrQuery]
-  )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
+  )(using ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     //generator.nextIdSafe().map { _serial =>
     generateSerial().map { _serial =>
       // val __issuer = new X500Name(caCert.getSubjectX500Principal.getName)
@@ -376,7 +376,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
 
   // gencert          generate a private key and a certificate
   override def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
-      implicit ec: ExecutionContext
+      using ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] = {
     (for {
       csr  <- genCsr(query, Some(caCert))
@@ -408,7 +408,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
 
   override def genSelfSignedCert(
       query: GenCsrQuery
-  )(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
+  )(using ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
     if (query.ca) {
       genSelfSignedCA(query)
     } else {
@@ -513,7 +513,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
 
   override def genSelfSignedCA(
       query: GenCsrQuery
-  )(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
+  )(using ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
     genKeyPair(query.key).flatMap {
       case Left(e)     => Left(e).future
       case Right(_kpr) =>
@@ -591,7 +591,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
   }
 
   override def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
-      implicit ec: ExecutionContext
+      using ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] = {
     genKeyPair(query.key).flatMap {
       case Left(e)     => Left(e).future

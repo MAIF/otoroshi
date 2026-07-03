@@ -79,15 +79,15 @@ object RemoteEntity {
 trait CatalogSource {
   def sourceKind: String
   def supportsWebhook: Boolean
-  def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(implicit
+  def webhookDeploySelect(possibleCatalogs: Seq[RemoteCatalog], payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteCatalog]]]
-  def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(implicit
+  def webhookDeployExtractArgs(catalog: RemoteCatalog, payload: JsValue)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, JsObject]]
-  def fetch(catalog: RemoteCatalog, args: JsObject)(implicit
+  def fetch(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       env: Env
   ): Future[Either[JsValue, Seq[RemoteEntity]]]
@@ -214,7 +214,7 @@ class RemoteCatalogEngine(env: Env) {
     }
   }
 
-  def deploy(catalog: RemoteCatalog, args: JsObject)(implicit
+  def deploy(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       ev: Env
   ): Future[Either[JsValue, DeployReport]] = {
@@ -229,14 +229,14 @@ class RemoteCatalogEngine(env: Env) {
     }
   }
 
-  def dryRun(catalog: RemoteCatalog, args: JsObject)(implicit
+  def dryRun(catalog: RemoteCatalog, args: JsObject)(using
       ec: ExecutionContext,
       ev: Env
   ): Future[Either[JsValue, DeployReport]] = {
     doFetchAndReconcile(catalog, args, dryRun = true)
   }
 
-  def undeploy(catalog: RemoteCatalog)(implicit
+  def undeploy(catalog: RemoteCatalog)(using
       ec: ExecutionContext,
       ev: Env
   ): Future[Either[JsValue, DeployReport]] = {
@@ -251,7 +251,7 @@ class RemoteCatalogEngine(env: Env) {
     }
   }
 
-  private def doUndeploy(catalog: RemoteCatalog)(implicit
+  private def doUndeploy(catalog: RemoteCatalog)(using
       ec: ExecutionContext,
       ev: Env
   ): Future[Either[JsValue, DeployReport]] = {
@@ -298,7 +298,7 @@ class RemoteCatalogEngine(env: Env) {
       }
   }
 
-  private def doFetchAndReconcile(catalog: RemoteCatalog, args: JsObject, dryRun: Boolean)(implicit
+  private def doFetchAndReconcile(catalog: RemoteCatalog, args: JsObject, dryRun: Boolean)(using
       ec: ExecutionContext,
       ev: Env
   ): Future[Either[JsValue, DeployReport]] = {
@@ -313,7 +313,7 @@ class RemoteCatalogEngine(env: Env) {
     }
   }
 
-  private def reconcile(catalog: RemoteCatalog, remoteEntities: Seq[RemoteEntity], dryRun: Boolean)(implicit
+  private def reconcile(catalog: RemoteCatalog, remoteEntities: Seq[RemoteEntity], dryRun: Boolean)(using
       ec: ExecutionContext,
       ev: Env
   ): Future[DeployReport] = {
@@ -340,7 +340,7 @@ class RemoteCatalogEngine(env: Env) {
       kind: String,
       entities: Seq[RemoteEntity],
       dryRun: Boolean
-  )(implicit ec: ExecutionContext, ev: Env): Future[ReconcileResult] = {
+  )(using ec: ExecutionContext, ev: Env): Future[ReconcileResult] = {
     findResource(kind) match {
       case None           =>
         ReconcileResult(kind, 0, 0, 0, Seq(s"Unknown resource kind: $kind")).vfuture
@@ -355,7 +355,7 @@ class RemoteCatalogEngine(env: Env) {
       resource: Resource,
       entities: Seq[RemoteEntity],
       dryRun: Boolean
-  )(implicit ec: ExecutionContext, ev: Env): Future[ReconcileResult] = {
+  )(using ec: ExecutionContext, ev: Env): Future[ReconcileResult] = {
     val metadataKey = s"remote_catalog=${catalog.id}"
     var created     = 0
     var updated     = 0
@@ -424,7 +424,7 @@ class RemoteCatalogEngine(env: Env) {
       remoteIds: Set[String],
       metadataKey: String,
       dryRun: Boolean
-  )(implicit ec: ExecutionContext, ev: Env): Future[Int] = {
+  )(using ec: ExecutionContext, ev: Env): Future[Int] = {
     Try {
       val allEntities     = resource.access.allJson()
       val managedEntities = allEntities.filter { json =>

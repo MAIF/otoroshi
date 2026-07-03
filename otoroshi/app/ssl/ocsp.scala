@@ -122,7 +122,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   val nextUpdateOffset: Int =
     env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
-  def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(implicit ec: ExecutionContext): Future[Result] = {
+  def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(using ec: ExecutionContext): Future[Result] = {
     import scala.util._
     if (possibleCerts.isEmpty || (possibleCerts.nonEmpty && possibleCerts.contains(id))) {
       // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
@@ -146,7 +146,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(implicit
+  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(using
       ec: ExecutionContext
   ): Future[Result] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
@@ -174,8 +174,8 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
   private def manageRequest(ocspReq: OCSPReq, possibleCerts: Seq[BigInteger]): Future[OCSPResp] = {
     for {
-      optRootCA         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)(ec, env)
-      optIntermediateCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)(ec, env)
+      optRootCA         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)(using ec, env)
+      optIntermediateCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)(using ec, env)
     } yield {
       (optRootCA, optIntermediateCA) match {
         case (Some(rootCA), Some(intermediateCA)) if intermediateCA.caFromChain.isDefined =>

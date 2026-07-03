@@ -29,7 +29,7 @@ class DisableHttp10 extends NgAccessValidator {
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     if (ctx.request.version == "HTTP/1.0") {
       Errors
         .craftResponseResult(

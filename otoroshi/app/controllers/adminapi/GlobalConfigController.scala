@@ -12,7 +12,7 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
-class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

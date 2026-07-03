@@ -169,7 +169,7 @@ class EurekaServerSink extends NgBackendCall {
     ).vfuture
   }
 
-  private def getApps(pluginId: String)(implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+  private def getApps(pluginId: String)(using env: Env, ec: ExecutionContext, mat: Materializer) = {
 
     env.datastores.rawDataStore
       .allMatching(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps*")
@@ -182,7 +182,7 @@ class EurekaServerSink extends NgBackendCall {
       hasBody: Boolean,
       body: Future[ByteString],
       evictionTimeout: Int
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer) = {
     if (hasBody)
       body.flatMap { bodyRaw =>
         val instance      = bodyRaw.utf8String.parseJson.as[JsObject]
@@ -237,7 +237,7 @@ class EurekaServerSink extends NgBackendCall {
       ).vfuture
   }
 
-  private def getAppWithId(pluginId: String, appId: String)(implicit
+  private def getAppWithId(pluginId: String, appId: String)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -268,7 +268,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def getAppWithIdAndInstanceId(pluginId: String, appId: String, instanceId: String)(implicit
+  private def getAppWithIdAndInstanceId(pluginId: String, appId: String, instanceId: String)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -287,7 +287,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def getInstanceWithId(pluginId: String, instanceId: String)(implicit
+  private def getInstanceWithId(pluginId: String, instanceId: String)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -306,7 +306,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def deleteAppWithId(pluginId: String, appId: String, instanceId: String)(implicit
+  private def deleteAppWithId(pluginId: String, appId: String, instanceId: String)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -322,7 +322,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def checkHeartbeat(pluginId: String, appId: String, instanceId: String, evictionTimeout: Int)(implicit
+  private def checkHeartbeat(pluginId: String, appId: String, instanceId: String, evictionTimeout: Int)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -361,7 +361,7 @@ class EurekaServerSink extends NgBackendCall {
       appId: String,
       instanceId: String,
       status: Option[String]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer) = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer) = {
     env.datastores.rawDataStore
       .get(s"${env.storageRoot}:plugins:eureka-server-$pluginId:apps:$appId:$instanceId")
       .flatMap {
@@ -394,7 +394,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def putMetadata(pluginId: String, appId: String, instanceId: String, queryString: Option[String])(implicit
+  private def putMetadata(pluginId: String, appId: String, instanceId: String, queryString: Option[String])(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -442,7 +442,7 @@ class EurekaServerSink extends NgBackendCall {
         }
   }
 
-  private def getInstancesUnderVipAddress(pluginId: String, vipAddress: String)(implicit
+  private def getInstancesUnderVipAddress(pluginId: String, vipAddress: String)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -461,7 +461,7 @@ class EurekaServerSink extends NgBackendCall {
       }
   }
 
-  private def getInstancesUnderSecureVipAddress(pluginId: String, svipAddress: String)(implicit
+  private def getInstancesUnderSecureVipAddress(pluginId: String, svipAddress: String)(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -483,7 +483,7 @@ class EurekaServerSink extends NgBackendCall {
   override def callBackend(
       ctx: NgbBackendCallContext,
       delegates: () => Future[Either[NgProxyEngineError, BackendCallResponse]]
-  )(implicit
+  )(using
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
@@ -582,7 +582,7 @@ class EurekaTarget extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val rawConfig = ctx.cachedConfig(internalName)(EurekaTargetConfig.format)
     val pluginId  = ctx.route.id
 
@@ -692,7 +692,7 @@ class ExternalEurekaTarget extends NgPreRouting {
 
   override def preRoute(
       ctx: NgPreRoutingContext
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgPreRoutingError, Done]] = {
     val rawConfig = ctx.cachedConfig(internalName)(ExternalEurekaTargetConfig.format)
     val pluginId  = ctx.route.id
 

@@ -111,7 +111,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     FastFuture.successful(())
   }
 
-  private def getDailyAndMonthlyQuotas(key: String, allowedQuotas: AllowedQuota)(implicit
+  private def getDailyAndMonthlyQuotas(key: String, allowedQuotas: AllowedQuota)(using
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
@@ -143,7 +143,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     }
   }
 
-  override def check(key: String, allowedQuotas: AllowedQuota)(implicit
+  override def check(key: String, allowedQuotas: AllowedQuota)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
@@ -164,7 +164,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
       increment: Long,
       allowedQuotas: AllowedQuota,
       expirationSeconds: Int
-  )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
+  )(using env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
     askForRefill().flatMap { _ =>
       getDailyAndMonthlyQuotas(key, allowedQuotas)
         .flatMap(currentState => {
@@ -197,7 +197,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
     }
   }
 
-  override def reset(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(implicit
+  override def reset(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(using
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
@@ -230,11 +230,11 @@ case class LegacyThrottlingStrategy(clientId: String, config: LegacyThrottlingSt
 
   def client(): otoroshi.storage.RedisLike = env.datastores.redis
 
-  override def totalCallsKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:global:$name"
-  override def dailyQuotaKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:daily:$name"
-  override def monthlyQuotaKey(name: String)(implicit env: Env): String =
+  override def totalCallsKey(name: String)(using env: Env): String   = s"${env.storageRoot}:apikey:quotas:global:$name"
+  override def dailyQuotaKey(name: String)(using env: Env): String   = s"${env.storageRoot}:apikey:quotas:daily:$name"
+  override def monthlyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:apikey:quotas:monthly:$name"
-  override def throttlingKey(name: String)(implicit env: Env): String   = s"${env.storageRoot}:apikey:quotas:second:$name"
+  override def throttlingKey(name: String)(using env: Env): String   = s"${env.storageRoot}:apikey:quotas:second:$name"
 }
 
 case class DistributedRedisThrottlingStrategyConfig(
@@ -347,13 +347,13 @@ case class LuaDistributedRedisThrottlingStrategy(
   def client(): otoroshi.storage.RedisLike = clientF()
 
   // Hash-tag the bucket key so all four counters land on the same Redis Cluster slot.
-  override def throttlingKey(name: String)(implicit env: Env): String   =
+  override def throttlingKey(name: String)(using env: Env): String   =
     s"${env.storageRoot}:ratelimiter:lua:{$name}:window"
-  override def dailyQuotaKey(name: String)(implicit env: Env): String   =
+  override def dailyQuotaKey(name: String)(using env: Env): String   =
     s"${env.storageRoot}:ratelimiter:lua:{$name}:daily"
-  override def monthlyQuotaKey(name: String)(implicit env: Env): String =
+  override def monthlyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:ratelimiter:lua:{$name}:monthly"
-  override def totalCallsKey(name: String)(implicit env: Env): String   =
+  override def totalCallsKey(name: String)(using env: Env): String   =
     s"${env.storageRoot}:ratelimiter:lua:{$name}:global"
 
   override def checkAndIncrement(
@@ -361,7 +361,7 @@ case class LuaDistributedRedisThrottlingStrategy(
       increment: Long,
       allowedQuotas: AllowedQuota,
       expirationSeconds: Int
-  )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
+  )(using env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
     val redis = client()
 
     val now        = System.currentTimeMillis()
@@ -486,7 +486,7 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
     FixedWindowBucket(windowStart = System.currentTimeMillis(), count = 0)
   )
 
-  private def getDailyAndMonthlyQuotas(key: String, allowedQuotas: AllowedQuota)(implicit
+  private def getDailyAndMonthlyQuotas(key: String, allowedQuotas: AllowedQuota)(using
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
@@ -518,7 +518,7 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
     }
   }
 
-  override def check(key: String, allowedQuotas: AllowedQuota)(implicit
+  override def check(key: String, allowedQuotas: AllowedQuota)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
@@ -535,7 +535,7 @@ case class FixedWindowStrategy(bucketId: String, config: FixedWindowStrategyConf
   }
 
   override def checkAndIncrement(key: String, increment: Long, allowedQuotas: AllowedQuota, expirationSeconds: Int)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
@@ -638,7 +638,7 @@ class LocalTokenBucket extends NgAccessValidator {
 
   override def defaultConfigObject: Option[NgPluginConfig] = LocalTokensBucketStrategyConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(LocalTokensBucketStrategyConfig.format)
       .getOrElse(LocalTokensBucketStrategyConfig())
@@ -689,7 +689,7 @@ class FixedWindow extends NgAccessValidator {
 
   override def defaultConfigObject: Option[NgPluginConfig] = FixedWindowStrategyConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(FixedWindowStrategyConfig.format)
       .getOrElse(FixedWindowStrategyConfig())
@@ -745,7 +745,7 @@ class DistributedRedisThrottling extends NgAccessValidator {
 
   override def defaultConfigObject: Option[NgPluginConfig] = DistributedRedisThrottlingStrategyConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(DistributedRedisThrottlingStrategyConfig.format)
       .getOrElse(DistributedRedisThrottlingStrategyConfig())
@@ -801,7 +801,7 @@ class LuaDistributedRedisThrottling extends NgAccessValidator {
 
   override def defaultConfigObject: Option[NgPluginConfig] = LuaDistributedRedisThrottlingStrategyConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(LuaDistributedRedisThrottlingStrategyConfig.format)
       .getOrElse(LuaDistributedRedisThrottlingStrategyConfig())
@@ -943,21 +943,21 @@ object Quota {
 }
 
 trait ThrottlingStrategy {
-  def throttlingKey(name: String)(implicit env: Env): String =
+  def throttlingKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:window:$name"
 
-  def dailyQuotaKey(name: String)(implicit env: Env): String =
+  def dailyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:daily:$name"
 
-  def monthlyQuotaKey(name: String)(implicit env: Env): String =
+  def monthlyQuotaKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:monthly:$name"
 
-  def totalCallsKey(name: String)(implicit env: Env): String =
+  def totalCallsKey(name: String)(using env: Env): String =
     s"${env.storageRoot}:ratelimiter:quotas:global:$name"
 
   def client(): otoroshi.storage.RedisLike
 
-  def incrementDailyAndMonthly(key: String, increment: Long)(implicit
+  def incrementDailyAndMonthly(key: String, increment: Long)(using
       env: Env,
       ec: ExecutionContext
   ): Future[(Long, Long)] = {
@@ -990,7 +990,7 @@ trait ThrottlingStrategy {
       increment: Long,
       allowedQuotas: AllowedQuota,
       expirationSeconds: Int
-  )(implicit env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
+  )(using env: Env, ec: ExecutionContext): Future[ThrottlingResult] = {
     val redisCli = client()
 
     // Calculate reset timestamps
@@ -1037,7 +1037,7 @@ trait ThrottlingStrategy {
     }
   }
 
-  def quotas(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(implicit
+  def quotas(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(using
       ec: ExecutionContext,
       env: Env
   ): Future[QuotaState] = {
@@ -1077,7 +1077,7 @@ trait ThrottlingStrategy {
     }
   }
 
-  def check(key: String, allowedQuotas: AllowedQuota)(implicit
+  def check(key: String, allowedQuotas: AllowedQuota)(using
       env: Env,
       ec: ExecutionContext
   ): Future[ThrottlingResult] = {
@@ -1119,7 +1119,7 @@ trait ThrottlingStrategy {
     }
   }
 
-  def reset(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(implicit
+  def reset(key: String, allowedQuotas: AllowedQuota, expirationSeconds: Int)(using
       env: Env,
       ec: ExecutionContext
   ): Future[QuotaState] = {
@@ -1160,7 +1160,7 @@ trait ThrottlingStrategy {
 }
 
 object ThrottlingStrategy {
-  def apply(config: ThrottlingStrategyConfig, key: String)(implicit env: Env): ThrottlingStrategy = {
+  def apply(config: ThrottlingStrategyConfig, key: String)(using env: Env): ThrottlingStrategy = {
     val conf = config.json
 
     config.id match {
@@ -1207,7 +1207,7 @@ object ThrottlingStrategy {
     }
   }
 
-  def default(clientId: String)(implicit env: Env): ThrottlingStrategy =
+  def default(clientId: String)(using env: Env): ThrottlingStrategy =
     if (env.rateLimiter.distributedRedisSettings.enabled) {
       DistributedRedisThrottlingStrategy(
         clientId,
@@ -1274,7 +1274,7 @@ class RateLimiter(_env: Env) {
       attrs: TypedMap,
       throttlingStrategy: Option[ThrottlingStrategyConfig]
   ): ThrottlingStrategy = {
-    val key = value.evaluateEl(attrs)(env)
+    val key = value.evaluateEl(attrs)(using env)
     throttlingStrategy match {
       case Some(config) => getOrCreateWithConfig(key, config)
       case None         => strategies.getOrElse(key, ThrottlingStrategy.default(key))
@@ -1285,7 +1285,7 @@ class RateLimiter(_env: Env) {
     strategies.get(key) match {
       case Some(strategy) if strategy.config.id == config.id => strategy
       case _                                                 =>
-        val newStrategy = ThrottlingStrategy.apply(config, key)(env)
+        val newStrategy = ThrottlingStrategy.apply(config, key)(using env)
         strategies.put(key, newStrategy)
         newStrategy
     }

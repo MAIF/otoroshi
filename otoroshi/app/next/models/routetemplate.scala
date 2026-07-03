@@ -29,7 +29,7 @@ case class RouteTemplate(
 }
 
 object RouteTemplate {
-  def defaultRouteTemplate()(implicit env: Env) = RouteTemplate(
+  def defaultRouteTemplate()(using env: Env) = RouteTemplate(
     location = EntityLocation.default,
     id = IdGenerator.namedId("route-template", env),
     name = "New route template",
@@ -72,7 +72,7 @@ trait RouteTemplateDataStore extends BasicStore[RouteTemplate] {
   def template(env: Env): RouteTemplate = {
     implicit val e: otoroshi.env.Env = env
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .routeTemplate
       .map { template =>
@@ -88,7 +88,7 @@ class KvRouteTemplateDataStore(redisCli: RedisLike, _env: Env)
     extends RouteTemplateDataStore
     with RedisLikeStore[RouteTemplate] {
   override def fmt: Format[RouteTemplate]              = RouteTemplate.format
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def key(id: String): String                 = s"${_env.storageRoot}:route-templates:$id"
   override def extractId(value: RouteTemplate): String = value.id
 }

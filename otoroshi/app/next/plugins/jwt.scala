@@ -119,7 +119,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
     "This plugin verifies the current request with one or more jwt verifier".some
   override def defaultConfigObject: Option[NgPluginConfig] = NgJwtVerificationConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgJwtVerificationConfig.format).getOrElse(NgJwtVerificationConfig())
 
     config.verifiers match {
@@ -130,7 +130,7 @@ class JwtVerification extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     ctx.attrs.get(JwtInjectionKey) match {
       case None            => ctx.otoroshiRequest.right
       case Some(injection) => {
@@ -164,7 +164,7 @@ object JwtVerifierUtils {
       .vfuture
   }
 
-  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(implicit
+  def verify(ctx: NgAccessContext, verifierIds: Seq[String], customResult: Option[Result])(using
       env: Env,
       ec: ExecutionContext
   ): Future[NgAccess] = {
@@ -272,7 +272,7 @@ class JwtVerificationOnly extends NgAccessValidator with NgRequestTransformer {
   override def description: Option[String]       =
     "This plugin verifies the current request with one jwt verifier".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config =
       ctx.cachedConfig(internalName)(NgJwtVerificationOnlyConfig.format).getOrElse(NgJwtVerificationOnlyConfig())
 
@@ -340,7 +340,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
   override def name: String                      = "Jwt signer"
   override def description: Option[String]       = "This plugin can only generate token".some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     if (config.failIfPresent) {
@@ -363,7 +363,7 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val config = ctx.cachedConfig(internalName)(NgJwtSignerConfig.format).getOrElse(NgJwtSignerConfig())
 
     config.verifier match {
@@ -595,7 +595,7 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {
@@ -750,7 +750,7 @@ class JweExtractor extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config = ctx.cachedConfig(internalName)(NgJweSignerConfig.format).getOrElse(NgJweSignerConfig())
 
     config.certId match {
@@ -937,7 +937,7 @@ class OIDCJwtVerifier extends NgAccessValidator {
   override def configFlow: Seq[String]        = OIDCJwtVerifierConfig.configFlow
   override def configSchema: Option[JsObject] = OIDCJwtVerifierConfig.configSchema
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx.cachedConfig(internalName)(OIDCJwtVerifierConfig.format).getOrElse(OIDCJwtVerifierConfig())
     config.ref match {
       case None               => NgAccess.NgDenied(Results.BadRequest(Json.obj("error" -> "no auth. module setup"))).vfuture
@@ -1045,7 +1045,7 @@ case class OAuth2TokenExchangeConfig(
     }
   }
 
-  def withExpressionLanguage(attrs: TypedMap)(implicit env: Env): OAuth2TokenExchangeConfig = {
+  def withExpressionLanguage(attrs: TypedMap)(using env: Env): OAuth2TokenExchangeConfig = {
     OAuth2TokenExchangeConfig.format.reads(json.stringify.evaluateEl(attrs).parseJson) match {
       case JsError(errs)     =>
         OAuth2TokenExchange.logger.error(s"error while applying EL on OAuth2TokenExchangeConfig: ${errs}")
@@ -1322,7 +1322,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
   private val ExchangedTokenKey = TypedKey[String]("otoroshi.next.plugins.OAuth2TokenExchange.ExchangedToken")
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config = ctx
       .cachedConfig(internalName)(OAuth2TokenExchangeConfig.format)
       .getOrElse(OAuth2TokenExchangeConfig())
@@ -1415,7 +1415,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
       config: OAuth2TokenExchangeConfig,
       oidcModule: OAuth2ModuleConfig,
       attrs: TypedMap
-  )(implicit env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[Result, Unit]] = {
     val cacheKey  =
       s"${subjectToken.sha256}-${config.exchange.audience.getOrElse("")}-${config.exchange.scope.getOrElse("")}"
     val cacheTtl  = config.cacheTtlMs
@@ -1501,7 +1501,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
   override def transformRequest(
       ctx: NgTransformerRequestContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     ctx.attrs.get(ExchangedTokenKey) match {
       case Some(exchangedToken) =>
         Right(

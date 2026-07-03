@@ -126,7 +126,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true,
       additionalHeadersOut: List[HttpHeader] = List.empty
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
@@ -175,7 +175,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       delay: FiniteDuration = 0.millis,
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
@@ -231,7 +231,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
     Await.result(p.future, duration + 1.second)
   }
 
-  def awaitF(duration: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
+  def awaitF(duration: FiniteDuration)(using system: ActorSystem): Future[Unit] = {
     val p = Promise[Unit]
     system.scheduler.scheduleOnce(duration) {
       p.trySuccess(())
@@ -863,7 +863,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true,
       additionalHeadersOut: List[HttpHeader] = List.empty
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
@@ -883,7 +883,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
             val tail = body.tail
             Source
               .single(ByteString(head))
-              .concat(Source.future(awaitF(streamDelay)(actorSystem).map(_ => ByteString(tail))))
+              .concat(Source.future(awaitF(streamDelay)(using actorSystem).map(_ => ByteString(tail))))
           } else {
             Source(List(ByteString(body)))
           }
@@ -912,7 +912,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       delay: FiniteDuration = 0.millis,
       streamDelay: FiniteDuration = 0.millis,
       validate: HttpRequest => Boolean = _ => true
-  )(implicit ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
+  )(using ws: WSClient): (TargetService, Int, AtomicInteger, String => Map[String, String] => WSResponse) = {
     val counter = new AtomicInteger(0)
     val body    = """{"message":"hello world"}"""
     val server  = TargetService
@@ -932,7 +932,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
             val tail = body.tail
             Source
               .single(ByteString(head))
-              .concat(Source.future(awaitF(streamDelay)(actorSystem).map(_ => ByteString(tail))))
+              .concat(Source.future(awaitF(streamDelay)(using actorSystem).map(_ => ByteString(tail))))
           } else {
             Source(List(ByteString(body)))
           }
@@ -1030,7 +1030,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
     Await.result(p.future, duration + 1.second)
   }
 
-  def awaitF(duration: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
+  def awaitF(duration: FiniteDuration)(using system: ActorSystem): Future[Unit] = {
     val p = Promise[Unit]
     system.scheduler.scheduleOnce(duration) {
       p.trySuccess(())
@@ -1254,7 +1254,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
           .put(Json.stringify(newConfig.asJson))
           .flatMap { response =>
             val r = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
-            awaitF(100.millis)(actorSystem).map(_ => r)
+            awaitF(100.millis)(using actorSystem).map(_ => r)
           }
       }
       .andWait(1000.millis)
@@ -1825,7 +1825,7 @@ object Implicits {
     def await(): A = {
       Await.result(fu, 60.seconds)
     }
-    def andWait(duration: FiniteDuration)(implicit scheduler: Scheduler, ec: ExecutionContext): Future[A] = {
+    def andWait(duration: FiniteDuration)(using scheduler: Scheduler, ec: ExecutionContext): Future[A] = {
       val p = Promise[Unit]
       scheduler.scheduleOnce(duration) {
         p.trySuccess(())
@@ -2387,8 +2387,8 @@ trait ApiTester[Entity] {
 
   def testingBulk: Boolean = true
 
-  def beforeTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
-  def afterTest()(implicit ec: ExecutionContext): Future[Unit]  = FastFuture.successful(())
+  def beforeTest()(using ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
+  def afterTest()(using ec: ExecutionContext): Future[Unit]  = FastFuture.successful(())
 
   private def assertBodyJson(expected: JsValue, result: JsValue, name: String): Boolean = {
     if (result != expected) {
@@ -2440,7 +2440,7 @@ trait ApiTester[Entity] {
     }
   }
 
-  private def testCreateEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testCreateEntity(entity: Entity)(using ec: ExecutionContext): Future[Boolean] = {
     val path = route()
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
@@ -2465,7 +2465,7 @@ trait ApiTester[Entity] {
         }
       }
   }
-  private def testUpdateEntity(entity: Entity, updatedEntity: Entity)(implicit
+  private def testUpdateEntity(entity: Entity, updatedEntity: Entity)(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindById(entity, "testUpdateEntity pre".some).flatMap {
@@ -2496,7 +2496,7 @@ trait ApiTester[Entity] {
       }
     }
   }
-  private def testPatchEntity(entity: Entity, updatedEntity: (Entity, JsArray))(implicit
+  private def testPatchEntity(entity: Entity, updatedEntity: (Entity, JsArray))(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindById(entity, "testPatchEntity pre".some).flatMap {
@@ -2527,7 +2527,7 @@ trait ApiTester[Entity] {
       }
     }
   }
-  private def testDeleteEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testDeleteEntity(entity: Entity)(using ec: ExecutionContext): Future[Boolean] = {
     testFindById(entity, "testDeleteEntity pre".some).flatMap {
       case false => false.future
       case true  => {
@@ -2554,7 +2554,7 @@ trait ApiTester[Entity] {
       }
     }
   }
-  private def testFindAll(entities: Seq[Entity], ctx: Option[String])(implicit
+  private def testFindAll(entities: Seq[Entity], ctx: Option[String])(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     val path = route()
@@ -2578,7 +2578,7 @@ trait ApiTester[Entity] {
         }
       }
   }
-  private def testFindById(entity: Entity, ctx: Option[String])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testFindById(entity: Entity, ctx: Option[String])(using ec: ExecutionContext): Future[Boolean] = {
     val path = route() + "/" + extractId(entity)
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
@@ -2600,7 +2600,7 @@ trait ApiTester[Entity] {
       }
   }
 
-  private def testCreateEntities(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testCreateEntities(entities: Seq[Entity])(using ec: ExecutionContext): Future[Boolean] = {
     val path = route() + "/_bulk"
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
@@ -2624,7 +2624,7 @@ trait ApiTester[Entity] {
         }
       }
   }
-  private def testPatchEntities(entities: Seq[Entity], updatedEntities: Seq[(Entity, JsArray)])(implicit
+  private def testPatchEntities(entities: Seq[Entity], updatedEntities: Seq[(Entity, JsArray)])(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindAll(entities, "testPatchEntities pre".some).flatMap {
@@ -2669,7 +2669,7 @@ trait ApiTester[Entity] {
       }
     }
   }
-  private def testUpdateEntities(entities: Seq[Entity], updatedEntities: Seq[Entity])(implicit
+  private def testUpdateEntities(entities: Seq[Entity], updatedEntities: Seq[Entity])(using
       ec: ExecutionContext
   ): Future[Boolean] = {
     testFindAll(entities, "testUpdateEntities pre".some).flatMap {
@@ -2705,7 +2705,7 @@ trait ApiTester[Entity] {
       }
     }
   }
-  private def testDeleteEntities(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testDeleteEntities(entities: Seq[Entity])(using ec: ExecutionContext): Future[Boolean] = {
     testFindAll(entities, "testDeleteEntities pre".some).flatMap {
       case false => false.future
       case true  => {
@@ -2737,7 +2737,7 @@ trait ApiTester[Entity] {
     }
   }
 
-  def testApi(implicit ec: ExecutionContext): Future[ApiTesterResult] = {
+  def testApi(using ec: ExecutionContext): Future[ApiTesterResult] = {
 
     for {
 

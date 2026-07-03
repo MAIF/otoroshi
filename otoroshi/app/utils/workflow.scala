@@ -98,10 +98,10 @@ trait WorkFlowTask {
   def name: String
   def theType: WorkFlowTaskType
   def json: JsValue
-  def run(ctx: WorkFlowTaskContext)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult]
+  def run(ctx: WorkFlowTaskContext)(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult]
   def withPredicate(spec: JsValue, ctx: WorkFlowTaskContext)(
       f: => Future[WorkFlowResult]
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
     lazy val predicate = WorkFlowPredicate(spec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
     if (predicate.check(ctx.json)) {
       f
@@ -250,7 +250,7 @@ class WorkFlow(spec: WorkFlowSpec) {
 
   def run(
       input: WorkFlowRequest
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
     val ctx = WorkFlowTaskContext(
       input.input,
       new UnboundedTrieMap[String, JsValue](),
@@ -366,7 +366,7 @@ case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 
   override def run(
       ctx: WorkFlowTaskContext
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
     withPredicate(spec, ctx) {
       val response = applyTransformation(spec.select("response").as[JsValue], ctx, env)
       //val responseStr = applyEl(response.stringify, ctx, env)
@@ -420,7 +420,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
 
   override def run(
       ctx: WorkFlowTaskContext
-  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+  )(using ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
     withPredicate(spec, ctx) {
       val finalUrl = url(ctx, env)
       val req      = env.MtlsWs

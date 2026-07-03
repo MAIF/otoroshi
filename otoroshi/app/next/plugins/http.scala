@@ -33,7 +33,7 @@ class ReadOnlyCalls extends NgAccessValidator {
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = None
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method = ctx.request.method.toLowerCase
     if (!methods.contains(method)) {
       Errors
@@ -88,7 +88,7 @@ class AllowHttpMethods extends NgAccessValidator {
   override def isAccessAsync: Boolean                      = true
   override def defaultConfigObject: Option[NgPluginConfig] = NgAllowedMethodsConfig().some
 
-  override def access(ctx: NgAccessContext)(implicit env: Env, ec: ExecutionContext): Future[NgAccess] = {
+  override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val method                                                     = ctx.request.method.toLowerCase
     val NgAllowedMethodsConfig(allowed_methods, forbidden_methods) =
       ctx.cachedConfig(internalName)(NgAllowedMethodsConfig.format).getOrElse(NgAllowedMethodsConfig())

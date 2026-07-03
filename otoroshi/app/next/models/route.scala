@@ -47,7 +47,7 @@ case class NgRoute(
     plugins: NgPlugins
 ) extends EntityLocationSupport {
 
-  def save()(implicit env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.routeDataStore.set(this)
+  def save()(using env: Env, ec: ExecutionContext): Future[Boolean] = env.datastores.routeDataStore.set(this)
   lazy val cacheableId: String                                         = originalRouteId.getOrElse(id)
   override def internalId: String                                      = id
   override def theName: String                                         = name
@@ -91,7 +91,7 @@ case class NgRoute(
       skipDomainVerif: Boolean,
       noMoreSegments: Boolean,
       skipPathVerif: Boolean
-  )(implicit env: Env): Boolean = {
+  )(using env: Env): Boolean = {
     if (enabled) {
       val path         = request.thePath
       val domain       = request.theDomain
@@ -179,7 +179,7 @@ case class NgRoute(
             }
             firstRes && secondRes
           }
-        val matchers = plugins.routeMatcherPlugins(request)(env.otoroshiExecutionContext, env)
+        val matchers = plugins.routeMatcherPlugins(request)(using env.otoroshiExecutionContext, env)
         if (res && matchers.nonEmpty) {
           if (matchers.size == 1) {
             val matcher = matchers.head
@@ -552,7 +552,7 @@ case class NgRoute(
     )
   }
 
-  private def otoroshiJsonError(error: JsObject, status: Results.Status, __ctx: NgTransformerErrorContext)(implicit
+  private def otoroshiJsonError(error: JsObject, status: Results.Status, __ctx: NgTransformerErrorContext)(using
       env: Env,
       ec: ExecutionContext
   ): Result = {
@@ -568,7 +568,7 @@ case class NgRoute(
 
   def transformError(
       __ctx: NgTransformerErrorContext
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val all_plugins = __ctx.attrs
       .get(Keys.ContextualPluginsKey)
       .map(_.transformerPluginsThatTransformsError)
@@ -718,7 +718,7 @@ case class NgRoute(
   }
 
   def contextualPlugins(global_plugins: NgPlugins, nextPluginsMerge: Boolean, attrs: TypedMap, request: RequestHeader)(
-      implicit
+      using
       env: Env,
       ec: ExecutionContext
   ): NgContextualPlugins = {
@@ -880,7 +880,7 @@ object NgRoute {
     }
   }
 
-  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean)(implicit
+  def fromServiceDescriptor(service: ServiceDescriptor, debug: Boolean)(using
       ec: ExecutionContext,
       env: Env
   ): NgRoute = {
@@ -1318,7 +1318,7 @@ object NgRoute {
 }
 
 trait NgRouteDataStore extends BasicStore[NgRoute] {
-  def template(ctx: Option[ApiActionContext[_]] = None)(implicit env: Env): NgRoute = {
+  def template(ctx: Option[ApiActionContext[_]] = None)(using env: Env): NgRoute = {
     val default = NgRoute(
       location = EntityLocation.ownEntityLocation(ctx),
       id = s"route_${IdGenerator.uuid}",
@@ -1363,9 +1363,9 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
         )
       )
     )
-      .copy(location = EntityLocation.ownEntityLocation(ctx)(env))
+      .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
-      .latest()(env.otoroshiExecutionContext, env)
+      .latest()(using env.otoroshiExecutionContext, env)
       .templates
       .route
       .map { template =>
@@ -1378,7 +1378,7 @@ trait NgRouteDataStore extends BasicStore[NgRoute] {
 }
 
 class KvNgRouteDataStore(redisCli: RedisLike, _env: Env) extends NgRouteDataStore with RedisLikeStore[NgRoute] {
-  override def redisLike(implicit env: Env): RedisLike = redisCli
+  override def redisLike(using env: Env): RedisLike = redisCli
   override def fmt: Format[NgRoute]                    = NgRoute.fmt
   override def key(id: String): String                 = s"${_env.storageRoot}:routes:${id}"
   override def extractId(value: NgRoute): String       = value.id

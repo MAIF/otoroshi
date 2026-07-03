@@ -21,7 +21,7 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
-class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
