@@ -92,7 +92,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
   def write(): Unit = {
     val config = Json.obj(
       "banned"                -> JsArray(banned.map(JsString.apply)),
-      "descriptions"          -> JsObject(descriptions.mapValues(JsString.apply).toMap),
+      "descriptions"          -> JsObject(descriptions.view.mapValues(JsString.apply).toMap),
       // "old_descriptions" -> JsObject(old_descriptions.mapValues(JsString.apply).toMap),
       // "old_examples" -> JsObject(old_examples.mapValues(JsString.apply).toMap),
       "bulkControllerMethods" -> JsArray(bulkControllerMethods.map(JsString.apply)),
@@ -108,7 +108,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
     }
 
     val descs       = descriptions
-      .mapValues(JsString.apply).toMap
+      .view.mapValues(JsString.apply).toMap
       .toSeq
       .sortWith((a, b) => a._1.compareTo(b._1) < 0)
       .map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}")
@@ -1175,7 +1175,7 @@ class OpenApiGenerator(
       val cfg = OpenApiGeneratorConfig(
         config.filePath,
         config.raw.asObject ++ Json.obj(
-          "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply).toMap)
+          "descriptions" -> JsObject(foundDescriptions.view.mapValues(JsString.apply).toMap)
           // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
         )
       )
@@ -1267,8 +1267,8 @@ class OpenApiGenerator(
       OpenApiGeneratorConfig(
         config.filePath,
         config.raw.asObject ++ Json.obj(
-          "old_descriptions" -> JsObject(descriptions.mapValues(JsString.apply).toMap),
-          "old_examples"     -> JsObject(examples.mapValues(JsString.apply).toMap)
+          "old_descriptions" -> JsObject(descriptions.view.mapValues(JsString.apply).toMap),
+          "old_examples"     -> JsObject(examples.view.mapValues(JsString.apply).toMap)
         )
       ).write()
     } else {

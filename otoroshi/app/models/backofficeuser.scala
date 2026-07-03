@@ -115,7 +115,7 @@ object BackOfficeUser {
               .select("adminEntityValidators")
               .asOpt[JsObject]
               .map { obj =>
-                obj.value.mapValues { arr =>
+                obj.value.view.mapValues { arr =>
                   arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
@@ -147,7 +147,7 @@ object BackOfficeUser {
         "metadata"              -> o.metadata,
         "tags"                  -> JsArray(o.tags.map(JsString.apply)),
         "rights"                -> o.rights.json,
-        "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
+        "adminEntityValidators" -> o.adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json))).toMap
       )
   }
 }

@@ -664,7 +664,7 @@ class Env(
     .select("entity_validators")
     .asOpt[JsObject]
     .map { obj =>
-      obj.value.mapValues { arr =>
+      obj.value.view.mapValues { arr =>
         arr.asArray.value.toSeq
           .map { item =>
             JsonValidator.format.reads(item)

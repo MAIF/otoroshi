@@ -80,7 +80,7 @@ object BasicAuthUser {
           "tags"                  -> o.tags,
           "webauthn"              -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
           "rights"                -> o.rights.json,
-          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
+          "adminEntityValidators" -> o.adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json))).toMap
         )
       override def reads(json: JsValue)     =
         Try {
@@ -97,7 +97,7 @@ object BasicAuthUser {
                 .select("adminEntityValidators")
                 .asOpt[JsObject]
                 .map { obj =>
-                  obj.value.mapValues { arr =>
+                  obj.value.view.mapValues { arr =>
                     arr.asArray.value.toSeq
                       .map { item =>
                         JsonValidator.format.reads(item)

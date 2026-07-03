@@ -1248,12 +1248,12 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
       }
       case Some(body) if request.contentType.contains("application/x-www-form-urlencoded") => {
         body.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
-          val values: Map[String, String]      = FormUrlEncodedParser.parse(bodyRaw.utf8String).mapValues(_.last).toMap
+          val values: Map[String, String]      = FormUrlEncodedParser.parse(bodyRaw.utf8String).view.mapValues(_.last).toMap
           val default                          =
             defaultEntity
               .orElse(resource.access.template(version, Map.empty, ctx.some).asOpt[JsObject])
               .getOrElse(Json.obj())
-          val jsonValues: Map[String, JsValue] = values.mapValues{
+          val jsonValues: Map[String, JsValue] = values.view.mapValues{
             case str if str == "null"                                     => JsNull
             case str if str == "true"                                     => JsBoolean(true)
             case str if str == "false"                                    => JsBoolean(false)
@@ -2305,7 +2305,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
   // GET /apis/:group/:version/:entity/_template
   def template(group: String, version: String, entity: String) = ApiAction.async { ctx =>
     withResource(group, version, entity, ctx.request) { resource =>
-      val templ = resource.access.template(version, ctx.request.queryString.mapValues(_.last).toMap, ctx.some)
+      val templ = resource.access.template(version, ctx.request.queryString.view.mapValues(_.last).toMap, ctx.some)
       if (templ == Json.obj()) {
         NotFound(Json.obj("error" -> "template not found !")).vfuture
       } else {

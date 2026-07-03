@@ -556,7 +556,7 @@ class HttpHandler()(using env: Env) {
               val isUp                                  = true
               val (resp, remainingQuotas)               = tuple
               // val responseHeader          = ByteString(s"HTTP/1.1 ${resp.headers.status}")
-              val headers                               = resp.headers.mapValues(_.head).toMap
+              val headers                               = resp.headers.view.mapValues(_.head).toMap
               val _headersForOut: Seq[(String, String)] =
                 resp.headers.toSeq.flatMap(c =>
                   c._2.map(v => (c._1, v))
@@ -594,7 +594,7 @@ class HttpHandler()(using env: Env) {
                       attrs = attrs
                     )
                   } else if (isUp) {
-                    logger.error(stateRespInvalid.errorMessage(resp.status, resp.headers.mapValues(_.last).toMap))
+                    logger.error(stateRespInvalid.errorMessage(resp.status, resp.headers.view.mapValues(_.last).toMap))
                     val extraInfos    = attrs
                       .get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey)
                       .map(_.as[JsObject])
@@ -602,7 +602,7 @@ class HttpHandler()(using env: Env) {
                     val newExtraInfos =
                       extraInfos ++ Json.obj(
                         "stateRespInvalid" -> stateRespInvalid
-                          .exchangePayload(resp.status, resp.headers.mapValues(_.last).toMap)
+                          .exchangePayload(resp.status, resp.headers.view.mapValues(_.last).toMap)
                       )
                     attrs.put(otoroshi.plugins.Keys.GatewayEventExtraInfosKey -> newExtraInfos)
                     Errors.craftResponseResult(
@@ -716,7 +716,7 @@ class HttpHandler()(using env: Env) {
                                   httpResponse.status,
                                   isChunked,
                                   upstreamLatency,
-                                  headersOut = resp.headers.mapValues(_.head).toMap.toSeq.map(Header.apply),
+                                  headersOut = resp.headers.view.mapValues(_.head).toMap.toSeq.map(Header.apply),
                                   otoroshiHeadersOut = headersOut.map(Header.apply),
                                   otoroshiHeadersIn = headersIn.map(Header.apply)
                                 )
@@ -737,7 +737,7 @@ class HttpHandler()(using env: Env) {
                                   httpResponse.status,
                                   isChunked,
                                   upstreamLatency,
-                                  headersOut = resp.headers.mapValues(_.head).toMap.toSeq.map(Header.apply),
+                                  headersOut = resp.headers.view.mapValues(_.head).toMap.toSeq.map(Header.apply),
                                   otoroshiHeadersOut = headersOut.map(Header.apply),
                                   otoroshiHeadersIn = headersIn.map(Header.apply)
                                 )
@@ -899,7 +899,7 @@ class HttpHandler()(using env: Env) {
                                     httpResponse.status,
                                     isChunked,
                                     upstreamLatency,
-                                    headersOut = resp.headers.mapValues(_.head).toMap.toSeq.map(Header.apply),
+                                    headersOut = resp.headers.view.mapValues(_.head).toMap.toSeq.map(Header.apply),
                                     otoroshiHeadersOut = headersOut.map(Header.apply),
                                     otoroshiHeadersIn = headersIn.map(Header.apply)
                                   )

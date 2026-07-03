@@ -330,7 +330,7 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head).toMap
+                .view.mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
@@ -400,7 +400,7 @@ class BackOfficeController(
             )
             .withHeaders(
               res.headers
-                .mapValues(_.head).toMap
+                .view.mapValues(_.head).toMap
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
@@ -1992,7 +1992,7 @@ class BackOfficeController(
       .map { res =>
         Results
           .Status(res.status)(res.body)
-          .withHeaders(res.headers.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type"): _*)
+          .withHeaders(res.headers.view.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type"): _*)
           .as(res.contentType)
       }
   }

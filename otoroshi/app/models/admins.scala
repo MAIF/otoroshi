@@ -83,7 +83,7 @@ case class SimpleOtoroshiAdmin(
       "metadata"              -> metadata,
       "tags"                  -> JsArray(tags.map(JsString.apply)),
       "rights"                -> rights.json,
-      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
+      "adminEntityValidators" -> adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json))).toMap
     )
 }
 
@@ -109,7 +109,7 @@ object SimpleOtoroshiAdmin {
           .select("adminEntityValidators")
           .asOpt[JsObject]
           .map { obj =>
-            obj.value.mapValues { arr =>
+            obj.value.view.mapValues { arr =>
               arr.asArray.value.toSeq
                 .map { item =>
                   JsonValidator.format.reads(item)
@@ -161,7 +161,7 @@ case class WebAuthnOtoroshiAdmin(
       "metadata"              -> metadata,
       "tags"                  -> JsArray(tags.map(JsString.apply)),
       "rights"                -> rights.json,
-      "adminEntityValidators" -> adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
+      "adminEntityValidators" -> adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json))).toMap
     )
 }
 
@@ -192,7 +192,7 @@ object WebAuthnOtoroshiAdmin {
           .select("adminEntityValidators")
           .asOpt[JsObject]
           .map { obj =>
-            obj.value.mapValues { arr =>
+            obj.value.view.mapValues { arr =>
               arr.asArray.value.toSeq
                 .map { item =>
                   JsonValidator.format.reads(item)

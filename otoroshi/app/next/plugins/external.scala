@@ -95,7 +95,7 @@ class NgExternalValidator extends NgAccessValidator {
       attrs = ctx.attrs,
       env = env
     )
-    val headers = config.headers.mapValues(v =>
+    val headers = config.headers.view.mapValues(v =>
       GlobalExpressionLanguage.apply(
         value = v,
         req = ctx.request.some,

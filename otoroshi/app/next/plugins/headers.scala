@@ -374,7 +374,7 @@ class OtoroshiHeadersIn extends NgRequestTransformer {
         env.Headers.OtoroshiGatewayParentRequest
       )
       .appendAll(additionalHeaders)
-      .mapValues(v =>
+      .view.mapValues(v =>
         otoroshi.el.GlobalExpressionLanguage(
           value = v,
           req = ctx.request.some,
@@ -416,7 +416,7 @@ class AdditionalHeadersOut extends NgRequestTransformer {
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpResponse] = {
     val config = ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig())
     val additionalHeaders = {
-      config.headers.mapValues{ value =>
+      config.headers.view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -458,7 +458,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.mapValues{ value =>
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -506,7 +506,7 @@ class MissingHeadersIn extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiRequest.headers.contains(key) && !ctx.otoroshiRequest.headers.contains(key.toLowerCase)
       }
-      .mapValues{ value =>
+      .view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
@@ -553,7 +553,7 @@ class MissingHeadersOut extends NgRequestTransformer {
       .filter { case (key, _) =>
         !ctx.otoroshiResponse.headers.contains(key) && !ctx.otoroshiResponse.headers.contains(key.toLowerCase)
       }
-      .mapValues{ value =>
+      .view.mapValues{ value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,

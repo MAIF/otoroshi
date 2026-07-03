@@ -80,7 +80,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
           deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray).toMap)
+            .map(_.view.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
@@ -96,8 +96,8 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
-              o.value.mapValues { obj =>
-                obj.asObject.value.mapValues { arr =>
+              o.value.view.mapValues { obj =>
+                obj.asObject.value.view.mapValues { arr =>
                   arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
@@ -210,13 +210,13 @@ case class Oauth1ModuleConfig(
       "remoteValidators"              -> JsArray(remoteValidators.map(_.json)),
       "metadata"                      -> metadata,
       "tags"                          -> JsArray(tags.map(JsString.apply)),
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json).toMap),
+      "rightsOverride"                -> JsObject(rightsOverride.view.mapValues(_.json).toMap),
       "httpMethod"                    -> httpMethod.name,
       "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "allowedUsers"                  -> allowedUsers,
       "deniedUsers"                   -> deniedUsers,
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.view.mapValues{ o =>
+        JsObject(o.view.mapValues(v => JsArray(v.map(_.json))).toMap)
       }.toMap)
     )
 

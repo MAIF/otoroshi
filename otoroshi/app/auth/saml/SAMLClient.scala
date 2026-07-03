@@ -421,8 +421,8 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
-              o.value.mapValues { obj =>
-                obj.asObject.value.mapValues { arr =>
+              o.value.view.mapValues { obj =>
+                obj.asObject.value.view.mapValues { arr =>
                   arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
@@ -829,8 +829,8 @@ case class SamlAuthModuleConfig(
     "usedNameIDAsEmail"             -> this.usedNameIDAsEmail,
     "emailAttributeName"            -> this.emailAttributeName,
     "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
-      JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
+    "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.view.mapValues{ o =>
+      JsObject(o.view.mapValues(v => JsArray(v.map(_.json))).toMap)
     }.toMap)
   )
 

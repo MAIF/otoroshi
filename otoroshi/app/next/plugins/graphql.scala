@@ -1411,7 +1411,7 @@ class GraphQLProxy extends NgBackendCall {
         val operationName = body.select("operationName").asOpt[String]
         if (operationName.contains("IntrospectionQuery")) {
           callBackendApi(bodyRaw, config).map { res =>
-            sourceBodyResponse(res.status, res.headers.mapValues(_.last).toMap, res.bodyAsSource)
+            sourceBodyResponse(res.status, res.headers.view.mapValues(_.last).toMap, res.bodyAsSource)
           }
         } else {
           val query = body.select("query").asString
@@ -1485,7 +1485,7 @@ class GraphQLProxy extends NgBackendCall {
                     } else {
                       sourceBodyResponse(
                         res.status,
-                        res.headers.mapValues(_.last).toMap,
+                        res.headers.view.mapValues(_.last).toMap,
                         res.bodyAsSource
                       ).vfuture
                     }

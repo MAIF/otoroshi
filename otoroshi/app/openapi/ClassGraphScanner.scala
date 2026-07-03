@@ -62,7 +62,7 @@ class ClassGraphScanner {
       new CrdsGenerator(openApiSchema).run()
     }
     if (hasWritten || !formFile.exists()) {
-      val forms = new JsObject(asForms.mapValues(_.json).toMap)
+      val forms = new JsObject(asForms.view.mapValues(_.json).toMap)
       Files.writeString(formFile.toPath, forms.prettify)
       new CrdsGenerator(openApiSchema).run()
     }
@@ -99,7 +99,7 @@ class ClassGraphScanner {
         val jsonRaw = new String(openapiformres.readAllBytes(), StandardCharsets.UTF_8)
         val obj     = Json.parse(jsonRaw).as[JsObject]
         val map     = new UnboundedTrieMap[String, Form]()
-        map.++=(obj.value.mapValues(Form.fromJson).toMap).toMap
+        map.++=(obj.value.view.mapValues(Form.fromJson).toMap).toMap
       }
       OpenApiSchema(
         scanResult = scanResult,

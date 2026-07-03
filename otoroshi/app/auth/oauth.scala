@@ -97,7 +97,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray).toMap)
+            .map(_.view.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           otoroshiRightsField = (json \ "otoroshiRightsField").asOpt[String].getOrElse("otoroshi_rights"),
@@ -107,8 +107,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
-              o.value.mapValues { obj =>
-                obj.asObject.value.mapValues { arr =>
+              o.value.view.mapValues { obj =>
+                obj.asObject.value.view.mapValues { arr =>
                   arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
@@ -249,13 +249,13 @@ case class GenericOauth2ModuleConfig(
       "refreshTokens"                 -> this.refreshTokens,
       "sessionCookieValues"           -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"                   -> superAdmins,
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json).toMap),
+      "rightsOverride"                -> JsObject(rightsOverride.view.mapValues(_.json).toMap),
       "dataOverride"                  -> JsObject(dataOverride),
       "otoroshiRightsField"           -> this.otoroshiRightsField,
       "allowedUsers"                  -> this.allowedUsers,
       "deniedUsers"                   -> this.deniedUsers,
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.view.mapValues{ o =>
+        JsObject(o.view.mapValues(v => JsArray(v.map(_.json))).toMap)
       }.toMap)
     )
   def save()(using ec: ExecutionContext, env: Env): Future[Boolean]  = env.datastores.authConfigsDataStore.set(this)

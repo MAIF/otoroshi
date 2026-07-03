@@ -57,9 +57,9 @@ case class JwtInjection(
   def asJson: JsValue =
     Json.obj(
       "token"             -> decodedToken.map(_.getToken.json).getOrElse(JsNull).asValue,
-      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply).toMap),
+      "additionalHeaders" -> JsObject(this.additionalHeaders.view.mapValues(JsString.apply).toMap),
       "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
-      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply).toMap),
+      "additionalCookies" -> JsObject(this.additionalCookies.view.mapValues(JsString.apply).toMap),
       "removeCookies"     -> JsArray(this.removeCookies.map(JsString.apply))
     )
 }
@@ -827,7 +827,7 @@ case class MappingSettings(
 )                                                                                          extends AsJson                      {
   override def asJson =
     Json.obj(
-      "map"    -> JsObject(map.mapValues(JsString.apply).toMap),
+      "map"    -> JsObject(map.view.mapValues(JsString.apply).toMap),
       "values" -> values,
       "remove" -> JsArray(remove.map(JsString.apply))
     )
@@ -891,7 +891,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
   }
   def asVerification(algorithm: Algorithm, attrs: TypedMap)(using env: Env): Verification = {
     val verification = fields
-      .mapValues(_.evaluateEl(attrs)).toMap
+      .view.mapValues(_.evaluateEl(attrs)).toMap
       .foldLeft(
         JWT
           .require(algorithm)
@@ -1063,8 +1063,8 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
 
   override def asJson =
     Json.obj(
-      "fields"      -> JsObject(this.fields.mapValues(JsString.apply).toMap),
-      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply).toMap)
+      "fields"      -> JsObject(this.fields.view.mapValues(JsString.apply).toMap),
+      "arrayFields" -> JsObject(this.arrayFields.view.mapValues(JsString.apply).toMap)
     )
 }
 

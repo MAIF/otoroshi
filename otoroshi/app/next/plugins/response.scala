@@ -97,7 +97,7 @@ class StaticResponse extends NgBackendCall {
     inMemoryBodyResponse(
       config.status,
       config.headers.applyOnIf(config.applyEl)(
-        _.mapValues(str =>
+        _.view.mapValues(str =>
           GlobalExpressionLanguage.apply(
             value = str.debugPrintln,
             req = ctx.rawRequest.some,

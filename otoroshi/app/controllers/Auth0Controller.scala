@@ -612,7 +612,7 @@ class AuthController(
                   try {
                     val decoded =
                       JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
-                    decoded.getClaims.asScala.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
+                    decoded.getClaims.asScala.view.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
                   } catch {
                     case t: Throwable =>
                       logger.error("error while verifying relay_state", t)
@@ -726,7 +726,7 @@ class AuthController(
             val params: Map[String, String] = {
               try {
                 val decoded = JWT.require(Algorithm.HMAC512(env.otoroshiSecret)).build().verify(body("RelayState").head)
-                decoded.getClaims.asScala.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
+                decoded.getClaims.asScala.view.mapValues(_.asString()).toMap.filter(_._2 != null).toMap
               } catch {
                 case t: Throwable =>
                   logger.error("error while verifying relay_state", t)

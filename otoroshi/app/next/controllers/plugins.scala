@@ -43,7 +43,7 @@ class NgPluginsController(
   }
 
   def forms() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
-    val forms = new JsObject(env.openApiSchema.asForms.mapValues(_.json).toMap)
+    val forms = new JsObject(env.openApiSchema.asForms.view.mapValues(_.json).toMap)
     Ok(forms)
   }
 

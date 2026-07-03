@@ -438,7 +438,7 @@ case class ApikeyAccessModeConfiguration(
       "rotation"                -> rotation.json,
       "validUntil"              -> validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
       "tags"                    -> JsArray(tags.map(JsString.apply)),
-      "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).mapValues(JsString.apply).toMap)
+      "metadata"                -> JsObject(metadata.filter(_._1.nonEmpty).view.mapValues(JsString.apply).toMap)
     )
   }
 }
@@ -977,7 +977,7 @@ object ApiSubscription {
         .map(_.split(SUBSCRIPTION_METADATA_KEY))
         .getOrElse(Array.empty[String])
 
-    currentApikeyMetadata.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key)).toMap
+    currentApikeyMetadata.view.filterKeys(key => !managed_keys.contains(key) && !CORE_METADATA.contains(key)).toMap
   }
 
   private def removeManagedTags(

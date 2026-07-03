@@ -48,7 +48,7 @@ object LdapAuthUser {
           "metadata"              -> o.metadata,
           "ldapProfile"           -> o.ldapProfile.getOrElse(JsNull).as[JsValue],
           "userRights"            -> o.userRights.map(UserRights.format.writes),
-          "adminEntityValidators" -> o.adminEntityValidators.mapValues(v => JsArray(v.map(_.json))).toMap
+          "adminEntityValidators" -> o.adminEntityValidators.view.mapValues(v => JsArray(v.map(_.json))).toMap
         )
       override def reads(json: JsValue)    =
         Try {
@@ -63,7 +63,7 @@ object LdapAuthUser {
                 .select("adminEntityValidators")
                 .asOpt[JsObject]
                 .map { obj =>
-                  obj.value.mapValues { arr =>
+                  obj.value.view.mapValues { arr =>
                     arr.asArray.value.toSeq
                       .map { item =>
                         JsonValidator.format.reads(item)
@@ -153,12 +153,12 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           extractProfileFilterNot = (json \ "extractProfileFilterNot").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
-            .map(_.mapValues(UserRights.readFromArray).toMap)
+            .map(_.view.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.mapValues(GroupRights.reads).toMap.collect { case (key, Some(v)) =>
+            .map(_.view.mapValues(GroupRights.reads).toMap.collect { case (key, Some(v)) =>
               (key, v)
             })
             .getOrElse(Map.empty),
@@ -174,8 +174,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .select("adminEntityValidatorsOverride")
             .asOpt[JsObject]
             .map { o =>
-              o.value.mapValues { obj =>
-                obj.asObject.value.mapValues { arr =>
+              o.value.view.mapValues { obj =>
+                obj.asObject.value.view.mapValues { arr =>
                   arr.asArray.value.toSeq
                     .map { item =>
                       JsonValidator.format.reads(item)
@@ -327,13 +327,13 @@ case class LdapAuthModuleConfig(
       "extractProfile"                -> extractProfile,
       "extractProfileFilter"          -> extractProfileFilter,
       "extractProfileFilterNot"       -> extractProfileFilterNot,
-      "rightsOverride"                -> JsObject(rightsOverride.mapValues(_.json).toMap),
+      "rightsOverride"                -> JsObject(rightsOverride.view.mapValues(_.json).toMap),
       "dataOverride"                  -> JsObject(dataOverride),
       "allowedUsers"                  -> allowedUsers,
       "deniedUsers"                   -> deniedUsers,
-      "groupRights"                   -> JsObject(groupRights.mapValues(GroupRights._fmt.writes).toMap),
-      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.mapValues{ o =>
-        JsObject(o.mapValues(v => JsArray(v.map(_.json))).toMap)
+      "groupRights"                   -> JsObject(groupRights.view.mapValues(GroupRights._fmt.writes).toMap),
+      "adminEntityValidatorsOverride" -> JsObject(adminEntityValidatorsOverride.view.mapValues{ o =>
+        JsObject(o.view.mapValues(v => JsArray(v.map(_.json))).toMap)
       }.toMap)
     )
 
