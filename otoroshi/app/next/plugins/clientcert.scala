@@ -180,7 +180,7 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
-          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectDN.getName), DN(cert.getIssuerDN.getName))
+          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectX500Principal.getName), DN(cert.getIssuerX500Principal.getName))
         )
       ) match {
       case Some(certs)            => {
@@ -199,7 +199,7 @@ class NgHasClientCertMatchingValidator extends NgAccessValidator {
         }
       }
       case _ if config.mandatory  => forbidden(context)
-      case _ if !config.mandatory => NgAccess.NgAllowed.vfuture
+      case _                      => NgAccess.NgAllowed.vfuture
     }
   }
 }
@@ -387,7 +387,7 @@ class NgCertificateAsApikey extends NgPreRouting {
         val config       =
           ctx.cachedConfig(internalName)(NgCertificateAsApikeyConfig.format).getOrElse(NgCertificateAsApikeyConfig())
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         env.datastores.apiKeyDataStore
           .findById(clientId)

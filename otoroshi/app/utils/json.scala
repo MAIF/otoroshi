@@ -120,7 +120,7 @@ object JsonOperationsHelper {
     val out = fields.map(input => getValueAtPath(input, obj))
 
     out.foldLeft(Json.obj()) { case (acc, curr) =>
-      insertAtPath(acc, curr._1.split("\\."), curr._2)
+      insertAtPath(acc, curr._1.split("\\.").toIndexedSeq, curr._2)
     }
   }
 

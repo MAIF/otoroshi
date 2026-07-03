@@ -2,7 +2,8 @@ package otoroshi.next.analytics.exporter
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import io.vertx.core.json.JsonObject
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
 import otoroshi.env.Env
 import otoroshi.events.ExportResult
@@ -101,7 +102,7 @@ object UserAnalyticsExporterSettings {
 
 /**
  * Registry of currently running UserAnalyticsExporter instances, keyed by
- * exporter id. The query layer (Phase B) uses this to find the live PgPool
+ * exporter id. The query layer (Phase B) uses this to find the live Pool
  * of the active exporter.
  */
 object UserAnalyticsExporterRegistry {
@@ -119,10 +120,10 @@ object UserAnalyticsExporterRegistry {
   def get(id: String): Option[UserAnalyticsExporter] = Option(running.get(id))
 
   /**
-   * Returns the live PgPool of the currently active analytics exporter
+   * Returns the live Pool of the currently active analytics exporter
    * (the one carrying the `otoroshi:user-analytics:active=true` metadata).
    */
-  def activeRunningPool(using env: Env, ec: ExecutionContext): Future[Option[PgPool]] = {
+  def activeRunningPool(using env: Env, ec: ExecutionContext): Future[Option[Pool]] = {
     UserAnalyticsExporterSettings.findActiveAnalyticsExporter.map { configOpt =>
       configOpt.flatMap(c => Option(running.get(c.id))).flatMap(_.pool)
     }
@@ -135,7 +136,7 @@ object UserAnalyticsExporterRegistry {
   def activeRunning(using
       env: Env,
       ec: ExecutionContext
-  ): Future[Option[(UserAnalyticsExporterSettings, PgPool)]] = {
+  ): Future[Option[(UserAnalyticsExporterSettings, Pool)]] = {
     UserAnalyticsExporterSettings.findActiveAnalyticsExporter.map { configOpt =>
       for {
         cfg      <- configOpt
@@ -242,7 +243,7 @@ object AnalyticsSchema {
     )
   }
 
-  def migrate(pool: PgPool, settings: UserAnalyticsExporterSettings)(using ec: ExecutionContext): Future[Unit] = {
+  def migrate(pool: Pool, settings: UserAnalyticsExporterSettings)(using ec: ExecutionContext): Future[Unit] = {
     val createSchema      = pool.query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};").executeAsync()
     val createTable       = createSchema.flatMap(_ => pool.query(createTableSql(settings)).executeAsync())
     val withEventsIndexes = indexStatements(settings).foldLeft(createTable.map(_ => ())) { (acc, ddl) =>
@@ -472,9 +473,9 @@ object FiredAlertDenormalizer {
 class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionContext, env: Env)
     extends DefaultDataExporter(config)(using ec, env) {
 
-  private val poolRef = new AtomicReference[PgPool](null)
+  private val poolRef = new AtomicReference[Pool](null)
 
-  def pool: Option[PgPool] = Option(poolRef.get())
+  def pool: Option[Pool] = Option(poolRef.get())
 
   private def buildConnectOptions(s: UserAnalyticsExporterSettings): PgConnectOptions = {
     s.uri match {
@@ -502,7 +503,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionConte
     exporter[UserAnalyticsExporterSettings] match {
       case None    => FastFuture.successful(())
       case Some(s) =>
-        val newPool = PgPool.pool(buildConnectOptions(s), new PoolOptions().setMaxSize(s.poolSize))
+        val newPool = PgBuilder.pool().connectingTo(buildConnectOptions(s)).`with`(new PoolOptions().setMaxSize(s.poolSize)).build()
         poolRef.set(newPool)
         UserAnalyticsExporterRegistry.register(config.id, this)
         if (env.clusterConfig.mode.isOff || env.clusterConfig.mode.isLeader) {
@@ -566,7 +567,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionConte
   }
 
   private def sendGatewayEvents(
-      pool: PgPool,
+      pool: Pool,
       s: UserAnalyticsExporterSettings,
       events: Seq[JsValue]
   ): Future[Unit] = {
@@ -587,7 +588,7 @@ class UserAnalyticsExporter(config: DataExporterConfig)(using ec: ExecutionConte
   }
 
   private def sendAlertEvents(
-      pool: PgPool,
+      pool: Pool,
       s: UserAnalyticsExporterSettings,
       events: Seq[JsValue]
   ): Future[Unit] = {

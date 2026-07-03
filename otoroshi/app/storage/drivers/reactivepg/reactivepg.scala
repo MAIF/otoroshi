@@ -10,7 +10,8 @@ import com.typesafe.config.ConfigFactory
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{PoolOptions, Row}
 import next.models.{
   ApiDataStore,
@@ -236,7 +237,7 @@ class ReactivePgDataStores(
   private lazy val schema             = configuration.getOptionalWithFileSupport[String]("app.pg.schema").getOrElse("otoroshi")
   private lazy val table              = configuration.getOptionalWithFileSupport[String]("app.pg.table").getOrElse("entities")
   private lazy val schemaDotTable     = s"$schema.$table"
-  private lazy val client             = PgPool.pool(connectOptions, poolOptions)
+  private lazy val client             = PgBuilder.pool().connectingTo(connectOptions).`with`(poolOptions).build()
 
   lazy val redis: ReactivePgRedis = new ReactivePgRedis(
     client,
@@ -613,7 +614,7 @@ class ReactivePgDataStores(
 }
 
 class ReactivePgRedis(
-    pool: PgPool,
+    pool: Pool,
     system: ActorSystem,
     env: Env,
     schemaDotTable: String,

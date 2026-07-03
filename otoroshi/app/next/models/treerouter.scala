@@ -152,7 +152,7 @@ case class NgTreeRouter(
     tree.get(domain) match {
       case Some(ptree) =>
         ptree.find(
-          path.split("/").filterNot(_.trim.isEmpty),
+          path.split("/").filterNot(_.trim.isEmpty).toIndexedSeq,
           path.endsWith("/"),
           "",
           scala.collection.mutable.HashMap.empty,

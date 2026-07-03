@@ -65,7 +65,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
                     chain.headOption match {
                       case Some(cert) =>
                         FastFuture.successful(
-                          RegexPool(dn).matches(DN(cert.getIssuerDN.getName).stringify)
+                          RegexPool(dn).matches(DN(cert.getIssuerX500Principal.getName).stringify)
                         )
                       case None       => FastFuture.successful(false)
                     }
@@ -126,7 +126,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
     context.request.clientCertificateChain
       .map(
         _.map(cert =>
-          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectDN.getName), DN(cert.getIssuerDN.getName))
+          SubIss(cert.getSerialNumber.toString(16), DN(cert.getSubjectX500Principal.getName), DN(cert.getIssuerX500Principal.getName))
         )
       ) //match {
       .orElse(Some(Seq(SubIss("1234567890", DN("SN=foo"), DN("SN=ca, CN=CA_MAIF_ROOTCA"))))) match {
@@ -264,14 +264,14 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
     if (
       certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
       certs
-        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+        .exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))) ||
       certs
-        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
+        .exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))) ||
       certs.exists(cert =>
-        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
+        regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectX500Principal.getName).stringify))
       ) ||
       certs.exists(cert =>
-        regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
+        regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerX500Principal.getName).stringify))
       )
     ) {
       true
@@ -406,20 +406,20 @@ class ClientCertChainHeader extends RequestTransformer {
     JsArray(
       chain.map(c =>
         Json.obj(
-          "subjectDN"    -> DN(c.getSubjectDN.getName).stringify,
-          "issuerDN"     -> DN(c.getIssuerDN.getName).stringify,
+          "subjectDN"    -> DN(c.getSubjectX500Principal.getName).stringify,
+          "issuerDN"     -> DN(c.getIssuerX500Principal.getName).stringify,
           "notAfter"     -> c.getNotAfter.getTime,
           "notBefore"    -> c.getNotBefore.getTime,
           "serialNumber" -> c.getSerialNumber.toString(16),
-          "subjectCN"    -> Option(DN(c.getSubjectDN.getName).stringify)
+          "subjectCN"    -> Option(DN(c.getSubjectX500Principal.getName).stringify)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
             .map(_.replace("CN=", "").replace("cn=", ""))
-            .getOrElse(DN(c.getSubjectDN.getName).stringify)
+            .getOrElse(DN(c.getSubjectX500Principal.getName).stringify)
             .asInstanceOf[String],
-          "issuerCN"     -> Option(DN(c.getIssuerDN.getName).stringify)
+          "issuerCN"     -> Option(DN(c.getIssuerX500Principal.getName).stringify)
             .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
             .map(_.replace("CN=", "").replace("cn=", ""))
-            .getOrElse(DN(c.getIssuerDN.getName).stringify)
+            .getOrElse(DN(c.getIssuerX500Principal.getName).stringify)
             .asInstanceOf[String]
         )
       )
@@ -457,7 +457,7 @@ class ClientCertChainHeader extends RequestTransformer {
         val dnsMap   =
           if (sendDns)
             Map(
-              dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify))))
+              dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectX500Principal.getName).stringify))))
             )
           else Map.empty
         val chainMap = if (sendChain) Map(chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty

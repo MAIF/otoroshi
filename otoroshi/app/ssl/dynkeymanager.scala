@@ -175,7 +175,7 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
         val dns   = domain.split("\\|").toSeq.map(DN.apply)
         val certs = validCerts
           .filter { c =>
-            val dnses = c.certificates.map(_.getSubjectDN.getName).map(DN.apply)
+            val dnses = c.certificates.map(_.getSubjectX500Principal.getName).map(DN.apply)
             dnses.exists(dn => dns.exists(v => v.isEqualsTo(dn)))
           }
           .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)

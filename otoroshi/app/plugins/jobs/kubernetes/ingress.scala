@@ -289,7 +289,7 @@ class KubernetesIngressControllerJob extends Job {
 }*/
 
 case class OtoAnnotationConfig(annotations: Map[String, String]) {
-  def asSeqString(value: String): Seq[String]         = value.split(",").map(_.trim)
+  def asSeqString(value: String): Seq[String]         = value.split(",").map(_.trim).toIndexedSeq
   def asMapString(value: String): Map[String, String] =
     value
       .split(",")

@@ -1,7 +1,8 @@
 package otoroshi.next.analytics.exporter
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.PoolOptions
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
@@ -63,7 +64,7 @@ class AnalyticsRetentionJob extends Job {
           .setPassword(s.password)
           .applyOnIf(s.ssl)(_.setSslMode(SslMode.REQUIRE))
     }
-    val pool = PgPool.pool(opts, new PoolOptions().setMaxSize(1))
+    val pool = PgBuilder.pool().connectingTo(opts).`with`(new PoolOptions().setMaxSize(1)).build()
     val sql  =
       s"DELETE FROM ${AnalyticsSchema.fullTable(s)} WHERE ts < NOW() - INTERVAL '${s.retentionDays} days'"
     pool

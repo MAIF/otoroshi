@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.queries
 
-import io.vertx.pgclient.PgPool
+import io.vertx.sqlclient.Pool
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
 import otoroshi.utils.syntax.implicits._
@@ -243,7 +243,7 @@ trait AnalyticsQuery {
       params: JsObject,
       bucket: Bucket,
       settings: UserAnalyticsExporterSettings,
-      pool: PgPool
+      pool: Pool
   )(using ec: ExecutionContext, env: Env): Future[QueryResult]
 
   def toCatalogJson: JsObject = Json.obj(

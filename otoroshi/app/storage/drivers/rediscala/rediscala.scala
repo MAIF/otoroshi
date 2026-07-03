@@ -68,7 +68,7 @@ object RedisMember {
     }
   }
   def fromList(value: String): Seq[RedisMember] = {
-    value.split(",").map(_.trim).flatMap(fromString)
+    value.split(",").map(_.trim).flatMap(fromString).toIndexedSeq
   }
 }
 

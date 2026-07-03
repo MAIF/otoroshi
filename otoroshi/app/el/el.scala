@@ -690,7 +690,7 @@ object GlobalExpressionLanguage {
             case r"exp"                                                                          => "{exp}"
 
             case "req.client_cert.dn" if req.isDefined && headCert.isDefined                                         =>
-              DN(headCert.get.getSubjectDN.getName).stringify
+              DN(headCert.get.getSubjectX500Principal.getName).stringify
             case "req.client_cert.id" if req.isDefined && headCert.isDefined                                         =>
               headCert.get.getSerialNumber.toString(16)
             case "req.client_cert.domain" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined =>
@@ -698,7 +698,7 @@ object GlobalExpressionLanguage {
             case "req.client_cert.cn" if req.isDefined && headCert.isDefined && headCert.get.rawDomain.isDefined     =>
               headCert.get.rawDomain.get
             case "req.client_cert.issuer_dn" if req.isDefined && headCert.isDefined                                  =>
-              DN(headCert.get.getIssuerDN.getName).stringify
+              DN(headCert.get.getIssuerX500Principal.getName).stringify
             case expr                                                                                                => "bad-expr" //s"$${$expr}"
           }
         } recover { case e =>

@@ -109,7 +109,7 @@ class RBAC extends NgAccessValidator {
     if (value.trim.startsWith("[") && value.trim.endsWith("]")) {
       Try(Json.parse(value).asArray.value.toSeq.map(_.asString)).getOrElse(Seq.empty).toSeq
     } else {
-      value.split(",").map(_.trim)
+      value.split(",").map(_.trim).toIndexedSeq
     }
   }
 

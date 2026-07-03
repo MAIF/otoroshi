@@ -1989,7 +1989,7 @@ object CertificateData {
     val client: Boolean             = usages.contains(KeyPurposeId.id_kp_clientAuth)
     // val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")) match {
     Json.obj(
-      "issuerDN"        -> DN(cert.getIssuerDN.getName).stringify,
+      "issuerDN"        -> DN(cert.getIssuerX500Principal.getName).stringify,
       "notAfter"        -> cert.getNotAfter.getTime,
       "notBefore"       -> cert.getNotBefore.getTime,
       "serialNumber"    -> cert.getSerialNumber.toString(16),
@@ -1998,7 +1998,7 @@ object CertificateData {
       "sigAlgOID"       -> cert.getSigAlgOID,
       "_signature"      -> new String(encoder.encode(cert.getSignature)),
       "signature"       -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
-      "subjectDN"       -> DN(cert.getSubjectDN.getName).stringify,
+      "subjectDN"       -> DN(cert.getSubjectX500Principal.getName).stringify,
       "domain"          -> domain,
       "rawDomain"       -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "version"         -> cert.getVersion,
@@ -2892,31 +2892,31 @@ object SSLImplicits {
     def asPem: String               =
       s"${PemHeaders.BeginCertificate}\n${encodedAndPadded}\n${PemHeaders.EndCertificate}\n"
     def altNames: Seq[String]       =
-      CertInfo.getSubjectAlternativeNames(cert.getSubjectDN.toString, cert, logger).asScala.toSeq
+      CertInfo.getSubjectAlternativeNames(cert.getSubjectX500Principal.toString, cert, logger).asScala.toSeq
     def rawDomain: Option[String] = {
-      Option(DN(cert.getSubjectDN.getName).stringify)
+      Option(DN(cert.getSubjectX500Principal.getName).stringify)
         .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase.startsWith("cn=")))
         .map(_.replace("CN=", "").replace("cn=", ""))
     }
     def maybeDomain: Option[String] = domains.headOption
-    def domain: String              = domains.headOption.getOrElse(cert.getSubjectDN.getName)
+    def domain: String              = domains.headOption.getOrElse(cert.getSubjectX500Principal.getName)
     def domains: Seq[String]        = (rawDomain ++ altNames).toSeq
     def asJson: JsObject            =
       Json.obj(
-        "subjectDN"    -> DN(cert.getSubjectDN.getName).stringify,
-        "issuerDN"     -> DN(cert.getIssuerDN.getName).stringify,
+        "subjectDN"    -> DN(cert.getSubjectX500Principal.getName).stringify,
+        "issuerDN"     -> DN(cert.getIssuerX500Principal.getName).stringify,
         "notAfter"     -> cert.getNotAfter.getTime,
         "notBefore"    -> cert.getNotBefore.getTime,
         "serialNumber" -> cert.getSerialNumber.toString(16),
-        "subjectCN"    -> Option(DN(cert.getSubjectDN.getName).stringify)
+        "subjectCN"    -> Option(DN(cert.getSubjectX500Principal.getName).stringify)
           .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
           .map(_.replace("CN=", ""))
-          .getOrElse(DN(cert.getSubjectDN.getName).stringify)
+          .getOrElse(DN(cert.getSubjectX500Principal.getName).stringify)
           .asInstanceOf[String],
-        "issuerCN"     -> Option(DN(cert.getIssuerDN.getName).stringify)
+        "issuerCN"     -> Option(DN(cert.getIssuerX500Principal.getName).stringify)
           .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
           .map(_.replace("CN=", ""))
-          .getOrElse(DN(cert.getIssuerDN.getName).stringify)
+          .getOrElse(DN(cert.getIssuerX500Principal.getName).stringify)
           .asInstanceOf[String]
       )
   }
@@ -2996,7 +2996,7 @@ case class RawCertificate(
   lazy val certificatesChainArray: Array[X509Certificate] = certificatesChain.toArray
   lazy val from: DateTime                                 = new DateTime(certificate.get.getNotBefore)
   lazy val to: DateTime                                   = new DateTime(certificate.get.getNotAfter)
-  lazy val name: String                                   = certificate.get.getSubjectDN.toString
+  lazy val name: String                                   = certificate.get.getSubjectX500Principal.toString
   lazy val domain: String                                 = certificate.get.domain
   lazy val serial: String                                 = certificate.get.getSerialNumber.toString()
   lazy val sans: List[String]                             = certificate.get.domains.toList

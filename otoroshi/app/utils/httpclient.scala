@@ -91,7 +91,7 @@ case class MtlsConfig(
           val dn = DN(id)
           DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
             cert.certificate.exists { c =>
-              val otherDn = DN(c.getSubjectDN.getName)
+              val otherDn = DN(c.getSubjectX500Principal.getName)
               dn.isEqualsTo(otherDn)
             }
           } filter { cert =>
@@ -110,7 +110,7 @@ case class MtlsConfig(
           val dn = DN(id)
           DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
             cert.certificate.exists { c =>
-              val otherDn = DN(c.getSubjectDN.getName)
+              val otherDn = DN(c.getSubjectX500Principal.getName)
               dn.isEqualsTo(otherDn)
             }
           } filter { cert =>

@@ -1581,7 +1581,7 @@ class Vaults(env: Env) {
               "not-found".vfuture
             }
           }
-          runOr(_expr.split("\\|\\|").map(_.trim))
+          runOr(_expr.split("\\|\\|").map(_.trim).toIndexedSeq)
         } else if (_expr.contains("&&")) {
           val parts = _expr.split("&&").map(_.trim)
           val index = counter.incrementAndGet() % (if (parts.nonEmpty) parts.length else 1)

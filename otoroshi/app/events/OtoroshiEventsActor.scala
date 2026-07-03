@@ -2350,12 +2350,13 @@ object Exporters {
       extends DefaultDataExporter(config)(using ec, env) {
 
     import otoroshi.storage.drivers.reactivepg.pgimplicits._
-    import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
+    import io.vertx.pgclient.{PgBuilder, PgConnectOptions, SslMode}
+    import io.vertx.sqlclient.Pool
     import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
     import io.vertx.core.json.JsonObject
     import scala.jdk.CollectionConverters.*
 
-    private val poolRef        = new AtomicReference[PgPool](null)
+    private val poolRef        = new AtomicReference[Pool](null)
     private val lastCleanupRef = new AtomicReference[Long](0L)
 
     private def buildConnectOptions(settings: PostgresExporterSettings): PgConnectOptions = {
@@ -2372,7 +2373,7 @@ object Exporters {
       }
     }
 
-    private def initTable(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+    private def initTable(pool: Pool, settings: PostgresExporterSettings): Future[Unit] = {
       pool
         .query(s"CREATE SCHEMA IF NOT EXISTS ${settings.schema};")
         .executeAsync()
@@ -2397,7 +2398,7 @@ object Exporters {
     override def start(): Future[Unit] = {
       exporter[PostgresExporterSettings]
         .map { settings =>
-          val pool = PgPool.pool(buildConnectOptions(settings), new PoolOptions().setMaxSize(settings.poolSize))
+          val pool = PgBuilder.pool().connectingTo(buildConnectOptions(settings)).`with`(new PoolOptions().setMaxSize(settings.poolSize)).build()
           poolRef.set(pool)
           initTable(pool, settings).recover { case e: Throwable =>
             logger.error(
@@ -2420,7 +2421,7 @@ object Exporters {
       tuple
     }
 
-    private def cleanupOldEvents(pool: PgPool, settings: PostgresExporterSettings): Future[Unit] = {
+    private def cleanupOldEvents(pool: Pool, settings: PostgresExporterSettings): Future[Unit] = {
       if (settings.retentionDays > 0) {
         val now           = System.currentTimeMillis()
         val last          = lastCleanupRef.get()

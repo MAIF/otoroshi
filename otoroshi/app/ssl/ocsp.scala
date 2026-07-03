@@ -55,9 +55,9 @@ object CertParentHelper {
 
   def fromOtoroshiRootCa(cert: X509Certificate, level: Int = 0): Boolean = {
     if (logger.isDebugEnabled)
-      logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+      logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}")
     if (level > 100) {
-      logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+      logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectX500Principal.getName)}")
       cache.put(cert.getSerialNumber, false)
       false
     } else {
@@ -78,10 +78,10 @@ object CertParentHelper {
                 cache.put(cert.getSerialNumber, true)
                 true
               } else {
-                val issuerDn = DN(cert.getIssuerDN.getName)
+                val issuerDn = DN(cert.getIssuerX500Principal.getName)
                 if (logger.isDebugEnabled) logger.debug(s"searching for $issuerDn")
                 DynamicSSLEngineProvider.certificates.values.find(
-                  _.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(issuerDn))
+                  _.certificate.exists(c => DN(c.getSubjectX500Principal.getName).isEqualsTo(issuerDn))
                 ) match {
                   case None                                                                           =>
                     if (logger.isDebugEnabled) logger.debug("issuer not found")
@@ -91,7 +91,7 @@ object CertParentHelper {
                     if (logger.isDebugEnabled) logger.debug("not from otoroshi")
                     cache.put(cert.getSerialNumber, false)
                     false
-                  case Some(issuer) if cert.getSerialNumber != issuer.certificate.get.getSerialNumber =>
+                  case Some(issuer) =>
                     if (logger.isDebugEnabled) logger.debug("found issuer")
                     fromOtoroshiRootCa(issuer.certificate.get, level + 1)
                 }
