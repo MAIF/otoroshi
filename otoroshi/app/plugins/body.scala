@@ -6,7 +6,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models.ServiceDescriptor
@@ -234,7 +234,7 @@ class BodyLogger extends RequestTransformer {
     FastFuture.successful(())
   }
 
-  private def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  private def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   private def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")

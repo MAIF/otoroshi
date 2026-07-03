@@ -7,7 +7,7 @@ import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import com.google.common.hash.Hashing
 import otoroshi.env.Env
 import otoroshi.events.{
@@ -804,7 +804,7 @@ object ApiKeyHelper {
   import otoroshi.utils.http.RequestImplicits._
   import otoroshi.utils.syntax.implicits._
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(using
       ec: ExecutionContext,

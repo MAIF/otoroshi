@@ -1,6 +1,6 @@
 package otoroshi.next.doc
 
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.events.CustomDataExporter
 import otoroshi.next.plugins.api.{NgNamedPlugin, NgPluginVisibility}
 import play.api.Logger
@@ -194,7 +194,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
       //   |
       //   |$documentation
       //   |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -228,7 +228,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
              |${contents.mkString("\n")}
              |
              |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 }

@@ -9,7 +9,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.token.builder.parser.Parser
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
@@ -1432,7 +1432,7 @@ class ApikeyAuthModule extends PreRouting {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.AccessControl)
   override def steps: Seq[NgStep]                = Seq(NgStep.PreRoute)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")

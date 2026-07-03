@@ -977,7 +977,7 @@ case class ParallelFlowsNode(json: JsObject) extends Node {
               )
             )
           } else {
-            Right(JsArray(seq.map(_.right.get)))
+            Right(JsArray(seq.map(_.toOption.get)))
           }
         }
     }

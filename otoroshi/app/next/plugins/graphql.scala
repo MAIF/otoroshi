@@ -977,7 +977,7 @@ class GraphQLBackend extends NgBackendCall {
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Action[Unit, Any] = {
     val url = replaceQueryParams(c)
 
-    val graphqlQuery = env.scriptManager.getAnyScript[GraphQLQuery](s"cp:${classOf[GraphQLQuery].getName}").right.get
+    val graphqlQuery = env.scriptManager.getAnyScript[GraphQLQuery](s"cp:${classOf[GraphQLQuery].getName}").toOption.get
     graphqlQuery
       .callBackend(
         ctx.copy(

@@ -9,7 +9,6 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManagerAsyncClientBuilder
 import com.amazonaws.services.secretsmanager.model.{GetSecretValueRequest, GetSecretValueResult}
 import com.github.blemale.scaffeine.Scaffeine
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.JWK
 import com.typesafe.config.{ConfigFactory, ConfigParseOptions, ConfigResolveOptions, ConfigSyntax}
 import org.joda.time.DateTime
@@ -754,7 +753,7 @@ class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration,
   // .getOrElse("secret")
 
   def makeStringToSign(opts: String): String = {
-    "GET%2F&" + URLEncoder.encode(opts, Charsets.UTF_8)
+    "GET%2F&" + URLEncoder.encode(opts, StandardCharsets.UTF_8)
   }
 
   def makeSignature(stringToSign: String, secret: String): String = {
@@ -1169,7 +1168,7 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
       val decryptedValue = {
         val ivBytes          = Base64.getDecoder().decode(secretValueIV)
         val tagBytes         = Base64.getDecoder().decode(secretValueTag)
-        val keyBytes         = serviceTokenSecret.getBytes(Charsets.UTF_8)
+        val keyBytes         = serviceTokenSecret.getBytes(StandardCharsets.UTF_8)
         val encryptedBytes   = Base64.getDecoder().decode(secretValueCiphertext)
         val cipher           = Cipher.getInstance("AES/GCM/NoPadding")
         val keySpec          = new SecretKeySpec(keyBytes, "AES")
@@ -1196,7 +1195,7 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
       val decryptedValue = {
         val ivBytes          = Base64.getDecoder().decode(secretValueIV)
         val tagBytes         = Base64.getDecoder().decode(secretValueTag)
-        val keyBytes         = secretKey.getBytes(Charsets.UTF_8)
+        val keyBytes         = secretKey.getBytes(StandardCharsets.UTF_8)
         val encryptedBytes   = Base64.getDecoder().decode(secretValueCiphertext)
         val cipher           = Cipher.getInstance("AES/GCM/NoPadding")
         val keySpec          = new SecretKeySpec(keyBytes, "AES");

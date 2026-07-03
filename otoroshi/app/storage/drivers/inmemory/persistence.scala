@@ -10,7 +10,7 @@ import org.apache.pekko.stream.connectors.s3._
 import org.apache.pekko.stream.scaladsl.{Framing, Keep, Sink, Source}
 import org.apache.pekko.stream.{Attributes, Materializer}
 import org.apache.pekko.util.ByteString
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
@@ -168,7 +168,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
           if (logger.isDebugEnabled) logger.debug("Writing state to disk ...")
-          Files.write(file.toPath, content.getBytes(Charsets.UTF_8))
+          Files.write(file.toPath, content.getBytes(StandardCharsets.UTF_8))
           lastHash.set(hash)
         }
       }

@@ -4,7 +4,6 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, LdapAuthModule, LdapAuthModuleConfig}
 import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
@@ -76,11 +75,11 @@ class NgLegacyAuthModuleCall extends NgAccessValidator {
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val authPlugin   = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[AuthModule])(using env.otoroshiExecutionContext)
-      .right
+      .toOption
       .get
     val apikeyPlugin = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[NgLegacyApikeyCall])(using env.otoroshiExecutionContext)
-      .right
+      .toOption
       .get
     val config       = ctx.cachedConfig(internalName)(configReads).getOrElse(NgLegacyAuthModuleCallConfig.default)
     val apikeyConfig = NgLegacyApikeyCallConfig(
@@ -897,7 +896,7 @@ class BasicAuthWithAuthModule extends NgAccessValidator {
         }
     }
 
-    def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+    def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
     def extractUsernamePassword(header: String): Option[(String, String)] = {
       val base64 = header.replace("Basic ", "").replace("basic ", "")

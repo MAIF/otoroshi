@@ -10,7 +10,6 @@ import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.auth.{AuthModuleConfig, SamlAuthModuleConfig, SessionCookieValues}
-import com.google.common.base.Charsets
 import controllers.Assets
 import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.controllers.HealthController
@@ -1057,5 +1056,5 @@ class GatewayRequestHandler(
       Redirect(s"$protocol://$domain${req.relativeUri}")
     }
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 }

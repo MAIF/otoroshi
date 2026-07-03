@@ -7,7 +7,6 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
 import otoroshi.controllers.{routes, LocalCredentialRepository}
@@ -244,7 +243,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
 
   def this() = this(BasicAuthModule.defaultConfig)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")
     Option(base64)

@@ -3021,7 +3021,7 @@ class SwappableInMemoryDataStores(
         val hash = MurmurHash3.stringHash(content)
         if (hash != lastHash.get()) {
           if (Cluster.logger.isDebugEnabled) Cluster.logger.debug("Writing state to disk ...")
-          java.nio.file.Files.write(file.toPath, content.getBytes(com.google.common.base.Charsets.UTF_8))
+          java.nio.file.Files.write(file.toPath, content.getBytes(java.nio.charset.StandardCharsets.UTF_8))
           lastHash.set(hash)
         }
       }

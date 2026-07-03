@@ -65,7 +65,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
   private val engine: ProxyEngine = env.scriptManager
     .getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}")
-    .right
+    .toOption
     .get
     .asInstanceOf[ProxyEngine]
 

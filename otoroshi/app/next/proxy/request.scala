@@ -5,7 +5,7 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
@@ -134,7 +134,7 @@ class BackOfficeRequest(
     env.Headers.OtoroshiClientId     -> apikey.clientId,
     env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
     env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-      Json.stringify(user.profile).getBytes(Charsets.UTF_8)
+      Json.stringify(user.profile).getBytes(StandardCharsets.UTF_8)
     ),
     "Otoroshi-Tenant"                -> request.headers.get("Otoroshi-Tenant").getOrElse("default"),
     "Otoroshi-BackOffice-User"       -> JWT

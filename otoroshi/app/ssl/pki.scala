@@ -394,7 +394,7 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
             resp.cert,
             resp.csr,
             query.some,
-            csr.right.get.privateKey,
+            csr.toOption.get.privateKey,
             caCert,
             caChain
           )

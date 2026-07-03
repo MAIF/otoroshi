@@ -2,7 +2,6 @@ package otoroshi.auth
 
 import java.util
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import com.google.common.base.Charsets
 import org.apache.pulsar.client.api.PulsarClientException.AuthenticationException
 import otoroshi.auth.LdapAuthModuleConfig.fromJson
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
@@ -677,7 +676,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
   def this() = this(LdapAuthModule.defaultConfig)
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")

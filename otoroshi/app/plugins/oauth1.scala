@@ -2,7 +2,7 @@ package otoroshi.plugins.oauth1
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -149,7 +149,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
     encodeURI(signature)
   }
 
-  private def encode(param: String): String = UriEncoding.encodePathSegment(param, Charsets.UTF_8)
+  private def encode(param: String): String = UriEncoding.encodePathSegment(param, StandardCharsets.UTF_8)
 
   def prepareParameters(params: Seq[(String, String)]): String = params
     .map { case (k, v) => (encode(k), encode(v)) }

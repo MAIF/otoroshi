@@ -1,6 +1,6 @@
 package otoroshi.script
 
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.events.CustomDataExporter
 import play.api.Logger
 import play.api.libs.json.Json
@@ -284,7 +284,7 @@ class PluginDocumentationGenerator(docPath: String) {
       //   |
       //   |$documentation
       //   |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
 
     (plugin.name, file.getName)
@@ -325,7 +325,7 @@ class PluginDocumentationGenerator(docPath: String) {
         |@@@
         |
         |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 
@@ -362,7 +362,7 @@ class PluginDocumentationGenerator(docPath: String) {
         |
         |
         |""".stripMargin).asJava,
-      Charsets.UTF_8
+      StandardCharsets.UTF_8
     )
   }
 }

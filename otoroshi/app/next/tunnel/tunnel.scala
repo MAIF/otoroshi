@@ -311,7 +311,7 @@ class TunnelAgent(env: Env) {
           case None    => Source.empty[ByteString]
           case Some(b) => Source.single(b)
         }
-        val engine            = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
+        val engine            = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
         val request           = new TunnelRequest(
           requestId = reqId,
           version = version,

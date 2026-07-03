@@ -8,7 +8,7 @@ import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.KeyType
 import io.otoroshi.wasm4s.scaladsl._
 import next.models.Api
@@ -251,7 +251,7 @@ class BackOfficeController(
       env.Headers.OtoroshiClientId     -> apikey.clientId,
       env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
       env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-        Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+        Json.stringify(ctx.user.profile).getBytes(StandardCharsets.UTF_8)
       ),
       "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
       "Otoroshi-BackOffice-User"       -> JWT

@@ -471,7 +471,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
       env.clusterConfig.mode match {
         case Off => NotFound(Json.obj("error" -> "Cluster API not available")).future
         case _   => {
-          val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").right.get
+          val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
           val cookies    = ctx.request.headers
             .get("Otoroshi-Relay-Routing-Cookies")
             .map(c => Cookies.decodeCookieHeader(c))

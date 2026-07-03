@@ -3,7 +3,7 @@ package otoroshi.next.plugins
 import org.apache.pekko.Done
 import org.apache.pekko.stream.Materializer
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models._
@@ -76,7 +76,7 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
   override def matches(ctx: NgRouteMatcherContext)(using env: Env): Boolean = {
     val plugin = env.scriptManager
       .getAnyScript[NgRouteMatcher](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
-      .right
+      .toOption
       .get
     plugin.matches(ctx)(using env)
   }
@@ -85,14 +85,14 @@ class NgLegacyApikeyCall extends NgAccessValidator with NgRequestTransformer wit
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val plugin = env.scriptManager
       .getAnyScript[NgRequestTransformer](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
-      .right
+      .toOption
       .get
     plugin.transformRequestSync(ctx)(using env, ec, mat)
   }
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val plugin     = env.scriptManager
       .getAnyScript[NgAccessValidator](NgPluginHelper.pluginId[ApikeyCalls])(using env.otoroshiExecutionContext)
-      .right
+      .toOption
       .get
     val config     = configCache.get(
       ctx.route.cacheableId,
@@ -781,7 +781,7 @@ class ApikeyAuthModule extends NgPreRouting {
   override def description: Option[String]                 =
     "This plugin adds basic auth on service where credentials are valid apikeys on the current service.".some
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
     val base64 = header.replace("Basic ", "").replace("basic ", "")

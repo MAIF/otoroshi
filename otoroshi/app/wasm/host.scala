@@ -387,11 +387,11 @@ object Http extends AwaitCapable {
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.JwtInjectionKey,
-      json => JwtInjection.fromJson(json).right.get
+      json => JwtInjection.fromJson(json).toOption.get
     ),
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.PreExtractedApikeyTupleKey,
-      json => ApikeyTuple.fromJson(json).right.get
+      json => ApikeyTuple.fromJson(json).toOption.get
     ),
     otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.UserKey, json => PrivateAppsUser.fmt.reads(json).get),
     otoroshi.plugins.AttributeSetter(otoroshi.plugins.Keys.ApiKeyKey, json => ApiKey._fmt.reads(json).get),

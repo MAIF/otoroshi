@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import next.models.Api
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -38,7 +38,7 @@ trait ApiActionContextCapable {
   def user(using env: Env): Option[JsValue] =
     request.headers
       .get(env.Headers.OtoroshiAdminProfile)
-      .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
+      .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), StandardCharsets.UTF_8))).toOption)
 
   def from(using env: Env): String = request.theIpAddress
 
@@ -337,7 +337,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
 
   lazy val logger = Logger("otoroshi-api-action")
 
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
   def error(message: String, ex: Option[Throwable] = None)(using request: Request[_]): Future[Result] = {
     ex match {
@@ -361,7 +361,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
     def perform(): Future[Result] = {
       request.headers.get(env.Headers.OtoroshiClaim).get.split("\\.").toSeq match {
         case Seq(head, body, signature) => {
-          val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), Charsets.UTF_8))
+          val claim          = Json.parse(new String(OtoroshiClaim.decoder.decode(body), StandardCharsets.UTF_8))
           val lastestApikey  = (claim \ "access_type").asOpt[String].exists(v => v == "apikey" || v == "both")
           val latestClientId = (claim \ "apikey" \ "clientId").asOpt[String]
           (claim \ "sub").as[String].split(":").toSeq match {

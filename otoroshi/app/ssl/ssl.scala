@@ -414,7 +414,7 @@ case class Cert(
     } getOrElse false
   }
   lazy val cryptoKeyPair: KeyPair = {
-    val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, privateKey, password).right.get
+    val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, privateKey, password).toOption.get
 
     //val privkey: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(privkeySpec) /*Try(KeyFactory.getInstance("RSA"))
     //  .orElse(Try(KeyFactory.getInstance("DSA")))
@@ -2124,7 +2124,7 @@ object FakeKeyStore {
     // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
-    resp.right.get
+    resp.toOption.get
   }
 
   def createClientCertificateFromCA(
@@ -2155,7 +2155,7 @@ object FakeKeyStore {
     // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
-    resp.right.get
+    resp.toOption.get
   }
 
   def createSelfSignedClientCertificate(
@@ -2179,7 +2179,7 @@ object FakeKeyStore {
     // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
-    resp.right.get
+    resp.toOption.get
   }
 
   def createCertificateFromCA(
@@ -2208,7 +2208,7 @@ object FakeKeyStore {
     // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
-    resp.right.get
+    resp.toOption.get
   }
 
   def createSubCa(
@@ -2238,7 +2238,7 @@ object FakeKeyStore {
     // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
-    resp.right.get
+    resp.toOption.get
   }
 
   def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(using
@@ -2259,7 +2259,7 @@ object FakeKeyStore {
     // AWAIT: valid
     val resp = Await.result(f, 30.seconds)
 
-    resp.right.get
+    resp.toOption.get
   }
 }
 
@@ -2985,7 +2985,7 @@ case class RawCertificate(
   def matchesDomain(dom: String): Boolean = sans.exists(d => RegexPool.apply(d).matches(dom))
 
   lazy val cryptoKeyPair: KeyPair = {
-    val privkey           = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, pemPrivateKey, password).right.get
+    val privkey           = DynamicSSLEngineProvider.readPrivateKeyUniversal(domain, pemPrivateKey, password).toOption.get
     val pubkey: PublicKey = certificate.get.getPublicKey
     new KeyPair(pubkey, privkey)
   }

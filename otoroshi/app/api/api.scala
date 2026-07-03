@@ -350,7 +350,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
               val error  = Json.obj("errors" -> JsArray(errors))
               error.leftf
             } else {
-              val keys = res.map(_.right.get)
+              val keys = res.map(_.toOption.get)
               env.datastores.rawDataStore.del(keys).map(_ => ().right)
             }
           }

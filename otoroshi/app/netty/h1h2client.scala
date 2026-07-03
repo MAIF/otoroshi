@@ -5,7 +5,7 @@ import org.apache.pekko.http.scaladsl.model.headers.{`Content-Length`, `Content-
 import org.apache.pekko.http.scaladsl.model.{ContentType, HttpHeader, Uri}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import com.google.common.base.Charsets
+import java.nio.charset.StandardCharsets
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelOption
 import io.netty.handler.codec.http.HttpMethod
@@ -144,7 +144,7 @@ case class NettyWsClientRequest(
     scheme match {
       case WSAuthScheme.BASIC =>
         addHttpHeaders(
-          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}"
+          "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(StandardCharsets.UTF_8))}"
         )
       case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }
