@@ -61,7 +61,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.function.Consumer
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -2353,7 +2353,7 @@ object Exporters {
     import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
     import io.vertx.sqlclient.{PoolOptions, Tuple => VertxTuple}
     import io.vertx.core.json.JsonObject
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     private val poolRef        = new AtomicReference[PgPool](null)
     private val lastCleanupRef = new AtomicReference[Long](0L)

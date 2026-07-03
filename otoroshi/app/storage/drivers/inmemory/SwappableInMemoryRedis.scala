@@ -102,7 +102,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
 
   import actorSystem.dispatcher
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import scala.concurrent.duration._
 
   val patterns: ConcurrentHashMap[String, Pattern] = new UnboundedConcurrentHashMap[String, Pattern]()
@@ -440,7 +440,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   import actorSystem.dispatcher
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import scala.concurrent.duration._
 
   lazy val logger = Logger("otoroshi-datastores")

@@ -607,7 +607,7 @@ trait NanoApp extends RequestTransformer {
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
     funit
   }
 
@@ -773,7 +773,7 @@ class ScriptManager(env: Env) {
     Try {
       import io.github.classgraph.ClassInfo
 
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
       val start      = System.currentTimeMillis()
       val scanResult = env.openApiSchema.scanResult
 

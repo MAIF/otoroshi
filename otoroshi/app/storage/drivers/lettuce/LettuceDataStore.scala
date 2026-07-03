@@ -41,7 +41,7 @@ import play.api.{Configuration, Environment, Logger}
 
 import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class LettuceDataStores(

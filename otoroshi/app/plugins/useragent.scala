@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 
 object UserAgentHelper {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   private val logger = Logger("otoroshi-plugins-user-agent-helper")
 

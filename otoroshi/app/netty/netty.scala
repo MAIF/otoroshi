@@ -170,7 +170,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       }
       .chunkedTransfer(bresponse.chunked)
       .trailerHeaders(theaders => {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
         result.header.headers.get("otoroshi-netty-trailers").foreach { trailersId =>
           otoroshi.netty.NettyRequestAwaitingTrailers.get(trailersId).foreach {
             case Left(future)    =>

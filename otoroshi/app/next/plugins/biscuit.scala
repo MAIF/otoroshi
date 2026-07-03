@@ -75,7 +75,7 @@ object NgBiscuitConfig {
 
 class NgBiscuitExtractor extends NgPreRouting {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   override def name: String                                = "Apikey from Biscuit token extractor"
   override def description: Option[String]                 =

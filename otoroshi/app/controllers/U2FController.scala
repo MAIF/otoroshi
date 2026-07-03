@@ -230,7 +230,7 @@ class U2FController(
   def webAuthnRegistrationStart() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(TenantAdminOnly) {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
 
         val username                = (ctx.request.body \ "username").as[String]
         val label                   = (ctx.request.body \ "label").as[String]
@@ -286,7 +286,7 @@ class U2FController(
   def webAuthnRegistrationFinish() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
       ctx.checkRights(SuperAdminOnly) {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
 
         val json                    = ctx.request.body
         val responseJson            = Json.stringify((json \ "webauthn").as[JsValue])
@@ -391,7 +391,7 @@ class U2FController(
 
   def webAuthnLoginStart() =
     BackOfficeAction.async(parse.json) { ctx =>
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
 
       val usernameOpt             = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt             = (ctx.request.body \ "password").asOpt[String]
@@ -445,7 +445,7 @@ class U2FController(
 
   def webAuthnLoginFinish() =
     BackOfficeAction.async(parse.json) { ctx =>
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
 
       implicit val req = ctx.request
 
@@ -563,7 +563,7 @@ class LocalCredentialRepository(
     base64Decoder: java.util.Base64.Decoder
 ) extends CredentialRepository {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   // changes in webauthn-server-core 2.1.0 from 1.7.0 forces us to do some shenanigans
   def handleVersion210Upgrade(json: JsValue): JsValue = {

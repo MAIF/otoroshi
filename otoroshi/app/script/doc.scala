@@ -10,7 +10,7 @@ import java.nio.file.Files
 import scala.util.Try
 import otoroshi.utils.syntax.implicits._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import java.nio.charset.Charset
 
 class PluginDocumentationGenerator(docPath: String) {
@@ -30,7 +30,7 @@ class PluginDocumentationGenerator(docPath: String) {
     Try {
       import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
-      import collection.JavaConverters._
+      import scala.jdk.CollectionConverters.*
       val start                  = System.currentTimeMillis()
       val allPackages            = Seq("otoroshi") //, "otoroshi_plugins")
       val scanResult: ScanResult = new ClassGraph()

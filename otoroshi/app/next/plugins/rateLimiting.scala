@@ -18,7 +18,7 @@ import play.api.libs.json._
 import play.api.mvc.Results.TooManyRequests
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

@@ -1962,7 +1962,7 @@ object CertificateData {
 
   import otoroshi.ssl.SSLImplicits._
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
@@ -2878,7 +2878,7 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
 
 object SSLImplicits {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   private val logger = Logger("otoroshi-ssl-implicits")
 

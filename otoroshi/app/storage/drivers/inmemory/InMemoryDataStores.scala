@@ -349,7 +349,7 @@ class InMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     value match {
       case str: String                                                     => ("string", JsString(str))

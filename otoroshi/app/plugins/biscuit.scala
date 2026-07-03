@@ -91,7 +91,7 @@ case class SealedBiscuitToken(token: String) extends BiscuitToken
 
 object BiscuitHelper {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   def readConfigFromJson(rawConfig: JsValue): BiscuitConfig = {
     BiscuitConfig(
@@ -200,7 +200,7 @@ object BiscuitHelper {
 // MIGRATED
 class BiscuitExtractor extends PreRouting {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   override def name: String = "Apikey from Biscuit token extractor"
 

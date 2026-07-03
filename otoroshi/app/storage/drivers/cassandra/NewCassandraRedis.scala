@@ -37,7 +37,7 @@ object CassImplicits {
 
   implicit class EnhancedAsyncResultSet(val rsf: AsyncResultSet) extends AnyVal {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     import scala.compat.java8.FutureConverters._
 
     def list()(using mat: Materializer): Future[Seq[Row]] = {
@@ -83,7 +83,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   import CassImplicits._
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import scala.compat.java8.FutureConverters._
 
   private val metrics = new MetricRegistry()

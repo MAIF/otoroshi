@@ -87,7 +87,7 @@ case class KubernetesConfig(
 )
 
 object KubernetesConfig {
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   def theConfig(ctx: ContextWithConfig)(using env: Env, ec: ExecutionContext): KubernetesConfig = {
     val globalConfig = env.datastores.globalConfigDataStore.latest()(using env.otoroshiExecutionContext, env)
     val conf         = ctx

@@ -14,7 +14,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.concurrent.TrieMap
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {

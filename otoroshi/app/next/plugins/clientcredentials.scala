@@ -242,7 +242,7 @@ class NgClientCredentials extends NgRequestSink {
             import org.biscuitsec.biscuit.token.builder.Block
             import org.biscuitsec.biscuit.token.builder.Utils._
 
-            import collection.JavaConverters._
+            import scala.jdk.CollectionConverters.*
 
             val biscuitConf: BiscuitConf = conf.biscuit.getOrElse(BiscuitConf())
 

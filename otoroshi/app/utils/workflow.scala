@@ -152,7 +152,7 @@ object WorkFlowEl {
 
   import otoroshi.utils.KaleidoscopeShim._
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   val logger             = Logger("workflow-el")
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")

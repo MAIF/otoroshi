@@ -22,7 +22,7 @@ import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyPair}
 import java.util.Base64
 import java.util.concurrent.Executors
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

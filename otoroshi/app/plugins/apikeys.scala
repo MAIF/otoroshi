@@ -368,7 +368,7 @@ class ClientCredentialFlow extends RequestTransformer {
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
     funit
   }
 
@@ -1149,7 +1149,7 @@ class ClientCredentialService extends RequestSink {
             import org.biscuitsec.biscuit.token.builder.Block
             import org.biscuitsec.biscuit.token.builder.Utils._
 
-            import collection.JavaConverters._
+            import scala.jdk.CollectionConverters.*
 
             val biscuitConf: BiscuitConf = conf.biscuit
 

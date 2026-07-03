@@ -11,7 +11,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}
 
 /**

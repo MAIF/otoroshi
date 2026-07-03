@@ -712,7 +712,7 @@ class Env(
       )
     )(otoroshiMaterializer)
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = ahcClient.underlying[DefaultAsyncHttpClient].getClientStats
@@ -762,7 +762,7 @@ class Env(
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     internalAhcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
       scala.util.Try {
         val stats = wsClient.underlying[DefaultAsyncHttpClient].getClientStats

@@ -886,7 +886,7 @@ class BackOfficeController(
   def getAllLoggers() =
     BackOfficeActionAuth.async { ctx =>
       ctx.checkRights(SuperAdminOnly) {
-        import collection.JavaConverters._
+        import scala.jdk.CollectionConverters.*
 
         val paginationPage: Int     = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
         val paginationPageSize: Int =

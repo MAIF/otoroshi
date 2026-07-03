@@ -11,7 +11,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.{JsArray, JsObject, Json}
 
 import java.util.Collections
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 import scala.collection.concurrent.TrieMap
 
 object StringJwkProvider {

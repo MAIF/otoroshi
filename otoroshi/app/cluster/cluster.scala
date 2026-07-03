@@ -2186,7 +2186,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -2901,7 +2901,7 @@ class SwappableInMemoryDataStores(
       environment: Environment,
       lifecycle: ApplicationLifecycle
   ): Future[Unit] = {
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     Cluster.logger.info("Now using Swappable InMemory DataStores")
     dbPathOpt.foreach { dbPath =>
       val file = new File(dbPath)
@@ -2971,7 +2971,7 @@ class SwappableInMemoryDataStores(
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -3307,7 +3307,7 @@ class SwappableInMemoryDataStores(
 
   private def toJson(value: Any): (String, JsValue) = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     value match {
       case str: String                                                     => ("string", JsString(str))

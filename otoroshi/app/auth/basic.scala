@@ -582,7 +582,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       descriptor: ServiceDescriptor
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     val usernameOpt             = (body \ "username").asOpt[String]
     val passwordOpt             = (body \ "password").asOpt[String]
@@ -651,7 +651,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     val usernameOpt             = (body \ "username").asOpt[String]
     val passwordOpt             = (body \ "password").asOpt[String]
@@ -721,7 +721,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       descriptor: ServiceDescriptor
   )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, PrivateAppsUser]] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     val json                    = body
     val webauthn                = (json \ "webauthn").as[JsObject]
@@ -806,7 +806,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[ErrorReason, BackOfficeUser]] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     val json                    = body
     val webauthn                = (json \ "webauthn").as[JsObject]
@@ -891,7 +891,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     val username                = (body \ "username").as[String]
     val label                   = (body \ "label").as[String]
@@ -959,7 +959,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
       body: JsValue
   )(using env: Env, ec: ExecutionContext): Future[Either[String, JsValue]] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     val json                    = body
     val responseJson            = Json.stringify((json \ "webauthn").as[JsValue])

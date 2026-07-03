@@ -9,7 +9,7 @@ import otoroshi.storage.drivers.lettuce._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.JsObject
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.*
 
 object LettuceStatefulClientConfig {
   def apply(obj: JsObject) = new LettuceStatefulClientConfig(obj.select("uri").asString)

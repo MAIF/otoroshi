@@ -411,7 +411,7 @@ class EnvoyControlPlane extends RequestTransformer {
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
     funit
   }
 

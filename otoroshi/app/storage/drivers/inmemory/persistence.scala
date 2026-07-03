@@ -73,7 +73,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   override def message: String = s"Now using FileDb DataStores (loading '$dbPath')"
 
   override def onStart(): Future[Unit] = {
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
     val file = new File(dbPath)
     if (!file.exists()) {
       logger.info(s"Creating FileDb file and directory ('$dbPath')")
@@ -117,7 +117,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -262,7 +262,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))
@@ -520,7 +520,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     what match {
       case "counter"        => Some(ByteString(value.as[Long].toString))

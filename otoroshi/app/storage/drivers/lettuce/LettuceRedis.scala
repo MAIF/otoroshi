@@ -38,7 +38,7 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   import actorSystem.dispatcher
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import scala.compat.java8.FutureConverters._
 
   lazy val redis = client.connect(new ByteStringRedisCodec()).async()
@@ -294,7 +294,7 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 
   import actorSystem.dispatcher
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import scala.compat.java8.FutureConverters._
 
   lazy val redis = client.connect(new ByteStringRedisCodec()).async()
@@ -439,7 +439,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
 
   import actorSystem.dispatcher
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import scala.compat.java8.FutureConverters._
 
   lazy val logger               = Logger("otoroshi-lettuce-redis")
@@ -767,7 +767,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
 
   import actorSystem.dispatcher
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
   import otoroshi.utils.reactive.ReactiveStreamImplicits._
 
   implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer

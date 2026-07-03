@@ -624,7 +624,7 @@ class ReactivePgRedis(
 
   import pgimplicits._
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters.*
 
   private implicit val ec: scala.concurrent.ExecutionContext = system.dispatcher
 

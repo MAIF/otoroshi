@@ -388,7 +388,7 @@ case class LdapAuthModuleConfig(
 
   private def _bindUser(urls: Seq[String], username: String, password: String): Either[String, LdapAuthUser] = {
     import javax.naming._
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     if (urls.isEmpty)
       Left(s"Missing LDAP server URLs or all down")

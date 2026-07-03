@@ -499,7 +499,7 @@ object implicits {
   }
   implicit class BetterConfiguration(val configuration: Configuration) extends AnyVal {
 
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters.*
 
     private def readFromFile[A](path: String, loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
       val file = new File(path)
