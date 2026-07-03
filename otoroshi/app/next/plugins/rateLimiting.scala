@@ -98,7 +98,7 @@ case class LocalTokensBucketStrategy(bucketId: String, config: LocalTokensBucket
         val timeElapsedSec = timeElapsedMs / 1000.0
 
         val tokensToAdd     = timeElapsedSec * config.refillRatePerSecond
-        val newBucketTokens = Math.min(config.capacity, oldBucket.tokens + tokensToAdd)
+        val newBucketTokens = Math.min(config.capacity.toDouble, oldBucket.tokens + tokensToAdd)
 
         if (tokensToAdd > 0) {
           oldBucket.copy(tokens = newBucketTokens, lastRefillMs = currentTimeMs)

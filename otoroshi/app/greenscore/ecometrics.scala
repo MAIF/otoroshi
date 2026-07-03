@@ -125,14 +125,14 @@ object ScalingRouteReservoirs {
 
   def from(reservoirs: RouteReservoirs) = {
     ScalingRouteReservoirs(
-      reservoirs.overhead.getSnapshot.getMean.toLong,
-      reservoirs.duration.getSnapshot.getMean.toLong,
-      reservoirs.backendDuration.getSnapshot.getMean.toLong,
-      reservoirs.calls.getSnapshot.getMean.toLong,
-      reservoirs.dataIn.getSnapshot.getMean.toLong,
-      reservoirs.dataOut.getSnapshot.getMean.toLong,
-      reservoirs.headersOut.getSnapshot.getMean.toLong,
-      reservoirs.headersIn.getSnapshot.getMean.toLong
+      reservoirs.overhead.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.duration.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.backendDuration.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.calls.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.dataIn.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.dataOut.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.headersOut.getSnapshot.getMean.toLong.toFloat,
+      reservoirs.headersIn.getSnapshot.getMean.toLong.toFloat
     )
   }
 

@@ -1327,10 +1327,10 @@ sealed trait JwtVerifier extends AsJson {
               case Some(outputAlgorithm) => {
                 val moreCtx           = Map(
                   "jti" -> IdGenerator.uuid,
-                  "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
-                  "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "iat" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
+                  "nbf" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
                   "iss" -> "Otoroshi",
-                  "exp" -> s"${Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong}",
+                  "exp" -> s"${Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong}",
                   "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
                   "aud" -> "backend"
                 )
@@ -1629,10 +1629,10 @@ sealed trait JwtVerifier extends AsJson {
               case Some(outputAlgorithm) => {
                 val moreCtx           = Map(
                   "jti" -> IdGenerator.uuid,
-                  "iat" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
-                  "nbf" -> s"${Math.floor(System.currentTimeMillis() / 1000L).toLong}",
+                  "iat" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
+                  "nbf" -> s"${Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong}",
                   "iss" -> "Otoroshi",
-                  "exp" -> s"${Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong}",
+                  "exp" -> s"${Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong}",
                   "sub" -> apikey.map(_.clientName).orElse(user.map(_.email)).getOrElse("anonymous"),
                   "aud" -> "backend"
                 )

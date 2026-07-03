@@ -167,7 +167,7 @@ class OAuth1CallerPlugin extends RequestTransformer {
       Keys.consumerKey     -> consumerKey,
       Keys.signatureMethod -> signatureMethod,
       Keys.signature       -> s"${encodeURI(consumerSecret + "&" + tokenSecret.getOrElse(""))}",
-      Keys.timestamp       -> s"${Math.floor(System.currentTimeMillis() / 1000).toInt}",
+      Keys.timestamp       -> s"${Math.floor((System.currentTimeMillis() / 1000).toDouble).toInt}",
       Keys.nonce           -> s"${Random.nextInt(1000000000)}"
     )
 

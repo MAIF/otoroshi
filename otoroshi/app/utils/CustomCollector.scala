@@ -109,7 +109,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
         "_count",
         new util.ArrayList[String](tags.keySet),
         new util.ArrayList[String](tags.values),
-        count
+        count.toDouble
       )
     )
     new MetricFamilySamples(samples.get(0).name, Type.SUMMARY, "", samples)
@@ -134,7 +134,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
     )
 
   def fromMeter(key: MetricId, entryValue: Meter): MetricFamilySamples = {
-    val sample = getSample(key, entryValue.getCount, "_count")
+    val sample = getSample(key, entryValue.getCount.toDouble, "_count")
     new MetricFamilySamples(sample.name, Type.COUNTER, "", util.Arrays.asList(sample))
   }
 

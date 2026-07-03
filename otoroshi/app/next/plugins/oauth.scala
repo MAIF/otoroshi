@@ -152,7 +152,7 @@ class OAuth1Caller extends NgRequestTransformer {
       OAuth1Caller.Keys.consumerKey     -> consumerKey,
       OAuth1Caller.Keys.signatureMethod -> signatureMethod,
       OAuth1Caller.Keys.signature       -> s"${encodeURI(consumerSecret + "&" + tokenSecret.getOrElse(""))}",
-      OAuth1Caller.Keys.timestamp       -> s"${Math.floor(System.currentTimeMillis() / 1000).toInt}",
+      OAuth1Caller.Keys.timestamp       -> s"${Math.floor((System.currentTimeMillis() / 1000).toDouble).toInt}",
       OAuth1Caller.Keys.nonce           -> s"${Random.nextInt(1000000000)}"
     )
 

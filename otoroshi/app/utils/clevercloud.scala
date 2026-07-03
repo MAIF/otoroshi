@@ -85,7 +85,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       Keys.oauth_consumer_key     -> settings.apiConsumerKey,
       Keys.oauth_signature_method -> "PLAINTEXT",
       Keys.oauth_signature        -> s"${settings.apiConsumerSecret}&${tokenSecret.getOrElse("")}",
-      Keys.oauth_timestamp        -> s"${Math.floor(System.currentTimeMillis() / 1000).toInt}",
+      Keys.oauth_timestamp        -> s"${Math.floor((System.currentTimeMillis() / 1000).toDouble).toInt}",
       Keys.oauth_nonce            -> s"${ThreadLocalRandom.current().nextInt(1000000000)}"
     )
 

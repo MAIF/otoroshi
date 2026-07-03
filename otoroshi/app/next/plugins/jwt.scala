@@ -396,10 +396,10 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                       .fromJson(
                         Json.obj(
                           "jti" -> IdGenerator.uuid,
-                          "iat" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
-                          "nbf" -> Math.floor(System.currentTimeMillis() / 1000L).toLong,
+                          "iat" -> Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong,
+                          "nbf" -> Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong,
                           "iss" -> "Otoroshi",
-                          "exp" -> Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong,
+                          "exp" -> Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong,
                           "sub" -> JsString(optSub.getOrElse("anonymous")),
                           "aud" -> "backend"
                         ) ++ globalVerifier.strategy.asInstanceOf[DefaultToken].token.as[JsObject],
@@ -417,11 +417,11 @@ class JwtSigner extends NgAccessValidator with NgRequestTransformer {
                       .map { case (key, value) =>
                         value match {
                           case JsString(v) if v == "{iat}" =>
-                            (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
+                            (key, JsNumber(Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong))
                           case JsString(v) if v == "{nbf}" =>
-                            (key, JsNumber(Math.floor(System.currentTimeMillis() / 1000L).toLong))
+                            (key, JsNumber(Math.floor((System.currentTimeMillis() / 1000L).toDouble).toLong))
                           case JsString(v) if v == "{exp}" =>
-                            (key, JsNumber(Math.floor((System.currentTimeMillis() + 60000L) / 1000L).toLong))
+                            (key, JsNumber(Math.floor(((System.currentTimeMillis() + 60000L) / 1000L).toDouble).toLong))
                           case _                           => (key, value.as[JsValue])
                         }
                       }

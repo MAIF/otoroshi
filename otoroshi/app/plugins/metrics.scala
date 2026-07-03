@@ -383,7 +383,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
-    reqDurationGlobal.observe(duration)
+    reqDurationGlobal.observe(duration.toDouble)
 
     if (includeUri) {
       reqDurationHistogramWithUri
@@ -394,7 +394,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.descriptor.name.slug,
           ctx.request.relativeUri
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogramWithUri
         .labels(
           ctx.otoroshiResponse.status.toString,
@@ -412,7 +412,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.request.theProtocol,
           ctx.descriptor.name.slug
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogram
         .labels(
           ctx.otoroshiResponse.status.toString,
@@ -434,7 +434,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val includeUri     = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
 
     requestCounterGlobal.inc()
-    reqDurationGlobal.observe(duration)
+    reqDurationGlobal.observe(duration.toDouble)
     if (includeUri) {
       reqDurationHistogramWithUri
         .labels(
@@ -444,7 +444,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.descriptor.name.slug,
           ctx.request.relativeUri
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogramWithUri
         .labels(
           ctx.otoroshiResponse.status.toString,
@@ -462,7 +462,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
           ctx.request.theProtocol,
           ctx.descriptor.name.slug
         )
-        .observe(duration)
+        .observe(duration.toDouble)
       reqTotalHistogram
         .labels(
           ctx.otoroshiResponse.status.toString,
