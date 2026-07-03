@@ -453,7 +453,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
       }
       case keys                                                 =>
-        redisLike.mget(keys.map(key): _*).map { values: Seq[Option[ByteString]] =>
+        redisLike.mget(keys.map(key): _*).map { (values: Seq[Option[ByteString]]) =>
           values.flatMap { opt =>
             opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
           }

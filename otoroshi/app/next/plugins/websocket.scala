@@ -907,7 +907,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
         Source
           .fromPublisher(hotFlux)
           .via(mirrorFlow)
-          .runWith(Sink.foreach { m: play.api.http.websocket.Message =>
+          .runWith(Sink.foreach { (m: play.api.http.websocket.Message) =>
             //println("Got sink message: " + m)
           })(env.otoroshiMaterializer)
         response

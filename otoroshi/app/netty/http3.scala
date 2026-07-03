@@ -658,7 +658,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           val address                 = new AtomicReference[String]("0.0.0.0")
           def addressAccess(): String = address.get()
           override def initChannel(ch: QuicChannel): Unit = {
-            ch.collectPathStats(0).addListener { fu: io.netty.util.concurrent.Future[QuicConnectionPathStats] =>
+            ch.collectPathStats(0).addListener { (fu: io.netty.util.concurrent.Future[QuicConnectionPathStats]) =>
               Option(fu.get())
                 .flatMap(v => Try(v.toString).toOption)
                 .flatMap(v => Try(v.split("/").last).toOption)

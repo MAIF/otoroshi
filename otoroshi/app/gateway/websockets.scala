@@ -726,11 +726,11 @@ object WebSocketProxyActor {
               }
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
-            a: ClientConnectionSettings =>
+            (a: ClientConnectionSettings) =>
               a.withTransport(httpsProxyTransport)
                 .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
                 .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
-          } getOrElse { a: ClientConnectionSettings =>
+          } getOrElse { (a: ClientConnectionSettings) =>
           val maybeIpAddress = target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
           if (env.manualDnsResolve && maybeIpAddress.isDefined) {
             a.withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
@@ -896,11 +896,11 @@ class WebSocketProxyActor(
               case _                                 => ClientTransport.httpsProxy(proxyAddress)
             }
             // TODO: use proxy transport when akka http will be updated
-            a: ClientConnectionSettings =>
+            (a: ClientConnectionSettings) =>
               //a //.withTransport(httpsProxyTransport)
               a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
                 .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
-          } getOrElse { a: ClientConnectionSettings =>
+          } getOrElse { (a: ClientConnectionSettings) =>
           a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
             .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
         }

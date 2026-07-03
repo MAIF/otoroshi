@@ -1761,7 +1761,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // PATCH /apis/:group/:version/:entity/_bulk
   def bulkPatch(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
@@ -1859,7 +1859,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // POST /apis/:group/:version/:entity/_bulk
   def bulkCreate(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -1964,7 +1964,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // PUT /apis/:group/:version/:entity/_bulk
   def bulkUpdate(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2087,7 +2087,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // DELETE /apis/:group/:version/:entity/_bulk
   def bulkDelete(group: String, version: String, entity: String) =
-    ApiAction.async(sourceBodyParser) { ctx: ApiActionContext[Source[ByteString, _]] =>
+    ApiAction.async(sourceBodyParser) { (ctx: ApiActionContext[Source[ByteString, _]]) =>
       ctx.request.headers.get("Content-Type") match {
         case Some("application/x-ndjson") =>
           withResource(group, version, entity, ctx.request, bulk = true) { resource =>
@@ -2224,7 +2224,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // POST /apis/:group/:version/:entity
   def create(group: String, version: String, entity: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)                                  => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2382,7 +2382,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // POST /apis/:group/:version/:entity/:id
   def upsert(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2467,7 +2467,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // PUT /apis/:group/:version/:entity/:id
   def update(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       withResource(group, version, entity, ctx.request) { resource =>
         bodyIn(ctx, ctx.request, resource, version) flatMap {
           case Left(err)     => result(Results.BadRequest, err, ctx.request, resource.some)
@@ -2529,7 +2529,7 @@ class GenericApiController(ApiAction: ApiAction, DocAction: DocAction, cc: Contr
 
   // PATCH /apis/:group/:version/:entity/:id
   def patch(group: String, version: String, entity: String, id: String) = ApiAction.async(sourceBodyParser) {
-    ctx: ApiActionContext[Source[ByteString, _]] =>
+    (ctx: ApiActionContext[Source[ByteString, _]]) =>
       import otoroshi.utils.json.JsonPatchHelpers.patchJson
       withResource(group, version, entity, ctx.request) { resource =>
         resource.access.findOne(version, id).flatMap {
