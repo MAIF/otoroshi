@@ -2001,7 +2001,7 @@ case class RefJwtVerifier(
       case s if s.isEmpty => f(JwtInjection())
       case _              => {
 
-        val promise                                       = Promise[Either[Result, A]]
+        val promise                                       = Promise[Either[Result, A]]()
         val last                                          = new AtomicReference[Either[Result, A]](
           Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
         )
@@ -2076,7 +2076,7 @@ case class RefJwtVerifier(
     ids match {
       case s if s.isEmpty => JwtInjection().right.future
       case _              => {
-        val promise = Promise[Either[Result, JwtInjection]]
+        val promise = Promise[Either[Result, JwtInjection]]()
         def dequeueNext(all: Seq[String], last: Either[Result, JwtInjection]): Unit = {
           all.headOption match {
             case None      => promise.trySuccess(last)

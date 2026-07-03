@@ -218,7 +218,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
         config match {
           case a: OIDCThirdPartyApiKeyConfig =>
             val latestGlobalConfig = env.datastores.globalConfigDataStore.latest()
-            val promise            = Promise[Boolean]
+            val promise            = Promise[Boolean]()
             a.copy(enabled = true)
               .handleGen(ctx.request, ctx.route.serviceDescriptor, latestGlobalConfig, ctx.attrs) { _ =>
                 promise.trySuccess(true)

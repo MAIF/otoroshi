@@ -62,7 +62,7 @@ class NgDeferPlugin extends NgRequestTransformer {
     if (timeout - elapsed <= 0L) {
       ctx.otoroshiRequest.rightf
     } else {
-      val promise = Promise[Either[Result, NgPluginHttpRequest]]
+      val promise = Promise[Either[Result, NgPluginHttpRequest]]()
       env.otoroshiScheduler.scheduleOnce((timeout - elapsed).millis) {
         promise.trySuccess(Right(ctx.otoroshiRequest))
       }

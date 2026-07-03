@@ -285,7 +285,7 @@ class Env(
     if (analyticsPressureEnabled) Materializer(analyticsActorSystem) else otoroshiMaterializer
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
-    val promise = Promise[Unit]
+    val promise = Promise[Unit]()
     otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
     }(otoroshiExecutionContext)

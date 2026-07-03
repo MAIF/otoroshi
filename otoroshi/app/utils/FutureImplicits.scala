@@ -27,7 +27,7 @@ package object future {
     implicit final class EnhancedFuture[A](future: Future[A]) {
 
       def fold[U](pf: PartialFunction[Try[A], U])(using executor: ExecutionContext): Future[U] = {
-        val promise = Promise[U]
+        val promise = Promise[U]()
         future.andThen {
           case underlying: Try[A] => {
             try {
@@ -41,7 +41,7 @@ package object future {
       }
 
       def foldM[U](pf: PartialFunction[Try[A], Future[U]])(using executor: ExecutionContext): Future[U] = {
-        val promise = Promise[U]
+        val promise = Promise[U]()
         future.andThen {
           case underlying: Try[A] => {
             try {

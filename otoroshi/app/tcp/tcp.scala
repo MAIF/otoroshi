@@ -826,7 +826,7 @@ class TcpProxy(
         idleTimeout = Duration.Inf
       )
       .map { incomingConnection =>
-        val promise    = Promise[String]
+        val promise    = Promise[String]()
         val firstChunk = new AtomicBoolean(false)
         AwesomeIncomingConnection(
           incomingConnection.copy(

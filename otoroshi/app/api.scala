@@ -123,7 +123,7 @@ object OtoroshiLoaderHelper {
       components.env.configuration.betterGetOptional[Long]("app.boot.waitProxyStateSyncTimeout").getOrElse(10000)
 
     def timeout(task: String, duration: FiniteDuration): Future[SubSystemInitializationState] = {
-      val promise = Promise[SubSystemInitializationState]
+      val promise = Promise[SubSystemInitializationState]()
       scheduler.scheduleOnce(duration) {
         promise.trySuccess(SubSystemInitializationState.Timeout(task, duration.toMillis))
       }

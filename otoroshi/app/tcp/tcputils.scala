@@ -69,7 +69,7 @@ object TcpUtils {
     val tls = tlsWrapping.atop(TLS(createSSLEngine, verifySession, closing)).reversed
     val tcp = Tcp()
     tcp.bind(interface, port, backlog, options, true, idleTimeout).map { incomingConnection =>
-      val promise    = Promise[String]
+      val promise    = Promise[String]()
       val firstChunk = new AtomicBoolean(false)
       AwesomeIncomingConnection(
         incomingConnection.copy(

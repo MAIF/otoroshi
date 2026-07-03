@@ -168,7 +168,7 @@ class WebSocketHandler()(using env: Env) {
     val fromOtoroshi       = req.headers
       .get(env.Headers.OtoroshiRequestId)
       .orElse(req.headers.get(env.Headers.OtoroshiGatewayParentRequest))
-    val promise            = Promise[ProxyDone]
+    val promise            = Promise[ProxyDone]()
 
     val claim = descriptor.generateInfoToken(apiKey, paUsr, Some(req))
     if (logger.isTraceEnabled) logger.trace(s"Claim is : $claim")

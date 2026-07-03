@@ -104,7 +104,7 @@ private[utils] final class UdpBindFlow(localAddress: InetSocketAddress)(using va
   val out: Outlet[Datagram]                = Outlet("UdpBindFlow.in")
   val shape: FlowShape[Datagram, Datagram] = FlowShape.of(in, out)
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes) = {
-    val boundPromise = Promise[InetSocketAddress]
+    val boundPromise = Promise[InetSocketAddress]()
     (new UdpBindLogic(localAddress, boundPromise)(shape), boundPromise.future)
   }
 }

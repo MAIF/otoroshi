@@ -62,7 +62,7 @@ class DeferPlugin extends RequestTransformer {
     if (timeout - elapsed <= 0L) {
       FastFuture.successful(Right(ctx.otoroshiRequest))
     } else {
-      val promise = Promise[Either[Result, HttpRequest]]
+      val promise = Promise[Either[Result, HttpRequest]]()
       env.otoroshiScheduler.scheduleOnce((timeout - elapsed).millis) {
         promise.trySuccess(Right(ctx.otoroshiRequest))
       }

@@ -435,7 +435,7 @@ object implicits {
     def asLeft[R](using executor: ExecutionContext): Future[Either[A, R]]  = obj.map(a => Left[A, R](a))
     def asRight[R](using executor: ExecutionContext): Future[Either[R, A]] = obj.map(a => Right[R, A](a))
     def fold[U](pf: PartialFunction[Try[A], U])(using executor: ExecutionContext): Future[U] = {
-      val promise = Promise[U]
+      val promise = Promise[U]()
       obj.andThen {
         case underlying: Try[A] => {
           try {
@@ -449,7 +449,7 @@ object implicits {
     }
 
     def foldM[U](pf: PartialFunction[Try[A], Future[U]])(using executor: ExecutionContext): Future[U] = {
-      val promise = Promise[U]
+      val promise = Promise[U]()
       obj.andThen {
         case underlying: Try[A] => {
           try {

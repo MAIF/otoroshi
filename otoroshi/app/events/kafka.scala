@@ -314,7 +314,7 @@ class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunct
   private lazy val producer: Producer[Array[Byte], String] = producerSettings.createKafkaProducer
 
   def publish(event: JsValue): Future[Done] = {
-    val promise = Promise[RecordMetadata]
+    val promise = Promise[RecordMetadata]()
     try {
       val message = Json.stringify(event)
       producer.send(new ProducerRecord[Array[Byte], String](topic, message), callback(promise))

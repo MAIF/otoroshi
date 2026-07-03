@@ -465,7 +465,7 @@ class TunnelAgent(env: Env) {
   }
 
   private def timeout(duration: FiniteDuration): Future[Unit] = {
-    val promise = Promise[Unit]
+    val promise = Promise[Unit]()
     env.otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
     }(env.otoroshiExecutionContext)
@@ -891,7 +891,7 @@ class LeaderConnection(
   }
 
   private def timeout(duration: FiniteDuration): Future[Unit] = {
-    val promise = Promise[Unit]
+    val promise = Promise[Unit]()
     env.otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
     }(env.otoroshiExecutionContext)

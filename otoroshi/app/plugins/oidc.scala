@@ -239,7 +239,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
         config match {
           case a: OIDCThirdPartyApiKeyConfig =>
             val latestGlobalConfig = env.datastores.globalConfigDataStore.latest()
-            val promise            = Promise[Boolean]
+            val promise            = Promise[Boolean]()
             a.copy(enabled = true)
               .handleGen(ctx.request, ctx.descriptor, latestGlobalConfig, ctx.attrs) { _ =>
                 promise.trySuccess(true)

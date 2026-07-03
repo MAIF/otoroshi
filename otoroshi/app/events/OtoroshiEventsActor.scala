@@ -320,7 +320,7 @@ object DataExporter {
       val newQueue      = setupQueue()
       internalQueue.set(newQueue)
       val fuStart       = start()
-      val endOfOldQueue = Promise[Unit]
+      val endOfOldQueue = Promise[Unit]()
       Option(oldQueue) match {
         case None                => endOfOldQueue.trySuccess(())
         case Some((_, queue, _)) => {

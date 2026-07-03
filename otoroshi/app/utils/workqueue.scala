@@ -12,7 +12,7 @@ final class WorkQueue[A](buffer: Int)(using mat: Materializer) {
   def apply(future: => Future[A])(using ec: ExecutionContext): Future[A] = run(() => future)
 
   def run(task: Task[A])(using ec: ExecutionContext): Future[A] = {
-    val promise = Promise[A]
+    val promise = Promise[A]()
     queue.offer(task -> promise) flatMap {
       case QueueOfferResult.Enqueued => promise.future
       case result                    => Future failed new Exception(s"Can't enqueue: $result")
