@@ -888,15 +888,15 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     } else {
       ""
     }
-    val indexWithDate           = if (config.indexSettings.clientSide) s"$index-$df" else index
-    val indexClause             = Json.stringify(
+    val indexWithDate               = if (config.indexSettings.clientSide) s"$index-$df" else index
+    val indexClause                 = Json.stringify(
       Json.obj(
         config.indexSettings.action -> Json
           .obj("_index" -> indexWithDate)
           .applyOnIf(mustAddLegacyType)(_ ++ Json.obj("_type" -> `type`))
       )
     )
-    val sourceClause            = Json.stringify(source)
+    val sourceClause                = Json.stringify(source)
     s"$indexClause\n$sourceClause"
   }
 

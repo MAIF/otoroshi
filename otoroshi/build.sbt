@@ -2,7 +2,7 @@ import xerial.sbt.Sonatype._
 
 name := """otoroshi"""
 organization := "fr.maif"
-version := "18.0.0-dev"
+version := "17.18.0-dev"
 scalaVersion := scalaLangVersion
 
 ThisBuild / evictionErrorLevel := Level.Warn
