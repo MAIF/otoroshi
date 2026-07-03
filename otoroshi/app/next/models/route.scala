@@ -537,7 +537,7 @@ case class NgRoute(
         val exclusion: Seq[String] =
           if (possiblePlugins.isEmpty) Seq.empty else possiblePlugins.map(_.exclude).reduce((a, b) => a.intersect(b))
         val config                 = possiblePlugins
-          .flatMap(p => p.config.raw.value.keySet.-("plugin").headOption.map(plug => (p.config.raw, plug)))
+          .flatMap(p => p.config.raw.value.keySet.diff(Set("plugin")).headOption.map(plug => (p.config.raw, plug)))
           .map { case (pconfig, key) =>
             pconfig.select(key).asObject
           }

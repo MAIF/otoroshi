@@ -1772,7 +1772,7 @@ case class Api(
             frontend = apiRoute.frontend.copy(
               domains = apiRoute.frontend.domains
                 .map(domain => s"${api.domain}${api.contextPath}${domain.path}")
-                .map(NgDomainAndPath)
+                .map(NgDomainAndPath.apply)
             ),
             backend = backend,
             backendRef = None,

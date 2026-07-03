@@ -28,7 +28,7 @@ import java.security.MessageDigest
 import java.security.cert.{CertificateFactory, X509Certificate}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-import scala.collection.TraversableOnce
+import scala.collection.IterableOnce
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -683,12 +683,12 @@ object implicits {
   }
   implicit class BetterTrieMapOfStringAndB[B](val theMap: TrieMap[String, B]) extends AnyVal {
     def add(tuple: (String, B)): TrieMap[String, B]                         = theMap.+=(tuple)
-    def addAll(all: TraversableOnce[(String, B)]): TrieMap[String, B]       = theMap.++=(all)
+    def addAll(all: IterableOnce[(String, B)]): TrieMap[String, B]       = theMap.++=(all)
     def rem(key: String): TrieMap[String, B]                                = theMap.-=(key)
     def remIgnoreCase(key: String): TrieMap[String, B]                      = theMap.-=(key).-=(key.toLowerCase())
-    def remAll(keys: TraversableOnce[String]): TrieMap[String, B]           = theMap.--=(keys)
-    def remAllIgnoreCase(keys: TraversableOnce[String]): TrieMap[String, B] =
-      theMap.--=(keys).--=(keys.map(_.toLowerCase()))
+    def remAll(keys: IterableOnce[String]): TrieMap[String, B]           = theMap.--=(keys)
+    def remAllIgnoreCase(keys: IterableOnce[String]): TrieMap[String, B] =
+      theMap.--=(keys).--=(keys.iterator.map(_.toLowerCase()))
     def containsIgnoreCase(key: String): Boolean                            = theMap.contains(key) || theMap.contains(key.toLowerCase())
     def getIgnoreCase(key: String): Option[B]                               = theMap.get(key).orElse(theMap.get(key.toLowerCase()))
     def remAndAddIgnoreCase(tuple: (String, B)): TrieMap[String, B]         = remIgnoreCase(tuple._1).add(tuple)

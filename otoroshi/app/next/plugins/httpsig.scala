@@ -918,7 +918,7 @@ object HttpSignatureVerifyRequestConfig {
         "array" -> true,
         "label" -> "Allowed algorithms",
         "help"  -> "Reject signatures whose algorithm is not in this list.",
-        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString)))
+        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString.apply)))
       ),
       "required_components" -> Json.obj(
         "type"  -> "array",
@@ -1270,7 +1270,7 @@ object HttpSignatureSignResponseConfig {
         "type"  -> "select",
         "label" -> "Algorithm",
         "help"  -> "Signature algorithm. Must match the key type.",
-        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString)))
+        "props" -> Json.obj("options" -> JsArray(HttpSigAlgorithms.all.map(JsString.apply)))
       ),
       "keyid"                    -> Json.obj(
         "type"  -> "string",
@@ -1296,7 +1296,7 @@ object HttpSignatureSignResponseConfig {
         "type"  -> "select",
         "label" -> "Content-Digest algorithm",
         "help"  -> "Hash function used to build the Content-Digest header.",
-        "props" -> Json.obj("options" -> JsArray(Seq("sha-256", "sha-512").map(JsString)))
+        "props" -> Json.obj("options" -> JsArray(Seq("sha-256", "sha-512").map(JsString.apply)))
       ),
       "include_created"          -> Json.obj(
         "type"  -> "bool",

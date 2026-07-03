@@ -320,7 +320,7 @@ object LetsEncryptHelper {
       .toMat(Sink.seq)(Keep.right)
       .run()
       .map { seq =>
-        seq.find(_.isLeft).map(v => Left(v.left.get)).getOrElse(Right(seq.map(_.toOption.get)))
+        seq.find(_.isLeft).map(v => Left(v.swap.toOption.get)).getOrElse(Right(seq.map(_.toOption.get)))
       }
   }
 

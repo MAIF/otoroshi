@@ -346,7 +346,7 @@ trait ResourceAccessApi[T <: EntityLocationSupport] {
           .flatMap { res =>
             val hasErrors = res.exists(_.isLeft)
             if (hasErrors) {
-              val errors = res.filter(_.isLeft).map(_.left.get)
+              val errors = res.filter(_.isLeft).map(_.swap.toOption.get)
               val error  = Json.obj("errors" -> JsArray(errors))
               error.leftf
             } else {

@@ -45,20 +45,20 @@ class SnowMonkey(using env: Env) {
 
     val sb = new scala.collection.mutable.StringBuilder()
 
-    if (megaannums > 0) sb.append(megaannums + " megaannums ")
-    if (millenniums > 0) sb.append(millenniums + " millenniums ")
-    if (centuries > 0) sb.append(centuries + " centuries ")
-    if (decades > 0) sb.append(decades + " decades ")
-    if (years > 0) sb.append(years + " years ")
-    if (months > 0) sb.append(months + " months ")
-    if (weeks > 0) sb.append(weeks + " weeks ")
-    if (days > 0) sb.append(days + " days ")
-    if (hours > 0) sb.append(hours + " hours ")
-    if (minutes > 0) sb.append(minutes + " minutes ")
-    if (seconds > 0) sb.append(seconds + " seconds ")
+    if (megaannums > 0) sb.append(megaannums.toString + " megaannums ")
+    if (millenniums > 0) sb.append(millenniums.toString + " millenniums ")
+    if (centuries > 0) sb.append(centuries.toString + " centuries ")
+    if (decades > 0) sb.append(decades.toString + " decades ")
+    if (years > 0) sb.append(years.toString + " years ")
+    if (months > 0) sb.append(months.toString + " months ")
+    if (weeks > 0) sb.append(weeks.toString + " weeks ")
+    if (days > 0) sb.append(days.toString + " days ")
+    if (hours > 0) sb.append(hours.toString + " hours ")
+    if (minutes > 0) sb.append(minutes.toString + " minutes ")
+    if (seconds > 0) sb.append(seconds.toString + " seconds ")
     if (minutes < 1 && hours < 1 && days < 1) {
       if (sb.nonEmpty) sb.append(" ")
-      sb.append(milliseconds + " milliseconds")
+      sb.append(milliseconds.toString + " milliseconds")
     }
     sb.toString().trim
   }

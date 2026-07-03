@@ -283,7 +283,7 @@ class HashicorpVault(name: String, configuration: Configuration, _env: Env) exte
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+          CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
         }
       }
       .recover { case e: Throwable =>
@@ -394,7 +394,7 @@ class AzureVault(_name: String, configuration: Configuration, _env: Env) extends
           // tokenCache.invalidate(tokenKey) ???
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+          CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
         }
       }
       .recover { case e: Throwable =>
@@ -479,7 +479,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
             } else if (response.status == 403) {
               CachedVaultSecretStatus.SecretReadForbidden
             } else {
-              CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+              CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
             }
           }
           .recover { case e: Throwable =>
@@ -791,7 +791,7 @@ class AlibabaCloudSecretManagerVault(name: String, configuration: Configuration,
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+          CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
         }
       }
       .recover { case e: Throwable =>
@@ -962,7 +962,7 @@ class IzanamiVault(name: String, configuration: Configuration, _env: Env) extend
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+          CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
         }
       }
       .recover { case e: Throwable =>
@@ -1027,7 +1027,7 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+          CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
         }
       }
       .recover { case e: Throwable =>
@@ -1085,7 +1085,7 @@ class HttpVault(name: String, configuration: Configuration, _env: Env) extends V
         } else if (response.status == 403) {
           CachedVaultSecretStatus.SecretReadForbidden
         } else {
-          CachedVaultSecretStatus.SecretReadError(response.status + " - " + response.body)
+          CachedVaultSecretStatus.SecretReadError(response.status.toString + " - " + response.body)
         }
       }
       .recover { case e: Throwable =>
@@ -1290,7 +1290,7 @@ class InfisicalVault(name: String, configuration: Configuration, _env: Env) exte
               } else if (resp.status == 404) {
                 CachedVaultSecretStatus.SecretNotFound
               } else {
-                CachedVaultSecretStatus.SecretReadError(resp.status + " - " + resp.body)
+                CachedVaultSecretStatus.SecretReadError(resp.status.toString + " - " + resp.body)
               }
             }
         }

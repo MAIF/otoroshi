@@ -489,7 +489,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(using 
             Ok(
               JsArray(
                 fields.distinct.sorted
-                  .map(JsString)
+                  .map(JsString.apply)
               )
             ).future
           case None        => BadRequest("Event type unkown").future

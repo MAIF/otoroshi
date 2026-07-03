@@ -173,7 +173,7 @@ object OAuthProtectedResourceMetadataConfig {
         "type"  -> "select",
         "label" -> "Signing algorithm",
         "props" -> Json.obj(
-          "options" -> JsArray(Seq("RS256", "RS384", "RS512", "ES256", "ES384", "ES512").map(JsString))
+          "options" -> JsArray(Seq("RS256", "RS384", "RS512", "ES256", "ES384", "ES512").map(JsString.apply))
         )
       ),
       "signed_metadata_kid"                        -> Json.obj(

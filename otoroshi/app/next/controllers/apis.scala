@@ -441,7 +441,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
         ctx.request.body
           .asOpt[JsObject]
-          .map(ApiDocumentationPlan)
+          .map(ApiDocumentationPlan.apply)
           .toRight(BadRequest(Json.obj("error" -> "wrong plan format"))) match {
           case Left(err)              => err.vfuture
           case Right(plan) if isDraft =>

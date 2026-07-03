@@ -47,7 +47,7 @@ object IdGenerator {
       val append    = if (timestamp < lastTimestamp.get()) s"-${duplicates.incrementAndGet() + generatorId}" else ""
       lastTimestamp.set(timestamp)
       counter.compareAndSet(4095, -1L)
-      (((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()) + append
+      (((timestamp - minus) << 22L) | (generatorId << 10L) | counter.incrementAndGet()).toString + append
     }
 
   def uuid: String = {

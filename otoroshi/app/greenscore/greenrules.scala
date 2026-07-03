@@ -70,7 +70,7 @@ case class Thresholds(
 
 case class Efficiency(excludedPaths: Seq[String] = Seq.empty) {
   def json() = Json.obj(
-    "paths" -> JsArray(excludedPaths.map(JsString))
+    "paths" -> JsArray(excludedPaths.map(JsString.apply))
   )
 }
 

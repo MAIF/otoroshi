@@ -37,11 +37,11 @@ object Xml {
           case (_, Nil)            => toJsValue(value)
           case (XValue(""), xs)    => JsObject(mkFields(xs))
           case (XValue(_), _ :: _) =>
-            val values = JsObject(mkFields(("value" → value) +: attrs))
+            val values = JsObject(mkFields(("value" -> value) +: attrs))
             if (flatten) {
               values
             } else {
-              JsObject(Seq(name → values))
+              JsObject(Seq(name -> values))
             }
           case (_, _)              => JsObject(Seq(name -> toJsValue(value)))
         }

@@ -28,7 +28,7 @@ object TcpUtils {
   val domainNamePattern                                                                                                = Pattern.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
   private val tlsWrapping: BidiFlow[ByteString, TLSProtocol.SendBytes, TLSProtocol.SslTlsInbound, ByteString, NotUsed] =
     BidiFlow.fromFlows(
-      Flow[ByteString].map(TLSProtocol.SendBytes),
+      Flow[ByteString].map(TLSProtocol.SendBytes.apply),
       Flow[TLSProtocol.SslTlsInbound].collect { case sb: TLSProtocol.SessionBytes =>
         sb.bytes
       // ignore other kinds of inbounds (currently only Truncated)
@@ -61,7 +61,7 @@ object TcpUtils {
       port: Int,
       createSSLEngine: () => SSLEngine,
       backlog: Int = 100,
-      options: immutable.Traversable[SocketOption] = Nil,
+      options: immutable.Iterable[SocketOption] = Nil,
       idleTimeout: Duration = Duration.Inf,
       verifySession: SSLSession => Try[Unit],
       closing: TLSClosing = IgnoreComplete

@@ -434,7 +434,7 @@ case class Cert(
       cert = certificate.get,
       csr = Await
         .result(env.pki.genCsr(query, None)(using env.otoroshiExecutionContext), 10.seconds)
-        .right
+        .toOption
         .get
         .csr,
       csrQuery = query.some,

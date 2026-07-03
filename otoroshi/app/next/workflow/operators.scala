@@ -453,9 +453,9 @@ class MapRenameOperator extends WorkflowOperator {
         val old_key = opts.select("old_key").asString
         val new_key = opts.select("new_key").asString
         obj.get(old_key) match {
-          case None            => JsObject(obj - old_key)
+          case None            => JsObject(obj.toMap - old_key)
           case Some(old_value) => {
-            val map = obj - old_key + (new_key -> old_value)
+            val map = obj.toMap - old_key + (new_key -> old_value)
             JsObject(map)
           }
         }

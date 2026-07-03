@@ -257,7 +257,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
                 None,
                 attrs = ctx.attrs
               )
-              .map(NgAccess.NgDenied)
+              .map(NgAccess.NgDenied.apply)
           }
         })
     } else {
@@ -670,7 +670,7 @@ class OIDCAuthToken extends NgAccessValidator {
             None,
             attrs = ctx.attrs
           )
-          .map(NgAccess.NgDenied)
+          .map(NgAccess.NgDenied.apply)
       }
       case Some(authModuleConfig) if config.opaque  => {
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
@@ -692,7 +692,7 @@ class OIDCAuthToken extends NgAccessValidator {
                 None,
                 attrs = ctx.attrs
               )
-              .map(NgAccess.NgDenied)
+              .map(NgAccess.NgDenied.apply)
           case Some(algoSettings) => {
             val jwtVerifier = LocalJwtVerifier(
               enabled = true,
