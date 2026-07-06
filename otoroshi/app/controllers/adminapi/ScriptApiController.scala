@@ -126,6 +126,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           case Left(_)                                                             => extractInfos(c)
           case Right(instance) if instance.jobVisibility == JobVisibility.UserLand => extractInfos(c)
           case Right(instance) if instance.jobVisibility == JobVisibility.Internal => JsNull
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
       def extractInfos(c: String): JsValue = {

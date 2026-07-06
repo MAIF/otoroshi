@@ -737,6 +737,7 @@ class GatewayRequestHandler(
             case Left(_) if extensionsPublicKeys.nonEmpty   =>
               Results.Ok(Json.obj("keys" -> JsArray(extensionsPublicKeys.map(_.raw))))
             case Right(keys)                                => Results.Ok(Json.obj("keys" -> JsArray(keys ++ extensionsPublicKeys.map(_.raw))))
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }

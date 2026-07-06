@@ -1540,6 +1540,7 @@ class Env(
                     case Failure(e) => logger.error("Error while importing initial data !", e)
                   }(ec)
               }
+              case _ => ()
             }
           } else {
             configuration.getOptionalWithFileSupport[play.api.Configuration]("app.initialData") match {

@@ -46,8 +46,9 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
   }
 
   private def combineValueAndList(value: String, l: util.Collection[String]) = {
-    val half = new util.ArrayList[String]() { { value } }
-    half.addAll(new util.ArrayList[String](l))
+    val half = new util.ArrayList[String]()
+    half.add(value)
+    half.addAll(l)
     half
   }
 
@@ -58,8 +59,9 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
       factor: Double,
       tags: util.Map[String, String]
   ): MetricFamilySamples = {
-    val quantile = new util.ArrayList[String]() { { "quantile" } }
-    quantile.addAll(new util.ArrayList[String](tags.keySet))
+    val quantile = new util.ArrayList[String]()
+    quantile.add("quantile")
+    quantile.addAll(tags.keySet)
 
     val samples = util.Arrays.asList(
       sampleBuilder.createSample(

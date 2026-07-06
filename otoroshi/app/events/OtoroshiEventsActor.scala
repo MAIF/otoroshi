@@ -2103,6 +2103,7 @@ object Exporters {
                   withEventLongValue(event, metric.selector) { v =>
                     env.metrics.timerUpdate(id, v, TimeUnit.MILLISECONDS)
                   }
+                case _ =>
               }
             }
           }
@@ -2311,6 +2312,7 @@ object Exporters {
                     withEventLongValue(event, metric.selector) { v =>
                       meter.withTimer(id).record(Math.abs(FiniteDuration(v, TimeUnit.MILLISECONDS).toNanos), attributes)
                     }
+                  case _ => 
                 }
               }
             } catch {
