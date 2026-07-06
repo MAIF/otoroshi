@@ -427,6 +427,7 @@ class OAuth2Caller extends NgRequestTransformer {
           .getOrElse("")}${config.audience.map(s => s"&audience=$s").getOrElse("")}${config.resource
           .map(s => s"&resource=$s")
           .getOrElse("")}"
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
     val ctype        = if (config.jsonPayload) "application/json" else "application/x-www-form-urlencoded"
     val authMod      = config.authModRef

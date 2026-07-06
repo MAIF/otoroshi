@@ -996,7 +996,9 @@ class OIDCJwtVerifier extends NgAccessValidator {
                         case Left(result) if !config.mandatory => NgAccess.NgAllowed
                         case Left(result) if config.mandatory  => NgAccess.NgDenied(customResult.getOrElse(result))
                         case Right(r)                          => r
+                        case other => throw new IllegalStateException(s"unreachable case: $other")
                       }
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
               }
               case _                                                                  =>

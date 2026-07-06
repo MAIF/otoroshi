@@ -480,7 +480,7 @@ case class JWKSAlgoSettings(
       case Some((stop, keys, false)) if stop > System.currentTimeMillis()  => false
       case Some((stop, keys, false)) if stop <= System.currentTimeMillis() => true
       case Some((_, keys, true))                                           => false
-      case None                                                            => true
+      case _                                                               => true
     }
   }
 
@@ -611,7 +611,7 @@ case class JWKSAlgoSettings(
                 FastFuture.successful(None)
             }
           }
-          case None                                                            => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
+          case _                                                               => fetchJWKS(alg, kid, System.currentTimeMillis() + ttl.toMillis, Map.empty)
         }
       }
       case _                         =>
@@ -1395,6 +1395,7 @@ sealed trait JwtVerifier extends AsJson {
               .left[JwtInjection]
           }
           case _ if !strict                    => JwtInjection().right[Result]
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       case Some(_token) =>
         val token       = if (_token.startsWith("Bearer ")) _token.replaceFirst("Bearer ", "") else _token
@@ -1697,6 +1698,7 @@ sealed trait JwtVerifier extends AsJson {
               .left[A]
           }
           case _ if !strict                    => f(JwtInjection()).right[Result]
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       // case None if strict =>
       //   Errors

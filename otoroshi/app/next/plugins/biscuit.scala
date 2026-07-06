@@ -257,6 +257,7 @@ class NgBiscuitValidator extends NgAccessValidator {
       }
       case _ if config.legacy.enforce      => forbidden(ctx)
       case _ if !config.legacy.enforce     => NgAccess.NgAllowed.vfuture
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

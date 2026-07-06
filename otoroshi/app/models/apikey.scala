@@ -945,18 +945,18 @@ object ApiKeyHelper {
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                => FastFuture.successful(None)
           case Some(key) if !key.allowClientIdOnly => FastFuture.successful(None)
           case Some(key) if key.allowClientIdOnly  => FastFuture.successful(Some(key))
+          case _                                   => FastFuture.successful(None)
         }
     } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
       val (clientId, clientSecret) = authByCustomHeaders.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                     => FastFuture.successful(None)
           case Some(key) if key.isInvalid(clientSecret) => FastFuture.successful(None)
           case Some(key) if key.isValid(clientSecret)   => FastFuture.successful(Some(key))
+          case _                                        => FastFuture.successful(None)
         }
     } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
       val jwtTokenValue = authByJwtToken.get
@@ -1107,9 +1107,9 @@ object ApiKeyHelper {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
             .flatMap {
-              case None                                     => FastFuture.successful(None)
               case Some(key) if key.isInvalid(apiKeySecret) => FastFuture.successful(None)
               case Some(key) if key.isValid(apiKeySecret)   => FastFuture.successful(Some(key))
+              case _                                        => FastFuture.successful(None)
             }
         }
         case _                                          => FastFuture.successful(None)
@@ -1471,7 +1471,6 @@ object ApiKeyHelper {
     val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
     if (preExtractedApiKey.isDefined) {
       preExtractedApiKey match {
-        case None                                         => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
         case Some(key) if key.isInvalid(key.clientSecret) => {
           sendRevokedApiKeyAlert(key)
           errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
@@ -1502,14 +1501,13 @@ object ApiKeyHelper {
               sendQuotasExceededError(key, quotas)
               errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
           }
+        case _                                            => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
       }
     } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
       val clientId = authBySimpleApiKeyClientId.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                       =>
-            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
           case Some(key) if !key.allowClientIdOnly        =>
             errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
           case Some(key) if !key.matchRouting(descriptor) =>
@@ -1548,14 +1546,14 @@ object ApiKeyHelper {
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
+          case _ =>
+            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
         }
     } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
       val (clientId, clientSecret) = authByCustomHeaders.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
         .flatMap {
-          case None                                       =>
-            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
           case Some(key) if key.isInvalid(clientSecret)   => {
             sendRevokedApiKeyAlert(key)
             errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
@@ -1585,6 +1583,8 @@ object ApiKeyHelper {
                 sendQuotasExceededError(key, quotas)
                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
+          case _ =>
+            errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
         }
     } else if (authByOtoBearerToken.isDefined && descriptor.apiKeyConstraints.otoBearerAuth.enabled) {
       val bearer = authByOtoBearerToken.get
@@ -1802,8 +1802,6 @@ object ApiKeyHelper {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
             .flatMap {
-              case None                                       =>
-                errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
               case Some(key) if key.isInvalid(apiKeySecret)   => {
                 sendRevokedApiKeyAlert(key)
                 errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
@@ -1833,6 +1831,8 @@ object ApiKeyHelper {
                     sendQuotasExceededError(key, quotas)
                     errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                 }
+              case _ =>
+                errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
             }
         }
         case _                                          =>
@@ -2304,7 +2304,6 @@ object ApiKeyHelper {
           val key = "apikey_rejection_reason"
           attrs.update(otoroshi.plugins.Keys.ExtraAnalyticsDataKey) {
             case Some(obj @ JsObject(_)) => obj ++ Json.obj(key -> message)
-            case Some(other)             => other
             case None                    => Json.obj(key -> message)
           }
         }

@@ -336,6 +336,7 @@ class OtoroshiChallenge extends NgRequestTransformer {
               }
             }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }

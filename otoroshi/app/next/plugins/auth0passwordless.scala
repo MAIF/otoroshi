@@ -229,7 +229,7 @@ class Auth0PasswordlessStartFlowEndpoint extends NgBackendCall {
           doStartFlow(ctx, JsObject(ctx.request.queryParams.view.mapValues(_.json).toMap), config, oauthConfig)
         }
       }
-      case None                                                                   =>
+      case _                                                                   =>
         BackendCallResponse(
           NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))),
           None
@@ -396,7 +396,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
           doEndFlow(ctx, JsObject(ctx.request.queryParams.view.mapValues(_.json).toMap), config, oauthConfig)
         }
       }
-      case None                                                                   =>
+      case _                                                                   =>
         BackendCallResponse(
           NgPluginHttpResponse.fromResult(Results.Unauthorized(Json.obj("error" -> "unauthorized"))),
           None

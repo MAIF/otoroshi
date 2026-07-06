@@ -146,7 +146,7 @@ class OIDCHeaders extends NgRequestTransformer {
             headers = ctx.otoroshiRequest.headers ++ profileMap ++ idTokenMap ++ accessTokenMap
           )
         )
-      case None                                                              => Right(ctx.otoroshiRequest)
+      case _                                                                 => Right(ctx.otoroshiRequest)
     }
   }
 }
@@ -228,7 +228,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
                 case _ if !promise.isCompleted => promise.trySuccess(false)
               }
             promise.future
-          case _                             => FastFuture.successful(true)
+          // case _                             => FastFuture.successful(true)
         }
       }
 
@@ -322,7 +322,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
                 Results.Ok("--").right.future
               }
               .map(_ => ())
-          case _                             => ().future
+          // case _                             => ().future
         }
       }
 
@@ -660,18 +660,6 @@ class OIDCAuthToken extends NgAccessValidator {
       .cachedConfig(internalName)(OIDCAuthTokenConfig.format)
       .getOrElse(OIDCAuthTokenConfig.default)
     env.proxyState.authModule(config.ref) match {
-      case None                                     => {
-        Errors
-          .craftResponseResult(
-            "bad auth. module",
-            Results.InternalServerError,
-            ctx.request,
-            None,
-            None,
-            attrs = ctx.attrs
-          )
-          .map(NgAccess.NgDenied.apply)
-      }
       case Some(authModuleConfig) if config.opaque  => {
         val oauth2Config = authModuleConfig.asInstanceOf[OAuth2ModuleConfig]
         OIDCAuthToken.getSession(ctx, oauth2Config, config).flatMap {
@@ -716,6 +704,18 @@ class OIDCAuthToken extends NgAccessValidator {
               }
           }
         }
+      }
+      case _                                        => {
+        Errors
+          .craftResponseResult(
+            "bad auth. module",
+            Results.InternalServerError,
+            ctx.request,
+            None,
+            None,
+            attrs = ctx.attrs
+          )
+          .map(NgAccess.NgDenied.apply)
       }
     }
   }

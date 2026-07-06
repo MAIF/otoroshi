@@ -563,6 +563,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
           case Some((time, values)) if start - time > config.timeout  =>
             fetch(config.method, config.url, config.headers, config.timeout, config.tls)
             validate(certs, values, ctx)
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
       case _           => forbidden(ctx)
