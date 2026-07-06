@@ -374,21 +374,21 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && wellKnownOverridesRoutes.nonEmpty) {
       wellKnownOverridesRouter.find(request) match {
-        case None                                       => f
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
+        case _ => f
       }
     } else if (
       hasExtensions && request.path.startsWith("/.well-known/otoroshi/extensions/") && wellKnownRoutes.nonEmpty
     ) {
       wellKnownRouter.find(request) match {
-        case None                                       => f
         case Some(route) if route.adminRoute.wantsBody  =>
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
+        case _ => f
       }
     } else f
   }
@@ -407,7 +407,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(ApiAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.apiKey, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (
       hasExtensions && (request.path
@@ -420,7 +420,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(ApiAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.apiKey, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else f
   }
@@ -442,7 +442,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (hasExtensions && backofficeAuthOverridesRoutes.nonEmpty) {
       backofficeAuthOverridesRouter.find(request) match {
@@ -452,7 +452,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
       assetsRouter.find(request) match {
@@ -465,7 +465,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/") && backofficeAuthRoutes.nonEmpty) {
       backofficeAuthRouter.find(request) match {
@@ -475,7 +475,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(BackOfficeAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.user, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else f
   }
@@ -497,7 +497,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (hasExtensions && privateAppAuthOverridesRoutes.nonEmpty) {
       privateAppAuthOverridesRouter.find(request) match {
@@ -507,7 +507,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.users, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/assets/") && assets.nonEmpty) {
       assetsRouter.find(request) match {
@@ -520,7 +520,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           Some(actionBuilder.async(sourceBodyParser) { req => route.adminRoute.handle(route, req, req.body.some) })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(actionBuilder.async { req => route.adminRoute.handle(route, req, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else if (hasExtensions && request.path.startsWith("/extensions/") && privateAppAuthRoutes.nonEmpty) {
       privateAppAuthRouter.find(request) match {
@@ -530,7 +530,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
           })
         case Some(route) if !route.adminRoute.wantsBody =>
           Some(PrivateAppsAction.async { ctx => route.adminRoute.handle(route, ctx.request, ctx.users, None) })
-        case None                                       => f
+        case _                                       => f
       }
     } else f
   }

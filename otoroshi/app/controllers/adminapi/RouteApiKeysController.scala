@@ -99,6 +99,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             )
             apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
   }
@@ -156,6 +157,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             )
             env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -286,12 +288,14 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                         )
                         newApiKey.save().map(_ => Ok(newApiKey.toJson))
                       }
+                      case other => throw new IllegalStateException(s"unreachable case: $other")
                     }
                   }
                 }
               }
             }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -344,10 +348,12 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
                     )
                     newApiKey.save().map(_ => Ok(newApiKey.toJson))
                   }
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
               }
             }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -390,6 +396,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             env.datastores.apiKeyDataStore.deleteFastLookupByService(id, apiKey)
             apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 
@@ -482,6 +489,7 @@ class ApiKeysFromRouteController(val ApiAction: ApiAction, val cc: ControllerCom
             )
             Ok(apiKey.toJson)
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
     }
 

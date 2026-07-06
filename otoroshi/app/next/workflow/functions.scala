@@ -194,6 +194,7 @@ class MemoryGetFunction extends WorkflowFunction {
       case None                          => JsNull
       case Some(value) if path.isEmpty   => value
       case Some(value) if path.isDefined => value.at(path.get).asValue
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
     value.rightf
   }

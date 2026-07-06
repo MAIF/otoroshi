@@ -87,6 +87,7 @@ object HealthController {
       val otoroshiStatus   = JsString(_health match {
         case Healthy if overhead <= env.healthLimit => "healthy"
         case Healthy if overhead > env.healthLimit  => "unhealthy"
+        case Healthy                                => "unhealthy"
         case Unhealthy                              => "unhealthy"
         case Unreachable                            => "down"
       })

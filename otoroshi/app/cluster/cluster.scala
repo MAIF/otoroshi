@@ -348,7 +348,7 @@ case class ClusterConfig(
   def gzip(): Flow[ByteString, ByteString, NotUsed]   =
     if (compression == -1) Flow.apply[ByteString] else Compression.gzip(compression)
   def gunzip(): Flow[ByteString, ByteString, NotUsed] =
-    if (compression == -1) Flow.apply[ByteString] else Compression.gunzip()
+    if (compression == -1) Flow.apply[ByteString] else Compression.gzipDecompress()
   def json: JsValue                                   = Json.obj(
     "mode"         -> mode.json,
     "compression"  -> compression,

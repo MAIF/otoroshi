@@ -755,7 +755,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                         )
                       )
                   }
-                case None                                                  =>
+                case _                                                  =>
                   authConfig.rightsOverride.getOrElse(
                     user.email,
                     UserRights(

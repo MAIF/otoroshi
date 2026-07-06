@@ -323,7 +323,7 @@ class AuthController(
                     withMultiAuthConfig(route, req) { auth => multiAuthCallback(auth, route, ctx) }
                   case _                                                                                             => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
                 }
-            case _                                          => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
+            // case _                                          => NotFound(otoroshi.views.html.oto.error("Private apps are not configured", env)).vfuture
           }
         }
       }
@@ -999,7 +999,7 @@ class AuthController(
             }
           }
         }
-        case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty    =>
+        case config =>
           FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
       }
     }
@@ -1122,8 +1122,6 @@ class AuthController(
         case Some(e) => FastFuture.successful(BadRequest(otoroshi.views.html.backoffice.unauthorized(env)))
         case None    => {
           env.datastores.globalConfigDataStore.singleton().flatMap {
-            case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty    =>
-              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
             case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
 
               config.backOfficeAuthRef match {
@@ -1189,6 +1187,8 @@ class AuthController(
                 }
               }
             }
+            case config =>
+              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index))
           }
         }
       }

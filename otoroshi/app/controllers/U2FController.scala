@@ -494,10 +494,6 @@ class U2FController(
                             .build()
                         )
                       } match {
-                        case Failure(e)                           =>
-                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                        case Success(result) if !result.isSuccess =>
-                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                         case Success(result) if result.isSuccess  => {
                           if (logger.isDebugEnabled) logger.debug(s"Login successful for user '$username'")
                           BackOfficeUser(
@@ -542,6 +538,8 @@ class U2FController(
                             ).addingToSession("bousr" -> boUser.randomId)
                           }
                         }
+                        case _                          =>
+                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                       }
                     } else {
                       FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))

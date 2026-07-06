@@ -782,13 +782,11 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           .build()
                       )
                     ) match {
-                      case Failure(e)                           =>
-                        FastFuture.successful(Left(ErrorReason("bad request")))
-                      case Success(result) if !result.isSuccess =>
-                        FastFuture.successful(Left(ErrorReason("bad request")))
-                      case Success(result) if result.isSuccess  => {
+                      case Success(result) if result.isSuccess => {
                         FastFuture.successful(Right(user))
                       }
+                      case _ =>
+                        FastFuture.successful(Left(ErrorReason("bad request")))
                     }
                   }
                 }
@@ -867,12 +865,11 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           .build()
                       )
                     ) match {
-                      case Failure(e)                           =>
-                        FastFuture.successful(Left(ErrorReason("bad request")))
-                      case Success(result) if !result.isSuccess =>
-                        FastFuture.successful(Left(ErrorReason("bad request")))
                       case Success(result) if result.isSuccess  => {
                         FastFuture.successful(Right(user))
+                      }
+                      case _ => {
+                        FastFuture.successful(Left(ErrorReason("bad request")))
                       }
                     }
                   }

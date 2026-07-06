@@ -676,8 +676,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
         eventualDescriptors
           .map(_.filter(d => ctx.canUserRead(d)))
           .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
+            case seq: Seq[ServiceDescriptor] if seq.nonEmpty => Some(seq)
+            case _                          => None
           }
           .flatMap {
             case Some(desc) =>
@@ -729,8 +729,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
               .sortWith(_.name < _.name)
           )
           .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil                         => None
+            case seq: Seq[ServiceDescriptor] if seq.nonEmpty => Some(seq)
+            case _                         => None
           }
           .flatMap {
             case None       => NotFound(Json.obj("error" -> "No entity found")).future

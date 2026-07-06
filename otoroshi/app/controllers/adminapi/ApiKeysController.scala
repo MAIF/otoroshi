@@ -56,6 +56,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               )
               apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
             }
+            case _ => ctx.fforbidden
           }
       }
     }
@@ -82,6 +83,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               )
               env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
             }
+            case _ => ctx.fforbidden
           }
       }
     }
@@ -182,8 +184,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                       }
                     }
                   }
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
               }
+              case other => throw new IllegalStateException(s"unreachable case: $other")
             }
         }
     }
@@ -222,8 +226,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                   )
                   newApiKey.save().map(_ => Ok(newApiKey.toJson))
                 }
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -255,6 +261,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               env.datastores.apiKeyDataStore.deleteFastLookupByService(serviceId, apiKey)
               apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -364,6 +371,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
               )
               Ok(apiKey.toJson)
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -400,6 +408,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               )
               apiKey.remainingQuotas().map(rq => Ok(rq.toJson))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -426,6 +435,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               )
               env.datastores.apiKeyDataStore.resetQuotas(apiKey).map(rq => Ok(rq.toJson))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -494,6 +504,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               )
               Ok(apiKey.toJson)
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -514,10 +525,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("group_" + group.id) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-            case None                                                     => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
             case Some(groupId) if !groupId.contains(s"group_${group.id}") =>
               body ++ Json.obj("authorizedEntities" -> (entities ++ groupId).distinct)
             case Some(groupId) if groupId.contains(s"group_${group.id}")  => body
+            case _                                                     => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
           }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
@@ -591,8 +602,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                     }
                   }
                 }
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -631,8 +644,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                   )
                   newApiKey.save().map(_ => Ok(newApiKey.toJson))
                 }
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
@@ -664,6 +679,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
               env.datastores.apiKeyDataStore.deleteFastLookupByGroup(groupId, apiKey)
               apiKey.delete().map(res => Ok(Json.obj("deleted" -> true)))
             }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
       }
     }
