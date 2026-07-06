@@ -645,8 +645,8 @@ object TlsWasmoSettings {
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         TlsWasmoSettings(
-          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format.reads),
-          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format.reads)
+          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format),
+          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

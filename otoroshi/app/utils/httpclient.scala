@@ -1075,7 +1075,7 @@ object WSProxyServerUtils {
       while ({
         var2.hasNext
       }) {
-        val nonProxyHost: String = var2.next.asInstanceOf[String]
+        val nonProxyHost: String = var2.next().asInstanceOf[String]
         if (this.matchNonProxyHost(hostname, nonProxyHost)) return true
       }
     }

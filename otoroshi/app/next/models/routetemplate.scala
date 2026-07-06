@@ -76,10 +76,10 @@ trait RouteTemplateDataStore extends BasicStore[RouteTemplate] {
       .templates
       .routeTemplate
       .map { template =>
-        RouteTemplate.format.reads(RouteTemplate.defaultRouteTemplate.json.asObject.deepMerge(template)).get
+        RouteTemplate.format.reads(RouteTemplate.defaultRouteTemplate().json.asObject.deepMerge(template)).get
       }
       .getOrElse {
-        RouteTemplate.defaultRouteTemplate
+        RouteTemplate.defaultRouteTemplate()
       }
   }
 }

@@ -339,7 +339,7 @@ case class RouteScoreByDateAndSection(
     "date"           -> date,
     "section"        -> section,
     "section_weight" -> sectionWeight,
-    "score"          -> score.json,
+    "score"          -> score.json(),
     "letter"         -> letter,
     "color"          -> color
   )

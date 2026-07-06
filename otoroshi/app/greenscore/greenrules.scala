@@ -31,18 +31,21 @@ case class TripleBounds(excellent: Int = 0, sufficient: Int = 0, poor: Int = 0) 
 }
 
 object TripleBounds {
-  def reads(item: JsValue): JsResult[TripleBounds] = {
-    Try {
-      JsSuccess(
-        TripleBounds(
-          excellent = item.select("excellent").as[Int],
-          sufficient = item.select("sufficient").as[Int],
-          poor = item.select("poor").as[Int]
+  val fmt = new Format[TripleBounds] {
+    override def writes(o: TripleBounds): JsValue = o.json()
+    override def reads(item: JsValue): JsResult[TripleBounds] = {
+      Try {
+        JsSuccess(
+          TripleBounds(
+            excellent = item.select("excellent").as[Int],
+            sufficient = item.select("sufficient").as[Int],
+            poor = item.select("poor").as[Int]
+          )
         )
-      )
-    } recover { case e =>
-      JsError(e.getMessage)
-    } get
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+    }
   }
 }
 
@@ -75,37 +78,43 @@ case class Efficiency(excludedPaths: Seq[String] = Seq.empty) {
 }
 
 object Efficiency {
-  def reads(item: JsValue): JsResult[Efficiency] = {
-    Try {
-      JsSuccess(
-        Efficiency(
-          excludedPaths = item.select("paths").as[Seq[String]]
+  val fmt = new Format[Efficiency] {
+    override def writes(o: Efficiency): JsValue = o.json()
+    override def reads(item: JsValue): JsResult[Efficiency] = {
+      Try {
+        JsSuccess(
+          Efficiency(
+            excludedPaths = item.select("paths").as[Seq[String]]
+          )
         )
-      )
-    } recover { case e =>
-      JsError(e.getMessage)
-    } get
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+    }
   }
 }
 
 object Thresholds {
-  def reads(item: JsValue): JsResult[Thresholds] = {
-    Try {
-      JsSuccess(
-        Thresholds(
-          calls = item.select("calls").as[TripleBounds](TripleBounds.reads),
-          dataIn = item.select("dataIn").as[TripleBounds](TripleBounds.reads),
-          dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.reads),
-          overhead = item.select("overhead").as[TripleBounds](TripleBounds.reads),
-          duration = item.select("duration").as[TripleBounds](TripleBounds.reads),
-          backendDuration = item.select("backendDuration").as[TripleBounds](TripleBounds.reads),
-          headersIn = item.select("headersIn").as[TripleBounds](TripleBounds.reads),
-          headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.reads)
+  val fmt = new Format[Thresholds] {
+    override def writes(o: Thresholds): JsValue = o.json()
+    override def reads(item: JsValue): JsResult[Thresholds] = {
+      Try {
+        JsSuccess(
+          Thresholds(
+            calls = item.select("calls").as[TripleBounds](TripleBounds.fmt),
+            dataIn = item.select("dataIn").as[TripleBounds](TripleBounds.fmt),
+            dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.fmt),
+            overhead = item.select("overhead").as[TripleBounds](TripleBounds.fmt),
+            duration = item.select("duration").as[TripleBounds](TripleBounds.fmt),
+            backendDuration = item.select("backendDuration").as[TripleBounds](TripleBounds.fmt),
+            headersIn = item.select("headersIn").as[TripleBounds](TripleBounds.fmt),
+            headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.fmt),
+          )
         )
-      )
-    } recover { case e =>
-      JsError(e.getMessage)
-    } get
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+    }
   }
 }
 
@@ -138,26 +147,29 @@ case class RuleState(
 }
 
 object Rule {
-  def reads(json: JsValue): JsResult[Seq[Rule]] = {
-    Try {
-      JsSuccess(
-        json
-          .as[JsArray]
-          .value.toSeq
-          .map(item =>
-            Rule(
-              id = RuleId(item.select("id").as[String]),
-              section = item.select("section").as[String],
-              description = item.select("description").asOpt[String],
-              advice = item.select("advice").asOpt[String],
-              weight = item.select("weight").as[Double],
-              sectionWeight = item.select("section_weight").as[Double]
+  val fmt = new Format[Seq[Rule]] {
+    override def writes(o: Seq[Rule]): JsValue = JsArray(o.map(_.json()))
+    override def reads(json: JsValue): JsResult[Seq[Rule]] = {
+      Try {
+        JsSuccess(
+          json
+            .as[JsArray]
+            .value.toSeq
+            .map(item =>
+              Rule(
+                id = RuleId(item.select("id").as[String]),
+                section = item.select("section").as[String],
+                description = item.select("description").asOpt[String],
+                advice = item.select("advice").asOpt[String],
+                weight = item.select("weight").as[Double],
+                sectionWeight = item.select("section_weight").as[Double]
+              )
             )
-          )
-      )
-    } recover { case e =>
-      JsError(e.getMessage)
-    } get
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+    }
   }
 }
 
@@ -168,7 +180,7 @@ object RuleStateRecord {
     override def reads(json: JsValue): JsResult[RuleStateRecord] = Try {
       RuleStateRecord(
         date = (json \ "date").as[Long],
-        states = json.select("states").asOpt[Seq[RuleState]](RuleState.reads).getOrElse(Seq.empty).toSeq
+        states = json.select("states").asOpt[Seq[RuleState]](RuleState.fmt).getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -183,22 +195,25 @@ object RuleStateRecord {
 }
 
 object RuleState {
-  def reads(json: JsValue): JsResult[Seq[RuleState]] = {
-    Try {
-      JsSuccess(
-        json
-          .as[JsArray]
-          .value.toSeq
-          .map(item =>
-            RuleState(
-              id = RuleId(item.select("id").as[String]),
-              enabled = item.select("enabled").asOpt[Boolean].getOrElse(true)
+  val fmt = new Format[Seq[RuleState]] {
+    override def writes(o: Seq[RuleState]): JsValue = JsArray(o.map(_.json()))
+    override def reads(json: JsValue): JsResult[Seq[RuleState]] = {
+      Try {
+        JsSuccess(
+          json
+            .as[JsArray]
+            .value.toSeq
+            .map(item =>
+              RuleState(
+                id = RuleId(item.select("id").as[String]),
+                enabled = item.select("enabled").asOpt[Boolean].getOrElse(true)
+              )
             )
-          )
-      )
-    } recover { case e =>
-      JsError(e.getMessage)
-    } get
+        )
+      } recover { case e =>
+        JsError(e.getMessage)
+      } get
+    }
   }
 }
 
@@ -417,13 +432,13 @@ object RulesRouteConfiguration {
     override def reads(json: JsValue): JsResult[RulesRouteConfiguration] = Try {
       RulesRouteConfiguration(
         states = (json \ "states")
-          .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format.reads))
+          .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format))
           .getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: RulesRouteConfiguration): JsValue             = o.json
+    override def writes(o: RulesRouteConfiguration): JsValue             = o.json()
   }
 }

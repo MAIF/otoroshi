@@ -29,11 +29,11 @@ object KeyManagerCompatibility {
 
 object DynamicKeyManager {
 
-  val cache    = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, Cert]
+  val cache    = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, Cert]()
   val sessions = Scaffeine()
     .maximumSize(1000)
     .expireAfterWrite(5.seconds)
-    .build[String, (SSLSession, PrivateKey, Array[X509Certificate])]
+    .build[String, (SSLSession, PrivateKey, Array[X509Certificate])]()
 
   def validCertificates(allCertificates: Seq[Cert]): Seq[Cert] = {
     allCertificates

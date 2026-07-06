@@ -637,7 +637,7 @@ class BasicAuthCaller extends NgRequestTransformer {
   override def transformRequestSync(
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
-    val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format.reads).getOrElse(BasicAuthCallerConfig())
+    val config = ctx.cachedConfig(internalName)(BasicAuthCallerConfig.format).getOrElse(BasicAuthCallerConfig())
 
     (config.username, config.password) match {
       case (Some(username), Some(password)) if username.nonEmpty && password.nonEmpty =>
@@ -721,7 +721,7 @@ class SimpleBasicAuth extends NgAccessValidator {
   }
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
-    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format.reads).getOrElse(SimpleBasicAuthConfig())
+    val config                = ctx.cachedConfig(internalName)(SimpleBasicAuthConfig.format).getOrElse(SimpleBasicAuthConfig())
     val globalUsers           = env.datastores.globalConfigDataStore
       .latest()
       .plugins

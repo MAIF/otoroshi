@@ -91,7 +91,7 @@ object GreenScoreEntity {
       "routes"      -> JsArray(o.routes.map(route => {
         Json.obj(
           "routeId"     -> route.routeId,
-          "rulesConfig" -> route.rulesConfig.json
+          "rulesConfig" -> route.rulesConfig.json()
         )
       })),
       "thresholds"  -> o.thresholds.json(),
@@ -106,7 +106,7 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
-        thresholds = json.select("thresholds").as[Thresholds](Thresholds.reads),
+        thresholds = json.select("thresholds").as[Thresholds](Thresholds.fmt),
         routes = json
           .select("routes")
           .asOpt[JsArray]
@@ -117,14 +117,14 @@ object GreenScoreEntity {
                 .map(v => {
                   RouteRules(
                     v.select("routeId").as[String],
-                    v.select("rulesConfig").asOpt[JsObject].map(RulesRouteConfiguration.format.reads).get.get
+                    v.select("rulesConfig").asOpt[JsObject].map(o => RulesRouteConfiguration.format.reads(o)).get.get
                   )
                 })
                 .get
             })
           })
           .getOrElse(Seq.empty).toSeq,
-        efficiency = json.select("efficiency").asOpt(Efficiency.reads).getOrElse(Efficiency())
+        efficiency = json.select("efficiency").asOpt(Efficiency.fmt).getOrElse(Efficiency())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

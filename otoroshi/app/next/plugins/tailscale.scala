@@ -166,7 +166,7 @@ class TailscaleLocalApiClient(env: Env) {
     }).andThen {
       case Failure(_: FileNotFoundException) =>
         TailscaleLocalApiClient.logger.error(
-          s"Tailscale socket does not exist at '${socketAddress}'. Maybe tailscaled does not run on your machine ..."
+          s"Tailscale socket does not exist at '${socketAddress()}'. Maybe tailscaled does not run on your machine ..."
         )
       case Failure(exception)                =>
         TailscaleLocalApiClient.logger.error("Tailscale call failed", exception)

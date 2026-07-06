@@ -268,7 +268,7 @@ class QueryCache(maxEntries: Int = 1000, ttl: FiniteDuration = 30.seconds) {
   private val cache: java.util.Map[String, Entry] = java.util.Collections.synchronizedMap(
     new java.util.LinkedHashMap[String, Entry](maxEntries + 1, 0.75f, true) {
       override def removeEldestEntry(eldest: java.util.Map.Entry[String, Entry]): Boolean =
-        size() > maxEntries
+        this.size() > maxEntries
     }
   )
 

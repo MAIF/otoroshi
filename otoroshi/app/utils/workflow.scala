@@ -35,7 +35,7 @@ object WorkFlowSpec                                                             
       .asOpt[JsArray]
       .map(
         _.value
-          .map(WorkFlowTask.format.reads)
+          .map(o => WorkFlowTask.format.reads(o))
           .collect { case JsSuccess(value, _) =>
             value
           }

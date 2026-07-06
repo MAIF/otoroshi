@@ -107,7 +107,7 @@ object OpenFGAValidator {
       update = (k, v, d) => v._2,
       read = (k, v, d) => v._2
     )
-    .build[String, (Boolean, FiniteDuration)]
+    .build[String, (Boolean, FiniteDuration)]()
 }
 
 class OpenFGAValidator extends NgAccessValidator {

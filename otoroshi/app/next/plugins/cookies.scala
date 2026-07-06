@@ -168,7 +168,7 @@ class AdditionalCookieIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
+      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format).getOrElse(AdditionalCookieInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies :+ config.toCookie(ctx.attrs)
@@ -200,7 +200,7 @@ class AdditionalCookieOut extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads)
+      .cachedConfig(internalName)(AdditionalCookieOutConfig.format)
       .getOrElse(AdditionalCookieOutConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
@@ -262,7 +262,7 @@ class RemoveCookiesIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config: RemoveCookiesInConfig =
-      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads).getOrElse(RemoveCookiesInConfig.default)
+      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format).getOrElse(RemoveCookiesInConfig.default)
     Right(
       ctx.otoroshiRequest.copy(
         cookies = ctx.otoroshiRequest.cookies.filterNot(v => config.names.contains(v.name))
@@ -294,7 +294,7 @@ class RemoveCookiesOut extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config: RemoveCookiesInConfig =
-      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format.reads).getOrElse(RemoveCookiesInConfig.default)
+      ctx.cachedConfig(internalName)(RemoveCookiesInConfig.format).getOrElse(RemoveCookiesInConfig.default)
     Right(
       ctx.otoroshiResponse.copy(
         cookies = ctx.otoroshiResponse.cookies.filterNot(v => config.names.contains(v.name))
@@ -326,7 +326,7 @@ class MissingCookieIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     val config =
-      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format.reads).getOrElse(AdditionalCookieInConfig.default)
+      ctx.cachedConfig(internalName)(AdditionalCookieInConfig.format).getOrElse(AdditionalCookieInConfig.default)
     if (!ctx.otoroshiRequest.cookies.exists(_.name == config.name)) {
       Right(
         ctx.otoroshiRequest.copy(
@@ -362,7 +362,7 @@ class MissingCookieOut extends NgRequestTransformer {
       ctx: NgTransformerResponseContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpResponse]] = {
     val config = ctx
-      .cachedConfig(internalName)(AdditionalCookieOutConfig.format.reads)
+      .cachedConfig(internalName)(AdditionalCookieOutConfig.format)
       .getOrElse(AdditionalCookieOutConfig.default)
     if (!ctx.otoroshiResponse.cookies.exists(_.name == config.name)) {
       Right(
@@ -421,7 +421,7 @@ class CookiesValidation extends NgAccessValidator {
 
   override def access(ctx: NgAccessContext)(using env: Env, ec: ExecutionContext): Future[NgAccess] = {
     val config            =
-      ctx.cachedConfig(internalName)(CookiesValidationConfig.format.reads).getOrElse(CookiesValidationConfig())
+      ctx.cachedConfig(internalName)(CookiesValidationConfig.format).getOrElse(CookiesValidationConfig())
     val validationCookies = config.cookies
     val cookies           = ctx.request.cookies.map { cookie =>
       (cookie.name, cookie.value)

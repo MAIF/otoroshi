@@ -32,5 +32,5 @@ final class WorkQueue[A](buffer: Int)(using mat: Materializer) {
       () // keep processing tasks
     }
     .toMat(Sink.ignore)(Keep.left)
-    .run
+    .run()
 }

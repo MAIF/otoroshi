@@ -63,7 +63,7 @@ class Http1RequestHandler(
     ctx.write(response)
   }
 
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
     cause.printStackTrace()
     ctx.close()
     hotSource.tryEmitError(cause)
@@ -574,7 +574,7 @@ class Http1RequestHandler(
 class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
   private val logger = Logger("otoroshi-experimental-netty-http3-server")
-  private val cache  = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, QuicSslContext]
+  private val cache  = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, QuicSslContext]()
 
   def start(
       handler: HttpRequestHandler,

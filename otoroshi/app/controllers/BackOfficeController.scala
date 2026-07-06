@@ -2040,7 +2040,7 @@ class BackOfficeController(
       .select("types")
       .as[JsArray]
       .value.toSeq
-      .map(GraphQLFormats.objectTypeDefinitionFmt.reads)
+      .map(e => GraphQLFormats.objectTypeDefinitionFmt.reads(e))
       .flatMap {
         case JsSuccess(v, _) => Some(v)
         case JsError(_)      => None

@@ -823,13 +823,13 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
           Ok(
             Json
               .obj(
-                "bearer" -> apiKey.toBearer
+                "bearer" -> apiKey.toBearer()
               )
               .applyOnWithOpt(apiKey.rotation.nextSecret) { case (json, next) =>
-                json ++ Json.obj("bearer_next" -> apiKey.toNextBearer)
+                json ++ Json.obj("bearer_next" -> apiKey.toNextBearer())
               }
               .applyOnWithOpt(ctx.request.getQueryString("newSecret")) { case (json, newSecret) =>
-                json ++ Json.obj("bearer_new" -> apiKey.copy(clientSecret = newSecret).toBearer)
+                json ++ Json.obj("bearer_new" -> apiKey.copy(clientSecret = newSecret).toBearer())
               }
           ).vfuture
         }

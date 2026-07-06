@@ -2084,7 +2084,7 @@ object Api {
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
         documentation = (json \ "documentation")
-          .asOpt[ApiDocumentation](ApiDocumentation._fmt.reads),
+          .asOpt[ApiDocumentation](ApiDocumentation._fmt),
         deployments = (json \ "deployments")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiDeployment._fmt.reads(v).asOpt))
@@ -2095,7 +2095,7 @@ object Api {
           .getOrElse(Seq.empty).toSeq,
         testing = json
           .select("testing")
-          .asOpt(ApiTesting._fmt.reads)
+          .asOpt(ApiTesting._fmt)
           .getOrElse(ApiTesting()),
         clients = (json \ "clients")
           .asOpt[Seq[JsValue]]

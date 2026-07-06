@@ -105,7 +105,7 @@ class GrpcWebProxyPlugin extends NgRequestTransformer {
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
 
     val config = ctx
-      .cachedConfig(internalName)(GrpcWebConfig.fmt.reads)
+      .cachedConfig(internalName)(GrpcWebConfig.fmt)
       .getOrElse(GrpcWebConfig())
 
     val contentType   = ctx.request.headers.get("Content-Type").getOrElse("")

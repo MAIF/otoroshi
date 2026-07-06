@@ -154,7 +154,7 @@ case class Plugins(
   }
 
   private val request_handlers_cache      =
-    Scaffeine().maximumSize(2).expireAfterWrite(1.minute).build[String, (Boolean, Map[String, RequestHandler])]
+    Scaffeine().maximumSize(2).expireAfterWrite(1.minute).build[String, (Boolean, Map[String, RequestHandler])]()
   private val request_handlers_cache_name = "singleton"
   // private val request_handlers_ref = new AtomicReference[(Boolean, Map[String, RequestHandler])]()
 

@@ -114,14 +114,14 @@ class UserAgentExtractor extends PreRouting {
     val config = ctx.configFor("UserAgentInfo")
     val log    = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
-      case None     => funit
+      case None     => Future.unit
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua).map {
-          case None       => funit
+          case None       => Future.unit
           case Some(info) => {
             if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
-            funit
+            Future.unit
           }
         }
     }

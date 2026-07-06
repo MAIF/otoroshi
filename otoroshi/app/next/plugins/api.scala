@@ -1590,7 +1590,7 @@ object NgWebsocketResponse {
   ): Future[NgWebsocketResponse] = {
     implicit val m: Materializer = env.otoroshiMaterializer
     (for {
-      frame <- message.str
+      frame <- message.str()
       size  <- message.size()
     } yield (frame, size))
       .collect { case (frame, frameSize) =>

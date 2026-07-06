@@ -138,7 +138,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               "pluginType"  -> PluginType.CompositeType.name
             )
           case Right(instance) =>
-            instance.jsonDescription ++ Json.obj(
+            instance.jsonDescription() ++ Json.obj(
               "id"                -> s"cp:$c",
               "name"              -> instance.name,
               "pluginType"        -> instance.pluginType.name,

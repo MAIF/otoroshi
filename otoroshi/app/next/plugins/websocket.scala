@@ -146,7 +146,7 @@ class WebsocketContentValidatorIn extends NgWebsocketValidatorPlugin {
     val config                   =
       ctx.cachedConfig(internalName)(FrameFormatValidatorConfig.format).getOrElse(FrameFormatValidatorConfig())
 
-    message.str
+    message.str()
       .map(message => {
         val json = ctx.json.asObject ++ Json.obj(
           "route"   -> ctx.route.json,

@@ -83,7 +83,7 @@ object StaticBackendConfig {
 
 class StaticBackend extends NgBackendCall {
 
-  private val fileCache    = Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (String, ByteString)]
+  private val fileCache    = Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (String, ByteString)]()
   private val fileUtilsRef = new AtomicReference[FileUtils]()
 
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)
@@ -148,7 +148,7 @@ case class S3BackendConfig(s3: S3Configuration) extends NgPluginConfig {
 class S3Backend extends NgBackendCall {
 
   private val fileCache    =
-    Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (ObjectMetadata, ByteString)]
+    Scaffeine().maximumSize(100).expireAfterWrite(2.minutes).build[String, (ObjectMetadata, ByteString)]()
   private val fileUtilsRef = new AtomicReference[FileUtils]()
 
   override def steps: Seq[NgStep]                = Seq(NgStep.CallBackend)

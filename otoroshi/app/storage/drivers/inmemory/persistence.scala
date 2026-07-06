@@ -488,7 +488,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     val store                                                       = new UnboundedConcurrentHashMap[String, Any]()
     val expirations                                                 = new UnboundedConcurrentHashMap[String, Long]()
     val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
-    S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs).runFold(none)((_, opt) => opt).map {
+    S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs()).runFold(none)((_, opt) => opt).map {
       case None                 =>
         logger.warn(s"asset at ${url} does not exists yet ...")
         ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
@@ -578,7 +578,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
             cannedAcl = conf.acl,
             chunkingParallelism = 1
           )
-          .withAttributes(s3ClientSettingsAttrs)
+          .withAttributes(s3ClientSettingsAttrs())
         if (logger.isDebugEnabled) logger.debug(s"writing state to $url")
         Source
           .single(payload)

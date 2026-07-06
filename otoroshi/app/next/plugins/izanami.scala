@@ -322,7 +322,7 @@ object NgIzanamiV1CanaryRoutingConfig {
         routes = json
           .select("routes")
           .asOpt[Seq[JsValue]]
-          .map(_.map(NgIzanamiV1CanaryRoutingConfigRoute.format.reads).collect { case JsSuccess(e, _) => e })
+          .map(_.map(e => NgIzanamiV1CanaryRoutingConfigRoute.format.reads(e)).collect { case JsSuccess(e, _) => e })
           .getOrElse(Seq.empty).toSeq
       )
     } match {

@@ -287,7 +287,7 @@ object MockResponsesConfig {
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
-        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format.reads)
+        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)

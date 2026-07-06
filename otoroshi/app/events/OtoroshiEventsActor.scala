@@ -2204,7 +2204,7 @@ object Exporters {
       )
       override def reads(json: JsValue): JsResult[OtlpMetricsExporterSettings] = Try {
         OtlpMetricsExporterSettings(
-          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads).map(_.get).get,
+          otlp = json.select("otlp").asOpt[JsObject].map(o => OtlpSettings.format.reads(o)).map(_.get).get,
           tags = json.select("tags").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           metrics = json
             .select("metrics")
@@ -2231,7 +2231,7 @@ object Exporters {
       )
       override def reads(json: JsValue): JsResult[OtlpLogsExporterSettings] = Try {
         OtlpLogsExporterSettings(
-          otlp = json.select("otlp").asOpt[JsObject].map(OtlpSettings.format.reads).map(_.get).get
+          otlp = json.select("otlp").asOpt[JsObject].map(o => OtlpSettings.format.reads(o)).map(_.get).get
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

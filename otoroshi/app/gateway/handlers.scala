@@ -679,7 +679,7 @@ class GatewayRequestHandler(
     }
   }
 
-  private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]
+  private val devCache = Scaffeine().maximumSize(10000).build[String, (String, ByteString)]()
 
   def serveDevAssets() = actionBuilder.async { req =>
     val wholePath = req.relativeUri

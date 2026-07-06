@@ -149,7 +149,7 @@ private class StatsDActor(host: String, port: Int, multiMetrics: Boolean, packet
 
   override def postStop() = {
     //save any remaining data to StatsD
-    flush
+    flush()
 
     //Close the channel
     if (channel.isOpen()) {
@@ -166,7 +166,7 @@ private class StatsDActor(host: String, port: Int, multiMetrics: Boolean, packet
       // If we're going to go past the threshold of the buffer then flush.
       // the +1 is for the potential '\n' in multi_metrics below
       if (sendBuffer.remaining() < (data.length + 1)) {
-        flush
+        flush()
       }
 
       // multiple metrics are separated by '\n'
@@ -178,7 +178,7 @@ private class StatsDActor(host: String, port: Int, multiMetrics: Boolean, packet
       sendBuffer.put(data)
 
       if (!multiMetrics) {
-        flush
+        flush()
       }
 
     } catch {

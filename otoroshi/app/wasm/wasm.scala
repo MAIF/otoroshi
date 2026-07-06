@@ -75,16 +75,16 @@ object WasmAuthorizations {
         httpAccess = (json \ "httpAccess").asOpt[Boolean].getOrElse(false),
         proxyHttpCallTimeout = (json \ "proxyHttpCallTimeout").asOpt[Int].getOrElse(5000),
         globalDataStoreAccess = (json \ "globalDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         pluginDataStoreAccess = (json \ "pluginDataStoreAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         globalMapAccess = (json \ "globalMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         pluginMapAccess = (json \ "pluginMapAccess")
-          .asOpt[WasmDataRights](WasmDataRights.fmt.reads)
+          .asOpt[WasmDataRights](WasmDataRights.fmt)
           .getOrElse(WasmDataRights()),
         proxyStateAccess = (json \ "proxyStateAccess").asOpt[Boolean].getOrElse(false),
         configurationAccess = (json \ "configurationAccess").asOpt[Boolean].getOrElse(false)
@@ -185,8 +185,8 @@ object WasmConfig {
         //   )
         //   .getOrElse(WasmVmLifetime.Forever),
         authorizations = (json \ "authorizations")
-          .asOpt[WasmAuthorizations](WasmAuthorizations.format.reads)
-          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format.reads))
+          .asOpt[WasmAuthorizations](WasmAuthorizations.format)
+          .orElse((json \ "accesses").asOpt[WasmAuthorizations](WasmAuthorizations.format))
           .getOrElse {
             WasmAuthorizations()
           },

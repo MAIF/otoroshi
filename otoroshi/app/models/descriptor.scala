@@ -1438,7 +1438,7 @@ case class ApiKeyRouteMatcher(
     noneMetaKeysIn: Seq[String] = Seq.empty,
     oneMetaKeyIn: Seq[String] = Seq.empty,
     allMetaKeysIn: Seq[String] = Seq.empty
-) extends {
+) {
   def json: JsValue                         = ApiKeyRouteMatcher.format.writes(this)
   def gentleJson: JsValue                   = Json
     .obj()
