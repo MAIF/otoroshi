@@ -458,7 +458,7 @@ class AdditionalHeadersIn extends NgRequestTransformer {
       ctx: NgTransformerRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, NgPluginHttpRequest] = {
     val additionalHeaders =
-      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.view.mapValues{ value =>
+      ctx.cachedConfig(internalName)(configReads).getOrElse(NgHeaderValuesConfig()).headers.view.mapValues { value =>
         HeadersExpressionLanguage(
           value,
           ctx.request.some,
