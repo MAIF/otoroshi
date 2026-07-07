@@ -400,6 +400,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
           s"trying to reconcile 2 different entities of type $name with same id/path. entity with native id always win as fallback !"
         )
         existingById
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 
@@ -1426,9 +1427,9 @@ object KubernetesCRDsJob {
     val kube     = entities.map(_.typed).map(v => (id(v), v))
     kube.filter { case (key, value) =>
       existing.get(key) match {
-        case None                                          => true
         case Some(existingValue) if value == existingValue => false
         case Some(existingValue) if value != existingValue => true
+        case _                                             => true
       }
     } map { case (_, value) =>
       (value, () => save(value))

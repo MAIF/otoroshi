@@ -500,6 +500,7 @@ class ClientCredentialFlow extends RequestTransformer {
                   env.datastores.rawDataStore
                     .del(Seq(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti"))
                     .map(_ => Results.Ok("").left)
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
             }
             case _                        =>
@@ -934,6 +935,7 @@ class ClientCredentialFlow extends RequestTransformer {
                   ctx.otoroshiRequest.rightf
               }
           }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }

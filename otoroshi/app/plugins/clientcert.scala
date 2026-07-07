@@ -316,13 +316,13 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
         val ttl             = (config \ "ttl").asOpt[Long].getOrElse(10 * 60000L)
         val start           = System.currentTimeMillis()
         cache.get(url) match {
-          case None                                        =>
-            fetch(url, headers, ttl, mtlsConfig).map(b => validate(certs, b))
           case Some((time, values)) if start - time <= ttl =>
             FastFuture.successful(validate(certs, values))
           case Some((time, values)) if start - time > ttl  =>
             fetch(url, headers, ttl, mtlsConfig)
             FastFuture.successful(validate(certs, values))
+          case _                                        =>
+            fetch(url, headers, ttl, mtlsConfig).map(b => validate(certs, b))
         }
       }
       case _           => FastFuture.successful(false)

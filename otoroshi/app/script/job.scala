@@ -474,10 +474,6 @@ case class RegisteredJobContext(
         env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(30 * 1000)).map {
           case true  =>
             env.datastores.rawDataStore.get(key).map {
-              case None                                                =>
-                if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 1")
-                env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
-                ()
               case Some(value) if value.utf8String != randomLock.get() =>
                 if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 2")
                 env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
@@ -486,6 +482,10 @@ case class RegisteredJobContext(
                 if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header successfully acquired lock")
                 env.jobManager.registerLock(job.uniqueId, randomLock.get())
                 func
+              case _                                                   =>
+                if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 1")
+                env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
+                ()
             }
           case false =>
             if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 3")
@@ -503,7 +503,7 @@ case class RegisteredJobContext(
           if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header failed to acquire lock - 0")
           env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
           ()
-        case None                                        =>
+        case _                                           =>
           if (JobManager.logger.isDebugEnabled) JobManager.logger.debug(s"$header no lock found, setnx")
           actorSystem.scheduler.scheduleOnce(Random.nextInt(1000).millisecond) {
             internalsetLock()

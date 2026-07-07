@@ -254,11 +254,11 @@ class BasicAuthApikeyExtractor extends PreRouting {
               env.datastores.apiKeyDataStore
                 .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
                 .flatMap {
-                  case None                                     => ().future
                   case Some(key) if key.isInvalid(apiKeySecret) => ().future
                   case Some(key) if key.isValid(apiKeySecret)   =>
                     ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                     ().future
+                  case _                                     => ().future
                 }
             }
             case _                                          => ().future
@@ -309,11 +309,11 @@ class CustomHeadersApikeyExtractor extends PreRouting {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(clientId, descriptor.id)
             .flatMap {
-              case None                                     => ().future
               case Some(key) if key.isInvalid(clientSecret) => ().future
               case Some(key) if key.isValid(clientSecret)   =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                 ().future
+              case _                                     => ().future
             }
         } else {
           ().future
@@ -361,11 +361,11 @@ class ClientIdApikeyExtractor extends PreRouting {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(clientId, descriptor.id)
             .flatMap {
-              case None                                => ().future
               case Some(key) if !key.allowClientIdOnly => ().future
               case Some(key) if key.allowClientIdOnly  =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                 ().future
+              case _                                => ().future
             }
         } else {
           ().future

@@ -139,6 +139,7 @@ class JwtUserExtractor extends PreRouting {
                 ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
                 Results.Ok(Json.obj()).future
               }
+              case other => throw new IllegalStateException(s"unreachable case: $other")
             }
           }
           .recover { case e: Throwable =>
@@ -158,6 +159,7 @@ class JwtUserExtractor extends PreRouting {
             }
           }
       }
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

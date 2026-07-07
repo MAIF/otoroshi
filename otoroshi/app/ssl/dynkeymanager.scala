@@ -80,6 +80,7 @@ object DynamicKeyManager {
                 case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
                 case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
                 case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+                case _ => true
               }
               .seffectOnIf(logger.isDebugEnabled)(certs =>
                 logger.debug(s"possible certificates for '$domain': \n${certs
@@ -101,6 +102,7 @@ object DynamicKeyManager {
                   case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false
                   case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*")  => true
                   case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+                  case _ => true
                 }
                 .map(_._2)
                 .headOption

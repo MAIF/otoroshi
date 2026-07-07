@@ -62,7 +62,7 @@ final class ConcurrentMutableTypedMap(val m: TrieMap[TypedKey[_], Any]) extends 
       case ((key, v: NgTarget), idx)                                                               => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, v: NgBackend), idx)                                                              => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, v: ApikeyTuple), idx)                                                            => (key.displayName.getOrElse(s"key-${idx}"), v.json)
-      case ((key, v: JwtInjection), idx)                                                           => (key.displayName.getOrElse(s"key-${idx}"), v.json)
+      // case ((key, v: JwtInjection), idx)                                                           => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, v: ApiKey), idx)                                                                 => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, v: ApiKeyRotationInfo), idx)                                                     => (key.displayName.getOrElse(s"key-${idx}"), v.json)
       case ((key, v: RemainingQuotas), idx)                                                        => (key.displayName.getOrElse(s"key-${idx}"), v.toJson)

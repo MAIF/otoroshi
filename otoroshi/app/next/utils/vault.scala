@@ -538,7 +538,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
             // GOOGLE_APPLICATION_CREDENTIALS env var
             sys.env.get("GOOGLE_APPLICATION_CREDENTIALS") match {
               case Some(value) if new File(value).exists() => Files.readString(new File(value).toPath).some
-              case None                                    => {
+              case _                                    => {
                 // well known file
                 val wellKnownFile = getWellKnownCredentialsFile()
                 println(wellKnownFile.getAbsolutePath)
@@ -1511,6 +1511,7 @@ class Vaults(env: Env) {
             case CachedVaultSecretStatus.VaultNotFound        => resolve(force = false)
             case _ if shouldRetry                             => resolve(force = true)
             case _ if !shouldRetry                            => resolve(force = false)
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
         }
         .runWith(Sink.ignore)(env.otoroshiMaterializer)

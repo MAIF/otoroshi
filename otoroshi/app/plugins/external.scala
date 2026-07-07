@@ -259,6 +259,7 @@ class ExternalHttpValidator extends AccessValidator {
       case Some(chain)                       => {
         canAccessWithClientCertChain(chain, context, valCfg)
       }
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

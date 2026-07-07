@@ -95,10 +95,10 @@ trait NamedPlugin { self =>
   def defaultConfig: Option[JsObject]   = None
   def configRoot: Option[String]        =
     defaultConfig match {
-      case None                                   => None
       case Some(config) if config.value.size > 1  => None
       case Some(config) if config.value.isEmpty   => None
       case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
+      case _                                      => None
     }
   def configSchema: Option[JsObject]    =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {

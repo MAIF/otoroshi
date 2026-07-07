@@ -224,8 +224,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
               OCSPRespBuilder.SUCCESSFUL,
               responseBuilder.build(contentSigner, signingCertificateChain, new Date())
             )
-
-        case (None, None) => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
+        case _ => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
       }
     }
   }

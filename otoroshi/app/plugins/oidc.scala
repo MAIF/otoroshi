@@ -158,7 +158,7 @@ class OIDCHeaders extends RequestTransformer {
           )
         ).future
       }
-      case None => Right(ctx.otoroshiRequest).future
+      case _ => Right(ctx.otoroshiRequest).future
     }
   }
 }

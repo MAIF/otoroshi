@@ -444,6 +444,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
                 .map {
                   case (key, value) if value.size == 1 => Json.obj(key -> value.headOption.map(JsString.apply))
                   case (key, value) if value.size > 1  => Json.obj(key -> JsArray(value.map(JsString.apply)))
+                  case other => throw new IllegalStateException(s"unreachable case: $other")
                 }
                 .foldLeft(Json.obj())(_ ++ _),
               "bodyTxt"   -> bodyTxt,

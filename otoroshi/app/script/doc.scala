@@ -195,6 +195,7 @@ class PluginDocumentationGenerator(docPath: String) {
       case PluginType.DataExporterType    => ""
       case PluginType.RequestHandlerType  => ""
       case PluginType.CompositeType       => ""
+      case PluginType.TunnelHandlerType   => ""
     }
 
     s"""

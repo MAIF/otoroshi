@@ -875,6 +875,7 @@ class TcpProxy(
       case TlsMode.PassThrough if !sni => tcpBindNoTls(settings, env)
       case TlsMode.Enabled if !sni     => tcpBindTls(settings, env)
       case TlsMode.Enabled if sni      => tcpBindTlsAndSNI(settings, env)
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }).andThen {
       case Success(_) if tls == TlsMode.Enabled => log.info(s"Tcp/Tls proxy listening on $interface:$port")
       case Success(_)                           => log.info(s"Tcp     proxy listening on $interface:$port")

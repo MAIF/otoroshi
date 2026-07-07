@@ -1100,23 +1100,23 @@ class OpenApiGenerator(
       .flatMap { case (_, endpoints) =>
         Seq("get", "post", "delete", "put", "patch", "head")
           .flatMap(verb => {
-            endpoints.as[JsObject] \ verb match {
+            (endpoints.as[JsObject] \ verb) match {
               case JsDefined(value: JsObject) =>
                 Seq("200", "201", "400", "404", "500")
                   .flatMap(status => {
-                    value \ "responses" \ status \ "content" match {
+                    (value \ "responses" \ status \ "content") match {
                       case JsDefined(value: JsObject) =>
                         Seq("application/json", "application/x-ndjson")
                           .flatMap(contentType => {
                             val ref: Option[String] = (value \ contentType \ "schema") match {
                               case JsDefined(value: JsObject) =>
-                                value \ "$ref" match {
+                                (value \ "$ref") match {
                                   case JsDefined(JsString(r)) => Some(r)
-                                  case _: JsUndefined         =>
+                                  case _         =>
                                     None
-                                    value \ "item" \ "$ref" match {
+                                    (value \ "item" \ "$ref") match {
                                       case JsDefined(JsString(r)) => Some(r)
-                                      case _: JsUndefined         => None
+                                      case _         => None
                                     }
                                 }
                               case _: JsUndefined             => None
@@ -1126,10 +1126,10 @@ class OpenApiGenerator(
                               case None        => None
                             }
                           })
-                      case _: JsUndefined             => None
+                      case _             => None
                     }
                   })
-              case _: JsUndefined             => None
+              case _             => None
             }
           })
       }

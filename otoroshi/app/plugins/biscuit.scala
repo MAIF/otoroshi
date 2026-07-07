@@ -401,6 +401,7 @@ class BiscuitValidator extends AccessValidator {
       }
       case _ if config.enforce             => false.future
       case _ if !config.enforce            => true.future
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }

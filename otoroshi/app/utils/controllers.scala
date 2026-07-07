@@ -660,6 +660,7 @@ trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                     )
                     Json.obj("status" -> 200, "deleted" -> true, "id" -> id).stringify.byteString
                 }
+              case other => throw new IllegalStateException(s"unreachable case: $other")
             }
           }
         }
@@ -1199,6 +1200,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
                 )
                 (id, None)
             }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
       .runFold(Seq.empty[(String, Option[ApiError[Error]])]) { case (seq, (id, done)) =>

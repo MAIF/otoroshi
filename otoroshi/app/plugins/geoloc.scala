@@ -393,6 +393,7 @@ object MaxMindGeolocationHelper {
               dbRefSet(url, cityDb)
               dbInitializationDoneSet(url)
               logger.info("Geolocation db from URL initialized")
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
         }
       }
@@ -451,6 +452,7 @@ s                     |mv *.mmdb geolite.mmdb
                 case Failure(e) =>
                   logger.error(s"Geolocation db initialization from zip file URL failed", e)
               }
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
         }
       }
@@ -511,7 +513,7 @@ s                     |mv *.mmdb geolite.mmdb
                 case Failure(e) =>
                   logger.error(s"Geolocation db from tar.gz file URL initialization failed", e)
               }
-
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           }
         }
       }

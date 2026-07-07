@@ -810,6 +810,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
                  case c if !(c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")) =>
                    c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true"))
                      .applyOn(d => d.save().map(_ => d))
+                 case other => throw new IllegalStateException(s"unreachable case: $other")
                }
                .map { c =>
                  Alerts.send(
@@ -1278,6 +1279,7 @@ object DynamicSSLEngineProvider {
             case true                   => Array[TrustManager](noCATrustManager)
             case false if includeJdkCa  => createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
             case false if !includeJdkCa => createTrustStore(trustedKeyStore)
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           } getOrElse {
           if (trustAll) {
             Array[TrustManager](
@@ -1461,6 +1463,7 @@ object DynamicSSLEngineProvider {
             case true                   => Array[TrustManager](noCATrustManager)
             case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
             case false if !includeJdkCa => createTrustStore(keyStore2)
+            case other => throw new IllegalStateException(s"unreachable case: $other")
           } getOrElse {
           if (trustAll) {
             Array[TrustManager](
