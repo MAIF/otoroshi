@@ -666,7 +666,6 @@ object ElasticUtils {
     val numberOfShards: String   = config.indexSettings.numberOfShards.toString
     val numberOfReplicas: String = config.indexSettings.numberOfReplicas.toString
     getElasticVersion(config, logger, env).flatMap { version =>
-      ElasticWritesAnalytics.initialized(config, version)
       // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
       val (strTpl, indexTemplatePath) = version match {
         case ElasticVersion.UnderSeven(_)        => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
