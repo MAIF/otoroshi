@@ -263,7 +263,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
         case Right(flow)  => {
           res.sendWebsocket { (wsInbound, wsOutbound) =>
             val processor: Processor[RawMessage, Message] =
-              WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+              WebSocketFlowHandler.webSocketProtocol(65536, "ping", scala.concurrent.duration.Duration.Inf).join(flow).toProcessor.run()
             wsInbound
               .receiveFrames()
               .map[RawMessage](frameToRawMessage)
@@ -354,7 +354,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
             case Right(flow)  => {
               res.sendWebsocket { (wsInbound, wsOutbound) =>
                 val processor: Processor[RawMessage, Message] =
-                  WebSocketFlowHandler.webSocketProtocol(65536).join(flow).toProcessor.run()
+                  WebSocketFlowHandler.webSocketProtocol(65536, "ping", scala.concurrent.duration.Duration.Inf).join(flow).toProcessor.run()
                 wsInbound
                   .receiveFrames()
                   .map[RawMessage](frameToRawMessage)
@@ -475,9 +475,9 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
           val tlsVersion = args.requestHeader("Otoroshi-Tls-Version")
           AccessLog.create(
             defaultLogFormat,
-            applyAddress(args.remoteAddress()),
+            applyAddress(args.connectionInformation().connectionRemoteAddress()),
             args.user(),
-            args.zonedDateTime(),
+            args.accessDateTime(),
             args.method(),
             args.uri(),
             args.protocol(),
@@ -515,7 +515,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
                   .initialBufferSize(config.parser.initialBufferSize)
                   .maxHeaderSize(config.parser.maxHeaderSize)
                   .maxInitialLineLength(config.parser.maxInitialLineLength)
-                  .maxChunkSize(config.parser.maxChunkSize)
+                  //.maxChunkSize(config.parser.maxChunkSize)
                   .validateHeaders(config.parser.validateHeaders)
               )
               .idleTimeout(config.idleTimeout)
@@ -561,7 +561,7 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
                   .initialBufferSize(config.parser.initialBufferSize)
                   .maxHeaderSize(config.parser.maxHeaderSize)
                   .maxInitialLineLength(config.parser.maxInitialLineLength)
-                  .maxChunkSize(config.parser.maxChunkSize)
+                  //.maxChunkSize(config.parser.maxChunkSize)
                   .validateHeaders(config.parser.validateHeaders)
               )
               .idleTimeout(config.idleTimeout)

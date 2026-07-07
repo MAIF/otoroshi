@@ -52,7 +52,7 @@ class CustomHttp3FrameToHttpObjectCodec() extends Http3RequestStreamInboundHandl
     }
     if (isLast) {
       if (headers.method() == null && status == null) {
-        val last = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER, validateHeaders)
+        val last = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER)
         Http3ConversionUtil.addHttp3ToHttpHeaders(id, headers, last.trailingHeaders(), HttpVersion.HTTP_1_1, true, true)
         ctx.fireChannelRead(last)
       } else {

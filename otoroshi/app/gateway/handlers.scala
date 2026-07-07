@@ -304,7 +304,7 @@ class GatewayRequestHandler(
     privateActionBuilder: PrivateAppsAction,
     healthController: HealthController
 )(using env: Env, mat: Materializer)
-    extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
+    extends DefaultHttpRequestHandler(webCommands, optDevContext, () => router, errorHandler, configuration, filters) {
 
   implicit lazy val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val scheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
