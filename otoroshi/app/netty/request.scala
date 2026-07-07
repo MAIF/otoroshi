@@ -216,7 +216,7 @@ class ReactorNettyRequestHeader(
       }))
     )
     .applyOnWithOpt(exclusive) { case (attrs, exclusive) =>
-      attrs + (NettyRequestKeys.ListenerExclusiveKey -> exclusive)
+      attrs.updated(NettyRequestKeys.ListenerExclusiveKey -> exclusive)
     }
   lazy val method: String               = req.method().toString
   lazy val version: String              = httpVersion

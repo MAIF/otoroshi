@@ -1180,7 +1180,7 @@ class ScriptManager(env: Env) {
           cpTryCache.synchronized {
             if (!cpTryCache.contains(ref)) {
               Try(env.environment.classLoader.loadClass(r.replace("cp:", ""))) // .asSubclass(classOf[A]))
-                .map(clazz => clazz.newInstance()) match {
+                .map(clazz => clazz.getDeclaredConstructor().newInstance()) match {
                 case Success(tr) =>
                   cpTryCache.put(ref, ())
                   val typ = tr.asInstanceOf[NamedPlugin].pluginType

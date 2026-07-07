@@ -642,10 +642,10 @@ object Cert {
               }
             }
           }
-          .map {
-            case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
-            case (host, Right(_))  => logger.info(s"Successfully created certificate for $host")
-          }
+          // .map {
+          //   case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
+          //   case (host, Right(_))  => logger.info(s"Successfully created certificate for $host")
+          // }
           .runWith(Sink.ignore)
           .map(_ => ())
       }

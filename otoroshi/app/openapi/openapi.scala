@@ -1113,13 +1113,12 @@ class OpenApiGenerator(
                                 (value \ "$ref") match {
                                   case JsDefined(JsString(r)) => Some(r)
                                   case _         =>
-                                    None
                                     (value \ "item" \ "$ref") match {
                                       case JsDefined(JsString(r)) => Some(r)
                                       case _         => None
                                     }
                                 }
-                              case _: JsUndefined             => None
+                              case _             => None
                             }
                             ref match {
                               case Some(value) => Some(value.replace("#/components/schemas/", ""))

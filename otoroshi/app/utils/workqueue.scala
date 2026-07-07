@@ -20,7 +20,7 @@ final class WorkQueue[A](buffer: Int)(using mat: Materializer) {
   }
 
   private val queue = Source
-    .queue[(Task[A], Promise[A])](buffer, OverflowStrategy.dropNew)
+    .queue[(Task[A], Promise[A])](buffer, OverflowStrategy.dropTail)
     .mapAsync(1) {
       case (task, promise) => {
         val rf: Future[A] = task()

@@ -329,10 +329,10 @@ class CassandraDataStores(
       ec: ExecutionContext
   ): Future[JsValue] = {
     (typ, value) match {
-      case ("hash", v: Map[String, ByteString]) =>
+      case ("hash", v: Map[String, ByteString] @unchecked) =>
         FastFuture.successful(JsObject(v.map(t => (t._1, JsString(t._2.utf8String)))))
-      case ("list", v: Seq[ByteString])         => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
-      case ("set", v: Set[ByteString])          => FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
+      case ("list", v: Seq[ByteString] @unchecked)         => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
+      case ("set", v: Set[ByteString] @unchecked)          => FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
       case ("string", v: ByteString)            =>
         Option(v) match {
           case None    => FastFuture.successful(JsNull)

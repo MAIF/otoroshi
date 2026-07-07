@@ -66,7 +66,7 @@ class InMemoryDataStores(
     new SwappableInMemoryRedis(_optimized, env, actorSystem)
   }
 
-  def redis(): otoroshi.storage.RedisLike = swredis
+  def redis: otoroshi.storage.RedisLike = swredis
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
@@ -85,7 +85,7 @@ class InMemoryDataStores(
     persistence
       .onStart()
       .flatMap { _ =>
-        redis().start()
+        redis.start()
         _serviceDescriptorDataStore.startCleanup(env)
         _certificateDataStore.startSync()
         FastFuture.successful(())
@@ -99,7 +99,7 @@ class InMemoryDataStores(
   ): Future[Unit] = {
     _certificateDataStore.stopSync()
     _serviceDescriptorDataStore.stopCleanup()
-    redis().stop()
+    redis.stop()
     persistence
       .onStop()
       .flatMap { _ =>
@@ -108,38 +108,38 @@ class InMemoryDataStores(
       }(actorSystem.dispatcher)
   }
 
-  private lazy val _privateAppsUserDataStore   = new KvPrivateAppsUserDataStore(redis(), env)
-  private lazy val _backOfficeUserDataStore    = new KvBackOfficeUserDataStore(redis(), env)
-  private lazy val _serviceGroupDataStore      = new KvServiceGroupDataStore(redis(), env)
-  private lazy val _globalConfigDataStore      = new KvGlobalConfigDataStore(redis(), env)
-  private lazy val _apiKeyDataStore            = new KvApiKeyDataStore(redis(), env)
-  private lazy val _serviceDescriptorDataStore = new KvServiceDescriptorDataStore(redis(), redisStatsItems, env)
-  private lazy val _simpleAdminDataStore       = new KvSimpleAdminDataStore(redis(), env)
-  private lazy val _alertDataStore             = new KvAlertDataStore(redis())
-  private lazy val _auditDataStore             = new KvAuditDataStore(redis())
-  private lazy val _healthCheckDataStore       = new KvHealthCheckDataStore(redis(), env)
-  private lazy val _errorTemplateDataStore     = new KvErrorTemplateDataStore(redis(), env)
+  private lazy val _privateAppsUserDataStore   = new KvPrivateAppsUserDataStore(redis, env)
+  private lazy val _backOfficeUserDataStore    = new KvBackOfficeUserDataStore(redis, env)
+  private lazy val _serviceGroupDataStore      = new KvServiceGroupDataStore(redis, env)
+  private lazy val _globalConfigDataStore      = new KvGlobalConfigDataStore(redis, env)
+  private lazy val _apiKeyDataStore            = new KvApiKeyDataStore(redis, env)
+  private lazy val _serviceDescriptorDataStore = new KvServiceDescriptorDataStore(redis, redisStatsItems, env)
+  private lazy val _simpleAdminDataStore       = new KvSimpleAdminDataStore(redis, env)
+  private lazy val _alertDataStore             = new KvAlertDataStore(redis)
+  private lazy val _auditDataStore             = new KvAuditDataStore(redis)
+  private lazy val _healthCheckDataStore       = new KvHealthCheckDataStore(redis, env)
+  private lazy val _errorTemplateDataStore     = new KvErrorTemplateDataStore(redis, env)
   private lazy val _requestsDataStore          = new InMemoryRequestsDataStore()
-  private lazy val _canaryDataStore            = new KvCanaryDataStore(redis(), env)
-  private lazy val _chaosDataStore             = new KvChaosDataStore(redis(), env)
-  private lazy val _jwtVerifDataStore          = new KvGlobalJwtVerifierDataStore(redis(), env)
-  private lazy val _authConfigsDataStore       = new KvAuthConfigsDataStore(redis(), env)
-  private lazy val _certificateDataStore       = new KvCertificateDataStore(redis(), env)
+  private lazy val _canaryDataStore            = new KvCanaryDataStore(redis, env)
+  private lazy val _chaosDataStore             = new KvChaosDataStore(redis, env)
+  private lazy val _jwtVerifDataStore          = new KvGlobalJwtVerifierDataStore(redis, env)
+  private lazy val _authConfigsDataStore       = new KvAuthConfigsDataStore(redis, env)
+  private lazy val _certificateDataStore       = new KvCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis(), env)
+  private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis(), env)
+  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
-  private lazy val _scriptDataStore             = new KvScriptDataStore(redis(), env)
+  private lazy val _scriptDataStore             = new KvScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
-  private lazy val _tcpServiceDataStore                 = new KvTcpServiceDataStoreDataStore(redis(), env)
+  private lazy val _tcpServiceDataStore                 = new KvTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore          = new KvRawDataStore(redis())
+  private lazy val _rawDataStore          = new KvRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
 
   private lazy val _webAuthnAdminDataStore                    = new KvWebAuthnAdminDataStore()
@@ -148,44 +148,44 @@ class InMemoryDataStores(
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  private lazy val _tenantDataStore             = new TenantDataStore(redis(), env)
+  private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
   override def tenantDataStore: TenantDataStore = _tenantDataStore
 
-  private lazy val _teamDataStore           = new TeamDataStore(redis(), env)
+  private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
 
-  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis(), env)
+  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
-  private lazy val _routeDataStore              = new KvNgRouteDataStore(redis(), env)
+  private lazy val _routeDataStore              = new KvNgRouteDataStore(redis, env)
   override def routeDataStore: NgRouteDataStore = _routeDataStore
 
-  private lazy val _routesCompositionDataStore                        = new KvNgRouteCompositionDataStore(redis(), env)
+  private lazy val _routesCompositionDataStore                        = new KvNgRouteCompositionDataStore(redis, env)
   override def routeCompositionDataStore: NgRouteCompositionDataStore = _routesCompositionDataStore
 
-  private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis(), env)
+  private lazy val _backendsDataStore                      = new KvStoredNgBackendDataStore(redis, env)
   override def backendsDataStore: StoredNgBackendDataStore = _backendsDataStore
 
-  private lazy val _wasmPluginDataStore                  = new KvWasmPluginDataStore(redis(), env)
+  private lazy val _wasmPluginDataStore                  = new KvWasmPluginDataStore(redis, env)
   override def wasmPluginsDataStore: WasmPluginDataStore = _wasmPluginDataStore
 
-  private lazy val _draftDataStore             = new KvDraftDataStore(redis(), env)
+  private lazy val _draftDataStore             = new KvDraftDataStore(redis, env)
   override def draftsDataStore: DraftDataStore = _draftDataStore
 
-  private lazy val _apiDataStore          = new KvApiDataStore(redis(), env)
+  private lazy val _apiDataStore          = new KvApiDataStore(redis, env)
   override def apiDataStore: ApiDataStore = _apiDataStore
 
-  private lazy val _apiSubscriptionDataStore                      = new KvApiSubscriptionDataStore(redis(), env)
+  private lazy val _apiSubscriptionDataStore                      = new KvApiSubscriptionDataStore(redis, env)
   override def apiSubscriptionDataStore: ApiSubscriptionDataStore = _apiSubscriptionDataStore
 
-  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis(), env)
+  private lazy val _routeTemplateDataStore                    = new KvRouteTemplateDataStore(redis, env)
   override def routeTemplateDataStore: RouteTemplateDataStore = _routeTemplateDataStore
 
-  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis(), env)
+  private lazy val _userDashboardDataStore                    = new KvUserDashboardDataStore(redis, env)
   override def userDashboardDataStore: UserDashboardDataStore = _userDashboardDataStore
 
   private lazy val _userAlertDataStore                                               =
-    new otoroshi.next.analytics.models.KvUserAlertDataStore(redis(), env)
+    new otoroshi.next.analytics.models.KvUserAlertDataStore(redis, env)
   override def userAlertDataStore: otoroshi.next.analytics.models.UserAlertDataStore = _userAlertDataStore
 
   private lazy val _adminPreferencesDatastore              = new AdminPreferencesDatastore(env)
@@ -208,13 +208,13 @@ class InMemoryDataStores(
   override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
   override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
-  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis().health()(using ec)
+  override def health()(using ec: ExecutionContext): Future[DataStoreHealth] = redis.health()(using ec)
   override def rawExport(
       group: Int
   )(using ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
-        redis().keys(s"${env.storageRoot}:*")
+        redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
       .grouped(group)
@@ -241,13 +241,13 @@ class InMemoryDataStores(
               //(key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
-                redis().rawGet(key).flatMap {
+                redis.rawGet(key).flatMap {
                   case None        => FastFuture.successful(JsNull)
                   case Some(value) => {
                     toJson(value) match {
                       case (_, JsNull)       => FastFuture.successful(JsNull)
                       case (what, jsonValue) =>
-                        redis().pttl(key).map { ttl =>
+                        redis.pttl(key).map { ttl =>
                           Json.obj(
                             "k" -> key,
                             "v" -> jsonValue,
@@ -274,7 +274,7 @@ class InMemoryDataStores(
 
     FastFuture.successful(
       Source
-        .future(redis().keys(s"${env.storageRoot}:*"))
+        .future(redis.keys(s"${env.storageRoot}:*"))
         .mapConcat(_.toList)
         .grouped(10)
         .mapAsync(1) {
@@ -282,13 +282,13 @@ class InMemoryDataStores(
           case keys                 => {
             Source(keys.toList)
               .mapAsync(1) { key =>
-                redis().rawGet(key).flatMap {
+                redis.rawGet(key).flatMap {
                   case None        => FastFuture.successful(JsNull)
                   case Some(value) => {
                     toJson(value) match {
                       case (_, JsNull)       => FastFuture.successful(JsNull)
                       case (what, jsonValue) =>
-                        redis().pttl(key).map { ttl =>
+                        redis.pttl(key).map { ttl =>
                           Json.obj(
                             "k" -> key,
                             "v" -> jsonValue,
@@ -314,9 +314,9 @@ class InMemoryDataStores(
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 
-    redis()
+    redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis().del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -325,18 +325,18 @@ class InMemoryDataStores(
             val pttl  = (json \ "t").as[Long]
             val what  = (json \ "w").as[String]
             (what match {
-              case "counter" => redis().set(key, value.as[Long].toString)
-              case "string"  => redis().set(key, value.as[String])
+              case "counter" => redis.set(key, value.as[Long].toString)
+              case "string"  => redis.set(key, value.as[String])
               case "hash"    =>
                 Source(value.as[JsObject].value.toList)
-                  .mapAsync(1)(v => redis().hset(key, v._1, Json.stringify(v._2)))
+                  .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis().lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
-              case "set"     => redis().sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
-                redis().pexpire(key, pttl)
+                redis.pexpire(key, pttl)
               } else {
                 FastFuture.successful(true)
               }
@@ -356,17 +356,17 @@ class InMemoryDataStores(
       case str: ByteString                                                 => ("string", JsString(str.utf8String))
       case lng: Long                                                       => ("string", JsString(lng.toString))
       case lng: java.util.concurrent.atomic.AtomicLong                     => ("string", JsString(lng.get().toString))
-      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
+      case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] @unchecked =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case map: TrieMap[String, ByteString]                                =>
+      case map: TrieMap[String, ByteString] @unchecked                               =>
         ("hash", JsObject(map.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] @unchecked    =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case list: scala.collection.mutable.ListBuffer[ByteString]          =>
+      case list: scala.collection.mutable.ListBuffer[ByteString] @unchecked         =>
         ("list", JsArray(list.toSeq.map(a => JsString(a.utf8String))))
-      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] @unchecked      =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: scala.collection.mutable.HashSet[ByteString]               =>
+      case set: scala.collection.mutable.HashSet[ByteString] @unchecked              =>
         ("set", JsArray(set.toSeq.map(a => JsString(a.utf8String))))
       case _                                                               => ("none", JsNull)
     }

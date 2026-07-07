@@ -71,6 +71,9 @@ object PulsarConfig {
 }
 
 object PulsarSetting {
+
+  implicit val mjsv: Manifest[JsValue] = Manifest.classType(classOf[JsValue])
+
   def client(_env: otoroshi.env.Env, config: PulsarConfig): PulsarClient = {
     if (config.mtlsConfig.mtls) {
       val (_, jks, password) = config.mtlsConfig.toJKS(using _env)

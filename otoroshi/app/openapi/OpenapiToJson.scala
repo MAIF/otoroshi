@@ -28,10 +28,7 @@ class OpenapiToJson(spec: JsValue) {
   }
 
   def process(data: TrieMap[String, JsValue]) = {
-    var changed = true
-    do {
-      changed = replaceOneOf(data)
-    } while (changed)
+    while replaceOneOf(data) do ()
   }
 
   def reads(path: String): JsPath = {

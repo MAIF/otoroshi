@@ -91,7 +91,7 @@ object GreenScoreEntity {
       "routes"      -> JsArray(o.routes.map(route => {
         Json.obj(
           "routeId"     -> route.routeId,
-          "rulesConfig" -> route.rulesConfig.json()
+          "rulesConfig" -> route.rulesConfig.json
         )
       })),
       "thresholds"  -> o.thresholds.json(),

@@ -410,7 +410,7 @@ object RulesManager {
 }
 
 case class RulesRouteConfiguration(states: Seq[RuleStateRecord] = Seq.empty) extends NgPluginConfig {
-  def json(): JsValue = {
+  def json: JsValue = {
     Json.obj(
       "states" -> JsArray(states.map(RuleStateRecord.format.writes))
     )
@@ -439,6 +439,6 @@ object RulesRouteConfiguration {
       case Failure(e) => JsError(e.getMessage)
       case Success(c) => JsSuccess(c)
     }
-    override def writes(o: RulesRouteConfiguration): JsValue             = o.json()
+    override def writes(o: RulesRouteConfiguration): JsValue             = o.json
   }
 }

@@ -924,7 +924,7 @@ case class ClientQueueError(message: String) extends RuntimeException(message) w
 case class CacheConnectionSettings(
     enabled: Boolean = false,
     queueSize: Int = 2048,
-    strategy: NgOverflowStrategy = NgOverflowStrategy.dropNew
+    strategy: NgOverflowStrategy = NgOverflowStrategy.dropTail
 ) {
   def json: JsValue = {
     Json.obj(

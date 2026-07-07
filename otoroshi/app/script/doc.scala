@@ -297,7 +297,7 @@ class PluginDocumentationGenerator(docPath: String) {
       (transformersNames ++ validatorsNames ++ preRouteNames ++ reqSinkNames ++ listenerNames ++ jobNames ++ exporterNames).distinct
     val names: Seq[(String, String)] = plugins
       .map { pl =>
-        this.getClass.getClassLoader.loadClass(pl).newInstance()
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
       }
       .map(_.asInstanceOf[NamedPlugin])
       .filterNot(_.core)
@@ -339,7 +339,7 @@ class PluginDocumentationGenerator(docPath: String) {
         .filterNot(_ == "otoroshi.next.catalogs.RemoteCatalogJob")
     val contents: Seq[String] = plugins
       .map { pl =>
-        this.getClass.getClassLoader.loadClass(pl).newInstance()
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
       }
       .map(_.asInstanceOf[NamedPlugin])
       .filterNot(_.core)

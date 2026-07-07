@@ -205,7 +205,7 @@ class NgPluginDocumentationGenerator(docPath: String) {
     val plugins               = allPluginNames.distinct
     val contents: Seq[String] = plugins
       .map { pl =>
-        this.getClass.getClassLoader.loadClass(pl).newInstance()
+        this.getClass.getClassLoader.loadClass(pl).getDeclaredConstructor().newInstance()
       }
       .map(_.asInstanceOf[NgNamedPlugin])
       .filterNot(_.deprecated)

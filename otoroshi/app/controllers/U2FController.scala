@@ -46,7 +46,7 @@ class U2FController(
   private val random        = new SecureRandom()
   private val jsonMapper    = new ObjectMapper()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-    .setSerializationInclusion(Include.NON_ABSENT)
+    .setDefaultPropertyInclusion(Include.NON_ABSENT)
     .registerModule(new Jdk8Module())
 
   def loginPage() =

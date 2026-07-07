@@ -467,6 +467,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val filters = new DefaultHttpFilters(httpFilters: _*)
 
+  lazy val headerEncoding = new play.api.mvc.DefaultCookieHeaderEncoding(httpConfiguration.cookies)
+
   lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
   lazy val httpHandler: HttpHandler               = wire[HttpHandler]
   lazy val webSocketHandler: WebSocketHandler     = wire[WebSocketHandler]

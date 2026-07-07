@@ -85,9 +85,9 @@ case object DropTailNgOverflowStrategy     extends NgOverflowStrategy {
 case object DropBufferNgOverflowStrategy   extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.dropBuffer
 }
-case object DropNewNgOverflowStrategy      extends NgOverflowStrategy {
-  def toAkka: OverflowStrategy = OverflowStrategy.dropNew
-}
+// case object DropNewNgOverflowStrategy      extends NgOverflowStrategy {
+//   def toAkka: OverflowStrategy = OverflowStrategy.dropNew
+// }
 case object BackpressureNgOverflowStrategy extends NgOverflowStrategy {
   def toAkka: OverflowStrategy = OverflowStrategy.backpressure
 }
@@ -98,7 +98,7 @@ object NgOverflowStrategy {
   val dropHead: NgOverflowStrategy     = DropHeadNgOverflowStrategy
   val dropTail: NgOverflowStrategy     = DropTailNgOverflowStrategy
   val dropBuffer: NgOverflowStrategy   = DropBufferNgOverflowStrategy
-  val dropNew: NgOverflowStrategy      = DropNewNgOverflowStrategy
+  // val dropNew: NgOverflowStrategy      = DropNewNgOverflowStrategy
   val backpressure: NgOverflowStrategy = BackpressureNgOverflowStrategy
   val fail: NgOverflowStrategy         = FailNgOverflowStrategy
 }
@@ -106,7 +106,7 @@ object NgOverflowStrategy {
 case class NgCacheConnectionSettings(
     enabled: Boolean = false,
     queueSize: Int = 2048,
-    strategy: NgOverflowStrategy = NgOverflowStrategy.dropNew
+    strategy: NgOverflowStrategy = NgOverflowStrategy.dropTail
 ) {
   lazy val legacy: CacheConnectionSettings = CacheConnectionSettings(
     enabled = enabled,
@@ -185,7 +185,7 @@ object NgClientConfig {
           cacheConnectionSettings = NgCacheConnectionSettings(
             enabled = (json \ "cache_connection_settings" \ "enabled").asOpt[Boolean].getOrElse(false),
             queueSize = (json \ "cache_connection_settings" \ "queue_size").asOpt[Int].getOrElse(2048),
-            strategy = NgOverflowStrategy.dropNew
+            strategy = NgOverflowStrategy.dropTail
           ),
           customTimeouts = (json \ "custom_timeouts")
             .asOpt[JsArray]

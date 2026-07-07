@@ -264,7 +264,7 @@ object GzipFlow {
   }
 
   def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, _] = {
-    Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gunzip(max))
+    Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzipDecompress(max))
   }
 
   // http://doc.akka.io/docs/akka/2.4.14/scala/stream/stream-cookbook.html#Chunking_up_a_stream_of_ByteStrings_into_limited_size_ByteStrings

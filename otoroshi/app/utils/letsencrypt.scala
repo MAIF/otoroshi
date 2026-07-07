@@ -261,17 +261,16 @@ object LetsEncryptHelper {
                     Some(4.minutes.toMillis)
                   )
                   .flatMap { _ =>
-                    createCertificate(host).map(e => (host, e))
+                    createCertificate(host).map(e => (host, e)).map {
+                      case (host, Left(err)) => logger.error(s"Error while creating let's encrypt certificate for $host. $err")
+                      case (host, Right(_))  => logger.info(s"Successfully created let's encrypt certificate for $host")
+                    }
                   }
                   .andThen { case _ =>
                     env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host"))
                   }
               }
             }
-          }
-          .map {
-            case (host, Left(err)) => logger.error(s"Error while creating let's encrypt certificate for $host. $err")
-            case (host, Right(_))  => logger.info(s"Successfully created let's encrypt certificate for $host")
           }
           .runWith(Sink.ignore)
           .map(_ => ())

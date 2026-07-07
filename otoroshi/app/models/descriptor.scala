@@ -1123,7 +1123,7 @@ object ClientConfig {
           cacheConnectionSettings = CacheConnectionSettings(
             enabled = (json \ "cacheConnectionSettings" \ "enabled").asOpt[Boolean].getOrElse(false),
             queueSize = (json \ "cacheConnectionSettings" \ "queueSize").asOpt[Int].getOrElse(2048),
-            strategy = NgOverflowStrategy.dropNew
+            strategy = NgOverflowStrategy.dropTail
           ),
           customTimeouts = (json \ "customTimeouts")
             .asOpt[JsArray]

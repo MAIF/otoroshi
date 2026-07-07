@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic._
 import scala.concurrent.duration._
 
-class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
+class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHeaderEncoding: play.api.mvc.CookieHeaderEncoding)(using
     env: Env
 ) extends AbstractController(cc) {
 
@@ -474,7 +474,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(using
           val engine     = env.scriptManager.getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}").toOption.get
           val cookies    = ctx.request.headers
             .get("Otoroshi-Relay-Routing-Cookies")
-            .map(c => Cookies.decodeCookieHeader(c))
+            //.map(c => Cookies.decodeCookieHeader(c))
+            .map(c => cookieHeaderEncoding.decodeCookieHeader(c))
             .getOrElse(Seq.empty[Cookie]).toSeq
           val certs      = ctx.request.headers.headers
             .filter(_._1.startsWith("Otoroshi-Relay-Routing-Certs-"))

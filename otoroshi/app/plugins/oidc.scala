@@ -661,11 +661,13 @@ case class OIDCThirdPartyApiKeyConfig(
                                           }
                                       }
                                   }) flatMap { apiKey =>
-                                    (quotasEnabled match {
-                                      case true  => apiKey.withinQuotasAndRotation()
-                                      case false => FastFuture.successful(true)
-                                    }).flatMap {
-                                      case true  => {
+                                    val fb: Future[(Boolean, Option[ApiKeyRotationInfo])] = if (quotasEnabled) {
+                                      apiKey.withinQuotasAndRotation()
+                                    } else {
+                                      FastFuture.successful((true, None))
+                                    }
+                                    fb.flatMap {
+                                      case (true, _)  => {
                                         if (localVerificationOnly) {
                                           f(Some(apiKey)).fright[Result]
                                         } else {
@@ -731,7 +733,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                           }
                                         }
                                       }
-                                      case false =>
+                                      case (false, _) =>
                                         Errors
                                           .craftResponseResult(
                                             "You performed too much requests",

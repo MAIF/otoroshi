@@ -286,6 +286,7 @@ class NgJwtUserExtractor extends NgPreRouting {
             }
           }
       }
+      case other => throw new IllegalStateException(s"unreachable case: $other")
     }
   }
 }
