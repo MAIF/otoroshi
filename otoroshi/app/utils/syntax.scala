@@ -390,7 +390,7 @@ object implicits {
         case JsBoolean(v)    => v.toString.some
         case o @ JsObject(_) => o.stringify.some
         case a @ JsArray(_)  => a.stringify.some
-        case _               => None
+        // case _               => None
       }
     }
   }

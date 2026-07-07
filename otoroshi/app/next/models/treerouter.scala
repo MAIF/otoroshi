@@ -340,6 +340,7 @@ case class NgTreeNodePath(
                 NgMatchedRoutes(routes.toSeq, s"$path/$head", pathParams, noMoreSegments = segments.tail.isEmpty).some
               case s                      => s
             }
+          case other => throw new IllegalStateException(s"unreachable case: $other")
         }
       }
     }

@@ -402,6 +402,7 @@ case class NgRoute(
                 case None                                => Seq("/.*")
                 case Some(apkc) if apkc.exclude.isEmpty  => Seq.empty
                 case Some(apkc) if apkc.exclude.nonEmpty => apkc.exclude
+                case other => throw new IllegalStateException(s"unreachable case: $other")
               }
           }
         } else {

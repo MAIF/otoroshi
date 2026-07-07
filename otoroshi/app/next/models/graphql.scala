@@ -54,7 +54,7 @@ object GraphQLFormats {
           o.value.map(arg => jsonToArgumentValue(arg, isJsonDirectiveArgument)).toVector
         ) // TODO - manage ListValue recursively
     case o: JsObject      => StringValue(Json.stringify(o))
-    case _                => StringValue("")
+    // case _                => StringValue("")
   }
 
   def argumentValueToJson(value: Value): JsValue = value match {

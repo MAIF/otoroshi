@@ -272,15 +272,15 @@ case class Cert(
                 caCert.cryptoKeyPair
               )
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
-            case _                  =>
-              // println("wait what ???")
-              val resp = FakeKeyStore.createSelfSignedCertificate(
-                domain,
-                duration,
-                Some(cryptoKeyPair),
-                certificate.map(_.getSerialNumber.longValue())
-              )
-              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+            // case _                  =>
+            //   // println("wait what ???")
+            //   val resp = FakeKeyStore.createSelfSignedCertificate(
+            //     domain,
+            //     duration,
+            //     Some(cryptoKeyPair),
+            //     certificate.map(_.getSerialNumber.longValue())
+            //   )
+            //   copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
           }
         }
       }

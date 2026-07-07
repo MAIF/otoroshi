@@ -69,7 +69,7 @@ object UserAgentHelper {
             }
             cache.getIfPresent(ua).flatten
           }(ec)
-        case _                 => None.future
+        // case _                 => None.future
       }
     }
   }
