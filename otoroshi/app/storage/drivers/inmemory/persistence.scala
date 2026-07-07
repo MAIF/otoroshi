@@ -483,39 +483,72 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     FastFuture.successful(())
   }
 
+  // private def readStateFromS3(): Future[Unit] = {
+  //   if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
+  //   val store                                                       = new UnboundedConcurrentHashMap[String, Any]()
+  //   val expirations                                                 = new UnboundedConcurrentHashMap[String, Long]()
+  //   val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
+  //   S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs()).runFold(none)((_, opt) => opt).map {
+  //     case None                 =>
+  //       logger.warn(s"asset at ${url} does not exists yet ...")
+  //       ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+  //     case Some((source, meta)) => {
+  //       source
+  //         .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+  //         .map(_.utf8String.trim)
+  //         .filterNot(_.isEmpty)
+  //         .map { raw =>
+  //           val item  = Json.parse(raw)
+  //           val key   = (item \ "k").as[String]
+  //           val value = (item \ "v").as[JsValue]
+  //           val what  = (item \ "w").as[String]
+  //           val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+  //           fromJson(what, value, ds._modern)
+  //             .map(v => store.put(key, v))
+  //             .getOrElse(println(s"file read error for: ${item.prettify} "))
+  //           if (ttl > -1L) {
+  //             expirations.put(key, ttl)
+  //           }
+  //         }
+  //         .runWith(Sink.ignore)
+  //         .andThen { case _ =>
+  //           ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+  //         }
+  //     }
+  //   }
+  // }
+
   private def readStateFromS3(): Future[Unit] = {
     if (logger.isDebugEnabled) logger.debug(s"Reading state from $url")
-    val store                                                       = new UnboundedConcurrentHashMap[String, Any]()
-    val expirations                                                 = new UnboundedConcurrentHashMap[String, Long]()
-    val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
-    S3.download(conf.bucket, conf.key).withAttributes(s3ClientSettingsAttrs()).runFold(none)((_, opt) => opt).map {
-      case None                 =>
-        logger.warn(s"asset at ${url} does not exists yet ...")
-        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
-      case Some((source, meta)) => {
-        source
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-          .map(_.utf8String.trim)
-          .filterNot(_.isEmpty)
-          .map { raw =>
-            val item  = Json.parse(raw)
-            val key   = (item \ "k").as[String]
-            val value = (item \ "v").as[JsValue]
-            val what  = (item \ "w").as[String]
-            val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
-            fromJson(what, value, ds._modern)
-              .map(v => store.put(key, v))
-              .getOrElse(println(s"file read error for: ${item.prettify} "))
-            if (ttl > -1L) {
-              expirations.put(key, ttl)
-            }
-          }
-          .runWith(Sink.ignore)
-          .andThen { case _ =>
-            ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
-          }
+    val store = new UnboundedConcurrentHashMap[String, Any]()
+    val expirations = new UnboundedConcurrentHashMap[String, Long]()
+
+    S3.getObject(conf.bucket, conf.key)
+      .withAttributes(s3ClientSettingsAttrs())
+      .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, allowTruncation = true))
+      .map(_.utf8String.trim)
+      .filterNot(_.isEmpty)
+      .map { raw =>
+        val item = Json.parse(raw)
+        val key = (item \ "k").as[String]
+        val value = (item \ "v").as[JsValue]
+        val what = (item \ "w").as[String]
+        val ttl = (item \ "t").asOpt[Long].getOrElse(-1L)
+        fromJson(what, value, ds._modern)
+          .map(v => store.put(key, v))
+          .getOrElse(println(s"file read error for: ${item.prettify} "))
+        if (ttl > -1L) {
+          expirations.put(key, ttl)
+        }
       }
-    }
+      .runWith(Sink.ignore)
+      .map { _ =>
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      }
+      .recover { case _: S3Exception =>
+        logger.warn(s"asset at $url does not exists yet ...")
+        ds.swredis.swap(Memory(store, expirations), SwapStrategy.Replace)
+      }
   }
 
   private def fromJson(what: String, value: JsValue, modern: Boolean): Option[Any] = {

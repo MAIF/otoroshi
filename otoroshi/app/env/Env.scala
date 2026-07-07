@@ -138,6 +138,8 @@ class Env(
 
   val logger = Logger("otoroshi-env")
 
+  lazy val defaultCookieHeaderEncoding = new play.api.mvc.DefaultCookieHeaderEncoding(httpConfiguration.cookies)
+
   val handlerRef = new AtomicReference[HttpRequestHandler]()
 
   val otoroshiActorSystem: ActorSystem           = ActorSystem(

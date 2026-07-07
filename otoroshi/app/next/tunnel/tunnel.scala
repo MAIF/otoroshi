@@ -93,7 +93,7 @@ class TunnelPlugin extends NgBackendCall {
         val setCookieHeader: Seq[WSCookie] = result.header.headers
           .getIgnoreCase("Set-Cookie")
           .map { sc =>
-            Cookies.decodeSetCookieHeader(sc)
+            env.defaultCookieHeaderEncoding.decodeSetCookieHeader(sc)
           }
           .getOrElse(Seq.empty).toSeq
           .map(_.wsCookie)
@@ -1040,6 +1040,7 @@ class TunnelRelayActor(out: ActorRef, tunnelId: String, env: Env) extends Actor 
   private val logger       = Logger("otoroshi-tunnel-relay-actor")
   private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   private implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
+  private implicit val ev: Env = env
 
   def handleRequest(data: ByteString): Unit = Try {
     val request = Json.parse(data.toArray)
@@ -1097,6 +1098,7 @@ object TunnelActor {
 
   def resultToJson(result: Result, requestId: String)(using
       ec: ExecutionContext,
+      env: Env,
       mat: Materializer
   ): Future[JsValue] = {
     val ct      = result.body.contentType
@@ -1104,7 +1106,7 @@ object TunnelActor {
     val cookies = result.header.headers
       .getIgnoreCase("Cookie")
       .map { c =>
-        Cookies.decodeCookieHeader(c)
+        env.defaultCookieHeaderEncoding.decodeCookieHeader(c)
       }
       .getOrElse(Seq.empty).toSeq
     result.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { br =>

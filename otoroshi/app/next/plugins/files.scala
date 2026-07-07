@@ -4,16 +4,16 @@ import org.apache.pekko.http.scaladsl.model.headers.`Last-Modified`
 import org.apache.pekko.stream.connectors.s3.AccessStyle.{PathAccessStyle, VirtualHostAccessStyle}
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
 import org.apache.pekko.stream.{Attributes, Materializer}
-import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Settings}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.connectors.s3.{ApiVersion, MemoryBufferType, ObjectMetadata, S3Attributes, S3Exception, S3Settings}
+import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.storage.drivers.inmemory.S3Configuration
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -195,25 +195,45 @@ class S3Backend extends NgBackendCall {
       }
   }
 
+  // private def fileContent(key: String, config: S3Configuration)(using
+  //     ec: ExecutionContext,
+  //     mat: Materializer
+  // ): Future[Option[(ObjectMetadata, ByteString)]] = {
+  //   S3.download(config.bucket, key)
+  //     .withAttributes(s3ClientSettingsAttrs(config))
+  //     .runWith(Sink.headOption)
+  //     .map(_.flatten)
+  //     .flatMap { opt =>
+  //       opt
+  //         .map {
+  //           case (source, om) => {
+  //             source.runFold(ByteString.empty)(_ ++ _).map { content =>
+  //               (om, content).some
+  //             }
+  //           }
+  //         }
+  //         .getOrElse(None.vfuture)
+  //     }
+  // }
+
   private def fileContent(key: String, config: S3Configuration)(using
-      ec: ExecutionContext,
-      mat: Materializer
+    ec: ExecutionContext,
+    mat: Materializer
   ): Future[Option[(ObjectMetadata, ByteString)]] = {
-    S3.download(config.bucket, key)
+    val (metadataFuture, contentFuture) = S3
+      .getObject(config.bucket, key)
       .withAttributes(s3ClientSettingsAttrs(config))
-      .runWith(Sink.headOption)
-      .map(_.flatten)
-      .flatMap { opt =>
-        opt
-          .map {
-            case (source, om) => {
-              source.runFold(ByteString.empty)(_ ++ _).map { content =>
-                (om, content).some
-              }
-            }
-          }
-          .getOrElse(None.vfuture)
-      }
+      .toMat(Sink.fold(ByteString.empty)(_ ++ _))(Keep.both)
+      .run()
+
+    for {
+      metadata <- metadataFuture
+      content <- contentFuture
+    } yield {
+      Some((metadata, content))
+    }
+  }.recover { case _: S3Exception =>
+    None
   }
 
   private def normalizeKey(key: String, config: S3Configuration)(using

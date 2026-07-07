@@ -1006,20 +1006,35 @@ class CatalogSourceS3 extends CatalogSource {
       }
   }
 
+  // private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(using
+  //     ec: ExecutionContext,
+  //     mat: Materializer
+  // ): Future[Either[JsValue, String]] = {
+  //   S3.download(bucket, key)
+  //     .withAttributes(s3ClientSettingsAttrs(config))
+  //     .runWith(Sink.head)
+  //     .flatMap {
+  //       case None              =>
+  //         (Left(Json.obj("error" -> s"S3 object not found: $bucket/$key")): Either[JsValue, String]).vfuture
+  //       case Some((source, _)) =>
+  //         source.runFold(ByteString.empty)(_ ++ _).map { bs =>
+  //           Right(bs.utf8String): Either[JsValue, String]
+  //         }
+  //     }
+  //     .recover { case e: Throwable =>
+  //       Left(Json.obj("error" -> s"Error fetching S3 object $bucket/$key: ${e.getMessage}")): Either[JsValue, String]
+  //     }
+  // }
+
   private def fetchS3Object(bucket: String, key: String, config: JsObject, env: Env)(using
-      ec: ExecutionContext,
-      mat: Materializer
+    ec: ExecutionContext,
+    mat: Materializer
   ): Future[Either[JsValue, String]] = {
-    S3.download(bucket, key)
+    S3.getObject(bucket, key)
       .withAttributes(s3ClientSettingsAttrs(config))
-      .runWith(Sink.head)
-      .flatMap {
-        case None              =>
-          (Left(Json.obj("error" -> s"S3 object not found: $bucket/$key")): Either[JsValue, String]).vfuture
-        case Some((source, _)) =>
-          source.runFold(ByteString.empty)(_ ++ _).map { bs =>
-            Right(bs.utf8String): Either[JsValue, String]
-          }
+      .runFold(ByteString.empty)(_ ++ _)
+      .map { bs =>
+        Right(bs.utf8String): Either[JsValue, String]
       }
       .recover { case e: Throwable =>
         Left(Json.obj("error" -> s"Error fetching S3 object $bucket/$key: ${e.getMessage}")): Either[JsValue, String]

@@ -53,7 +53,7 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
     val ct                             = resp.headers.getIgnoreCase("Content-Type").map(_.last)
     val setCookie                      = resp.headers
       .get("Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
-      .map(vs => vs.flatMap(v => Cookies.decodeSetCookieHeader(v)))
+      .map(vs => vs.flatMap(v => env.defaultCookieHeaderEncoding.decodeSetCookieHeader(v)))
       .getOrElse(Seq.empty[Cookie]).toSeq
     val headers: Seq[(String, String)] = resp.headers
       .filterNot(_._1 == "Otoroshi-Relay-Routing-Response-Header-Set-Cookie")
@@ -121,7 +121,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
       }.applyOnWithOpt(req.clientCertificateChain) { case (seq, certs) =>
         seq ++ certs.zipWithIndex.map { case (c, idx) => (s"Otoroshi-Relay-Routing-Certs-${idx}" -> c.encoded) }
       }.applyOnIf(req.cookies.nonEmpty) { seq =>
-        seq :+ ("Otoroshi-Relay-Routing-Cookies", Cookies.encodeCookieHeader(req.cookies.toSeq))
+        seq :+ ("Otoroshi-Relay-Routing-Cookies", env.defaultCookieHeaderEncoding.encodeCookieHeader(req.cookies.toSeq))
       }
       val uriStr                         = s"$url/api/cluster/relay"
       val uri                            = Uri(uriStr)

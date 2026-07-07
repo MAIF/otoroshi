@@ -683,18 +683,31 @@ case class ClusterBackup(
       .run()
   }
 
+  // private def readFromS3(
+  //     conf: S3Configuration
+  // )(using ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
+  //   val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
+  //   S3.download(conf.bucket, conf.key)
+  //     .withAttributes(s3ClientSettingsAttrs(conf))
+  //     .runFold(none)((_, opt) => opt)
+  //     .flatMap {
+  //       case None                 =>
+  //         Cluster.logger.error(s"resource '${url(conf)}' does not exist")
+  //         None.vfuture
+  //       case Some((source, meta)) => source.runFold(ByteString.empty)(_ ++ _).map(v => v.some)
+  //     }
+  // }
+
   private def readFromS3(
-      conf: S3Configuration
+    conf: S3Configuration
   )(using ec: ExecutionContext, mat: Materializer): Future[Option[ByteString]] = {
-    val none: Option[(Source[ByteString, NotUsed], ObjectMetadata)] = None
-    S3.download(conf.bucket, conf.key)
+    S3.getObject(conf.bucket, conf.key)
       .withAttributes(s3ClientSettingsAttrs(conf))
-      .runFold(none)((_, opt) => opt)
-      .flatMap {
-        case None                 =>
-          Cluster.logger.error(s"resource '${url(conf)}' does not exist")
-          None.vfuture
-        case Some((source, meta)) => source.runFold(ByteString.empty)(_ ++ _).map(v => v.some)
+      .runWith(Sink.fold(ByteString.empty)(_ ++ _))
+      .map(Some(_))
+      .recover { case _: S3Exception =>
+        Cluster.logger.error(s"resource '${url(conf)}' does not exist")
+        None
       }
   }
 }

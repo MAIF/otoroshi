@@ -4,8 +4,8 @@ import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpEntity.{ChunkStreamPart, Limitable, SizeLimit}
 import org.apache.pekko.http.scaladsl.model.HttpHeader.ParsingResult
-import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.model.headers.*
 import org.apache.pekko.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import org.apache.pekko.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -15,6 +15,7 @@ import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source, SourceQueueWithComp
 import org.apache.pekko.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+
 import java.nio.charset.StandardCharsets
 import com.typesafe.sslconfig.pekko.PekkoSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
@@ -25,24 +26,24 @@ import otoroshi.gateway.{RequestTimeoutException, Timeout}
 import otoroshi.netty.{NettyClientConfig, NettyHttpClient}
 import otoroshi.next.models.NgOverflowStrategy
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import reactor.netty.http.client.HttpClient
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import javax.net.ssl.SSLContext
+import javax.net.ssl.{SSLContext, SSLEngine}
 import scala.collection.concurrent.TrieMap
 import scala.collection.immutable.TreeMap
-import scala.concurrent.duration.{Duration, _}
+import scala.concurrent.duration.{Duration, *}
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
@@ -679,33 +680,34 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
 
   private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
-  private[utils] val akkaSSLConfig: PekkoSSLConfig   = PekkoSSLConfig(system).withSettings(
-    config.ssl
-      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-      // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
-      .withSslParametersConfig(
-        config.ssl.sslParametersConfig
-          .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
-      )
-      .withDefault(false)
-  )
-  private[utils] val akkaSSLLooseConfig: PekkoSSLConfig = PekkoSSLConfig(system).withSettings(
-    config.ssl
-      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-      //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
-      .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))
-      .withSslParametersConfig(
-        config.ssl.sslParametersConfig
-          .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
-      )
-      .withDefault(false)
-  )
+  // private[utils] val akkaSSLConfig: PekkoSSLConfig   = PekkoSSLConfig(system).withSettings(
+  //   config.ssl
+  //     // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+  //     // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
+  //     .withSslParametersConfig(
+  //       config.ssl.sslParametersConfig
+  //         .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+  //     )
+  //     .withDefault(false)
+  // )
+  // private[utils] val akkaSSLLooseConfig: PekkoSSLConfig = PekkoSSLConfig(system).withSettings(
+  //   config.ssl
+  //     // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+  //     //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
+  //     .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))
+  //     .withSslParametersConfig(
+  //       config.ssl.sslParametersConfig
+  //         .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
+  //     )
+  //     .withDefault(false)
+  // )
 
   private[utils] val lastSslContext               = new AtomicReference[SSLContext](null)
   private[utils] val connectionContextHolder      =
-    new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
+    new AtomicReference[HttpsConnectionContext](ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = false, SSLContext.getDefault)))
+    //new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
   private[utils] val connectionContextLooseHolder =
-    new AtomicReference[HttpsConnectionContext](connectionContextHolder.get())
+    new AtomicReference[HttpsConnectionContext](ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = false, SSLContext.getDefault)))
 
   // client.validateAndWarnAboutLooseSettings()
 
@@ -725,6 +727,22 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
     .maximumSize(1000)
     .build()
 
+  private[utils] def createSSLEngine(loose: Boolean, clientAuth: Boolean, sslContext: SSLContext): (String, Int) => SSLEngine =
+    (host, port) => {
+      val engine = sslContext.createSSLEngine(host, port)
+      engine.setUseClientMode(true)
+      val params = engine.getSSLParameters
+      params.setNeedClientAuth(clientAuth)
+      // Set endpoint identification algorithm based on loose mode
+      params.setEndpointIdentificationAlgorithm(if (loose) null else "https")
+      engine.setSSLParameters(params)
+      engine
+    }
+
+  private[utils] def createStandardSSLEngine(clientAuth: Boolean, sslContext: SSLContext) = createSSLEngine(loose = false, clientAuth = clientAuth, sslContext = sslContext)
+
+  private[utils] def createLooseSSLEngine(clientAuth: Boolean, sslContext: SSLContext) = createSSLEngine(loose = true, clientAuth = clientAuth, sslContext = sslContext)
+
   private[utils] def executeRequest[T](
       request: HttpRequest,
       loose: Boolean,
@@ -743,9 +761,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
           val connectionContext: HttpsConnectionContext      =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLConfig))
           val connectionContextLoose: HttpsConnectionContext =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
           connectionContextHolder.set(connectionContext)
           connectionContextLooseHolder.set(connectionContextLoose)
         }
@@ -781,9 +801,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val pool = customizer(connectionPoolSettings).withMaxConnections(512)
           val cctx = if (loose) {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLLooseConfig))
           } else {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLConfig))
           }
           if (clientConfig.cacheConnectionSettings.enabled) {
             queueClientRequest(request, pool, cctx, clientConfig.cacheConnectionSettings)
@@ -877,9 +899,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
           val connectionContext: HttpsConnectionContext      =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLConfig))
           val connectionContextLoose: HttpsConnectionContext =
-            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = false, currentSslContext))
+            //ConnectionContext.httpsClient(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
           connectionContextHolder.set(connectionContext)
           connectionContextLooseHolder.set(connectionContextLoose)
         }
@@ -903,9 +927,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
         // val sslContext = DynamicSSLEngineProvider.setupSslContextFor(clientCerts, trustedCerts, trustAll, env)
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val cctx = if (loose) {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+            ConnectionContext.httpsClient(createLooseSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLLooseConfig))
           } else {
-            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+            ConnectionContext.httpsClient(createStandardSSLEngine(clientAuth = true, sslContext))
+            //ConnectionContext.httpsClient(sslContext, sslConfig = Some(akkaSSLConfig))
           }
           client.singleWebSocketRequest(
             request = request,

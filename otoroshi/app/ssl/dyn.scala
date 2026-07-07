@@ -165,7 +165,7 @@ object DynamicSSLContext {
         override def engineGetSocketFactory(): SSLSocketFactory             = getCtx().getSocketFactory
         override def engineGetServerSocketFactory(): SSLServerSocketFactory = getCtx().getServerSocketFactory
       },
-      new Provider("Otoroshi dynamic SSLContext", 1d, "A dynamic SSLContext that can be reconfigured on the fly") {},
+      new Provider("Otoroshi dynamic SSLContext", "1.0", "A dynamic SSLContext that can be reconfigured on the fly") {},
       "Otoroshi dynamic SSLContext"
     ) {}
     sslContext
