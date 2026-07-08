@@ -32,7 +32,7 @@ import io.netty.incubator.codec.http3.{
   HttpConversionUtil
 }
 import io.netty.incubator.codec.quic.QuicStreamChannel
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.net.SocketAddress;
 

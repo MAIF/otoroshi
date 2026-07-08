@@ -12,12 +12,12 @@ import otoroshi.events.Exporters.{
 }
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.metrics.opentelemetry.OtlpSettings
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.mailer._
+import otoroshi.utils.mailer.*
 import otoroshi.utils.syntax.implicits.BetterJsReadable
 import play.api.libs.json.{Format, JsError, JsSuccess, Json}
 

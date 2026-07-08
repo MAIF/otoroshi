@@ -5,11 +5,11 @@ import java.nio.file.Files
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import otoroshi.env.Env
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.JsonPathValidator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64

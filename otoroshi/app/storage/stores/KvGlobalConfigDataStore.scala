@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.script.Script
 import otoroshi.security.Auth0Config
@@ -12,9 +12,9 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Success
 

@@ -8,8 +8,8 @@ import otoroshi.api.{DeleteAction, WriteAction}
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.{ApikeyQuotas, _}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.services.ApiConsistencyService
@@ -18,13 +18,13 @@ import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.UrlSanitizer.sanitize
 import otoroshi.utils.controllers.{GenericAlert, SendAuditAndAlert}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.net.URI
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

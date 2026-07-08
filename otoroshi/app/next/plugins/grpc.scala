@@ -3,10 +3,10 @@ package otoroshi.next.plugins
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.HeaderNames
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.util.Base64

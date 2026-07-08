@@ -6,15 +6,15 @@ import com.github.blemale.scaffeine.Scaffeine
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter}
-import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.*
 import io.netty.handler.ssl.util.SelfSignedCertificate
 import io.netty.incubator.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, Mapping, ReferenceCountUtil}
 import org.joda.time.DateTime
 import otoroshi.env.Env
-import otoroshi.netty.ImplicitUtils._
+import otoroshi.netty.ImplicitUtils.*
 import otoroshi.ssl.{DynamicKeyManager, DynamicSSLEngineProvider}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
 import play.api.libs.json.Json
@@ -24,7 +24,7 @@ import reactor.core.publisher.{Flux, Sinks}
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Await
 import scala.concurrent.duration.{DurationInt, DurationLong}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Try}
 
 class Http1RequestHandler(
@@ -584,9 +584,9 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
     if (config.http3.enabled && config.http3.port != -1) {
 
-      import io.netty.bootstrap._
-      import io.netty.channel._
-      import io.netty.channel.socket.nio._
+      import io.netty.bootstrap.*
+      import io.netty.channel.*
+      import io.netty.channel.socket.nio.*
       import io.netty.incubator.codec.http3.{Http3, Http3ServerConnectionHandler}
       import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicChannel, QuicStreamChannel}
 

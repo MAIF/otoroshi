@@ -1,15 +1,15 @@
 package otoroshi.models
 
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import otoroshi.auth.{AuthModuleConfig, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
-import play.api.libs.json._
+import play.api.libs.json.*
 import otoroshi.storage.BasicStore
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

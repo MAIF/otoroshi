@@ -10,13 +10,13 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.{NgDomainAndPath, NgFrontend, NgTreeRouter, NgTreeRouter_Test}
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
 
 import java.util.UUID
@@ -343,7 +343,7 @@ class MockResponses extends NgBackendCall {
           None
       }
       .map(mr => {
-        import otoroshi.utils.KaleidoscopeShim._
+        import otoroshi.utils.KaleidoscopeShim.*
 
         val route    = mr.routes.headOption.get
         val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)

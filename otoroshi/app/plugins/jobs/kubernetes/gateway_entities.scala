@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import play.api.libs.json._
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
+import otoroshi.utils.syntax.implicits.*
 
 // ─── GatewayClass (cluster-scoped) ──────────────────────────────────────────
 

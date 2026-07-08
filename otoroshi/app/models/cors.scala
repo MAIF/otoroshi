@@ -4,7 +4,7 @@ import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits.BetterJsValue
 
 import java.util.concurrent.TimeUnit
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import scala.concurrent.duration.FiniteDuration

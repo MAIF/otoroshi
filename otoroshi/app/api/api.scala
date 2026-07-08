@@ -13,7 +13,7 @@ import otoroshi.controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.{UserAlert, UserDashboard}
 import otoroshi.next.models.{NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.next.plugins.api.{
@@ -36,12 +36,12 @@ import otoroshi.utils.JsonValidator
 import otoroshi.utils.controllers.GenericAlert
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.json.{JsonOperationsHelper, JsonPatchHelpers}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.http.HttpEntity
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
+import play.api.mvc.*
 import play.core.parsers.FormUrlEncodedParser
 import utils.EntityFiltering
 import utils.EntityFiltering.PaginatedContent

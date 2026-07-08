@@ -28,7 +28,7 @@ import org.bouncycastle.operator.jcajce.{
 }
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.libs.json.Json
-import otoroshi.ssl._
+import otoroshi.ssl.*
 import org.joda.time.DateTime
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import play.api.Logger
@@ -36,11 +36,11 @@ import play.api.Logger
 import java.util.Date
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 
 import java.math.BigInteger
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 object CertParentHelper {
@@ -123,7 +123,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     env.configuration.getOptionalWithFileSupport[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
   def aia(id: String, req: RequestHeader, possibleCerts: Seq[String])(using ec: ExecutionContext): Future[Result] = {
-    import scala.util._
+    import scala.util.*
     if (possibleCerts.isEmpty || (possibleCerts.nonEmpty && possibleCerts.contains(id))) {
       // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
       DynamicSSLEngineProvider.certificates.values.find { c =>

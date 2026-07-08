@@ -11,14 +11,14 @@ import otoroshi.events.{DataInOut, GatewayEvent, Header, Location}
 import otoroshi.models.RemainingQuotas
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.http.Implicits.BetterStandaloneWSResponse
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.http.WSCookieWithSameSite
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Results.Status
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}

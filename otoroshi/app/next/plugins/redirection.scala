@@ -15,7 +15,7 @@ import otoroshi.next.plugins.api.{
   NgStep
 }
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.ExecutionContext

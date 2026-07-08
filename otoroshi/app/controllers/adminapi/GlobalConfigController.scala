@@ -8,7 +8,7 @@ import otoroshi.models.GlobalConfig
 import otoroshi.models.RightsChecker
 import otoroshi.utils.json.JsonOperationsHelper
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 

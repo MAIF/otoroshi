@@ -6,13 +6,13 @@ import otoroshi.env.Env
 import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.string.Implicits._
+import otoroshi.utils.string.Implicits.*
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -281,7 +281,7 @@ class PrometheusEndpoint extends RequestSink {
 // DEPRECATED
 class PrometheusServiceMetrics extends RequestTransformer {
 
-  import io.prometheus.client._
+  import io.prometheus.client.*
 
   private lazy val requestCounterGlobal = PrometheusSupport.register(
     Counter

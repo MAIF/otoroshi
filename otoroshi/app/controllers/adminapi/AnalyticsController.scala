@@ -5,15 +5,15 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.joda.time.DateTime
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.jobs.updates._
+import otoroshi.events.*
+import otoroshi.jobs.updates.*
 import otoroshi.models.{RightsChecker, ServiceDescriptor}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import reactor.core.publisher.Sinks
 import utils.EntityFiltering
 

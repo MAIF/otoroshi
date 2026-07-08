@@ -1,7 +1,7 @@
 package otoroshi.plugins.biscuit
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.biscuitsec.biscuit.crypto._
+import org.biscuitsec.biscuit.crypto.*
 import org.biscuitsec.biscuit.datalog.SymbolTable
 import org.biscuitsec.biscuit.error.Error
 import org.biscuitsec.biscuit.token.builder.Term.Str
@@ -11,10 +11,10 @@ import org.biscuitsec.biscuit.token.{Authorizer, Biscuit}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Results}
 
@@ -255,7 +255,7 @@ class BiscuitExtractor extends PreRouting {
   def testing(): Unit = {
 
     import org.biscuitsec.biscuit.token.builder.Block
-    import org.biscuitsec.biscuit.token.builder.Utils._
+    import org.biscuitsec.biscuit.token.builder.Utils.*
 
     val client_id         = "tdrw4ixcssyvljrq"
     val client_secret     = "pdpzme7xpg58y1za0yqyihycschnq74iu7437qqfjor0h3jeo505n6w4ofg1pa17"

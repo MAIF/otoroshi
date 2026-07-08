@@ -7,12 +7,12 @@ import com.blueconic.browscap.{UserAgentParser, UserAgentService}
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.cache.Caches
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt

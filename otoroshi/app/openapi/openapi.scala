@@ -1,14 +1,14 @@
 package otoroshi.openapi
 
 import org.apache.pekko.http.scaladsl.model.{HttpProtocol, HttpProtocols}
-import io.github.classgraph._
+import io.github.classgraph.*
 import otoroshi.env.Env
 import otoroshi.models.Entity
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets

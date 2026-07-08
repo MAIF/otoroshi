@@ -2,10 +2,10 @@ package otoroshi.next.plugins
 
 import org.apache.pekko.Done
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
 import scala.concurrent.{ExecutionContext, Future}

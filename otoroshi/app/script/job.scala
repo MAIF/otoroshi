@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import org.apache.pekko.actor.{ActorSystem, Cancellable, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.stream.scaladsl._
+import org.apache.pekko.stream.scaladsl.*
 import org.apache.pekko.util.ByteString
 import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
@@ -22,14 +22,14 @@ import otoroshi.next.workflow.WorkflowJob
 import otoroshi.utils
 import otoroshi.utils.{future, JsonPathValidator, JsonValidator, SchedulerHelper, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Random, Success, Try}
 

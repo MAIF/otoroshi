@@ -4,10 +4,10 @@ import org.joda.time.DateTime
 import otoroshi.api.{Resource, WriteAction}
 import otoroshi.env.Env
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.JsError.toJson
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results
 import otoroshi.utils.yaml.Yaml
 

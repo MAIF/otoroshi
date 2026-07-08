@@ -14,13 +14,13 @@ import com.typesafe.config.{ConfigFactory, ConfigParseOptions, ConfigResolveOpti
 import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.{KubernetesClient, KubernetesConfig}
-import otoroshi.ssl.SSLImplicits._
+import otoroshi.ssl.SSLImplicits.*
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
 import play.api.{Configuration, Logger}
 

@@ -13,11 +13,11 @@ import com.sksamuel.pulsar4s.{
   Topic
 }
 import otoroshi.models.Exporter
-import com.sksamuel.pulsar4s.playjson._
+import com.sksamuel.pulsar4s.playjson.*
 import org.apache.pulsar.client.impl.auth.{AuthenticationBasic, AuthenticationToken}
 import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.util.{Failure, Success, Try}
 

@@ -2,7 +2,7 @@ package otoroshi.ssl.pki
 
 import java.io.{ByteArrayInputStream, StringReader}
 import java.math.BigInteger
-import java.security._
+import java.security.*
 import java.security.cert.{CertificateFactory, X509Certificate}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -10,7 +10,7 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.x509._
+import org.bouncycastle.asn1.x509.*
 import org.bouncycastle.asn1.{
   x509,
   ASN1EncodableVector,
@@ -28,14 +28,14 @@ import org.bouncycastle.operator.{DefaultDigestAlgorithmIdentifierFinder, Defaul
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder
 import org.bouncycastle.util.io.pem.PemReader
-import otoroshi.ssl.pki.models._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.ssl.pki.models.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
-import otoroshi.ssl.SSLImplicits._
+import otoroshi.ssl.SSLImplicits.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import org.bouncycastle.jce.ECNamedCurveTable
@@ -254,9 +254,9 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
     }
   }
 
-  import org.bouncycastle.operator._
-  import org.bouncycastle.operator.bc._
-  import org.bouncycastle.crypto.params._
+  import org.bouncycastle.operator.*
+  import org.bouncycastle.operator.bc.*
+  import org.bouncycastle.crypto.params.*
 
   def contentSigner(
       signatureAlg: AlgorithmIdentifier,

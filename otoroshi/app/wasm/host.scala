@@ -3,20 +3,20 @@ package otoroshi.wasm
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
-import io.otoroshi.wasm4s.scaladsl._
-import org.extism.sdk._
+import io.otoroshi.wasm4s.scaladsl.*
+import org.extism.sdk.*
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterConfig
 import otoroshi.env.Env
 import otoroshi.events.WasmLogEvent
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgTarget
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{ConcurrentMutableTypedMap, RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Optional

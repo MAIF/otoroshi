@@ -13,7 +13,7 @@ import otoroshi.utils.controllers.{
   OptionalEntityAndContext,
   SeqEntityAndContext
 }
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}

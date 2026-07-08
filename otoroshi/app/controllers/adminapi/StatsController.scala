@@ -16,7 +16,7 @@ import otoroshi.next.controllers.Stats
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}

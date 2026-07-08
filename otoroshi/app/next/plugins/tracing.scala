@@ -18,18 +18,18 @@ import io.opentelemetry.sdk.trace.`export`.{SimpleSpanProcessor, SpanExporter}
 import io.opentelemetry.sdk.trace.data.SpanData
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result
 
 import java.util.concurrent.TimeUnit
 import java.{lang, util}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 object NoopSpanExporter {

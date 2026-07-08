@@ -2,10 +2,10 @@ package otoroshi.plugins.jobs.kubernetes
 
 import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, HttpProtocol, HttpProtocols, RoundRobin}
-import otoroshi.next.models._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.models.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try

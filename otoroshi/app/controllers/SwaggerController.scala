@@ -2,7 +2,7 @@ package otoroshi.controllers
 
 import controllers.AssetsBuilder
 import otoroshi.env.Env
-import play.api.mvc._
+import play.api.mvc.*
 
 class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(using env: Env)
     extends AbstractController(cc) {

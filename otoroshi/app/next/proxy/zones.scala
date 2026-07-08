@@ -12,12 +12,12 @@ import otoroshi.models.{Target, TargetPredicate}
 import otoroshi.next.models.NgRoute
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationLong

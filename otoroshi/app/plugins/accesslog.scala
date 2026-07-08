@@ -4,7 +4,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import org.joda.time.DateTime
 import otoroshi.events.KafkaWrapper
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
@@ -12,10 +12,10 @@ import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContex
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

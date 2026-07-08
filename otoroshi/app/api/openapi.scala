@@ -2,7 +2,7 @@ package otoroshi.api
 
 import otoroshi.env.Env
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 
 import java.nio.charset.StandardCharsets

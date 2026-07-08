@@ -4,9 +4,9 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
-import org.shredzone.acme4j._
-import org.shredzone.acme4j.challenge._
-import org.shredzone.acme4j.util._
+import org.shredzone.acme4j.*
+import org.shredzone.acme4j.challenge.*
+import org.shredzone.acme4j.util.*
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, CertRenewalAlert}
 import otoroshi.ssl.DynamicSSLEngineProvider.base64Decode
@@ -14,7 +14,7 @@ import otoroshi.ssl.{Cert, PemHeaders}
 import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits.BetterFiniteDuration
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.io.StringWriter
 import java.security.cert.X509Certificate
@@ -23,7 +23,7 @@ import java.security.{KeyFactory, KeyPair}
 import java.util.Base64
 import java.util.concurrent.Executors
 import scala.jdk.CollectionConverters.*
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

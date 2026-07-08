@@ -2,10 +2,10 @@ package otoroshi.next.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 
 class EntitiesController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env)
     extends AbstractController(cc) {

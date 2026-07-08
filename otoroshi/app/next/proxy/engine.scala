@@ -8,34 +8,34 @@ import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.gateway._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.gateway.*
+import otoroshi.models.*
 import otoroshi.netty.{NettyHttpClient, NettyRequestKeys}
 import otoroshi.next.events.TrafficCaptureEvent
 import otoroshi.next.extensions.HttpListenerNames
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.next.plugins.{HeaderTooLongAlert, Keys}
-import otoroshi.next.plugins.api._
-import otoroshi.next.proxy.NgProxyEngineError._
+import otoroshi.next.plugins.api.*
+import otoroshi.next.proxy.NgProxyEngineError.*
 import otoroshi.next.utils.{FEither, JsonHelpers}
 import otoroshi.script.RequestHandler
 import otoroshi.security.IdGenerator
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
+import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.ResponseImplicits.*
 import otoroshi.utils.http.WSCookieWithSameSite
 import otoroshi.utils.streams.MaxLengthLimiter
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap, UrlSanitizer}
 import play.api.{mvc, Logger}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSRequest
 import play.api.mvc.Results.Status
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.mvc.request.RequestAttrKey
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}

@@ -4,11 +4,11 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
@@ -303,7 +303,7 @@ object Oauth1AuthModule {
 }
 
 case class Oauth1AuthModule(authConfig: Oauth1ModuleConfig) extends AuthModule {
-  import Oauth1AuthModule._
+  import Oauth1AuthModule.*
 
   def this() = this(Oauth1AuthModule.defaultConfig)
 

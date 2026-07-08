@@ -1,13 +1,13 @@
 package otoroshi.ssl
 
-import java.io._
+import java.io.*
 import java.lang.reflect.{Field, InaccessibleObjectException}
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.US_ASCII
-import java.security._
-import java.security.cert._
+import java.security.*
+import java.security.cert.*
 import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
@@ -30,8 +30,8 @@ import otoroshi.gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
-import javax.net.ssl._
-import otoroshi.models._
+import javax.net.ssl.*
+import otoroshi.models.*
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.ASN1ObjectIdentifier
@@ -50,9 +50,9 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import otoroshi.utils.{RegexPool, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.{Configuration, Logger}
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
@@ -61,14 +61,14 @@ import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
-import otoroshi.utils.syntax.implicits._
+import scala.concurrent.duration.*
+import otoroshi.utils.syntax.implicits.*
 
 import java.nio.file.Files
 import java.util
@@ -214,7 +214,7 @@ case class Cert(
   def renew(
       _duration: Option[FiniteDuration] = None
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
-    import SSLImplicits._
+    import SSLImplicits.*
     val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     this match {
       case original if original.letsEncrypt => LetsEncryptHelper.renew(this)
@@ -447,7 +447,7 @@ case class Cert(
 
 object Cert {
 
-  import SSLImplicits._
+  import SSLImplicits.*
 
   val OtoroshiCaDN             = s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
   val OtoroshiCA               = "otoroshi-root-ca"
@@ -1122,7 +1122,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
   }
 
   def jautoGenerateCertificateForDomain(domain: String, env: Env): Option[Cert] = {
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
     Try {
       // TODO: blocking ec
       implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -1582,7 +1582,7 @@ object DynamicSSLEngineProvider {
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
 
-    import SSLImplicits._
+    import SSLImplicits.*
 
     if (logger.isDebugEnabled) logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
@@ -1764,7 +1764,7 @@ object DynamicSSLEngineProvider {
       if (logger.isDebugEnabled) logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")
     } else {
-      import otoroshi.utils.syntax.implicits._
+      import otoroshi.utils.syntax.implicits.*
       Try {
         // val reader = new PemReader(new StringReader(privateKey))
         val parser    = new PEMParser(new StringReader(content))
@@ -1963,7 +1963,7 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
   import scala.jdk.CollectionConverters.*
 
@@ -2053,7 +2053,7 @@ object PemHeaders {
 
 object FakeKeyStore {
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
   private val EMPTY_PASSWORD = Array.emptyCharArray
   private val encoder        = Base64.getEncoder
@@ -2413,7 +2413,7 @@ class CustomSSLEngine(delegate: SSLEngine, appProto: Option[String], bannedProto
   override def setHandshakeApplicationProtocolSelector(
       selector: BiFunction[SSLEngine, util.List[String], String]
   ): Unit = {
-    import scala.jdk.CollectionConverters._
+    import scala.jdk.CollectionConverters.*
     if (!lock) {
       delegate.setHandshakeApplicationProtocolSelector(new BiFunction[SSLEngine, util.List[String], String] {
         override def apply(t: SSLEngine, u: util.List[String]): String = {
@@ -2587,7 +2587,7 @@ case class ClientCertificateValidator(
   def theName: String                  = name
   def theTags: Seq[String]             = tags
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   /*
   TEST CODE
@@ -2618,9 +2618,9 @@ case class ClientCertificateValidator(
    */
 
   import play.api.http.websocket.{Message => PlayWSMessage}
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def save()(using ec: ExecutionContext, env: Env) = env.datastores.clientCertificateValidationDataStore.set(this)
 
@@ -2983,7 +2983,7 @@ case class RawCertificate(
     client: Boolean = false
 ) {
 
-  import SSLImplicits._
+  import SSLImplicits.*
 
   def matchesDomain(dom: String): Boolean = sans.exists(d => RegexPool.apply(d).matches(dom))
 

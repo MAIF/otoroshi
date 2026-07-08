@@ -2,7 +2,7 @@ package otoroshi.controllers
 
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import ch.qos.logback.classic.{Level, LoggerContext}
@@ -10,42 +10,42 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import java.nio.charset.StandardCharsets
 import com.nimbusds.jose.jwk.KeyType
-import io.otoroshi.wasm4s.scaladsl._
+import io.otoroshi.wasm4s.scaladsl.*
 import next.models.Api
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth, BackOfficeActionContextAuth}
-import otoroshi.auth._
+import otoroshi.auth.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticTemplates, ElasticUtils, ElasticVersion}
 import otoroshi.jobs.AnonymousReportingJobConfig
 import otoroshi.jobs.newengine.NewEngine
 import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{GraphQLFormats, NgRoute, NgRouteComposition, NgTarget}
 import otoroshi.next.plugins.EurekaServerSink
 import otoroshi.next.proxy.BackOfficeRequest
-import otoroshi.security._
-import otoroshi.ssl._
+import otoroshi.security.*
+import otoroshi.ssl.*
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.http.{HttpEntity, HttpRequestHandler}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -588,7 +588,7 @@ class BackOfficeController(
 
   def documentationFrameDescriptor(lineId: String, serviceId: String) =
     BackOfficeActionAuth.async { ctx =>
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case Some(descriptor) if !ctx.canUserRead(descriptor)            => ApiActionContext.fforbidden
         case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
@@ -971,9 +971,9 @@ class BackOfficeController(
 
   def fetchOpenIdConfiguration() =
     BackOfficeActionAuth.async(parse.json) { ctx =>
-      import otoroshi.utils.http.Implicits._
+      import otoroshi.utils.http.Implicits.*
 
-      import scala.concurrent.duration._
+      import scala.concurrent.duration.*
       val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
       val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
       val desc         = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
@@ -1129,7 +1129,7 @@ class BackOfficeController(
 
   def fetchSAMLConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
     import scala.xml.Elem
-    import scala.xml.XML._
+    import scala.xml.XML.*
     Try {
       val xmlContent: Either[String, Elem] = (ctx.request.body \ "url").asOpt[String] match {
         case Some(url) => Right(load(url))
@@ -1482,7 +1482,7 @@ class BackOfficeController(
       }
     }
 
-  import otoroshi.ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits.*
 
   def caCert(): Action[Source[ByteString, _]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>

@@ -3,7 +3,7 @@ package otoroshi.models
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 import otoroshi.utils.syntax.implicits.BetterJsReadable

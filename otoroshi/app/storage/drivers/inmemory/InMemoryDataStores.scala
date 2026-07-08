@@ -20,17 +20,17 @@ import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage.stores._
+import otoroshi.storage.stores.*
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, SwappableRedisLikeMetricsWrapper}
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import scala.collection.concurrent.TrieMap

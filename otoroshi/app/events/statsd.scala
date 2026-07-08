@@ -7,7 +7,7 @@ import org.apache.pekko.actor.{Actor, ActorSystem, Cancellable, Props}
 import com.codahale.metrics.{Counter, Gauge, Reporter}
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import otoroshi.env.Env
-import github.gphat.censorinus._
+import github.gphat.censorinus.*
 
 import scala.concurrent.duration.FiniteDuration
 

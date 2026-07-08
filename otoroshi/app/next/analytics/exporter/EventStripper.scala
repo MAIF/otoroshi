@@ -1,6 +1,6 @@
 package otoroshi.next.analytics.exporter
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 /**
  * EventStripper

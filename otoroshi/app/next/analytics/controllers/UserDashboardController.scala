@@ -2,9 +2,9 @@ package otoroshi.next.analytics.controllers
 
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.Future

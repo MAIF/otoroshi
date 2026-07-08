@@ -3,18 +3,18 @@ package otoroshi.next.plugins
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.models.IpFiltering
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{Result, Results}
 
 import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

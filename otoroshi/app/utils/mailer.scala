@@ -1,14 +1,14 @@
 package otoroshi.utils.mailer
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
 import otoroshi.models.Exporter
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

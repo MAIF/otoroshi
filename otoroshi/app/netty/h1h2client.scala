@@ -17,7 +17,7 @@ import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.{Cert, VeryNiceTrustManager}
 import otoroshi.utils.http.{AkkaWsClientRequest, MtlsConfig}
 import otoroshi.utils.reactive.ReactiveStreamUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{
@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success}
 import scala.xml.{Elem, XML}
 

@@ -8,21 +8,21 @@ import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.scaladsl.{Concat, Framing, Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.DateTime
 import otoroshi.security.IdGenerator
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{WSRequest, WSResponse}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, PemHeaders}
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 
 import java.nio.charset.StandardCharsets
 import scala.collection.concurrent.TrieMap
@@ -1176,7 +1176,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       root: String = "/apis"
   ): Source[Seq[ByteString], _] = {
 
-    import otoroshi.utils.http.Implicits._
+    import otoroshi.utils.http.Implicits.*
 
     val lastTime = new AtomicLong(0L)
     val last     = new AtomicReference[String]("0")
@@ -1283,7 +1283,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       root: String = "/apis"
   ): Source[Seq[ByteString], _] = {
 
-    import otoroshi.utils.http.Implicits._
+    import otoroshi.utils.http.Implicits.*
 
     val lastTime = new AtomicLong(0L)
     val last     = new AtomicReference[String]("0")

@@ -10,10 +10,10 @@ import otoroshi.events.ExportResult
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.models.{DataExporterConfig, Exporter}
 import otoroshi.security.IdGenerator
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters.*

@@ -7,17 +7,17 @@ import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.BodyHelper
-import otoroshi.utils.mailer._
-import otoroshi.utils.syntax.implicits._
-import otoroshi.utils.http.ResponseImplicits._
+import otoroshi.utils.mailer.*
+import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.http.ResponseImplicits.*
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSAuthScheme
 
 import java.io.File
 import java.nio.file.Files
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -967,7 +967,7 @@ class WorkflowCallFunction extends WorkflowFunction {
 
 class SystemCallFunction extends WorkflowFunction {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   override def documentationName: String                  = "core.system_call"
   override def documentationDisplayName: String           = "System call"

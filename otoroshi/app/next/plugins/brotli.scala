@@ -5,14 +5,14 @@ import org.apache.pekko.util.ByteString
 import com.nixxcode.jvmbrotli.common.BrotliLoader
 import com.nixxcode.jvmbrotli.enc.Encoder
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HeaderNames.{ACCEPT_ENCODING, CONTENT_ENCODING, VARY}
 import play.api.http.{MediaType, Status}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Headers, RequestHeader, Result}
 
 import scala.concurrent.ExecutionContext

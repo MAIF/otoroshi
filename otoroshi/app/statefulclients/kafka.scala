@@ -2,7 +2,7 @@ package otoroshi.statefulclients
 
 import org.apache.kafka.clients.producer.Producer
 import otoroshi.events.{KafkaConfig, KafkaSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import java.util.concurrent.atomic.AtomicBoolean

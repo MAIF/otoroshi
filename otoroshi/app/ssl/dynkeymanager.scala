@@ -3,16 +3,16 @@ package otoroshi.ssl
 import java.net.Socket
 import java.security.{Principal, PrivateKey}
 import java.security.cert.X509Certificate
-import com.github.blemale.scaffeine._
+import com.github.blemale.scaffeine.*
 import otoroshi.env.Env
 
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
 import otoroshi.models.{GlobalConfig, TlsSettings}
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Try
 
 object KeyManagerCompatibility {

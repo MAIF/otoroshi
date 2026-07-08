@@ -18,7 +18,7 @@ import otoroshi.script.{
 }
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.ssl.Cert
 import otoroshi.utils.cache.types.UnboundedTrieMap
 

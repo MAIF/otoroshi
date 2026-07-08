@@ -5,7 +5,7 @@ import io.otoroshi.wasm4s.scaladsl.WasmoSettings
 import org.joda.time.DateTime
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.next.models.{NgPlugins, NgRoute, NgRouteComposition, StoredNgBackend}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
@@ -21,9 +21,9 @@ import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -1100,8 +1100,8 @@ case class OtoroshiExport(
     drafts: Seq[Draft] = Seq.empty
 ) {
 
-  import otoroshi.utils.json.JsonImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.json.JsonImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
   private def customizeAndMergeArray[A](
       entities: Seq[A],

@@ -8,12 +8,12 @@ import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module, ValidableUser}
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.storage.BasicStore
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.cluster._
+import otoroshi.utils.json.JsonImplicits.*
+import otoroshi.cluster.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
 import otoroshi.utils.TypedMap
@@ -21,7 +21,7 @@ import otoroshi.utils.syntax.implicits.BetterSyntax
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -183,7 +183,7 @@ trait PrivateAppsUserDataStore extends BasicStore[PrivateAppsUser]
 
 object PrivateAppsUserHelper {
 
-  import otoroshi.utils.http.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits.*
 
   case class PassWithAuthContext(
       req: RequestHeader,

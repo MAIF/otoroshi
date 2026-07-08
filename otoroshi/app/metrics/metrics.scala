@@ -2,7 +2,7 @@ package otoroshi.metrics
 
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import com.codahale.metrics._
+import com.codahale.metrics.*
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
 import com.codahale.metrics.jvm.{
@@ -19,11 +19,11 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
-import otoroshi.metrics.opentelemetry._
+import otoroshi.metrics.opentelemetry.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedConcurrentHashMap
 import otoroshi.utils.prometheus.CustomCollector
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
@@ -37,7 +37,7 @@ import java.util.{Timer => _, _}
 import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 trait TimerMetrics {

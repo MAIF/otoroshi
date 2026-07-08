@@ -13,7 +13,7 @@ import otoroshi.next.plugins.api.{
 }
 import otoroshi.utils.gzip.GzipConfig
 import otoroshi.utils.gzip.GzipConfig.logger
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{Format, JsError, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
 import play.api.mvc.Result
 

@@ -5,11 +5,11 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.auth.OAuth2ModuleConfig
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import scala.concurrent.{ExecutionContext, Future}
@@ -273,7 +273,7 @@ object OAuthProtectedResourceMetadata {
 
 class OAuthProtectedResourceMetadata extends NgBackendCall {
 
-  import OAuthProtectedResourceMetadata._
+  import OAuthProtectedResourceMetadata.*
 
   override def useDelegates: Boolean                       = false
   override def multiInstance: Boolean                      = true

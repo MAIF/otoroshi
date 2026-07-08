@@ -15,11 +15,11 @@ import org.apache.pekko.{AwesomeIncomingConnection, Done, TcpUtils}
 import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
-import javax.net.ssl._
+import javax.net.ssl.*
 import otoroshi.models.{EntityLocation, IpFiltering, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
@@ -31,7 +31,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 /**
  * - [x] TCP service can be disabled
@@ -890,7 +890,7 @@ case class RunningServer(port: Int, oldService: TcpService, binding: Future[Tcp.
 
 class RunningServers(env: Env) {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private implicit val system: org.apache.pekko.actor.ActorSystem = env.otoroshiActorSystem
   private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext

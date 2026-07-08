@@ -6,14 +6,14 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.events.AnalyticEvent
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.concurrent.TrieMap
-import scala.concurrent._
-import scala.jdk.CollectionConverters._
-import scala.util._
+import scala.concurrent.*
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 
 // TODO: time budget per node
 // TODO: fuel budget per run, with fuel consumption per node

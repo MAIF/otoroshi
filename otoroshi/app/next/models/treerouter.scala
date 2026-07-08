@@ -7,10 +7,10 @@ import otoroshi.netty.NettyRequestKeys
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap
 import play.api.mvc.request.{RemoteConnection, RequestTarget}
 import play.api.mvc.{Headers, RequestHeader}
@@ -19,7 +19,7 @@ import java.net.{InetAddress, URI}
 import java.security.cert.X509Certificate
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 sealed trait RoutingStrategy {
   def json: JsValue

@@ -11,14 +11,14 @@ import com.maxmind.geoip2.DatabaseReader
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.plugins.Keys
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -249,7 +249,7 @@ class GeolocationInfoEndpoint extends RequestTransformer {
 
 object IpStackGeolocationHelper {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private val cache = Caches.bounded[String, Option[JsValue]](10000)
 
@@ -281,7 +281,7 @@ object IpStackGeolocationHelper {
 
 object MaxMindGeolocationHelper {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   private val logger  = Logger("otoroshi-plugins-maxmind-geolocation-helper")
   private val ipCache = Caches.bounded[String, InetAddress](10000)

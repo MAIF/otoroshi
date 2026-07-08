@@ -118,7 +118,7 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPem: Seq[String] = {
-      import otoroshi.ssl.SSLImplicits._
+      import otoroshi.ssl.SSLImplicits.*
       requestHeader.clientCertificateChain
         .map(chain =>
           chain.map { cert =>

@@ -2,8 +2,8 @@ package otoroshi.events
 
 import java.util.concurrent.{Executors, TimeUnit}
 import org.apache.pekko.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
-import org.apache.pekko.actor.SupervisorStrategy._
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.actor.SupervisorStrategy.*
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
@@ -33,9 +33,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration.FiniteDuration
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.mailer.EmailLocation
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
@@ -1357,7 +1357,7 @@ class AlertsActor(using env: Env) extends Actor {
 
   import org.joda.time.DateTime
   import otoroshi.events.KafkaWrapper
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   implicit val ec: scala.concurrent.ExecutionContext = env.analyticsExecutionContext
   implicit val mat: org.apache.pekko.stream.Materializer = env.analyticsMaterializer

@@ -12,7 +12,7 @@ import org.apache.commons.codec.binary.Hex
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{AccessContext, AccessValidator}
 import otoroshi.utils.http.MtlsConfig
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 import otoroshi.ssl.{ClientCertificateValidator, PemHeaders}
 
@@ -38,7 +38,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
 // DEPRECATED
 class ExternalHttpValidator extends AccessValidator {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   override def deprecated: Boolean = true
 
@@ -161,7 +161,7 @@ class ExternalHttpValidator extends AccessValidator {
       user: Option[PrivateAppsUser] = None,
       cfg: ExternalHttpValidatorConfig
   )(using ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    import otoroshi.ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits.*
     val globalConfig                        = env.datastores.globalConfigDataStore.latest()
     val certPayload                         = chain
       .map { cert =>

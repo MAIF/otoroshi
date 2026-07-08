@@ -9,7 +9,7 @@ import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 // MIGRATED

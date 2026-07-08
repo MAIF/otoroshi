@@ -8,7 +8,7 @@ import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.codec.{RedisCodec, StringCodec}
 import io.lettuce.core.{RedisClient, RedisURI, SetArgs}
 import otoroshi.env.Env
-import otoroshi.storage._
+import otoroshi.storage.*
 import otoroshi.utils.syntax.implicits.{BetterString, BetterSyntax}
 import play.api.Logger
 
@@ -39,7 +39,7 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   import actorSystem.dispatcher
 
   import scala.jdk.CollectionConverters.*
-  import scala.compat.java8.FutureConverters._
+  import scala.compat.java8.FutureConverters.*
 
   lazy val redis = client.connect(new ByteStringRedisCodec()).async()
 
@@ -295,7 +295,7 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   import actorSystem.dispatcher
 
   import scala.jdk.CollectionConverters.*
-  import scala.compat.java8.FutureConverters._
+  import scala.compat.java8.FutureConverters.*
 
   lazy val redis = client.connect(new ByteStringRedisCodec()).async()
 
@@ -440,7 +440,7 @@ class PooledLettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client:
   import actorSystem.dispatcher
 
   import scala.jdk.CollectionConverters.*
-  import scala.compat.java8.FutureConverters._
+  import scala.compat.java8.FutureConverters.*
 
   lazy val logger               = Logger("otoroshi-lettuce-redis")
   lazy val avoidCommandFailures =
@@ -768,7 +768,7 @@ class ReactivePooledLettuceRedisStandaloneAndSentinels(
   import actorSystem.dispatcher
 
   import scala.jdk.CollectionConverters.*
-  import otoroshi.utils.reactive.ReactiveStreamImplicits._
+  import otoroshi.utils.reactive.ReactiveStreamImplicits.*
 
   implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 

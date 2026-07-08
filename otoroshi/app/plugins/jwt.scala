@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.JsonPathUtils
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.mvc.Results
 import otoroshi.security.{IdGenerator, OtoroshiClaim}

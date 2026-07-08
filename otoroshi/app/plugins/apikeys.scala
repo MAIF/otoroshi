@@ -15,18 +15,18 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.cluster.ClusterAgent
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.JsonPathUtils
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.DN
 import otoroshi.utils.jwk.JWKSHelper
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 
@@ -34,7 +34,7 @@ import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPu
 import java.security.{KeyPair, SecureRandom}
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -315,8 +315,8 @@ class ClientCredentialFlowExtractor extends PreRouting {
 // DEPRECATED
 class ClientCredentialFlow extends RequestTransformer {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
   private val revokedCache: Cache[String, Boolean] = Scaffeine()
     .recordStats()
@@ -959,8 +959,8 @@ case class BiscuitConf(
 // TODO: MIGRATE !
 class ClientCredentialService extends RequestSink {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
   case class ClientCredentialServiceConfig(raw: JsValue) {
     lazy val expiration     = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
@@ -1149,7 +1149,7 @@ class ClientCredentialService extends RequestSink {
             import org.biscuitsec.biscuit.crypto.KeyPair
             import org.biscuitsec.biscuit.token.Biscuit
             import org.biscuitsec.biscuit.token.builder.Block
-            import org.biscuitsec.biscuit.token.builder.Utils._
+            import org.biscuitsec.biscuit.token.builder.Utils.*
 
             import scala.jdk.CollectionConverters.*
 
@@ -1471,7 +1471,7 @@ class ApikeyAuthModule extends PreRouting {
 
   def validApikey(apikey: ApiKey, password: String, groups: Seq[ServiceGroupIdentifier], config: JsValue): Boolean = {
 
-    import otoroshi.models.SeqImplicits._
+    import otoroshi.models.SeqImplicits.*
 
     val validSecret            =
       apikey.clientSecret == password || (apikey.rotation.enabled && apikey.rotation.nextSecret.contains(password))

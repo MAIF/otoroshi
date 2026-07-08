@@ -4,13 +4,13 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import org.joda.time.DateTime
-import otoroshi.models._
+import otoroshi.models.*
 import play.api.Logger
-import play.api.libs.json._
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
+import otoroshi.utils.json.JsonImplicits.*
+import otoroshi.utils.syntax.implicits.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class WebAuthnRegistrationsDataStore() {

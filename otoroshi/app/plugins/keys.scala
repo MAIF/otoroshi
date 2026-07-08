@@ -5,7 +5,7 @@ import org.apache.pekko.util.ByteString
 import next.models.{Api, ApiDocumentationPlan}
 import org.joda.time.DateTime
 import otoroshi.gateway.GwError
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgTarget
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.libs.typedmap.TypedKey

@@ -8,10 +8,10 @@ import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
 import otoroshi.next.analytics.queries.{AnalyticsRuntime, Filters}
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}

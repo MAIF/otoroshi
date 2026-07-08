@@ -13,12 +13,12 @@ import otoroshi.gateway.Errors
 import otoroshi.models.{PrivateAppsUser, PrivateAppsUserHelper}
 import otoroshi.next.plugins.BasicAuthWithAuthModule.alreadyLoggedIn
 import otoroshi.next.plugins.api.NgAccess.NgAllowed
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{Result, Results}
 

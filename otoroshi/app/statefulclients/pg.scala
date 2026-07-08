@@ -2,7 +2,7 @@ package otoroshi.statefulclients
 
 import io.vertx.pgclient.PgConnectOptions
 import io.vertx.sqlclient.{Pool, PoolOptions}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import java.util.concurrent.atomic.AtomicBoolean

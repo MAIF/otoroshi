@@ -10,14 +10,14 @@ import otoroshi.env.Env
 
 import javax.naming.{CommunicationException, Context, ServiceUnavailableException}
 import javax.naming.directory.{Attribute, InitialDirContext, SearchControls}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, _}
-import play.api.mvc._
+import play.api.mvc.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -386,7 +386,7 @@ case class LdapAuthModuleConfig(
   }
 
   private def _bindUser(urls: Seq[String], username: String, password: String): Either[String, LdapAuthUser] = {
-    import javax.naming._
+    import javax.naming.*
     import scala.jdk.CollectionConverters.*
 
     if (urls.isEmpty)
@@ -672,7 +672,7 @@ object LdapAuthModule {
 
 case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
-  import otoroshi.utils.future.Implicits._
+  import otoroshi.utils.future.Implicits.*
 
   def this() = this(LdapAuthModule.defaultConfig)
 

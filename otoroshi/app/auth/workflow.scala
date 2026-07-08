@@ -1,17 +1,17 @@
 package otoroshi.auth
 
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.BodyHelper
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{JsonPathValidator, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

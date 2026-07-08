@@ -6,9 +6,9 @@ import io.netty.channel.epoll.EpollDomainSocketChannel
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPromise, EventLoopGroup}
-import io.netty.handler.codec.http._
+import io.netty.handler.codec.http.*
 import org.joda.time.DateTime
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.core.NamedThreadFactory
 
 sealed trait TlsVersion {

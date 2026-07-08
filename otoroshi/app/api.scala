@@ -16,23 +16,23 @@ import otoroshi.controllers.adminapi.InfosApiController
 import controllers.{Assets, AssetsComponents}
 import org.slf4j.LoggerFactory
 import otoroshi.netty.ReactorNettyServer
-import otoroshi.actions._
+import otoroshi.actions.*
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.cluster.{ClusterConfig, ClusterMode}
-import otoroshi.controllers._
-import otoroshi.controllers.adminapi._
-import otoroshi.env._
-import otoroshi.gateway._
+import otoroshi.controllers.*
+import otoroshi.controllers.adminapi.*
+import otoroshi.env.*
+import otoroshi.gateway.*
 import otoroshi.metrics.Metrics
 import otoroshi.metrics.opentelemetry.OtlpSettings
 import otoroshi.next.controllers.{NgPluginsController, TryItController}
-import otoroshi.next.controllers.adminapi._
+import otoroshi.next.controllers.adminapi.*
 import otoroshi.next.proxy.NgProxyStateLoaderJob
 import otoroshi.next.tunnel.TunnelController
 import otoroshi.next.workflow.WorkflowsController
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.storage.DataStores
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.json.{JsObject, Json}
@@ -81,7 +81,7 @@ object OtoroshiLoaderHelper {
 
   def waitForReadiness(components: EnvContainer): Unit = {
 
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
 
     implicit val ec: scala.concurrent.ExecutionContext = components.env.otoroshiExecutionContext
     implicit val scheduler: org.apache.pekko.actor.Scheduler = components.env.otoroshiScheduler

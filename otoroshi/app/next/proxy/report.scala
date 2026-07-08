@@ -6,12 +6,12 @@ import otoroshi.events.AnalyticEvent
 import otoroshi.next.models.NgRoute
 import otoroshi.next.utils.JsonHelpers
 import otoroshi.security.IdGenerator
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object DurationHelper {
 

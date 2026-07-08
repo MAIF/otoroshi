@@ -2,10 +2,10 @@ package otoroshi.next.plugins
 
 import otoroshi.models.{AlgoSettings, HSAlgoSettings, SecComInfoTokenVersion}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, PluginIndex}
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.infotoken.AddFieldsSettings
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterJsValueReader, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success, Try}

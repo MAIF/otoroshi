@@ -2,10 +2,10 @@ package otoroshi.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.SnowMonkeyConfig
 import otoroshi.models.RightsChecker
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsSuccess, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}

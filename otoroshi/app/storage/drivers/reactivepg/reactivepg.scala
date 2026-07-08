@@ -26,25 +26,25 @@ import otoroshi.cluster.{Cluster, ClusterStateDataStore, KvClusterStateDataStore
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.analytics.models.{KvUserDashboardDataStore, UserDashboardDataStore}
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.script.{JobContext, JobId, KvScriptDataStore, OneTimeJob, ScriptDataStore}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import otoroshi.storage._
-import otoroshi.storage.stores._
+import otoroshi.storage.*
+import otoroshi.storage.stores.*
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import otoroshi.utils.SchedulerHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logger}
 
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent._
-import scala.concurrent.duration._
+import scala.concurrent.*
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success, Try}
 
 object pgimplicits {
@@ -132,7 +132,7 @@ class ReactivePgDataStores(
     env: Env
 ) extends DataStores {
 
-  import pgimplicits._
+  import pgimplicits.*
 
   private val logger = Logger("otoroshi-reactive-pg-datastores")
 
@@ -623,7 +623,7 @@ class ReactivePgRedis(
 ) extends RedisLike
     with OptimizedRedisLike {
 
-  import pgimplicits._
+  import pgimplicits.*
 
   import scala.jdk.CollectionConverters.*
 

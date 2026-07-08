@@ -5,7 +5,7 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}

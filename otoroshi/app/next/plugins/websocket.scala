@@ -9,22 +9,22 @@ import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaVal
 import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
 import otoroshi.env.Env
 import otoroshi.gateway.WebSocketProxyActor
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.next.workflow.{Node, WorkflowAdminExtension}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{JsonPathValidator, UrlSanitizer}
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.http.websocket.{CloseCodes, Message}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.ActorFlow
 import reactor.core.publisher.Sinks
 
 import java.nio.charset.StandardCharsets
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util._
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 
 sealed trait RejectStrategy {
   def json: JsValue

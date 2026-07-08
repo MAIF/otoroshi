@@ -6,12 +6,12 @@ import otoroshi.plugins.jobs.kubernetes.KubernetesConfig
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
-import otoroshi.utils.syntax.implicits._
-import otoroshi.events.impl._
+import otoroshi.utils.syntax.implicits.*
+import otoroshi.events.impl.*
 import otoroshi.next.plugins.api.NgPluginCategory
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.{Failure, Try}
 
 object EventstoreCheckerJob {

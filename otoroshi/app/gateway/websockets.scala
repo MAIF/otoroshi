@@ -14,19 +14,19 @@ import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import otoroshi.next.models.{NgContextualPlugins, NgRoute}
 import otoroshi.next.plugins.RejectStrategy
-import otoroshi.next.plugins.api._
-import otoroshi.script.Implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.script.Implicits.*
 import otoroshi.script.TransformerRequestContext
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.future.Implicits._
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits.*
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.http.{HeadersHelper, ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import otoroshi.utils.udp._
+import otoroshi.utils.udp.*
 import otoroshi.utils.{TypedMap, UrlSanitizer}
 import play.api.Logger
 import play.api.http.websocket.{
@@ -40,11 +40,11 @@ import play.api.http.websocket.{
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.Results.NotFound
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
@@ -503,7 +503,7 @@ class WebSocketHandler()(using env: Env) {
             case "udp"     => {
 
               import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
-              import GraphDSL.Implicits._
+              import GraphDSL.Implicits.*
 
               val base64decoder = java.util.Base64.getDecoder
               val base64encoder = java.util.Base64.getEncoder
@@ -805,7 +805,7 @@ class WebSocketProxyActor(
     cb: Option[Function[play.api.http.websocket.Message, Unit]] = None
 ) extends Actor {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer

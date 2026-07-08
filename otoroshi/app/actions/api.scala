@@ -11,13 +11,13 @@ import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, _}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

@@ -1,16 +1,16 @@
 package otoroshi.next.catalogs
 
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.{Attributes, Materializer}
 import org.apache.pekko.util.ByteString
 import otoroshi.api.Resource
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.providers.AwsRegionProvider
@@ -168,7 +168,7 @@ object SourceUtils {
 
 class CatalogSourceFile extends CatalogSource {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   private val logger = Logger("otoroshi-remote-catalog-source-file")
 
@@ -1851,7 +1851,7 @@ class CatalogSourceCodeberg extends CatalogSourceGiteaCompat("codeberg", "https:
 
 class CatalogSourceGit extends CatalogSource {
 
-  import scala.sys.process._
+  import scala.sys.process.*
 
   private val logger = Logger("otoroshi-remote-catalog-source-git")
 

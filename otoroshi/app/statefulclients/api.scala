@@ -2,9 +2,9 @@ package otoroshi.statefulclients
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.Executors
 import scala.collection.concurrent.TrieMap

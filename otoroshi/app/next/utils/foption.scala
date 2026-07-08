@@ -1,6 +1,6 @@
 package otoroshi.next.utils
 
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

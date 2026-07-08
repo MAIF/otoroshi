@@ -23,7 +23,7 @@ import otoroshi.models.{
   ServiceDescriptor
 }
 import otoroshi.next.plugins.Keys.JwtInjectionKey
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{
   BetterJsReadable,
@@ -32,7 +32,7 @@ import otoroshi.utils.syntax.implicits.{
   BetterString,
   BetterSyntax
 }
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.{RequestHeader, Result, Results}
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
@@ -51,7 +51,7 @@ import java.security.interfaces.{RSAPrivateKey, RSAPublicKey}
 import java.util.{Date, UUID}
 import javax.crypto.{Cipher, KeyGenerator}
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 case class NgJwtVerificationConfig(
@@ -1298,7 +1298,7 @@ object OAuth2TokenExchange {
 
 class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
   import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 
   override def defaultConfigObject: Option[NgPluginConfig] = OAuth2TokenExchangeConfig().some

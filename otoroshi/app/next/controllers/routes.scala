@@ -2,17 +2,17 @@ package otoroshi.next.controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, RawCertificate}
-import otoroshi.utils.controllers._
+import otoroshi.utils.controllers.*
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
+import play.api.mvc.*
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -225,7 +225,7 @@ class NgRoutesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def domainsAndCertificates() = ApiAction { (ctx: otoroshi.actions.ApiActionContext[play.api.mvc.AnyContent]) =>
-    import otoroshi.ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits.*
 
     val routes           = env.proxyState.allRoutes()
     val domains          = routes.flatMap(_.frontend.domains).map(_.domainLowerCase).distinct

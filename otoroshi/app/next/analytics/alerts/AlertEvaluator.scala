@@ -5,9 +5,9 @@ import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.UserAnalyticsExporterRegistry
 import otoroshi.next.analytics.models.{AlertCondition, UserAlert}
 import otoroshi.next.analytics.queries.{AnalyticsRuntime, AnalyticsShape, Bucketing, Filters, QueryResult}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}

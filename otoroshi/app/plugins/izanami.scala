@@ -21,11 +21,11 @@ import otoroshi.script.{
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 import otoroshi.utils.http.{MtlsConfig, WSCookieWithSameSite}
 import otoroshi.utils.http.WSCookieWithSameSite
 

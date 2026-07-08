@@ -5,27 +5,27 @@ import org.apache.pekko.Done
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
 import org.apache.pekko.actor.{ActorRef, Scheduler}
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import com.auth0.jwt.JWT
 import otoroshi.env.{Env, SidecarConfig}
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import org.joda.time.DateTime
 import otoroshi.el.HeadersExpressionLanguage
-import otoroshi.script.Implicits._
-import otoroshi.script._
+import otoroshi.script.Implicits.*
+import otoroshi.script.*
 import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.http.HttpEntity
-import play.api.mvc.Results._
+import play.api.mvc.Results.*
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 import otoroshi.security.IdGenerator
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
-import otoroshi.utils._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
+import otoroshi.utils.*
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
 import play.api.libs.ws.WSResponse
 

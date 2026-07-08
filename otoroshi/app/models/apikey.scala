@@ -26,7 +26,7 @@ import otoroshi.actions.ApiActionContext
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{AllowedQuota, ThrottlingStrategyConfig}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
@@ -43,7 +43,7 @@ import otoroshi.utils.syntax.implicits.{
 
 import java.security.Signature
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 
 case class RemainingQuotas(
@@ -328,7 +328,7 @@ case class ApiKey(
 
   def matchRouting(routing: ApiKeyRouteMatcher): Boolean = {
 
-    import SeqImplicits._
+    import SeqImplicits.*
 
     val shouldNotSearchForAnApiKey = routing.hasNoRoutingConstraints
 
@@ -801,8 +801,8 @@ object ApikeyTuple {
 
 object ApiKeyHelper {
 
-  import otoroshi.utils.http.RequestImplicits._
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.http.RequestImplicits.*
+  import otoroshi.utils.syntax.implicits.*
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 

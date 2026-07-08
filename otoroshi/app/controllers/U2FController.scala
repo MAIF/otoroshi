@@ -11,21 +11,21 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.yubico.webauthn._
-import com.yubico.webauthn.data._
+import com.yubico.webauthn.*
+import com.yubico.webauthn.data.*
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.BackOfficeUser
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models._
+import otoroshi.models.*
 import play.api.Logger
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.BCryptHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}

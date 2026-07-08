@@ -10,13 +10,13 @@ import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.Results.TooManyRequests
@@ -439,7 +439,7 @@ case class OIDCThirdPartyApiKeyConfig(
     rolesPath: Seq[String] = Seq.empty
 ) extends ThirdPartyApiKeyConfig {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 

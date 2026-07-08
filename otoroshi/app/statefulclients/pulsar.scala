@@ -2,7 +2,7 @@ package otoroshi.statefulclients
 
 import com.sksamuel.pulsar4s.PulsarClient
 import otoroshi.events.{PulsarConfig, PulsarSetting}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import java.util.concurrent.atomic.AtomicBoolean

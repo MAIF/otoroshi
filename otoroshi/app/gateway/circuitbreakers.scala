@@ -1,6 +1,6 @@
 package otoroshi.gateway
 
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
@@ -10,7 +10,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.pattern.{CircuitBreaker => AkkaCircuitBreaker}
 import org.apache.pekko.stream.scaladsl.Flow
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.health.HealthCheckLogic
 import otoroshi.models.{ApiKey, ClientConfig, GlobalConfig, LoadBalancing, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
@@ -18,11 +18,11 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.Json
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{duration, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}

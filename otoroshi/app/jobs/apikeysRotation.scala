@@ -6,9 +6,9 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class ApikeysSecretsRotationJob extends Job {

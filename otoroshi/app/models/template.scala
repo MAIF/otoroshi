@@ -3,9 +3,9 @@ package otoroshi.models
 import otoroshi.env.Env
 import otoroshi.storage.BasicStore
 import otoroshi.utils.RegexPool
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.Base64
 import scala.concurrent.ExecutionContext

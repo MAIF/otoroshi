@@ -7,11 +7,11 @@ import io.vertx.sqlclient.PoolOptions
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 class AnalyticsRetentionJob extends Job {

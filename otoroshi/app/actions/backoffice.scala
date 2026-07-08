@@ -11,11 +11,11 @@ import otoroshi.models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
 import otoroshi.utils.TypedMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.Json
 import play.api.mvc.Results.Status
-import play.api.mvc._
-import otoroshi.utils.http.RequestImplicits._
+import play.api.mvc.*
+import otoroshi.utils.http.RequestImplicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

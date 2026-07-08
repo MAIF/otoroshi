@@ -15,7 +15,7 @@ import otoroshi.next.utils.JsonHelpers
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.reactive.ReactiveStreamUtils
 import otoroshi.utils.{AsyncUtils, JsonPathUtils, Regex, RegexPool, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie, WSProxyServer}
 import play.api.mvc.Cookie
 import play.api.{ConfigLoader, Configuration, Logger}
@@ -256,7 +256,7 @@ object implicits {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
   implicit class BetterString(private val obj: String)         extends AnyVal {
-    import otoroshi.utils.string.Implicits._
+    import otoroshi.utils.string.Implicits.*
     def slugify: String                                        = obj.slug
     def slugifyWithSlash: String                               = obj.slug2
     def wildcard: Regex                                        = RegexPool.apply(obj)

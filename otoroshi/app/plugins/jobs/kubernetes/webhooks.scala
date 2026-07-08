@@ -3,15 +3,15 @@ package otoroshi.plugins.jobs.kubernetes
 import org.apache.pekko.util.ByteString
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
 import otoroshi.tcp.TcpService
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import otoroshi.ssl.Cert
 

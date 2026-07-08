@@ -5,7 +5,7 @@ import otoroshi.cluster.ClusterLeaderUpdateMessage.RouteCallIncr
 import otoroshi.greenscore.EcoMetrics.{colorFromScore, letterFromScore, MAX_GREEN_SCORE_NOTE}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.{Timer => _}
 import scala.collection.concurrent.TrieMap

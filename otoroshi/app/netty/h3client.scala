@@ -15,8 +15,8 @@ import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext}
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder
 import io.netty.handler.ssl.ApplicationProtocolNegotiator
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
-import io.netty.incubator.codec.http3._
-import io.netty.incubator.codec.quic._
+import io.netty.incubator.codec.http3.*
+import io.netty.incubator.codec.quic.*
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.commons.codec.binary.Base64
@@ -26,10 +26,10 @@ import otoroshi.models.{ClientConfig, Target}
 import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.mvc.MultipartFormData
 import reactor.core.publisher.{Flux, Sinks}
 
@@ -41,7 +41,7 @@ import javax.net.ssl.SSLSessionContext
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, Future, Promise}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 

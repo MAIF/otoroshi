@@ -7,14 +7,14 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends AnalyticsWritesService {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 

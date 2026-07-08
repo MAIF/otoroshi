@@ -3,10 +3,10 @@ package otoroshi.models
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
-import play.api.libs.json._
-import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.*
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

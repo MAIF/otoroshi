@@ -5,7 +5,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import org.apache.pekko.NotUsed
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
@@ -72,9 +72,9 @@ object CleverCloudClient {
 
 class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSettings, val orgaId: String) {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
-  import CleverCloudClient._
+  import CleverCloudClient.*
 
   implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 

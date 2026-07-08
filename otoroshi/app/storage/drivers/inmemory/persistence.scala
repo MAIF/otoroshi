@@ -6,7 +6,7 @@ import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.connectors.s3.headers.CannedAcl
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
-import org.apache.pekko.stream.connectors.s3._
+import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.scaladsl.{Framing, Keep, Sink, Source}
 import org.apache.pekko.stream.{Attributes, Materializer}
 import org.apache.pekko.util.ByteString
@@ -15,10 +15,10 @@ import otoroshi.env.Env
 import otoroshi.next.plugins.api.NgPluginConfig
 import otoroshi.utils.SchedulerHelper
 import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
-import otoroshi.utils.http.Implicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.Implicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.SourceBody
 import software.amazon.awssdk.auth.credentials.{AwsBasicCredentials, StaticCredentialsProvider}
 import software.amazon.awssdk.regions.Region
@@ -29,9 +29,9 @@ import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util._
+import scala.util.*
 import scala.util.hashing.MurmurHash3
 
 sealed trait PersistenceKind

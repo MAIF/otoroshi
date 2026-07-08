@@ -11,29 +11,29 @@ import com.google.common.hash.Hashing
 import io.github.classgraph.ClassgraphUtils
 import otoroshi.auth.AuthModule
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.gateway.GwError
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.extensions.AdminExtension
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.config.ConfigUtils
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{SchedulerHelper, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import javax.script._
-import scala.concurrent.duration._
+import javax.script.*
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 

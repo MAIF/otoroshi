@@ -9,7 +9,7 @@ import play.api.libs.json.Json
 import java.io.File
 import java.nio.file.Files
 import scala.util.Try
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.jdk.CollectionConverters.*
 import java.nio.charset.Charset

@@ -12,9 +12,9 @@ import org.mindrot.jbcrypt.BCrypt
 import otoroshi.utils.crypto.BCryptHelper
 import otoroshi.utils.mailer.EmailLocation
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import otoroshi.security.IdGenerator
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.*
 
 import scala.concurrent.Future
 
@@ -94,7 +94,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   }
 
   def registerSessionForUser(authModuleId: String, username: String): Future[(String, String)] = {
-    import scala.concurrent.duration._
+    import scala.concurrent.duration.*
     val sessionId = IdGenerator.token(32)
     env.datastores.rawDataStore
       .set(

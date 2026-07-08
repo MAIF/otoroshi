@@ -12,26 +12,26 @@ import otoroshi.api.WriteAction
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.extensions.KubernetesHelper
 import otoroshi.next.models.{NgDomainAndPath, NgRoute, NgRouteComposition, NgTarget, StoredNgBackend}
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.SyncReport
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.http.DN
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -2047,7 +2047,7 @@ object KubernetesCRDsJob {
       updatedSecrets: AtomicReference[Seq[(String, String)]]
   )(using env: Env, ec: ExecutionContext): Future[Unit] = {
 
-    import otoroshi.ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits.*
 
     logger.info(s"will export ${certs.size} certificates as secrets")
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer

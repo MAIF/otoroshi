@@ -21,11 +21,11 @@ import otoroshi.utils
 import otoroshi.utils.cache.Caches
 import otoroshi.utils.http.Implicits.logger
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 
@@ -506,7 +506,7 @@ case class JWKSAlgoSettings(
       ec: ExecutionContext,
       env: Env
   ): Future[Option[Algorithm]] = {
-    import otoroshi.utils.http.Implicits._
+    import otoroshi.utils.http.Implicits.*
     implicit val s: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
     // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
     JWKSAlgoSettings.cache.put(url, (oldStop, oldKeys, true))
@@ -651,7 +651,7 @@ object RSAKPAlgoSettings                                extends FromJson[RSAKPAl
 }
 case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = certId.some
 
@@ -703,7 +703,7 @@ object ESKPAlgoSettings                                extends FromJson[ESKPAlgo
 }
 case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = certId.some
 
@@ -755,7 +755,7 @@ object KidAlgoSettings extends FromJson[KidAlgoSettings] {
 
 case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
 
-  import scala.concurrent.duration._
+  import scala.concurrent.duration.*
 
   def keyId: Option[String] = None
 
@@ -1304,7 +1304,7 @@ sealed trait JwtVerifier extends AsJson {
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-sync"
   ) {
 
-    import Implicits._
+    import Implicits.*
 
     source.token(request) match {
       case None         =>
@@ -1607,7 +1607,7 @@ sealed trait JwtVerifier extends AsJson {
     "ng-report-call-access-validator-plugins-plugin-cp:otoroshi.next.plugins.JwtVerification-int-async"
   ) {
 
-    import Implicits._
+    import Implicits.*
 
     source.token(request) match {
       case None         =>

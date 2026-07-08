@@ -8,14 +8,14 @@ import otoroshi.auth.Oauth1AuthModule.encodeURI
 import otoroshi.env.Env
 import otoroshi.models.{GlobalConfig, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.next.models.NgRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.plugins.authcallers.{ForceRetryException, OAuth2Kind}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits.{BetterJsReadable, BetterJsValue, BetterString, BetterSyntax}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result, Results}

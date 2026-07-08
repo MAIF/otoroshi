@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 package object experiments {
 
-  import Result._
+  import Result.*
 
   object Result {
 

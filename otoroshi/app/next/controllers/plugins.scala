@@ -3,8 +3,8 @@ package otoroshi.next.controllers
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import otoroshi.next.plugins.api._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 class NgPluginsController(

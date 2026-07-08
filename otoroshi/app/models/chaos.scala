@@ -6,7 +6,7 @@ import otoroshi.env.Env
 import otoroshi.models.SnowMonkeyConfig.logger
 import org.joda.time.{DateTime, LocalTime}
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}

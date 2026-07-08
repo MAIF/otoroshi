@@ -8,7 +8,7 @@ import otoroshi.models.AlgoSettings
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 case class OtoroshiClaim(
     iss: String,                          // issuer

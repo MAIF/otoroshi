@@ -11,16 +11,16 @@ import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.next.models.NgTreeRouter
 import otoroshi.next.models.NgTreeRouter_Test.NgFakeRoute
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.{JsonPathUtils, JsonPathValidator, TypedMap}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSResponse
-import otoroshi.utils.JsonMarshaller._
-import otoroshi.wasm._
+import otoroshi.utils.JsonMarshaller.*
+import otoroshi.wasm.*
 import sangria.ast
-import sangria.ast._
+import sangria.ast.*
 import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, QueryReducer}
 import sangria.parser.QueryParser
@@ -52,8 +52,8 @@ import sangria.validation.{QueryValidator, ValueCoercionViolation, Violation}
 
 import scala.concurrent.duration.{DurationLong, FiniteDuration, MILLISECONDS}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import scala.util._
+import scala.jdk.CollectionConverters.*
+import scala.util.*
 import scala.util.control.NoStackTrace
 
 case object TooComplexQueryError                          extends Exception("Query is too expensive.") with NoStackTrace

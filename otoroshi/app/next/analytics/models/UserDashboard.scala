@@ -4,8 +4,8 @@ import otoroshi.env.Env
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import scala.util.{Failure, Success, Try}
 

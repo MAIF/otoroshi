@@ -2,8 +2,8 @@ package otoroshi.netty
 
 import otoroshi.env.Env
 import otoroshi.next.extensions.HttpListenerNames
-import otoroshi.ssl._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.ssl.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.{Format, JsError, JsResult, JsSuccess, JsValue, Json}
 import reactor.netty.http.HttpDecoderSpec

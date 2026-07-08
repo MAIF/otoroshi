@@ -11,9 +11,9 @@ import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{WSProxyServer, WSResponse}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
@@ -266,9 +266,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 
   lazy val logger = Logger("otoroshi-global-oauth2-module")
 
-  import otoroshi.utils.http.Implicits._
-  import otoroshi.utils.syntax.implicits._
-  import play.api.libs.ws.DefaultBodyWritables._
+  import otoroshi.utils.http.Implicits.*
+  import otoroshi.utils.syntax.implicits.*
+  import play.api.libs.ws.DefaultBodyWritables.*
 
   def this() = this(GenericOauth2Module.defaultConfig)
 

@@ -2,15 +2,15 @@ package otoroshi.gateway
 
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.http.scaladsl.util.FastFuture
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{BestResponseTime, ClientConfig, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
-import otoroshi.script.Implicits._
+import otoroshi.script.Implicits.*
 import otoroshi.script.{
   TransformerRequestBodyContext,
   TransformerRequestContext,
@@ -24,12 +24,12 @@ import play.api.libs.json.{JsArray, JsObject, JsString, JsValue, Json}
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
-import play.api.mvc._
+import play.api.mvc.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.ResponseImplicits.*
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.Implicits.*
 import otoroshi.utils.streams.MaxLengthLimiter
 import otoroshi.utils.syntax.implicits.BetterSyntax
 

@@ -14,7 +14,7 @@ import otoroshi.utils.controllers.{
   SeqEntityAndContext
 }
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import otoroshi.ssl.Cert
 

@@ -3,14 +3,14 @@ package otoroshi.next.plugins
 import com.github.blemale.scaffeine.Scaffeine
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
-import otoroshi.next.plugins.api._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.mvc.Results
 
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.util._
+import scala.concurrent.*
+import scala.concurrent.duration.*
+import scala.util.*
 
 case class OpenFGAValidatorConfig(
     url: String = "http://localhost:8088",

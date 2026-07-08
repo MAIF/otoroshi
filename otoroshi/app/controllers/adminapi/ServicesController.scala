@@ -3,7 +3,7 @@ package otoroshi.controllers.adminapi
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.next.models.NgRoute
 import otoroshi.utils.controllers.{
@@ -19,12 +19,12 @@ import otoroshi.utils.controllers.{
   SeqEntityAndContext
 }
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader}
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Status
 

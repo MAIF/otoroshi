@@ -15,7 +15,7 @@ import org.opensaml.core.xml.schema.impl.XSStringImpl
 import org.opensaml.saml.common.SAMLVersion
 import org.opensaml.saml.common.xml.SAMLConstants
 import org.opensaml.saml.metadata.resolver.impl.DOMMetadataResolver
-import org.opensaml.saml.saml2.core._
+import org.opensaml.saml.saml2.core.*
 import org.opensaml.saml.saml2.encryption.Decrypter
 import org.opensaml.saml.saml2.metadata.EntityDescriptor
 import org.opensaml.security.x509.BasicX509Credential
@@ -35,12 +35,12 @@ import org.w3c.dom.{Document, Node}
 import otoroshi.auth.implicits.ResultWithPrivateAppSession
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.DynamicSSLEngineProvider.PRIVATE_KEY_PATTERN
 import otoroshi.ssl.{DynamicSSLEngineProvider, PemHeaders}
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.Results.{BadRequest, Ok, Redirect}
@@ -59,13 +59,13 @@ import java.util.zip.{Inflater, InflaterInputStream}
 import java.util.{Base64, UUID}
 import javax.xml.namespace.QName
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.Try
 import java.util.zip.Deflater
 
 case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
 
-  import SAMLModule._
+  import SAMLModule.*
 
   def this() = this(SAMLModule.defaultConfig)
 

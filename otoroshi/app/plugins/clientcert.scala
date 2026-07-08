@@ -5,14 +5,14 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.RegexPool
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.{DN, MtlsConfig}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.Result
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
 import otoroshi.utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap

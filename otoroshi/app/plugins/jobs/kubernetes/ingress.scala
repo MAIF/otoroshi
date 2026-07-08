@@ -11,7 +11,7 @@ import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, Leade
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.DateTime
 import otoroshi.next.models.{
   NgBackend,
@@ -24,16 +24,16 @@ import otoroshi.next.models.{
 }
 import otoroshi.next.plugins.api.NgPluginCategory
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 

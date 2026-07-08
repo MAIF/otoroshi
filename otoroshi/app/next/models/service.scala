@@ -2,16 +2,16 @@ package otoroshi.next.models
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.api.OtoroshiEnvHolder
-import otoroshi.env._
-import otoroshi.models._
+import otoroshi.env.*
+import otoroshi.models.*
 import otoroshi.security.IdGenerator
-import otoroshi.storage._
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.storage.*
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util._
+import scala.util.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.ApikeyCalls

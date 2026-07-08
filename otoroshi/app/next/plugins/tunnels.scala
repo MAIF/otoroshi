@@ -126,7 +126,7 @@ class UdpTunnel extends NgTunnelHandler {
       ctx: NgTunnelHandlerContext
   )(using env: Env, ec: ExecutionContext): Flow[Message, Message, _] = {
     import org.apache.pekko.stream.scaladsl.{Flow, GraphDSL, UnzipWith, ZipWith}
-    import GraphDSL.Implicits._
+    import GraphDSL.Implicits.*
     val base64decoder                   = java.util.Base64.getDecoder
     val base64encoder                   = java.util.Base64.getEncoder
     val target                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).get

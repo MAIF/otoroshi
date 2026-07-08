@@ -4,12 +4,12 @@ import otoroshi.env.Env
 import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.RequestHeader
 
 import scala.util.Try
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.KaleidoscopeShim._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.KaleidoscopeShim.*
 import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.next.extensions.HttpListenerNames
 import otoroshi.next.models.NgRoute
@@ -17,7 +17,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 import otoroshi.utils.http.DN
 import otoroshi.utils.{ReplaceAllWith, TypedMap}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit

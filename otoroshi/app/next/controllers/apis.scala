@@ -29,10 +29,10 @@ import otoroshi.models.Draft
 import otoroshi.next.models.{NgClientConfig, NgRoute}
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsNull, JsObject, JsSuccess, JsValue, Json, Reads}
-import play.api.mvc._
+import play.api.mvc.*
 
 import java.util.concurrent.TimeUnit
 import scala.+:

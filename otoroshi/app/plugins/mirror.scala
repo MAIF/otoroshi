@@ -10,17 +10,17 @@ import otoroshi.events.AuditEvent
 import otoroshi.models.{ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.HeadersHelper
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json._
+import otoroshi.utils.syntax.implicits.*
+import play.api.libs.json.*
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.http.ResponseImplicits._
-import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.http.ResponseImplicits.*
+import otoroshi.utils.http.Implicits.*
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}

@@ -2,16 +2,16 @@ package otoroshi.storage.stores
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import otoroshi.models._
-import play.api.libs.json._
-import otoroshi.utils.json.JsonImplicits._
+import otoroshi.models.*
+import play.api.libs.json.*
+import otoroshi.utils.json.JsonImplicits.*
 
 import scala.util.Success
 import org.apache.pekko.util.ByteString
 import otoroshi.storage.RedisLike
 import org.joda.time.DateTime
 import play.api.Logger
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -1,7 +1,7 @@
 package otoroshi.env
 
 import org.apache.pekko.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
-import org.apache.pekko.http.scaladsl.util.FastFuture._
+import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.Materializer
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
@@ -14,12 +14,12 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.auth.{AuthModuleConfig, PrivateAppsSessionManager, SessionCookieValues}
-import otoroshi.cluster._
-import otoroshi.events._
+import otoroshi.cluster.*
+import otoroshi.events.*
 import otoroshi.gateway.{AnalyticsQueue, CircuitBreakersHolder}
 import otoroshi.health.HealthCheckerActor
 import otoroshi.jobs.updates.Version
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.extensions.{AdminExtensionConfig, AdminExtensionId, AdminExtensions}
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.RateLimiter
@@ -34,22 +34,22 @@ import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, OcspResponder}
 import otoroshi.statefulclients.StatefulClientsManager
 import otoroshi.storage.{DataStores, DataStoresBuilder}
-import otoroshi.storage.drivers.cassandra._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.drivers.lettuce._
+import otoroshi.storage.drivers.cassandra.*
+import otoroshi.storage.drivers.inmemory.*
+import otoroshi.storage.drivers.lettuce.*
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
-import otoroshi.storage.drivers.rediscala._
+import otoroshi.storage.drivers.rediscala.*
 import otoroshi.tcp.TcpService
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.{AkkWsClient, WsClientChooser}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.OtoroshiWasmIntegrationContext
-import play.api._
+import play.api.*
 import play.api.http.{HttpConfiguration, HttpRequestHandler}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
-import play.api.libs.ws._
-import play.api.libs.ws.ahc._
+import play.api.libs.ws.*
+import play.api.libs.ws.ahc.*
 import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClient
 import play.twirl.api.Html
 
@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.io.Source
 import scala.util.{Failure, Success}

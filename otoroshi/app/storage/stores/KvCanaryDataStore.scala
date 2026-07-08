@@ -3,8 +3,8 @@ package otoroshi.storage.stores
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.storage.RedisLike
-import otoroshi.models._
-import otoroshi.utils.future.Implicits._
+import otoroshi.models.*
+import otoroshi.utils.future.Implicits.*
 import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}

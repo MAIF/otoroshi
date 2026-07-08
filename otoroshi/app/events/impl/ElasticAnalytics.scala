@@ -7,7 +7,7 @@ import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.{ActorMaterializer, Materializer}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, IndexSettingsInterval, ServiceDescriptor, ServiceGroup}
 import org.joda.time.format.{DateTimeFormatterBuilder, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
@@ -15,10 +15,10 @@ import otoroshi.jobs.updates.Version
 import otoroshi.next.models.NgRoute
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import play.api.libs.json.Json.JsValueWrapper
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Environment, Logger}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.duration.DurationLong
@@ -558,7 +558,7 @@ object ElasticVersion       {
 
 object ElasticUtils {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   // private def indexUri: String = {
   //   val df = ISODateTimeFormat.date().print(DateTime.now())
@@ -801,7 +801,7 @@ object ElasticUtils {
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
 
-  import otoroshi.utils.http.Implicits._
+  import otoroshi.utils.http.Implicits.*
 
   lazy val logger = Logger("otoroshi-analytics-writes-elastic")
 

@@ -7,9 +7,9 @@ import otoroshi.env.Env
 import otoroshi.models.ApiKeyHelper.decodeBase64
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{PreRouting, PreRoutingContext}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.ssl.DynamicSSLEngineProvider
-import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

@@ -4,11 +4,11 @@ import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import otoroshi.utils.json.JsonOperationsHelper
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
-import play.api.libs.json._
+import play.api.libs.json.*
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 sealed trait Operator[T] {
   def apply(source: JsValue, key: String): T

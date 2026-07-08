@@ -6,7 +6,7 @@ import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import otoroshi.utils.future.Implicits._
+import otoroshi.utils.future.Implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -1,9 +1,9 @@
 package otoroshi.openapi
 
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.utils.yaml.Yaml.write
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets

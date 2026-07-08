@@ -1,12 +1,12 @@
 package otoroshi.statefulclients
 
 import org.apache.pekko.util.ByteString
-import io.lettuce.core._
+import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
-import otoroshi.storage.drivers.lettuce._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.storage.drivers.lettuce.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.JsObject
 
 import scala.jdk.CollectionConverters.*

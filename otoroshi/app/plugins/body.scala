@@ -8,22 +8,22 @@ import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.util.ByteString
 import java.nio.charset.StandardCharsets
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.ServiceDescriptor
 import org.joda.time.DateTime
-import otoroshi.script._
-import play.api.libs.json._
+import otoroshi.script.*
+import play.api.libs.json.*
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import otoroshi.security.OtoroshiClaim
-import otoroshi.utils.json.JsonImplicits._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.future.Implicits._
-import otoroshi.utils.KaleidoscopeShim._
+import otoroshi.utils.json.JsonImplicits.*
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.future.Implicits.*
+import otoroshi.utils.KaleidoscopeShim.*
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
 import otoroshi.utils.RegexPool
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 case class BodyLoggerFilterConfig(json: JsValue) {

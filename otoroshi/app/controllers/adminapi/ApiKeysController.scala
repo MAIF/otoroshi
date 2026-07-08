@@ -14,9 +14,9 @@ import otoroshi.utils.controllers.{
   OptionalEntityAndContext,
   SeqEntityAndContext
 }
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap

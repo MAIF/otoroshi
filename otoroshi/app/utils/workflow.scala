@@ -11,12 +11,12 @@ import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -150,7 +150,7 @@ object WorkFlowTask {
 
 object WorkFlowEl {
 
-  import otoroshi.utils.KaleidoscopeShim._
+  import otoroshi.utils.KaleidoscopeShim.*
 
   import scala.jdk.CollectionConverters.*
 

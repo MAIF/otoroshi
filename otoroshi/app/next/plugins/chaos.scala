@@ -14,9 +14,9 @@ import otoroshi.models.{
   LatencyInjectionFaultConfig,
   SnowMonkeyConfig
 }
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.utils.http.RequestImplicits.EnhancedRequestHeader
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{Format, JsArray, JsError, JsNull, JsObject, JsResult, JsSuccess, JsValue, Json, Reads}
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result

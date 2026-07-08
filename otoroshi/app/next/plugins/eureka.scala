@@ -5,14 +5,14 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import otoroshi.utils.KaleidoscopeShim._
+import otoroshi.utils.KaleidoscopeShim.*
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.next.models.NgTarget
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.proxy.NgProxyEngineError
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterString, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.duration.DurationInt

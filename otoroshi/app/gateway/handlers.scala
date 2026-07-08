@@ -14,28 +14,28 @@ import controllers.Assets
 import otoroshi.actions.{ApiAction, BackOfficeAction, PrivateAppsAction}
 import otoroshi.controllers.HealthController
 import otoroshi.env.Env
-import otoroshi.events._
-import otoroshi.models._
+import otoroshi.events.*
+import otoroshi.models.*
 import otoroshi.next.models.NgRoute
 import otoroshi.next.plugins.{MultiAuthModule, NgMultiAuthModuleConfig}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.ssl.OcspResponder
 import otoroshi.utils.{RegexPool, TypedMap}
-import otoroshi.utils.letsencrypt._
+import otoroshi.utils.letsencrypt.*
 import otoroshi.utils.jwk.JWKSHelper
 import play.api.ApplicationLoader.DevContext
 import play.api.Logger
 import play.api.http.{Status => _, _}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results._
-import play.api.mvc._
+import play.api.mvc.Results.*
+import play.api.mvc.*
 import play.api.routing.Router
 import play.core.WebCommands
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets

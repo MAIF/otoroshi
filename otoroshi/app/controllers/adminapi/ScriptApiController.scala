@@ -8,7 +8,7 @@ import otoroshi.next.catalogs.RemoteCatalogJob
 import otoroshi.next.plugins.WasmJob
 import otoroshi.next.workflow.WorkflowJob
 import otoroshi.plugins.jobs.kubernetes.{KubernetesCRDsJob, KubernetesConfig}
-import otoroshi.script._
+import otoroshi.script.*
 import otoroshi.security.IdGenerator
 import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
@@ -23,10 +23,10 @@ import otoroshi.utils.controllers.{
   SeqEntityAndContext
 }
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
-import otoroshi.utils.syntax.implicits._
+import play.api.mvc.*
+import otoroshi.utils.syntax.implicits.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

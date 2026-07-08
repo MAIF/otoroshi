@@ -4,8 +4,8 @@ import io.vertx.sqlclient.Pool
 import io.vertx.sqlclient.{Row, RowSet, Tuple => VertxTuple}
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{AnalyticsSchema, UserAnalyticsExporterSettings}
-import otoroshi.storage.drivers.reactivepg.pgimplicits._
-import play.api.libs.json._
+import otoroshi.storage.drivers.reactivepg.pgimplicits.*
+import play.api.libs.json.*
 
 import scala.jdk.CollectionConverters.*
 import scala.concurrent.{ExecutionContext, Future}

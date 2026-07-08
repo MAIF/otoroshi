@@ -11,7 +11,7 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.Logger
 import play.api.libs.typedmap.{TypedKey, TypedMap}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.mvc.request.{Cell, RemoteConnection, RequestAttrKey, RequestTarget}
 import reactor.core.publisher.Flux
 import reactor.netty.http.server.HttpServerRequest
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.net.ssl.{SSLPeerUnverifiedException, SSLSession}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
 object NettyRequestKeys {

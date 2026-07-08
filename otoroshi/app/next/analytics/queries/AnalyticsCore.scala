@@ -3,13 +3,13 @@ package otoroshi.next.analytics.queries
 import io.vertx.sqlclient.Pool
 import otoroshi.env.Env
 import otoroshi.next.analytics.exporter.{UserAnalyticsExporterRegistry, UserAnalyticsExporterSettings}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.{Instant, ZoneOffset}
 import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 

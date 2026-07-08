@@ -6,7 +6,7 @@ import otoroshi.utils.cache.types.UnboundedTrieMap
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 
 import java.io.File
 import java.nio.charset.StandardCharsets

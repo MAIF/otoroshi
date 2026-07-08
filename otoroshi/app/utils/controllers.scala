@@ -5,18 +5,18 @@ import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.models.{BackOfficeUser, EntityLocationSupport}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.JsonValidator
 import otoroshi.utils.json.JsonOperationsHelper
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.http.HttpEntity
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Ok
-import play.api.mvc._
+import play.api.mvc.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
@@ -285,7 +285,7 @@ trait EntityHelper[Entity <: EntityLocationSupport, Error] {
 
 trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[Entity, Error] {
 
-  import Results._
+  import Results.*
 
   def env: Env
 
@@ -697,7 +697,7 @@ trait BulkControllerHelper[Entity <: EntityLocationSupport, Error] extends BulkH
 
 trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[Entity, Error] {
 
-  import Results._
+  import Results.*
 
   def isApikey: Boolean = false
 

@@ -5,9 +5,9 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 
 import com.typesafe.config.Config
-import com.typesafe.sslconfig.ssl._
+import com.typesafe.sslconfig.ssl.*
 import com.typesafe.sslconfig.util.{LoggerFactory, NoDepsLogger}
-import javax.net.ssl._
+import javax.net.ssl.*
 import play.api.Logger
 
 case class ConfigAndHash(config: Config, hash: String)

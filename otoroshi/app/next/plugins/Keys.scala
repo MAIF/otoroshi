@@ -2,7 +2,7 @@ package otoroshi.next.plugins
 
 import next.models.{Api, ApiDocumentationPlan}
 import otoroshi.models.{ApiKey, ApikeyTuple, JwtInjection}
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import otoroshi.next.proxy.NgExecutionReport
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.Result

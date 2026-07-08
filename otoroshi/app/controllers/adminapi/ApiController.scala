@@ -5,7 +5,7 @@ import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.streams.Accumulator
-import play.api.mvc._
+import play.api.mvc.*
 
 class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: Env) extends AbstractController(cc) {
 

@@ -6,11 +6,11 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import com.nimbusds.jose.jwk.{ECKey, JWK, OctetKeyPair, RSAKey}
 import otoroshi.env.Env
-import otoroshi.next.plugins.api._
-import otoroshi.utils.http.RequestImplicits._
-import otoroshi.utils.syntax.implicits._
+import otoroshi.next.plugins.api.*
+import otoroshi.utils.http.RequestImplicits.*
+import otoroshi.utils.syntax.implicits.*
 import play.api.Logger
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Result, Results}
 
 import java.net.URI
@@ -20,7 +20,7 @@ import java.security.{KeyFactory, MessageDigest, PrivateKey, PublicKey, Signatur
 import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -340,7 +340,7 @@ object HttpSigMessage {
 
 object HttpSigBase {
 
-  import HttpSigStructuredFields._
+  import HttpSigStructuredFields.*
 
   // Build the canonical signature base. `relatedRequest` is consulted when a component carries the ;req parameter,
   // which is used for response signatures that cover request components.

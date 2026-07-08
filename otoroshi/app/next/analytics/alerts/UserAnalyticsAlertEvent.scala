@@ -4,7 +4,7 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
 import otoroshi.next.analytics.models.UserAlert
-import play.api.libs.json._
+import play.api.libs.json.*
 
 /**
  * Per-condition evaluation snapshot included in the emitted alert payload so

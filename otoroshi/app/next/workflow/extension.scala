@@ -9,7 +9,7 @@ import otoroshi.actions.{ApiAction, BackOfficeActionContext}
 import otoroshi.api.{GenericResourceAccessApiWithState, Resource, ResourceVersion}
 import otoroshi.env.Env
 import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocation, EntityLocationSupport}
-import otoroshi.next.extensions._
+import otoroshi.next.extensions.*
 import otoroshi.next.models.NgBackend
 import otoroshi.next.plugins.{WasmJob, WasmJobsConfig}
 import otoroshi.script.{Job, JobInstantiation, JobKind}
@@ -17,11 +17,11 @@ import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.TypedMap
 import otoroshi.utils.cache.types.UnboundedTrieMap
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.WasmConfig
 import play.api.Logger
 import play.api.http.websocket.{Message, TextMessage}
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result, Results, WebSocket}
 import reactor.core.publisher.{Flux, Sinks}

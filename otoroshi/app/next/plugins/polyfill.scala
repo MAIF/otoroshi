@@ -7,15 +7,15 @@ import org.joda.time.DateTime
 import org.jsoup.Jsoup
 import otoroshi.env.Env
 import otoroshi.events.AlertEvent
-import otoroshi.next.plugins.api._
+import otoroshi.next.plugins.api.*
 import otoroshi.next.utils.JsonHelpers
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object PolyfillIoResources {
   lazy val cloudflareUri = Uri("https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js")
