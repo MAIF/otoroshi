@@ -11,7 +11,7 @@ inThisBuild(
   List(
     description := "Lightweight api management on top of a modern http reverse proxy",
     startYear := Some(2017),
-    organization := "fr.maif",
+    // organization := "fr.maif",
     homepage := Some(url("https://github.com/MAIF/otoroshi")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     sonatypeProfileName := "fr.maif",
@@ -21,7 +21,7 @@ inThisBuild(
         "scm:git@github.com:MAIF/otoroshi.git"
       )
     ),
-    publishMavenStyle := true,
+    // publishMavenStyle := true,
     developers := List(
       Developer(
         "mathieuancelin",
@@ -256,16 +256,19 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions ++= Seq(
-  "-feature",
   // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
   // migration, to keep the diff minimal instead of rewriting hundreds of call-sites
   "-source:3.0-migration",
+  "-explain",
+  "-feature",
+  "-explain-cyclic",
   "-language:higherKinds",
   "-language:implicitConversions",
   "-language:existentials",
-  "-language:postfixOps"
+  "-language:postfixOps",
+  // scala3-library_3 declares `scala.caps` as both a package and an object
+  "-Wconf:msg=package scala contains object and package with same name:s",
 )
-
 // resolvers += "jitpack" at "https://jitpack.io"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
@@ -288,8 +291,8 @@ Compile / TwirlKeys.compileTemplates := {
 // scalafmtVersion in ThisBuild := "1.2.0"
 
 Test / parallelExecution := false
-IntegrationTest / testForkedParallel := false
-IntegrationTest / fork := true
+//IntegrationTest / testForkedParallel := false
+//IntegrationTest / fork := true
 
 Test / javaOptions ++= Seq(
   "--add-opens=java.base/javax.net.ssl=ALL-UNNAMED",
