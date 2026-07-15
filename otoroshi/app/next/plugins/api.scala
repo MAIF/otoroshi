@@ -141,12 +141,19 @@ case class NgPluginHttpRequest(
 
 object NgPluginHttpResponse {
   def fromResult(result: Result): NgPluginHttpResponse = {
+    val chunked = result.body match {
+      case HttpEntity.Chunked(_, _) => true
+      case _ => false
+    }
     val headers = result.header.headers
       .applyOnWithOpt(result.body.contentType) { case (headers, ctype) =>
         headers + ("Content-Type" -> ctype)
       }
       .applyOnWithOpt(result.body.contentLength) { case (headers, clength) =>
         headers + ("Content-Length" -> clength.toString)
+      }
+      .applyOnIf(chunked) { heads =>
+        heads + ("Transfer-Encoding" -> "chunked")
       }
     NgPluginHttpResponse(
       status = result.header.status,
