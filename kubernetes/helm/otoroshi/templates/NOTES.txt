@@ -1,4 +1,5 @@
-{{- $externalSvc := ternary .Values.cluster.workerExternalServiceName .Values.loadbalancer.name .Values.cluster.enabled -}}
+{{- $externalSvc := ternary .Values.cluster.leaderExternalServiceName .Values.loadbalancer.name .Values.cluster.enabled -}}
+{{- $workerExternalSvc := .Values.cluster.workerExternalServiceName -}}
 {{- $internalSvc := ternary .Values.cluster.leaderServiceName .Values.service.name .Values.cluster.enabled -}}
 {{- $lbType := include "otoroshi.loadBalancerType" . -}}
 Otoroshi {{ .Chart.AppVersion }} has been deployed to namespace "{{ .Release.Namespace }}".
@@ -6,6 +7,13 @@ Otoroshi {{ .Chart.AppVersion }} has been deployed to namespace "{{ .Release.Nam
 ============================================================
 1. Accessing the admin UI
 ============================================================
+{{- if .Values.cluster.enabled }}
+In cluster mode the admin UI, the admin API and the private-apps SSO proxy are served by the
+LEADER instances only — point their DNS names (otoroshi / otoroshi-api / privateapps) at the
+leader external service "{{ $externalSvc }}". The WORKER instances handle everything else — the
+data-plane traffic proxied to your backends — so the domains of your published routes must point
+at the worker external service instead (see "Data-plane traffic (routes)" below).
+{{ end }}
 {{- if eq $lbType "LoadBalancer" }}
 The external service "{{ $externalSvc }}" is of type LoadBalancer. Wait for an external IP:
 
@@ -29,6 +37,21 @@ Put your own loadbalancer (MetalLB, HAProxy, NGINX, …) in front of the cluster
 The external service "{{ $externalSvc }}" is of type ClusterIP — Otoroshi is not directly
 exposed outside the cluster. Either point your own Ingress / Gateway at this service, or
 use port-forwarding (see below).
+{{- end }}
+{{- if .Values.cluster.enabled }}
+
+--- Data-plane traffic (routes) ---
+The worker external service "{{ $workerExternalSvc }}" (type {{ $lbType }}) fronts the WORKER
+instances, which proxy the actual traffic to your backends. Point the domains of your published
+routes at it (NOT at the admin domains above):
+{{- if eq $lbType "LoadBalancer" }}
+
+    kubectl -n {{ .Release.Namespace }} get svc {{ $workerExternalSvc }} -w
+{{- else if eq $lbType "NodePort" }}
+
+    HTTP  → node:{{ .Values.loadbalancer.nodePort.http }}
+    HTTPS → node:{{ .Values.loadbalancer.nodePort.https }}
+{{- end }}
 {{- end }}
 
 Or run a quick port-forward:
