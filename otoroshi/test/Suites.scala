@@ -129,6 +129,11 @@ class ExpressionLanguageTests
       new ExpressionLanguageSpec(Configurations.InMemoryConfiguration)
     )
 
+class BackendMtlsTests
+    extends Suites(
+      new BackendMtlsSpec(Configurations.InMemoryConfiguration)
+    )
+
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
