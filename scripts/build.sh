@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
+export SBT_OPTS="-Xmx8G -Xss16M -Xmax-inlines=64"
 
 LOCATION=`pwd`
 
