@@ -92,11 +92,13 @@ object DynamicKeyManager {
               .seffectOnIf(logger.isDebugEnabled)(opt => logger.debug(s"choosing '${opt.map(_.name).getOrElse("--")}'"))
           }
           .orElse {
-            //foundCertDef
-            tlsSettings.defaultDomain.flatMap { d =>
+            //foundCertDef: no match for the requested domain -> fall back to the configured defaultDomain.
+            // NB: match against `dd` (the defaultDomain), not `domain` (the requested SNI), and avoid the
+            // inner lambda param shadowing `dd` — otherwise this fallback is a no-op (same filter as above).
+            tlsSettings.defaultDomain.flatMap { dd =>
               validCerts
                 .flatMap(c => c.allDomains.map(d => (d, c)))
-                .filter(c => c._2.sanMatchesDomain(domain, c._1))
+                .filter(c => c._2.sanMatchesDomain(dd, c._1))
                 .sortWith {
                   case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*")   => d1.size > d2.size
                   case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*")  => false

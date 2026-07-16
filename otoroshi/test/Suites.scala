@@ -134,6 +134,11 @@ class BackendMtlsTests
       new BackendMtlsSpec(Configurations.InMemoryConfiguration)
     )
 
+class FrontendTlsTests
+    extends Suites(
+      new FrontendTlsSpec(Configurations.InMemoryConfiguration)
+    )
+
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()

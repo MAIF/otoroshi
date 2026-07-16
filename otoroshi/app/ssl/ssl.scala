@@ -2904,7 +2904,11 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
  */
 class NewFakeTrustManager(managers: Seq[X509TrustManager]) extends FakeTrustManager(managers) {
 
-  private def requireServerTrusted(check: X509TrustManager => Unit): Unit = {
+  // A cert chain (server for outgoing calls, client for incoming mTLS) is trusted iff at least one
+  // configured trust manager validates it; otherwise the validation error is propagated. Combined with
+  // the engine's setWantClientAuth / setNeedClientAuth, this gives standard mTLS semantics for the client
+  // side: Want = cert optional but validated if presented, Need = cert mandatory and validated.
+  private def requireTrusted(what: String)(check: X509TrustManager => Unit): Unit = {
     var lastError: Throwable = null
     val trusted              = managers.exists { m =>
       try { check(m); true }
@@ -2913,26 +2917,41 @@ class NewFakeTrustManager(managers: Seq[X509TrustManager]) extends FakeTrustMana
     if (!trusted) {
       lastError match {
         case null                    =>
-          throw new CertificateException("no configured trust manager could validate the server certificate chain")
+          throw new CertificateException(s"no configured trust manager could validate the $what certificate chain")
         case e: CertificateException => throw e
-        case e                       => throw new CertificateException("server certificate chain not trusted", e)
+        case e                       => throw new CertificateException(s"$what certificate chain not trusted", e)
       }
     }
   }
 
   override def checkServerTrusted(var1: Array[X509Certificate], var2: String): Unit =
-    requireServerTrusted(_.checkServerTrusted(var1, var2))
+    requireTrusted("server")(_.checkServerTrusted(var1, var2))
 
   override def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit =
-    requireServerTrusted {
+    requireTrusted("server") {
       case m: X509ExtendedTrustManager => m.checkServerTrusted(var1, var2, var3)
       case m: X509TrustManager         => m.checkServerTrusted(var1, var2)
     }
 
   override def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit =
-    requireServerTrusted {
+    requireTrusted("server") {
       case m: X509ExtendedTrustManager => m.checkServerTrusted(var1, var2, var3)
       case m: X509TrustManager         => m.checkServerTrusted(var1, var2)
+    }
+
+  override def checkClientTrusted(var1: Array[X509Certificate], var2: String): Unit =
+    requireTrusted("client")(_.checkClientTrusted(var1, var2))
+
+  override def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit =
+    requireTrusted("client") {
+      case m: X509ExtendedTrustManager => m.checkClientTrusted(var1, var2, var3)
+      case m: X509TrustManager         => m.checkClientTrusted(var1, var2)
+    }
+
+  override def checkClientTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit =
+    requireTrusted("client") {
+      case m: X509ExtendedTrustManager => m.checkClientTrusted(var1, var2, var3)
+      case m: X509TrustManager         => m.checkClientTrusted(var1, var2)
     }
 }
 
