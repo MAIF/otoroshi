@@ -1270,28 +1270,30 @@ object DynamicSSLEngineProvider {
           optEnv.get
         ) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       }
+      val strictServerValidation         = optEnv.exists(_.strictBackendServerValidation)
       val tm: Array[TrustManager]        =
-        optEnv
-          .flatMap(e =>
-            e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
-          )
-          .map {
-            case true                   => Array[TrustManager](noCATrustManager)
-            case false if includeJdkCa  => createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
-            case false if !includeJdkCa => createTrustStore(trustedKeyStore)
-            case other => throw new IllegalStateException(s"unreachable case: $other")
-          } getOrElse {
-          if (trustAll) {
-            Array[TrustManager](
-              new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+        if (strictServerValidation && trustAll) {
+          Array[TrustManager](new VeryNiceTrustManager(Seq.empty[X509TrustManager]))
+        } else {
+          optEnv
+            .flatMap(e =>
+              e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
             )
-          } else {
-            if (includeJdkCa) {
-              createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
-            } else {
-              createTrustStore(trustedKeyStore)
+            .map {
+              case true                   => Array[TrustManager](noCATrustManager)
+              case false if includeJdkCa  => createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
+              case false if !includeJdkCa => createTrustStore(trustedKeyStore)
+              case other                  => throw new IllegalStateException(s"unreachable case: $other")
             }
-          }
+            .getOrElse {
+              if (trustAll) {
+                Array[TrustManager](new VeryNiceTrustManager(Seq.empty[X509TrustManager]))
+              } else if (includeJdkCa) {
+                createTrustStoreWithJdkCAs(trustedKeyStore, cacertPath, cacertPassword)
+              } else {
+                createTrustStore(trustedKeyStore)
+              }
+            }
         }
 
       sslContext.init(keyManagers, tm, null)
@@ -1454,28 +1456,32 @@ object DynamicSSLEngineProvider {
       )
 
       val keyStore2: KeyStore     = if (trustedCerts.nonEmpty) createKeyStore(trustedCerts) else keyStore1
+      // when the strict flag is ON, trustAll takes precedence over every other trust setting; otherwise
+      // the behaviour is exactly the historical one.
+      val strictServerValidation  = optEnv.exists(_.strictBackendServerValidation)
       val tm: Array[TrustManager] =
-        optEnv
-          .flatMap(e =>
-            e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
-          )
-          .map {
-            case true                   => Array[TrustManager](noCATrustManager)
-            case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
-            case false if !includeJdkCa => createTrustStore(keyStore2)
-            case other => throw new IllegalStateException(s"unreachable case: $other")
-          } getOrElse {
-          if (trustAll) {
-            Array[TrustManager](
-              new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+        if (strictServerValidation && trustAll) {
+          Array[TrustManager](new VeryNiceTrustManager(Seq.empty[X509TrustManager]))
+        } else {
+          optEnv
+            .flatMap(e =>
+              e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
             )
-          } else {
-            if (includeJdkCa) {
-              createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
-            } else {
-              createTrustStore(keyStore2)
+            .map {
+              case true                   => Array[TrustManager](noCATrustManager)
+              case false if includeJdkCa  => createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
+              case false if !includeJdkCa => createTrustStore(keyStore2)
+              case other                  => throw new IllegalStateException(s"unreachable case: $other")
             }
-          }
+            .getOrElse {
+              if (trustAll) {
+                Array[TrustManager](new VeryNiceTrustManager(Seq.empty[X509TrustManager]))
+              } else if (includeJdkCa) {
+                createTrustStoreWithJdkCAs(keyStore2, cacertPath, cacertPassword)
+              } else {
+                createTrustStore(keyStore2)
+              }
+            }
         }
 
       sslContext.init(keyManagers, tm, null)
@@ -1668,6 +1674,13 @@ object DynamicSSLEngineProvider {
     keyStore
   }
 
+  // Picks the strict (NewFakeTrustManager) vs legacy (FakeTrustManager) server-cert behaviour based on the
+  // `otoroshi.ssl.trust.strictBackendServerValidation` flag. Defaults to legacy when no env is available.
+  private def wrapTrustManagers(managers: Seq[X509TrustManager]): X509ExtendedTrustManager = {
+    if (Option(currentEnv.get).exists(_.strictBackendServerValidation)) new NewFakeTrustManager(managers)
+    else new FakeTrustManager(managers)
+  }
+
   def createTrustStoreWithJdkCAs(
       keyStore: KeyStore,
       cacertPath: String,
@@ -1682,7 +1695,7 @@ object DynamicSSLEngineProvider {
     val tmf2   = TrustManagerFactory.getInstance("SunX509")
     tmf2.init(javaKs)
     Array[TrustManager](
-      new FakeTrustManager((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq)
+      wrapTrustManagers((tmf.getTrustManagers ++ tmf2.getTrustManagers).map(_.asInstanceOf[X509TrustManager]).toSeq)
     )
   }
 
@@ -1691,7 +1704,7 @@ object DynamicSSLEngineProvider {
     val tmf = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
     Array[TrustManager](
-      new FakeTrustManager(tmf.getTrustManagers.map(_.asInstanceOf[X509TrustManager]).toSeq)
+      wrapTrustManagers(tmf.getTrustManagers.map(_.asInstanceOf[X509TrustManager]).toSeq)
     )
   }
 
@@ -2838,6 +2851,9 @@ class VeryNiceTrustManager(managers: Seq[X509TrustManager]) extends X509Extended
   def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit = ()
 }
 
+// Historical (permissive) trust manager: `checkServerTrusted` never throws — if no configured manager
+// validates the chain, the cert is accepted anyway. Kept as the default to preserve legacy behaviour.
+// Selected unless `otoroshi.ssl.trust.strictBackendServerValidation` is on (then NewFakeTrustManager).
 class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrustManager {
 
   def checkClientTrusted(var1: Array[X509Certificate], var2: String): Unit = {
@@ -2877,6 +2893,47 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
       case m: X509TrustManager         => Try(m.checkServerTrusted(var1, var2)).isSuccess
     }
   }
+}
+
+/**
+ * Like [[FakeTrustManager]] but STRICT about SERVER certificates (outgoing calls): a server cert is
+ * trusted iff at least one configured trust manager validates it, otherwise the validation error is
+ * propagated so an untrusted / hostname-mismatched backend server cert is rejected. CLIENT-cert
+ * validation (incoming mTLS) stays permissive (inherited from [[FakeTrustManager]]). Selected via the
+ * `otoroshi.ssl.trust.strictBackendServerValidation` flag.
+ */
+class NewFakeTrustManager(managers: Seq[X509TrustManager]) extends FakeTrustManager(managers) {
+
+  private def requireServerTrusted(check: X509TrustManager => Unit): Unit = {
+    var lastError: Throwable = null
+    val trusted              = managers.exists { m =>
+      try { check(m); true }
+      catch { case e: Throwable => lastError = e; false }
+    }
+    if (!trusted) {
+      lastError match {
+        case null                    =>
+          throw new CertificateException("no configured trust manager could validate the server certificate chain")
+        case e: CertificateException => throw e
+        case e                       => throw new CertificateException("server certificate chain not trusted", e)
+      }
+    }
+  }
+
+  override def checkServerTrusted(var1: Array[X509Certificate], var2: String): Unit =
+    requireServerTrusted(_.checkServerTrusted(var1, var2))
+
+  override def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: Socket): Unit =
+    requireServerTrusted {
+      case m: X509ExtendedTrustManager => m.checkServerTrusted(var1, var2, var3)
+      case m: X509TrustManager         => m.checkServerTrusted(var1, var2)
+    }
+
+  override def checkServerTrusted(var1: Array[X509Certificate], var2: String, var3: SSLEngine): Unit =
+    requireServerTrusted {
+      case m: X509ExtendedTrustManager => m.checkServerTrusted(var1, var2, var3)
+      case m: X509TrustManager         => m.checkServerTrusted(var1, var2)
+    }
 }
 
 object SSLImplicits {

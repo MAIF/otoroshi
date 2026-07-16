@@ -481,7 +481,11 @@ case class TlsSettings(
     includeJdkCaClient: Boolean = true,
     trustedCAsServer: Seq[String] = Seq.empty,
     bannedAlpnProtocols: Map[String, Seq[String]] = Map.empty,
-    clientAuth: ClientAuth = ClientAuth.None
+    clientAuth: ClientAuth = ClientAuth.None,
+    // strict validation of backend server certs on outgoing mTLS calls. Case-class default is `true`
+    // (new installs), but the JSON reads default is `false` so existing/persisted configs keep the
+    // historical permissive behaviour. Consulted only when otoroshi.ssl.trust.strictBackendServerValidation="global".
+    strictBackendServerValidation: Boolean = true
 )                  {
   def json: JsValue = TlsSettings.format.writes(this)
   def trustedCAsServerWithLocalCAs(env: Env): Seq[String] = {
@@ -499,7 +503,8 @@ object TlsSettings {
         "includeJdkCaClient"  -> o.includeJdkCaClient,
         "trustedCAsServer"    -> JsArray(o.trustedCAsServer.map(JsString.apply)),
         "bannedAlpnProtocols" -> o.bannedAlpnProtocols,
-        "clientAuth"          -> o.clientAuth.name
+        "clientAuth"          -> o.clientAuth.name,
+        "strictBackendServerValidation" -> o.strictBackendServerValidation
       )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
@@ -515,7 +520,9 @@ object TlsSettings {
             .asOpt[String]
             .flatMap(ClientAuth.apply)
             .filterNot(_ == ClientAuth.Dynamic)
-            .getOrElse(ClientAuth.None)
+            .getOrElse(ClientAuth.None),
+          // absent (existing/persisted configs) => keep the historical permissive behaviour
+          strictBackendServerValidation = (json \ "strictBackendServerValidation").asOpt[Boolean].getOrElse(false)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)

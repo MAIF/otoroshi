@@ -233,6 +233,23 @@ class Env(
       configuration.getOptionalWithFileSupport[Boolean]("otoroshi.elSettings.allowConfigAccess").getOrElse(true)
   )
 
+  // Controls strict validation of backend server certs on outgoing mTLS calls (NewFakeTrustManager +
+  // trustAll precedence) vs the historical permissive behaviour (FakeTrustManager). See app/ssl/ssl.scala.
+  // Static config mode: "strict" | "legacy" | "global" (default). "global" defers to the runtime global
+  // config's TlsSettings.strictBackendServerValidation (old installs default to false, fresh installs true).
+  private lazy val strictBackendServerValidationMode: String =
+    configuration
+      .getOptionalWithFileSupport[String]("otoroshi.ssl.trust.strictBackendServerValidation")
+      .map(_.trim.toLowerCase)
+      .getOrElse("global")
+
+  def strictBackendServerValidation: Boolean = strictBackendServerValidationMode match {
+    case "strict" => true
+    case "legacy" => false
+    case _        => // "global" (default): read the current global config
+      datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings.strictBackendServerValidation).getOrElse(false)
+  }
+
   lazy val devMimetypes: Map[String, String] = configuration
     .betterGetOptional[String]("play.http.fileMimeTypes")
     .map { types =>
