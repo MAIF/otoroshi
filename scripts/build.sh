@@ -32,7 +32,7 @@ build_server () {
 
 compile_server () {
   cd $LOCATION/otoroshi
-  sbt ';clean;compile;assembly'
+  sbt ';clean;compile'
 }
 
 test_server () {
