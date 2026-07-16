@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export SBT_OPTS="-Xmx8G -Xss16M -Xmax-inlines=64"
+export SBT_OPTS="-Xmx8G -Xss16M"
 
 LOCATION=`pwd`
 
@@ -66,7 +66,7 @@ case "${1}" in
     ;;
   test_all)
     clean
-    build_ui
+    # build_ui
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_manual
     compile_server
@@ -78,7 +78,7 @@ case "${1}" in
     ;;
   test_server)
     clean
-    build_ui
+    # build_ui
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_manual
     compile_server
