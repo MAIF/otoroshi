@@ -124,6 +124,11 @@ class MapFilterTest
       new MapFilterSpec()
     )
 
+class ExpressionLanguageTests
+    extends Suites(
+      new ExpressionLanguageSpec(Configurations.InMemoryConfiguration)
+    )
+
 class Log4ShellTests
     extends Suites(
       new Log4ShellSpec()
