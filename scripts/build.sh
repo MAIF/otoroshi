@@ -37,7 +37,7 @@ compile_server () {
 
 test_server () {
   cd $LOCATION/otoroshi
-  TEST_STORE=inmemory sbt ';testOnly OtoroshiTests;testOnly functional.PluginsTestSpec'
+  TEST_STORE=inmemory sbt ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.PluginsTestSpec'
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
   # TEST_STORE=redis sbt test
   # rc=$?; if [ $rc != 0 ]; then exit $rc; fi
