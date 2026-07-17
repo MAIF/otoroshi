@@ -372,22 +372,22 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "HTTP Client Cache - matches wildcard mime type '*'" in {
       new HTTPClientCacheTests(this).matchesWildcardMimeType()
     }
-    "Authentication - in memory" in {
+    "Authentication - in memory" taggedAs Browser in {
       new AuthenticationTests(this).inMemory()
     }
-    "Authentication - pass with apikey" in {
+    "Authentication - pass with apikey" taggedAs Browser in {
       new AuthenticationTests(this).passWithApikey()
     }
-    "Multi Authentication - one module" in {
+    "Multi Authentication - one module" taggedAs Browser in {
       new MultiAuthenticationTests(this).oneModule()
     }
-    "Multi Authentication - keycloak and in memory authentication" in {
+    "Multi Authentication - keycloak and in memory authentication" taggedAs Browser in {
       new MultiAuthenticationTests(this).keycloakAndInMemoryAuthentication()
     }
-    "Multi Authentication - pass with apikey" in {
+    "Multi Authentication - pass with apikey" taggedAs Browser in {
       new MultiAuthenticationTests(this).passWithApikey()
     }
-    "Multi Authentication - email flow" in {
+    "Multi Authentication - email flow" taggedAs Browser in {
       new MultiAuthenticationTests(this).emailFlow()
     }
     "OAuth2 caller - password flow" in {
@@ -411,7 +411,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Send otoroshi headers back" in {
       new SendOtoroshiHeadersBackTests(this)
     }
-    "User profile endpoint" in {
+    "User profile endpoint" taggedAs Browser in {
       new UserProfileEndpointTests(this)
     }
     "Apikey mandatory metadata" in {
@@ -420,7 +420,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Robots" in {
       new RobotsTests(this)
     }
-    "User logged in expected" in {
+    "User logged in expected" taggedAs Browser in {
       new NgAuthModuleExpectedUserTests(this)
     }
     "IP block list" in {
@@ -438,10 +438,10 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Apikey mandatory tags" in {
       new ApikeyMandatoryTagsTests(this)
     }
-    "User extraction from auth. module" in {
+    "User extraction from auth. module" taggedAs Browser in {
       new NgAuthModuleUserExtractorTests(this)
     }
-    "Expected consumer" in {
+    "Expected consumer" taggedAs Browser in {
       new NgExpectedConsumerTests(this)
     }
     "Generic allowed list" in {
@@ -450,7 +450,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Generic block list" in {
       new GenericBlockListTests(this)
     }
-    "Allowed users only" in {
+    "Allowed users only" taggedAs Browser in {
       new HasAllowedUsersValidatorTests(this)
     }
     "Regex Response Headers Rewriter" in {

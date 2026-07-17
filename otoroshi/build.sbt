@@ -250,7 +250,10 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
   "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.44.1" % Test,
-  "com.microsoft.playwright"         % "playwright"                           % "1.47.0" % Test
+  // pinned to 1.44.0: 1.47.0+ crashes at browser/context teardown with
+  // "Cannot find module './../../package.json'" (getPlaywrightVersion in
+  // HarTracer.stop), which hangs the JVM test forever. See microsoft/playwright#35727.
+  "com.microsoft.playwright"         % "playwright"                           % "1.44.0" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )

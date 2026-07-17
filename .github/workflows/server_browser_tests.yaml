@@ -1,0 +1,93 @@
+name: Server Browser Tests
+
+# Runs the browser-driven server tests (playwright-java specs tagged `Browser`
+# inside functional.PluginsTestSpec) in isolation from the main "Build & Test"
+# job, so a crashed/hung browser driver can never stall the whole server test
+# suite (see server_build_and_test.yaml + microsoft/playwright#35727).
+#
+# These tests drive the server-rendered login / back-office pages, which are
+# served from the compiled JS assets, so the UI bundle must be built first:
+# scripts/build.sh test_server_with_browser does clean + build_ui + compile + test.
+
+on:
+  push:
+    paths:
+      - 'otoroshi/**'
+      - '.github/workflows/server_browser_tests.yaml'
+  pull_request:
+    paths:
+      - 'otoroshi/**'
+      - '.github/workflows/server_browser_tests.yaml'
+  workflow_dispatch:
+
+jobs:
+  browser-tests:
+    runs-on: ubuntu-latest
+    # Hard cap: a hung browser driver fails here in <=1h instead of GitHub's 6h max.
+    timeout-minutes: 60
+
+    env:
+      SBT_OPTS: -Dsbt.override.build.repos=true
+      COURSIER_PARALLEL_DOWNLOAD_COUNT: '4'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1.1.5
+
+      - uses: coursier/cache-action@v6
+
+      # Needed to build the UI bundles (build.sh build_ui -> yarn build).
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+          cache-dependency-path: otoroshi/javascript/yarn.lock
+
+      - name: Configure sbt repositories (mirror Maven Central via Google)
+        run: |
+          mkdir -p ~/.sbt
+          cat > ~/.sbt/repositories <<'EOF'
+          [repositories]
+            local
+            local-preloaded-ivy: file:///${sbt.preloaded-${sbt.global.base-${user.home}/.sbt}/preloaded/}, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext]
+            local-preloaded: file:///${sbt.preloaded-${sbt.global.base-${user.home}/.sbt}/preloaded/}
+            maven-central-google: https://maven-central.storage-download.googleapis.com/maven2/
+            maven-central
+            typesafe-ivy-releases: https://repo.typesafe.com/typesafe/ivy-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
+            sbt-plugin-releases: https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+            sonatype-snapshots: https://oss.sonatype.org/content/repositories/snapshots
+          EOF
+
+      - name: Redirect repo1.maven.org to Google mirror (Coursier)
+        run: |
+          mkdir -p ~/.config/coursier
+          cat > ~/.config/coursier/mirror.properties <<'EOF'
+          central.from=https://repo1.maven.org/maven2
+          central.to=https://maven-central.storage-download.googleapis.com/maven2
+          EOF
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          # keep this version in sync with com.microsoft.playwright:playwright in otoroshi/build.sbt
+          key: ${{ runner.os }}-playwright-1.44.0
+
+      - name: Install Playwright browser + OS deps (chromium)
+        # playwright-java 1.44.0 uses the same chromium revision and default
+        # browsers path (~/.cache/ms-playwright) as the node playwright of the
+        # same version, so this deterministically pre-installs the exact browser
+        # (and its system libs) instead of a lazy runtime download inside the test.
+        run: npx --yes playwright@1.44.0 install --with-deps chromium
+
+      - name: Build UI + run browser-tagged server tests
+        run: sh ./scripts/build.sh test_server_with_browser
