@@ -99,12 +99,15 @@ jobs:
           # keep this version in sync with com.microsoft.playwright:playwright in otoroshi/build.sbt
           key: ${{ runner.os }}-playwright-1.44.0
 
-      - name: Install Playwright browser + OS deps (chromium)
+      - name: Install Playwright browser (chromium)
         # playwright-java 1.44.0 uses the same chromium revision and default
         # browsers path (~/.cache/ms-playwright) as the node playwright of the
         # same version, so this deterministically pre-installs the exact browser
-        # (and its system libs) instead of a lazy runtime download inside the test.
-        run: npx --yes playwright@1.44.0 install --with-deps chromium
+        # instead of a lazy runtime download inside the test.
+        # NB: no --with-deps here — playwright 1.44's install-deps hardcodes
+        # `libasound2`, which no longer exists on Ubuntu 24.04 (renamed
+        # libasound2t64) and fails; the OS libs are installed by the apt step above.
+        run: npx --yes playwright@1.44.0 install chromium
 
       - name: Build UI + run browser-tagged server tests
         run: sh ./scripts/build.sh test_server_with_browser
