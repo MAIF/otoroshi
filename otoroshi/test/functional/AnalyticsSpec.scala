@@ -3,9 +3,9 @@ package functional
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import otoroshi.events._
+import otoroshi.events.*
 import otoroshi.events.impl.ElasticWritesAnalytics
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
@@ -15,7 +15,7 @@ import play.api.libs.ws.WSClient
 import otoroshi.security.IdGenerator
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

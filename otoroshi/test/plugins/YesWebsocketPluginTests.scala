@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{Future, Promise}
 
 class YesWebsocketPluginTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def sendYMessagesPeriodicallyToWebsocketClients() = {
     val route = createRouteWithExternalTarget(

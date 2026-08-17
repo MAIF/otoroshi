@@ -1,6 +1,6 @@
 package plugins
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import org.apache.pekko.http.scaladsl.model.headers.Host
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import org.apache.pekko.http.scaladsl.{Http, HttpExt}
@@ -22,14 +22,14 @@ import otoroshi.next.plugins.{
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import otoroshi.wasm.WasmConfig
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class WasmWebsocketTransformerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   implicit val http: HttpExt = Http()(system)
 

@@ -16,7 +16,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationLong
 
 class OAuth2CallerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def startKeycloakContainer(): GenericContainer = {
     val keycloakContainer = GenericContainer(

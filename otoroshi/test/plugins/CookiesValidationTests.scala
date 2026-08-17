@@ -12,11 +12,11 @@ import otoroshi.next.plugins.{
 }
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
 class CookiesValidationTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

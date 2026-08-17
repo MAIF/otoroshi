@@ -6,19 +6,19 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.script.Script
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.WSAuthScheme
 
 import java.util.Base64
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
 
 class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)

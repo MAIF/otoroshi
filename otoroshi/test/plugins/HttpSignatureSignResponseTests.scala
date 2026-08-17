@@ -2,16 +2,16 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 
 class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   private val hmacSecret = "this-is-a-32-byte-test-secret!!"
   private val keyid      = "test-shared-secret"

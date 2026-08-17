@@ -13,7 +13,7 @@ import javax.naming.directory.{Attribute, InitialDirContext, SearchControls}
 import otoroshi.models.*
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, _}
+import play.api.libs.json.{JsArray, JsObject, *}
 import play.api.mvc.*
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.{JsonPathValidator, JsonValidator, RegexPool}

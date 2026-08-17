@@ -1,6 +1,6 @@
 package functional
 
-import next.models._
+import next.models.*
 
 import otoroshi.models.EntityLocation
 import otoroshi.next.models.{NgFrontend, NgPlugins}

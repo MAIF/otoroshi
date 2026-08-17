@@ -2,18 +2,18 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValueReader, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.net.SocketException
 
 class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def validCall() {
     val id    = IdGenerator.uuid

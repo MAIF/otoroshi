@@ -14,7 +14,7 @@ import otoroshi.models.{ApiKey, EntityLocation, PrivateAppsUser, ServiceGroupIde
 import otoroshi.next.models.{NgDomainAndPath, NgMatchedRoute, NgRoute}
 import otoroshi.utils.TypedMap
 import play.api.Configuration
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.{Cookie, RequestHeader}
 import play.api.test.FakeRequest
 

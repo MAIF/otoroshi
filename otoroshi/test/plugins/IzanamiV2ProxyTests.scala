@@ -19,7 +19,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import scala.concurrent.Future
 
 class IzanamiV2ProxyTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   private def setup(config: IzanamiV2ProxyConfig): (NgRoute, NgRoute) = {
     val targetRoute = createRouteWithExternalTarget(

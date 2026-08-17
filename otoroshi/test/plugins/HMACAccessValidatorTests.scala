@@ -10,12 +10,12 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.Base64
 
 class HMACAccessValidatorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def default() = {
     val route = createRouteWithExternalTarget(

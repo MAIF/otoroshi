@@ -10,7 +10,7 @@ import play.api.http.Status
 import play.api.libs.json.Json
 
 class OverrideLocationHeaderTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def redirectToRelativePath() = {
     val route = createLocalRoute(

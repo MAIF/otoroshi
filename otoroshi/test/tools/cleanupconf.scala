@@ -1,6 +1,6 @@
 package tools
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.{HttpMethods, HttpRequest}

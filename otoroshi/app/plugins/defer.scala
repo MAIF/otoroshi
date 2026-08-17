@@ -5,7 +5,7 @@ import org.apache.pekko.stream.Materializer
 import otoroshi.env.Env
 import org.joda.time.DateTime
 import otoroshi.next.plugins.api.{NgPluginCategory, NgPluginVisibility, NgStep}
-import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
+import otoroshi.script.{RequestTransformer, TransformerRequestContext, *}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
 

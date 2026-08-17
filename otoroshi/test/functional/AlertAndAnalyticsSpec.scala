@@ -10,7 +10,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.Json
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

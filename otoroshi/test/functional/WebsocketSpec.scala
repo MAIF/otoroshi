@@ -1,6 +1,6 @@
 package functional
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.pekko.{Done, NotUsed}
@@ -17,7 +17,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class WebsocketSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

@@ -9,17 +9,17 @@ import functional.{PluginsTestSpec, WebsocketBackend}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Seconds, Span}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class WebsocketSizeValidatorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   implicit val http: HttpExt = Http()(system)
 

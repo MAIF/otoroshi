@@ -6,7 +6,7 @@ import otoroshi.api.OtoroshiEnvHolder
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.*
-import otoroshi.next.plugins.{NgLegacyApikeyCall, _}
+import otoroshi.next.plugins.{NgLegacyApikeyCall, *}
 import otoroshi.next.plugins.api.*
 import otoroshi.next.plugins.wrappers.*
 import otoroshi.next.proxy.NgProxyEngineError.NgResultProxyEngineError

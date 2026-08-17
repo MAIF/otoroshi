@@ -3,7 +3,7 @@ package functional
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.Http
-import org.apache.pekko.http.scaladsl.model.{ws, _}
+import org.apache.pekko.http.scaladsl.model.{ws, *}
 import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -19,17 +19,17 @@ import otoroshi.api.Otoroshi
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import otoroshi.loader.modules.OtoroshiComponentsInstances
-import otoroshi.models._
-import otoroshi.next.models._
+import otoroshi.models.*
+import otoroshi.next.models.*
 import otoroshi.next.workflow.Workflow
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.Cert
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import otoroshi.wasm.proxywasm.CorazaWafConfig
 import play.api.ApplicationLoader.Context
 import play.api.http.Status
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.json.*
+import play.api.libs.ws.*
 import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Logger}
 import play.core.server.ServerConfig
@@ -38,7 +38,7 @@ import java.net.{InetAddress, ServerSocket, UnknownHostException}
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Random, Success, Try}
 
@@ -549,7 +549,7 @@ trait _OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
 
 trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest.matchers.must.Matchers with OptionValues with ScalaFutures with IntegrationPatience {
 
-  import Implicits._
+  import Implicits.*
 
   def getTestConfiguration(configuration: Configuration): Configuration
 
@@ -2184,7 +2184,7 @@ class WebsocketBackend(
 
 object TargetService {
 
-  import Implicits._
+  import Implicits.*
 
   def apply(host: Option[String], path: String, contentType: String, result: HttpRequest => String): TargetService = {
     new TargetService(
@@ -2362,7 +2362,7 @@ case class ApiTesterResult(
 
 trait ApiTester[Entity] {
 
-  import otoroshi.utils.syntax.implicits._
+  import otoroshi.utils.syntax.implicits.*
 
   private val logger = Logger("otoroshi-api-tester")
 

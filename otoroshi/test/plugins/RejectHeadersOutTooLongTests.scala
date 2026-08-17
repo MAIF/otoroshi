@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class RejectHeadersOutTooLongTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(

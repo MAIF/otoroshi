@@ -1,7 +1,7 @@
 package otoroshi.storage.drivers.cassandra
 
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.{TimeUnit, _}
+import java.util.concurrent.{TimeUnit, *}
 import java.util.regex.Pattern
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.apache.pekko.http.scaladsl.util.FastFuture

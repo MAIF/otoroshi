@@ -6,10 +6,10 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{MockResponse, MockResponses, MockResponsesConfig, OverrideHost}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class MockReponsesTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(

@@ -3,7 +3,7 @@ package functional
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{OptionValues}
-import otoroshi.next.models._
+import otoroshi.next.models.*
 import play.api.Configuration
 
 import scala.util.Failure
@@ -105,7 +105,7 @@ class NgTreeRouterOpenapiWithEnvSpec(configurationSpec: => Configuration) extend
     }
 
     "find route fast" in {
-      import otoroshi.utils.syntax.implicits._
+      import otoroshi.utils.syntax.implicits.*
       NgRouteComposition
         .fromOpenApi(
           "api.oto.tools",

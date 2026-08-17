@@ -13,14 +13,14 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{FrameFormatValidatorConfig, OverrideHost, RejectStrategy, WebsocketContentValidatorIn}
 import otoroshi.utils.JsonPathValidator
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
 
 class WebsocketContentValidatorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   implicit val http: HttpExt = Http()(system)
 

@@ -10,7 +10,7 @@ import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit}
 import otoroshi.models.*
 import otoroshi.next.models.*
-import otoroshi.next.plugins.{ApikeyQuotas, _}
+import otoroshi.next.plugins.{ApikeyQuotas, *}
 import otoroshi.next.plugins.api.NgPluginHelper.pluginId
 import otoroshi.next.services.ApiConsistencyService
 import otoroshi.security.IdGenerator

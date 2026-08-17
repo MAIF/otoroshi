@@ -2,17 +2,17 @@ package plugins
 
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 class HttpSignatureVerifyRequestTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   // B.2.5 fixture from RFC 9421 — HMAC-SHA256 with a known shared secret.
   private val hmacSecretB64 =

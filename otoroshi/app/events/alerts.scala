@@ -9,7 +9,7 @@ import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
 import org.apache.pekko.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
 import org.apache.pekko.util.ByteString
 import otoroshi.env.Env
-import otoroshi.models.{QuotasAlmostExceededSettings, _}
+import otoroshi.models.{QuotasAlmostExceededSettings, *}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{

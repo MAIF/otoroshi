@@ -9,7 +9,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class RemoveHeadersOutTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(

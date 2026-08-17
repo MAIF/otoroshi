@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets
 import next.models.Api
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, _}
+import otoroshi.models.{ApiKey, BackOfficeUser, EntityLocationSupport, *}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.utils.syntax.implicits.*
 import play.api.Logger

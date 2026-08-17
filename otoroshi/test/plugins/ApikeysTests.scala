@@ -21,7 +21,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSAuthScheme
 
 class ApikeysTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def default() = {
     val route = createRouteWithExternalTarget(

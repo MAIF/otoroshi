@@ -16,7 +16,7 @@ import play.api.libs.json.{JsObject, Json}
 
 class React2SShellDetectorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

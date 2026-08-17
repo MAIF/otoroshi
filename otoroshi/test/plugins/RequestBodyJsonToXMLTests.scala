@@ -8,12 +8,12 @@ import otoroshi.next.plugins.{AdditionalCookieInConfig, JsonToXmlRequest, JsonTr
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import otoroshi.utils.xml.Xml
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.xml.Elem
 
 class RequestBodyJsonToXMLTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

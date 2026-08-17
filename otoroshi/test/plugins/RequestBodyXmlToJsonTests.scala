@@ -8,7 +8,7 @@ import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.libs.json.Json
 
 class RequestBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

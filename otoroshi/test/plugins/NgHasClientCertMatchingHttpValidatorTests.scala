@@ -34,7 +34,7 @@ import scala.concurrent.{Future, Promise}
 
 class NgHasClientCertMatchingHttpValidatorTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   case class OtoroshiInstance(port: Int, configuration: String) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()

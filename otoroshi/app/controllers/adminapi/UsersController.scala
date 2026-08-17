@@ -8,7 +8,7 @@ import otoroshi.models.{BackOfficeUser, PrivateAppsUser}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
-import otoroshi.models.{UserRights, _}
+import otoroshi.models.{UserRights, *}
 import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 import otoroshi.utils.syntax.implicits.*
 import play.api.libs.json.{JsValue, Json}

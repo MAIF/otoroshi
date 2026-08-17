@@ -11,7 +11,7 @@ import org.apache.pekko.http.scaladsl.model.headers.`Content-Type`
 import org.apache.pekko.http.scaladsl.model.{ContentType, HttpCharsets, MediaTypes}
 
 class ResponseBodyXmlToJsonTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(

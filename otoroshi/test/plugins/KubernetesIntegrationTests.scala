@@ -24,12 +24,12 @@ import java.security.cert.CertificateFactory
 import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Future, Promise}
-import scala.sys.process._
+import scala.sys.process.*
 import scala.util.{Failure, Success, Try}
 
 class KubernetesIntegrationTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val instanceId = IdGenerator.uuid
 

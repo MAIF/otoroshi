@@ -9,7 +9,7 @@ import otoroshi.next.models.{NgTarget, NgTlsConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
 import play.api.Configuration
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.WSResponse
 
 import java.net.Socket
@@ -17,9 +17,9 @@ import java.security.cert.X509Certificate
 import java.security.{KeyStore, PrivateKey, SecureRandom}
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.{KeyManagerFactory, SSLContext, SSLEngine, TrustManagerFactory, X509ExtendedTrustManager}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.Failure
 
 /**

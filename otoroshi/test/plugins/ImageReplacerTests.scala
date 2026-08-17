@@ -9,7 +9,7 @@ import otoroshi.next.plugins.{ImageReplacer, OverrideHost}
 import play.api.http.Status
 
 class ImageReplacerTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(

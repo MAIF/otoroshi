@@ -16,14 +16,14 @@ import otoroshi.next.plugins.{
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Promise
 
 class RegexRequestBodyRewriterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

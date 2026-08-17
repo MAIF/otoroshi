@@ -6,7 +6,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.{Minutes, Span}
 import play.api.{Configuration, Logger}
-import plugins._
+import plugins.*
 
 import scala.concurrent.duration.DurationInt
 

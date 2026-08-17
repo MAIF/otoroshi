@@ -6,12 +6,12 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgDeferPlugin, NgDeferPluginConfig, OverrideHost}
 import otoroshi.security.IdGenerator
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 
 class DeferResponsesTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

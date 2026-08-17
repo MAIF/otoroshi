@@ -1,7 +1,7 @@
 package plugins
 
 
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64

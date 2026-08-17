@@ -7,10 +7,10 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgDefaultRequestBody, NgDefaultRequestBodyConfig, OverrideHost}
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterJsValueReader}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class DefaultRequestBodyTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val localRoute = createRouteWithExternalTarget(
     Seq(

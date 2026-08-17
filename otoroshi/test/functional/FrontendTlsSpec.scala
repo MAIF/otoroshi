@@ -8,7 +8,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgHasClientCertMatchingValidator, NgHasClientCertMatchingValidatorConfig, NgHasClientCertValidator}
 import otoroshi.security.IdGenerator
 import otoroshi.ssl.{Cert, ClientAuth, DynamicSSLEngineProvider, FakeKeyStore}
-import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.syntax.implicits.*
 import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.core.server.ServerConfig
@@ -20,7 +20,7 @@ import java.security.cert.{Certificate, X509Certificate}
 import java.security.{KeyStore, PrivateKey, SecureRandom}
 import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.{KeyManager, KeyManagerFactory, SNIHostName, SSLContext, SSLSocket, TrustManager, X509TrustManager}
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Try
 
 /**

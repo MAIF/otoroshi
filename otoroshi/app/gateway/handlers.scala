@@ -25,7 +25,7 @@ import otoroshi.utils.letsencrypt.*
 import otoroshi.utils.jwk.JWKSHelper
 import play.api.ApplicationLoader.DevContext
 import play.api.Logger
-import play.api.http.{Status => _, _}
+import play.api.http.{Status => _, *}
 import play.api.libs.json.*
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.*

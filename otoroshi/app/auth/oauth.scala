@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import otoroshi.auth.implicits.{RequestHeaderWithPrivateAppSession, ResultWithPrivateAppSession}
 import otoroshi.controllers.routes
 import otoroshi.env.Env
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, _}
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights, *}
 import otoroshi.security.IdGenerator
 import otoroshi.utils.{JsonPathValidator, JsonValidator}
 import otoroshi.utils.http.MtlsConfig

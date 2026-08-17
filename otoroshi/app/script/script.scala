@@ -1592,12 +1592,12 @@ trait ScriptDataStore extends BasicStore[Script] {
       code = """import org.apache.pekko.stream.Materializer
              |import otoroshi.env.Env
              |import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-             |import otoroshi.script._
+             |import otoroshi.script.*
              |import play.api.Logger
              |import play.api.mvc.{Result, Results}
-             |import scala.util._
+             |import scala.util.*
              |import scala.concurrent.{ExecutionContext, Future}
-             |import otoroshi.utils.syntax.implicits._
+             |import otoroshi.utils.syntax.implicits.*
              |
              |/**
              | * Your own request transformer

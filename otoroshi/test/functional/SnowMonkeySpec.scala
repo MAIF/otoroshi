@@ -3,7 +3,7 @@ package functional
 import java.util.concurrent.atomic.AtomicInteger
 import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
-import otoroshi.models._
+import otoroshi.models.*
 import org.joda.time.LocalTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
@@ -24,7 +24,7 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 

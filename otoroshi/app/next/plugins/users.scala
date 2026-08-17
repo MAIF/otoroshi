@@ -5,7 +5,7 @@ import org.joda.time.DateTime
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import otoroshi.models.PrivateAppsUser
-import otoroshi.next.plugins.api.{NgPreRoutingError, _}
+import otoroshi.next.plugins.api.{NgPreRoutingError, *}
 import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.JsonPathUtils
 import otoroshi.utils.syntax.implicits.*

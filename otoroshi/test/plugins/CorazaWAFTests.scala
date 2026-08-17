@@ -14,7 +14,7 @@ import play.api.libs.json.JsObject
 
 class CorazaWAFTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val coraza    = CorazaWafConfig(
     location = EntityLocation.default,

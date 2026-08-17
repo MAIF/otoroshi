@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 class NgIncomingRequestValidatorDeniedDomainNamesTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   private def enableGlobalMaintenance(globalConfig: GlobalConfig) = {
     ws.url(s"http://localhost:$port/api/globalconfig")

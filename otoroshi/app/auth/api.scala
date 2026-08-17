@@ -3,7 +3,7 @@ package otoroshi.auth
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
-import otoroshi.models.{UserRights, _}
+import otoroshi.models.{UserRights, *}
 import otoroshi.next.models.{NgRoute, NgTlsConfig}
 import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore

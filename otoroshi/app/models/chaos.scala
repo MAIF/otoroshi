@@ -8,7 +8,7 @@ import org.joda.time.{DateTime, LocalTime}
 import play.api.Logger
 import play.api.libs.json.*
 
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 

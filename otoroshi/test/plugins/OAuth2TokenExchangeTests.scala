@@ -12,7 +12,7 @@ import play.api.http.Status
 import play.api.libs.json.{JsObject, Json}
 
 class OAuth2TokenExchangeTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def tokenExchangeBasic() = {
 

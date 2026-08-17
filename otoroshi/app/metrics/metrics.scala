@@ -33,7 +33,7 @@ import java.lang.management.ManagementFactory
 import java.util
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-import java.util.{Timer => _, _}
+import java.util.{Timer => _, *}
 import javax.management.{Attribute, ObjectName}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}

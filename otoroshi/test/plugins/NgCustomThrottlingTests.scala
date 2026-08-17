@@ -9,7 +9,7 @@ import play.api.libs.json.JsObject
 
 class NgCustomThrottlingTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

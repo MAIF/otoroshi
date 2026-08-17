@@ -8,13 +8,13 @@ import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{NgTrafficMirroring, NgTrafficMirroringConfig, OverrideHost}
 import otoroshi.plugins.mirror.MirroringPluginConfig
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Promise
 
 class TrafficMirroringTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val counter         = new AtomicInteger(0)
   val messagesPromise = Promise[Int]()

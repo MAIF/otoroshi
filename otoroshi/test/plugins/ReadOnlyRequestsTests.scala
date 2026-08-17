@@ -7,7 +7,7 @@ import otoroshi.next.plugins.{OverrideHost, ReadOnlyCalls}
 import play.api.http.Status
 
 class ReadOnlyRequestsTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

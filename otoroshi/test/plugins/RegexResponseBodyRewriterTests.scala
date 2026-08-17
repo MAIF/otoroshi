@@ -12,11 +12,11 @@ import otoroshi.next.plugins.{
 }
 import otoroshi.utils.syntax.implicits.BetterJsValueReader
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class RegexResponseBodyRewriterTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   val route = createLocalRoute(
     Seq(

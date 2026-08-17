@@ -9,10 +9,10 @@ import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{LimitHeaderInTooLong, OverrideHost, RejectHeaderConfig}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class LimitHeadersInTooLongTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

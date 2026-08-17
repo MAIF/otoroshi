@@ -8,7 +8,7 @@ import io.netty.handler.codec.http.HttpHeaders
 import org.testcontainers.utility.MountableFile
 import otoroshi.models.HttpProtocols
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgTarget}
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.libs.json.JsObject
@@ -23,7 +23,7 @@ import scala.concurrent.{Future, Promise}
 
 class GrpcWebTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def buildAndSaveDockerImage(imageName: String) = {
     val dockerClient = GenericContainer("docker:27-cli")

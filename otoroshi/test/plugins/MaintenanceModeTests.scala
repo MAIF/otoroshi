@@ -7,7 +7,7 @@ import otoroshi.next.plugins.{MaintenanceMode, OverrideHost}
 import play.api.http.Status
 
 class MaintenanceModeTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

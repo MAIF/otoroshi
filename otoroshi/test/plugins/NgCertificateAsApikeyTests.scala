@@ -42,7 +42,7 @@ import scala.concurrent.{Future, Promise}
 
 class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   case class OtoroshiInstance(port: Int, configuration: String, customHttpsPort: Int) {
     private val ref: AtomicReference[Otoroshi] = new AtomicReference[Otoroshi]()

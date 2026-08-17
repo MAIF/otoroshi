@@ -7,14 +7,14 @@ import otoroshi.next.plugins.OverrideHost
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 import java.nio.file.{Files, Path}
 
 class RemoteCatalogsTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   def deployWithAdminApi(): Unit = {
 

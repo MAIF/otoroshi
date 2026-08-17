@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 class GlobalMaintenanceModeTests(parent: PluginsTestSpec) {
 
-  import parent._
+  import parent.*
 
   private def enableGlobalMaintenance(globalConfig: GlobalConfig): Future[WSResponse] = {
     ws.url(s"http://localhost:$port/api/globalconfig")

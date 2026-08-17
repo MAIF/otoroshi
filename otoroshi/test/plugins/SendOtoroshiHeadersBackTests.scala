@@ -14,10 +14,10 @@ import otoroshi.next.plugins.{
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterJsValue
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class SendOtoroshiHeadersBackTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

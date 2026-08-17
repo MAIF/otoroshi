@@ -40,7 +40,7 @@ import otoroshi.utils.cache.types.{UnboundedConcurrentHashMap, UnboundedTrieMap}
 import otoroshi.utils.http.{CacheConnectionSettings, MtlsConfig}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.RequestImplicits.*

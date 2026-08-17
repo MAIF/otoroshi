@@ -8,12 +8,12 @@ import otoroshi.next.plugins.{ApikeyCalls, BlockHttpTraffic, BlockHttpTrafficCon
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.BetterSyntax
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import scala.concurrent.duration.DurationInt
 
 class BlockNonHTTPsTrafficTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val route = createRouteWithExternalTarget(
     Seq(

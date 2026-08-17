@@ -1,16 +1,16 @@
 package plugins
 
 import functional.PluginsTestSpec
-import otoroshi.models._
+import otoroshi.models.*
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}
 import otoroshi.next.plugins.api.NgPluginHelper
-import otoroshi.next.plugins._
+import otoroshi.next.plugins.*
 import otoroshi.security.IdGenerator
 import play.api.http.Status
 import play.api.libs.json.JsObject
 
 class PublicPrivatePathsTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val strictRoute = createRouteWithExternalTarget(
     Seq(

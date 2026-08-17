@@ -17,7 +17,7 @@ import otoroshi.next.plugins.{
   WebsocketJsonFormatValidatorConfig
 }
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.DurationInt
@@ -25,7 +25,7 @@ import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
 
 class WebsocketJsonFormatValidatorTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   def closeConnection() = {
     implicit val http: HttpExt = Http()(system)

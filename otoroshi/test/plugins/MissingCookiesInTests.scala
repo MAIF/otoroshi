@@ -7,11 +7,11 @@ import otoroshi.next.plugins.{AdditionalCookieOutConfig, MissingCookieIn, Overri
 import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits.{BetterJsValue, BetterSyntax}
 import play.api.http.Status
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.libs.ws.DefaultWSCookie
 
 class MissingCookiesInTests(parent: PluginsTestSpec) {
-  import parent._
+  import parent.*
 
   val id    = IdGenerator.uuid
   val route = createRouteWithExternalTarget(
