@@ -86,6 +86,21 @@ lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
 
+scalacOptions ++= Seq(
+  // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
+  // migration, to keep the diff minimal instead of rewriting hundreds of call-sites
+  "-source:3.0-migration",
+  "-explain",
+  "-feature",
+  "-explain-cyclic",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-language:existentials",
+  "-language:postfixOps",
+  // scala3-library_3 declares `scala.caps` as both a package and an object
+  "-Wconf:msg=package scala contains object and package with same name:s",
+)
+
 // Pekko 1.6 upstream is used directly (no more patched akka-stream from the lib directory):
 // the TLS 1.3 handshake session fix has been part of Pekko since 1.1.0.
 
@@ -257,22 +272,6 @@ libraryDependencies ++= Seq(
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
-
-scalacOptions ++= Seq(
-  // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
-  // migration, to keep the diff minimal instead of rewriting hundreds of call-sites
-  "-source:3.0-migration",
-  "-explain",
-  "-feature",
-  "-explain-cyclic",
-  "-language:higherKinds",
-  "-language:implicitConversions",
-  "-language:existentials",
-  "-language:postfixOps",
-  // scala3-library_3 declares `scala.caps` as both a package and an object
-  "-Wconf:msg=package scala contains object and package with same name:s",
-)
-// resolvers += "jitpack" at "https://jitpack.io"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
