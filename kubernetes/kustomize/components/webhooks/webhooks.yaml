@@ -4,6 +4,12 @@
 # and gets injected at runtime by the KubernetesAdmissionWebhookCRDValidator
 # sink, which also patches failurePolicy. Make sure that sink is enabled in
 # `initial-customization.json` (it is by default).
+#
+# `clientConfig.service.name` MUST be the service declared as
+# `KubernetesConfig.otoroshiServiceName` in `initial-customization.json` — the sink
+# only matches a Host of `<otoroshiServiceName>.<namespace>.svc[.cluster.local]` and
+# the generated certificate carries only those SANs. In cluster mode that is
+# `otoroshi-worker-service`, not `otoroshi-service` — see readme.md.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:

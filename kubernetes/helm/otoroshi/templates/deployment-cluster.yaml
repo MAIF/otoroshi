@@ -136,6 +136,16 @@ spec:
             value: "{{ .Values.loadbalancer.nodePort.http }}"
           - name: OTOROSHI_EXPOSED_PORTS_HTTPS
             value: "{{ .Values.loadbalancer.nodePort.https }}"
+          # Only applied on the very first boot, when the datastore is still empty. On an
+          # upgrade (or a pre-existing Redis) Otoroshi keeps the global config it already has,
+          # so any change here must also be applied by hand on existing installs.
+          #
+          # The admission-webhook request sinks are declared TWICE on purpose:
+          #  - under `plugins.config.ng` (wrapped in RequestSinkWrapper) because the next-gen
+          #    proxy engine — the default — only looks at that list;
+          #  - under `scripts.sinkRefs` for the legacy engine.
+          # Note that `plugins.config.ng` REPLACES the built-in list (deepMerge does not merge
+          # arrays), hence the NgClientCredentials entry below which is an Otoroshi default.
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: >
               {
@@ -143,6 +153,46 @@ spec:
                   "tlsSettings": {
                     "defaultDomain": "www.{{ .Values.env.domain }}",
                     "randomIfNotFound": false
+                  },
+                  "plugins": {
+                    "enabled": true,
+                    "config": {
+                      "ng": [
+                        {
+                          "enabled": true,
+                          "debug": false,
+                          "include": [],
+                          "exclude": [],
+                          "plugin": "cp:otoroshi.next.plugins.NgClientCredentials",
+                          "config": {
+                            "expiration": 3600000,
+                            "default_key_pair": "otoroshi-jwt-signing",
+                            "domain": "*",
+                            "secure": true
+                          }
+                        },
+                        {
+                          "enabled": true,
+                          "debug": false,
+                          "include": [],
+                          "exclude": [],
+                          "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+                          "config": {
+                            "plugin": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator"
+                          }
+                        },
+                        {
+                          "enabled": true,
+                          "debug": false,
+                          "include": [],
+                          "exclude": [],
+                          "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+                          "config": {
+                            "plugin": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+                          }
+                        }
+                      ]
+                    }
                   },
                   "scripts":{
                     "enabled":true,

@@ -119,6 +119,27 @@ Otoroshi is running in cluster mode:
 Workers connect to the leader API service at:
     https://{{ .Values.cluster.leaderApiServiceName }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.https }}
 {{- end }}
+{{- if or .Values.webhooks.validation .Values.webhooks.sidecarInject }}
+
+============================================================
+7. Admission webhooks (upgrades)
+============================================================
+{{ if .Values.webhooks.validation }}- ValidatingWebhookConfiguration "otoroshi-admission-webhook-validation" (CRD validation)
+{{ end }}{{ if .Values.webhooks.sidecarInject }}- MutatingWebhookConfiguration "otoroshi-admission-webhook-injector" (sidecar injection)
+{{ end }}
+They are answered by request sinks registered in the Otoroshi global config through
+OTOROSHI_INITIAL_CUSTOMIZATION, which only applies on the FIRST boot, while the datastore
+is still empty. If you upgraded from an earlier chart version, or pointed this release at a
+pre-existing Redis, check that Danger zone -> Global plugins contains
+"Request sink plugin wrapper" entries for:
+
+    cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator
+    cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector
+
+Without them Otoroshi answers 404, and once the CRDs controller job has flipped failurePolicy
+from Ignore to Fail (first sync loop, <= 60s), every `kubectl apply` of a proxy.otoroshi.io
+resource fails with "the server could not find the requested resource".
+{{- end }}
 
 ============================================================
 More

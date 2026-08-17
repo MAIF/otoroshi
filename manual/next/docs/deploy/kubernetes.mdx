@@ -1483,14 +1483,97 @@ don't forget to update the otoroshi `ClusterRole`
 
 ## CRD validation in kubectl
 
-In order to get CRD validation before manifest deployments right inside kubectl, you can deploy a validation webhook that will do the trick. Also check that you have `otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator` request sink enabled.
+In order to get CRD validation before manifest deployments right inside kubectl, you can deploy a validation webhook that will do the trick. Also check that you have `otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator` request sink enabled (see the [enabling the admission webhook sinks](#enabling-the-admission-webhook-sinks) section below).
 
 ```yaml include=../snippets/kubernetes/kustomize/base/validation-webhook.yaml
 ```
 
+### Enabling the admission webhook sinks
+
+Both admission webhooks are served by Otoroshi *request sinks* — plugins that answer requests no route matched. The next-gen proxy engine, which is the default, only picks up request sinks declared in the global config under `plugins.config.ng`; the older `scripts.sinkRefs` list is read by the legacy engine only. Declaring them in both places covers either engine:
+
+```json
+{
+  "plugins": {
+    "enabled": true,
+    "config": {
+      "ng": [
+        {
+          "enabled": true,
+          "debug": false,
+          "include": [],
+          "exclude": [],
+          "plugin": "cp:otoroshi.next.plugins.NgClientCredentials",
+          "config": {
+            "expiration": 3600000,
+            "default_key_pair": "otoroshi-jwt-signing",
+            "domain": "*",
+            "secure": true
+          }
+        },
+        {
+          "enabled": true,
+          "debug": false,
+          "include": [],
+          "exclude": [],
+          "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+          "config": {
+            "plugin": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator"
+          }
+        },
+        {
+          "enabled": true,
+          "debug": false,
+          "include": [],
+          "exclude": [],
+          "plugin": "cp:otoroshi.next.plugins.wrappers.RequestSinkWrapper",
+          "config": {
+            "plugin": "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+          }
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "enabled": true,
+    "sinkRefs": [
+      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator",
+      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+    ],
+    "sinkConfig": {}
+  }
+}
+```
+
+`RequestSinkWrapper` is what lets the next-gen engine run these plugins, which are written against the legacy request-sink API. They need no configuration of their own: the `KubernetesConfig` block used by the sinks falls back to `scripts.jobConfig.KubernetesConfig`, the very one the CRDs controller job uses.
+
+:::warning
+`plugins.config.ng` replaces Otoroshi's built-in plugin list rather than merging into it — a JSON deep merge does not merge arrays. Keep the entries that were already there, such as the default `NgClientCredentials` above.
+:::
+
+:::warning
+When this configuration is passed through `OTOROSHI_INITIAL_CUSTOMIZATION`, it is only applied on the very first boot, while the datastore is still empty. On an upgrade — or against a pre-existing Redis — Otoroshi keeps the global config it already has, and the change must be applied by hand from the admin UI (Danger zone → Global plugins) or through the admin API.
+:::
+
+### Troubleshooting
+
+`kubectl apply` failing with:
+
+```
+Internal error occurred: failed calling webhook "otoroshi-admission-webhook.otoroshi.io":
+failed to call webhook: the server could not find the requested resource
+```
+
+means Otoroshi answered `404` on `/apis/webhooks/validation`, i.e. no request sink handled the call. The two usual causes are:
+
+- the sinks are not registered for the running engine — see the section above;
+- the `Host` the apiserver used does not match what the sinks accept. They only match `<otoroshiServiceName>.<namespace>.svc` and `<otoroshiServiceName>.<namespace>.svc.<clusterDomain>`, taken from `KubernetesConfig`. So `webhooks[].clientConfig.service.name` in the webhook manifest must be the very service named by `otoroshiServiceName` — in a Leader/Worker setup, that is the worker service. This is also the name the certificate Otoroshi generates for the endpoint is issued for, so a mismatch breaks the TLS handshake as well.
+
+Note that the failure can stay invisible for a while: the manifests ship with `failurePolicy: Ignore`, and the CRDs controller job flips it to `Fail` on its first sync loop. Before the flip, the apiserver silently swallows the `404` and manifests are accepted unvalidated; after it, every apply fails.
+
 ## Easier integration with otoroshi-sidecar
 
-Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhook. Also check that you have `otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector` request sink enabled.
+Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhook. Also check that you have `otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector` request sink enabled (see the [enabling the admission webhook sinks](#enabling-the-admission-webhook-sinks) section above).
 
 ```yaml include=../snippets/kubernetes/kustomize/base/sidecar-webhook.yaml
 ```

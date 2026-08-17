@@ -8,6 +8,27 @@ Leader+Worker setups, use [`initial-customization-cluster`](../initial-customiza
 
 This component is enabled by default in the `simple*` overlays.
 
+## Shape of the file
+
+The whole payload lives under a top-level `config` key — that is the only key
+Otoroshi merges into the global config (a sibling top-level `scripts` key means
+something else entirely: a list of Script *entities* to import).
+
+The admission-webhook request sinks are declared twice on purpose:
+
+- under `config.plugins.config.ng`, wrapped in `RequestSinkWrapper`, because the
+  next-gen proxy engine — the default — only reads its request sinks from there;
+- under `config.scripts.sinkRefs`, for the legacy engine.
+
+`config.plugins.config.ng` *replaces* Otoroshi's built-in list rather than
+merging into it (a JSON deep merge does not merge arrays), which is why the
+default `NgClientCredentials` entry is repeated in the file.
+
+This JSON is only applied on the very first boot, while the datastore is still
+empty. On an upgrade — or against a pre-existing Redis — Otoroshi keeps the
+global config it already has, so changes here must also be applied by hand on
+existing installs (Danger zone → Global plugins).
+
 ## Customize
 
 Edit `initial-customization.json` next to this `kustomization.yaml` to tweak

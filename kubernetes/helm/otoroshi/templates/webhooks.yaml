@@ -1,4 +1,11 @@
-{{- $webhookServiceName := ternary .Values.cluster.leaderApiServiceName .Values.service.name .Values.cluster.enabled -}}
+{{/*
+The webhook MUST target the very service passed as `otoroshiServiceName` in the
+KubernetesConfig of the deployment templates: the sinks that answer these calls only
+match a Host of `<otoroshiServiceName>.<namespace>.svc[.cluster.local]` (see
+KubernetesAdmissionWebhookCRDValidator.matches), and the certificate Otoroshi generates
+for that endpoint is issued for those two SANs only (see createWebhookCerts).
+*/}}
+{{- $webhookServiceName := ternary .Values.cluster.workerServiceName .Values.service.name .Values.cluster.enabled -}}
 {{- if .Values.webhooks.validation }}
 ---
 apiVersion: admissionregistration.k8s.io/v1

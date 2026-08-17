@@ -209,8 +209,17 @@ autoscaling:
   # HPA scaling behavior (v2). Empty means use Kubernetes defaults.
   behavior: {}
 
+# Admission webhooks. They are answered by request sinks registered in the Otoroshi
+# global config by OTOROSHI_INITIAL_CUSTOMIZATION — which only applies on the FIRST boot,
+# while the datastore is still empty. On an upgrade, or against a pre-existing Redis,
+# register them by hand (Danger zone -> Global plugins) before turning these on,
+# otherwise Otoroshi answers 404 and, once the CRDs controller job has flipped
+# failurePolicy from Ignore to Fail, every `kubectl apply` of a proxy.otoroshi.io
+# resource fails with "the server could not find the requested resource".
 webhooks:
+  # kube-apiserver validates every proxy.otoroshi.io CR against Otoroshi before persisting it.
   validation: true
+  # Injects an otoroshi-sidecar container into pods labeled `otoroshi.io/sidecar: inject`.
   sidecarInject: false
 
 # PodDisruptionBudget.
