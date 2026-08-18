@@ -615,12 +615,14 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
       ec: ExecutionContext
   ): Future[Option[String]] = {
     val js            = Json.parse(serviceAccountJsonContent)
-    val clientEmail   = (js \ "client_email")
-      .asOpt[String]
-      .getOrElse(return Future.failed(new RuntimeException("no client_email in SA json")))
-    val privateKeyPem = (js \ "private_key")
-      .asOpt[String]
-      .getOrElse(return Future.failed(new RuntimeException("no private_key in SA json")))
+    val clientEmail   = (js \ "client_email").asOpt[String] match {
+      case Some(v) => v
+      case None    => return Future.failed(new RuntimeException("no client_email in SA json"))
+    }
+    val privateKeyPem = (js \ "private_key").asOpt[String] match {
+      case Some(v) => v
+      case None    => return Future.failed(new RuntimeException("no private_key in SA json"))
+    }
     val now           = Instant.now().getEpochSecond
     val header        = Json.obj("alg" -> "RS256", "typ" -> "JWT")
     val scopeStr      = scopes.mkString(" ")

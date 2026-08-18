@@ -635,18 +635,20 @@ case class LdapAuthModuleConfig(
     adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
 
     try {
-      for (url <- serverUrls) {
+      // `exists` short-circuits on the first reachable url, like the non-local return it replaces
+      val connected = serverUrls.iterator.exists { url =>
         env.put(Context.PROVIDER_URL, url)
         scala.util.Try {
           val ctx2 = new InitialDirContext(env)
           ctx2.close()
         } match {
-          case Success(_)                                                          => return FastFuture.successful((true, "--"))
-          case Failure(_: ServiceUnavailableException | _: CommunicationException) =>
+          case Success(_)                                                          => true
+          case Failure(_: ServiceUnavailableException | _: CommunicationException) => false
           case Failure(e)                                                          => throw e
         }
       }
-      FastFuture.successful((false, "Missing LDAP server URLs or all down"))
+      if (connected) FastFuture.successful((true, "--"))
+      else FastFuture.successful((false, "Missing LDAP server URLs or all down"))
     } catch {
       case e: Exception => FastFuture.successful((false, e.getMessage))
     }

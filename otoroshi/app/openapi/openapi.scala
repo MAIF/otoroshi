@@ -16,6 +16,7 @@ import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicLong
 import scala.jdk.CollectionConverters.*
 import scala.collection.concurrent.TrieMap
+import scala.util.boundary
 
 case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
 
@@ -805,7 +806,7 @@ class OpenApiGenerator(
     }
   }
 
-  def scanPaths(config: OpenApiGeneratorConfig): (JsValue, JsValue) = {
+  def scanPaths(config: OpenApiGeneratorConfig): (JsValue, JsValue) = boundary {
     val f = new File(routerPath)
     if (f.exists()) {
       var tags             = Seq.empty[String]
@@ -831,7 +832,7 @@ class OpenApiGenerator(
               val controller     = world.getOrElse(controllerName, null)
 
               if (controller == null) {
-                return (Json.obj(), Json.obj())
+                boundary.break((Json.obj(), Json.obj()))
               }
 
               val method             = controller.getMethodInfo(methodName)

@@ -180,7 +180,7 @@ async function buildOpenApi(version, where, releaseDir) {
 /*
 async function buildPluginDoc(version, where, releaseDir) {
   // build plugins doc
-  // needs JDK11 !!!!
+  // needs JDK17 !!!!
   await runScript(`
     cd ${where}/otoroshi
     sbt ";clean;compile;testOnly PluginDocTests"

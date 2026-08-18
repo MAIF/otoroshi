@@ -23,6 +23,7 @@ import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import scala.util.boundary
 
 // =====================================================================================================================
 //
@@ -612,18 +613,22 @@ object HttpSigContentDigest {
   // Returns the list of algorithms successfully checked (so callers can require at least one strong digest).
   def verify(headerValue: String, body: Array[Byte]): Either[String, Seq[String]] = {
     HttpSigStructuredFields.parseSignatureDict(headerValue).flatMap { entries =>
-      val checked = collection.mutable.ListBuffer.empty[String]
-      val it      = entries.iterator
-      while (it.hasNext) {
-        val (alg, bs)  = it.next()
-        val normalized = alg.toLowerCase
-        if (!SupportedAlgs.contains(normalized)) return Left(s"unsupported content-digest algorithm: $alg")
-        val md         = MessageDigest.getInstance(if (normalized == "sha-256") "SHA-256" else "SHA-512")
-        val computed   = md.digest(body)
-        if (!MessageDigest.isEqual(computed, bs)) return Left(s"content-digest mismatch for $alg")
-        checked += normalized
+      boundary {
+        val checked = collection.mutable.ListBuffer.empty[String]
+        val it      = entries.iterator
+        while (it.hasNext) {
+          val (alg, bs)  = it.next()
+          val normalized = alg.toLowerCase
+          if (!SupportedAlgs.contains(normalized))
+            boundary.break(Left(s"unsupported content-digest algorithm: $alg"))
+          val md         = MessageDigest.getInstance(if (normalized == "sha-256") "SHA-256" else "SHA-512")
+          val computed   = md.digest(body)
+          if (!MessageDigest.isEqual(computed, bs))
+            boundary.break(Left(s"content-digest mismatch for $alg"))
+          checked += normalized
+        }
+        Right(checked.toList)
       }
-      Right(checked.toList)
     }
   }
 }
@@ -1120,15 +1125,19 @@ class HttpSignatureVerifyRequest extends NgAccessValidator with NgRequestTransfo
           return Future.successful(Left(s"signature '$label' created in the future"))
         // maxAgeSeconds < 0 would otherwise be a foot-gun (negative numbers compare with `now - c > maxAge + skew`
         // in a way that lets very old signatures through). Coerce to 0 so a config typo can't widen the window.
-        config.maxAgeSeconds.foreach { raw =>
-          val maxAge = math.max(0L, raw)
-          if (now - c > maxAge + config.clockSkewSeconds)
-            return Future.successful(Left(s"signature '$label' is older than $maxAge seconds"))
+        config.maxAgeSeconds match {
+          case Some(raw) =>
+            val maxAge = math.max(0L, raw)
+            if (now - c > maxAge + config.clockSkewSeconds)
+              return Future.successful(Left(s"signature '$label' is older than $maxAge seconds"))
+          case None      => ()
         }
       case None    => ()
     }
-    input.expires.foreach { e =>
-      if (now > e + config.clockSkewSeconds) return Future.successful(Left(s"signature '$label' has expired"))
+    input.expires match {
+      case Some(e) if now > e + config.clockSkewSeconds =>
+        return Future.successful(Left(s"signature '$label' has expired"))
+      case _                                            => ()
     }
 
     // 4. keyid
