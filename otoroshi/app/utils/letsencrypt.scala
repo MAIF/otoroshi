@@ -1,5 +1,7 @@
 package otoroshi.utils.letsencrypt
 
+import org.apache.pekko.actor.Scheduler
+import org.apache.pekko.pattern.after
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Keep, Sink, Source}
@@ -20,6 +22,7 @@ import java.io.StringWriter
 import java.security.cert.X509Certificate
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyPair}
+import java.time.{Duration, Instant}
 import java.util.Base64
 import java.util.concurrent.Executors
 import scala.jdk.CollectionConverters.*
@@ -323,7 +326,126 @@ object LetsEncryptHelper {
       }
   }
 
+  // Core polling logic that respects retry-after headers
+  private def pollUntil[T](
+                            fetchAndCheck: () => Future[(Option[Instant], T)], // Returns (retryAfter, currentState)
+                            isComplete: T => Boolean,
+                            attemptsLeft: Int,
+                            defaultDelay: FiniteDuration = 3.seconds,
+                            maxDelay: FiniteDuration = 30.seconds
+                          )(using ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+
+    def calculateDelay(retryAfterOpt: Option[Instant], attemptNumber: Int): FiniteDuration = {
+      retryAfterOpt match {
+        case Some(retryAfterInstant) =>
+          val suggestedDelay = Duration.between(Instant.now(), retryAfterInstant)
+          val delayMillis = Math.max(100, suggestedDelay.toMillis) // min 100ms
+          Math.min(delayMillis, maxDelay.toMillis).millis
+
+        case None =>
+          // Exponential backoff with jitter
+          val backoff = Math.min(
+            defaultDelay.toMillis * Math.pow(1.5, attemptNumber).toLong,
+            maxDelay.toMillis
+          )
+          (backoff + (Math.random() * 0.2 * backoff).toLong).millis
+      }
+    }
+
+    def pollOnce(remainingAttempts: Int, attemptNumber: Int): Future[T] = {
+      if (remainingAttempts <= 0) {
+        Future.failed(new Exception(s"Max attempts exceeded"))
+      } else {
+        fetchAndCheck().flatMap { case (retryAfterOpt, currentState) =>
+          if (isComplete(currentState)) {
+            Future.successful(currentState)
+          } else {
+            val delay = calculateDelay(retryAfterOpt, attemptNumber)
+            after(delay, scheduler)(
+              pollOnce(remainingAttempts - 1, attemptNumber + 1)
+            )
+          }
+        }
+      }
+    }
+
+    pollOnce(attemptsLeft, 0)
+  }
+
+  private def pollAcmeResource[T](
+                                   resource: T,
+                                   fetch: T => Option[Instant], // fetch method that returns retry-after
+                                   getStatus: T => Status,
+                                   maxAttempts: Int = 10,
+                                   defaultDelay: FiniteDuration = 3.seconds
+                                 )(using ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
+
+    val fetchAndCheck = () =>
+      Future {
+        val retryAfter = fetch(resource)
+        (retryAfter, resource)
+      }
+
+    pollUntil(
+      fetchAndCheck,
+      (r: T) => getStatus(r) == Status.VALID,
+      maxAttempts,
+      defaultDelay
+    )
+  }
+
   private def authorizeOrder(
+                              domain: String,
+                              status: Status,
+                              challenge: Http01Challenge
+                            )(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
+
+    logger.info(s"authorizing order $domain")
+
+    if (status == Status.VALID || challenge.getStatus == Status.VALID) {
+      FastFuture.successful(Right(Status.VALID))
+    } else {
+      Future {
+        challenge.trigger()
+      }(using blockingEc).flatMap { _ =>
+        pollAcmeResource(
+          challenge,
+          fetch = (c: Http01Challenge) => Option(c.fetch().orElse(null)),
+          getStatus = (c: Http01Challenge) => c.getStatus,
+          maxAttempts = 10,
+          defaultDelay = 3.seconds
+        )(using ec, mat.system.scheduler)
+          .map(_ => Right(Status.VALID))
+          .recover { case e =>
+            Left(s"Failed to authorize certificate for domain, ${e.getMessage}")
+          }
+      }
+    }
+  }
+
+  private def orderCertificate(
+                                order: Order,
+                                csr: Array[Byte]
+                              )(using ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
+
+    Future {
+      order.execute(csr)
+    }(using blockingEc).flatMap { _ =>
+      pollAcmeResource(
+        order,
+        fetch = (o: Order) => Option(o.fetch().orElse(null)),
+        getStatus = (o: Order) => o.getStatus,
+        maxAttempts = 10,
+        defaultDelay = 5.seconds
+      )(using ec, mat.system.scheduler)
+        .map(Right(_))
+        .recover { case e =>
+          Left(s"Failed to order certificate for domain, ${e.getMessage}")
+        }
+    }
+  }
+
+  /*private def authorizeOrder(
       domain: String,
       status: Status,
       challenge: Http01Challenge
@@ -340,7 +462,7 @@ object LetsEncryptHelper {
           .tick(3.seconds, 3.seconds, ())
           .mapAsync(1) { _ =>
             Future {
-              challenge.update()
+              challenge.fetch()
               challenge.getStatus
             }(using blockingEc)
           }
@@ -371,7 +493,7 @@ object LetsEncryptHelper {
         .tick(3.seconds, 5.seconds, ())
         .mapAsync(1) { _ =>
           Future {
-            order.update()
+            order.fetch()
             order
           }(using blockingEc)
         }
@@ -387,7 +509,7 @@ object LetsEncryptHelper {
           case Some(e) => e
         }
     }
-  }
+  }*/
 
   private def buildCsr(domain: String, keyPair: KeyPair): Array[Byte] = {
     val csrb         = new CSRBuilder()

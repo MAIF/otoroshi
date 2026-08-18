@@ -57,7 +57,7 @@ lazy val root = (project in file("."))
 
 lazy val scalaLangVersion        = "3.8.4"
 lazy val metricsVersion          = "4.2.39"
-lazy val acme4jVersion           = "3.2.1" // "2.14"
+lazy val acme4jVersion           = "3.5.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "3.0.6"
 lazy val webAuthnVersion         = "2.1.0" // using this version for backward compatibility reasons //"1.7.0" //"2.1.0"
@@ -67,7 +67,7 @@ lazy val pulsarVersion           = "2.12.0.1"
 lazy val openTelemetryVersion    = "1.65.0" // zipkin exporter not in 1.65 yet
 lazy val openTelemetryZipkinVersion    = "1.64.0"
 lazy val jacksonVersion          = "2.22.2"
-lazy val jacksonAnnotationVersion = "2.21" // jackson-annotations is versioned at the minor level only
+lazy val jacksonAnnotationVersion = "2.22" // jackson-annotations is versioned at the minor level only
 
 lazy val pekkoVersion            = "1.6.0"
 lazy val pekkoHttpVersion        = "1.4.0"
@@ -146,7 +146,7 @@ libraryDependencies ++= Seq(
   "io.prometheus"                    % "simpleclient_dropwizard"              % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "com.auth0"                        % "java-jwt"                             % "4.6.0" excludeAll (excludesJackson: _*),
   "com.auth0"                        % "jwks-rsa"                             % "0.24.1" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                     % "nimbus-jose-jwt"                      % "9.39.1",
+  "com.nimbusds"                     % "nimbus-jose-jwt"                      % "9.48",
   "de.svenkubiak"                    % "jBCrypt"                              % "0.4.3",
   "io.github.classgraph"             % "classgraph"                           % "4.8.192" excludeAll (excludesJackson: _*),
   "com.comcast"                     %% "ip4s-core"                            % "3.8.0",
@@ -160,10 +160,10 @@ libraryDependencies ++= Seq(
   "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
   "org.shredzone.acme4j"             % "acme4j-client"                        % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   "io.lettuce"                       % "lettuce-core"                         % "6.8.1.RELEASE" excludeAll (excludesJackson: _*),
-  "io.vertx"                         % "vertx-pg-client"                      % "4.5.22",
+  "io.vertx"                         % "vertx-pg-client"                      % "4.5.32",
   "com.ongres.scram"                 % "common"                               % "2.1",
   "com.ongres.scram"                 % "client"                               % "2.1",
-  "com.jayway.jsonpath"              % "json-path"                            % "2.7.0",
+  "com.jayway.jsonpath"              % "json-path"                            % "2.10.0",
   "com.cronutils"                    % "cron-utils"                           % "9.2.1",
   "commons-lang"                     % "commons-lang"                         % "2.6",
   "com.datastax.oss"                 % "java-driver-core"                     % "4.17.0" excludeAll (excludesJackson: _*),
@@ -227,7 +227,7 @@ libraryDependencies ++= Seq(
   // "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
   // "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
   // "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.53" excludeAll (
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -254,7 +254,7 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.30.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
-  "com.networknt"                    % "json-schema-validator"                % "1.3.0" excludeAll (
+  "com.networknt"                    % "json-schema-validator"                % "1.5.9" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),

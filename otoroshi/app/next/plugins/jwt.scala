@@ -619,31 +619,7 @@ class JweSigner extends NgAccessValidator with NgRequestTransformer {
             val enc = config.contentEncryptionAlgorithm
             val kid = jsonKeypair.select("kid").asOpt[String].orNull
 
-            val header = new JWEHeader(
-              alg,
-              enc,
-              null,
-              "JWT",
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              kid,
-              null,
-              null,
-              null,
-              null,
-              null,
-              0,
-              null,
-              null,
-              null,
-              null,
-              null
-            )
+            val header = new JWEHeader.Builder(alg, enc).keyID(kid).contentType("JWT").pbes2Count(0).build()
 
             val claimsSet = new JWTClaimsSet.Builder()
             claimsSet.issuer(env.Headers.OtoroshiIssuer)
