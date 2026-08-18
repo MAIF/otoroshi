@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import io.otoroshi.wasm4s.scaladsl.{WasmSource, WasmSourceKind}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*

@@ -873,7 +873,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
           FastFuture.failed(
             ClientQueueError("Client queue was closed (pool shut down) while running the request. Try again later.")
           )
-      }(ec)
+      }(using ec)
   }
 
   private[utils] def executeWsRequest[T](
@@ -912,7 +912,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
           clientFlow = clientFlow,
           connectionContext = if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
           settings = customizer(ClientConnectionSettings(system))
-        )(mat)
+        )(using mat)
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
         if (logger.isDebugEnabled)
@@ -938,7 +938,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(using system: ActorSystem, m
             clientFlow = clientFlow,
             connectionContext = cctx,
             settings = customizer(ClientConnectionSettings(system))
-          )(mat)
+          )(using mat)
         }
       }
     }
@@ -972,7 +972,7 @@ case class AkkWsClientStreamedResponse(
     val headers                        = httpResponse.headers.groupBy(_.name()).view.mapValues(_.map(_.value())).toMap.toSeq ++ Seq(
       ("Content-Type" -> Seq(contentType))
     )
-    val headz                          = TreeMap(headers: _*)(CaseInsensitiveOrdered)
+    val headz                          = TreeMap(headers*)(using CaseInsensitiveOrdered)
     val noContentLengthHeader: Boolean =
       httpResponse.entity.contentLengthOption.isEmpty /*headz.getIgnoreCase("Content-Length").isEmpty*/
     val isContentLengthZero: Boolean   = httpResponse.entity.contentLengthOption.contains(
@@ -1007,7 +1007,7 @@ case class AkkWsClientStreamedResponse(
     .getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
     Await.result(
-      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat),
+      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(using mat),
       FiniteDuration(10, TimeUnit.MINUTES)
     ) // AWAIT: valid
   private lazy val _bodyAsString: String   = _bodyAsBytes.utf8String
@@ -1019,7 +1019,7 @@ case class AkkWsClientStreamedResponse(
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _] = {
+  def bodyAsSource: Source[ByteString, ?] = {
     if (ClientConfig.logger.isDebugEnabled)
       ClientConfig.logger.debug(s"[httpclient] consuming body in ${requestTimeout}")
     httpResponse.entity.dataBytes.takeWithin(requestTimeout)
@@ -1050,7 +1050,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
     } else {
       Seq.empty
     })*/
-    TreeMap(headers: _*)(CaseInsensitiveOrdered)
+    TreeMap(headers*)(using CaseInsensitiveOrdered)
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
@@ -1069,7 +1069,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   def statusText: String                               = httpResponse.status.defaultMessage()
   def headers: Map[String, Seq[String]]                = allHeaders
   def underlying[T]: T                                 = httpResponse.asInstanceOf[T]
-  def bodyAsSource: Source[ByteString, _]              = Source.single(rawbody)
+  def bodyAsSource: Source[ByteString, ?]              = Source.single(rawbody)
   override def header(name: String): Option[String]    = headerValues(name).headOption
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   def body: String                                     = _bodyAsString
@@ -1097,7 +1097,7 @@ object WSProxyServerUtils {
   def isIgnoredForHost(hostname: String, nonProxyHosts: Seq[String]): Boolean = {
     Assertions.assertNotNull(hostname, "hostname")
     if (nonProxyHosts.nonEmpty) {
-      val var2: Iterator[_] = nonProxyHosts.iterator
+      val var2: Iterator[?] = nonProxyHosts.iterator
       while ({
         var2.hasNext
       }) {
@@ -1279,7 +1279,7 @@ case class AkkaWsClientRequest(
   override def withBody[T](body: T)(using evidence$1: BodyWritable[T]): WSRequest =
     copy(body = evidence$1.transform(body))
 
-  override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
+  override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers*)
   override def withDisableUrlEncoding(disableUrlEncoding: Boolean): Self = this
   override def addCookies(cookies: play.api.libs.ws.WSCookie*): Self = this
 
@@ -1578,22 +1578,22 @@ case class AkkaWsClientRequest(
       }
     } getOrElse Seq.empty
   }
-  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
+  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters*)
   override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       =
-    copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
+    copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters*)).toString())
   override def addQueryStringParameters(parameters: (String, String)*): WSRequest = {
     val params: Seq[(String, String)] =
       _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
-    copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
+    copy(rawUrl = _uri.withQuery(Uri.Query.apply(params*)).toString())
   }
   override def withProxyServer(proxyServer: WSProxyServer): WSRequest                                    = copy(proxy = Option(proxyServer))
   override def proxyServer: Option[WSProxyServer]                                                        = proxy
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  =
-    post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   =
-    put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]  =
+    post[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse] =
+    patch[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]   =
+    put[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1642,7 +1642,7 @@ object Implicits {
     def ignore()(using mat: Materializer): req.Self = {
       req match {
         case httpRequest: AkkaWsClientRequest =>
-          Try(httpRequest.akkaHttpEntity.dataBytes.runWith(Sink.ignore)(mat)) match {
+          Try(httpRequest.akkaHttpEntity.dataBytes.runWith(Sink.ignore)(using mat)) match {
             case Failure(e) => logger.error("Error while discarding request entity bytes ...", e)
             case _          => ()
           }

@@ -120,7 +120,7 @@ class NgExpectedConsumerTests(parent: PluginsTestSpec) {
   val callWithUser = ws
     .url(s"http://127.0.0.1:$port/restricted")
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-    .withCookies(wsCookies: _*)
+    .withCookies(wsCookies*)
     .get()
     .futureValue
 

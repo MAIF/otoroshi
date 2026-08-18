@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.el.GlobalExpressionLanguage
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
@@ -112,7 +113,7 @@ class NgExternalValidator extends NgAccessValidator {
       .url(url)
       .withRequestTimeout(config.timeout)
       .withFollowRedirects(true)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .post(ctx.wasmJson)
       .flatMap { resp =>
         if (resp.status == 200) {

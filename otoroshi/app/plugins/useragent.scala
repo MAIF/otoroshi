@@ -40,10 +40,10 @@ object UserAgentHelper {
           val parser = new UserAgentService().loadParser()
           logger.info("end initializing ...")
           parser
-        }(ec).andThen {
+        }(using ec).andThen {
           case Success(_) => logger.info(s"User-Agent parser initialized in ${System.currentTimeMillis() - start} ms")
           case Failure(e) => logger.error("User-Agent parser initialization failed", e)
-        }(ec)
+        }(using ec)
 
         if (parserFuture.compareAndSet(null, future)) {
           future
@@ -68,7 +68,7 @@ object UserAgentHelper {
                 cache.put(ua, details)
             }
             cache.getIfPresent(ua).flatten
-          }(ec)
+          }(using ec)
         // case _                 => None.future
       }
     }

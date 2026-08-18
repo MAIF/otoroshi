@@ -156,7 +156,7 @@ class HasAllowedUsersValidatorTests(parent: PluginsTestSpec) {
     val resp    = ws
       .url(s"http://127.0.0.1:$port/")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(cookies: _*)
+      .withCookies(cookies*)
       .get()
       .futureValue
 

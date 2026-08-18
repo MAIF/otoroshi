@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyReadables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -575,7 +576,7 @@ class EurekaTarget extends NgPreRouting {
 
   private def updatePreExtractedRequestTargetsKey(ctx: NgPreRoutingContext, apps: Seq[JsValue]) = {
     ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> apps.map(application => {
-      val instance = (application \ "application" \ "instance").as(EurekaInstance.format)
+      val instance = (application \ "application" \ "instance").as(using EurekaInstance.format)
       EurekaInstance.toTarget(instance)
     }))
   }
@@ -706,7 +707,7 @@ class ExternalEurekaTarget extends NgPreRouting {
               case None       =>
                 env.Ws
                   .url(s"$serviceUrlDefaultZone/apps/$eurekaApp")
-                  .withHttpHeaders(Seq("Accept" -> "application/json"): _*)
+                  .withHttpHeaders(Seq("Accept" -> "application/json")*)
                   .get()
                   .flatMap { res =>
                     if (res.status == 200) {
@@ -714,7 +715,7 @@ class ExternalEurekaTarget extends NgPreRouting {
                         .as[JsObject] \ "application" \ "instance")
                         .as[JsArray]
                         .value.toSeq
-                        .map(instance => instance.as(EurekaInstance.format))
+                        .map(instance => instance.as(using EurekaInstance.format))
                         .map(EurekaInstance.toTarget)
 
                       ctx.attrs.put(otoroshi.plugins.Keys.PreExtractedRequestTargetsKey -> instances)

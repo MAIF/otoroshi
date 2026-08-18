@@ -56,7 +56,7 @@ class PreRoutingWrapper extends NgPreRouting {
           .recover {
             case PreRoutingError(body, code, contentType, headers) =>
               NgPreRoutingErrorWithResult(
-                Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq: _*)
+                Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq*)
               ).left
             case PreRoutingErrorWithResult(r)                      => NgPreRoutingErrorWithResult(r).left
             case t: Throwable                                      =>
@@ -543,7 +543,7 @@ class CompositeWrapper extends NgPreRouting with NgAccessValidator with NgReques
           .recover {
             case PreRoutingError(body, code, contentType, headers) =>
               NgPreRoutingErrorWithResult(
-                Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq: _*)
+                Results.Status(code)(body).as(contentType).withHeaders(headers.toSeq*)
               ).left
             case PreRoutingErrorWithResult(r)                      => NgPreRoutingErrorWithResult(r).left
             case t: Throwable                                      =>

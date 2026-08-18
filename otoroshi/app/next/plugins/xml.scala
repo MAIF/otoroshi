@@ -1,6 +1,8 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.stream.Materializer
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}

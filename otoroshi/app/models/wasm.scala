@@ -56,7 +56,7 @@ object WasmPlugin {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
-        config = (json \ "config").asOpt(WasmConfig.format).getOrElse(WasmConfig()),
+        config = (json \ "config").asOpt(using WasmConfig.format).getOrElse(WasmConfig()),
         steps = (json \ "steps")
           .asOpt[Seq[String]]
           .map(_.map(NgStep.apply).collect { case Some(s) => s })
@@ -72,7 +72,7 @@ object WasmPlugin {
 }
 
 trait WasmPluginDataStore extends BasicStore[WasmPlugin] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): WasmPlugin = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): WasmPlugin = {
     val defaultWasmPlugin = WasmPlugin(
       id = IdGenerator.namedId("wasm-plugin", env),
       name = "New wasm plugin",

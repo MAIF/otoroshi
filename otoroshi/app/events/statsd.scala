@@ -213,7 +213,7 @@ class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporte
   def sendToStatsD(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registry.getGauges
-        .forEach((name: MetricId, gauge: Gauge[_]) =>
+        .forEach((name: MetricId, gauge: Gauge[?]) =>
           env.statsd.metric(name.getKey, gauge.getValue)(using config.statsdConfig)
         )
       registry.getCounters

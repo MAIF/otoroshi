@@ -101,7 +101,7 @@ object NgPluginInstance {
       exclude = obj.select("exclude").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       boundListeners = obj.select("bound_listeners").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
       config = NgPluginInstanceConfig(obj.select("config").asOpt[JsObject].getOrElse(Json.obj())),
-      pluginIndex = obj.select("plugin_index").asOpt(PluginIndex.format)
+      pluginIndex = obj.select("plugin_index").asOpt(using PluginIndex.format)
     )
   }
 }

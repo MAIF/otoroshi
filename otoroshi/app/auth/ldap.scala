@@ -57,7 +57,7 @@ object LdapAuthUser {
               email = (json \ "email").as[String],
               ldapProfile = (json \ "ldapProfile").asOpt[JsObject],
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-              userRights = (json \ "userRights").asOpt[UserRights](UserRights.format),
+              userRights = (json \ "userRights").asOpt[UserRights](using UserRights.format),
               adminEntityValidators = json
                 .select("adminEntityValidators")
                 .asOpt[JsObject]
@@ -130,7 +130,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
               location.teams.map(t => GroupFilter(filter, TenantAccess(location.tenant.value), t.value))
             case None         =>
               (json \ "groupFilters")
-                .asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt))
+                .asOpt[Seq[GroupFilter]](using Reads.seq(using GroupFilter._fmt))
                 .getOrElse(Seq.empty[GroupFilter]).toSeq
           },
           allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
@@ -145,7 +145,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           extractProfile = (json \ "extractProfile").asOpt[Boolean].getOrElse(false),
           extractProfileFilter = (json \ "extractProfileFilter").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
@@ -208,7 +208,7 @@ object GroupRights {
       Try {
         JsSuccess(
           GroupRights(
-            userRights = (json \ "rights").asOpt[UserRights](UserRights.format).getOrElse(UserRights(Seq.empty)),
+            userRights = (json \ "rights").asOpt[UserRights](using UserRights.format).getOrElse(UserRights(Seq.empty)),
             users = (json \ "users").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
         )

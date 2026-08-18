@@ -1,6 +1,7 @@
 package otoroshi.controllers
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
@@ -194,7 +195,7 @@ class BackOfficeController(
   }
 
   private def passWithPlay(
-      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      ctx: BackOfficeActionContextAuth[Source[ByteString, ?]],
       apikey: ApiKey
   ): Future[Result] = {
     logger.debug(s"using play for ${ctx.request.method} ${ctx.request.theUrl}")
@@ -227,7 +228,7 @@ class BackOfficeController(
   // }
 
   private def passWithOldEngine(
-      ctx: BackOfficeActionContextAuth[Source[ByteString, _]],
+      ctx: BackOfficeActionContextAuth[Source[ByteString, ?]],
       apikey: ApiKey,
       path: String
   ): Future[Result] = {
@@ -268,11 +269,11 @@ class BackOfficeController(
 
       val builder = env.Ws // MTLS needed here ???
         .akkaUrl(s"$url/$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withFollowRedirects(false)
         .withMethod(ctx.request.method)
         .withRequestTimeout(flags.requestTimeout)
-        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head))*)
 
       val builderWithBody = if (currentReqHasBody) {
         builder.withBody(SourceBody(ctx.request.body))
@@ -334,18 +335,18 @@ class BackOfficeController(
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
-                .filter(_._1 != "Transfer-Encoding"): _*
+                .filter(_._1 != "Transfer-Encoding")*
             )
             .as(ctype)
         }
     } else {
       val builder = env.Ws // MTLS needed here ???
         .url(s"$url/$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withFollowRedirects(false)
         .withMethod(ctx.request.method)
         .withRequestTimeout(flags.requestTimeout)
-        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+        .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head))*)
 
       val builderWithBody = if (currentReqHasBody) {
         builder.withBody(SourceBody(ctx.request.body))
@@ -404,7 +405,7 @@ class BackOfficeController(
                 .toSeq
                 .filter(_._1 != "Content-Type")
                 .filter(_._1 != "Content-Length")
-                .filter(_._1 != "Transfer-Encoding"): _*
+                .filter(_._1 != "Transfer-Encoding")*
             )
             .as(ctype)
         }
@@ -698,7 +699,7 @@ class BackOfficeController(
           env.Ws
             .url(s"$url/apps")
             .withMethod("GET")
-            .withHttpHeaders(Seq("Accept" -> "application/json"): _*)
+            .withHttpHeaders(Seq("Accept" -> "application/json")*)
             .execute()
             .map { res =>
               if (res.status == 200) {
@@ -986,7 +987,7 @@ class BackOfficeController(
       val client_certs  = ctx.request.body.select("client_certs").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq
 
       val sessionCookieValues =
-        (ctx.request.body \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+        (ctx.request.body \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues())
       (ctx.request.body \ "url").asOpt[String] match {
         case None      =>
           FastFuture.successful(
@@ -1375,7 +1376,7 @@ class BackOfficeController(
       }
     }
 
-  def selfSignedCert(): Action[Source[ByteString, _]] =
+  def selfSignedCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1414,7 +1415,7 @@ class BackOfficeController(
       }
     }
 
-  def selfSignedClientCert(): Action[Source[ByteString, _]] =
+  def selfSignedClientCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1453,7 +1454,7 @@ class BackOfficeController(
       }
     }
 
-  def importP12File(): Action[Source[ByteString, _]] =
+  def importP12File(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       val password = ctx.request.getQueryString("password").getOrElse("")
       val client   = ctx.request.getQueryString("client").contains("true")
@@ -1484,7 +1485,7 @@ class BackOfficeController(
 
   import otoroshi.ssl.SSLImplicits.*
 
-  def caCert(): Action[Source[ByteString, _]] =
+  def caCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
         Try {
@@ -1518,7 +1519,7 @@ class BackOfficeController(
       }
     }
 
-  def caSignedCert(): Action[Source[ByteString, _]] =
+  def caSignedCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1555,7 +1556,7 @@ class BackOfficeController(
       }
     }
 
-  def caSignedClientCert(): Action[Source[ByteString, _]] =
+  def caSignedClientCert(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
         Try {
@@ -1695,7 +1696,7 @@ class BackOfficeController(
       }
     }
 
-  def certificateData(): Action[Source[ByteString, _]] =
+  def certificateData(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
         Try {
@@ -1720,7 +1721,7 @@ class BackOfficeController(
       }
     }
 
-  def certificateIsValid(): Action[Source[ByteString, _]] =
+  def certificateIsValid(): Action[Source[ByteString, ?]] =
     BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
       ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
         Try {
@@ -1976,10 +1977,10 @@ class BackOfficeController(
 
     val builder = env.Ws
       .url(url)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withFollowRedirects(false)
       .withMethod(ctx.request.method)
-      .withQueryStringParameters(ctx.request.queryString.toSeq.filterNot(_._1 == "url").map(t => (t._1, t._2.head)): _*)
+      .withQueryStringParameters(ctx.request.queryString.toSeq.filterNot(_._1 == "url").map(t => (t._1, t._2.head))*)
 
     val builderWithBody = if (otoroshi.utils.body.BodyUtils.hasBody(ctx.request)) {
       builder.withBody(SourceBody(ctx.request.body))
@@ -1993,7 +1994,7 @@ class BackOfficeController(
       .map { res =>
         Results
           .Status(res.status)(res.body)
-          .withHeaders(res.headers.view.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type"): _*)
+          .withHeaders(res.headers.view.mapValues(_.last).toMap.toSeq.filterNot(_._1 == "Content-Type")*)
           .as(res.contentType)
       }
   }

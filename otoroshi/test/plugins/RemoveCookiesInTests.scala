@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper
 import otoroshi.next.plugins.{OverrideHost, RemoveCookiesIn, RemoveCookiesInConfig}
@@ -37,7 +38,7 @@ class RemoveCookiesInTests(parent: PluginsTestSpec) {
           value = "bar",
           domain = route.frontend.domains.head.domain.some
         )
-      ): _*
+      )*
     )
     .withHttpHeaders(
       "Host" -> route.frontend.domains.head.domain

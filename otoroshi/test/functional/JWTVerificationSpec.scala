@@ -1,6 +1,7 @@
 package functional
 
 import scala.jdk.CollectionConverters.*
+import play.api.libs.ws.WSBodyReadables.given
 import java.security.KeyFactory
 import java.security.interfaces.{ECPrivateKey, ECPublicKey}
 import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}

@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper

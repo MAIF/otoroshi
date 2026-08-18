@@ -44,7 +44,7 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
   private def in  = shape.in
   private def out = shape.out
 
-  private var listener: ActorRef = _
+  private var listener: ActorRef = scala.compiletime.uninitialized
 
   override def preStart(): Unit = {
     implicit val sender = getStageActor(processIncoming).ref

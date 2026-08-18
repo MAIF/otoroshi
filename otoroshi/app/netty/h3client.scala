@@ -154,7 +154,7 @@ class NettyHttp3Client(val env: Env) {
   private[netty] def getStandardSslContext(): QuicSslContext = {
     val context = QuicSslContextBuilder
       .forClient()
-      .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+      .applicationProtocols(Http3.supportedApplicationProtocols()*)
       .earlyData(true)
       .build()
     context
@@ -175,7 +175,7 @@ class NettyHttp3Client(val env: Env) {
           )
           ctx.keyManager(keyManager, null).trustManager(trustManager)
         }
-        .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+        .applicationProtocols(Http3.supportedApplicationProtocols()*)
         .earlyData(true)
         .build()
       context
@@ -288,7 +288,7 @@ class NettyHttp3Client(val env: Env) {
   }
 
   def close(): Unit = {
-    channels.asMap().values.map(_.map(c => c.close().sync())(env.otoroshiExecutionContext))
+    channels.asMap().values.map(_.map(c => c.close().sync())(using env.otoroshiExecutionContext))
     group.shutdownGracefully()
   }
 
@@ -312,7 +312,7 @@ case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bo
   override def allHeaders: Map[String, Seq[String]]   = resp.allHeaders
   override def uri: URI                               = resp.uri
 
-  override def bodyAsSource: Source[ByteString, _] = Source.single(bodyAsBytes)
+  override def bodyAsSource: Source[ByteString, ?] = Source.single(bodyAsBytes)
   override def body: String                        = _bodyAsString
   override def xml: Elem                           = _bodyAsXml
   override def json: JsValue                       = _bodyAsJson
@@ -323,7 +323,7 @@ case class NettyHttp3ClientStrictWsResponse(resp: NettyHttp3ClientWsResponse, bo
 
 case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) extends WSResponse with TrailerSupport {
 
-  private lazy val _body: Source[ByteString, _]          = Try {
+  private lazy val _body: Source[ByteString, ?]          = Try {
     Source
       .fromPublisher(resp.bodyFlux)
       .filter(_.nonEmpty)
@@ -340,7 +340,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
 
   private lazy val _bodyAsBytes: ByteString = {
     Await.result(
-      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer),
+      bodyAsSource.runFold(ByteString.empty)(_ ++ _)(using env.otoroshiMaterializer),
       FiniteDuration(10, TimeUnit.MINUTES)
     ) // AWAIT: valid
   }
@@ -369,7 +369,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
       .getOrElse(Seq.empty).toSeq
   }
 
-  override def bodyAsSource: Source[ByteString, _]    = _body
+  override def bodyAsSource: Source[ByteString, ?]    = _body
   override def headers: Map[String, Seq[String]]      = _allHeaders
   override def status: Int                            = resp.status
   override def statusText: String                     = StatusCode.int2StatusCode(resp.status).reason()
@@ -393,7 +393,7 @@ case class NettyHttp3ClientWsResponse(resp: Http3Response, _uri: Uri, env: Env) 
     resp.trailer.andThen {
       case Failure(ex)      => promise.tryFailure(ex)
       case Success(headers) => promise.trySuccess(headers)
-    }(env.otoroshiExecutionContext)
+    }(using env.otoroshiExecutionContext)
   }
 }
 
@@ -473,20 +473,20 @@ case class NettyHttp3ClientWsRequest(
       }
     } getOrElse Seq.empty
   }
-  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
+  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters*)
   override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       =
-    copy(_url = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
+    copy(_url = _uri.withQuery(Uri.Query.apply(parameters*)).toString())
   override def addQueryStringParameters(parameters: (String, String)*): WSRequest = {
     val params: Seq[(String, String)] =
       _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
-    copy(_url = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
+    copy(_url = _uri.withQuery(Uri.Query.apply(params*)).toString())
   }
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  =
-    post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
-    patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   =
-    put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]  =
+    post[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def patch(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse] =
+    patch[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, ?]], ?]): Future[WSResponse]   =
+    put[Source[MultipartFormData.Part[Source[ByteString, ?]], ?]](body)
   override def post[T](body: T)(using evidence$2: BodyWritable[T]): Future[WSResponse]                =
     withMethod("POST")
       .withBody(evidence$2.transform(body))
@@ -530,7 +530,7 @@ case class NettyHttp3ClientWsRequest(
       )
     } else this
   }
-  override def withHeaders(headers: (String, String)*): WSRequest                                        = withHttpHeaders(headers: _*)
+  override def withHeaders(headers: (String, String)*): WSRequest                                        = withHttpHeaders(headers*)
   override def withHttpHeaders(headers: (String, String)*): WSRequest = {
     copy(
       headers = headers.foldLeft(this.headers)((m, hdr) =>
@@ -595,7 +595,7 @@ case class NettyHttp3ClientWsRequest(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def execute(): Future[WSResponse] = {
     val env = OtoroshiEnvHolder.get()
-    stream().map(_.asInstanceOf[NettyHttp3ClientWsResponse].toStrict())(env.otoroshiExecutionContext)
+    stream().map(_.asInstanceOf[NettyHttp3ClientWsResponse].toStrict())(using env.otoroshiExecutionContext)
   }
   override def stream(): Future[WSResponse] = {
     implicit val ec: scala.concurrent.ExecutionContext = client.env.otoroshiExecutionContext
@@ -653,8 +653,8 @@ case class NettyHttp3ClientWsRequest(
         if (client.logger.isDebugEnabled) client.logger.debug("sending body chunks")
         val bodySource: Flux[ByteString] = body match {
           case EmptyBody          => Flux.empty[ByteString]
-          case InMemoryBody(bs)   => Flux.just(Seq(bs): _*)
-          case SourceBody(source) => Flux.from(source.runWith(Sink.asPublisher(false))(client.env.otoroshiMaterializer))
+          case InMemoryBody(bs)   => Flux.just(Seq(bs)*)
+          case SourceBody(source) => Flux.from(source.runWith(Sink.asPublisher(false))(using client.env.otoroshiMaterializer))
         }
         bodySource
           .doOnNext(chunk => {

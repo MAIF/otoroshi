@@ -285,7 +285,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     for {
       _ <- redisCli
              .keys(s"${env.storageRoot}:*")
-             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
+             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys*) else FastFuture.successful(0L))
       _ <- config.save()
       _ <-
         Future.sequence(

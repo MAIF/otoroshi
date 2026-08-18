@@ -1,6 +1,7 @@
 package plugins
 
 import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import play.api.libs.ws.WSBodyReadables.given
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*
@@ -16,7 +17,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
   import parent.*
 
-  def validCall() {
+  def validCall(): Unit = {
     val message = Json.obj("message" -> "creation done")
     val route   = createLocalRoute(
       Seq(
@@ -51,7 +52,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def tooBigBody() {
+  def tooBigBody(): Unit = {
     val message = Json.obj("message" -> "creation done")
     val route   = createLocalRoute(
       Seq(
@@ -87,7 +88,7 @@ class ResponseBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def chunkBody() {
+  def chunkBody(): Unit = {
     val message =
       "Hello from backend!, Hello from backend!, Hello from backend!, Hello from backend!, Hello from backend!"
     val route   = createLocalRoute(

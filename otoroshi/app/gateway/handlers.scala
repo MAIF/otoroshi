@@ -185,7 +185,7 @@ object GatewayRequestHandler {
       u.flatMap { optUser =>
         auth.authModule(globalConfig).paLogout(req, optUser, globalConfig, routeLegacy).map {
           case Left(body)   =>
-            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+            body.discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
             body
           case Right(value) =>
             value match {
@@ -205,7 +205,7 @@ object GatewayRequestHandler {
                     .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.routeCookieSuffix(route)}"
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + redirectTo)
                 Redirect(redirectTo)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
               }
               case Some(logoutUrl) => {
                 val cookieOpt         =
@@ -223,7 +223,7 @@ object GatewayRequestHandler {
                   logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
                 if (logger.isTraceEnabled) logger.trace("should redirect to " + actualRedirectUrl)
                 Redirect(actualRedirectUrl)
-                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth): _*)
+                  .discardingCookies(env.removePrivateSessionCookies(req.theHost, routeLegacy, auth)*)
               }
             }
         }
@@ -353,7 +353,7 @@ class GatewayRequestHandler(
 
   // TODO : very dirty ... fix it using Play 2.6 request.hasBody
   // def hasBody(request: Request[_]): Boolean = request.hasBody
-  def hasBody(request: Request[_]): Boolean = {
+  def hasBody(request: Request[?]): Boolean = {
     request.theHasBody
     // (request.method, request.headers.get("Content-Length")) match {
     //   case ("GET", Some(_))    => true
@@ -811,7 +811,7 @@ class GatewayRequestHandler(
                     ma.getOrElse(86400),
                     SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
                     secOpt
-                  ): _*
+                  )*
                 )
               )
             case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure)                  =>
@@ -824,7 +824,7 @@ class GatewayRequestHandler(
                     ma.getOrElse(86400),
                     SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true)),
                     secOpt
-                  ): _*
+                  )*
                 )
               )
             case _                                                                                                =>

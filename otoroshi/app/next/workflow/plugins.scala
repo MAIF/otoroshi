@@ -129,7 +129,7 @@ class WorkflowBackend extends NgBackendCall {
                     Right(
                       BackendCallResponse(
                         NgPluginHttpResponse.fromResult(
-                          Results.Status(status.get)(body.get).withHeaders(heads.toSeq: _*).as(ctype)
+                          Results.Status(status.get)(body.get).withHeaders(heads.toSeq*).as(ctype)
                         ),
                         None
                       )

@@ -84,7 +84,7 @@ object NgClientCredentialsConfig {
         defaultKeyPair = json.select("defaultKeyPair").asOpt[String].getOrElse(Cert.OtoroshiJwtSigning),
         domain = json.select("domain").asOpt[String].getOrElse("*"),
         secure = json.select("secure").asOpt[Boolean].getOrElse(true),
-        biscuit = json.select("biscuit").asOpt(BiscuitConf.format)
+        biscuit = json.select("biscuit").asOpt(using BiscuitConf.format)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

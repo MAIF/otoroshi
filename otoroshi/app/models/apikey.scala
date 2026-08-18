@@ -514,7 +514,7 @@ object ApiKey {
             enabled = enabled,
             readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
             allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
-            throttlingStrategy = json.select("throttlingStrategy").asOpt(ThrottlingStrategyConfig.fmt),
+            throttlingStrategy = json.select("throttlingStrategy").asOpt(using ThrottlingStrategyConfig.fmt),
             throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             dailyQuota = (json \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
             monthlyQuota = (json \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
@@ -553,7 +553,7 @@ object ApiKey {
 }
 
 trait ApiKeyDataStore extends BasicStore[ApiKey] {
-  def initiateNewApiKey(groupId: String, env: Env, ctx: Option[ApiActionContext[_]] = None): ApiKey = {
+  def initiateNewApiKey(groupId: String, env: Env, ctx: Option[ApiActionContext[?]] = None): ApiKey = {
     val defaultApikey = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),
@@ -573,7 +573,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       }
   }
 
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ApiKey = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): ApiKey = {
     val defaultApikey = ApiKey(
       clientId = IdGenerator.lowerCaseToken(16),
       clientSecret = IdGenerator.lowerCaseToken(64),

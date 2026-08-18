@@ -82,7 +82,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
         SchedulerHelper.runnable(
           cleanupFastLookups()(using env.otoroshiExecutionContext, env.otoroshiMaterializer, env)
         )
-      )(env.otoroshiExecutionContext)
+      )(using env.otoroshiExecutionContext)
     )
   }
 
@@ -98,7 +98,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
           .mapAsync(1)(key => redisCli.pttl(key).map(ttl => (key, ttl)))
           .filter(_._2 == -1)
           .grouped(100)
-          .mapAsync(1)(seq => redisCli.del(seq.map(_._1): _*))
+          .mapAsync(1)(seq => redisCli.del(seq.map(_._1)*))
           .runFold(0L)(_ + _)
       }
       .andThen {
@@ -128,7 +128,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       services: Seq[ServiceDescriptor]
   )(using ec: ExecutionContext, env: Env): Future[Boolean] =
     for {
-      r <- redisCli.sadd(query.asKey, services.map(_.id): _*)
+      r <- redisCli.sadd(query.asKey, services.map(_.id)*)
       _ <- redisCli.pexpire(query.asKey, 60000)
     } yield r > 0L
 
@@ -137,7 +137,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       services: Seq[ServiceDescriptor]
   )(using ec: ExecutionContext, env: Env): Future[Boolean] =
     for {
-      r <- redisCli.srem(query.asKey, services.map(_.id): _*)
+      r <- redisCli.srem(query.asKey, services.map(_.id)*)
     } yield r > 0L
 
   override def updateMetricsOnError(

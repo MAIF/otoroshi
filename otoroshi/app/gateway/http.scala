@@ -1,6 +1,7 @@
 package otoroshi.gateway
 
 import org.apache.pekko.actor.ActorRef
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
@@ -55,7 +56,7 @@ class HttpHandler()(using env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): (RequestHeader, Source[ByteString, _]) => Future[Result] = { (req, body) =>
+  ): (RequestHeader, Source[ByteString, ?]) => Future[Result] = { (req, body) =>
     {
       reverseProxyAction
         .async[Result](
@@ -99,7 +100,7 @@ class HttpHandler()(using env: Env) {
       snowMonkey: SnowMonkey,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): Request[Source[ByteString, _]] => Future[Result] = (req: Request[Source[ByteString, _]]) => {
+  ): Request[Source[ByteString, ?]] => Future[Result] = (req: Request[Source[ByteString, ?]]) => {
     reverseProxyAction
       .async[Result](
         ReverseProxyActionContext(req, req.body, snowMonkey, logger),
@@ -383,9 +384,9 @@ class HttpHandler()(using env: Env) {
               evt.log()(using env, env.analyticsExecutionContext) // pressure EC
             }
           }
-        }(env.analyticsExecutionContext) // pressure EC
+        }(using env.analyticsExecutionContext) // pressure EC
       }
-    }(env.analyticsExecutionContext) // pressure EC
+    }(using env.analyticsExecutionContext) // pressure EC
     //.andThen {
     //  case _ => env.datastores.requestsDataStore.decrementProcessedRequests()
     //}
@@ -483,7 +484,7 @@ class HttpHandler()(using env: Env) {
                 otoroshiHeadersIn = headersIn.map(Header.apply)
               )
             )
-            badResult.withHeaders(_headersOut: _*)
+            badResult.withHeaders(_headersOut*)
           }
         }
         case Right(httpRequest) => {
@@ -530,9 +531,9 @@ class HttpHandler()(using env: Env) {
             .withHttpHeaders(
               HeadersHelper
                 .addClaims(httpRequest.headers, httpRequest.claims, descriptor)
-                .filterNot(_._1 == "Cookie"): _*
+                .filterNot(_._1 == "Cookie")*
             )
-            .withCookies(wsCookiesIn: _*)
+            .withCookies(wsCookiesIn*)
             .withFollowRedirects(false)
             .withMaybeProxyServer(
               descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
@@ -706,7 +707,7 @@ class HttpHandler()(using env: Env) {
                           case _                                                                                     => false
                         }
 
-                        val theStream: Source[ByteString, _] = resp.bodyAsSource
+                        val theStream: Source[ByteString, ?] = resp.bodyAsSource
                           .concat(snowMonkeyContext.trailingResponseBodyStream)
                           .alsoTo(Sink.onComplete {
                             case Success(_) =>
@@ -827,11 +828,11 @@ class HttpHandler()(using env: Env) {
                                     headersOut.filterNot { h =>
                                       val lower = h._1.toLowerCase()
                                       lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                    }: _*
+                                    }*
                                   )
                                   .withCookies(
                                     withTrackingCookies ++ jwtInjection.additionalCookies
-                                      .map(t => Cookie(t._1, t._2)) ++ cookies: _*
+                                      .map(t => Cookie(t._1, t._2)) ++ cookies*
                                   )
                                 contentType match {
                                   case None      => descriptor.gzip.handleResult(req, response)
@@ -867,11 +868,11 @@ class HttpHandler()(using env: Env) {
                                   headersOut.filterNot { h =>
                                     val lower = h._1.toLowerCase()
                                     lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }: _*
+                                  }*
                                 )
                                 .withCookies(
                                   (withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies)*
                                 )
                               contentType match {
                                 case None      => res
@@ -920,11 +921,11 @@ class HttpHandler()(using env: Env) {
                                   headersOut.filterNot { h =>
                                     val lower = h._1.toLowerCase()
                                     lower == "content-type" || lower == "set-cookie" || lower == "transfer-encoding"
-                                  }: _*
+                                  }*
                                 )
                                 .withCookies(
                                   (withTrackingCookies ++ jwtInjection.additionalCookies
-                                    .map(t => Cookie(t._1, t._2)) ++ cookies): _*
+                                    .map(t => Cookie(t._1, t._2)) ++ cookies)*
                                 )
                               contentType match {
                                 case None      => res

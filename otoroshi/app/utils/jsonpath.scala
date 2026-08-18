@@ -44,7 +44,7 @@ object JsonPathUtils {
   }
 
   def getAt[T](payload: String, path: String)(using r: Reads[T]): Option[T] = {
-    getAtPoly(payload, path).flatMap(_.asOpt[T](r))
+    getAtPoly(payload, path).flatMap(_.asOpt[T](using r))
   }
 
   def getAtPolyJsonStr(payload: JsValue, path: String): String = {

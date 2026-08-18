@@ -271,7 +271,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
     )
   )
 
-  private def handleDeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+  private def handleDeploy(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env
@@ -300,7 +300,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  private def handleTest(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+  private def handleTest(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env
@@ -324,7 +324,7 @@ class RemoteCatalogAdminExtension(val env: Env) extends AdminExtension {
     }
   }
 
-  private def handleUndeploy(optBody: Option[Source[ByteString, _]]): Future[Result] = {
+  private def handleUndeploy(optBody: Option[Source[ByteString, ?]]): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     implicit val ev: otoroshi.env.Env = env

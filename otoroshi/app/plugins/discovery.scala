@@ -35,7 +35,7 @@ object SelfRegistrationConfig {
 
 object DiscoveryHelper {
 
-  def register(serviceIdOpt: Option[String], body: Source[ByteString, _], config: SelfRegistrationConfig)(using
+  def register(serviceIdOpt: Option[String], body: Source[ByteString, ?], config: SelfRegistrationConfig)(using
       env: Env,
       ec: ExecutionContext
   ): Future[Result] = {
@@ -241,7 +241,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   import otoroshi.utils.KaleidoscopeShim.*
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def name: String = "Self registration endpoints (service discovery)"
 
@@ -277,7 +277,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
@@ -290,7 +290,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -302,7 +302,7 @@ class DiscoverySelfRegistrationTransformer extends RequestTransformer {
     (ctx.request.method.toLowerCase(), ctx.request.thePath) match {
       case ("post", "/discovery/_register")                             => {
         awaitingRequests.get(ctx.snowflake).map { promise =>
-          val bodySource: Source[ByteString, _] = Source
+          val bodySource: Source[ByteString, ?] = Source
             .future(promise.future)
             .flatMapConcat(s => s)
           DiscoveryHelper.register(ctx.descriptor.id.some, bodySource, config).map(r => Left(r))

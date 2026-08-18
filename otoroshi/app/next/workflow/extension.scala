@@ -154,8 +154,8 @@ object Workflow {
           .getOrElse(WorkflowJobConfig.default),
         functions = (json \ "functions").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
         testPayload = (json \ "test_payload").asOpt[JsObject].getOrElse(Json.obj("name" -> "foo")),
-        orphans = (json \ "orphans").asOpt[Orphans](Orphans.format).getOrElse(Orphans()),
-        notes = (json \ "notes").asOpt(Reads.seq(Note.format)).getOrElse(Seq.empty).toSeq
+        orphans = (json \ "orphans").asOpt[Orphans](using Orphans.format).getOrElse(Orphans()),
+        notes = (json \ "notes").asOpt(using Reads.seq(using Note.format)).getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -194,7 +194,7 @@ class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: 
       .keys(keyAll())
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
+        else redisLike.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -207,7 +207,7 @@ class KvPausedWorkflowSessionDatastore(extensionId: AdminExtensionId, redisCli: 
       .keys(key(wfId, "*"))
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
+        else redisLike.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -312,7 +312,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
             case Some(body) =>
               body
-                .runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer)
+                .runFold(ByteString(""))(_ ++ _)(using env.otoroshiMaterializer)
                 .flatMap { bodyRaw =>
                   bodyRaw.utf8String.parseJson match {
                     case data @ JsObject(_) => {
@@ -330,15 +330,15 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
                                 .resume(data, attrs, env)
                                 .map { r =>
                                   Results.Ok(r.json)
-                                }(env.otoroshiExecutionContext)
+                                }(using env.otoroshiExecutionContext)
                             }
                           }
                           case None          => Results.NotFound(Json.obj("error" -> "resource not found")).vfuture
-                        }(env.otoroshiExecutionContext)
+                        }(using env.otoroshiExecutionContext)
                     }
                     case _                  => Results.BadRequest(Json.obj("error" -> "bad data format")).vfuture
                   }
-                }(env.otoroshiExecutionContext)
+                }(using env.otoroshiExecutionContext)
           }
         }
       ),
@@ -354,7 +354,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             .map {
               case Some(session) => Results.Ok(session.json)
               case None          => Results.NotFound(Json.obj("error" -> "resource not found"))
-            }(env.otoroshiExecutionContext)
+            }(using env.otoroshiExecutionContext)
         }
       ),
       AdminExtensionAdminApiRoute(
@@ -369,7 +369,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             .map {
               case true  => Results.Ok(Json.obj("done" -> true))
               case false => Results.NotFound(Json.obj("error" -> "resource not found"))
-            }(env.otoroshiExecutionContext)
+            }(using env.otoroshiExecutionContext)
         }
       ),
       AdminExtensionAdminApiRoute(
@@ -382,7 +382,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             .allForWorkflow(wfId)
             .map { sessions =>
               Results.Ok(JsArray(sessions.map(_.json)))
-            }(env.otoroshiExecutionContext)
+            }(using env.otoroshiExecutionContext)
         }
       ),
       AdminExtensionAdminApiRoute(
@@ -394,7 +394,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             case None       => Results.BadRequest(Json.obj("error" -> "no body")).vfuture
             case Some(body) =>
               body
-                .runFold(ByteString(""))(_ ++ _)(env.otoroshiMaterializer)
+                .runFold(ByteString(""))(_ ++ _)(using env.otoroshiMaterializer)
                 .flatMap { bodyRaw =>
                   val json = bodyRaw.utf8String.parseJson
                   PausedWorkflowSession.format.reads(json) match {
@@ -411,12 +411,12 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
                               .save(wfId, id, session)
                               .map { _ =>
                                 Results.Ok(session.json)
-                              }(env.otoroshiExecutionContext)
+                              }(using env.otoroshiExecutionContext)
                           }
-                        }(env.otoroshiExecutionContext)
+                        }(using env.otoroshiExecutionContext)
                     }
                   }
-                }(env.otoroshiExecutionContext)
+                }(using env.otoroshiExecutionContext)
           }
         }
       ),
@@ -429,7 +429,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
             .all()
             .map { sessions =>
               Results.Ok(JsArray(sessions.map(_.json)))
-            }(env.otoroshiExecutionContext)
+            }(using env.otoroshiExecutionContext)
         }
       )
     )
@@ -527,7 +527,7 @@ class WorkflowAdminExtension(val env: Env) extends AdminExtension {
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
       user: Option[BackOfficeUser],
-      body: Option[Source[ByteString, _]]
+      body: Option[Source[ByteString, ?]]
   ): Future[Result] = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer

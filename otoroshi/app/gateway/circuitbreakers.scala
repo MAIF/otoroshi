@@ -45,7 +45,7 @@ object Retry {
 
   lazy val logger = Logger("otoroshi-circuit-breaker")
 
-  private[this] def retryPromise[T](
+  private def retryPromise[T](
       totalCalls: Int,
       times: Int,
       delay: Long,
@@ -82,7 +82,7 @@ object Retry {
                   retryPromise[T](totalCalls, times - 1, newDelay, factor, promise, Some(e), ctx, f, counter)
                 }
               }
-          }(ec)
+          }(using ec)
       }
     } catch {
       case e: Throwable => promise.tryFailure(e)

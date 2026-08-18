@@ -226,7 +226,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     manager.startIfPossible(this)
     promise.future.andThen { case _ =>
       manager.unregisterJob(this)
-    }(manager.jobExecutor)
+    }(using manager.jobExecutor)
   }
 
   final def runOnceWithConfiguration()(using env: Env): Future[Unit] = {
@@ -235,7 +235,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     manager.runOnceWithConfiguration(this)
     promise.future.andThen { case _ =>
       manager.unregisterJob(this)
-    }(manager.jobExecutor)
+    }(using manager.jobExecutor)
   }
 
   final def auditJson(ctx: JobContext)(using env: Env): JsValue =
@@ -691,10 +691,10 @@ class JobManager(env: Env) {
       .filterNot(_ == classOf[RemoteCatalogJob].getName)
       .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     scanRef.set(
-      jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))(jobExecutor)
+      jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))(using jobExecutor)
     )
     lockRef.set(
-      jobScheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(updateLocks()))(jobExecutor)
+      jobScheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(updateLocks()))(using jobExecutor)
     )
   }
 

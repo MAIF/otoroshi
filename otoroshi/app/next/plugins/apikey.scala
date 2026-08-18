@@ -660,14 +660,14 @@ object NgApikeyExtractors {
     override def writes(o: NgApikeyExtractors): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyExtractors] = JsonHelpers.reader {
       NgApikeyExtractors(
-        basic = (json \ "basic").asOpt(NgApikeyExtractorBasic.format).getOrElse(NgApikeyExtractorBasic()),
+        basic = (json \ "basic").asOpt(using NgApikeyExtractorBasic.format).getOrElse(NgApikeyExtractorBasic()),
         customHeaders = (json \ "custom_headers")
-          .asOpt(NgApikeyExtractorCustomHeaders.format)
+          .asOpt(using NgApikeyExtractorCustomHeaders.format)
           .getOrElse(NgApikeyExtractorCustomHeaders()),
-        clientId = (json \ "client_id").asOpt(NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
-        jwt = (json \ "jwt").asOpt(NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
+        clientId = (json \ "client_id").asOpt(using NgApikeyExtractorClientId.format).getOrElse(NgApikeyExtractorClientId()),
+        jwt = (json \ "jwt").asOpt(using NgApikeyExtractorJwt.format).getOrElse(NgApikeyExtractorJwt()),
         otoBearer =
-          (json \ "oto_bearer").asOpt(NgApikeyExtractorOtoBearer.format).getOrElse(NgApikeyExtractorOtoBearer())
+          (json \ "oto_bearer").asOpt(using NgApikeyExtractorOtoBearer.format).getOrElse(NgApikeyExtractorOtoBearer())
       )
     }
   }
@@ -706,8 +706,8 @@ object NgApikeyCallsConfig {
     override def writes(o: NgApikeyCallsConfig): JsValue             = o.json
     override def reads(json: JsValue): JsResult[NgApikeyCallsConfig] = Try {
       NgApikeyCallsConfig(
-        extractors = (json \ "extractors").asOpt(NgApikeyExtractors.format).getOrElse(NgApikeyExtractors()),
-        routing = (json \ "routing").asOpt(NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
+        extractors = (json \ "extractors").asOpt(using NgApikeyExtractors.format).getOrElse(NgApikeyExtractors()),
+        routing = (json \ "routing").asOpt(using NgApikeyMatcher.format).getOrElse(NgApikeyMatcher()),
         validate = (json \ "validate").asOpt[Boolean].getOrElse(true),
         mandatory = (json \ "mandatory").asOpt[Boolean].getOrElse(true),
         passWithUser = (json \ "pass_with_user").asOpt[Boolean].getOrElse(false),

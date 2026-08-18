@@ -152,7 +152,7 @@ case class HttpListener(
 
 object HttpListener {
   val logger                                                              = Logger("otoroshi-http-listeners")
-  def default(ctx: Option[ApiActionContext[_]] = None)(using env: Env) = HttpListener(
+  def default(ctx: Option[ApiActionContext[?]] = None)(using env: Env) = HttpListener(
     location = EntityLocation.ownEntityLocation(ctx)(using env),
     id = "http-listener_" + UUID.randomUUID().toString,
     name = "http listener",
@@ -176,7 +176,7 @@ object HttpListener {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").as[String],
-        config = (json \ "config").as(HttpListenerConfig.format),
+        config = (json \ "config").as(using HttpListenerConfig.format),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
       )
@@ -272,7 +272,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
       ctx: AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
       req: RequestHeader,
       user: Option[BackOfficeUser],
-      body: Option[Source[ByteString, _]]
+      body: Option[Source[ByteString, ?]]
   ): Future[Result] = {
     val all: Seq[(String, String)] =
       staticListeners.keySet.toSeq.map(v => (v, v)) ++ dynamicListeners.values.toSeq.map(l => (l._1.id, l._1.name))
@@ -319,7 +319,7 @@ class HttpListenerAdminExtension(val env: Env) extends AdminExtension {
           }
         }
       }
-    }(env.analyticsExecutionContext)
+    }(using env.analyticsExecutionContext)
   }
 
   override def syncStates(): Future[Unit] = {

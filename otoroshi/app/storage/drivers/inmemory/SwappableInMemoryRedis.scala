@@ -322,10 +322,10 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     FastFuture.successful(value)
   }
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply)*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(_.toString).map(ByteString.apply): _*)
+    lpushBS(key, values.map(_.toString).map(ByteString.apply)*)
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     if (!store.containsKey(key)) {
@@ -386,7 +386,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   private def emptySet(): java.util.Set[ByteString] =
     new java.util.concurrent.CopyOnWriteArraySet[ByteString]
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     if (!store.containsKey(key)) {
@@ -409,7 +409,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     FastFuture.successful(seq.asScala.toSeq)
   }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     if (!store.containsKey(key)) {
@@ -628,10 +628,10 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
     memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq()).size.toLong.future
   }
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply)*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(_.toString).map(ByteString.apply): _*)
+    lpushBS(key, values.map(_.toString).map(ByteString.apply)*)
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     val seq: MutableSeq[ByteString] = memory.getTypedOrUpdate[MutableSeq[ByteString]](key, emptySeq())
@@ -687,7 +687,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
 
   private def emptySet(): MutableSet[ByteString] = scala.collection.mutable.HashSet.empty[ByteString]
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     val seq: MutableSet[ByteString] = memory.getTypedOrUpdate[MutableSet[ByteString]](key, emptySet())
@@ -707,7 +707,7 @@ class ModernSwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: A
     seq.toSeq.future
   }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     val seq: MutableSet[ByteString] = memory.getTypedOrUpdate[MutableSet[ByteString]](key, emptySet())

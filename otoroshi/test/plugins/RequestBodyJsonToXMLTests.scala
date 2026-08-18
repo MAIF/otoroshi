@@ -1,6 +1,8 @@
 package plugins
 
 import org.apache.pekko.util.ByteString
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper

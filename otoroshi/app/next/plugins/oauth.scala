@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.stream.Materializer
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
 import otoroshi.auth.OAuth2ModuleConfig
@@ -514,7 +515,7 @@ class OAuth2Caller extends NgRequestTransformer {
             "client_secret" -> authMod.get.clientSecret,
             "scope"         -> authMod.get.scope
           )
-        )(writeableOf_urlEncodedSimpleForm)
+        )(using writeableOf_urlEncodedSimpleForm)
       }
       case _ if config.jsonPayload => {
         builder.post(
@@ -541,7 +542,7 @@ class OAuth2Caller extends NgRequestTransformer {
             .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
             .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
             .applyOnWithOpt(config.resource) { (json, resource) => json ++ Map("resource" -> resource) }
-        )(writeableOf_urlEncodedSimpleForm)
+        )(using writeableOf_urlEncodedSimpleForm)
       }
     }
     // TODO: check status code
@@ -871,7 +872,7 @@ class OAuth2AuthModuleCaller extends NgRequestTransformer {
           "client_secret" -> authMod.clientSecret,
           "scope"         -> authMod.scope
         )
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
       .map(_.json)
       .map { json =>
         val rtok      = json.select("refresh_token").asOpt[String].getOrElse(refreshToken)

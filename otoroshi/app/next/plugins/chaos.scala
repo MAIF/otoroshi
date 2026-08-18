@@ -126,8 +126,8 @@ object NgLatencyInjectionFaultConfig {
       Try {
         NgLatencyInjectionFaultConfig(
           ratio = (json \ "ratio").as[Double],
-          from = (json \ "from").as(SnowMonkeyConfig.durationFmt),
-          to = (json \ "to").as(SnowMonkeyConfig.durationFmt)
+          from = (json \ "from").as(using SnowMonkeyConfig.durationFmt),
+          to = (json \ "to").as(using SnowMonkeyConfig.durationFmt)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -155,7 +155,7 @@ object NgBadResponsesFaultConfig {
       Try {
         NgBadResponsesFaultConfig(
           ratio = (json \ "ratio").as[Double],
-          responses = (json \ "responses").as(Reads.seq(NgBadResponse.format))
+          responses = (json \ "responses").as(using Reads.seq(using NgBadResponse.format))
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -199,13 +199,13 @@ object NgChaosConfig {
       Try {
         NgChaosConfig(
           largeRequestFaultConfig =
-            (json \ "large_request_fault").asOpt[NgLargeRequestFaultConfig](NgLargeRequestFaultConfig.format),
+            (json \ "large_request_fault").asOpt[NgLargeRequestFaultConfig](using NgLargeRequestFaultConfig.format),
           largeResponseFaultConfig =
-            (json \ "large_response_fault").asOpt[NgLargeResponseFaultConfig](NgLargeResponseFaultConfig.format),
+            (json \ "large_response_fault").asOpt[NgLargeResponseFaultConfig](using NgLargeResponseFaultConfig.format),
           latencyInjectionFaultConfig = (json \ "latency_injection_fault")
-            .asOpt[NgLatencyInjectionFaultConfig](NgLatencyInjectionFaultConfig.format),
+            .asOpt[NgLatencyInjectionFaultConfig](using NgLatencyInjectionFaultConfig.format),
           badResponsesFaultConfig =
-            (json \ "bad_responses_fault").asOpt[NgBadResponsesFaultConfig](NgBadResponsesFaultConfig.format)
+            (json \ "bad_responses_fault").asOpt[NgBadResponsesFaultConfig](using NgBadResponsesFaultConfig.format)
         )
       } match {
         case Failure(e) => JsError(e.getMessage)

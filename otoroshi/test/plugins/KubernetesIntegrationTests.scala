@@ -1,6 +1,7 @@
 package plugins
 
 import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyReadables.given
 import org.apache.pekko.stream.scaladsl.Source
 import com.dimafeng.testcontainers.GenericContainer
 import com.github.dockerjava.api.model.{Bind, ExposedPort, HostConfig, PortBinding, Ports, Volume}
@@ -331,7 +332,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
         throw new RuntimeException(s"Timeout waiting after ${timeoutSeconds}s")
       }
 
-      val getResult = kubectlContainer.execInContainer(commands: _*)
+      val getResult = kubectlContainer.execInContainer(commands*)
       val output    = getResult.getStdout
       val stderr    = getResult.getStderr
 

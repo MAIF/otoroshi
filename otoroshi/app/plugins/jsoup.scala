@@ -68,7 +68,7 @@ class HtmlPatcher extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     ctx.rawResponse.headers.get("Content-Type").orElse(ctx.rawResponse.headers.get("content-type")) match {
       case Some(ctype) if ctype.contains("text/html") => {
         Source.future(

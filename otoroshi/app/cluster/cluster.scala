@@ -1,6 +1,7 @@
 package otoroshi.cluster
 
 import org.apache.pekko.NotUsed
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.apache.pekko.http.scaladsl.ClientTransport
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, Uri}
@@ -915,7 +916,7 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(0L)
-        else redisLike.del(keys: _*)
+        else redisLike.del(keys*)
       )
   }
 
@@ -947,7 +948,7 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
+        else redisLike.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -1031,7 +1032,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(0L)
-        else redisLike.del(keys: _*)
+        else redisLike.del(keys*)
       )
   }
 
@@ -1063,7 +1064,7 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
       .keys(s"${env.storageRoot}:cluster:members:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisLike.mget(keys: _*)
+        else redisLike.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => MemberView.fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -2578,7 +2579,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           queueRef.set(q)
           q
       }
-    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, _]                                                      = pushSource
+    val source: Source[org.apache.pekko.http.scaladsl.model.ws.Message, ?]                                                      = pushSource
 
     def handleOfferFailure(
         key: String,
@@ -2753,7 +2754,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 .andThen(handleOfferFailure(key, incr))
             }
           }
-        }(env.otoroshiExecutionContext)
+        }(using env.otoroshiExecutionContext)
       )
     }
 
@@ -2930,7 +2931,7 @@ class SwappableInMemoryDataStores(
             // AWAIT: valid
             Await.result(writeStateToDisk(dbPath)(using actorSystem.dispatcher, materializer), 10.seconds)
           )
-        )(actorSystem.dispatcher)
+        )(using actorSystem.dispatcher)
       )
     }
     redis.start()
@@ -3197,7 +3198,7 @@ class SwappableInMemoryDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -3239,7 +3240,7 @@ class SwappableInMemoryDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -3247,7 +3248,7 @@ class SwappableInMemoryDataStores(
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -3262,8 +3263,8 @@ class SwappableInMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {

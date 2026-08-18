@@ -242,7 +242,7 @@ case class SAMLModule(authConfig: SamlAuthModuleConfig) extends AuthModule {
           } else {
             s"${authConfig.singleSignOnUrl}?SAMLRequest=${URLEncoder.encode(encoded, "UTF-8")}"
           }
-          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(request)
+          Redirect(redirectUrl).addingToSession("hash" -> env.sign(s"${authConfig.id}:::backoffice"))(using request)
         }
     }
   }
@@ -379,7 +379,7 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           singleSignOnUrl = (json \ "singleSignOnUrl").as[String],
           singleLogoutUrl = (json \ "singleLogoutUrl").asOpt[String].filter(_.nonEmpty),
-          credentials = (json \ "credentials").as[SAMLCredentials](SAMLCredentials.fmt),
+          credentials = (json \ "credentials").as[SAMLCredentials](using SAMLCredentials.fmt),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
@@ -403,12 +403,12 @@ object SamlAuthModuleConfig extends FromJson[AuthModuleConfig] {
             .map(n => NameIDFormat(n).getOrElse(NameIDFormat.Transient))
             .getOrElse(NameIDFormat.Transient),
           validateAssertions = (json \ "validateAssertions").as[Boolean],
-          signature = (json \ "signature").as[SAMLSignature](SAMLSignature.fmt),
+          signature = (json \ "signature").as[SAMLSignature](using SAMLSignature.fmt),
           usedNameIDAsEmail = (json \ "usedNameIDAsEmail").asOpt[Boolean].getOrElse(true),
           emailAttributeName = (json \ "emailAttributeName").asOpt[String],
           clientSideSessionEnabled = (json \ "clientSideSessionEnabled").asOpt[Boolean].getOrElse(true),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -642,8 +642,8 @@ object SAMLCredentials {
         Try {
           JsSuccess(
             SAMLCredentials(
-              signingKey = (json \ "signingKey").as[Credential](Credential.fmt),
-              encryptionKey = (json \ "encryptionKey").as[Credential](Credential.fmt),
+              signingKey = (json \ "signingKey").as[Credential](using Credential.fmt),
+              encryptionKey = (json \ "encryptionKey").as[Credential](using Credential.fmt),
               signedDocuments = (json \ "signedDocuments").asOpt[Boolean].getOrElse(false),
               encryptedAssertions = (json \ "encryptedAssertions").asOpt[Boolean].getOrElse(false)
             )

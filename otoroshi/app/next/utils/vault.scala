@@ -1,6 +1,7 @@
 package otoroshi.next.utils
 
 import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
@@ -493,7 +494,7 @@ class GoogleSecretManagerVault(name: String, configuration: Configuration, _env:
     tokenCache.getIfPresent("singleton") match {
       case Some(token)                                      => token.some.vfuture
       case None if authMode.contains("google")              => {
-        val adc = GoogleCredentials.getApplicationDefault().applyOnIf(scopes.nonEmpty)(_.createScoped(scopes: _*))
+        val adc = GoogleCredentials.getApplicationDefault().applyOnIf(scopes.nonEmpty)(_.createScoped(scopes*))
         adc.refreshIfExpired()
         Option(adc.getAccessToken) match {
           case Some(accessToken) => Some(accessToken.getTokenValue).vfuture
@@ -1000,7 +1001,7 @@ class SpringCloudConfigVault(name: String, configuration: Configuration, _env: E
     val url     = s"${baseUrl}/${root}"
     env.Ws
       .url(url)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withRequestTimeout(timeout)
       .withMethod(method)
       .withFollowRedirects(false)
@@ -1063,7 +1064,7 @@ class HttpVault(name: String, configuration: Configuration, _env: Env) extends V
     val url     = s"${baseUrl}"
     env.Ws
       .url(url)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withRequestTimeout(timeout)
       .withMethod(method)
       .withFollowRedirects(false)
@@ -1514,7 +1515,7 @@ class Vaults(env: Env) {
             case other => throw new IllegalStateException(s"unreachable case: $other")
           }
         }
-        .runWith(Sink.ignore)(env.otoroshiMaterializer)
+        .runWith(Sink.ignore)(using env.otoroshiMaterializer)
     } else {
       Done.vfuture
     }

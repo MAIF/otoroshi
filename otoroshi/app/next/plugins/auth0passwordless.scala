@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import otoroshi.auth.{GenericOauth2Module, GenericOauth2ModuleConfig}
@@ -356,7 +357,7 @@ class Auth0PasswordlessEndFlowEndpoint extends NgBackendCall {
                               "session_id"             -> sessionId // can be passed as cookie value, or "Otoroshi-Token" header, or "pappsToken" query params
                             )
                           )
-                          .withCookies(cookies: _*)
+                          .withCookies(cookies*)
                       ),
                       None
                     ).right

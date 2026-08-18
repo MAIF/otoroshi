@@ -31,7 +31,7 @@ class CustomCollector(registry: SemanticMetricRegistry, _jmxRegistry: MetricRegi
     )
   }
 
-  def fromGauge(key: MetricId, entryValue: Gauge[_]): MetricFamilySamples = {
+  def fromGauge(key: MetricId, entryValue: Gauge[?]): MetricFamilySamples = {
     val obj   = entryValue.getValue
     var value = .0
 

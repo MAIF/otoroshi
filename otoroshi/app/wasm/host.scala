@@ -1,6 +1,7 @@
 package otoroshi.wasm
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import io.otoroshi.wasm4s.scaladsl.*
@@ -72,7 +73,7 @@ object HFunction {
   )(
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal]) => Unit
   ): HostFunction[EmptyUserData] = {
-    defineFunction[EmptyUserData](config, fname, None, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3))
+    defineFunction[EmptyUserData](config, fname, None, returnType, params*)((p1, p2, p3, _) => f(p1, p2, p3))
   }
 
   def defineClassicFunction(
@@ -84,7 +85,7 @@ object HFunction {
       f: (ExtismCurrentPlugin, Array[LibExtism.ExtismVal], Array[LibExtism.ExtismVal], EnvUserData) => Unit
   )(using env: Env, ec: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     val ev = EnvUserData(env.wasmIntegration.context, ec, mat, config)
-    defineFunction[EnvUserData](config, fname, ev.some, returnType, params: _*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
+    defineFunction[EnvUserData](config, fname, ev.some, returnType, params*)((p1, p2, p3, _) => f(p1, p2, p3, ev))
   }
 
   def defineContextualFunction(
@@ -115,7 +116,7 @@ object HFunction {
   ): HostFunction[A] = {
     new HostFunction[A](
       fname,
-      Array(params: _*),
+      Array(params*),
       Array(returnType),
       new ExtismFunction[A] {
         override def invoke(
@@ -142,7 +143,7 @@ object HFunction {
   ): HostFunction[A] = {
     new HostFunction[A](
       fname,
-      Array(params: _*),
+      Array(params*),
       Array(),
       new ExtismFunction[A] {
         override def invoke(
@@ -198,7 +199,7 @@ object Logging extends AwaitCapable {
       LibExtism.ExtismValType.I64,
       LibExtism.ExtismValType.I64
     ) { (plugin, params, returns, ud) =>
-      val data  = Utils.contextParamsToJson(plugin, params: _*)
+      val data  = Utils.contextParamsToJson(plugin, params*)
       val route = data.select("route_id").asOpt[String].flatMap(env.proxyState.route)
       val event = WasmLogEvent(
         `@id` = ud.asInstanceOf[OtoroshiWasmIntegrationContext].ev.snowflakeGenerator.nextIdStr(),
@@ -238,7 +239,7 @@ object Http extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val context = Json.parse(Utils.contextParamsToString(plugin, params: _*))
+          val context = Json.parse(Utils.contextParamsToString(plugin, params*))
 
           val url          = (context \ "url").asOpt[String].getOrElse("https://request.otoroshi.io")
           val allowedHosts = hostData.config.allowedHosts
@@ -253,7 +254,7 @@ object Http extends AwaitCapable {
               .Ws
               .url(url)
               .withMethod((context \ "method").asOpt[String].getOrElse("GET"))
-              .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+              .withHttpHeaders((context \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq*)
               .withRequestTimeout(
                 Duration(
                   (context \ "request_timeout")
@@ -267,7 +268,7 @@ object Http extends AwaitCapable {
                 )
               )
               .withFollowRedirects((context \ "follow_redirects").asOpt[Boolean].getOrElse(false))
-              .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq: _*)
+              .withQueryStringParameters((context \ "query").asOpt[Map[String, String]].getOrElse(Map.empty).toSeq*)
             val bodyAsBytes              = context.select("body_bytes").asOpt[Array[Byte]].map(bytes => ByteString(bytes))
             val bodyBase64               = context.select("body_base64").asOpt[String].map(str => ByteString(str).decodeBase64)
             val bodyJson                 = context.select("body_json").asOpt[JsValue].map(str => ByteString(str.stringify))
@@ -349,7 +350,7 @@ object Http extends AwaitCapable {
           attrs match {
             case None     => plugin.returnBytes(returns(0), Array.empty[Byte])
             case Some(at) =>
-              val key = Utils.contextParamsToString(plugin, params: _*)
+              val key = Utils.contextParamsToString(plugin, params*)
               at.json.select(key).asOpt[JsValue] match {
                 case None        => plugin.returnBytes(returns(0), Array.empty[Byte])
                 case Some(value) => plugin.returnBytes(returns(0), value.stringify.byteString.toArray)
@@ -380,7 +381,7 @@ object Http extends AwaitCapable {
     }
   }
 
-  lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[_]] = Seq(
+  lazy val possibleAttributes: Map[String, otoroshi.plugins.AttributeSetter[?]] = Seq(
     otoroshi.plugins.AttributeSetter(
       otoroshi.next.plugins.Keys.ResponseAddHeadersKey,
       json => json.asObject.value.view.mapValues(_.asString).toMap.toSeq
@@ -428,7 +429,7 @@ object Http extends AwaitCapable {
         {
           attrs match {
             case Some(at: ConcurrentMutableTypedMap) => {
-              val context = Json.parse(Utils.contextParamsToString(plugin, params: _*))
+              val context = Json.parse(Utils.contextParamsToString(plugin, params*))
               val key     = context.select("key").asString
               val value   = context.select("value").asValue
               try {
@@ -461,7 +462,7 @@ object Http extends AwaitCapable {
         {
           attrs match {
             case Some(at: ConcurrentMutableTypedMap) => {
-              val key = Utils.contextParamsToString(plugin, params: _*)
+              val key = Utils.contextParamsToString(plugin, params*)
               at.m.keySet.find(_.displayName.contains(key)).foreach(tk => at.remove(tk))
               plugin.returnInt(returns(0), 1)
             }
@@ -503,7 +504,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val key    = Utils.contextParamsToString(plugin, params: _*)
+          val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore
             .allMatching(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
@@ -530,7 +531,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val key    = Utils.contextParamsToString(plugin, params: _*)
+          val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore
             .keys(s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key")
@@ -557,7 +558,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val key    = Utils.contextParamsToString(plugin, params: _*)
+          val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore.get(
             s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
@@ -583,7 +584,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val key    = Utils.contextParamsToString(plugin, params: _*)
+          val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore.exists(
             s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
@@ -608,7 +609,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val key    = Utils.contextParamsToString(plugin, params: _*)
+          val key    = Utils.contextParamsToString(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore.pttl(
             s"${hostData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.storageRoot}:$path$key"
@@ -632,7 +633,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val data   = Utils.contextParamsToJson(plugin, params: _*)
+          val data   = Utils.contextParamsToJson(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val key    = (data \ "key").as[String]
           val value  = (data \ "value")
@@ -666,7 +667,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val data   = Utils.contextParamsToJson(plugin, params: _*)
+          val data   = Utils.contextParamsToJson(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val key    = (data \ "key").as[String]
           val value  = (data \ "value")
@@ -700,7 +701,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val data   = Utils.contextParamsToJson(plugin, params: _*)
+          val data   = Utils.contextParamsToJson(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val future = env.datastores.rawDataStore
             .del(
@@ -729,7 +730,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val data   = Utils.contextParamsToJson(plugin, params: _*)
+          val data   = Utils.contextParamsToJson(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val key    = (data \ "key").as[String]
           val incr   = (data \ "incr").asOpt[String].map(_.toInt).getOrElse((data \ "incr").asOpt[Int].getOrElse(0))
@@ -755,7 +756,7 @@ object DataStore extends AwaitCapable {
           hostData: EnvUserData
       ) =>
         {
-          val data   = Utils.contextParamsToJson(plugin, params: _*)
+          val data   = Utils.contextParamsToJson(plugin, params*)
           val path   = prefix.map(p => s"wasm:$p:").getOrElse("")
           val key    = (data \ "key").as[String]
           val pttl   = (data \ "pttl").asOpt[String].map(_.toInt).getOrElse((data \ "pttl").asOpt[Int].getOrElse(0))
@@ -909,7 +910,7 @@ object State {
   )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_state_value", config) { (plugin, params, returns, userData) =>
       {
-        val context = Utils.contextParamsToJson(plugin, params: _*)
+        val context = Utils.contextParamsToJson(plugin, params*)
 
         val entity             = (context \ "entity").asOpt[String].getOrElse("")
         val id: Option[String] = (context \ "id").asOpt[String]
@@ -1027,7 +1028,7 @@ object State {
   )(using env: Env, executionContext: ExecutionContext, mat: Materializer): HostFunction[EnvUserData] = {
     HFunction.defineContextualFunction("proxy_cluster_state_value", config) { (plugin, params, returns, userData) =>
       {
-        val path = Utils.contextParamsToString(plugin, params: _*)
+        val path = Utils.contextParamsToString(plugin, params*)
 
         val cc = userData.asInstanceOf[OtoroshiWasmIntegrationContext].ev.clusterConfig
         plugin.returnString(returns(0), JsonOperationsHelper.getValueAtPath(path, getClusterState(cc))._2.stringify)
@@ -1234,7 +1235,7 @@ object HostFunctions {
   def getFunctions(config: WasmConfig, pluginId: String, attrs: Option[TypedMap])(using
       env: Env,
       executionContext: ExecutionContext
-  ): Array[HostFunction[_ <: HostUserData]] = {
+  ): Array[HostFunction[? <: HostUserData]] = {
 
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
 

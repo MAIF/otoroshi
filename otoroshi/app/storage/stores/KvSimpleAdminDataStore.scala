@@ -35,7 +35,7 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
       .keys(key("*"))
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisCli.mget(keys: _*)
+        else redisCli.mget(keys*)
       )
       .map(seq =>
         seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).flatMap { user =>
@@ -50,7 +50,7 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
     if (usernames.isEmpty) {
       FastFuture.successful(0L)
     } else {
-      redisCli.del(usernames.map(v => key(v)): _*)
+      redisCli.del(usernames.map(v => key(v))*)
     }
   }
 

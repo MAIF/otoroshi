@@ -21,8 +21,8 @@ import java.security.cert.X509Certificate
 import java.util.Base64
 import scala.concurrent.duration.DurationInt
 
-class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies, certs: Option[Seq[X509Certificate]])
-    extends Request[Source[ByteString, _]] {
+class RelayRoutingRequest(req: Request[Source[ByteString, ?]], cookies: Cookies, certs: Option[Seq[X509Certificate]])
+    extends Request[Source[ByteString, ?]] {
 
   lazy val version         = req.version
   lazy val reqId           = req.headers.get("Otoroshi-Relay-Routing-Id").get.toLong
@@ -42,7 +42,7 @@ class RelayRoutingRequest(req: Request[Source[ByteString, _]], cookies: Cookies,
     req.headers.toSimpleMap.toSeq
       .filterNot(_._1 == "Otoroshi-Relay-Routing-Cookies")
       .filter(_._1.startsWith("Otoroshi-Relay-Routing-Header-"))
-      .map(v => (v._1.replace("Otoroshi-Relay-Routing-Header-", ""), v._2)): _*
+      .map(v => (v._1.replace("Otoroshi-Relay-Routing-Header-", ""), v._2))*
   )
   lazy val connection: RemoteConnection = new RelayRoutingRemoteConnection(_remoteAddrInet, _remoteSecured, certs)
   lazy val target: RequestTarget        = new RelayRoutingRequestTarget(_remoteUriStr)
@@ -52,7 +52,7 @@ class TunnelRequest(
     requestId: Long,
     val version: String,
     val method: String,
-    val body: Source[ByteString, _],
+    val body: Source[ByteString, ?],
     _remoteUriStr: String,
     _remoteAddr: String,
     _remoteSecured: Boolean,
@@ -60,7 +60,7 @@ class TunnelRequest(
     _headers: Map[String, String],
     cookies: Cookies,
     certs: Option[Seq[X509Certificate]]
-) extends Request[Source[ByteString, _]] {
+) extends Request[Source[ByteString, ?]] {
 
   lazy val _remoteUri      = Uri(_remoteUriStr)
   lazy val _remoteAddrInet = InetAddress.getByName(_remoteAddr)
@@ -69,7 +69,7 @@ class TunnelRequest(
     RequestAttrKey.Cookies -> Cell(cookies)
   )
 
-  lazy val headers: Headers             = Headers(_headers.toSeq: _*)
+  lazy val headers: Headers             = Headers(_headers.toSeq*)
   lazy val connection: RemoteConnection = new RelayRoutingRemoteConnection(_remoteAddrInet, _remoteSecured, certs)
   lazy val target: RequestTarget        = new RelayRoutingRequestTarget(_remoteUriStr)
 }
@@ -96,12 +96,12 @@ class RelayRoutingRequestTarget(_remoteUriStr: String) extends RequestTarget {
 }
 
 class BackOfficeRequest(
-    request: Request[Source[ByteString, _]],
+    request: Request[Source[ByteString, ?]],
     host: String,
     apikey: ApiKey,
     user: BackOfficeUser,
     env: Env
-) extends Request[Source[ByteString, _]] {
+) extends Request[Source[ByteString, ?]] {
 
   private val newUri = {
     val path = request.path.replaceFirst("/bo/api/proxy/", "/").replace("//", "/")
@@ -146,13 +146,13 @@ class BackOfficeRequest(
   override def connection: RemoteConnection = new BackOfficeRemoteConnection(request)
   override def target: RequestTarget        = new BackOfficeRequestTarget(newUri)
   override def headers: Headers             = Headers.apply(
-    ((request.headers.headers.filterNot(_._1.toLowerCase() == "x-forwarded-host").toMap ++ addHeaders.toMap).toSeq): _*
+    ((request.headers.headers.filterNot(_._1.toLowerCase() == "x-forwarded-host").toMap ++ addHeaders.toMap).toSeq)*
   )
 
   override def version: String             = request.version
   override def attrs: TypedMap             = request.attrs
   override def method: String              = request.method
-  override def body: Source[ByteString, _] = request.body
+  override def body: Source[ByteString, ?] = request.body
 }
 
 class BackOfficeRequestTarget(newUri: String) extends RequestTarget {
@@ -163,7 +163,7 @@ class BackOfficeRequestTarget(newUri: String) extends RequestTarget {
   override def queryMap: Map[String, Seq[String]] = _uri.query().toMultiMap
 }
 
-class BackOfficeRemoteConnection(request: Request[Source[ByteString, _]]) extends RemoteConnection {
+class BackOfficeRemoteConnection(request: Request[Source[ByteString, ?]]) extends RemoteConnection {
   override def remoteAddress: InetAddress                           = InetAddress.getLocalHost
   override def clientCertificateChain: Option[Seq[X509Certificate]] = request.clientCertificateChain
   override def secure: Boolean                                      = request.secure

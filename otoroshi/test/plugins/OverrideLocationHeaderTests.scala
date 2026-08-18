@@ -1,6 +1,7 @@
 package plugins
 
 import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import play.api.libs.ws.WSBodyReadables.given
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.api.NgPluginHelper

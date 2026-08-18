@@ -47,7 +47,7 @@ class CookiesValidationTests(parent: PluginsTestSpec) {
           domain = route.frontend.domains.head.domain.some,
           httpOnly = true
         )
-      ): _*
+      )*
     )
     .get()
     .futureValue

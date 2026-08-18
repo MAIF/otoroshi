@@ -1,6 +1,7 @@
 package otoroshi.greenscore
 
 import com.typesafe.config.ConfigFactory
+import play.api.libs.ws.WSBodyWritables.given
 import functional.OtoroshiSpec
 import org.joda.time.DateTime
 import otoroshi.greenscore.EcoMetrics.MAX_GREEN_SCORE_NOTE

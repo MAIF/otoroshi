@@ -88,7 +88,7 @@ class StateExporter extends Job {
     format match {
       case "raw" =>
         env.datastores.fullNdJsonExport(100, 1, 4).flatMap { source =>
-          source.runFold(Seq.empty[JsValue])(_ :+ _)(env.otoroshiMaterializer).map { raw =>
+          source.runFold(Seq.empty[JsValue])(_ :+ _)(using env.otoroshiMaterializer).map { raw =>
             FullStateExport(UUID.randomUUID().toString, DateTime.now(), "raw", JsArray(raw)).toAnalytics()
           }
         }

@@ -61,7 +61,7 @@ object WasmAuthModuleConfig {
         allowedUsers = json.select("allowedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         deniedUsers = json.select("deniedUsers").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         sessionCookieValues =
-          (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
         userValidators = (json \ "userValidators")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -174,7 +174,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 Results
                   .Status(response.select("status").asOpt[Int].getOrElse(200))
                   .apply(body)
-                  .withHeaders(headers.toSeq: _*)
+                  .withHeaders(headers.toSeq*)
                   .as(contentType)
               }
             }
@@ -344,7 +344,7 @@ class WasmAuthModule(val authConfig: WasmAuthModuleConfig) extends AuthModule {
                 Results
                   .Status(response.select("status").asOpt[Int].getOrElse(200))
                   .apply(body)
-                  .withHeaders(headers.toSeq: _*)
+                  .withHeaders(headers.toSeq*)
                   .as(contentType)
               }
             }

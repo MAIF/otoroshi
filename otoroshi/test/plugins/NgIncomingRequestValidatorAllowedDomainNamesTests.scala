@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.models.GlobalConfig
 import otoroshi.next.models.NgPluginInstance
 import otoroshi.next.plugins.OverrideHost

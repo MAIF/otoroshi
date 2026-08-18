@@ -1,6 +1,7 @@
 package otoroshi.next.workflow
 
 import org.apache.pekko.util.ByteString
+import play.api.libs.ws.WSBodyWritables.given
 import io.otoroshi.wasm4s.scaladsl.{WasmFunctionParameters, WasmSource, WasmSourceKind}
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -890,7 +891,7 @@ class HttpClientFunction extends WorkflowFunction {
       .url(url, tlsConfig.legacy)
       .withRequestTimeout(timeout)
       .withMethod(method)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .applyOnWithOpt(body) { case (builder, body) =>
         builder.withBody(body)
       }

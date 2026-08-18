@@ -359,14 +359,14 @@ object MaxMindGeolocationHelper {
       val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
       dbRefSet(file, cityDb)
       dbInitializationDoneSet(file)
-    }(exc).andThen {
+    }(using exc).andThen {
       case Success(_) =>
         logger.info("Geolocation db from file path initialized")
         dbInitializationDoneSet(file)
       case Failure(e) =>
         logger.error("Geolocation db from file path initialization failed", e)
         dbInitializationDoneSet(file)
-    }(exc)
+    }(using exc)
   }
 
   private def initDbFromURL(url: String)(using env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -383,7 +383,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization from URL failed, could not write file on disk")
           dbInitializationDoneSet(url)
         case resp                       => {
-          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(using env.otoroshiMaterializer).map {
             case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from URL failed, status was not 200")
               dbInitializationDoneSet(url)
@@ -414,7 +414,7 @@ object MaxMindGeolocationHelper {
           logger.error("Geolocation db initialization from zip file URL failed, status was not 200")
           dbInitializationDoneSet(rawUrl)
         case resp                       => {
-          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(using env.otoroshiMaterializer).map {
             case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from zip file URL failed, could not write file on disk")
               dbInitializationDoneSet(rawUrl)
@@ -473,7 +473,7 @@ s                     |mv *.mmdb geolite.mmdb
           logger.error("Geolocation db initialization from tar.gz file URL failed, status was not 200")
           dbInitializationDoneSet(rawUrl)
         case resp                       => {
-          resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
+          resp.bodyAsSource.runWith(FileIO.toPath(file))(using env.otoroshiMaterializer).map {
             case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from tar.gz file URL failed, could not write file on disk")
               dbInitializationDoneSet(rawUrl)

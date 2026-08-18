@@ -1,6 +1,7 @@
 package plugins
 
 import org.apache.pekko.stream.scaladsl.Sink
+import play.api.libs.ws.WSBodyReadables.given
 import org.apache.pekko.util.ByteString
 import functional.PluginsTestSpec
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}

@@ -1,6 +1,7 @@
 package otoroshi.utils.clevercloud
 
 import java.util.Base64
+import play.api.libs.ws.WSBodyWritables.given
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import org.apache.pekko.NotUsed
@@ -105,7 +106,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       .url(url)
       .withHttpHeaders("Authorization" -> params)
       .withMaybeProxyServer(config.proxies.clevercloud)
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
 
     // logger.debug(
     //   s"""

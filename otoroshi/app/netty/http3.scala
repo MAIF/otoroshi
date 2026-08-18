@@ -47,7 +47,7 @@ class Http1RequestHandler(
   private val ERROR                = Unpooled.wrappedBuffer(s"${Json.obj("error" -> "error")}\r\n".getBytes(CharsetUtil.US_ASCII))
 
   private var keepAlive            = false
-  private var request: HttpRequest = _
+  private var request: HttpRequest = scala.compiletime.uninitialized
   private val hotSource            = Sinks.many().unicast().onBackpressureBuffer[ByteString]()
   private val hotFlux              = hotSource.asFlux()
 
@@ -595,7 +595,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
       val cert             = new SelfSignedCertificate()
       val fakeCtx          = QuicSslContextBuilder
         .forServer(cert.key(), null, cert.cert())
-        .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+        .applicationProtocols(Http3.supportedApplicationProtocols()*)
         .earlyData(true)
         .build()
       val sslContext       = QuicSslContextBuilder.buildForServerWithSni(new Mapping[String, QuicSslContext] {
@@ -623,7 +623,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                     val chain   = cert.certificatesChain
                     if (logger.isDebugEnabled) logger.debug(s"for domain: ${domain}, found ${cert.name} / ${cert.id}")
                     QuicSslContextBuilder
-                      .forServer(keypair.getPrivate, cert.password.orNull, chain: _*)
+                      .forServer(keypair.getPrivate, cert.password.orNull, chain*)
                       .clientAuth(config.clientAuth match {
                         case otoroshi.ssl.ClientAuth.None => io.netty.handler.ssl.ClientAuth.NONE
                         case otoroshi.ssl.ClientAuth.Want => io.netty.handler.ssl.ClientAuth.OPTIONAL
@@ -638,7 +638,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                           .getOrElse(io.netty.handler.ssl.ClientAuth.NONE)
                       })
                       .trustManager(DynamicSSLEngineProvider.currentServerTrustManager)
-                      .applicationProtocols(Http3.supportedApplicationProtocols(): _*)
+                      .applicationProtocols(Http3.supportedApplicationProtocols()*)
                       .earlyData(true)
                       .build()
                   }

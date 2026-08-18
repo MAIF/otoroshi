@@ -306,7 +306,7 @@ object DataExporter {
           }
         }
 
-      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(using env.analyticsMaterializer)
 
       (stream, queue, done)
     }
@@ -636,14 +636,14 @@ object Exporters {
               val ctx                     = SslContextBuilder
                 .forClient()
                 .applyOn { ctx =>
-                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                  certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                   ctx
                 }
                 .applyOn { ctx =>
                   if (trustAll) {
                     ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                   } else {
-                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                    ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                   }
                 }
                 .build()
@@ -918,14 +918,14 @@ object Exporters {
                 val ctx                     = SslContextBuilder
                   .forClient()
                   .applyOn { ctx =>
-                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain: _*))
+                    certs.map(c => ctx.keyManager(c.cryptoKeyPair.getPrivate, c.certificatesChain*))
                     ctx
                   }
                   .applyOn { ctx =>
                     if (trustAll) {
                       ctx.trustManager(new VeryNiceTrustManager(Seq.empty))
                     } else {
-                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head): _*)
+                      ctx.trustManager(trustedCerts.map(_.certificatesChain.head)*)
                     }
                   }
                   .build()
@@ -1334,7 +1334,7 @@ object Exporters {
         Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map { case (cli, conf) =>
           Source(events.toList)
             .mapAsync(10)(evt => cli.publish(evt)(env, conf.copy(sendEvents = true)))
-            .runWith(Sink.ignore)(env.analyticsMaterializer)
+            .runWith(Sink.ignore)(using env.analyticsMaterializer)
             .map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -1367,7 +1367,7 @@ object Exporters {
         }
         Source(events.toList)
           .mapAsync(10)(evt => cli.sendAsync(evt))
-          .runWith(Sink.ignore)(env.analyticsMaterializer)
+          .runWith(Sink.ignore)(using env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -1659,7 +1659,7 @@ object Exporters {
           .mkString("")
 
         Future
-          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(FileWriting.blockingEc)
+          .apply(Files.write(path, contentToAppend.getBytes, StandardOpenOption.APPEND))(using FileWriting.blockingEc)
           .map { _ =>
             ExportResult.ExportResultSuccess
           }
@@ -1704,7 +1704,7 @@ object Exporters {
 
         Future
           .apply(Files.write(path, (prefix + contentToAppend).getBytes, StandardOpenOption.APPEND))(
-            FileWriting.blockingEc
+            using FileWriting.blockingEc
           )
           .map { _ =>
             if (exporterConfig.maxNumberOfFile.nonEmpty) {

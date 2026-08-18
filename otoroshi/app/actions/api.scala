@@ -338,7 +338,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(using env: Env)
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), StandardCharsets.UTF_8)
 
-  def error(message: String, ex: Option[Throwable] = None)(using request: Request[_]): Future[Result] = {
+  def error(message: String, ex: Option[Throwable] = None)(using request: Request[?]): Future[Result] = {
     ex match {
       case Some(e) => logger.error(s"error message: $message", e)
       case None    => logger.error(s"error message: $message")
@@ -446,7 +446,7 @@ class UnAuthApiAction(val parser: BodyParser[AnyContent])(using env: Env)
 
   lazy val logger = Logger("otoroshi-api-action")
 
-  def error(message: String, ex: Option[Throwable] = None)(using request: Request[_]): Future[Result] = {
+  def error(message: String, ex: Option[Throwable] = None)(using request: Request[?]): Future[Result] = {
     ex match {
       case Some(e) => logger.error(s"error message: $message", e)
       case None    => logger.error(s"error message: $message")

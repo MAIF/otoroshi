@@ -1,6 +1,7 @@
 package otoroshi.utils.mailer
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.util.FastFuture.*
 import otoroshi.env.Env
 import otoroshi.models.GlobalConfig
@@ -611,7 +612,7 @@ class GenericMailer(env: Env, config: GlobalConfig, settings: GenericMailerSetti
     val fu = env.Ws // no need for mtls here
       .url(settings.url)
       .withHttpHeaders("Content-Type" -> "application/json")
-      .addHttpHeaders(settings.headers.toSeq: _*)
+      .addHttpHeaders(settings.headers.toSeq*)
       .post(
         Json.obj(
           "from"    -> Json.obj(

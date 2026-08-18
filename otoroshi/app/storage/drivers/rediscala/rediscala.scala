@@ -574,7 +574,7 @@ abstract class AbstractRedisDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -613,7 +613,7 @@ abstract class AbstractRedisDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -621,7 +621,7 @@ abstract class AbstractRedisDataStores(
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -636,8 +636,8 @@ abstract class AbstractRedisDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -692,14 +692,14 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
         .sequence(keysAndHash.map { otherKeysTuple =>
           val (_, seq)          = otherKeysTuple
           val keys: Seq[String] = seq.map(_._1)
-          redis.mget(keys: _*).map(_.zip(keys))
+          redis.mget(keys*).map(_.zip(keys))
         })
         .map { res =>
           val results: Map[String, Option[ByteString]] = res.flatten.map(t => (t._2, t._1)).toMap
           keys.map(k => results.get(k).flatten)
         }
     } else {
-      redis.mget(keys: _*)
+      redis.mget(keys*)
     }
   }
 
@@ -717,11 +717,11 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
     if (cluster) {
       Future
         .sequence(keys.toSeq.groupBy(CRC16.crc16).map { otherKeys =>
-          redis.del(otherKeys._2: _*)
+          redis.del(otherKeys._2*)
         })
         .map(_.foldLeft(0L)(_ + _))
     } else {
-      redis.del(keys: _*)
+      redis.del(keys*)
     }
   }
 
@@ -733,7 +733,7 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
 
   override def keys(pattern: String): Future[Seq[String]] = redis.keys(pattern)
 
-  override def hdel(key: String, fields: String*): Future[Long] = redis.hdel(key, fields: _*)
+  override def hdel(key: String, fields: String*): Future[Long] = redis.hdel(key, fields*)
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = redis.hgetall(key)
 
@@ -743,12 +743,12 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
 
   override def llen(key: String): Future[Long] = redis.llen(key)
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply)*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(v => ByteString(v.toString)): _*)
+    lpushBS(key, values.map(v => ByteString(v.toString))*)
 
-  override def lpushBS(key: String, values: ByteString*): Future[Long] = redis.lpush(key, values: _*)
+  override def lpushBS(key: String, values: ByteString*): Future[Long] = redis.lpush(key, values*)
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = redis.lrange(key, start, stop)
 
@@ -762,9 +762,9 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = redis.pexpire(key, milliseconds)
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
-  override def saddBS(key: String, members: ByteString*): Future[Long] = redis.sadd(key, members: _*)
+  override def saddBS(key: String, members: ByteString*): Future[Long] = redis.sadd(key, members*)
 
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, ByteString(member))
 
@@ -772,9 +772,9 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
 
   override def smembers(key: String): Future[Seq[ByteString]] = redis.smembers(key)
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
-  override def sremBS(key: String, members: ByteString*): Future[Long] = redis.srem(key, members: _*)
+  override def sremBS(key: String, members: ByteString*): Future[Long] = redis.srem(key, members*)
 
   override def scard(key: String): Future[Long] = redis.scard(key)
 

@@ -1,6 +1,7 @@
 package functional
 
 import org.apache.pekko.actor.ActorSystem
+import play.api.libs.ws.WSBodyWritables.given
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events.*
@@ -54,7 +55,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
         setUpEvent(
           (1 to 100).map { i =>
             event(now.minusMinutes(i), getStatus(i), 500L, 50L, 500, 1000)
-          }: _*
+          }*
         )
 
         awaitF(10.seconds).futureValue
@@ -194,7 +195,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends O
         setUpEvent(
           (1 to 100).map { i =>
             event(now.minusMinutes(i), getStatus(i), 500L, 50L, 500, 1000)
-          }: _*
+          }*
         )
         awaitF(10.seconds).futureValue
         ws.url(s"$elasticUrl/_refresh").post("").futureValue

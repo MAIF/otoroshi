@@ -44,14 +44,14 @@ class FrontendTlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
 
   private val nettyHttpsPort: Int      = TargetService.freePort
   private val otoRef                   = new AtomicReference[Otoroshi]()
-  private var otoEnv: Env              = _
+  private var otoEnv: Env              = scala.compiletime.uninitialized
 
   // domains for the plugin routes (covered by the *.foo.tools server cert)
   private val hasCertDomain   = "hasclientcert.foo.tools"
   private val matchCertDomain = "matchclientcert.foo.tools"
-  private var matchingClient: (PrivateKey, Array[X509Certificate]) = _ // signed by test CA, CN=fe-client (matches the validator)
-  private var otherClient: (PrivateKey, Array[X509Certificate])    = _ // signed by test CA, CN=fe-other (does not match)
-  private var untrustedClient: (PrivateKey, Array[X509Certificate]) = _ // signed by a DIFFERENT (untrusted) CA
+  private var matchingClient: (PrivateKey, Array[X509Certificate]) = scala.compiletime.uninitialized // signed by test CA, CN=fe-client (matches the validator)
+  private var otherClient: (PrivateKey, Array[X509Certificate])    = scala.compiletime.uninitialized // signed by test CA, CN=fe-other (does not match)
+  private var untrustedClient: (PrivateKey, Array[X509Certificate]) = scala.compiletime.uninitialized // signed by a DIFFERENT (untrusted) CA
 
   override def getTestConfiguration(configuration: Configuration): Configuration = {
     Configuration(

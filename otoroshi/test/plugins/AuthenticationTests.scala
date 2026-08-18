@@ -1,6 +1,7 @@
 package plugins
 
 import com.microsoft.playwright.options.AriaRole
+import play.api.libs.ws.WSBodyReadables.given
 import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
 import otoroshi.models.{ApiKey, RouteIdentifier, TeamAccess, TenantAccess, UserRight, UserRights}
@@ -117,7 +118,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 
@@ -243,7 +244,7 @@ class AuthenticationTests(parent: PluginsTestSpec) {
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 

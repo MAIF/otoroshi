@@ -515,7 +515,7 @@ case class JWKSAlgoSettings(
         env.MtlsWs
           .url(url, tlsConfig)
           .withRequestTimeout(timeout)
-          .withHttpHeaders(headers.toSeq: _*)
+          .withHttpHeaders(headers.toSeq*)
           .withMaybeProxyServer(
             proxy.orElse(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.jwk))
           )
@@ -1054,7 +1054,7 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {
         val values = b._2.split(",").map(_.trim)
-        a.withArrayClaim(b._1, values: _*)
+        a.withArrayClaim(b._1, values*)
       } else {
         a.withArrayClaim(b._1, b._2)
       }
@@ -1231,10 +1231,10 @@ sealed trait JwtVerifier extends AsJson {
       elContext: Map[String, String],
       attrs: TypedMap
   )(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     internalVerify(request, desc.some, apikey, user, elContext, attrs, sendEvent = true)(f).map {
-      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, ?]](badResult)
       case Right(goodResult) => goodResult
     }
   }
@@ -1983,8 +1983,8 @@ case class RefJwtVerifier(
       elContext: Map[String, String],
       attrs: TypedMap
   )(
-      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(f)
   }
 
@@ -2007,7 +2007,7 @@ case class RefJwtVerifier(
         val last                                          = new AtomicReference[Either[Result, A]](
           Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.missing.globaljwtverifier.id")))
         )
-        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
+        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids*)
 
         def dequeueNext(): Unit = {
           queue.dequeueFirst(_ => true) match {
@@ -2521,7 +2521,7 @@ object Implicits {
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): GlobalJwtVerifier = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): GlobalJwtVerifier = {
     val defaultJwt = GlobalJwtVerifier(
       id = IdGenerator.namedId("jwt_verifier", env),
       name = "New jwt verifier",

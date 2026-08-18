@@ -1,6 +1,7 @@
 package plugins
 
 import org.apache.pekko.http.scaladsl.model.ContentTypes
+import play.api.libs.ws.WSBodyReadables.given
 import org.apache.pekko.stream.Attributes
 import org.apache.pekko.stream.connectors.s3.AccessStyle.PathAccessStyle
 import org.apache.pekko.stream.connectors.s3.*
@@ -120,7 +121,7 @@ class S3BackendTests(parent: PluginsTestSpec) {
     .futureValue
 
   resp2.status mustBe 200
-  resp2.body[String] contains "Hello from MinIO" mustBe true
+  resp2.body[String] `contains` "Hello from MinIO" mustBe true
 
   deleteOtoroshiRoute(route).futureValue
   s3Container.stop()

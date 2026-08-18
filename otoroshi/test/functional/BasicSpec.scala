@@ -1,6 +1,7 @@
 package functional
 
 import java.util.Date
+import play.api.libs.ws.WSBodyReadables.given
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT

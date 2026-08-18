@@ -1,6 +1,7 @@
 package otoroshi.plugins.izanami
 
 import java.util.concurrent.atomic.AtomicBoolean
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
@@ -135,12 +136,12 @@ class IzanamiProxy extends RequestTransformer {
   override def categories: Seq[NgPluginCategory] = Seq(NgPluginCategory.Integrations)
   override def steps: Seq[NgStep]                = Seq(NgStep.TransformRequest)
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
@@ -182,7 +183,7 @@ class IzanamiProxy extends RequestTransformer {
               resp.headers
                 .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -204,7 +205,7 @@ class IzanamiProxy extends RequestTransformer {
               resp.headers
                 .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -220,7 +221,7 @@ class IzanamiProxy extends RequestTransformer {
     awaitingRequests
       .get(ctx.snowflake)
       .map { promise =>
-        val bodySource: Source[ByteString, _] = Source
+        val bodySource: Source[ByteString, ?] = Source
           .future(promise.future)
           .flatMapConcat(s => s)
 
@@ -242,7 +243,7 @@ class IzanamiProxy extends RequestTransformer {
                   resp.headers
                     .view.mapValues(_.last).toMap
                     .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                    .toSeq: _*
+                    .toSeq*
                 )
                 .as(resp.header("Content-Type").getOrElse("application/json"))
                 .left
@@ -275,7 +276,7 @@ class IzanamiProxy extends RequestTransformer {
             resp.headers
               .view.mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-              .toSeq: _*
+              .toSeq*
           )
           .as(resp.header("Content-Type").getOrElse("application/json"))
           .left
@@ -297,7 +298,7 @@ class IzanamiProxy extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }

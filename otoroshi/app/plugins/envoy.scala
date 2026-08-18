@@ -30,7 +30,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def deprecated: Boolean = true
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def name: String = "[DEPRECATED] Envoy Control Plane"
 
@@ -411,7 +411,7 @@ class EnvoyControlPlane extends RequestTransformer {
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
@@ -424,7 +424,7 @@ class EnvoyControlPlane extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -433,7 +433,7 @@ class EnvoyControlPlane extends RequestTransformer {
       f: JsValue => Future[Result]
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     awaitingRequests.get(ctx.snowflake).map { promise =>
-      val bodySource: Source[ByteString, _] = Source
+      val bodySource: Source[ByteString, ?] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
       bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { body =>

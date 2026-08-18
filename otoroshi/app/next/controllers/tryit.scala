@@ -1,6 +1,7 @@
 package otoroshi.next.controllers
 
 import org.apache.pekko.kafka.ConsumerSettings
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import otoroshi.actions.BackOfficeActionAuth
@@ -167,8 +168,8 @@ class TryItController(
             .akkaUrlWithTarget(url, target)
             .withFollowRedirects(false)
             .withMethod(method)
-            .addHttpHeaders(headers.toSeq: _*)
-            .withCookies(cookies: _*)
+            .addHttpHeaders(headers.toSeq*)
+            .withCookies(cookies*)
             .withRequestTimeout(1.minute)
           val respF     = body match {
             case None          => wsRequest.execute()

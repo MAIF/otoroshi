@@ -834,7 +834,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
 
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
-  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, ?]]] = {
     val config  = ctx
       .cachedConfig(internalName)(WebsocketMirrorBackendConfig.format)
       .getOrElse(WebsocketMirrorBackendConfig())
@@ -857,7 +857,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               ctx.attrs,
               env
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
           .rightf
       }
       case Some(url) => {
@@ -882,7 +882,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               ctx.attrs,
               env
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
         val response   = ActorFlow
           .actorRef(out =>
             WebSocketProxyActor.props(
@@ -899,7 +899,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
               env,
               Some(cb)
             )
-          )(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          )(using env.otoroshiActorSystem, env.otoroshiMaterializer)
           .alsoTo(Sink.onComplete { case _ =>
             hotSource.tryEmitComplete()
           })
@@ -909,7 +909,7 @@ class WebsocketMirrorBackend extends NgWebsocketBackendPlugin {
           .via(mirrorFlow)
           .runWith(Sink.foreach { (m: play.api.http.websocket.Message) =>
             //println("Got sink message: " + m)
-          })(env.otoroshiMaterializer)
+          })(using env.otoroshiMaterializer)
         response
       }
     }

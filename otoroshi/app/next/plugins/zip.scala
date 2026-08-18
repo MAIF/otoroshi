@@ -126,7 +126,7 @@ class ZipFileBackend extends NgBackendCall {
 
   private def atPath(_path: String, zip: ZipFile, config: ZipFileBackendConfig)(using
       env: Env
-  ): Option[(String, Source[ByteString, _])] = {
+  ): Option[(String, Source[ByteString, ?])] = {
     var path =
       if (_path == "/") "index.html"
       else {

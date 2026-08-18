@@ -326,7 +326,7 @@ class ResponseCache extends RequestTransformer {
             ResponseCache.logger.debug(
               s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
             )
-          Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+          Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq*))
         }
       }
     } else {
@@ -336,7 +336,7 @@ class ResponseCache extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled && couldCacheResponse(ctx, config)) {
       val size = new AtomicLong(0L)

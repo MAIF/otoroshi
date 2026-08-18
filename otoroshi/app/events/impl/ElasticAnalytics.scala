@@ -1,6 +1,7 @@
 package otoroshi.events.impl
 
 import java.util.Base64
+import play.api.libs.ws.WSBodyWritables.given
 import java.util.concurrent.ConcurrentHashMap
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -593,7 +594,7 @@ object ElasticUtils {
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
   }
 
   def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(using
@@ -916,7 +917,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
           "Content-Type"  -> "application/x-ndjson"
         )
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
     Source(event.toList)
       .grouped(config.maxBulkSize)
       .map(_.map(bulkRequest))
@@ -1008,7 +1009,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
       .post(query)
       .flatMap { resp =>
         resp.status match {
@@ -1030,7 +1031,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
       }
-      .addHttpHeaders(config.headers.toSeq: _*)
+      .addHttpHeaders(config.headers.toSeq*)
       .post(query)
       .flatMap { resp =>
         resp.status match {

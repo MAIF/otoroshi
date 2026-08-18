@@ -129,7 +129,7 @@ object KafkaSettings {
       .tick(0.second, 1.second, ())
       .filter(_ => DynamicSSLEngineProvider.isFirstSetupDone)
       .take(1)
-      .runWith(Sink.head)(env.otoroshiMaterializer)
+      .runWith(Sink.head)(using env.otoroshiMaterializer)
   }
 
   private def getSaslJaasClass(mechanism: String) = {

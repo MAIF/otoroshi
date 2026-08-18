@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import com.github.blemale.scaffeine.Scaffeine
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.env.Env
 import otoroshi.next.models.NgTlsConfig
 import otoroshi.next.plugins.api.*

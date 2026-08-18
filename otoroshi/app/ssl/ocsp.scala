@@ -146,7 +146,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def respond(req: RequestHeader, body: Source[ByteString, _], possibleCerts: Seq[String])(using
+  def respond(req: RequestHeader, body: Source[ByteString, ?], possibleCerts: Seq[String])(using
       ec: ExecutionContext
   ): Future[Result] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>

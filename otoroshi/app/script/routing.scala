@@ -24,7 +24,7 @@ case class PreRoutingError(
 ) extends RuntimeException("PreRoutingError")
     with NoStackTrace {
   def asResult: Result = {
-    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq: _*)
+    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq*)
   }
 }
 case class PreRoutingErrorWithResult(result: Result)

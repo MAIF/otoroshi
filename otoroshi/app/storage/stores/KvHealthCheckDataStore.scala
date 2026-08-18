@@ -25,12 +25,12 @@ class KvHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends HealthCheck
   )(using ec: ExecutionContext, env: Env): Future[Seq[HealthCheckEvent]] =
     redisCli
       .lrange(key(serviceDescriptor.id), 0, collectionSize - 1)
-      .map(seq => seq.map(i => Json.parse(i.utf8String).as(HealthCheckEvent.format)))
+      .map(seq => seq.map(i => Json.parse(i.utf8String).as(using HealthCheckEvent.format)))
 
   override def findLast(
       serviceDescriptor: ServiceDescriptor
   )(using ec: ExecutionContext, env: Env): Future[Option[HealthCheckEvent]] =
     redisCli
       .lrange(key(serviceDescriptor.id), 0, 1)
-      .map(seq => seq.map(i => Json.parse(i.utf8String).as(HealthCheckEvent.format)).headOption)
+      .map(seq => seq.map(i => Json.parse(i.utf8String).as(using HealthCheckEvent.format)).headOption)
 }

@@ -1,6 +1,7 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
+import play.api.libs.ws.WSBodyReadables.given
 import org.apache.pekko.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.{ClientConfig, ServiceDescriptor, Target}

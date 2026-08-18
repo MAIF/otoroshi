@@ -1221,7 +1221,7 @@ case class ForEachNode(json: JsObject) extends Node {
               }
           }
           .takeWhile(_.isRight, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             seq.lastOption match {
               case None            => JsArray().right
@@ -1248,7 +1248,7 @@ case class ForEachNode(json: JsObject) extends Node {
               }
           }
           .takeWhile(_.isRight, inclusive = true)
-          .runWith(Sink.seq)(env.otoroshiMaterializer)
+          .runWith(Sink.seq)(using env.otoroshiMaterializer)
           .map { seq =>
             seq.lastOption match {
               case None            => JsArray().right
@@ -1344,7 +1344,7 @@ case class MapNode(json: JsObject) extends Node {
                 }
             }
             .takeWhile(_.isRight, inclusive = true)
-            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .map { seq =>
               seq.lastOption match {
                 case None            => JsArray().right
@@ -1445,7 +1445,7 @@ case class FlatMapNode(json: JsObject) extends Node {
                 }
             }
             .takeWhile(_.isRight, inclusive = true)
-            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .map { seq =>
               seq.lastOption match {
                 case None            => JsArray().right
@@ -1555,7 +1555,7 @@ case class FilterNode(json: JsObject) extends Node {
                 }
             }
             .takeWhile(_._2.isRight, inclusive = true)
-            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .map { seq =>
               seq.lastOption match {
                 case None                 => JsArray().right

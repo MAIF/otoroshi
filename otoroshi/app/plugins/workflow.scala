@@ -109,12 +109,12 @@ class WorkflowJob extends Job {
 
 class WorkflowEndpoint extends RequestTransformer {
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
@@ -127,7 +127,7 @@ class WorkflowEndpoint extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -167,7 +167,7 @@ class WorkflowEndpoint extends RequestTransformer {
     val workflow = WorkFlow(spec)
     awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed                          = new AtomicBoolean(false)
-      val bodySource: Source[ByteString, _] = Source
+      val bodySource: Source[ByteString, ?] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
         .alsoTo(Sink.onComplete { case _ =>

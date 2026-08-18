@@ -28,7 +28,7 @@ class WebsocketJsonFormatValidatorTests(parent: PluginsTestSpec) {
   import parent.*
 
   def closeConnection() = {
-    implicit val http: HttpExt = Http()(system)
+    implicit val http: HttpExt = Http()(using system)
 
     val backend = new WebsocketBackend().await()
 
@@ -96,7 +96,7 @@ class WebsocketJsonFormatValidatorTests(parent: PluginsTestSpec) {
   }
 
   def drop() = {
-    implicit val http: HttpExt = Http()(system)
+    implicit val http: HttpExt = Http()(using system)
 
     val backend = new WebsocketBackend().await()
 

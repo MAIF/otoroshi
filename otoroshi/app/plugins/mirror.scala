@@ -1,6 +1,7 @@
 package otoroshi.plugins.mirror
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
@@ -105,9 +106,9 @@ case class RequestContext(
         (HeadersHelper
           .addClaims(httpRequest.headers, httpRequest.claims, descriptor)
           .filterNot(_._1 == "Host")
-          .filterNot(_._1 == "Cookie") ++ Seq("Host" -> url.authority.host.toString())): _*
+          .filterNot(_._1 == "Cookie") ++ Seq("Host" -> url.authority.host.toString()))*
       )
-      .withCookies(httpRequest.cookies: _*)
+      .withCookies(httpRequest.cookies*)
       .withFollowRedirects(false)
       .withMaybeProxyServer(
         descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
@@ -358,7 +359,7 @@ class MirroringPlugin extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     ctx.body
       .alsoTo(Sink.foreach(bs => inFlightRequests.get(ctx.snowflake).foreach(_.input.getAndUpdate(v => v.concat(bs)))))
       .alsoTo(
@@ -368,7 +369,7 @@ class MirroringPlugin extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     val cfg = MirroringPluginConfig(ctx.configFor("MirroringPlugin"))
     inFlightRequests.get(ctx.snowflake).foreach { c =>
       if (!c.started.get()) {

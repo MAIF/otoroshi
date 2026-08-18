@@ -530,7 +530,7 @@ object ReverseProxyActionHelper {
 
 case class ReverseProxyActionContext(
     req: RequestHeader,
-    requestBody: Source[ByteString, _],
+    requestBody: Source[ByteString, ?],
     snowMonkey: SnowMonkey,
     logger: Logger
 )
@@ -549,7 +549,7 @@ case class ActualCallContext(
     globalConfig: GlobalConfig,
     withTrackingCookies: Seq[Cookie],
     bodyAlreadyConsumed: AtomicBoolean,
-    requestBody: Source[ByteString, _],
+    requestBody: Source[ByteString, ?],
     secondStart: Long,
     firstOverhead: Long,
     cbDuration: Long,
@@ -1220,7 +1220,7 @@ class ReverseProxyAction(env: Env) {
       .andThen { case _ =>
         val requests = env.datastores.requestsDataStore.decrementHandledRequests()
         env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
   }
 }
 
@@ -1355,7 +1355,7 @@ object ReverseProxyHelper {
               .successful(
                 Results
                   .Ok(ByteString.empty)
-                  .withHeaders(descriptor.cors.asHeaders(req): _*)
+                  .withHeaders(descriptor.cors.asHeaders(req)*)
               )
               .map(Left.apply)
           }

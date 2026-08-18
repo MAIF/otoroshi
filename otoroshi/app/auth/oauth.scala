@@ -1,6 +1,7 @@
 package otoroshi.auth
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import play.api.libs.ws.WSBodyWritables.given
 import com.auth0.jwt.JWT
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
@@ -77,7 +78,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           claims = (json \ "claims").asOpt[String].getOrElse("email name"),
           refreshTokens = (json \ "refreshTokens").asOpt[Boolean].getOrElse(false),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
-          pkce = (json \ "pkce").asOpt[PKCEConfig](PKCEConfig._fmt),
+          pkce = (json \ "pkce").asOpt[PKCEConfig](using PKCEConfig._fmt),
           noWildcardRedirectURI = (json \ "noWildcardRedirectURI").asOpt[Boolean].getOrElse(false),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
@@ -93,7 +94,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
           rightsOverride = (json \ "rightsOverride")
             .asOpt[Map[String, JsArray]]
@@ -364,7 +365,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home.absoluteURL(env.exposedRootSchemeIsHttps)
         )
-      ): _*
+      )*
     ).asFuture
   }
 
@@ -445,7 +446,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         "bo-redirect-after-login" -> redirect.getOrElse(
           routes.BackOfficeController.dashboard.absoluteURL(env.exposedRootSchemeIsHttps)
         )
-      ): _*
+      )*
     ).asFuture
   }
 
@@ -522,7 +523,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case None           => params
           case Some(verifier) => params ++ Map("code_verifier" -> verifier.replace(s"${authConfig.id}-", ""))
         }
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
     future1.map(_.json)
@@ -556,7 +557,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           "client_id"     -> clientId,
           "redirect_uri"  -> redirectUri
         ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
     future1.map(_.json)
@@ -580,7 +581,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         Map(
           "access_token" -> accessToken
         )
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     future2
   }
@@ -679,7 +680,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           "token"     -> accessToken,
           "client_id" -> authConfig.clientId
         ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     future.map {
       case resp if resp.status == 200 && (resp.json \ "active").asOpt[Boolean].getOrElse(false) =>

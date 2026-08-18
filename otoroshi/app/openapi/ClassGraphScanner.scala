@@ -128,7 +128,7 @@ class ClassGraphScanner {
     val scanResult = new ClassGraph()
       .addClassLoader(this.getClass.getClassLoader)
       .enableAllInfo()
-      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages: _*)
+      .acceptPackages(Seq("otoroshi", "otoroshi_plugins", "play.api.libs.ws") ++ configurationPackages*)
       .scan()
     //val dev        = env.isDev
     //if (dev) {

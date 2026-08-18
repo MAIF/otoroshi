@@ -285,7 +285,7 @@ object LetsEncryptHelper {
   ): Future[Order] = {
     Future {
       account.newOrder().domains(domain).create()
-    }(blockingEc)
+    }(using blockingEc)
   }
 
   private def doChallenges(order: Order, domain: String)(using
@@ -297,7 +297,7 @@ object LetsEncryptHelper {
       .mapAsync(1) { auth =>
         Future {
           (auth, auth.findChallenge(classOf[Http01Challenge]))
-        }(blockingEc)
+        }(using blockingEc)
       }
       .collect {
         case (auth, opt) if opt.isPresent => (auth, opt.get())
@@ -342,7 +342,7 @@ object LetsEncryptHelper {
             Future {
               challenge.update()
               challenge.getStatus
-            }(blockingEc)
+            }(using blockingEc)
           }
           .take(10)
           .filter(_ == Status.VALID)
@@ -366,14 +366,14 @@ object LetsEncryptHelper {
   ): Future[Either[String, Order]] = {
     Future {
       order.execute(csr)
-    }(blockingEc).flatMap { _ =>
+    }(using blockingEc).flatMap { _ =>
       Source
         .tick(3.seconds, 5.seconds, ())
         .mapAsync(1) { _ =>
           Future {
             order.update()
             order
-          }(blockingEc)
+          }(using blockingEc)
         }
         .take(10)
         .filter(_.getStatus == Status.VALID)

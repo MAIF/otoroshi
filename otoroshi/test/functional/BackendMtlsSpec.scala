@@ -71,8 +71,8 @@ class BackendMtlsSpec(configurationSpec: => Configuration) extends OtoroshiSpec 
   private val rogueId    = "mtls-client-rogue"
   private val serverCaId = "mtls-server-ca"
 
-  private var backend: MtlsBackend           = _
-  private var plainBackend: PlainTlsBackend  = _
+  private var backend: MtlsBackend           = scala.compiletime.uninitialized
+  private var plainBackend: PlainTlsBackend  = scala.compiletime.uninitialized
 
   // -------------------------------------------------------------------------------------------------
   // fixtures

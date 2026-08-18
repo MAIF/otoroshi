@@ -1,6 +1,7 @@
 package plugins
 
 import com.microsoft.playwright.*
+import play.api.libs.ws.WSBodyReadables.given
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
 import otoroshi.auth.{BasicAuthModuleConfig, BasicAuthUser, SessionCookieValues}
@@ -95,7 +96,7 @@ class UserProfileEndpointTests(parent: PluginsTestSpec) {
   val callWithUser = ws
     .url(s"http://127.0.0.1:$port/")
     .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-    .withCookies(wsCookies: _*)
+    .withCookies(wsCookies*)
     .get()
     .futureValue
 

@@ -151,7 +151,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -181,7 +181,7 @@ object OtoroshiLoaderHelper {
                 }
                 .filter(identity)
                 .take(1)
-                .runWith(Sink.head)(mat)
+                .runWith(Sink.head)(using mat)
                 .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
                 .recover { case e: Throwable =>
                   SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -238,7 +238,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -266,7 +266,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -294,7 +294,7 @@ object OtoroshiLoaderHelper {
               .map(_.initialized)
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -321,7 +321,7 @@ object OtoroshiLoaderHelper {
               }
               .filter(identity)
               .take(1)
-              .runWith(Sink.head)(mat)
+              .runWith(Sink.head)(using mat)
               .map(_ => SubSystemInitializationState.Successful(task, System.currentTimeMillis() - start))
               .recover { case e: Throwable =>
                 SubSystemInitializationState.Failed(task, e, System.currentTimeMillis() - start)
@@ -465,7 +465,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
-  lazy val filters = new DefaultHttpFilters(httpFilters: _*)
+  lazy val filters = new DefaultHttpFilters(httpFilters*)
 
   lazy val headerEncoding = new play.api.mvc.DefaultCookieHeaderEncoding(httpConfiguration.cookies)
 

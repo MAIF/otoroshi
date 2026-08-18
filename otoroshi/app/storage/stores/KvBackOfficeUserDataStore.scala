@@ -32,7 +32,7 @@ class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
       .keys(s"${env.storageRoot}:users:backoffice:*")
       .flatMap(keys =>
         if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-        else redisCli.mget(keys: _*)
+        else redisCli.mget(keys*)
       )
       .map { seq =>
         seq
@@ -50,6 +50,6 @@ class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
 
   def discardAllSessions()(using ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.keys(s"${env.storageRoot}:users:backoffice:*").flatMap { keys =>
-      redisCli.del(keys: _*)
+      redisCli.del(keys*)
     }
 }

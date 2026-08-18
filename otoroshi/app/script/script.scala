@@ -197,7 +197,7 @@ case class HttpRequest(
     clientCertificateChain: Option[Seq[X509Certificate]],
     target: Option[Target],
     claims: OtoroshiClaim,
-    body: () => Source[ByteString, _]
+    body: () => Source[ByteString, ?]
 ) {
   lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
@@ -234,7 +234,7 @@ case class HttpResponse(
     status: Int,
     headers: Map[String, String],
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
-    body: () => Source[ByteString, _]
+    body: () => Source[ByteString, ?]
 ) {
   def json: JsValue =
     Json.obj(
@@ -455,7 +455,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 
   def transformRequestBodyWithCtx(
       context: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     transformRequestBody(
       context.snowflake,
       context.otoroshiRequest.body.apply(),
@@ -469,7 +469,7 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 
   def transformResponseBodyWithCtx(
       context: TransformerResponseBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     transformResponseBody(
       context.snowflake,
       context.otoroshiResponse.body.apply(),
@@ -533,25 +533,25 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 
   def transformRequestBody(
       snowflake: String,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       rawRequest: HttpRequest,
       otoroshiRequest: HttpRequest,
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     body
   }
 
   def transformResponseBody(
       snowflake: String,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       rawResponse: HttpResponse,
       otoroshiResponse: HttpResponse,
       desc: ServiceDescriptor,
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     body
   }
 }
@@ -602,12 +602,12 @@ trait NanoApp extends RequestTransformer {
 
   override def pluginType: PluginType = PluginType.AppType
 
-  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, _]]]()
+  private val awaitingRequests = new UnboundedTrieMap[String, Promise[Source[ByteString, ?]]]()
 
   override def beforeRequest(
       ctx: BeforeRequestContext
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
-    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]]())
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, ?]]())
     funit
   }
 
@@ -623,7 +623,7 @@ trait NanoApp extends RequestTransformer {
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed                          = new AtomicBoolean(false)
-      val bodySource: Source[ByteString, _] = Source
+      val bodySource: Source[ByteString, ?] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
         .alsoTo(Sink.onComplete { case _ =>
@@ -642,21 +642,21 @@ trait NanoApp extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
 
   def route(
       request: HttpRequest,
-      body: Source[ByteString, _]
+      body: Source[ByteString, ?]
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     FastFuture.successful(routeSync(request, body))
   }
 
   def routeSync(
       request: HttpRequest,
-      body: Source[ByteString, _]
+      body: Source[ByteString, ?]
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Result = {
     Results.Ok(Json.obj("message" -> "Hello World!"))
   }
@@ -674,7 +674,7 @@ class ScriptCompiler(env: Env) {
         try {
           val engineManager = new ScriptEngineManager(env.environment.classLoader)
           val scriptEngine  = engineManager.getEngineByName("scala")
-          val engine        = scriptEngine.asInstanceOf[ScriptEngine with Invocable]
+          val engine        = scriptEngine.asInstanceOf[ScriptEngine & Invocable]
           if (scriptEngine == null) {
             // dev mode
             Left(
@@ -717,11 +717,11 @@ class ScriptCompiler(env: Env) {
               )
             )
         }
-      }(scriptExec)
+      }(using scriptExec)
       .andThen { case _ =>
         if (logger.isDebugEnabled)
           logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
-      }(scriptExec)
+      }(using scriptExec)
   }
 }
 
@@ -1049,11 +1049,11 @@ class ScriptManager(env: Env) {
         env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(
           SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true)))
         )(
-          env.otoroshiExecutionContext
+          using env.otoroshiExecutionContext
         )
       )
     }
-    env.otoroshiScheduler.scheduleOnce(1.second)(initClasspathModules())(env.otoroshiExecutionContext)
+    env.otoroshiScheduler.scheduleOnce(1.second)(initClasspathModules())(using env.otoroshiExecutionContext)
     this
   }
 
@@ -1097,7 +1097,7 @@ class ScriptManager(env: Env) {
         _firstPluginsSearchDone.compareAndSet(false, true)
         logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
         ()
-      }(cpScriptExec)
+      }(using cpScriptExec)
     }
   }
 
@@ -1248,7 +1248,7 @@ class ScriptManager(env: Env) {
           }
         }
         evt
-      }(ec)
+      }(using ec)
     }
   }
 }

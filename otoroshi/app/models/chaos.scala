@@ -113,8 +113,8 @@ object LatencyInjectionFaultConfig {
           // )
           LatencyInjectionFaultConfig(
             ratio = (json \ "ratio").as[Double],
-            from = (json \ "from").as(SnowMonkeyConfig.durationFmt),
-            to = (json \ "to").as(SnowMonkeyConfig.durationFmt)
+            from = (json \ "from").as(using SnowMonkeyConfig.durationFmt),
+            to = (json \ "to").as(using SnowMonkeyConfig.durationFmt)
           )
         )
       } recover { case t =>
@@ -142,7 +142,7 @@ object BadResponsesFaultConfig {
           // )
           BadResponsesFaultConfig(
             ratio = (json \ "ratio").as[Double],
-            responses = (json \ "responses").as(Reads.seq(BadResponse.fmt))
+            responses = (json \ "responses").as(using Reads.seq(using BadResponse.fmt))
           )
         )
       } recover { case t =>
@@ -173,13 +173,13 @@ object ChaosConfig {
         ChaosConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           largeRequestFaultConfig =
-            (json \ "largeRequestFaultConfig").asOpt[LargeRequestFaultConfig](LargeRequestFaultConfig.fmt),
+            (json \ "largeRequestFaultConfig").asOpt[LargeRequestFaultConfig](using LargeRequestFaultConfig.fmt),
           largeResponseFaultConfig =
-            (json \ "largeResponseFaultConfig").asOpt[LargeResponseFaultConfig](LargeResponseFaultConfig.fmt),
+            (json \ "largeResponseFaultConfig").asOpt[LargeResponseFaultConfig](using LargeResponseFaultConfig.fmt),
           latencyInjectionFaultConfig =
-            (json \ "latencyInjectionFaultConfig").asOpt[LatencyInjectionFaultConfig](LatencyInjectionFaultConfig.fmt),
+            (json \ "latencyInjectionFaultConfig").asOpt[LatencyInjectionFaultConfig](using LatencyInjectionFaultConfig.fmt),
           badResponsesFaultConfig =
-            (json \ "badResponsesFaultConfig").asOpt[BadResponsesFaultConfig](BadResponsesFaultConfig.fmt)
+            (json \ "badResponsesFaultConfig").asOpt[BadResponsesFaultConfig](using BadResponsesFaultConfig.fmt)
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -294,25 +294,25 @@ object SnowMonkeyConfig {
         SnowMonkeyConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           outageStrategy =
-            (json \ "outageStrategy").asOpt[OutageStrategy](outageStrategyFmt).getOrElse(OneServicePerGroup),
+            (json \ "outageStrategy").asOpt[OutageStrategy](using outageStrategyFmt).getOrElse(OneServicePerGroup),
           includeUserFacingDescriptors = (json \ "includeUserFacingDescriptors").asOpt[Boolean].getOrElse(false),
           dryRun = (json \ "dryRun").asOpt[Boolean].getOrElse(false),
           timesPerDay = (json \ "timesPerDay").asOpt[Int].getOrElse(1),
           startTime = (json \ "startTime")
-            .asOpt[LocalTime](play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
+            .asOpt[LocalTime](using play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
             .getOrElse(LocalTime.parse("09:00:00")),
           stopTime = (json \ "stopTime")
-            .asOpt[LocalTime](play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
+            .asOpt[LocalTime](using play.api.libs.json.JodaReads.DefaultJodaLocalTimeReads)
             .getOrElse(LocalTime.parse("23:59:59")),
           outageDurationFrom = (json \ "outageDurationFrom")
-            .asOpt[FiniteDuration](durationFmt)
+            .asOpt[FiniteDuration](using durationFmt)
             .getOrElse(FiniteDuration(1, TimeUnit.HOURS)),
           outageDurationTo = (json \ "outageDurationTo")
-            .asOpt[FiniteDuration](durationFmt)
+            .asOpt[FiniteDuration](using durationFmt)
             .getOrElse(FiniteDuration(10, TimeUnit.MINUTES)),
           targetGroups = (json \ "targetGroups").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
           chaosConfig = (json \ "chaosConfig")
-            .asOpt[ChaosConfig](ChaosConfig._fmt)
+            .asOpt[ChaosConfig](using ChaosConfig._fmt)
             .getOrElse(ChaosConfig(true, None, None, None, None))
         )
       } map { case sd =>

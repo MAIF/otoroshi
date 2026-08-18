@@ -1,6 +1,7 @@
 package otoroshi.jobs
 
 import org.joda.time.DateTime
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.cluster.{ClusterMode, StatsView}
 import otoroshi.env.Env
 import otoroshi.jobs.newengine.NewEngine

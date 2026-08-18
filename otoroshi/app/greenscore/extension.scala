@@ -106,7 +106,7 @@ object GreenScoreEntity {
         description = (json \ "description").as[String],
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
-        thresholds = json.select("thresholds").as[Thresholds](Thresholds.fmt),
+        thresholds = json.select("thresholds").as[Thresholds](using Thresholds.fmt),
         routes = json
           .select("routes")
           .asOpt[JsArray]
@@ -124,7 +124,7 @@ object GreenScoreEntity {
             })
           })
           .getOrElse(Seq.empty).toSeq,
-        efficiency = json.select("efficiency").asOpt(Efficiency.fmt).getOrElse(Efficiency())
+        efficiency = json.select("efficiency").asOpt(using Efficiency.fmt).getOrElse(Efficiency())
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -226,7 +226,7 @@ class GreenScoreExtension(val env: Env) extends AdminExtension {
         implicit val ev: otoroshi.env.Env = env
         body
           .map(
-            _.runFold(ByteString.empty)(_ ++ _)(env.otoroshiMaterializer)
+            _.runFold(ByteString.empty)(_ ++ _)(using env.otoroshiMaterializer)
               .map(r => Json.parse(r.utf8String))
           )
           .getOrElse(Json.arr().vfuture)

@@ -1301,9 +1301,9 @@ object IngressSupport {
           NetworkingV1beta1Ingress(
             apiVersion = (json \ "apiVersion").as[String],
             kind = (json \ "kind").as[String],
-            metadata = (json \ "metadata").as(V1ObjectMeta.reader),
-            spec = (json \ "spec").as(NetworkingV1beta1IngressSpec.reader),
-            status = (json \ "status").as(NetworkingV1beta1IngressStatus.reader)
+            metadata = (json \ "metadata").as(using V1ObjectMeta.reader),
+            spec = (json \ "spec").as(using NetworkingV1beta1IngressSpec.reader),
+            status = (json \ "status").as(using NetworkingV1beta1IngressStatus.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1326,8 +1326,8 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressItem(
             // metadata = (json \ "metadata").as(V1ObjectMeta.reader),
-            spec = (json \ "spec").as(NetworkingV1beta1IngressSpec.reader),
-            status = (json \ "status").as(NetworkingV1beta1IngressStatus.reader)
+            spec = (json \ "spec").as(using NetworkingV1beta1IngressSpec.reader),
+            status = (json \ "status").as(using NetworkingV1beta1IngressStatus.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1357,7 +1357,7 @@ object IngressSupport {
             case None          =>
               NetworkingV1beta1IngressBackend(
                 serviceName = (json \ "serviceName").as[String],
-                servicePort = (json \ "servicePort").as(IntOrString.reader)
+                servicePort = (json \ "servicePort").as(using IntOrString.reader)
               )
           }
         ) match {
@@ -1444,7 +1444,7 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressRule(
             host = (json \ "host").asOpt[String],
-            http = (json \ "http").as(NetworkingV1beta1HTTPIngressRuleValue.reader)
+            http = (json \ "http").as(using NetworkingV1beta1HTTPIngressRuleValue.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1460,9 +1460,9 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressSpec] =
         Try(
           NetworkingV1beta1IngressSpec(
-            backend = (json \ "backend").asOpt(NetworkingV1beta1IngressBackend.reader),
-            rules = (json \ "rules").asOpt(Reads.seq(NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty).toSeq,
-            tls = (json \ "tls").asOpt(Reads.seq(NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty).toSeq
+            backend = (json \ "backend").asOpt(using NetworkingV1beta1IngressBackend.reader),
+            rules = (json \ "rules").asOpt(using Reads.seq(using NetworkingV1beta1IngressRule.reader)).getOrElse(Seq.empty).toSeq,
+            tls = (json \ "tls").asOpt(using Reads.seq(using NetworkingV1beta1IngressTLS.reader)).getOrElse(Seq.empty).toSeq
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1483,7 +1483,7 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressList(
             apiVersion = (json \ "apiVersion").as[String],
-            items = (json \ "items").as(Reads.seq(NetworkingV1beta1Ingress.reader)),
+            items = (json \ "items").as(using Reads.seq(using NetworkingV1beta1Ingress.reader)),
             kind = (json \ "kind").as[String]
           )
         ) match {
@@ -1500,7 +1500,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1IngressStatus] =
         Try(
           NetworkingV1beta1IngressStatus(
-            loadBalancer = (json \ "loadBalancer").as(V1LoadBalancerStatus.reader)
+            loadBalancer = (json \ "loadBalancer").as(using V1LoadBalancerStatus.reader)
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1517,7 +1517,7 @@ object IngressSupport {
         Try(
           NetworkingV1beta1IngressTLS(
             secretName = (json \ "secretName").as[String],
-            hosts = (json \ "hosts").as(Reads.seq[String])
+            hosts = (json \ "hosts").as(using Reads.seq[String])
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1533,7 +1533,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1HTTPIngressPath] =
         Try(
           NetworkingV1beta1HTTPIngressPath(
-            backend = (json \ "backend").as(NetworkingV1beta1IngressBackend.reader),
+            backend = (json \ "backend").as(using NetworkingV1beta1IngressBackend.reader),
             path = (json \ "path").asOpt[String]
           )
         ) match {
@@ -1550,7 +1550,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[NetworkingV1beta1HTTPIngressRuleValue] =
         Try(
           NetworkingV1beta1HTTPIngressRuleValue(
-            paths = (json \ "paths").as(Reads.seq(NetworkingV1beta1HTTPIngressPath.reader))
+            paths = (json \ "paths").as(using Reads.seq(using NetworkingV1beta1HTTPIngressPath.reader))
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1566,7 +1566,7 @@ object IngressSupport {
       override def reads(json: JsValue): JsResult[V1LoadBalancerStatus] =
         Try(
           V1LoadBalancerStatus(
-            ingress = (json \ "ingress").as(Reads.seq(V1LoadBalancerIngress.reader))
+            ingress = (json \ "ingress").as(using Reads.seq(using V1LoadBalancerIngress.reader))
           )
         ) match {
           case Failure(e) => JsError(e.getMessage)
@@ -1593,7 +1593,7 @@ object IngressSupport {
             labels = (json \ "labels").as[Map[String, String]],
             name = (json \ "name").as[String],
             namespace = (json \ "namespace").as[String],
-            ownerReferences = (json \ "ownerReferences").as(Reads.seq(V1OwnerReference.reader)),
+            ownerReferences = (json \ "ownerReferences").as(using Reads.seq(using V1OwnerReference.reader)),
             resourceVersion = (json \ "resourceVersion").as[String],
             selfLink = (json \ "selfLink").as[String],
             uid = (json \ "uid").as[String]

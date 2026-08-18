@@ -50,7 +50,7 @@ import scala.util.{Failure, Success}
 
 class WebSocketHandler()(using env: Env) {
 
-  type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
+  type WSFlow = Flow[PlayWSMessage, PlayWSMessage, ?]
 
   implicit lazy val currentEc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
   implicit lazy val currentScheduler: org.apache.pekko.actor.Scheduler = env.otoroshiScheduler
@@ -92,7 +92,7 @@ class WebSocketHandler()(using env: Env) {
       ctx: ActualCallContext,
       headersInFiltered: Seq[String],
       headersOutFiltered: Seq[String]
-  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
 
     val ActualCallContext(
       req,
@@ -310,9 +310,9 @@ class WebSocketHandler()(using env: Env) {
               evt.log()(using env, env.analyticsExecutionContext) // pressure EC
             }
           }
-        }(env.analyticsExecutionContext) // pressure EC
+        }(using env.analyticsExecutionContext) // pressure EC
       }
-    }(env.analyticsExecutionContext) // pressure EC
+    }(using env.analyticsExecutionContext) // pressure EC
 
     val wsCookiesIn     = req.cookies.toSeq.map(c =>
       WSCookieWithSameSite(
@@ -396,7 +396,7 @@ class WebSocketHandler()(using env: Env) {
                   otoroshiHeadersIn = headersIn.map(Header.apply)
                 )
               )
-              badResult.withHeaders(_headersOut: _*)
+              badResult.withHeaders(_headersOut*)
             }
             .asLeft[WSFlow]
         }
@@ -441,7 +441,7 @@ class WebSocketHandler()(using env: Env) {
             .map(_.toLowerCase())
             .getOrElse("tcp") match {
             case "tcp"     => {
-              val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+              val flow: Flow[PlayWSMessage, PlayWSMessage, ?] =
                 Flow[PlayWSMessage]
                   .collect {
                     case PlayWSBinaryMessage(data) =>
@@ -473,7 +473,7 @@ class WebSocketHandler()(using env: Env) {
               FastFuture.successful(Right(flow))
             }
             case "udp-old" => {
-              val flow: Flow[PlayWSMessage, PlayWSMessage, _] =
+              val flow: Flow[PlayWSMessage, PlayWSMessage, ?] =
                 Flow[PlayWSMessage]
                   .collect {
                     case PlayWSBinaryMessage(data) =>
@@ -676,7 +676,7 @@ object WebSocketProxyActor {
       env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): Flow[PlayWSMessage, PlayWSMessage, _] = {
+  ): Flow[PlayWSMessage, PlayWSMessage, ?] = {
     val avoid                                = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
     val _headers                             = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
       // case (key, value) if key.toLowerCase == "cookie"     =>
@@ -923,7 +923,7 @@ class WebSocketProxyActor(
           }
         }
         case Failure(e) => logger.error(s"[WEBSOCKET] error", e)
-      }(context.dispatcher)
+      }(using context.dispatcher)
     } catch {
       case e: Exception => logger.error("[WEBSOCKET] error during call", e)
     }

@@ -824,7 +824,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       config.copy(
         wsClientConfig = wsClientConfig
       )
-    )(materializer)
+    )(using materializer)
   }
 
   lazy implicit val scheduler: Scheduler = actorSystem.scheduler
@@ -899,7 +899,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       (headers: Map[String, String]) => {
         val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
         ws.url(s"http://127.0.0.1:${port}/api")
-          .withHttpHeaders(finalHeaders: _*)
+          .withHttpHeaders(finalHeaders*)
           .get()
           .futureValue
       }
@@ -948,7 +948,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
         (headers: Map[String, String]) => {
           val finalHeaders = (Map("Host" -> host) ++ headers).toSeq
           ws.url(s"http://127.0.0.1:${port}$path")
-            .withHttpHeaders(finalHeaders: _*)
+            .withHttpHeaders(finalHeaders*)
             .get()
             .futureValue
         }
@@ -1023,7 +1023,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
   }
 
   def await(duration: FiniteDuration): Unit = {
-    val p = Promise[Unit]
+    val p = Promise[Unit]()
     scheduler.scheduleOnce(duration) {
       p.trySuccess(())
     }
@@ -1031,7 +1031,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
   }
 
   def awaitF(duration: FiniteDuration)(using system: ActorSystem): Future[Unit] = {
-    val p = Promise[Unit]
+    val p = Promise[Unit]()
     system.scheduler.scheduleOnce(duration) {
       p.trySuccess(())
     }
@@ -1051,7 +1051,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
     if (payload.isDefined) {
       wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
-        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json"): _*)
+        .withHttpHeaders(headers :+ ("Content-Type" -> "application/json")*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
         .withMethod(method)
@@ -1067,7 +1067,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
     } else {
       wsClient
         .url(s"http://127.0.0.1:${customPort.getOrElse(port)}$path")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
         .withFollowRedirects(false)
         .withMethod(method)
@@ -1241,7 +1241,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .get()
       .flatMap { response =>
-        val config    = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+        val config    = response.json.as[SnowMonkeyConfig](using SnowMonkeyConfig._fmt)
         val newConfig = f(config)
         wsClient
           .url(s"http://localhost:${customPort.getOrElse(port)}/api/snowmonkey/config")
@@ -1253,7 +1253,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .put(Json.stringify(newConfig.asJson))
           .flatMap { response =>
-            val r = response.json.as[SnowMonkeyConfig](SnowMonkeyConfig._fmt)
+            val r = response.json.as[SnowMonkeyConfig](using SnowMonkeyConfig._fmt)
             awaitF(100.millis)(using actorSystem).map(_ => r)
           }
       }
@@ -1826,7 +1826,7 @@ object Implicits {
       Await.result(fu, 60.seconds)
     }
     def andWait(duration: FiniteDuration)(using scheduler: Scheduler, ec: ExecutionContext): Future[A] = {
-      val p = Promise[Unit]
+      val p = Promise[Unit]()
       scheduler.scheduleOnce(duration) {
         p.trySuccess(())
       }
@@ -1890,7 +1890,7 @@ class TargetService(
     host: Option[String],
     path: String,
     contentType: String,
-    result: HttpRequest => (Int, String, Option[Source[ByteString, _]], List[HttpHeader])
+    result: HttpRequest => (Int, String, Option[Source[ByteString, ?]], List[HttpHeader])
 ) {
 
   implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem()
@@ -2146,7 +2146,7 @@ class WebsocketServer(counter: AtomicInteger) {
 class WebsocketBackend(
     root: String = "",
     callback: String => Message = text => TextMessage(s"Echo: $text"),
-    streamCallback: Source[String, _] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
+    streamCallback: Source[String, ?] => Message = textStream => TextMessage(textStream.map(text => s"Echo: $text"))
 ) {
   import org.apache.pekko.http.scaladsl.server.Directives.{get, handleWebSocketMessages, path}
 
@@ -2415,7 +2415,7 @@ trait ApiTester[Entity] {
   private def assertBodyHasAllIds(
       entities: Seq[Entity],
       checker: Int => Boolean,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       name: String
   ): Boolean = {
     implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -2444,7 +2444,7 @@ trait ApiTester[Entity] {
     val path = route()
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withHttpHeaders("Content-Type" -> "application/json")
       .withFollowRedirects(false)
@@ -2474,7 +2474,7 @@ trait ApiTester[Entity] {
         val path = route() + "/" + extractId(entity)
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/json")
           .withFollowRedirects(false)
@@ -2505,7 +2505,7 @@ trait ApiTester[Entity] {
         val path = route() + "/" + extractId(entity)
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/json")
           .withFollowRedirects(false)
@@ -2534,7 +2534,7 @@ trait ApiTester[Entity] {
         val path = route() + "/" + extractId(entity)
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withFollowRedirects(false)
           .withMethod("DELETE")
@@ -2560,7 +2560,7 @@ trait ApiTester[Entity] {
     val path = route()
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withFollowRedirects(false)
       .withMethod("GET")
@@ -2582,7 +2582,7 @@ trait ApiTester[Entity] {
     val path = route() + "/" + extractId(entity)
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withFollowRedirects(false)
       .withMethod("GET")
@@ -2604,7 +2604,7 @@ trait ApiTester[Entity] {
     val path = route() + "/_bulk"
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
-      .withQueryStringParameters(queryParams: _*)
+      .withQueryStringParameters(queryParams*)
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .withHttpHeaders("Content-Type" -> "application/x-ndjson")
       .withFollowRedirects(false)
@@ -2634,7 +2634,7 @@ trait ApiTester[Entity] {
         val path = route() + "/_bulk"
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/x-ndjson")
           .withFollowRedirects(false)
@@ -2679,7 +2679,7 @@ trait ApiTester[Entity] {
         val path = route() + "/_bulk"
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withHttpHeaders("Content-Type" -> "application/x-ndjson")
           .withFollowRedirects(false)
@@ -2712,7 +2712,7 @@ trait ApiTester[Entity] {
         val path = route() + "/_bulk"
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
-          .withQueryStringParameters(queryParams: _*)
+          .withQueryStringParameters(queryParams*)
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
           .withFollowRedirects(false)
           .withMethod("DELETE")
@@ -2821,7 +2821,7 @@ class CustomInetNameResolver(executor: EventExecutor, mappings: Map[String, Stri
       println(s"[DNS] Resolving all $inetHost -> $targetHost")
 
       val addresses = InetAddress.getAllByName(targetHost)
-      val list      = java.util.Arrays.asList(addresses: _*)
+      val list      = java.util.Arrays.asList(addresses*)
       promise.setSuccess(list)
 
     } catch {

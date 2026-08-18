@@ -36,7 +36,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
 
     implicit val system: ActorSystem = ActorSystem("otoroshi-test")
     implicit val mat: Materializer   = Materializer(system)
-    implicit val http: HttpExt       = Http()(system)
+    implicit val http: HttpExt       = Http()(using system)
 
     val yesCounter      = new AtomicInteger(0)
     val messagesPromise = Promise[Int]()
@@ -79,7 +79,7 @@ class YesWebsocketPluginTests(parent: PluginsTestSpec) {
 
     implicit val system: ActorSystem = ActorSystem("otoroshi-test")
     implicit val mat: Materializer   = Materializer(system)
-    implicit val http: HttpExt       = Http()(system)
+    implicit val http: HttpExt       = Http()(using system)
 
     val printSink: Sink[Message, Future[Done]] = Sink.foreach { _ => }
 

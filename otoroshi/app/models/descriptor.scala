@@ -823,7 +823,7 @@ object Target {
             .map(s => HttpProtocols.parse(s))
             .getOrElse(HttpProtocols.HTTP_1_1),
           backup = (json \ "backup").asOpt[Boolean].getOrElse(false),
-          predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+          predicate = (json \ "predicate").asOpt(using TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
@@ -1526,13 +1526,13 @@ object ApiKeyConstraints {
       Try {
         JsSuccess(
           ApiKeyConstraints(
-            basicAuth = (json \ "basicAuth").as(BasicAuthConstraints.format),
-            customHeadersAuth = (json \ "customHeadersAuth").as(CustomHeadersAuthConstraints.format),
+            basicAuth = (json \ "basicAuth").as(using BasicAuthConstraints.format),
+            customHeadersAuth = (json \ "customHeadersAuth").as(using CustomHeadersAuthConstraints.format),
             otoBearerAuth =
-              (json \ "otoBearerAuth").asOpt(OtoBearerConstraints.format).getOrElse(OtoBearerConstraints()),
-            clientIdAuth = (json \ "clientIdAuth").as(ClientIdAuthConstraints.format),
-            jwtAuth = (json \ "jwtAuth").as(JwtAuthConstraints.format),
-            routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
+              (json \ "otoBearerAuth").asOpt(using OtoBearerConstraints.format).getOrElse(OtoBearerConstraints()),
+            clientIdAuth = (json \ "clientIdAuth").as(using ClientIdAuthConstraints.format),
+            jwtAuth = (json \ "jwtAuth").as(using JwtAuthConstraints.format),
+            routing = (json \ "routing").as(using ApiKeyRouteMatcher.format)
           )
         )
       } recover { case e =>
@@ -2108,8 +2108,8 @@ case class ServiceDescriptor(
       config: GlobalConfig,
       attrs: TypedMap
   )(
-      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     validateClientCertificatesGen(snowflake, req, apikey, user, config, attrs)(f)
   }
 
@@ -2177,7 +2177,7 @@ case class ServiceDescriptor(
                 true
               )
               .toMat(Sink.last)(Keep.right)
-              .run()(env.otoroshiMaterializer)
+              .run()(using env.otoroshiMaterializer)
           }
           .flatMap {
             case Allowed        => f
@@ -2242,9 +2242,9 @@ case class ServiceDescriptor(
   }
 
   def preRouteWS(snowflake: String, req: RequestHeader, attrs: TypedMap)(
-      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    preRouteGen[Flow[PlayWSMessage, PlayWSMessage, _]](snowflake, req, attrs)(f)
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
+    preRouteGen[Flow[PlayWSMessage, PlayWSMessage, ?]](snowflake, req, attrs)(f)
   }
 
   def preRouteGen[A](snowflake: String, req: RequestHeader, attrs: TypedMap)(
@@ -2295,12 +2295,12 @@ case class ServiceDescriptor(
                 )
               }
               .toMat(Sink.last)(Keep.right)
-              .run()(env.otoroshiMaterializer)
+              .run()(using env.otoroshiMaterializer)
           }
           .flatMap(_ => f)
           .recoverWith {
             case PreRoutingError(body, code, ctype, headers) =>
-              FastFuture.successful(Results.Status(code)(body).as(ctype).withHeaders(headers.toSeq: _*)).map(Left.apply)
+              FastFuture.successful(Results.Status(code)(body).as(ctype).withHeaders(headers.toSeq*)).map(Left.apply)
             case PreRoutingErrorWithResult(result)           =>
               FastFuture.successful(result).map(Left.apply)
             case e                                           =>
@@ -2347,7 +2347,7 @@ object ServiceDescriptor {
           env = (json \ "env").asOpt[String].getOrElse("prod"),
           domain = (json \ "domain").as[String],
           subdomain = (json \ "subdomain").as[String],
-          targetsLoadBalancing = (json \ "targetsLoadBalancing").asOpt(LoadBalancing.format).getOrElse(RoundRobin),
+          targetsLoadBalancing = (json \ "targetsLoadBalancing").asOpt(using LoadBalancing.format).getOrElse(RoundRobin),
           targets = (json \ "targets")
             .asOpt[JsArray]
             .map(_.value.map(e => Target.format.reads(e).get))
@@ -2380,7 +2380,7 @@ object ServiceDescriptor {
           overrideHost = (json \ "overrideHost").asOpt[Boolean].getOrElse(true),
           allowHttp10 = (json \ "allowHttp10").asOpt[Boolean].getOrElse(true),
           letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
-          secComHeaders = (json \ "secComHeaders").asOpt(SecComHeaders.format).getOrElse(SecComHeaders()),
+          secComHeaders = (json \ "secComHeaders").asOpt(using SecComHeaders.format).getOrElse(SecComHeaders()),
           secComTtl =
             (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
           secComVersion = (json \ "secComVersion")
@@ -2410,18 +2410,18 @@ object ServiceDescriptor {
           matchingHeaders = (json \ "matchingHeaders").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
           removeHeadersIn = (json \ "removeHeadersIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           removeHeadersOut = (json \ "removeHeadersOut").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
-          ipFiltering = (json \ "ipFiltering").asOpt(IpFiltering.format).getOrElse(IpFiltering()),
-          api = (json \ "api").asOpt(ApiDescriptor.format).getOrElse(ApiDescriptor(false, None)),
-          healthCheck = (json \ "healthCheck").asOpt(HealthCheck.format).getOrElse(HealthCheck(false, "/")),
-          clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
-          canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
-          gzip = (json \ "gzip").asOpt(GzipConfig._fmt).getOrElse(GzipConfig()),
+          ipFiltering = (json \ "ipFiltering").asOpt(using IpFiltering.format).getOrElse(IpFiltering()),
+          api = (json \ "api").asOpt(using ApiDescriptor.format).getOrElse(ApiDescriptor(false, None)),
+          healthCheck = (json \ "healthCheck").asOpt(using HealthCheck.format).getOrElse(HealthCheck(false, "/")),
+          clientConfig = (json \ "clientConfig").asOpt(using ClientConfig.format).getOrElse(ClientConfig()),
+          canary = (json \ "canary").asOpt(using Canary.format).getOrElse(Canary()),
+          gzip = (json \ "gzip").asOpt(using GzipConfig._fmt).getOrElse(GzipConfig()),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(_.filter(_._1.nonEmpty))
             .getOrElse(Map.empty[String, String]),
-          chaosConfig = (json \ "chaosConfig").asOpt(ChaosConfig._fmt).getOrElse(ChaosConfig()),
+          chaosConfig = (json \ "chaosConfig").asOpt(using ChaosConfig._fmt).getOrElse(ChaosConfig()),
           jwtVerifier = JwtVerifier
             .fromJson((json \ "jwtVerifier").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(RefJwtVerifier()),
@@ -2592,9 +2592,9 @@ object ServiceDescriptorDataStore {
 
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceDescriptor = initiateNewDescriptor(ctx)(using env)
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceDescriptor = initiateNewDescriptor(ctx)(using env)
 
-  def initiateNewDescriptor(ctx: Option[ApiActionContext[_]] = None)(using env: Env): ServiceDescriptor = {
+  def initiateNewDescriptor(ctx: Option[ApiActionContext[?]] = None)(using env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
       ServiceLocation.fullQuery(
         v,

@@ -1,6 +1,8 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.*
 import otoroshi.next.plugins.api.NgPluginHelper
@@ -15,7 +17,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
 
   import parent.*
 
-  def validCall() {
+  def validCall(): Unit = {
     val id    = IdGenerator.uuid
     val route = createRouteWithExternalTarget(
       Seq(
@@ -47,7 +49,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def tooBigBody() {
+  def tooBigBody(): Unit = {
     val id    = IdGenerator.uuid
     val route = createRouteWithExternalTarget(
       Seq(
@@ -80,7 +82,7 @@ class RequestBodyLengthLimiterTests(parent: PluginsTestSpec) {
     deleteOtoroshiRoute(route).futureValue
   }
 
-  def chunkBody() {
+  def chunkBody(): Unit = {
     val id    = IdGenerator.uuid
     val route = createRouteWithExternalTarget(
       Seq(

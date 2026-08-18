@@ -161,7 +161,7 @@ object NgRouteComposition {
           .asOpt[Seq[JsValue]]
           .map(seq => seq.flatMap(json => NgMinimalRoute.fmt.reads(json).asOpt))
           .getOrElse(Seq.empty).toSeq,
-        client = (json \ "client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig.default),
+        client = (json \ "client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig.default),
         plugins = NgPlugins.readFrom(json.select("plugins"))
       )
     } match {
@@ -269,7 +269,7 @@ object NgRouteComposition {
 }
 
 trait NgRouteCompositionDataStore extends BasicStore[NgRouteComposition] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): NgRouteComposition = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): NgRouteComposition = {
     val default: NgRouteComposition = NgRouteComposition.empty
       .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore

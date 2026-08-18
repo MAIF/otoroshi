@@ -1,6 +1,7 @@
 package otoroshi.next.proxy
 
 import org.apache.pekko.Done
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -65,14 +66,14 @@ class RelayRoutingResult(resp: WSResponse) extends NgProxyEngineError {
     Results
       .Status(resp.status)
       .sendEntity(HttpEntity.Streamed(resp.bodyAsSource, cl, ct))
-      .withHeaders(headers: _*)
-      .applyOnIf(setCookie.nonEmpty)(_.withCookies(setCookie: _*))
+      .withHeaders(headers*)
+      .applyOnIf(setCookie.nonEmpty)(_.withCookies(setCookie*))
       .vfuture
   }
 }
 
 case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInteger) {
-  def call(req: RequestHeader, body: Source[ByteString, _])(using
+  def call(req: RequestHeader, body: Source[ByteString, ?])(using
       ec: ExecutionContext,
       env: Env,
       report: NgExecutionReport
@@ -151,7 +152,7 @@ case class SelectedLeader(member: MemberView, route: NgRoute, counter: AtomicInt
         .withMethod("POST")
         .withRequestTimeout(route.backend.client.globalTimeout.milliseconds)
         .withBody(body)
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .execute()
         .map { resp =>
           Left(new RelayRoutingResult(resp))

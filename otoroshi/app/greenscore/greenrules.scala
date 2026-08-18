@@ -101,14 +101,14 @@ object Thresholds {
       Try {
         JsSuccess(
           Thresholds(
-            calls = item.select("calls").as[TripleBounds](TripleBounds.fmt),
-            dataIn = item.select("dataIn").as[TripleBounds](TripleBounds.fmt),
-            dataOut = item.select("dataOut").as[TripleBounds](TripleBounds.fmt),
-            overhead = item.select("overhead").as[TripleBounds](TripleBounds.fmt),
-            duration = item.select("duration").as[TripleBounds](TripleBounds.fmt),
-            backendDuration = item.select("backendDuration").as[TripleBounds](TripleBounds.fmt),
-            headersIn = item.select("headersIn").as[TripleBounds](TripleBounds.fmt),
-            headersOut = item.select("headersOut").as[TripleBounds](TripleBounds.fmt),
+            calls = item.select("calls").as[TripleBounds](using TripleBounds.fmt),
+            dataIn = item.select("dataIn").as[TripleBounds](using TripleBounds.fmt),
+            dataOut = item.select("dataOut").as[TripleBounds](using TripleBounds.fmt),
+            overhead = item.select("overhead").as[TripleBounds](using TripleBounds.fmt),
+            duration = item.select("duration").as[TripleBounds](using TripleBounds.fmt),
+            backendDuration = item.select("backendDuration").as[TripleBounds](using TripleBounds.fmt),
+            headersIn = item.select("headersIn").as[TripleBounds](using TripleBounds.fmt),
+            headersOut = item.select("headersOut").as[TripleBounds](using TripleBounds.fmt),
           )
         )
       } recover { case e =>
@@ -180,7 +180,7 @@ object RuleStateRecord {
     override def reads(json: JsValue): JsResult[RuleStateRecord] = Try {
       RuleStateRecord(
         date = (json \ "date").as[Long],
-        states = json.select("states").asOpt[Seq[RuleState]](RuleState.fmt).getOrElse(Seq.empty).toSeq
+        states = json.select("states").asOpt[Seq[RuleState]](using RuleState.fmt).getOrElse(Seq.empty).toSeq
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -432,7 +432,7 @@ object RulesRouteConfiguration {
     override def reads(json: JsValue): JsResult[RulesRouteConfiguration] = Try {
       RulesRouteConfiguration(
         states = (json \ "states")
-          .asOpt[Seq[RuleStateRecord]](Reads.seq(RuleStateRecord.format))
+          .asOpt[Seq[RuleStateRecord]](using Reads.seq(using RuleStateRecord.format))
           .getOrElse(Seq.empty).toSeq
       )
     } match {

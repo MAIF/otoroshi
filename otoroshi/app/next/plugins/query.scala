@@ -73,7 +73,7 @@ class QueryTransformer extends NgRequestTransformer {
       query.+((key, List(value)))
     }
     val added: Seq[(String, String)]            = queryAdded.toSeq.flatMap(t => t._2.map(v => (t._1, v)))
-    val newUri                                  = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added: _*))
+    val newUri                                  = uri.copy(rawQueryString = None).withQuery(Uri.Query.apply(added*))
     ctx.otoroshiRequest.copy(url = newUri.toString()).right
   }
 }

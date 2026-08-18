@@ -63,7 +63,7 @@ case class NgPluginHttpRequest(
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
     version: String,
     clientCertificateChain: () => Option[Seq[X509Certificate]],
-    body: Source[ByteString, _],
+    body: Source[ByteString, ?],
     backend: Option[NgTarget]
 ) {
   lazy val contentType: Option[String]              = header("Content-Type")
@@ -171,7 +171,7 @@ case class NgPluginHttpResponse(
     status: Int,
     headers: Map[String, String],
     cookies: Seq[WSCookie] = Seq.empty[WSCookie],
-    body: Source[ByteString, _]
+    body: Source[ByteString, ?]
 ) {
   lazy val statusText: String               = StatusCodes.getForKey(status).map(_.reason()).getOrElse("NONE")
   lazy val transferEncoding: Option[String] = header("Transfer-Encoding")
@@ -188,7 +188,7 @@ case class NgPluginHttpResponse(
     Results
       .Status(status)
       .sendEntity(HttpEntity.Streamed(body, clength, ctype))
-      .withHeaders(headers.toSeq: _*)
+      .withHeaders(headers.toSeq*)
       .withCookies(cookies.map { c =>
         Cookie(
           name = c.name,
@@ -200,7 +200,7 @@ case class NgPluginHttpResponse(
           httpOnly = c.httpOnly,
           sameSite = c.asInstanceOf[WSCookieWithSameSite].sameSite // this one is risky ;)
         )
-      }: _*)
+      }*)
       .applyOnWithOpt(ctype) { case (r, typ) =>
         r.as(typ)
       }
@@ -525,7 +525,7 @@ case class NgPreRoutingErrorRaw(
     headers: Map[String, String] = Map.empty
 )                                                      extends NgPreRoutingError {
   def result: Result = {
-    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq: _*)
+    Results.Status(code).apply(body).as(contentType).withHeaders(headers.toSeq*)
   }
 }
 case class NgPreRoutingErrorWithResult(result: Result) extends NgPreRoutingError
@@ -919,7 +919,7 @@ case class NgRequestSinkContext(
     origin: NgRequestOrigin,
     status: Int,
     message: String,
-    body: Source[ByteString, _]
+    body: Source[ByteString, ?]
 ) {
   def wasmJson: JsValue = json
   def json: JsValue     = Json.obj(
@@ -996,7 +996,7 @@ trait NgTunnelHandler extends NgPlugin with NgAccessValidator {
       NgAccess.NgDenied(Results.NotFound(Json.obj("error" -> "not_found"))).vfuture
     }
   }
-  def handle(ctx: NgTunnelHandlerContext)(using env: Env, ec: ExecutionContext): Flow[Message, Message, _]
+  def handle(ctx: NgTunnelHandlerContext)(using env: Env, ec: ExecutionContext): Flow[Message, Message, ?]
 }
 
 case class NgbBackendCallContext(
@@ -1069,7 +1069,7 @@ trait NgBackendCall extends NgPlugin {
   def sourceBodyResponse(
       status: Int,
       headers: Map[String, String],
-      body: Source[ByteString, _]
+      body: Source[ByteString, ?]
   ): Either[NgProxyEngineError, BackendCallResponse] = {
     val finalHeaders = headers.getIgnoreCase("Transfer-Encoding") match {
       case None    =>
@@ -1637,13 +1637,13 @@ trait NgWebsocketBackendPlugin extends NgPlugin {
   )(using
       env: Env,
       ec: ExecutionContext
-  ): Future[Either[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+  ): Future[Either[NgProxyEngineError, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     callBackend(ctx).rightf
   }
 
   def callBackend(
       ctx: NgWebsocketPluginContext
-  )(using env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, _] = {
+  )(using env: Env, ec: ExecutionContext): Flow[PlayWSMessage, PlayWSMessage, ?] = {
     Flow.fromSinkAndSource(Sink.ignore, Source.empty)
   }
 }
@@ -1673,7 +1673,7 @@ class YesWebsocketBackend extends NgWebsocketBackendPlugin {
 
   override def callBackendOrError(
       ctx: NgWebsocketPluginContext
-  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, _]]] = {
+  )(using env: Env, ec: ExecutionContext): Future[Either[NgProxyEngineError, Flow[Message, Message, ?]]] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     ctx.request.getQueryString("fail") match {
       case Some("yes") =>

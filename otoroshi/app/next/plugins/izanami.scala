@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -124,7 +125,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
               resp.headers
                 .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -146,7 +147,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
               resp.headers
                 .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -157,7 +158,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
   private def getFeaturesWithBody(
       ctx: NgTransformerRequestContext,
       config: NgIzanamiV1ProxyConfig,
-      body: Source[ByteString, _]
+      body: Source[ByteString, ?]
   )(using env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, NgPluginHttpRequest]] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
       env.Ws
@@ -177,7 +178,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
               resp.headers
                 .view.mapValues(_.last).toMap
                 .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-                .toSeq: _*
+                .toSeq*
             )
             .as(resp.header("Content-Type").getOrElse("application/json"))
             .left
@@ -206,7 +207,7 @@ class NgIzanamiV1Proxy extends NgRequestTransformer {
             resp.headers
               .view.mapValues(_.last).toMap
               .filterNot(v => v._1.toLowerCase == "content-type" || v._1.toLowerCase == "content-length")
-              .toSeq: _*
+              .toSeq*
           )
           .as(resp.header("Content-Type").getOrElse("application/json"))
           .left

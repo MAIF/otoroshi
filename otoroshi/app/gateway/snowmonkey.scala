@@ -16,8 +16,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 case class SnowMonkeyContext(
-    trailingRequestBodyStream: Source[ByteString, _],
-    trailingResponseBodyStream: Source[ByteString, _],
+    trailingRequestBodyStream: Source[ByteString, ?],
+    trailingResponseBodyStream: Source[ByteString, ?],
     trailingRequestBodySize: Int = 0,
     trailingResponseBodySize: Int = 0
 )
@@ -118,7 +118,7 @@ class SnowMonkey(using env: Env) {
                   .apply(response.body)
                   .withHeaders(
                     (response.headers.toSeq :+ ("SnowMonkey-Latency" -> latency.toString))
-                      .filterNot(_._1.toLowerCase() == "content-type"): _*
+                      .filterNot(_._1.toLowerCase() == "content-type")*
                   )
                   .as(response.headers.getOrElse("Content-Type", "text/plain"))
               )

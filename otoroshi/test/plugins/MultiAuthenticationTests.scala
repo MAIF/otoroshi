@@ -1,6 +1,8 @@
 package plugins
 
 import com.dimafeng.testcontainers.GenericContainer
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import com.microsoft.playwright.*
 import com.microsoft.playwright.options.AriaRole
 import functional.PluginsTestSpec
@@ -393,7 +395,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       val callWithUser = ws
         .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(cookies: _*)
+        .withCookies(cookies*)
         .get()
         .futureValue
 
@@ -827,7 +829,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       val callWithUser = ws
         .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(cookies: _*)
+        .withCookies(cookies*)
         .get()
         .futureValue
 
@@ -1241,7 +1243,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
       val callWithUser = ws
         .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
         .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-        .withCookies(cookies: _*)
+        .withCookies(cookies*)
         .get()
         .futureValue
 
@@ -1377,7 +1379,7 @@ class MultiAuthenticationTests(parent: PluginsTestSpec) {
     val callWithUser = ws
       .url(s"http://127.0.0.1:$port/.well-known/otoroshi/me")
       .withHttpHeaders("Host" -> route.frontend.domains.head.domain)
-      .withCookies(wsCookies: _*)
+      .withCookies(wsCookies*)
       .get()
       .futureValue
 

@@ -205,8 +205,8 @@ case class Plugins(
     }
 
   def handleRequest(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
   )(using ec: ExecutionContext, env: Env): Future[Result] = env.metrics.withTimer("handle-ng-dispatch") {
     if (enabled) {
       val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)
@@ -225,12 +225,12 @@ case class Plugins(
   def handleWsRequest(
       request: RequestHeader,
       defaultRouting: RequestHeader => Future[
-        Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]
+        Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, ?]]
       ]
   )(using
       ec: ExecutionContext,
       env: Env
-  ): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, _]]] =
+  ): Future[Either[Result, Flow[play.api.http.websocket.Message, play.api.http.websocket.Message, ?]]] =
     env.metrics.withTimer("handle-ng-ws-dispatch") {
       if (enabled) {
         val (handlersMapHasWildcard, handlersMap) = getHandlersMap(request)

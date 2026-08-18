@@ -41,13 +41,13 @@ object RouteTemplate {
   val format                                    = new Format[RouteTemplate] {
     override def reads(json: JsValue): JsResult[RouteTemplate] = Try {
       RouteTemplate(
-        location = json.select("location").as(EntityLocation.format),
+        location = json.select("location").as(using EntityLocation.format),
         id = json.selectAsString("id"),
         name = json.selectAsString("name"),
         description = json.selectAsString("description"),
         tags = json.select("tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
         metadata = json.select("metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        route = json.select("route").asOpt(NgRoute.fmt).getOrElse(NgRoute.empty)
+        route = json.select("route").asOpt(using NgRoute.fmt).getOrElse(NgRoute.empty)
       )
     } match {
       case Failure(ex)    =>

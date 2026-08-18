@@ -1,6 +1,7 @@
 package otoroshi.auth
 
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.actions.ApiActionContext
 import otoroshi.env.Env
 import otoroshi.models.{UserRights, *}
@@ -36,7 +37,7 @@ case class RemoteUserValidatorSettings(
     env.MtlsWs
       .url(url, tlsSettings.legacy)
       .withRequestTimeout(timeout)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .post(
         Json
           .obj(
@@ -176,7 +177,7 @@ trait ValidableUser { self =>
       }
       .filter(_.isLeft)
       .take(1)
-      .runWith(Sink.headOption)(env.otoroshiMaterializer)
+      .runWith(Sink.headOption)(using env.otoroshiMaterializer)
       .map {
         case None            => Right(this)
         case Some(Left(err)) => Left(err)
@@ -465,7 +466,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
 
   def templates()(using env: Env): Seq[AuthModuleConfig] = env.scriptManager.authModules
 
-  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[_]] = None)(using
+  def template(modType: Option[String], env: Env, ctx: Option[ApiActionContext[?]] = None)(using
       ec: ExecutionContext
   ): AuthModuleConfig = {
 

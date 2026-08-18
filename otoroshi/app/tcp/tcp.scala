@@ -114,7 +114,7 @@ object SniSettings {
               enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
               forwardIfNoMatch = (json \ "forwardIfNoMatch").asOpt[Boolean].getOrElse(false),
               forwardsTo =
-                (json \ "forwardsTo").asOpt(TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
+                (json \ "forwardsTo").asOpt(using TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
             )
           )
         } recover { case e =>
@@ -167,7 +167,7 @@ object TcpRule {
           JsSuccess(
             TcpRule(
               domain = (json \ "domain").asOpt[String].getOrElse("*"),
-              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty).toSeq
+              targets = (json \ "targets").asOpt(using Reads.seq(using TcpTarget.fmt)).getOrElse(Seq.empty).toSeq
             )
           )
         } recover { case e =>
@@ -239,9 +239,9 @@ object TcpService {
             interface = (json \ "interface").asOpt[String].getOrElse("0.0.0.0"),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
-            sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
+            sni = (json \ "sni").asOpt(using SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
-            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty).toSeq,
+            rules = (json \ "rules").asOpt(using Reads.seq(using TcpRule.fmt)).getOrElse(Seq.empty).toSeq,
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
             tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq
           )
@@ -465,7 +465,7 @@ object TcpService {
     TcpService.findByPortFromState(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled && service.sni.enabled => {
         try {
-          val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyFutureFlow { () =>
+          val fullLayer: Flow[ByteString, ByteString, Future[?]] = Flow.lazyFutureFlow { () =>
             incoming.domain.map { sniDomain =>
               ref.set(sniDomain + ":" + port)
               log.info(s"domain: $sniDomain, local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
@@ -985,7 +985,7 @@ class RunningServers(env: Env) {
 }
 
 sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): TcpService = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): TcpService = {
     val defaultService = TcpService(
       id = IdGenerator.namedId("tcp_service", env),
       enabled = true,

@@ -508,7 +508,7 @@ object implicits {
           val content = Files.readAllLines(file.toPath).asScala.mkString("\n").trim
           Try {
             val config = Configuration(ConfigFactory.parseString(s"""value=${content}""".stripMargin))
-            config.getOptional[A]("value")(loader)
+            config.getOptional[A]("value")(using loader)
           } match {
             case Failure(_)     =>
               classTag.runtimeClass.getName match {
@@ -561,13 +561,13 @@ object implicits {
     }
 
     def betterGet[A](_path: String)(using loader: ConfigLoader[A]): A = {
-      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
-      configuration.get[A](path)(loader)
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(using loader))
+      configuration.get[A](path)(using loader)
     }
 
     def betterGetOptional[A](_path: String)(using loader: ConfigLoader[A]): Option[A] = {
-      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
-      configuration.getOptional[A](path)(loader)
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(using loader))
+      configuration.getOptional[A](path)(using loader)
     }
 
     def getOpt[A](path: String)(using loader: ConfigLoader[A]): Option[A] = {
@@ -581,10 +581,10 @@ object implicits {
     def getOptionalWithFileSupport[A](
         _path: String
     )(using loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
-      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(loader))
-      Try(configuration.getOptional[A](path)(loader)).toOption.flatten match {
+      val path = validateAndComputePath(_path, p => configuration.getOptional[A](p)(using loader))
+      Try(configuration.getOptional[A](path)(using loader)).toOption.flatten match {
         case None        =>
-          Try(configuration.getOptional[String](path)(ConfigLoader.stringLoader)).toOption.flatten match {
+          Try(configuration.getOptional[String](path)(using ConfigLoader.stringLoader)).toOption.flatten match {
             case Some(v) if v.startsWith("file://") => readFromFile[A](v.replace("file://", ""), loader, classTag)
             case _                                  => None
           }

@@ -262,7 +262,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(using env:
       }
     }
 
-  def checkNewUserRights(ctx: ApiActionContext[_], rights: UserRights)(f: => Future[Result]): Future[Result] = {
+  def checkNewUserRights(ctx: ApiActionContext[?], rights: UserRights)(f: => Future[Result]): Future[Result] = {
     if (!ctx.userIsSuperAdmin && rights.superAdmin) {
       FastFuture.successful(Forbidden(Json.obj("error" -> "you can't set superadmin rights to an admin")))
     } else {

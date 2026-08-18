@@ -151,7 +151,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(using env: Env)
                   FastFuture.successful(
                     Results
                       .NotFound(otoroshi.views.html.oto.error("Error", env))
-                      .removingFromSession("bousr")(request)
+                      .removingFromSession("bousr")(using request)
                   )
                 }
                 case false =>

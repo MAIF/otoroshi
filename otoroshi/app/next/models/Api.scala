@@ -620,19 +620,19 @@ case class ApiDocumentationPlan(raw: JsObject) {
   lazy val id: String                                                               = raw.selectAsString("id")
   lazy val name: String                                                             = raw.selectAsString("name")
   lazy val description: String                                                      = raw.selectAsOptString("description").getOrElse("No description")
-  lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(ApiPricing.format)
+  lazy val pricing: ApiPricing                                                      = raw.select("pricing").as(using ApiPricing.format)
   lazy val rateLimiting: Option[ThrottlingStrategyConfig]                           =
     raw
       .select("rateLimiting")
       .asOpt[JsObject]
-      .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(ThrottlingStrategyConfig.fmt))
+      .flatMap(rateLimiting => rateLimiting.select("strategy").asOpt(using ThrottlingStrategyConfig.fmt))
   lazy val accessModeConfiguration: Option[ApiDocumentationAccessModeConfiguration] =
     accessModeConfigurationType match {
-      case "apikey"        => (raw \ "access_mode_configuration").asOpt(ApikeyAccessModeConfiguration.fmt)
-      case "jwt"           => (raw \ "access_mode_configuration").asOpt(JWTAccessModeConfiguration.fmt)
-      case "mtls"          => (raw \ "access_mode_configuration").asOpt(MtlsAccessModeConfiguration.fmt)
-      case "oauth2-local"  => (raw \ "access_mode_configuration").asOpt(OAuth2AccessModeConfiguration.fmt)
-      case "oauth2-remote" => (raw \ "access_mode_configuration").asOpt(OAuth2RemoteAccessModeConfiguration.fmt)
+      case "apikey"        => (raw \ "access_mode_configuration").asOpt(using ApikeyAccessModeConfiguration.fmt)
+      case "jwt"           => (raw \ "access_mode_configuration").asOpt(using JWTAccessModeConfiguration.fmt)
+      case "mtls"          => (raw \ "access_mode_configuration").asOpt(using MtlsAccessModeConfiguration.fmt)
+      case "oauth2-local"  => (raw \ "access_mode_configuration").asOpt(using OAuth2AccessModeConfiguration.fmt)
+      case "oauth2-remote" => (raw \ "access_mode_configuration").asOpt(using OAuth2RemoteAccessModeConfiguration.fmt)
       case _               => None
     }
   lazy val status: ApiPlanStatus                                                    = raw.selectAsOptString("status").getOrElse("published").toLowerCase match {
@@ -667,7 +667,7 @@ case class ApiDocumentationSource(raw: JsObject) {
         env.Ws
           .url(url)
           .withFollowRedirects(httpFollowRedirects)
-          .withHttpHeaders(httpHeaders.toSeq: _*)
+          .withHttpHeaders(httpHeaders.toSeq*)
           .withRequestTimeout(httpTimeout)
           .get() map { resp =>
           if (resp.status == 200) {
@@ -1152,7 +1152,7 @@ object ApiSubscription {
   val format: Format[ApiSubscription] = new Format[ApiSubscription] {
     override def reads(json: JsValue): JsResult[ApiSubscription] = Try {
       ApiSubscription(
-        location = json.select("location").as(EntityLocation.format),
+        location = json.select("location").as(using EntityLocation.format),
         id = json.select("id").asString,
         name = json.select("name").asString,
         description = json.select("description").asString,
@@ -1167,7 +1167,7 @@ object ApiSubscription {
             case value        => ApiSubscriptionCustom(value)
           }
           .getOrElse(ApiSubscriptionDisabled),
-        dates = json.select("dates").as(ApiSubscriptionDates._fmt),
+        dates = json.select("dates").as(using ApiSubscriptionDates._fmt),
         ownerRef = json.selectAsString("owner_ref"),
         planRef = json.select("plan_ref").asString,
         paymentRef = json.selectAsOptObject("payment_ref").getOrElse(Json.obj()),
@@ -1276,7 +1276,7 @@ object ApiBackend {
       ApiBackend(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        backend = json.select("backend").as(NgBackend.fmt),
+        backend = json.select("backend").as(using NgBackend.fmt),
         client = json.select("client").asOpt[String].getOrElse("default_backend_client")
       )
     } match {
@@ -1312,7 +1312,7 @@ object ApiBackendClient {
       ApiBackendClient(
         id = json.select("id").asString,
         name = json.select("name").asString,
-        client = json.select("client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig.default)
+        client = json.select("client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig.default)
       )
     } match {
       case Failure(ex)    =>
@@ -2084,7 +2084,7 @@ object Api {
           .map(_.flatMap(v => ApiBackendClient._fmt.reads(v).asOpt))
           .getOrElse(Seq(ApiBackendClient.defaultClient)),
         documentation = (json \ "documentation")
-          .asOpt[ApiDocumentation](ApiDocumentation._fmt),
+          .asOpt[ApiDocumentation](using ApiDocumentation._fmt),
         deployments = (json \ "deployments")
           .asOpt[Seq[JsValue]]
           .map(_.flatMap(v => ApiDeployment._fmt.reads(v).asOpt))
@@ -2095,7 +2095,7 @@ object Api {
           .getOrElse(Seq.empty).toSeq,
         testing = json
           .select("testing")
-          .asOpt(ApiTesting._fmt)
+          .asOpt(using ApiTesting._fmt)
           .getOrElse(ApiTesting()),
         clients = (json \ "clients")
           .asOpt[Seq[JsValue]]

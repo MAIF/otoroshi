@@ -199,7 +199,7 @@ object NgResponseCacheConfig {
         ttl = json.select("ttl").asOpt[Long].getOrElse(60.minutes.toMillis),
         maxSize = json.select("maxSize").asOpt[Long].getOrElse(50L * 1024L * 1024L),
         autoClean = json.select("autoClean").asOpt[Boolean].getOrElse(true),
-        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](NgResponseCacheFilterConfig.format)
+        filter = json.select("filter").asOpt[NgResponseCacheFilterConfig](using NgResponseCacheFilterConfig.format)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -387,7 +387,7 @@ class NgResponseCache extends NgRequestTransformer {
           NgResponseCache.logger.debug(
             s"Serving '${ctx.request.method.toLowerCase()} - ${ctx.request.relativeUri}' from cache"
           )
-        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq: _*))
+        Left(Results.Status(status)(body).as(ctype).withHeaders(headers.toSeq*))
       }
     }
   }

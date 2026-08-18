@@ -1,6 +1,8 @@
 package plugins
 
 import com.dimafeng.testcontainers.GenericContainer
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import functional.PluginsTestSpec
 import org.testcontainers.containers.wait.strategy.Wait
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig, NgRoute}

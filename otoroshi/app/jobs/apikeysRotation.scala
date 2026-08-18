@@ -40,7 +40,7 @@ class ApikeysSecretsRotationJob extends Job {
     env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
       Source(apikeys.toList)
         .mapAsync(1)(apikey => env.datastores.apiKeyDataStore.keyRotation(apikey))
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map(_ => ())
     }
   }

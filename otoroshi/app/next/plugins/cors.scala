@@ -119,7 +119,7 @@ class Cors extends NgRequestTransformer with NgPreRouting {
       } else {
         NgPreRoutingErrorWithResult(
           Results.NoContent
-            .withHeaders(cors.legacy.asHeaders(req): _*)
+            .withHeaders(cors.legacy.asHeaders(req)*)
         ).left.vfuture
       }
     } else {

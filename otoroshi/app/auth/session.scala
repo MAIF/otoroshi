@@ -109,7 +109,7 @@ object implicits {
       if (env.privateAppsSessionManager.isEnabled) {
         withPrivateAppSession(new Session(privateAppSession.data ++ values.toMap))
       } else {
-        result.addingToSession(values: _*)
+        result.addingToSession(values*)
       }
     } catch {
       case t: Throwable =>
@@ -121,7 +121,7 @@ object implicits {
       if (env.privateAppsSessionManager.isEnabled) {
         withPrivateAppSession(new Session(privateAppSession.data -- keys))
       } else {
-        result.removingFromSession(keys: _*)
+        result.removingFromSession(keys*)
       }
     } catch {
       case t: Throwable =>

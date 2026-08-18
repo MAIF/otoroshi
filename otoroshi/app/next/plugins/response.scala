@@ -287,7 +287,7 @@ object MockResponsesConfig {
           .map(arr => arr.flatMap(v => MockResponse.format.reads(v).asOpt))
           .getOrElse(Seq.empty).toSeq,
         passThrough = json.select("pass_through").asOpt[Boolean].getOrElse(true),
-        formData = json.select("form_data").asOpt[MockFormData](MockFormData.format)
+        formData = json.select("form_data").asOpt[MockFormData](using MockFormData.format)
       )
     } match {
       case Failure(ex)    => JsError(ex.getMessage)
@@ -346,7 +346,7 @@ class MockResponses extends NgBackendCall {
         import otoroshi.utils.KaleidoscopeShim.*
 
         val route    = mr.routes.headOption.get
-        val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+        val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)
 
         def replaceOn(value: String) = {
           val newValue = Try {

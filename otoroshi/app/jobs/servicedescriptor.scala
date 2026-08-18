@@ -129,7 +129,7 @@ class ServiceDescriptorMigrationJob extends Job {
                   error(s"error while migrating '${descriptor.name}'", t)
                 }
             }
-            .runWith(Sink.ignore)(env.otoroshiMaterializer)
+            .runWith(Sink.ignore)(using env.otoroshiMaterializer)
             .andThen { case _ =>
               warn("migration done !")
             }

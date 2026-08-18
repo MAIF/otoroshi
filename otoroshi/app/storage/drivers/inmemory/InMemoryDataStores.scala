@@ -89,7 +89,7 @@ class InMemoryDataStores(
         _serviceDescriptorDataStore.startCleanup(env)
         _certificateDataStore.startSync()
         FastFuture.successful(())
-      }(actorSystem.dispatcher)
+      }(using actorSystem.dispatcher)
   }
 
   override def after(
@@ -105,7 +105,7 @@ class InMemoryDataStores(
       .flatMap { _ =>
         actorSystem.terminate()
         FastFuture.successful(())
-      }(actorSystem.dispatcher)
+      }(using actorSystem.dispatcher)
   }
 
   private lazy val _privateAppsUserDataStore   = new KvPrivateAppsUserDataStore(redis, env)
@@ -266,7 +266,7 @@ class InMemoryDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -308,7 +308,7 @@ class InMemoryDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -316,7 +316,7 @@ class InMemoryDataStores(
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -331,8 +331,8 @@ class InMemoryDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {

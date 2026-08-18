@@ -91,8 +91,8 @@ trait DataStores {
   def userAlertDataStore: UserAlertDataStore
   def adminPreferencesDatastore: AdminPreferencesDatastore
   ////
-  def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit]
-  def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]
+  def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit]
+  def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]]
 }
 
 trait RawDataStore {
@@ -164,7 +164,8 @@ trait RedisLike {
   def optimized: Boolean              = false
   def asOptimized: OptimizedRedisLike = this.asInstanceOf[OptimizedRedisLike]
   def health()(using ec: ExecutionContext): Future[DataStoreHealth]
-  def start(): Unit = {}
+  def start(): Unit = {
+}
   def stop(): Unit
   def flushall(): Future[Boolean]
   def get(key: String): Future[Option[ByteString]]
@@ -329,7 +330,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       FastFuture.successful(true)
     } else {
       val ks = ids.map(v => key(v))
-      redisLike.del(ks: _*).map(_ > 0)
+      redisLike.del(ks*).map(_ > 0)
     }
   }
 
@@ -340,7 +341,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         .mapAsync(1)(redisLike.keys)
         .mapAsync(1) { keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[(Option[ByteString], String)])
-          else redisLike.mget(keys: _*).map(seq => seq.zip(keys))
+          else redisLike.mget(keys*).map(seq => seq.zip(keys))
         }
         .map(seq => seq.filter(_._1.isDefined).map(t => (t._1.get.utf8String, t._2)))
         .flatMapConcat(values => Source(values.toList))
@@ -356,13 +357,13 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         .collect { case JsSuccess(i, _) =>
           i
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
     } else {
       redisLike
         .keys(key("*"))
         .flatMap(keys =>
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-          else redisLike.mget(keys: _*)
+          else redisLike.mget(keys*)
         )
         .map(seq =>
           seq
@@ -390,7 +391,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
             .keys(key("*"))
             .flatMap(keys =>
               if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-              else redisLike.mget(keys: _*)
+              else redisLike.mget(keys*)
             )
             .map(seq =>
               seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
@@ -453,7 +454,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         FastFuture.successful(findAllCache.get().filter(s => keys.contains(extractId(s))))
       }
       case keys                                                 =>
-        redisLike.mget(keys.map(key): _*).map { (values: Seq[Option[ByteString]]) =>
+        redisLike.mget(keys.map(key)*).map { (values: Seq[Option[ByteString]]) =>
           values.flatMap { opt =>
             opt.flatMap(bs => fromJsonSafe(Json.parse(bs.utf8String)).asOpt)
           }
@@ -480,7 +481,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
   def deleteAll()(using ec: ExecutionContext, env: Env): Future[Long]                                               =
     redisLike.keys(key("*")).flatMap { keys =>
-      redisLike.del(keys: _*)
+      redisLike.del(keys*)
     }
   def delete(id: String)(using ec: ExecutionContext, env: Env): Future[Boolean]                                     =
     redisLike.del(key(id)).map(_ > 0)
@@ -511,7 +512,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
       .grouped(fetchSize)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[Option[ByteString]])
-        case keys                 => redisLike.mget(keys: _*)
+        case keys                 => redisLike.mget(keys*)
       }
       .map { items =>
         items
@@ -579,7 +580,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
     countRead(keys.mkString(", "))
-    redis.mget(keys: _*)
+    redis.mget(keys*)
   }
   override def set(
       key: String,
@@ -601,7 +602,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def del(keys: String*): Future[Long] = {
     countWrite(keys.mkString(", "), "del")
-    redis.del(keys: _*)
+    redis.del(keys*)
   }
   override def incr(key: String): Future[Long] = {
     countWrite(key, "incr")
@@ -621,7 +622,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
     countWrite(key, "hdel")
-    redis.hdel(key, fields: _*)
+    redis.hdel(key, fields*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     countRead(key)
@@ -641,15 +642,15 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def lpush(key: String, values: String*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpush(key, values: _*)
+    redis.lpush(key, values*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushLong(key, values: _*)
+    redis.lpushLong(key, values*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushBS(key, values: _*)
+    redis.lpushBS(key, values*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     countRead(key)
@@ -677,11 +678,11 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def sadd(key: String, members: String*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.sadd(key, members: _*)
+    redis.sadd(key, members*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.saddBS(key, members: _*)
+    redis.saddBS(key, members*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
     countRead(key)
@@ -697,11 +698,11 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
   override def srem(key: String, members: String*): Future[Long] = {
     countWrite(key, "srem")
-    redis.srem(key, members: _*)
+    redis.srem(key, members*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "srem")
-    redis.sremBS(key, members: _*)
+    redis.sremBS(key, members*)
   }
   override def scard(key: String): Future[Long] = {
     countRead(key)
@@ -716,7 +717,7 @@ class RedisLikeMetricsWrapper(redis: RedisLike, val env: Env) extends RedisLike 
   }
 }
 
-class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val env: Env)
+class SwappableRedisLikeMetricsWrapper(redis: RedisLike & SwappableRedis, val env: Env)
     extends RedisLike
     with MetricsWrapper
     with SwappableRedis {
@@ -742,7 +743,7 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
     countRead(keys.mkString(", "))
-    redis.mget(keys: _*)
+    redis.mget(keys*)
   }
   override def set(
       key: String,
@@ -764,7 +765,7 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def del(keys: String*): Future[Long] = {
     countWrite(keys.mkString(", "), "del")
-    redis.del(keys: _*)
+    redis.del(keys*)
   }
   override def incr(key: String): Future[Long] = {
     incropt.incrBy(key, 1L) { _ =>
@@ -788,7 +789,7 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def hdel(key: String, fields: String*): Future[Long] = {
     countWrite(key, "hdel")
-    redis.hdel(key, fields: _*)
+    redis.hdel(key, fields*)
   }
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     countRead(key)
@@ -808,15 +809,15 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def lpush(key: String, values: String*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpush(key, values: _*)
+    redis.lpush(key, values*)
   }
   override def lpushLong(key: String, values: Long*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushLong(key, values: _*)
+    redis.lpushLong(key, values*)
   }
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
     countWrite(key, "lpush")
-    redis.lpushBS(key, values: _*)
+    redis.lpushBS(key, values*)
   }
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
     countRead(key)
@@ -844,11 +845,11 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def sadd(key: String, members: String*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.sadd(key, members: _*)
+    redis.sadd(key, members*)
   }
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "sadd")
-    redis.saddBS(key, members: _*)
+    redis.saddBS(key, members*)
   }
   override def sismember(key: String, member: String): Future[Boolean] = {
     countRead(key)
@@ -864,11 +865,11 @@ class SwappableRedisLikeMetricsWrapper(redis: RedisLike with SwappableRedis, val
   }
   override def srem(key: String, members: String*): Future[Long] = {
     countWrite(key, "srem")
-    redis.srem(key, members: _*)
+    redis.srem(key, members*)
   }
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     countWrite(key, "srem")
-    redis.sremBS(key, members: _*)
+    redis.sremBS(key, members*)
   }
   override def scard(key: String): Future[Long] = {
     countRead(key)

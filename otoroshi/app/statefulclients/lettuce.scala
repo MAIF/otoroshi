@@ -18,7 +18,7 @@ object LettuceStatefulClientConfig {
 case class LettuceStatefulClientConfig(uri: String)
     extends StatefulClientConfig[StatefulRedisConnection[String, ByteString]] {
 
-  private var redisClient: RedisClient = _
+  private var redisClient: RedisClient = scala.compiletime.uninitialized
 
   override def isOpen(client: StatefulRedisConnection[String, ByteString]): Boolean = client.isOpen
 
@@ -32,7 +32,7 @@ case class LettuceStatefulClientConfig(uri: String)
     Option(redisClient).foreach(_.shutdown())
   }
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case l: LettuceStatefulClientConfig => l.uri == uri
     case _                              => false
   }
@@ -44,7 +44,7 @@ case class LettuceStatefulClientConfig(uri: String)
 // would emit a SHUTDOWN command to the Redis server.
 case class DistributedRateLimiterLettuceStatefulClientConfig(uri: String) extends StatefulClientConfig[LettuceRedis] {
 
-  private var redisClient: RedisClient = _
+  private var redisClient: RedisClient = scala.compiletime.uninitialized
 
   override def isOpen(client: LettuceRedis): Boolean = Option(redisClient).exists(_ != null)
 
@@ -58,7 +58,7 @@ case class DistributedRateLimiterLettuceStatefulClientConfig(uri: String) extend
     Option(redisClient).foreach(_.shutdown())
   }
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case l: DistributedRateLimiterLettuceStatefulClientConfig => l.uri == uri
     case _                                                    => false
   }
@@ -67,7 +67,7 @@ case class DistributedRateLimiterLettuceStatefulClientConfig(uri: String) extend
 case class LettuceClusterStatefulClientConfig(uris: Seq[String])
     extends StatefulClientConfig[StatefulRedisClusterConnection[String, ByteString]] {
 
-  private var redisClient: RedisClusterClient = _
+  private var redisClient: RedisClusterClient = scala.compiletime.uninitialized
 
   override def isOpen(client: StatefulRedisClusterConnection[String, ByteString]): Boolean = client.isOpen
 
@@ -82,7 +82,7 @@ case class LettuceClusterStatefulClientConfig(uris: Seq[String])
     Option(redisClient).foreach(_.shutdown())
   }
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case l: LettuceClusterStatefulClientConfig => l.uris == uris
     case _                                     => false
   }
@@ -94,7 +94,7 @@ case class LettuceClusterStatefulClientConfig(uris: Seq[String])
 case class DistributedRateLimiterLettuceClusterStatefulClientConfig(uris: Seq[String])
     extends StatefulClientConfig[LettuceRedis] {
 
-  private var redisClient: RedisClusterClient = _
+  private var redisClient: RedisClusterClient = scala.compiletime.uninitialized
 
   override def isOpen(client: LettuceRedis): Boolean = Option(redisClient).exists(_ != null)
 
@@ -109,7 +109,7 @@ case class DistributedRateLimiterLettuceClusterStatefulClientConfig(uris: Seq[St
     Option(redisClient).foreach(_.shutdown())
   }
 
-  override def isSameConfig(other: StatefulClientConfig[_]): Boolean = other match {
+  override def isSameConfig(other: StatefulClientConfig[?]): Boolean = other match {
     case l: DistributedRateLimiterLettuceClusterStatefulClientConfig => l.uris == uris
     case _                                                           => false
   }

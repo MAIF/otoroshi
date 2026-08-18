@@ -652,8 +652,8 @@ object TlsWasmoSettings {
     override def reads(json: JsValue): JsResult[TlsWasmoSettings] = {
       Try {
         TlsWasmoSettings(
-          settings = (json \ "settings").as[WasmoSettings](WasmoSettings.format),
-          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](MtlsConfig.format)
+          settings = (json \ "settings").as[WasmoSettings](using WasmoSettings.format),
+          tlsConfig = (json \ "tlsConfig").as[MtlsConfig](using MtlsConfig.format)
         )
       } match {
         case Failure(e)  => JsError(e.getMessage)
@@ -922,7 +922,7 @@ object GlobalConfig {
           u2fLoginOnly = (json \ "u2fLoginOnly").asOpt[Boolean].getOrElse(false),
           logAnalyticsOnServer = (json \ "logAnalyticsOnServer").asOpt[Boolean].getOrElse(false),
           useAkkaHttpClient = (json \ "useAkkaHttpClient").asOpt[Boolean].getOrElse(false),
-          ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](IpFiltering.format).getOrElse(IpFiltering()),
+          ipFiltering = (json \ "ipFiltering").asOpt[IpFiltering](using IpFiltering.format).getOrElse(IpFiltering()),
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           perIpThrottlingQuota = (json \ "perIpThrottlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           elasticReadsConfig = (json \ "elasticReadsConfig").asOpt[JsObject].flatMap { config =>
@@ -940,11 +940,11 @@ object GlobalConfig {
             }*/
           },
           analyticsWebhooks =
-            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
+            (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](using Reads.seq(using Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
           alertsWebhooks =
-            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
+            (json \ "alertsWebhooks").asOpt[Seq[Webhook]](using Reads.seq(using Webhook.format)).getOrElse(Seq.empty[Webhook]).toSeq,
           elasticWritesConfigs = (json \ "elasticWritesConfigs")
-            .asOpt[Seq[ElasticAnalyticsConfig]](Reads.seq(ElasticAnalyticsConfig.format))
+            .asOpt[Seq[ElasticAnalyticsConfig]](using Reads.seq(using ElasticAnalyticsConfig.format))
             .getOrElse(Seq.empty[ElasticAnalyticsConfig]).toSeq,
           alertsEmails = (json \ "alertsEmails").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           endlessIpAddresses = (json \ "endlessIpAddresses").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
@@ -1003,7 +1003,7 @@ object GlobalConfig {
               case _                                                                                  => None
             }
           },
-          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
+          snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(using SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
           scripts = GlobalScripts.format
             .reads((json \ "scripts").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(GlobalScripts()),
@@ -1032,7 +1032,7 @@ object GlobalConfig {
             .select("templates")
             .asOpt[String]
             .flatMap(str => DefaultTemplates.format.reads(Json.parse(str)).asOpt)
-            .orElse(json.select("templates").asOpt(DefaultTemplates.format))
+            .orElse(json.select("templates").asOpt(using DefaultTemplates.format))
             .getOrElse(DefaultTemplates()),
           wasmoSettings = readWasmoSettings(json),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),

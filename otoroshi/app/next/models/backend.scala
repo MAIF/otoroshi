@@ -353,8 +353,8 @@ object NgBackend {
           loadBalancing = LoadBalancing.format
             .reads(obj.select("load_balancing").asOpt[JsObject].getOrElse(Json.obj()))
             .getOrElse(RoundRobin),
-          healthCheck = obj.select("health_check").asOpt(HealthCheck.format),
-          client = obj.select("client").asOpt(NgClientConfig.format).getOrElse(NgClientConfig())
+          healthCheck = obj.select("health_check").asOpt(using HealthCheck.format),
+          client = obj.select("client").asOpt(using NgClientConfig.format).getOrElse(NgClientConfig())
         )
     }
   }
@@ -520,13 +520,13 @@ object NgTarget {
       port = port,
       tls = tls,
       weight = obj.select("weight").asOpt[Int].getOrElse(1),
-      tlsConfig = obj.select("tls_config").asOpt(NgTlsConfig.format).getOrElse(NgTlsConfig()),
+      tlsConfig = obj.select("tls_config").asOpt(using NgTlsConfig.format).getOrElse(NgTlsConfig()),
       protocol = (obj \ "protocol")
         .asOpt[String]
         .filterNot(_.trim.isEmpty)
         .map(s => HttpProtocols.parse(s))
         .getOrElse(HttpProtocols.HTTP_1_1),
-      predicate = (obj \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
+      predicate = (obj \ "predicate").asOpt(using TargetPredicate.format).getOrElse(AlwaysMatch),
       ipAddress = ipAddress,
       backup = obj.select("backup").asOpt[Boolean].getOrElse(false)
     )
@@ -589,7 +589,7 @@ case class StoredNgBackend(
 }
 
 trait StoredNgBackendDataStore extends BasicStore[StoredNgBackend] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): StoredNgBackend = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): StoredNgBackend = {
     val default = StoredNgBackend(
       location = EntityLocation.ownEntityLocation(ctx)(using env),
       id = IdGenerator.namedId("backend", env),

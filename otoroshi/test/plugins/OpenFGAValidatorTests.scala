@@ -1,6 +1,7 @@
 package plugins
 
 import com.dimafeng.testcontainers.GenericContainer
+import play.api.libs.ws.WSBodyWritables.given
 import functional.PluginsTestSpec
 import otoroshi.models.{ApiKey, RouteIdentifier}
 import otoroshi.next.models.*

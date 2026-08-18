@@ -300,7 +300,7 @@ class BodyLogger extends RequestTransformer {
     ref.get() match {
       case null  =>
         env.datastores.rawDataStore.keys(pattern).flatMap(keys => env.datastores.rawDataStore.del(keys)).map(_ => ())
-      case redis => redis._1.keys(pattern).flatMap(keys => redis._1.del(keys: _*)).map(_ => ())
+      case redis => redis._1.keys(pattern).flatMap(keys => redis._1.del(keys*)).map(_ => ())
     }
   }
 
@@ -321,7 +321,7 @@ class BodyLogger extends RequestTransformer {
           .keys(pattern)
           .flatMap { keys =>
             if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-            else redis._1.mget(keys: _*)
+            else redis._1.mget(keys*)
           }
           .map { seq =>
             seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String))
@@ -613,7 +613,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     if (config.enabled && filter(ctx.request, config)) {
       val size = new AtomicLong(0L)
@@ -666,7 +666,7 @@ class BodyLogger extends RequestTransformer {
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     if (config.enabled && filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       val size = new AtomicLong(0L)

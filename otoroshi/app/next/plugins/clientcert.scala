@@ -528,7 +528,7 @@ class NgHasClientCertMatchingHttpValidator extends NgAccessValidator {
     env.MtlsWs
       .url(url, tls.legacy)
       .withMethod(method)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .withRequestTimeout(timeout.millis)
       .execute()
       .map {

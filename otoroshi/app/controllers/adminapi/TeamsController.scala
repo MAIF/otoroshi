@@ -36,7 +36,7 @@ class TeamsController(val ApiAction: ApiAction, val cc: ControllerComponents)(us
 
   override def extractId(entity: Team): String = env.datastores.teamDataStore.extractId(entity)
 
-  override def processId(rawId: String, ctx: ApiActionContext[_]): String = {
+  override def processId(rawId: String, ctx: ApiActionContext[?]): String = {
     s"${ctx.currentTenant.value}:$rawId"
   }
 

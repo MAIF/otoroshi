@@ -88,7 +88,7 @@ object BasicAuthUser {
               name = (json \ "name").as[String],
               password = (json \ "password").as[String],
               email = (json \ "email").as[String],
-              webauthn = (json \ "webauthn").asOpt(WebAuthnDetails.fmt),
+              webauthn = (json \ "webauthn").asOpt(using WebAuthnDetails.fmt),
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
               tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty).toSeq,
               rights = UserRights.readFromObject(json),
@@ -152,11 +152,11 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           basicAuth = (json \ "basicAuth").asOpt[Boolean].getOrElse(false),
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
-          users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]).toSeq,
+          users = (json \ "users").asOpt(using Reads.seq(using BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]).toSeq,
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]).toSeq,
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -209,7 +209,7 @@ case class BasicAuthModuleConfig(
       "sessionMaxAge"            -> this.sessionMaxAge,
       "metadata"                 -> this.metadata,
       "tags"                     -> JsArray(tags.map(JsString.apply)),
-      "users"                    -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
+      "users"                    -> Writes.seq(using BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues"      -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "userValidators"           -> JsArray(userValidators.map(_.json)),
       "allowedUsers"             -> this.allowedUsers,

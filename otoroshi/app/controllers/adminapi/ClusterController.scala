@@ -515,7 +515,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents, cookieHe
     action.apply(req).run().flatMap { result =>
       if (result.header.status == 204) {
         ActorFlow
-          .actorRef(out => ClusterStateActor.props(out, env))(env.otoroshiActorSystem, env.otoroshiMaterializer)
+          .actorRef(out => ClusterStateActor.props(out, env))(using env.otoroshiActorSystem, env.otoroshiMaterializer)
           .rightf
       } else {
         result.leftf

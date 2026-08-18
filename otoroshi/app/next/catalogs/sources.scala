@@ -1,6 +1,7 @@
 package otoroshi.next.catalogs
 
 import org.apache.pekko.stream.connectors.s3.scaladsl.S3
+import play.api.libs.ws.WSBodyReadables.given
 import org.apache.pekko.stream.connectors.s3.*
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.{Attributes, Materializer}
@@ -329,7 +330,7 @@ class CatalogSourceHttp extends CatalogSource {
     env.Ws
       .url(url)
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .get()
       .map { resp =>
         if (resp.status == 200) {
@@ -391,7 +392,7 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(githubRawHeaders(token): _*)
+      .withHttpHeaders(githubRawHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -418,7 +419,7 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("recursive" -> "1")
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -457,7 +458,7 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -528,7 +529,7 @@ class CatalogSourceGithub extends CatalogSource {
     env.Ws
       .url(orgUrl)
       .withQueryStringParameters("per_page" -> "100", "type" -> "all")
-      .withHttpHeaders(githubHeaders(token): _*)
+      .withHttpHeaders(githubHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .flatMap { resp =>
@@ -540,7 +541,7 @@ class CatalogSourceGithub extends CatalogSource {
           env.Ws
             .url(userUrl)
             .withQueryStringParameters("per_page" -> "100", "type" -> "all")
-            .withHttpHeaders(githubHeaders(token): _*)
+            .withHttpHeaders(githubHeaders(token)*)
             .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
             .get()
             .map { resp2 =>
@@ -693,7 +694,7 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -719,7 +720,7 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch, "recursive" -> "true", "per_page" -> "100")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -762,7 +763,7 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch, "path" -> dirPath, "per_page" -> "100")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -827,7 +828,7 @@ class CatalogSourceGitlab extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("per_page" -> "100", "include_subgroups" -> "true")
-      .withHttpHeaders(gitlabHeaders(token): _*)
+      .withHttpHeaders(gitlabHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1115,8 +1116,8 @@ class CatalogSourceConsulKv extends CatalogSource {
     val params = Seq("raw" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$key")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1138,8 +1139,8 @@ class CatalogSourceConsulKv extends CatalogSource {
     val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$cleanPrefix")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1172,8 +1173,8 @@ class CatalogSourceConsulKv extends CatalogSource {
     val params      = Seq("keys" -> "") ++ (if (dc.nonEmpty) Seq("dc" -> dc) else Seq.empty)
     env.Ws
       .url(s"$endpoint/v1/kv/$cleanPrefix")
-      .withQueryStringParameters(params: _*)
-      .withHttpHeaders(consulHeaders(token): _*)
+      .withQueryStringParameters(params*)
+      .withHttpHeaders(consulHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1311,7 +1312,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     val apiUrl = s"$apiBase/2.0/repositories/$workspace/$repo/src/$branch/$filePath"
     env.Ws
       .url(apiUrl)
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1341,7 +1342,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("pagelen" -> "100")
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1406,7 +1407,7 @@ class CatalogSourceBitbucket extends CatalogSource {
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("pagelen" -> "100")
-      .withHttpHeaders(bitbucketHeaders(token, username): _*)
+      .withHttpHeaders(bitbucketHeaders(token, username)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1579,7 +1580,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1609,7 +1610,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("recursive" -> "true")
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(60000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1647,7 +1648,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(apiUrl)
       .withQueryStringParameters("ref" -> branch)
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .map { resp =>
@@ -1710,7 +1711,7 @@ class CatalogSourceGiteaCompat(
     env.Ws
       .url(orgUrl)
       .withQueryStringParameters("limit" -> "50")
-      .withHttpHeaders(giteaHeaders(token): _*)
+      .withHttpHeaders(giteaHeaders(token)*)
       .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
       .get()
       .flatMap { resp =>
@@ -1722,7 +1723,7 @@ class CatalogSourceGiteaCompat(
           env.Ws
             .url(userUrl)
             .withQueryStringParameters("limit" -> "50")
-            .withHttpHeaders(giteaHeaders(token): _*)
+            .withHttpHeaders(giteaHeaders(token)*)
             .withRequestTimeout(Duration(30000L, TimeUnit.MILLISECONDS))
             .get()
             .map { resp2 =>
@@ -1910,7 +1911,7 @@ class CatalogSourceGit extends CatalogSource {
         err => { stderr = stderr + err + "\n" }
       )
       val envVars       = sshEnv(config)
-      val cmd           = Process(Seq("git") ++ args, cwd, envVars: _*)
+      val cmd           = Process(Seq("git") ++ args, cwd, envVars*)
       val code          = cmd.!(processLogger)
       if (code != 0) {
         Left(s"git ${args.head} failed (exit $code): ${stderr.take(500)}")

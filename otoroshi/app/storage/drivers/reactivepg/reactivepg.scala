@@ -336,7 +336,7 @@ class ReactivePgDataStores(
           Target("mirror.otoroshi.io")
         )
       ).save()(using reactivePgActorSystem.dispatcher, env)
-    }(reactivePgActorSystem.dispatcher)
+    }(using reactivePgActorSystem.dispatcher)
   }
 
   override def before(
@@ -539,7 +539,7 @@ class ReactivePgDataStores(
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, ?]] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
@@ -570,14 +570,14 @@ class ReactivePgDataStores(
     )
   }
 
-  override def fullNdJsonImport(exportSource: Source[JsValue, _]): Future[Unit] = {
+  override def fullNdJsonImport(exportSource: Source[JsValue, ?]): Future[Unit] = {
 
     implicit val ev: otoroshi.env.Env = env
     implicit val ecc: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys*) else FastFuture.successful(0L))
       .flatMap { _ =>
         exportSource
           .mapAsync(1) { json =>
@@ -596,8 +596,8 @@ class ReactivePgDataStores(
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
-              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq: _*)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.toSeq.map(Json.stringify).toSeq*)
               case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
@@ -696,7 +696,7 @@ class ReactivePgRedis(
             case None       => ().vfuture
           }
         }
-        .runWith(Sink.ignore)(env.otoroshiMaterializer)
+        .runWith(Sink.ignore)(using env.otoroshiMaterializer)
     }
   }
 
@@ -891,7 +891,7 @@ class ReactivePgRedis(
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
-  override def del(keys: String*): Future[Long] = hardDelete(keys: _*)
+  override def del(keys: String*): Future[Long] = hardDelete(keys*)
 
   def hardDelete(keys: String*): Future[Long] = {
     if (keys.isEmpty) {
@@ -1122,9 +1122,9 @@ class ReactivePgRedis(
       }
     }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  override def lpush(key: String, values: String*): Future[Long]                      = lpushBS(key, values.map(_.byteString): _*)
+  override def lpush(key: String, values: String*): Future[Long]                      = lpushBS(key, values.map(_.byteString)*)
 
-  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString): _*)
+  override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString)*)
 
   private def getArray(key: String): Future[Option[Seq[ByteString]]] =
     measure("pg.ops.lget") {
@@ -1230,7 +1230,7 @@ class ReactivePgRedis(
     }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.sadd") {
@@ -1270,7 +1270,7 @@ class ReactivePgRedis(
       }.map(_.getOrElse(Seq.empty).toSeq)
     }
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.srem") {

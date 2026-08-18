@@ -212,7 +212,7 @@ class AuthController(
           attrs = TypedMap.empty
         )
       } else {
-        FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request): _*))
+        FastFuture.successful(Results.Ok(ByteString.empty).withHeaders(cors.asHeaders(ctx.request)*))
       }
     }
 
@@ -380,7 +380,7 @@ class AuthController(
                             descriptor,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -430,7 +430,7 @@ class AuthController(
                             descriptor,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -496,7 +496,7 @@ class AuthController(
                             legacy,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -547,7 +547,7 @@ class AuthController(
                             legacy,
                             auth,
                             user.some
-                          ): _*
+                          )*
                         )
                     )
                   }
@@ -569,7 +569,7 @@ class AuthController(
       (redirectToOpt, hostOpt, cookiePrefOpt) match {
         case (Some(redirectTo), Some(host), Some(cp)) =>
           FastFuture.successful(
-            Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp): _*)
+            Redirect(redirectTo).discardingCookies(env.removePrivateSessionCookiesWithSuffix(host, cp)*)
           )
         case _                                        =>
           Errors.craftResponseResult(
@@ -630,7 +630,7 @@ class AuthController(
                 Redirect(redirectTo)
                   .removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                   .withCookies(
-                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                    env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                   )
 
               case _ =>
@@ -652,7 +652,7 @@ class AuthController(
                       s"$redirection&hash=$hash"
                     ).removingFromPrivateAppSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                       .withCookies(
-                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some): _*
+                        env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth, user.some)*
                       )
                   case redirectTo                  =>
                     val encodedRedirectTo  =
@@ -689,7 +689,7 @@ class AuthController(
                           "desc"
                         )
                         .withCookies(
-                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                         )
                     } else {
                       Redirect(setCookiesRedirect)
@@ -698,7 +698,7 @@ class AuthController(
                           "desc"
                         )
                         .withCookies(
-                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some): _*
+                          env.createPrivateSessionCookies(host, paUser.randomId, descriptor, auth, paUser.some)*
                         )
                     }
                 }

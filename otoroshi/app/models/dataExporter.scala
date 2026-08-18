@@ -1,6 +1,7 @@
 package otoroshi.models
 
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import play.api.libs.ws.WSBodyWritables.given
 import com.google.common.hash.Hashing
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -223,7 +224,7 @@ case class HttpCallSettings(
       .url(url, tlsConfig.legacy)
       .withRequestTimeout(timeout)
       .withMethod(method)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .withBody(finalBody)
       .execute()
       .map { resp =>
@@ -309,7 +310,7 @@ case class SplunkCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Authorization" -> s"Splunk ${token}")
-      }: _*)
+      }*)
       .withBody(
         events
           .map { evt =>
@@ -416,7 +417,7 @@ case class DatadogCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("DD-API-KEY" -> token)
-      }: _*)
+      }*)
       .withBody(
         JsArray(
           events
@@ -492,7 +493,7 @@ case class NewRelicCallSettings(
       .withMethod("POST")
       .withHttpHeaders(headers.toSeq.applyOnWithOpt(token) { case (headers, token) =>
         headers :+ ("Api-Key" -> token)
-      }: _*)
+      }*)
       .withBody(
         JsArray(
           events
@@ -910,10 +911,10 @@ object DataExporterConfig {
                 maxFileSize = (json \ "config" \ "maxFileSize").as[Long]
               )
             case "s3"             =>
-              (json \ "config").as(S3ExporterSettings.format)
+              (json \ "config").as(using S3ExporterSettings.format)
             case "goreplays3"     =>
               GoReplayS3Settings(
-                (json \ "config" \ "s3").as(S3Configuration.format),
+                (json \ "config" \ "s3").as(using S3Configuration.format),
                 (json \ "config" \ "maxFileSize").asOpt[Long].getOrElse(10L * 1024L * 1024L),
                 (json \ "config" \ "captureRequests").asOpt[Boolean].getOrElse(true),
                 (json \ "config" \ "captureResponses").asOpt[Boolean].getOrElse(false),

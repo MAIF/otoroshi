@@ -23,7 +23,7 @@ class WebsocketJQTransformerTests(parent: PluginsTestSpec) {
   import parent.*
 
   implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-websocket-test")
-  implicit val http: HttpExt = Http()(system)
+  implicit val http: HttpExt = Http()(using system)
 
   val backend = new WebsocketBackend(
     callback = text => TextMessage(Json.obj("message" -> text).stringify)

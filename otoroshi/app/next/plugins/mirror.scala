@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.http.scaladsl.model.Uri
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.util.ByteString
@@ -222,9 +223,9 @@ case class NgRequestContext(
       .withMethod(httpRequest.method)
       .withHttpHeaders(
         (httpRequest.headers.toSeq
-          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders): _*
+          .filterNot(_._1 == "Host") ++ Seq("Host" -> host) ++ configHeaders)*
       )
-      .withCookies(httpRequest.cookies: _*)
+      .withCookies(httpRequest.cookies*)
       .withFollowRedirects(false)
       .withMaybeProxyServer(
         route.backend.client.legacy.proxy.orElse(globalConfig.proxies.services)

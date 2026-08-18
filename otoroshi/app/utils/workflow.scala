@@ -1,6 +1,7 @@
 package otoroshi.utils.workflow
 
 import java.io.File
+import play.api.libs.ws.WSBodyWritables.given
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.stream.Materializer
@@ -403,7 +404,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
   lazy val timeout: FiniteDuration                                     = requestSpec.select("timeout").asOpt[Long].getOrElse(10000L).millis
   def headers(ctx: WorkFlowTaskContext, env: Env): Map[String, String] =
     requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).view.mapValues(v => applyEl(v, ctx, env)).toMap
-  lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(MtlsConfig.format).getOrElse(MtlsConfig())
+  lazy val tls: MtlsConfig                                             = requestSpec.select("tls").asOpt(using MtlsConfig.format).getOrElse(MtlsConfig())
   def bodyOpt(ctx: WorkFlowTaskContext, env: Env): Option[ByteString]  =
     requestSpec.select("body").asOpt[JsValue].map { body =>
       val finalBody = applyTransformation(body, ctx, env)
@@ -426,7 +427,7 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
       val req      = env.MtlsWs
         .url(finalUrl, tls)          // TODO: handle service-id
         .withRequestTimeout(timeout) // TODO: handle apikey
-        .withHttpHeaders(headers(ctx, env).toSeq: _*)
+        .withHttpHeaders(headers(ctx, env).toSeq*)
         .withMethod(method)
       val reqWithBody = bodyOpt(ctx, env).map(b => req.withBody(b)).getOrElse(req)
       reqWithBody

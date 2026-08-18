@@ -140,7 +140,7 @@ case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId
 
 object EntityLocation {
   val default = EntityLocation()
-  def ownEntityLocation(rawCtx: Option[ApiActionContext[_]])(using env: Env): EntityLocation = {
+  def ownEntityLocation(rawCtx: Option[ApiActionContext[?]])(using env: Env): EntityLocation = {
     rawCtx
       .map(ctx => getOwnEntityLocation(ctx.currentTenant, ctx.canUserRead))
       .getOrElse(EntityLocation.default)
@@ -205,7 +205,7 @@ object EntityLocation {
       }
   }
   def readFromKey(json: JsValue): EntityLocation = {
-    (json \ keyName).asOpt(format).getOrElse(EntityLocation())
+    (json \ keyName).asOpt(using format).getOrElse(EntityLocation())
   }
 }
 

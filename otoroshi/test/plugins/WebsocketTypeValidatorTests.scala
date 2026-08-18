@@ -21,7 +21,7 @@ import scala.concurrent.{Future, Promise}
 class WebsocketTypeValidatorTests(parent: PluginsTestSpec) {
   import parent.*
 
-  implicit val http: HttpExt = Http()(system)
+  implicit val http: HttpExt = Http()(using system)
 
   val backend = new WebsocketBackend().await()
 

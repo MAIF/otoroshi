@@ -44,7 +44,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration) extends O
 
       implicit val system: org.apache.pekko.actor.ActorSystem = ActorSystem("otoroshi-test")
       implicit val mat: org.apache.pekko.stream.Materializer = Materializer(system)
-      implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http()(system)
+      implicit val http: org.apache.pekko.http.scaladsl.HttpExt = Http()(using system)
 
       val service = ServiceDescriptor(
         id = "ws-test",

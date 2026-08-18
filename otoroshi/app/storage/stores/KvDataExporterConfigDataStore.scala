@@ -32,7 +32,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
 
   override def extractId(value: DataExporterConfig): String = value.id
 
-  def template(modType: Option[String], ctx: Option[ApiActionContext[_]] = None): DataExporterConfig = {
+  def template(modType: Option[String], ctx: Option[ApiActionContext[?]] = None): DataExporterConfig = {
     val defaultTemplate = modType match {
       case Some("webhook")        =>
         DataExporterConfig(

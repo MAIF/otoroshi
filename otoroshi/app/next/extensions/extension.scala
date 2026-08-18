@@ -85,7 +85,7 @@ case class AdminExtensionBackofficeAuthRoute(
         AdminExtensionRouterContext[AdminExtensionBackofficeAuthRoute],
         RequestHeader,
         Option[BackOfficeUser],
-        Option[Source[ByteString, _]]
+        Option[Source[ByteString, ?]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
 case class AdminExtensionBackofficePublicRoute(
@@ -95,7 +95,7 @@ case class AdminExtensionBackofficePublicRoute(
     handle: (
         AdminExtensionRouterContext[AdminExtensionBackofficePublicRoute],
         RequestHeader,
-        Option[Source[ByteString, _]]
+        Option[Source[ByteString, ?]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
 case class AdminExtensionAdminApiRoute(
@@ -106,7 +106,7 @@ case class AdminExtensionAdminApiRoute(
         AdminExtensionRouterContext[AdminExtensionAdminApiRoute],
         RequestHeader,
         ApiKey,
-        Option[Source[ByteString, _]]
+        Option[Source[ByteString, ?]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
 case class AdminExtensionPrivateAppAuthRoute(
@@ -117,7 +117,7 @@ case class AdminExtensionPrivateAppAuthRoute(
         AdminExtensionRouterContext[AdminExtensionPrivateAppAuthRoute],
         RequestHeader,
         Seq[PrivateAppsUser],
-        Option[Source[ByteString, _]]
+        Option[Source[ByteString, ?]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
 case class AdminExtensionPrivateAppPublicRoute(
@@ -127,7 +127,7 @@ case class AdminExtensionPrivateAppPublicRoute(
     handle: (
         AdminExtensionRouterContext[AdminExtensionPrivateAppPublicRoute],
         RequestHeader,
-        Option[Source[ByteString, _]]
+        Option[Source[ByteString, ?]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
 case class AdminExtensionWellKnownRoute(
@@ -137,7 +137,7 @@ case class AdminExtensionWellKnownRoute(
     handle: (
         AdminExtensionRouterContext[AdminExtensionWellKnownRoute],
         RequestHeader,
-        Option[Source[ByteString, _]]
+        Option[Source[ByteString, ?]]
     ) => Future[Result]
 ) extends AdminExtensionRoute
 
@@ -293,7 +293,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   def analyticsQueries(): Seq[otoroshi.next.analytics.queries.AnalyticsQuery]           = _analyticsQueries
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  private val extCache = new UnboundedTrieMap[Class[_], Any]
+  private val extCache = new UnboundedTrieMap[Class[?], Any]
 
   def enabledExtensions(): JsValue = {
     JsObject(extensions.map(e => (e.id.value, e.enabled.json)))
@@ -370,7 +370,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
   def handleWellKnownCall(
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent],
-      sourceBodyParser: BodyParser[Source[ByteString, _]]
+      sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && wellKnownOverridesRoutes.nonEmpty) {
       wellKnownOverridesRouter.find(request) match {
@@ -397,7 +397,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent],
       ApiAction: ApiAction,
-      sourceBodyParser: BodyParser[Source[ByteString, _]]
+      sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && adminApiOverridesRoutes.nonEmpty) {
       adminApiOverridesRouter.find(request) match {
@@ -429,7 +429,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent],
       BackOfficeAction: BackOfficeAction,
-      sourceBodyParser: BodyParser[Source[ByteString, _]]
+      sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && assetsOverrides.nonEmpty) {
       assetsOverridesRouter.find(request) match {
@@ -484,7 +484,7 @@ class AdminExtensions(env: Env, _extensions: Seq[AdminExtension]) {
       request: RequestHeader,
       actionBuilder: ActionBuilder[Request, AnyContent],
       PrivateAppsAction: PrivateAppsAction,
-      sourceBodyParser: BodyParser[Source[ByteString, _]]
+      sourceBodyParser: BodyParser[Source[ByteString, ?]]
   )(f: => Option[Handler]): Option[Handler] = {
     if (hasExtensions && assetsOverrides.nonEmpty) {
       assetsOverridesRouter.find(request) match {

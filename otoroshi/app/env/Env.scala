@@ -307,7 +307,7 @@ class Env(
     val promise = Promise[Unit]()
     otoroshiActorSystem.scheduler.scheduleOnce(duration) {
       promise.trySuccess(())
-    }(otoroshiExecutionContext)
+    }(using otoroshiExecutionContext)
     promise.future
   }
 
@@ -729,7 +729,7 @@ class Env(
       config.copy(
         wsClientConfig = wsClientConfig
       )
-    )(otoroshiMaterializer)
+    )(using otoroshiMaterializer)
 
     import scala.jdk.CollectionConverters.*
     ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
@@ -747,7 +747,7 @@ class Env(
         case Success(_) => ()
         case Failure(e) => logger.error("error while publishing ahc stats", e)
       }
-    }(otoroshiExecutionContext))
+    }(using otoroshiExecutionContext))
 
     WsClientChooser(
       ahcClient,
@@ -797,7 +797,7 @@ class Env(
         case Success(_) => ()
         case Failure(e) => logger.error("error while publishing ahc stats", e)
       }
-    }(otoroshiExecutionContext))
+    }(using otoroshiExecutionContext))
     WsClientChooser(
       wsClient,
       new AkkWsClient(wsClientConfig, this)(using otoroshiActorSystem, otoroshiMaterializer),
@@ -1372,7 +1372,7 @@ class Env(
     // TODO: remove timeout
     timeout(300.millis).andThen { case _ =>
       tunnelAgent.start()
-    }(otoroshiExecutionContext)
+    }(using otoroshiExecutionContext)
     ().vfuture
   }
 
@@ -1538,14 +1538,14 @@ class Env(
             configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
               case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
                 logger.info(s"Importing from URL: $url")
-                _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                _internalClient.url(url).withHttpHeaders(headers*).get().fast.map { resp =>
                   val json = resp.json.as[JsObject]
                   datastores.globalConfigDataStore
                     .fullImport(json)(using ec, this)
                     .andThen {
                       case Success(_) => logger.info("Successful import !")
                       case Failure(e) => logger.error("Error while importing initial data !", e)
-                    }(ec)
+                    }(using ec)
                 }
               }
               case Some(path)                                                           => {
@@ -1557,7 +1557,7 @@ class Env(
                   .andThen {
                     case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing initial data !", e)
-                  }(ec)
+                  }(using ec)
               }
               case _ => ()
             }
@@ -1577,7 +1577,7 @@ class Env(
                   .andThen {
                     case Success(_) => logger.info("Successful import !")
                     case Failure(e) => logger.error("Error while importing initial data !", e)
-                  }(ec)
+                  }(using ec)
               }
               case _         => {
 
@@ -1739,7 +1739,7 @@ class Env(
       }
     }
     ()
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   timeout(1000.millis).andThen { case _ =>
     jobManager.start()
@@ -1749,7 +1749,7 @@ class Env(
     otoroshi.next.analytics.queries.AnalyticsRuntime.init(
       otoroshi.next.analytics.queries.CoreQueries.all
     )(using this)
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {
     case _ if clusterConfig.mode != ClusterMode.Worker => {
@@ -1759,7 +1759,7 @@ class Env(
         _ <- datastores.globalConfigDataStore.migrate()
       } yield ()
     }
-  }(otoroshiExecutionContext)
+  }(using otoroshiExecutionContext)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

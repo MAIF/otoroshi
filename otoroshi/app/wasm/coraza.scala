@@ -33,7 +33,7 @@ import scala.util.*
 object CorazaPluginKeys {
   val CorazaWasmVmKey = TypedKey[WasmVm]("otoroshi.next.plugins.CorazaWasmVm")
 
-  val RequestBodyKey = TypedKey[Future[Source[ByteString, _]]]("otoroshi.next.plugins.RequestBodyKey")
+  val RequestBodyKey = TypedKey[Future[Source[ByteString, ?]]]("otoroshi.next.plugins.RequestBodyKey")
   val HasBodyKey     = TypedKey[Boolean]("otoroshi.next.plugins.HasBodyKey")
 }
 
@@ -171,7 +171,7 @@ class NgCorazaWAF extends NgRequestTransformer {
         .runFold(ByteString.empty)(_ ++ _)
         .flatMap { bytes =>
           val req     = ctx.otoroshiRequest.copy(body = bytes.chunks(16 * 1024))
-          val promise = Promise[Source[ByteString, _]]()
+          val promise = Promise[Source[ByteString, ?]]()
           ctx.attrs.put(otoroshi.wasm.proxywasm.CorazaPluginKeys.RequestBodyKey -> promise.future)
 
           val source = Source(bytes.grouped(16 * 1024).toList)
@@ -534,7 +534,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
     extends CorazaImplementation {
   private implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
 
-  private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(env.wasmIntegration.context)
+  private lazy val pool: WasmVmPool = WasmVmPool.forConfigurationWithId(key, wasm)(using env.wasmIntegration.context)
 
   def start(attrs: TypedMap): Future[Unit] = {
     pool
@@ -684,7 +684,7 @@ class CorazaNextPlugin(wasm: WasmConfig, val config: CorazaWafConfig, key: Strin
       }
 
     body_source
-      .runWith(Sink.head)(env.otoroshiMaterializer)
+      .runWith(Sink.head)(using env.otoroshiMaterializer)
       .flatMap(requestBody => {
         val in = Json.obj(
           "request"  -> Json

@@ -246,7 +246,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: E
     }
   }
 
-  def certificateData(): Action[Source[ByteString, _]] =
+  def certificateData(): Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
@@ -273,7 +273,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(using env: E
       }
     }
 
-  def certificateIsValid(): Action[Source[ByteString, _]] =
+  def certificateIsValid(): Action[Source[ByteString, ?]] =
     ApiAction.async(sourceBodyParser) { ctx =>
       ctx.checkRights(RightsChecker.SuperAdminOnly) {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>

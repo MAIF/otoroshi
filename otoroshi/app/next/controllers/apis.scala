@@ -313,7 +313,7 @@ class ApisController(ApiAction: ApiAction, cc: ControllerComponents)(using env: 
 
   private def validateBody(ctx: ApiActionContext[JsValue]): Either[Result, ApiSubscription] =
     ctx.request.body
-      .asOpt(ApiSubscription.format)
+      .asOpt(using ApiSubscription.format)
       .toRight(BadRequest(Json.obj("error" -> "wrong subscription format")))
 
   def closePlan(apiId: String, planId: String) = {

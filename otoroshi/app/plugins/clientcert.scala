@@ -286,7 +286,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
   ): Future[JsValue] = {
     env.MtlsWs
       .url(url, mtlsConfig)
-      .withHttpHeaders(headers.toSeq: _*)
+      .withHttpHeaders(headers.toSeq*)
       .get()
       .map {
         case r if r.status == 200 =>

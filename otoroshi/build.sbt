@@ -55,7 +55,7 @@ lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
   .disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion        = "3.8.3"
+lazy val scalaLangVersion        = "3.8.4"
 lazy val metricsVersion          = "4.2.12"
 lazy val acme4jVersion           = "3.2.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
@@ -89,7 +89,9 @@ lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
 scalacOptions ++= Seq(
   // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
   // migration, to keep the diff minimal instead of rewriting hundreds of call-sites
-  "-source:3.0-migration",
+  //"-source:3.0-migration",
+  //"-rewrite",
+  //"-source:3.8-migration",
   "-explain",
   "-feature",
   "-explain-cyclic",

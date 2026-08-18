@@ -1,6 +1,7 @@
 package functional
 
 import org.apache.pekko.actor.ActorSystem
+import play.api.libs.ws.WSBodyReadables.given
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory

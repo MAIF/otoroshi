@@ -70,7 +70,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(using env: Env)
             .collect { case Some(user) =>
               user
             }
-            .runWith(Sink.seq)(env.otoroshiMaterializer)
+            .runWith(Sink.seq)(using env.otoroshiMaterializer)
             .flatMap { users =>
               block(PrivateAppsActionContext(request, users, globalConfig))
             }
@@ -81,7 +81,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(using env: Env)
                 val discardingCookies: Seq[DiscardingCookie] = cookies.flatMap { cookie =>
                   env.removePrivateSessionCookiesWithSuffix(host, cookie.name.replace("oto-papps-", ""))
                 }
-                result.discardingCookies(discardingCookies: _*)
+                result.discardingCookies(discardingCookies*)
               }
           } else {
             block(PrivateAppsActionContext(request, Seq.empty, globalConfig))

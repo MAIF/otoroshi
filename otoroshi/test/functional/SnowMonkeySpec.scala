@@ -1,6 +1,7 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.util.ByteString
 import com.typesafe.config.ConfigFactory
 import otoroshi.models.*

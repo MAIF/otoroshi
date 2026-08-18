@@ -1,6 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -166,7 +167,7 @@ class GraphQLQuery extends NgBackendCall {
       .url(config.url)
       .withRequestTimeout(config.timeout.millis)
       .withMethod(config.method)
-      .withHttpHeaders(config.headers.toSeq: _*)
+      .withHttpHeaders(config.headers.toSeq*)
       .withBody(Json.obj("query" -> query, "variables" -> JsNull))
       .execute()
       .map { resp =>
@@ -660,14 +661,14 @@ class GraphQLBackend extends NgBackendCall {
       .url(url)
       .withRequestTimeout(FiniteDuration(c.arg(timeoutArg), MILLISECONDS))
       .withMethod(c.arg(methodArg).getOrElse("GET"))
-      .withHttpHeaders(Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]].toSeq: _*)
+      .withHttpHeaders(Json.parse(c.arg(headersArg).getOrElse("{}")).as[Map[String, String]].toSeq*)
 
     if (c.arg(methodArg).contains("POST")) {
       request = request
         .withHttpHeaders(
           (Map("Content-Type" -> "application/json") ++ Json
             .parse(c.arg(headersArg).getOrElse("{}"))
-            .as[Map[String, String]]).toSeq: _*
+            .as[Map[String, String]]).toSeq*
         )
         .withBody(c.ctx.args.raw.foldLeft(Json.obj()) { case (acc, curr) =>
           acc + (curr._1 -> (curr._2 match {
@@ -881,7 +882,7 @@ class GraphQLBackend extends NgBackendCall {
               }
               .map(r => {
                 val route    = r.routes.headOption.get
-                val response = Json.parse(route.metadata("mock")).as[MockResponse](MockResponse.format)
+                val response = Json.parse(route.metadata("mock")).as[MockResponse](using MockResponse.format)
 
                 Json.parse(response.body) match {
                   case JsArray(value) =>
@@ -1009,7 +1010,7 @@ class GraphQLBackend extends NgBackendCall {
       }
   }
 
-  def bodyToJson(source: Source[ByteString, _])(using mat: Materializer, ec: ExecutionContext) = source
+  def bodyToJson(source: Source[ByteString, ?])(using mat: Materializer, ec: ExecutionContext) = source
     .runFold(ByteString.empty)(_ ++ _)
     .map { rawBody =>
       {
@@ -1333,7 +1334,7 @@ class GraphQLProxy extends NgBackendCall {
             env.Ws
               .url(config.endpoint)
               .withMethod("POST")
-              .withHttpHeaders(headers: _*)
+              .withHttpHeaders(headers*)
               .withBody(
                 s"""{"operationName":"IntrospectionQuery","variables":{},"query":"${sangria.introspection
                   .introspectionQueryString(true)}"}""".replace("\n", "\\n")
@@ -1368,7 +1369,7 @@ class GraphQLProxy extends NgBackendCall {
     env.Ws
       .url(config.endpoint)
       .withMethod("POST")
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withBody(body)
       .execute()
     // .map { res =>

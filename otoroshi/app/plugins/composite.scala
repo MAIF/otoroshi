@@ -58,14 +58,14 @@ class CompositePlugin extends PreRouting with AccessValidator with RequestTransf
 
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     logger.info(s"transform-req-body: ${ctx.request.method} ${ctx.request.domain}${ctx.request.path}")
     ctx.body
   }
 
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
-  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  )(using env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, ?] = {
     logger.info(s"transform-res-body: ${ctx.request.method} ${ctx.request.domain}${ctx.request.path}")
     ctx.body
   }

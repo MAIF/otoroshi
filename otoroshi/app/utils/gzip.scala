@@ -76,7 +76,7 @@ case class GzipConfig(
   import play.api.http.HeaderNames.*
   import otoroshi.utils.http.RequestImplicits.*
 
-  private def createGzipFlow: Flow[ByteString, ByteString, _] = GzipFlow.gzip(bufferSize, compressionLevel)
+  private def createGzipFlow: Flow[ByteString, ByteString, ?] = GzipFlow.gzip(bufferSize, compressionLevel)
 
   def handleResult(request: RequestHeader, result: Result)(using
       ec: ExecutionContext,
@@ -259,11 +259,11 @@ case class GzipConfig(
 
 object GzipFlow {
 
-  def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, _] = {
+  def gzip(bufferSize: Int = 512, compressionLevel: Int = 5): Flow[ByteString, ByteString, ?] = {
     Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzip)
   }
 
-  def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, _] = {
+  def gunzip(bufferSize: Int = 512, max: Int = 64 * 1024): Flow[ByteString, ByteString, ?] = {
     Flow[ByteString].via(new Chunker(bufferSize)).via(Compression.gzipDecompress(max))
   }
 

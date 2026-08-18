@@ -1,6 +1,7 @@
 package otoroshi.storage.drivers.inmemory
 
 import org.apache.pekko.NotUsed
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.actor.Cancellable
 import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.http.scaladsl.util.FastFuture
@@ -84,7 +85,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       // AWAIT: valid
       Await.result(writeStateToDisk()(using ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
-    })(ds.actorSystem.dispatcher))
+    })(using ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
 
@@ -232,7 +233,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMethod("GET")
       .stream()
       .flatMap {
@@ -314,7 +315,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMethod("POST")
       .withBody(SourceBody(source))
       .stream()
@@ -472,7 +473,7 @@ class S3Persistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(5.second, conf.writeEvery)(SchedulerHelper.runnable {
       // AWAIT: valid
       Await.result(writeStateToS3(), 60.seconds)
-    })(ds.actorSystem.dispatcher))
+    })(using ds.actorSystem.dispatcher))
     FastFuture.successful(())
   }
 

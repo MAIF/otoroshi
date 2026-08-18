@@ -83,7 +83,7 @@ object Oauth1ModuleConfig extends FromJson[AuthModuleConfig] {
             .map(_.view.mapValues(UserRights.readFromArray).toMap)
             .getOrElse(Map.empty),
           sessionCookieValues =
-            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+            (json \ "sessionCookieValues").asOpt(using SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           userValidators = (json \ "userValidators")
             .asOpt[Seq[JsValue]]
             .map(_.flatMap(v => JsonPathValidator.format.reads(v).asOpt))
@@ -273,7 +273,7 @@ object Oauth1AuthModule {
   def post(env: Env, url: String, body: Map[String, String]): Future[WSResponse] = env.Ws
     .url(url)
     .addHttpHeaders(("Content-Type", "application/x-www-form-urlencoded"))
-    .post(body)(writeableOf_urlEncodedSimpleForm)
+    .post(body)(using writeableOf_urlEncodedSimpleForm)
 
   def getOauth1TemplateRequest(callbackURL: Option[String]): Map[String, String] = {
     val signatureMethod = "HMAC-SHA1"

@@ -481,8 +481,8 @@ class WasmRequestTransformer extends NgRequestTransformer {
                   Left(
                     Results
                       .Status(status)(body)
-                      .withCookies(cookies: _*)
-                      .withHeaders(headers.toSeq: _*)
+                      .withCookies(cookies*)
+                      .withHeaders(headers.toSeq*)
                       .as(contentType)
                   )
                 } else {
@@ -571,8 +571,8 @@ class WasmResponseTransformer extends NgRequestTransformer {
                   Left(
                     Results
                       .Status(status)(body)
-                      .withCookies(cookies: _*)
-                      .withHeaders(headers.toSeq: _*)
+                      .withCookies(cookies*)
+                      .withHeaders(headers.toSeq*)
                       .as(contentType)
                   )
                 } else {
@@ -635,7 +635,7 @@ class WasmSink extends NgRequestSink {
   }
 
   private def requestToWasmJson(
-      body: Source[ByteString, _]
+      body: Source[ByteString, ?]
   )(using ec: ExecutionContext, env: Env): Future[JsValue] = {
     implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
     body.runFold(ByteString.empty)(_ ++ _).map { rawBody =>
@@ -700,7 +700,7 @@ class WasmSink extends NgRequestSink {
 
               Results
                 .Status(status)(body)
-                .withHeaders(headers.toSeq: _*)
+                .withHeaders(headers.toSeq*)
                 .as(contentType)
             }
           }.andThen { case _ =>
@@ -743,7 +743,7 @@ class WasmRequestHandler extends RequestHandler {
   }
 
   private def requestToWasmJson(
-      request: Request[Source[ByteString, _]]
+      request: Request[Source[ByteString, ?]]
   )(using ec: ExecutionContext, env: Env): Future[JsValue] = {
     if (request.theHasBody) {
       implicit val mat: org.apache.pekko.stream.Materializer = env.otoroshiMaterializer
@@ -758,8 +758,8 @@ class WasmRequestHandler extends RequestHandler {
   }
 
   override def handle(
-      request: Request[Source[ByteString, _]],
-      defaultRouting: Request[Source[ByteString, _]] => Future[Result]
+      request: Request[Source[ByteString, ?]],
+      defaultRouting: Request[Source[ByteString, ?]] => Future[Result]
   )(using ec: ExecutionContext, env: Env): Future[Result] = {
     val configmap = env.datastores.globalConfigDataStore
       .latest()
@@ -805,7 +805,7 @@ class WasmRequestHandler extends RequestHandler {
                       val contentType: Option[String]  = headers.getIgnoreCase("Content-Type")
                       val status: Int                  = (response \ "status").asOpt[Int].getOrElse(200)
                       val cookies: Seq[WSCookie]       = WasmUtils.convertJsonCookies(response).getOrElse(Seq.empty).toSeq
-                      val body: Source[ByteString, _]  =
+                      val body: Source[ByteString, ?]  =
                         response.select("body").asOpt[String].map(b => ByteString(b)) match {
                           case None    => ByteString.empty.singleSource
                           case Some(b) => Source.single(b)
@@ -819,8 +819,8 @@ class WasmRequestHandler extends RequestHandler {
                             contentType = contentType
                           )
                         )
-                        .withHeaders(headers.toSeq: _*)
-                        .withCookies(cookies.map(_.toCookie): _*)
+                        .withHeaders(headers.toSeq*)
+                        .withCookies(cookies.map(_.toCookie)*)
                         .vfuture
                     }
                     case Left(bad) => Results.InternalServerError(bad).vfuture
@@ -1148,7 +1148,7 @@ class WasmRouter extends NgRouter {
             pathParams = response
               .select("path_params")
               .asOpt[Map[String, String]]
-              .map(m => scala.collection.mutable.HashMap.apply(m.toSeq: _*))
+              .map(m => scala.collection.mutable.HashMap.apply(m.toSeq*))
               .getOrElse(scala.collection.mutable.HashMap.empty),
             noMoreSegments = response.select("no_more_segments").asOpt[Boolean].getOrElse(false)
           )

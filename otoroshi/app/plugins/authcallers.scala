@@ -1,6 +1,7 @@
 package otoroshi.plugins.authcallers
 
 import org.apache.pekko.http.scaladsl.util.FastFuture
+import play.api.libs.ws.WSBodyWritables.given
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.util.ByteString
 import org.joda.time.DateTime
@@ -251,7 +252,7 @@ class OAuth2Caller extends RequestTransformer {
         )
           .applyOnWithOpt(config.scope) { (json, scope) => json ++ Map("scope" -> scope) }
           .applyOnWithOpt(config.audience) { (json, audience) => json ++ Map("audience" -> audience) }
-      )(writeableOf_urlEncodedSimpleForm)
+      )(using writeableOf_urlEncodedSimpleForm)
     }
     // TODO: check status code
     future1.map(_.json).map { json =>

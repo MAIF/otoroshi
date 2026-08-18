@@ -76,8 +76,8 @@ object ServiceGroup {
 }
 
 trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
-  def template(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = initiateNewGroup(env, ctx)
-  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[_]] = None): ServiceGroup = {
+  def template(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceGroup = initiateNewGroup(env, ctx)
+  def initiateNewGroup(env: Env, ctx: Option[ApiActionContext[?]] = None): ServiceGroup = {
     val defaultGroup = ServiceGroup(
       id = IdGenerator.namedId("group", env),
       name = "product-group",

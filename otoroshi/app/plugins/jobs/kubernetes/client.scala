@@ -1,6 +1,8 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.util.Base64
+import play.api.libs.ws.WSBodyReadables.given
+import play.api.libs.ws.WSBodyWritables.given
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern
 import org.apache.pekko.{Done, NotUsed}
@@ -91,7 +93,7 @@ object KubernetesClientNotifications {
     if (started.compareAndSet(false, true)) {
       env.otoroshiScheduler.scheduleWithFixedDelay(1.seconds, 10.seconds) { () =>
         printErrors()
-      }(env.otoroshiExecutionContext)
+      }(using env.otoroshiExecutionContext)
     }
   }
 }
@@ -1118,7 +1120,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector)
     // Source.combine(
     //   watchResources(namespaces, resources, "proxy.otoroshi.io/v1", timeout, stop, labelSelector),
@@ -1132,7 +1134,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     watchResources(namespaces, resources, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
   }
 
@@ -1142,7 +1144,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       labelSelector: Option[String] = None
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     watchResources(namespaces, resources, "v1", timeout, stop, labelSelector, "/api")
   }
 
@@ -1154,7 +1156,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None,
       root: String = "/apis"
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     if (namespaces.contains("*")) {
       resources
         .map(r => watchResource("*", r, api, timeout, stop, labelSelector, root))
@@ -1174,7 +1176,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       stop: => Boolean,
       labelSelector: Option[String] = None,
       root: String = "/apis"
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
 
     import otoroshi.utils.http.Implicits.*
 
@@ -1193,7 +1195,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             logger.debug(s"watch on ${api} / ${namespace} / ${resource} for ${timeout} seconds ! ")
           val lblStart                              = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
           val cliStart: WSRequest                   = client(s"${root}/$api/namespaces/$namespace/$resource$lblStart")
-          val f: Future[Source[Seq[ByteString], _]] = cliStart
+          val f: Future[Source[Seq[ByteString], ?]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
             )
@@ -1281,7 +1283,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       timeout: Int,
       stop: => Boolean,
       root: String = "/apis"
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
 
     import otoroshi.utils.http.Implicits.*
 
@@ -1299,7 +1301,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (logger.isDebugEnabled)
             logger.debug(s"watch on ${api} / ${resource} (cluster-scoped) for ${timeout} seconds ! ")
           val cliStart: WSRequest                   = client(s"${root}/$api/$resource")
-          val f: Future[Source[Seq[ByteString], _]] = cliStart
+          val f: Future[Source[Seq[ByteString], ?]] = cliStart
             .addHttpHeaders(
               "Accept" -> "application/json"
             )
@@ -1379,7 +1381,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       namespaces: Seq[String],
       timeout: Int,
       stop: => Boolean
-  ): Source[Seq[ByteString], _] = {
+  ): Source[Seq[ByteString], ?] = {
     val gatewayClassSource     = watchClusterResource("gatewayclasses", "gateway.networking.k8s.io/v1", timeout, stop)
     val v1NamespacedSource     = watchResources(
       namespaces,

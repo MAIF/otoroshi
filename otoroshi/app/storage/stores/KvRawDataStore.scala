@@ -21,7 +21,7 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
     redis.pexpire(key, pttl)
 
   override def mget(keys: Seq[String])(using ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]] =
-    redis.mget(keys: _*)
+    redis.mget(keys*)
 
   override def set(key: String, value: ByteString, ttl: Option[Long])(using
       ec: ExecutionContext,
@@ -31,7 +31,7 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
 
   override def del(keys: Seq[String])(using ec: ExecutionContext, env: Env): Future[Long] = {
     if (keys.nonEmpty) {
-      redis.del(keys: _*)
+      redis.del(keys*)
     } else {
       FastFuture.successful(0L)
     }
@@ -48,7 +48,7 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
   ): Future[Boolean] =
     redis.setnxBS(key, value, ttl)
 
-  override def sadd(key: String, members: Seq[ByteString]): Future[Long] = redis.saddBS(key, members: _*)
+  override def sadd(key: String, members: Seq[ByteString]): Future[Long] = redis.saddBS(key, members*)
 
   override def sismember(key: String, member: ByteString): Future[Boolean] = redis.sismemberBS(key, member)
 

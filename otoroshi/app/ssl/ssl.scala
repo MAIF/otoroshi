@@ -1,6 +1,7 @@
 package otoroshi.ssl
 
 import java.io.*
+import play.api.libs.ws.WSBodyWritables.given
 import java.lang.reflect.{Field, InaccessibleObjectException}
 import java.net.Socket
 import java.nio.ByteBuffer
@@ -667,7 +668,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )
   }
 
-  def nakedTemplate(env: Env, ctx: Option[ApiActionContext[_]] = None): Future[Cert] = {
+  def nakedTemplate(env: Env, ctx: Option[ApiActionContext[?]] = None): Future[Cert] = {
     val defaultCert = syncTemplate(env)
       .copy(location = EntityLocation.ownEntityLocation(ctx)(using env))
     env.datastores.globalConfigDataStore
@@ -683,7 +684,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
       .vfuture
   }
 
-  def template(ctx: Option[ApiActionContext[_]] = None)(using ec: ExecutionContext, env: Env): Future[Cert] = {
+  def template(ctx: Option[ApiActionContext[?]] = None)(using ec: ExecutionContext, env: Env): Future[Cert] = {
     nakedTemplate(env, ctx)
     // env.pki
     //   .genSelfSignedCert(
@@ -1969,8 +1970,10 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
 
 object noCATrustManager extends X509TrustManager {
   val nullArray            = Array[X509Certificate]()
-  def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
-  def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
+  def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {
+}
+  def checkServerTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {
+}
   def getAcceptedIssuers() = nullArray
 }
 
@@ -2672,7 +2675,7 @@ case class ClientCertificateValidator(
       headers.toSeq ++ Seq("Host" -> host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.Ws // no need for mtls here
       .url(url + path)
-      .withHttpHeaders(finalHeaders: _*)
+      .withHttpHeaders(finalHeaders*)
       .withMethod(method)
       .withBody(payload)
       .withRequestTimeout(Duration(timeout, TimeUnit.MILLISECONDS))
@@ -2809,10 +2812,10 @@ case class ClientCertificateValidator(
       config: GlobalConfig,
       attrs: TypedMap
   )(
-      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+      f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]]
+  )(using ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, ?]]] = {
     internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
-      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
+      case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, ?]](badResult)
       case Right(goodResult) => goodResult
     }
   }

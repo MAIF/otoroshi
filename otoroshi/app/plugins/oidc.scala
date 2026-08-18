@@ -1,6 +1,7 @@
 package otoroshi.plugins.oidc
 
 import java.util.concurrent.TimeUnit
+import play.api.libs.ws.WSBodyWritables.given
 import java.util.concurrent.atomic.AtomicReference
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
@@ -257,7 +258,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
         .mapAsync(1) { config =>
           checkOneConfig(config)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           if (atLeastOne) {
             seq.contains(true)
@@ -364,7 +365,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
         .mapAsync(1) { config =>
           checkOneConfig(config, ref)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           Option(ref.get()).foreach(apk => ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
           ()
@@ -707,7 +708,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                                     "token"     -> header,
                                                     "client_id" -> oidcAuth.clientId
                                                   ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-                                                )(writeableOf_urlEncodedSimpleForm)
+                                                )(using writeableOf_urlEncodedSimpleForm)
                                               }
                                               future1
                                                 .flatMap { resp =>

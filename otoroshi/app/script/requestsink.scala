@@ -24,7 +24,7 @@ object RequestSink {
   def maybeSinkRequest(
       snowflake: String,
       req: RequestHeader,
-      body: Source[ByteString, _],
+      body: Source[ByteString, ?],
       attrs: TypedMap,
       origin: RequestOrigin,
       status: Int,
@@ -74,7 +74,7 @@ case class RequestSinkContext(
     origin: RequestOrigin,
     status: Int,
     message: String,
-    body: Source[ByteString, _]
+    body: Source[ByteString, ?]
 ) extends ContextWithConfig {
 
   private def conf[A](prefix: String = "config-"): Option[JsValue] = {

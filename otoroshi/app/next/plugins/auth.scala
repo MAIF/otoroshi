@@ -312,7 +312,7 @@ class MultiAuthModule extends NgAccessValidator {
                       ctx.request.theDomain,
                       ctx.route.legacy,
                       auth
-                    ): _*
+                    )*
                   )
               )
               .vfuture
@@ -408,7 +408,7 @@ class AuthModule extends NgAccessValidator {
                               req.theDomain,
                               descriptor,
                               auth
-                            ): _*
+                            )*
                           )
                       )
                       .vfuture

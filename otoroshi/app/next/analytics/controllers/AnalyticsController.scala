@@ -27,7 +27,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
   // ----- helpers -------------------------------------------------------------
 
   private def requireSuperAdmin(
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   )(f: => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     if (ctx.userIsSuperAdmin) f
     else Forbidden(Json.obj("error" -> "super admin only")).future
@@ -40,7 +40,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using 
    *  query filters.
    */
   private def requireTenantAccess(
-      ctx: ApiActionContext[_]
+      ctx: ApiActionContext[?]
   )(f: String => Future[play.api.mvc.Result]): Future[play.api.mvc.Result] = {
     val tenant    = ctx.currentTenant
     val canAccess =

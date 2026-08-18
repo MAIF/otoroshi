@@ -66,7 +66,7 @@ case class NgJwtVerificationConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -216,7 +216,7 @@ case class NgJwtVerificationOnlyConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -828,7 +828,7 @@ case class OIDCJwtVerifierConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -1041,7 +1041,7 @@ case class OAuth2TokenExchangeConfig(
     if (customResponse) {
       val ctype          = customResponseHeaders.getIgnoreCase("Content-Type").getOrElse("application/json")
       val headersNoCtype = customResponseHeaders.filterNot(_._1.equalsIgnoreCase("content-type")).toSeq
-      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype: _*).as(ctype))
+      Some(Results.Status(customResponseStatus)(customResponseBody).withHeaders(headersNoCtype*).as(ctype))
     } else {
       None
     }
@@ -1461,7 +1461,7 @@ class OAuth2TokenExchange extends NgAccessValidator with NgRequestTransformer {
           .withRequestTimeout(timeout)
 
         builder
-          .post(params)(writeableOf_urlEncodedSimpleForm)
+          .post(params)(using writeableOf_urlEncodedSimpleForm)
           .map { response =>
             if (response.status == 200) {
               val json           = response.json

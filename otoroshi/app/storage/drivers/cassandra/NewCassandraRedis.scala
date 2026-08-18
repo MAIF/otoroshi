@@ -456,10 +456,10 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   override def llen(key: String): Future[Long] =
     getListAt(key).map(_.size)
 
-  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
+  override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply)*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
-    lpushBS(key, values.map(_.toString).map(ByteString.apply): _*)
+    lpushBS(key, values.map(_.toString).map(ByteString.apply)*)
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] =
     executeAsync(s"INSERT INTO otoroshi.values (key, type, lvalue) values ('$key', 'list', [ ]) IF NOT EXISTS;")
@@ -524,7 +524,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
+  override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply)*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(s"INSERT INTO otoroshi.values (key, type, svalue) values ('$key', 'set', {}) IF NOT EXISTS;")
@@ -542,7 +542,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   override def smembers(key: String): Future[Seq[ByteString]] = getSetAt(key).map(_.toSeq)
 
-  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
+  override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply)*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
     executeAsync(

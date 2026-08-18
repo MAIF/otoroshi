@@ -1,6 +1,7 @@
 package functional
 
 import java.util.Base64
+import play.api.libs.ws.WSBodyReadables.given
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.pekko.actor.ActorSystem

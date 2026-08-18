@@ -1319,7 +1319,7 @@ object NgRoute {
 }
 
 trait NgRouteDataStore extends BasicStore[NgRoute] {
-  def template(ctx: Option[ApiActionContext[_]] = None)(using env: Env): NgRoute = {
+  def template(ctx: Option[ApiActionContext[?]] = None)(using env: Env): NgRoute = {
     val default = NgRoute(
       location = EntityLocation.ownEntityLocation(ctx),
       id = s"route_${IdGenerator.uuid}",

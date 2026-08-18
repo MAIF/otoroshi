@@ -1,6 +1,7 @@
 package otoroshi.plugins.external
 
 import java.security.MessageDigest
+import play.api.libs.ws.WSBodyWritables.given
 import java.security.cert.X509Certificate
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -189,7 +190,7 @@ class ExternalHttpValidator extends AccessValidator {
       cfg.headers.toSeq ++ Seq("Host" -> cfg.host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.MtlsWs
       .url(cfg.url + cfg.path, cfg.mtlsConfig)
-      .withHttpHeaders(finalHeaders: _*)
+      .withHttpHeaders(finalHeaders*)
       .withMethod(cfg.method)
       .withBody(payload)
       .withRequestTimeout(Duration(cfg.timeout, TimeUnit.MILLISECONDS))

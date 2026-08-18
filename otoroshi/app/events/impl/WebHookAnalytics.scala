@@ -1,6 +1,7 @@
 package otoroshi.events.impl
 
 import otoroshi.env.Env
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.events.{AnalyticEvent, AnalyticsWritesService}
 import otoroshi.models.{GlobalConfig, HSAlgoSettings, Webhook}
 import org.joda.time.DateTime
@@ -77,7 +78,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       .getOrElse(webhook.url)
     val postResponse = env.MtlsWs
       .url(url, webhook.mtlsConfig)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withMaybeProxyServer(config.proxies.eventsWebhooks)
       .post(JsArray(event))
     postResponse.andThen {

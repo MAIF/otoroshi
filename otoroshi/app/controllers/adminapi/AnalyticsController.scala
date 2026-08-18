@@ -78,7 +78,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(using
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       val hotSource: Sinks.Many[String] = Sinks.many().unicast().onBackpressureBuffer[String]()
       val hotFlux                       = hotSource.asFlux()
-      val source: Source[String, _]     = Source.fromPublisher(hotFlux)
+      val source: Source[String, ?]     = Source.fromPublisher(hotFlux)
       val ref                           = env.analyticsActorSystem.actorOf(AnalyticsTmpListenerActor.props(hotSource, ctx, env))
       //println("subscribing to eventStream")
       env.analyticsActorSystem.eventStream.subscribe(ref, classOf[OtoroshiEvent])

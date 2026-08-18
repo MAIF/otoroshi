@@ -61,7 +61,7 @@ object LocalTokensBucketStrategyConfig {
         capacity = json.selectAsOptLong("capacity").getOrElse(300),
         refillRequestIntervalMs = json.selectAsOptLong("refillRequestIntervalMs").getOrElse(50),
         refillRequestedTokens = json.selectAsOptLong("refillRequestedTokens").getOrElse(50),
-        quota = json.select("quota").asOpt(AllowedQuota.fmt).getOrElse(AllowedQuota())
+        quota = json.select("quota").asOpt(using AllowedQuota.fmt).getOrElse(AllowedQuota())
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -256,7 +256,7 @@ object DistributedRedisThrottlingStrategyConfig {
     override def reads(json: JsValue): JsResult[DistributedRedisThrottlingStrategyConfig] = Try {
       DistributedRedisThrottlingStrategyConfig(
         bucketKey = json.selectAsOptString("bucketKey"),
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(using AllowedQuota.fmt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -298,7 +298,7 @@ object LuaDistributedRedisThrottlingStrategyConfig {
     override def reads(json: JsValue): JsResult[LuaDistributedRedisThrottlingStrategyConfig] = Try {
       LuaDistributedRedisThrottlingStrategyConfig(
         bucketKey = json.selectAsOptString("bucketKey"),
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(using AllowedQuota.fmt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)
@@ -389,7 +389,7 @@ case class LuaDistributedRedisThrottlingStrategy(
               LuaDistributedRedisThrottlingStrategy.script,
               ScriptOutputType.MULTI,
               keys,
-              args: _*
+              args*
             )
             .toScala
         )
@@ -400,7 +400,7 @@ case class LuaDistributedRedisThrottlingStrategy(
               LuaDistributedRedisThrottlingStrategy.script,
               ScriptOutputType.MULTI,
               keys,
-              args: _*
+              args*
             )
             .toScala
         )
@@ -461,7 +461,7 @@ object FixedWindowStrategyConfig {
     override def reads(json: JsValue): JsResult[FixedWindowStrategyConfig] = Try {
       FixedWindowStrategyConfig(
         windowDurationMs = json.selectAsOptLong("windowDurationMs").getOrElse(10000L),
-        quota = json.select("quota").as(AllowedQuota.fmt),
+        quota = json.select("quota").as(using AllowedQuota.fmt),
         bucketKey = json.selectAsOptString("bucketKey")
       )
     } match {
@@ -614,7 +614,7 @@ object LegacyThrottlingStrategyConfig {
   val format = new Format[LegacyThrottlingStrategyConfig] {
     override def reads(json: JsValue): JsResult[LegacyThrottlingStrategyConfig] = Try {
       LegacyThrottlingStrategyConfig(
-        quota = json.select("quota").as(AllowedQuota.fmt)
+        quota = json.select("quota").as(using AllowedQuota.fmt)
       )
     } match {
       case Failure(exception) => JsError(exception.getMessage)

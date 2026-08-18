@@ -236,7 +236,7 @@ class OIDCAccessTokenValidator extends NgAccessValidator {
         .mapAsync(1) { config =>
           checkOneConfig(config)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { seq =>
           if (pluginConfiguration.atLeastOne) {
             seq.contains(true)
@@ -331,7 +331,7 @@ class OIDCAccessTokenAsApikey extends NgPreRouting {
         .mapAsync(1) { config =>
           checkOneConfig(config, ref)
         }
-        .runWith(Sink.seq)(env.otoroshiMaterializer)
+        .runWith(Sink.seq)(using env.otoroshiMaterializer)
         .map { _ =>
           Option(ref.get()).foreach(apk => ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apk))
           Done.right

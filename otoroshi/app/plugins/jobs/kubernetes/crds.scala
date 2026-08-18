@@ -1361,7 +1361,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(using ec: Exec
       .mapAsync(1) { f =>
         f()
       }
-      .runWith(Sink.seq)(env.otoroshiMaterializer)
+      .runWith(Sink.seq)(using env.otoroshiMaterializer)
       .map(_.toMap)
   }
 }
@@ -1963,7 +1963,7 @@ object KubernetesCRDsJob {
               .debug(seq => logger.info(s"Will delete ${seq.size} out of date extension resources entities"))
               .applyOn(ids => resource.access.deleteMany(resource.version.name, ids))
           }
-        }.toList).mapAsync(1)(f => f()).runWith(Sink.ignore)(env.otoroshiMaterializer)
+        }.toList).mapAsync(1)(f => f()).runWith(Sink.ignore)(using env.otoroshiMaterializer)
 
     } yield ()
   }

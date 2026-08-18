@@ -341,7 +341,7 @@ object PrivateAppsUserHelper {
                             query.toHost,
                             descriptor,
                             auth
-                          ): _*
+                          )*
                         )
                     )
                   )

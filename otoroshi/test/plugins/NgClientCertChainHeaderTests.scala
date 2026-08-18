@@ -94,7 +94,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
     }
   }
 
-  var instance: OtoroshiInstance = _
+  var instance: OtoroshiInstance = scala.compiletime.uninitialized
   var customHttpsPort            = 0
 
   def createRouteWithConfig(

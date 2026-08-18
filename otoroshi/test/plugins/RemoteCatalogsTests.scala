@@ -1,6 +1,7 @@
 package plugins
 
 import functional.PluginsTestSpec
+import play.api.libs.ws.WSBodyWritables.given
 import otoroshi.next.catalogs.{RemoteCatalogDeployMany, RemoteCatalogDeploySingle}
 import otoroshi.next.models.{NgPluginInstance, NgPluginInstanceConfig}
 import otoroshi.next.plugins.OverrideHost
