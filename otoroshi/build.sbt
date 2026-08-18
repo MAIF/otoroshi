@@ -61,7 +61,7 @@ lazy val acme4jVersion           = "3.5.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "3.0.6"
 lazy val webAuthnVersion         = "2.1.0" // using this version for backward compatibility reasons //"1.7.0" //"2.1.0"
-lazy val kubernetesVersion       = "16.0.1"
+lazy val kubernetesVersion       = "27.0.0"
 lazy val bouncyCastleVersion     = "1.78.1"
 lazy val pulsarVersion           = "2.12.0.1"
 lazy val openTelemetryVersion    = "1.65.0" // zipkin exporter not in 1.65 yet
@@ -163,7 +163,7 @@ libraryDependencies ++= Seq(
   "io.vertx"                         % "vertx-pg-client"                      % "4.5.32",
   "com.ongres.scram"                 % "common"                               % "2.1",
   "com.ongres.scram"                 % "client"                               % "2.1",
-  "com.jayway.jsonpath"              % "json-path"                            % "2.10.0",
+  "com.jayway.jsonpath"              % "json-path"                            % "3.0.0",
   "com.cronutils"                    % "cron-utils"                           % "9.2.1",
   "commons-lang"                     % "commons-lang"                         % "2.6",
   "com.datastax.oss"                 % "java-driver-core"                     % "4.17.0" excludeAll (excludesJackson: _*),
