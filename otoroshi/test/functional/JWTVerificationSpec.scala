@@ -417,7 +417,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration) ext
             .asOption
             .map(a => a.value())
             .foreach { a =>
-              import collection.JavaConverters.*
+              import scala.jdk.CollectionConverters.*
               val v        = JWT
                 .require(algorithm2)
                 .withIssuer("foo")

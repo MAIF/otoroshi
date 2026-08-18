@@ -382,7 +382,7 @@ class NgClientCertChainHeaderTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 

@@ -131,7 +131,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(clientCertFile, clientKeyFile)
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
 
     pureNettyClient

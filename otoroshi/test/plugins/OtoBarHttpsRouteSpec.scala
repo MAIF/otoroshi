@@ -287,6 +287,7 @@ class OtoBarHttpsRouteSpec(parent: PluginsTestSpec) {
         SslContextBuilder
           .forClient()
           .trustManager(caCert)
+          .build()
       )
     }
     .resolver(resolverGroup)

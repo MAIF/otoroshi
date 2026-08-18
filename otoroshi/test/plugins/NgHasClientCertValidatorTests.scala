@@ -364,7 +364,7 @@ class NgHasClientCertValidatorTests(parent: PluginsTestSpec) {
             new ByteArrayInputStream(clientKeyInputStream)
           )
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 

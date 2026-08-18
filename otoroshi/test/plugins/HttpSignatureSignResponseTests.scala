@@ -88,8 +88,8 @@ class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
     // Content-Digest must cover the actual response body.
     HttpSigContentDigest.verify(digestRaw, resp.body[String].getBytes(StandardCharsets.UTF_8)).isRight mustBe true
 
-    val inputs         = HttpSigStructuredFields.parseSignatureInputDict(sigInputRaw).right.get
-    val sigs           = HttpSigStructuredFields.parseSignatureDict(sigRaw).right.get.toMap
+    val inputs         = HttpSigStructuredFields.parseSignatureInputDict(sigInputRaw).toOption.get
+    val sigs           = HttpSigStructuredFields.parseSignatureDict(sigRaw).toOption.get.toMap
     val (label, input) = inputs.head
     input.keyid mustBe Some(keyid)
     input.alg mustBe Some("hmac-sha256")
@@ -102,7 +102,7 @@ class HttpSignatureSignResponseTests(parent: PluginsTestSpec) {
       headers = respHeaders,
       status = Some(resp.status)
     )
-    val base        = HttpSigBase.build(responseMsg, input, None).right.get
+    val base        = HttpSigBase.build(responseMsg, input, None).toOption.get
     val verified    = HttpSigAlgorithms.verify(
       "hmac-sha256",
       base.getBytes(StandardCharsets.UTF_8),

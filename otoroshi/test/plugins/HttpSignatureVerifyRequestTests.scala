@@ -44,9 +44,9 @@ class HttpSignatureVerifyRequestTests(parent: PluginsTestSpec) {
       headers = Seq("Host" -> hostHeader) ++ extraHeaders,
       status = None
     )
-    val base           = HttpSigBase.build(msg, sigInput, None).right.get
+    val base           = HttpSigBase.build(msg, sigInput, None).toOption.get
     val sigBytes       =
-      HttpSigAlgorithms.sign("hmac-sha256", base.getBytes(StandardCharsets.UTF_8), Left(hmacSecret)).right.get
+      HttpSigAlgorithms.sign("hmac-sha256", base.getBytes(StandardCharsets.UTF_8), Left(hmacSecret)).toOption.get
     val sigInputHeader = HttpSigStructuredFields.serializeSignatureInputDict(List("sig1" -> sigInput))
     val sigHeader      = HttpSigStructuredFields.serializeSignatureDict(List("sig1" -> sigBytes))
     (sigInputHeader, sigHeader)

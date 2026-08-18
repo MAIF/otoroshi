@@ -391,7 +391,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
           .trustManager(caCert)
           .keyManager(new ByteArrayInputStream(clientCertInputStream), new ByteArrayInputStream(clientKeyInputStream))
 
-        spec.sslContext(sslCtxBuilder)
+        spec.sslContext(sslCtxBuilder.build())
       }
       .resolver(resolverGroup)
 
@@ -440,7 +440,7 @@ class NgCertificateAsApikeyTests(parent: PluginsTestSpec) {
           .asInstanceOf[java.security.cert.X509Certificate]
 
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
+        val subjectDN    = DN(cert.getSubjectX500Principal.getName).stringify
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         wsClient
           .url(s"http://localhost:${instance.port}/api/apikeys/$clientId")

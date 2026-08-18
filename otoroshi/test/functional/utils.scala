@@ -4,7 +4,7 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.{ws, *}
-import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
+import org.apache.pekko.http.scaladsl.model.ws.{Message, TextMessage}
 import org.apache.pekko.http.scaladsl.util.FastFuture
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Framing, Sink, Source}
@@ -1059,7 +1059,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
         .execute()
         .map { response =>
           if (response.status != 200 && response.status != 201) {
-            logger.error(response.status + " - " + response.body[String])
+            logger.error(s"${response.status} - ${response.body[String]}")
           }
           (response.json, response.status)
         }
@@ -1074,7 +1074,7 @@ trait OtoroshiSpec extends org.scalatest.wordspec.AnyWordSpec with org.scalatest
         .execute()
         .map { response =>
           if (response.status != 200 && response.status != 201) {
-            logger.error(response.status + " - " + response.body[String])
+            logger.error(s"${response.status} - ${response.body[String]}")
           }
           (response.json, response.status)
         }
@@ -1968,7 +1968,7 @@ class TargetService(
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound = http.newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): TargetService = {
     Await.result(bound, 60.seconds)
@@ -2015,7 +2015,7 @@ class SimpleTargetService(host: Option[String], path: String, contentType: Strin
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound = http.newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): SimpleTargetService = {
     Await.result(bound, 60.seconds)
@@ -2051,7 +2051,7 @@ class AlertServer(counter: AtomicInteger) {
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound = http.newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): AlertServer = {
     Await.result(bound, 60.seconds)
@@ -2089,7 +2089,7 @@ class AnalyticsServer(counter: AtomicInteger) {
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound = http.newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): AnalyticsServer = {
     Await.result(bound, 60.seconds)
@@ -2123,13 +2123,13 @@ class WebsocketServer(counter: AtomicInteger) {
       }
 
   def handler(request: HttpRequest): Future[HttpResponse] = {
-    request.header[UpgradeToWebSocket] match {
+    request.attribute(AttributeKeys.webSocketUpgrade) match {
       case Some(upgrade) => FastFuture.successful(upgrade.handleMessages(greeterWebSocketService))
       case None          => FastFuture.successful(HttpResponse(400, entity = "Not a valid websocket request!"))
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound = http.newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): WebsocketServer = {
     Await.result(bound, 60.seconds)
@@ -2322,7 +2322,7 @@ class BodySizeService() {
     }
   }
 
-  val bound = http.bindAndHandleAsync(handler, "0.0.0.0", port)
+  val bound = http.newServerAt("0.0.0.0", port).bind(handler)
 
   def await(): BodySizeService = {
     Await.result(bound, 60.seconds)
