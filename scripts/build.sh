@@ -39,7 +39,7 @@ test_server () {
   cd $LOCATION/otoroshi
   # Browser-tagged tests (playwright-java) are excluded here and run in the
   # dedicated "Server Browser Tests" workflow (server_browser_tests.yaml).
-  TEST_STORE=inmemory sbt ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.PluginsTestSpec -- -l Browser'
+  TEST_STORE=inmemory sbt ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser'
   # TEST_STORE=inmemory sbt ';testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly OtoroshiTests;test
   # Only functional.PluginsTestSpec -- -l Browser -l Docker'
   rc=$?; if [ $rc != 0 ]; then exit $rc; fi
