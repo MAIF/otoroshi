@@ -64,16 +64,16 @@ lazy val webAuthnVersion         = "2.1.0" // using this version for backward co
 lazy val kubernetesVersion       = "27.0.0"
 lazy val bouncyCastleVersion     = "1.78.1"
 lazy val pulsarVersion           = "2.12.0.1"
-lazy val openTelemetryVersion    = "1.65.0" // zipkin exporter not in 1.65 yet
-lazy val openTelemetryZipkinVersion    = "1.64.0"
-lazy val jacksonVersion          = "2.22.2"
-lazy val jacksonAnnotationVersion = "2.22" // jackson-annotations is versioned at the minor level only
+lazy val openTelemetryVersion    = "1.65.0"
+lazy val openTelemetryZipkinVersion = "1.64.0"// zipkin exporter not in 1.65 yet
+lazy val jacksonVersion             = "2.22.2"
+lazy val jacksonAnnotationVersion   = "2.22" // jackson-annotations is versioned at the minor level only
 
-lazy val pekkoVersion            = "1.6.0"
-lazy val pekkoHttpVersion        = "1.4.0"
-lazy val pekkoConnectorsS3Version = "1.3.0"
+lazy val pekkoVersion               = "1.6.0"
+lazy val pekkoHttpVersion           = "1.4.0"
+lazy val pekkoConnectorsS3Version   = "1.3.0"
 lazy val pekkoConnectorsKafkaVersion = "1.1.0"
-lazy val reactorNettyVersion      = "1.3.6"
+lazy val reactorNettyVersion         = "1.3.6"
 lazy val nettyVersion                     = "4.2.17.Final"
 lazy val nettyIncubatorTransportVersion   = "0.0.26.Final"
 lazy val nettyIncubatorCodecNativeVersion = "0.0.75.Final"
@@ -234,16 +234,6 @@ libraryDependencies ++= Seq(
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
-  // included in libs as jitpack is not stable at all
-  // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
-  //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
-  //   ExclusionRule("ch.qos.logback"),
-  //   ExclusionRule("org.slf4j"),
-  // ),
-  // "org.reflections"                  % "reflections"                          % "0.10.2",
-  // "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
-  // "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
-  // "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
   "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
@@ -269,18 +259,6 @@ libraryDependencies ++= Seq(
   "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion,
   "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion classifier "linux-x86_64" classifier "osx-x86_64",
   "io.netty.incubator"               % "netty-incubator-codec-http3"               % nettyIncubatorCodecVersion,
-
-  //     "io.projectreactor.netty"          % "reactor-netty-core"                   % reactorNettyVersion,
-  //     "io.projectreactor.netty"          % "reactor-netty-http"                   % reactorNettyVersion,
-  //     "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion,
-  //     "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
-  //     "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion,
-  //     "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  //     //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
-  //     //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  //     "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final",
-  //     "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  //     "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.30.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
   "com.networknt"                    % "json-schema-validator"                % "1.5.9" excludeAll (
