@@ -323,14 +323,17 @@ Test / javaOptions ++= Seq(
 // instance times out waiting for its certificates. Give each suite its own forked JVM so a run
 // covering several of them is meaningful. Forking is also what makes the --add-opens above apply.
 Test / fork := true
-Test / testGrouping := (Test / definedTests).value.map { test =>
-  Tests.Group(
-    name = test.name,
-    tests = Seq(test),
-    runPolicy = Tests.SubProcess(
-      ForkOptions().withRunJVMOptions((Test / javaOptions).value.toVector)
+Test / testGrouping := {
+  // hoisted out of the map below: task `.value` calls are not allowed inside an
+  // anonymous function (they are evaluated eagerly anyway, so this is equivalent).
+  val forkOptions = ForkOptions().withRunJVMOptions((Test / javaOptions).value.toVector)
+  (Test / definedTests).value.map { test =>
+    Tests.Group(
+      name = test.name,
+      tests = Seq(test),
+      runPolicy = Tests.SubProcess(forkOptions)
     )
-  )
+  }
 }
 
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
