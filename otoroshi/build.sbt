@@ -64,7 +64,8 @@ lazy val webAuthnVersion         = "2.1.0" // using this version for backward co
 lazy val kubernetesVersion       = "16.0.1"
 lazy val bouncyCastleVersion     = "1.78.1"
 lazy val pulsarVersion           = "2.12.0.1"
-lazy val openTelemetryVersion    = "1.64.0" // zipkin exporter not in 1.65 yet
+lazy val openTelemetryVersion    = "1.65.0" // zipkin exporter not in 1.65 yet
+lazy val openTelemetryZipkinVersion    = "1.64.0"
 lazy val jacksonVersion          = "2.22.2"
 lazy val jacksonAnnotationVersion = "2.21" // jackson-annotations is versioned at the minor level only
 
@@ -203,16 +204,16 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-sdk-trace"              % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-logging"       % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-otlp"          % openTelemetryVersion excludeAll (excludesJackson: _*),
-  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"        % openTelemetryVersion excludeAll (excludesJackson: _*),
+  "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"        % openTelemetryZipkinVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp" % openTelemetryVersion excludeAll (excludesJackson: _*),
   // "io.opentelemetry"                 % "opentelemetry-exporter-prometheus"         % "1.28.0-alpha" excludeAll (excludesJackson: _*),
-  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "1.28.0-alpha" excludeAll (excludesJackson: _*),
+  "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "2.30.0-alpha" excludeAll (excludesJackson: _*),
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.797" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                            % "2.26.1",
   "org.sangria-graphql"             %% "sangria"                              % "4.2.19",
   "org.bigtesting"                   % "routd"                                % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                            % "0.2.0",
-  "io.azam.ulidj"                    % "ulidj"                                % "1.0.4",
+  "io.azam.ulidj"                    % "ulidj"                                % "2.0.0",
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",

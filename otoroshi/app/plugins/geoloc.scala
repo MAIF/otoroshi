@@ -549,7 +549,7 @@ object MaxMindGeolocationHelper {
                         "ip"             -> ip,
                         "type"           -> ipType,
                         "continent_code" -> c.continent().code(),
-                        "continent_name" -> c.continent.v,
+                        "continent_name" -> c.continent().name(),
                         "country_code"   -> c.country().isoCode(),
                         "country_name"   -> c.country().name(),
                         "region_code"    -> c.postal().code(),
