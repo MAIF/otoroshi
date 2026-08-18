@@ -317,6 +317,22 @@ Test / javaOptions ++= Seq(
   "--add-opens=java.base/sun.security.ssl=ALL-UNNAMED"
 )
 
+// Every spec that boots an otoroshi instance leaves process-global state behind
+// (DynamicSSLEngineProvider, OtoroshiEnvHolder, ...), which is not reset when the instance stops.
+// Two such specs in the same JVM make the second one fail on stale state - FrontendTlsSpec for
+// instance times out waiting for its certificates. Give each suite its own forked JVM so a run
+// covering several of them is meaningful. Forking is also what makes the --add-opens above apply.
+Test / fork := true
+Test / testGrouping := (Test / definedTests).value.map { test =>
+  Tests.Group(
+    name = test.name,
+    tests = Seq(test),
+    runPolicy = Tests.SubProcess(
+      ForkOptions().withRunJVMOptions((Test / javaOptions).value.toVector)
+    )
+  )
+}
+
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
 sonatypeRepository := "https://ossrh-staging-api.central.sonatype.com/service/local/"

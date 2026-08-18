@@ -2,7 +2,6 @@ package functional
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterAll
-import otoroshi.models.Target
 import otoroshi.netty.NettyHttp3Client
 import otoroshi.security.IdGenerator
 import otoroshi.utils.http.MtlsConfig
@@ -69,12 +68,14 @@ class Http3Spec extends OtoroshiSpec with BeforeAndAfterAll {
         result = _ => Json.obj("message" -> "hello http3")
       ).futureValue
 
-      // the url keeps the route domain (it drives both the SNI and the :authority pseudo header)
-      // while the target pins the connection to the loopback, so the test does not need dns
+      // the url host drives the SNI, the :authority pseudo header and the udp address at once:
+      // *.oto.tools resolves to 127.0.0.1, and quic needs a resolved address (passing a Target
+      // goes through InetSocketAddress.createUnresolved, which QuicChannel rejects)
       val resp = h3Client
         .url(s"https://$domain:$http3Port/api")
-        .withTarget(Target(host = domain, ipAddress = Some("127.0.0.1")))
-        .withTlsConfig(MtlsConfig(trustAll = true, loose = true))
+        // the h3 client only honours trustAll when mtls is on (see NettyHttp3Client.getSslContextFrom),
+        // and otoroshi serves a self signed cert for *.oto.tools here
+        .withTlsConfig(MtlsConfig(mtls = true, trustAll = true, loose = true))
         .withRequestTimeout(30.seconds)
         .get()
         .futureValue
