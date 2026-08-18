@@ -342,7 +342,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Websocket size validator" in {
       new WebsocketSizeValidatorTests(this)
     }
-    "S3Backend" in {
+    "S3Backend" taggedAs Docker in {
       new S3BackendTests(this)
     }
     "Time Restricted Access Plugin" in {
@@ -390,7 +390,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Multi Authentication - email flow" taggedAs Browser in {
       new MultiAuthenticationTests(this).emailFlow()
     }
-    "OAuth2 caller - password flow" in {
+    "OAuth2 caller - password flow" taggedAs Docker in {
       new OAuth2CallerTests(this)
     }
     "Simple Basic Auth" in {
@@ -737,7 +737,7 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     "Fail2ban - reset counter after detection window expires" in {
       new Fail2BanTests(this).resetCounterAfterDetectionWindowExpires()
     }
-    "OpenFGA Validator" in {
+    "OpenFGA Validator" taggedAs Docker in {
       new OpenFGAValidatorTests(this).run()
     }
     // "Kubernetes integration - leader should be healthy" in {
@@ -760,12 +760,12 @@ class PluginsTestSpec extends OtoroshiSpec with BeforeAndAfterAll {
     //     .triggerScannerJob()
     //     .futureValue(Timeout(Span(30, Minutes)))
     // }
-    "gRPC Web plugin" in {
+    "gRPC Web plugin" taggedAs Docker in {
       new GrpcWebTests(this)
         .run()
         .futureValue(Timeout(Span(30, Minutes)))
     }
-    "gRPC Web plugin should apply authorization rules" in {
+    "gRPC Web plugin should apply authorization rules" taggedAs Docker in {
       new GrpcWebTests(this)
         .authorizationRules()
         .futureValue
