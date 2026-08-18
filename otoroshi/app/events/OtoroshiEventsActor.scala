@@ -15,7 +15,7 @@ import io.netty.channel.unix.DomainSocketAddress
 import io.netty.handler.ssl.SslContextBuilder
 import io.opentelemetry.api.logs.Severity
 import io.otoroshi.wasm4s.scaladsl.*
-import io.vertx.sqlclient.impl.ArrayTuple
+import io.vertx.sqlclient.internal.ArrayTuple
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory
 import jakarta.jms.ConnectionFactory
 import jakarta.jms.Destination

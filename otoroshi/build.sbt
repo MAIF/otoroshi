@@ -164,17 +164,12 @@ libraryDependencies ++= Seq(
   "com.sun.xml.bind"                 % "jaxb-core"                            % "4.0.8",
   "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
   "org.shredzone.acme4j"             % "acme4j-client"                        % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
-  // lettuce 7.x requires netty 4.2 (io.netty.channel.MultiThreadIoEventLoopGroup): it compiles
-  // against our netty 4.1 but blows up at runtime with a NoClassDefFoundError as soon as a redis
-  // client is created. Moving to 7.x means migrating the whole netty stack (reactor-netty 1.2.x,
-  // the native transports, and the quic/http3 codecs which moved out of io.netty.incubator).
-  // Until then, stay on the latest netty-4.1-based release. See functional.LettuceDatastoreSpec.
-  "io.lettuce"                       % "lettuce-core"                         % "6.8.2.RELEASE" excludeAll (excludesJackson: _*),
-  // vertx-pg-client 5.x requires netty 4.2 (io.vertx.core.spi.transport.Transport uses
-  // MultiThreadIoEventLoopGroup) and its api moved the transport/tls settings out of
-  // PgConnectOptions. Otoroshi is still on netty 4.1, so stay on the last 4.5.x for now.
-  // See functional.PgDatastoreSpec.
-  "io.vertx"                         % "vertx-pg-client"                      % "4.5.32",
+  // lettuce 7.x and vertx 5.x both require netty 4.2 (they use
+  // io.netty.channel.MultiThreadIoEventLoopGroup, absent from 4.1): keep them in sync with
+  // nettyVersion. Both are covered by functional.LettuceDatastoreSpec / functional.PgDatastoreSpec,
+  // which boot otoroshi on a real redis / postgresql started with testcontainers.
+  "io.lettuce"                       % "lettuce-core"                         % "7.7.0.RELEASE" excludeAll (excludesJackson: _*),
+  "io.vertx"                         % "vertx-pg-client"                      % "5.1.6",
   // vertx-pg-client declares scram-client as an optional dependency, so it has to be added
   // explicitly, otherwise SCRAM-SHA-256 auth (the default on modern postgresql) fails with
   // "Scram authentication not supported, missing com.ongres.scram:scram-client"
@@ -234,7 +229,7 @@ libraryDependencies ++= Seq(
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.53" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
