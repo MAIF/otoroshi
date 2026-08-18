@@ -56,24 +56,24 @@ lazy val root = (project in file("."))
   .disablePlugins(PlayFilters)
 
 lazy val scalaLangVersion        = "3.8.4"
-lazy val metricsVersion          = "4.2.12"
+lazy val metricsVersion          = "4.2.39"
 lazy val acme4jVersion           = "3.2.1" // "2.14"
 lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "3.0.6"
-lazy val webAuthnVersion         = "2.1.0" //"1.7.0" //"2.1.0"
+lazy val webAuthnVersion         = "2.1.0" // using this version for backward compatibility reasons //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "16.0.1"
-lazy val bouncyCastleVersion     = "1.77"
-lazy val pulsarVersion           = "2.10.0"
-lazy val openTelemetryVersion    = "1.28.0"
-lazy val jacksonVersion          = "2.21.3"
+lazy val bouncyCastleVersion     = "1.78.1"
+lazy val pulsarVersion           = "2.12.0.1"
+lazy val openTelemetryVersion    = "1.64.0" // zipkin exporter not in 1.65 yet
+lazy val jacksonVersion          = "2.22.2"
 lazy val jacksonAnnotationVersion = "2.21" // jackson-annotations is versioned at the minor level only
 
 lazy val pekkoVersion            = "1.6.0"
-lazy val pekkoHttpVersion        = "1.3.0"
+lazy val pekkoHttpVersion        = "1.4.0"
 lazy val pekkoConnectorsS3Version = "1.3.0"
 lazy val pekkoConnectorsKafkaVersion = "1.1.0"
-lazy val reactorNettyVersion     = "1.1.18"
-lazy val nettyVersion            = "4.1.119.Final"
+lazy val reactorNettyVersion     = "1.1.31"
+lazy val nettyVersion            = "4.1.137.Final"
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -127,7 +127,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.macwire"        %% "macros"                               % "2.6.7"  % "provided",
   "org.playframework"               %% "play-json"                            % playJsonVersion,
   "org.playframework"               %% "play-json-joda"                       % playJsonVersion,
-  "io.github.rediscala"             %% "rediscala"                            % "2.0.2",
+  "io.github.rediscala"             %% "rediscala"                            % "2.1.0",
   ("com.github.gphat"               %% "censorinus"                           % "2.1.16").cross(CrossVersion.for3Use2_13),
   "org.apache.pekko"                %% "pekko-actor"                          % pekkoVersion,
   "org.apache.pekko"                %% "pekko-stream"                         % pekkoVersion,
@@ -138,22 +138,22 @@ libraryDependencies ++= Seq(
   "org.apache.pekko"                %% "pekko-http-xml"                       % pekkoHttpVersion,
   "org.apache.pekko"                %% "pekko-connectors-kafka"               % pekkoConnectorsKafkaVersion,
   "org.apache.pekko"                %% "pekko-connectors-s3"                  % pekkoConnectorsS3Version,
-  "com.spotify.metrics"              % "semantic-metrics-core"                % "1.1.11",
+  "com.spotify.metrics"              % "semantic-metrics-core"                % "1.2.0",
   "io.dropwizard.metrics"            % "metrics-jmx"                          % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.dropwizard.metrics"            % "metrics-json"                         % metricsVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                    % "simpleclient_common"                  % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "io.prometheus"                    % "simpleclient_dropwizard"              % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
-  "com.auth0"                        % "java-jwt"                             % "4.2.0" excludeAll (excludesJackson: _*),
-  "com.auth0"                        % "jwks-rsa"                             % "0.21.2" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
+  "com.auth0"                        % "java-jwt"                             % "4.6.0" excludeAll (excludesJackson: _*),
+  "com.auth0"                        % "jwks-rsa"                             % "0.24.1" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
   "com.nimbusds"                     % "nimbus-jose-jwt"                      % "9.39.1",
   "de.svenkubiak"                    % "jBCrypt"                              % "0.4.3",
-  "io.github.classgraph"             % "classgraph"                           % "4.8.149" excludeAll (excludesJackson: _*),
-  "com.comcast"                     %% "ip4s-core"                            % "3.2.0",
+  "io.github.classgraph"             % "classgraph"                           % "4.8.192" excludeAll (excludesJackson: _*),
+  "com.comcast"                     %% "ip4s-core"                            % "3.8.0",
   "com.yubico"                       % "webauthn-server-core"                 % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                       % "webauthn-server-attestation"          % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.yubico"                       % "yubico-util"                          % webAuthnVersion excludeAll (excludesJackson: _*),
   "com.maxmind.geoip2"               % "geoip2"                               % "3.0.1",
-  "com.blueconic"                    % "browscap-java"                        % "1.4.3",
+  "com.blueconic"                    % "browscap-java"                        % "1.5.1",
   "javax.xml.bind"                   % "jaxb-api"                             % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"                 % "jaxb-core"                            % "2.3.0.1",
   "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
@@ -163,9 +163,9 @@ libraryDependencies ++= Seq(
   "com.ongres.scram"                 % "common"                               % "2.1",
   "com.ongres.scram"                 % "client"                               % "2.1",
   "com.jayway.jsonpath"              % "json-path"                            % "2.7.0",
-  "com.cronutils"                    % "cron-utils"                           % "9.2.0",
+  "com.cronutils"                    % "cron-utils"                           % "9.2.1",
   "commons-lang"                     % "commons-lang"                         % "2.6",
-  "com.datastax.oss"                 % "java-driver-core"                     % "4.15.0" excludeAll (excludesJackson: _*),
+  "com.datastax.oss"                 % "java-driver-core"                     % "4.17.0" excludeAll (excludesJackson: _*),
   "org.gnieh"                       %% "diffson-play-json"                    % "4.7.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
   "io.kubernetes"                    % "client-java"                          % kubernetesVersion excludeAll (excludesJackson: _*),
   "io.kubernetes"                    % "client-java-extended"                 % kubernetesVersion excludeAll (excludesJackson: _*),
@@ -175,13 +175,13 @@ libraryDependencies ++= Seq(
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                        % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"               % pulsarVersion excludeAll (excludesJackson: _*),
-  "org.jsoup"                        % "jsoup"                                % "1.15.3",
-  "org.biscuitsec"                   % "biscuit"                              % "4.0.0",
+  "org.jsoup"                        % "jsoup"                                % "1.23.1",
+  "org.biscuitsec"                   % "biscuit"                              % "4.0.1",
   "org.opensaml"                     % "opensaml-core"                        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                    % "4.0.1",
   //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-impl"                   % "4.0.1",
-  "org.openjdk.jol"                  % "jol-core"                             % "0.16",
+  "org.openjdk.jol"                  % "jol-core"                             % "0.17",
   "org.typelevel"                   %% "squants"                              % "1.8.3" excludeAll (excludesJackson: _*),
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-core"                         % jacksonVersion,
@@ -207,15 +207,15 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp" % openTelemetryVersion excludeAll (excludesJackson: _*),
   // "io.opentelemetry"                 % "opentelemetry-exporter-prometheus"         % "1.28.0-alpha" excludeAll (excludesJackson: _*),
   "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "1.28.0-alpha" excludeAll (excludesJackson: _*),
-  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.326" excludeAll (excludesJackson: _*),
-  "org.apache.logging.log4j"         % "log4j-api"                            % "2.19.0",
-  "org.sangria-graphql"             %% "sangria"                              % "4.2.18",
+  "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.797" excludeAll (excludesJackson: _*),
+  "org.apache.logging.log4j"         % "log4j-api"                            % "2.26.1",
+  "org.sangria-graphql"             %% "sangria"                              % "4.2.19",
   "org.bigtesting"                   % "routd"                                % "1.0.7",
   "com.nixxcode.jvmbrotli"           % "jvmbrotli"                            % "0.2.0",
   "io.azam.ulidj"                    % "ulidj"                                % "1.0.4",
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
-  "com.google.crypto.tink"           % "tink"                                 % "1.16.0",
-  "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.40.0",
+  "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
+  "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
   // included in libs as jitpack is not stable at all
   // "com.github.Opetushallitus"        % "scala-schema"                              % "2.34.0_2.12" excludeAll (
   //   ExclusionRule("com.github.spotbugs", "spotbugs-annotations"),
@@ -226,7 +226,7 @@ libraryDependencies ++= Seq(
   // "org.json4s"                       % "json4s-jackson_2.12"                  % "4.0.7",
   // "org.json4s"                       % "json4s-ast_2.12"                      % "4.0.7",
   // "org.json4s"                       % "json4s-ext_2.12"                      % "4.0.7",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.49" excludeAll (
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.53" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -248,9 +248,9 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
   //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
   //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.62.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.62.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.28.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.30.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
   "com.networknt"                    % "json-schema-validator"                % "1.3.0" excludeAll (
@@ -260,7 +260,7 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
   ),
   "jakarta.jms"                      % "jakarta.jms-api"                      % "3.1.0",
-  "org.apache.activemq"              % "artemis-jakarta-client"               % "2.41.0" excludeAll (
+  "org.apache.activemq"              % "artemis-jakarta-client"               % "2.55.0" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -270,7 +270,7 @@ libraryDependencies ++= Seq(
   // pinned to 1.44.0: 1.47.0+ crashes at browser/context teardown with
   // "Cannot find module './../../package.json'" (getPlaywrightVersion in
   // HarTracer.stop), which hangs the JVM test forever. See microsoft/playwright#35727.
-  "com.microsoft.playwright"         % "playwright"                           % "1.44.0" % Test
+  "com.microsoft.playwright"         % "playwright"                           % "1.62.0" % Test
   // https://github.com/mvel/mvel
   // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
