@@ -62,7 +62,8 @@ lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "3.0.6"
 lazy val webAuthnVersion         = "2.1.0" // using this version for backward compatibility reasons //"1.7.0" //"2.1.0"
 lazy val kubernetesVersion       = "27.0.0"
-lazy val bouncyCastleVersion     = "1.78.1"
+lazy val bouncyCastleVersion     = "1.85"
+lazy val bouncyCastleExtVersion  = "1.78.1"
 lazy val pulsarVersion           = "2.12.0.1"
 lazy val openTelemetryVersion    = "1.65.0"
 lazy val openTelemetryZipkinVersion = "1.64.0"// zipkin exporter not in 1.65 yet
@@ -177,14 +178,15 @@ libraryDependencies ++= Seq(
   "com.ongres.scram"                 % "scram-client"                         % scramVersion,
   "com.jayway.jsonpath"              % "json-path"                            % "3.0.0",
   "com.cronutils"                    % "cron-utils"                           % "9.2.1",
-  "commons-lang"                     % "commons-lang"                         % "2.6",
+  "org.apache.commons"               % "commons-lang3" % "3.20.0",
+  "org.apache.commons"               % "commons-text"  % "1.15.0",
   "com.datastax.oss"                 % "java-driver-core"                     % "4.17.0" excludeAll (excludesJackson: _*),
   "org.gnieh"                       %% "diffson-play-json"                    % "4.7.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
   "io.kubernetes"                    % "client-java"                          % kubernetesVersion excludeAll (excludesJackson: _*),
   "io.kubernetes"                    % "client-java-extended"                 % kubernetesVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                   % bouncyCastleVersion excludeAll (excludesJackson: _*),
-  "org.bouncycastle"                 % "bcprov-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson: _*),
+  "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-ext-jdk18on"                   % bouncyCastleExtVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson *),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                        % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"               % pulsarVersion excludeAll (excludesJackson: _*),
