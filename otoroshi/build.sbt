@@ -73,8 +73,13 @@ lazy val pekkoVersion            = "1.6.0"
 lazy val pekkoHttpVersion        = "1.4.0"
 lazy val pekkoConnectorsS3Version = "1.3.0"
 lazy val pekkoConnectorsKafkaVersion = "1.1.0"
-lazy val reactorNettyVersion     = "1.1.31"
-lazy val nettyVersion            = "4.1.137.Final"
+lazy val reactorNettyVersion      = "1.3.6"
+lazy val nettyVersion                     = "4.2.17.Final"
+lazy val nettyIncubatorTransportVersion   = "0.0.26.Final"
+lazy val nettyIncubatorCodecNativeVersion = "0.0.75.Final"
+lazy val nettyIncubatorCodecVersion       = "0.0.30.Final"
+lazy val scramVersion                     = "3.4"
+
 lazy val excludesJackson         = Seq(
   ExclusionRule(organization = "com.fasterxml.jackson.core"),
   ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -156,7 +161,7 @@ libraryDependencies ++= Seq(
   "com.maxmind.geoip2"               % "geoip2"                               % "5.2.0",
   "com.blueconic"                    % "browscap-java"                        % "1.5.1",
   "javax.xml.bind"                   % "jaxb-api"                             % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
-  "com.sun.xml.bind"                 % "jaxb-core"                            % "2.3.0.1",
+  "com.sun.xml.bind"                 % "jaxb-core"                            % "4.0.8",
   "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
   "org.shredzone.acme4j"             % "acme4j-client"                        % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   // lettuce 7.x requires netty 4.2 (io.netty.channel.MultiThreadIoEventLoopGroup): it compiles
@@ -173,7 +178,8 @@ libraryDependencies ++= Seq(
   // vertx-pg-client declares scram-client as an optional dependency, so it has to be added
   // explicitly, otherwise SCRAM-SHA-256 auth (the default on modern postgresql) fails with
   // "Scram authentication not supported, missing com.ongres.scram:scram-client"
-  "com.ongres.scram"                 % "scram-client"                         % "3.2",
+  "com.ongres.scram"                 % "scram-common"                         % scramVersion,
+  "com.ongres.scram"                 % "scram-client"                         % scramVersion,
   "com.jayway.jsonpath"              % "json-path"                            % "3.0.0",
   "com.cronutils"                    % "cron-utils"                           % "9.2.1",
   "commons-lang"                     % "commons-lang"                         % "2.6",
@@ -252,17 +258,29 @@ libraryDependencies ++= Seq(
     organization = "com.typesafe.play"
   )*/ // TODO - check if needed
   // new http stack ;)
-  "io.projectreactor.netty"          % "reactor-netty-core"                   % reactorNettyVersion,
-  "io.projectreactor.netty"          % "reactor-netty-http"                   % reactorNettyVersion,
-  "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion,
-  "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
-  "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion,
-  "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
-  //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final" classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.30.Final",
+  "io.projectreactor.netty"          % "reactor-netty-core"                        % reactorNettyVersion,
+  "io.projectreactor.netty"          % "reactor-netty-http"                        % reactorNettyVersion,
+  "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion,
+  "io.netty"                         % "netty-transport-native-kqueue"             % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
+  "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion,
+  "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
+  // "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion,
+  // "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion classifier "linux-x86_64" classifier "linux-aarch_64",
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion,
+  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion classifier "linux-x86_64" classifier "osx-x86_64",
+  "io.netty.incubator"               % "netty-incubator-codec-http3"               % nettyIncubatorCodecVersion,
+
+  //     "io.projectreactor.netty"          % "reactor-netty-core"                   % reactorNettyVersion,
+  //     "io.projectreactor.netty"          % "reactor-netty-http"                   % reactorNettyVersion,
+  //     "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion,
+  //     "io.netty"                         % "netty-transport-native-kqueue"        % nettyVersion classifier "osx-aarch_64" classifier "osx-x86_64",
+  //     "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion,
+  //     "io.netty"                         % "netty-transport-native-epoll"         % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
+  //     //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final",
+  //     //"io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % "0.0.25.Final" classifier "linux-x86_64" classifier "linux-aarch_64",
+  //     "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final",
+  //     "io.netty.incubator"               % "netty-incubator-codec-native-quic"    % "0.0.75.Final" classifier "linux-x86_64" classifier "osx-x86_64",
+  //     "io.netty.incubator"               % "netty-incubator-codec-http3"          % "0.0.30.Final",
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
   "com.networknt"                    % "json-schema-validator"                % "1.5.9" excludeAll (
@@ -426,8 +444,8 @@ addJava "-Dlog4j2.formatMsgNoLookups=true"
 Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.sbt.port", "5005")), suspend = false)
 
 // CVE check settings
-import net.nmoncho.sbt.dependencycheck.settings._
-dependencyCheckNvdApi := NvdApiSettings(apiKey = sys.env.getOrElse("NVD_API_KEY", "NVD_API_KEY"))
+// import net.nmoncho.sbt.dependencycheck.settings._
+// dependencyCheckNvdApi := NvdApiSettings(apiKey = sys.env.getOrElse("NVD_API_KEY", "NVD_API_KEY"))
 
 // SBOM settings
 bomFileName := "otoroshi-server.cdx.json"
