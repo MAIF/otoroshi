@@ -203,3 +203,13 @@ class GreenScoreTests
 //    extends Suites(
 //      new ApiKeysSpec("ApiKeysSpec", Configurations.InMemoryConfiguration)
 //    )
+
+class PgDatastoreTests
+    extends Suites(
+      new PgDatastoreSpec()
+    )
+
+class LettuceDatastoreTests
+    extends Suites(
+      new LettuceDatastoreSpec()
+    )
