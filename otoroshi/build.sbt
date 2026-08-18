@@ -125,7 +125,13 @@ dependencyOverrides ++= Seq(
   "org.apache.pekko" %% "pekko-http-core"             % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-http-xml"              % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-parsing"               % pekkoHttpVersion,
-  "org.scala-lang.modules" %% "scala-xml"             % "2.3.0"
+  "org.scala-lang.modules" %% "scala-xml"             % "2.3.0",
+  // netty 4.2 split netty-codec: io.netty.handler.codec.{DefaultHeaders,ByteToMessageDecoder,...}
+  // now live in netty-codec-base. Some deps (artemis-core-client, awssdk netty-nio-client) still
+  // ask for netty-codec 4.1.x, which ships those same class names with the 4.1 signatures and
+  // shadows netty-codec-base on the classpath -> NoSuchMethodError DefaultHeaders.containsAny at
+  // runtime. Keep netty-codec on nettyVersion so only the 4.2 copies are loaded.
+  "io.netty"               % "netty-codec"             % nettyVersion
 )
 
 libraryDependencies ++= Seq(
