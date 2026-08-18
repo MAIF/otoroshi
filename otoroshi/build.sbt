@@ -448,10 +448,7 @@ Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.s
 // SBOM settings
 bomFileName := "otoroshi-server.cdx.json"
 bomFormat := "json"
-bomSchemaVersion := "1.7"
-
 projectType := "application"
-
 includeBomSerialNumber := true
 includeBomTimestamp := true
 includeBomToolVersion := true
