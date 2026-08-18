@@ -1,6 +1,6 @@
 name: release-otoroshi
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       version_from:
@@ -33,7 +33,7 @@ jobs:
         run: |
           mkdir -p ./release-${{ inputs.version_to }}
       - name: setup git
-        run: | 
+        run: |
           git config --global user.email "otoroshi-bot-github-actions@users.noreply.github.com"
           git config --global user.name "otoroshi-bot-github-actions"
           git config --global --list
@@ -53,7 +53,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Setup xvfb for screen 0
         run: |
-          Xvfb :1 -screen 0 1600x1200x24 &         
+          Xvfb :1 -screen 0 1600x1200x24 &
       - name: run-release-process
         id: run-release-process
         env:
@@ -80,6 +80,7 @@ jobs:
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi.jar | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip.sha256
           shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip.sha256
+          shasum -a 256 ./release-${{ inputs.version_to }}/otoroshi-server.cdx.json | cut -d ' ' -f 1 > ./release-${{ inputs.version_to }}/otoroshi-server.cdx.json.sha256
       - name: Release binary to GitHub
         uses: softprops/action-gh-release@v1
         with:
@@ -89,6 +90,8 @@ jobs:
             ./release-${{ inputs.version_to }}/otoroshi.jar
             ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip
             ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip
+            ./release-${{ inputs.version_to }}/otoroshi-server.cdx.json
             ./release-${{ inputs.version_to }}/otoroshi.jar.sha256
             ./release-${{ inputs.version_to }}/otoroshi-${{ inputs.version_to }}.zip.sha256
             ./release-${{ inputs.version_to }}/otoroshi-manual-${{ inputs.version_to }}.zip.sha256
+            ./release-${{ inputs.version_to }}/otoroshi-server.cdx.json.sha256
