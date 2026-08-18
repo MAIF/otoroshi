@@ -413,6 +413,24 @@ addJava "-Dlog4j2.formatMsgNoLookups=true"
 
 Revolver.enableDebugging(port = Integer.parseInt(sys.props.getOrElse("otoroshi.sbt.port", "5005")), suspend = false)
 
+// CVE check settings
+import net.nmoncho.sbt.dependencycheck.settings._
+dependencyCheckNvdApi := NvdApiSettings(apiKey = sys.env.getOrElse("NVD_API_KEY", "NVD_API_KEY"))
+
+// SBOM settings
+bomFileName := "otoroshi-server.cdx.json"
+bomFormat := "json"
+bomSchemaVersion := "1.7"
+
+projectType := "application"
+
+includeBomSerialNumber := true
+includeBomTimestamp := true
+includeBomToolVersion := true
+includeBomHashes := true
+includeBomExternalReferences := true
+includeBomDependencyTree := true
+
 // run with: ~reStart
 reStart / mainClass := Some("play.core.server.ProdServerStart")
 reStart / javaOptions ++= Seq(

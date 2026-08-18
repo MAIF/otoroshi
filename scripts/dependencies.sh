@@ -1,0 +1,2 @@
+sbt dependencyUpdates
+sbt dependencyCheck
