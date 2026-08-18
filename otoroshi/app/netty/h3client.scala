@@ -15,8 +15,8 @@ import io.netty.channel.{Channel, ChannelHandler, ChannelHandlerContext}
 import io.netty.handler.codec.http.cookie.ClientCookieDecoder
 import io.netty.handler.ssl.ApplicationProtocolNegotiator
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
-import io.netty.incubator.codec.http3.*
-import io.netty.incubator.codec.quic.*
+import io.netty.handler.codec.http3.*
+import io.netty.handler.codec.quic.*
 import io.netty.util.concurrent.GenericFutureListener
 import io.netty.util.{CharsetUtil, ReferenceCountUtil}
 import org.apache.commons.codec.binary.Base64

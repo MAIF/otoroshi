@@ -1,4 +1,4 @@
-package io.netty.incubator.codec.http3
+package io.netty.handler.codec.http3
 
 import io.netty.buffer.ByteBufAllocator
 import io.netty.handler.codec.http.{FullHttpRequest, HttpHeaders, HttpMessage, HttpRequest, HttpVersion}

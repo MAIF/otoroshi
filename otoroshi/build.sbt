@@ -77,8 +77,6 @@ lazy val pekkoConnectorsKafkaVersion = "1.1.0"
 lazy val reactorNettyVersion         = "1.3.6"
 lazy val nettyVersion                     = "4.2.17.Final"
 lazy val nettyIncubatorTransportVersion   = "0.0.26.Final"
-lazy val nettyIncubatorCodecNativeVersion = "0.0.75.Final"
-lazy val nettyIncubatorCodecVersion       = "0.0.30.Final"
 lazy val scramVersion                     = "3.4"
 
 lazy val excludesJackson         = Seq(
@@ -168,7 +166,7 @@ libraryDependencies ++= Seq(
   "com.maxmind.geoip2"               % "geoip2"                               % "5.2.0",
   "com.blueconic"                    % "browscap-java"                        % "1.5.1",
   "javax.xml.bind"                   % "jaxb-api"                             % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
-  "com.sun.xml.bind"                 % "jaxb-core"                            % "4.0.8",
+  "com.sun.xml.bind"                 % "jaxb-core"                            % "4.0.9",
   "com.github.blemale"              %% "scaffeine"                            % "5.3.0",
   "org.shredzone.acme4j"             % "acme4j-client"                        % acme4jVersion excludeAll (excludeSlf4jAndJackson: _*),
   // lettuce 7.x and vertx 5.x both require netty 4.2 (they use
@@ -192,7 +190,7 @@ libraryDependencies ++= Seq(
   "io.kubernetes"                    % "client-java-extended"                 % kubernetesVersion excludeAll (excludesJackson: _*),
   "org.bouncycastle"                 % "bcpkix-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson *),
   "org.bouncycastle"                 % "bcprov-ext-jdk18on"                   % bouncyCastleExtVersion excludeAll (excludesJackson *),
-  "org.bouncycastle"                 % "bcprov-jdk18on"                       % bouncyCastleVersion excludeAll (excludesJackson *),
+  "org.bouncycastle"                 % "bcprov-jdk18on"                       % s"$bouncyCastleVersion.2" excludeAll (excludesJackson *),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-play-json"                   % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-core"                        % pulsarVersion excludeAll (excludesJackson: _*),
   "com.clever-cloud.pulsar4s"       %% "pulsar4s-pekko-streams"               % pulsarVersion excludeAll (excludesJackson: _*),
@@ -237,7 +235,7 @@ libraryDependencies ++= Seq(
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.53" excludeAll (
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (
     ExclusionRule("org.slf4j"),
     ExclusionRule(organization = "com.fasterxml.jackson.core"),
     ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
@@ -259,9 +257,12 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-transport-native-epoll"              % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64",
   // "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion,
   // "io.netty.incubator"               % "netty-incubator-transport-native-io_uring" % nettyIncubatorTransportVersion classifier "linux-x86_64" classifier "linux-aarch_64",
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion,
-  "io.netty.incubator"               % "netty-incubator-codec-native-quic"         % nettyIncubatorCodecNativeVersion classifier "linux-x86_64" classifier "osx-x86_64",
-  "io.netty.incubator"               % "netty-incubator-codec-http3"               % nettyIncubatorCodecVersion,
+  // quic/http3 graduated out of io.netty.incubator into netty proper with 4.2: same classes, new
+  // packages (io.netty.incubator.codec.{quic,http3} -> io.netty.handler.codec.{quic,http3}) and
+  // versioned with netty itself, so they can no longer drift from the core.
+  "io.netty"                         % "netty-codec-native-quic"                   % nettyVersion,
+  "io.netty"                         % "netty-codec-native-quic"                   % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64" classifier "osx-x86_64" classifier "osx-aarch_64",
+  "io.netty"                         % "netty-codec-http3"                         % nettyVersion,
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
   "com.networknt"                    % "json-schema-validator"                % "1.5.9" excludeAll (

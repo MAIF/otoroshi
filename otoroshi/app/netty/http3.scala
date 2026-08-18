@@ -8,7 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.{ChannelFutureListener, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.handler.codec.http.*
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.incubator.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
+import io.netty.handler.codec.quic.{QuicConnectionPathStats, QuicSslContext, QuicSslContextBuilder}
 import io.netty.util.{CharsetUtil, Mapping, ReferenceCountUtil}
 import org.joda.time.DateTime
 import otoroshi.env.Env
@@ -83,7 +83,7 @@ class Http1RequestHandler(
   private def runOtoroshiRequest(req: HttpRequest, keepAlive: Boolean, ctx: ChannelHandlerContext, msg: Any): Unit = {
     if (request == null) throw new RuntimeException("no request found !!!")
     val session                  = ctx.channel() match {
-      case c: io.netty.incubator.codec.quic.QuicChannel       =>
+      case c: io.netty.handler.codec.quic.QuicChannel       =>
         Option(c)
           .flatMap(p => Option(p.sslEngine()))
           .flatMap(p => Option(p.getSession()))
@@ -92,7 +92,7 @@ class Http1RequestHandler(
               .flatMap(p => Option(p.sslEngine()))
               .flatMap(p => Option(p.getHandshakeSession()))
           )
-      case c: io.netty.incubator.codec.quic.QuicStreamChannel =>
+      case c: io.netty.handler.codec.quic.QuicStreamChannel =>
         Option(c.parent())
           .flatMap(p => Option(p.sslEngine()))
           .flatMap(p => Option(p.getSession()))
@@ -587,8 +587,8 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
       import io.netty.bootstrap.*
       import io.netty.channel.*
       import io.netty.channel.socket.nio.*
-      import io.netty.incubator.codec.http3.{Http3, Http3ServerConnectionHandler}
-      import io.netty.incubator.codec.quic.{InsecureQuicTokenHandler, QuicChannel, QuicStreamChannel}
+      import io.netty.handler.codec.http3.{Http3, Http3ServerConnectionHandler}
+      import io.netty.handler.codec.quic.{InsecureQuicTokenHandler, QuicChannel, QuicStreamChannel}
 
       import java.util.concurrent.TimeUnit
 
@@ -678,7 +678,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
                 new Http3ServerConnectionHandler(
                   new ChannelInitializer[QuicStreamChannel]() {
                     override def initChannel(ch: QuicStreamChannel): Unit = {
-                      ch.pipeline().addLast(new io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec(true, false))
+                      ch.pipeline().addLast(new io.netty.handler.codec.http3.Http3FrameToHttpObjectCodec(true, false))
                       ch.pipeline()
                         .addLast(
                           new Http1RequestHandler(

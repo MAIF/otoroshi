@@ -1,7 +1,7 @@
 package otoroshi.next.plugins
 
 import org.apache.pekko.stream.Materializer
-import io.netty.incubator.codec.http3.Http3
+import io.netty.handler.codec.http3.Http3
 import otoroshi.env.Env
 import otoroshi.netty.ReactorNettyServerConfig
 import otoroshi.next.plugins.api.*
