@@ -67,7 +67,7 @@ lazy val bouncyCastleVersion     = "1.85"
 lazy val bouncyCastleExtVersion  = "1.78.1"
 lazy val pulsarVersion           = "2.12.0.1"
 lazy val openTelemetryVersion    = "1.65.0"
-lazy val openTelemetryZipkinVersion = "1.64.0"// zipkin exporter not in 1.65 yet
+lazy val openTelemetryZipkinVersion = "1.64.0"// zipkin exporter not in 1.65 because the project ended in favor of otlp exporter
 lazy val jacksonVersion             = "2.22.2"
 lazy val jacksonAnnotationVersion   = "2.22" // jackson-annotations is versioned at the minor level only
 
