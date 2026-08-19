@@ -4,8 +4,8 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
 import com.arakelian.jq.{ImmutableJqLibrary, ImmutableJqRequest}
-import com.networknt.schema.SpecVersion.VersionFlag
-import com.networknt.schema.{InputFormat, JsonSchemaFactory, PathType, SchemaValidatorsConfig}
+import com.networknt.schema.{InputFormat, SchemaRegistry, SchemaRegistryConfig, SpecificationVersion}
+import com.networknt.schema.path.PathType
 import io.otoroshi.wasm4s.scaladsl.WasmFunctionParameters
 import otoroshi.env.Env
 import otoroshi.gateway.WebSocketProxyActor
@@ -237,7 +237,7 @@ class WebsocketTypeValidator extends NgWebsocketValidatorPlugin {
 
 case class WebsocketJsonFormatValidatorConfig(
     schema: Option[String] = None,
-    specification: String = VersionFlag.V202012.getId,
+    specification: String = SpecificationVersion.DRAFT_2020_12.getDialectId,
     rejectStrategy: RejectStrategy = RejectStrategy.Drop
 ) extends NgPluginConfig {
   override def json: JsValue = WebsocketJsonFormatValidatorConfig.format.writes(this)
@@ -255,7 +255,7 @@ object WebsocketJsonFormatValidatorConfig {
       Try {
         WebsocketJsonFormatValidatorConfig(
           schema = json.select("schema").asOpt[String],
-          specification = json.select("specification").asOpt[String].getOrElse(VersionFlag.V202012.getId),
+          specification = json.select("specification").asOpt[String].getOrElse(SpecificationVersion.DRAFT_2020_12.getDialectId),
           rejectStrategy = RejectStrategy.read(json)
         )
       } match {
@@ -295,11 +295,16 @@ class WebsocketJsonFormatValidator extends NgWebsocketValidatorPlugin {
       .map(data => {
         val userSchema = config.schema.getOrElse("")
 
-        val jsonSchemaFactory = JsonSchemaFactory.getInstance(VersionFlag.fromId(config.specification).get())
+        val versionFlag = SpecificationVersion.fromDialectId(config.specification).get()
 
-        val schemaConfig = SchemaValidatorsConfig.builder().pathType(PathType.JSON_POINTER).formatAssertionsEnabled(true).build()
+        val schemaConfig = SchemaRegistryConfig
+          .builder()
+          .pathType(PathType.JSON_POINTER)
+          .formatAssertionsEnabled(true)
+          .build()
 
-        val schema = jsonSchemaFactory.getSchema(userSchema, schemaConfig)
+        val registry = SchemaRegistry.withDefaultDialect(versionFlag, b => b.schemaRegistryConfig(schemaConfig))
+        val schema = registry.getSchema(userSchema, InputFormat.JSON)
 
         Try {
           schema.validate(data, InputFormat.JSON).isEmpty

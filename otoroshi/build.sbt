@@ -90,6 +90,9 @@ lazy val excludeScalaJava8Compat = Seq(
 lazy val excludeSlf4jAndJackson  = excludesJackson ++ Seq(
   ExclusionRule(organization = "org.slf4j")
 )
+lazy val excludeSlf4jAndJacksonAndPlayJson  = excludeSlf4jAndJackson ++ Seq(
+  ExclusionRule(organization = "org.playframework", name = "play-json"),
+)
 
 scalacOptions ++= Seq(
   // accept Scala 2.13 syntax (e.g. un-parenthesized typed lambda params) as warnings during the
@@ -182,8 +185,8 @@ libraryDependencies ++= Seq(
   "com.ongres.scram"                 % "scram-client"                         % scramVersion,
   "com.jayway.jsonpath"              % "json-path"                            % "3.0.0",
   "com.cronutils"                    % "cron-utils"                           % "9.2.1",
-  "org.apache.commons"               % "commons-lang3" % "3.20.0",
-  "org.apache.commons"               % "commons-text"  % "1.15.0",
+  "org.apache.commons"               % "commons-lang3"                        % "3.20.0",
+  "org.apache.commons"               % "commons-text"                         % "1.15.0",
   "com.datastax.oss"                 % "java-driver-core"                     % "4.17.0" excludeAll (excludesJackson: _*),
   "org.gnieh"                       %% "diffson-play-json"                    % "4.7.0" excludeAll ExclusionRule(organization = "org.apache.pekko"),
   "io.kubernetes"                    % "client-java"                          % kubernetesVersion excludeAll (excludesJackson: _*),
@@ -235,13 +238,7 @@ libraryDependencies ++= Seq(
   "fr.maif"                         %% "wasm4s"                               % "5.0.3" classifier "bundle",
   "com.google.crypto.tink"           % "tink"                                 % "1.23.0",
   "com.google.auth"                  % "google-auth-library-oauth2-http"      % "1.50.0",
-  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
-    ExclusionRule(organization = "org.playframework", name = "play-json"),
-  ),
+  "io.swagger.core.v3"               % "swagger-core-jakarta"                 % "2.2.54" excludeAll (excludeSlf4jAndJacksonAndPlayJson *),
   // swagger-scala-module dropped: no Scala 3 build and pulls Akka. We keep the Java swagger-core
   // above; api.scala already has a fallback when the Scala converter is not registered.
   "org.scala-lang.modules"          %% "scala-java8-compat"                   % "1.0.2",
@@ -265,19 +262,9 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-codec-http3"                         % nettyVersion,
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
-  "com.networknt"                    % "json-schema-validator"                % "1.5.9" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
-  ),
+  "com.networknt"                    % "json-schema-validator"                % "3.0.6" excludeAll (excludeSlf4jAndJackson *),
   "jakarta.jms"                      % "jakarta.jms-api"                      % "3.1.0",
-  "org.apache.activemq"              % "artemis-jakarta-client"               % "2.55.0" excludeAll (
-    ExclusionRule("org.slf4j"),
-    ExclusionRule(organization = "com.fasterxml.jackson.core"),
-    ExclusionRule(organization = "com.fasterxml.jackson.datatype"),
-    ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
-  ),
+  "org.apache.activemq"              % "artemis-jakarta-client"               % "2.55.0" excludeAll (excludeSlf4jAndJackson *),
   "com.dimafeng"                    %% "testcontainers-scala-scalatest"       % "0.44.1" % Test,
   // pinned to 1.44.0: 1.47.0+ crashes at browser/context teardown with
   // "Cannot find module './../../package.json'" (getPlaywrightVersion in
