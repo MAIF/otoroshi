@@ -346,7 +346,27 @@ assembly / assemblyMergeStrategy := { e =>
     case path if path.contains("com/upokecenter/util")                  => MergeStrategy.first
     case path if path.contains("org/slf4j/impl")                        => MergeStrategy.first
     case path if path.contains("edu/umd/cs/findbugs/annotations")       => MergeStrategy.first
-    case PathList("scala", xs @ _*)                                     => MergeStrategy.first
+    // The wasm4s "bundle" jar vendors an entire scala library (2.13.16 base + its own scala 3
+    // runtime): 3430 of its classes collide with scala-library 3.8.4 and every one of them differs
+    // byte-wise. That jar sorts before scala-library on the classpath, so MergeStrategy.first was
+    // packing wasm4s's stdlib into otoroshi.jar instead of ours - scala/runtime/LazyVals$ and
+    // scala/collection/immutable/List included. The bundle is still required for org.extism.sdk
+    // (the plain wasm4s jar does not ship it), so keep the jar but never take scala/** from it.
+    // MergeStrategy.last would not do: scala-reflect 2.13.0 also ships scala/** and would win.
+    // "library.properties" is scala-library's own version stamp, at the root of the jar rather
+    // than under scala/, hence the second case.
+    case PathList("scala", _*) | "library.properties"                   =>
+      CustomMergeStrategy("preferRealScalaLibrary") { deps =>
+        val fromScalaLib = deps.find(
+          _.module.exists { m =>
+            // scala-reflect 2.13.0 is deliberately not in here: it also ships scala/**
+            m.organization == "org.scala-lang" &&
+            (m.name == "scala-library" || m.name.startsWith("scala3-library"))
+          }
+        )
+        val chosen = fromScalaLib.getOrElse(deps.head)
+        Right(Vector(JarEntry(chosen.target, chosen.stream)))
+      }
     case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
     case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
     case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
