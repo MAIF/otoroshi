@@ -103,6 +103,16 @@ run = [
   { task = "build-doc" }
 ]
 
+[tasks.generate-sbom]
+description = "Generate SBOM"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME 'Provided / makeBom'"
+
+[tasks.check-deps]
+description = "Check dependencies"
+dir = "otoroshi"
+run = "sbt --java-home $JAVA_HOME 'dependencyUpdates'"
+
 # ─── Run ─────────────────────────────────────────────────────────────
 
 [tasks.jar]
@@ -141,7 +151,7 @@ TEST_STORE = "inmemory"
 [tasks.test-all]
 description = "Run all backend tests (main + plugins)"
 dir = "otoroshi"
-run = "sbt --java-home $JAVA_HOME 'testOnly OtoroshiTests' 'testOnly functional.PluginsTestSpec'"
+run = "sbt --java-home $JAVA_HOME ';testOnly OtoroshiTests;testOnly ExpressionLanguageTests;testOnly BackendMtlsTests;testOnly FrontendTlsTests;testOnly functional.Http3Spec;testOnly functional.PluginsTestSpec -- -l Browser - Docker'"
 
 [tasks.test-all.env]
 TEST_STORE = "inmemory"
@@ -150,6 +160,11 @@ TEST_STORE = "inmemory"
 description = "Run Playwright end-to-end tests (requires running otoroshi)"
 dir = "otoroshi/javascript"
 run = "npx playwright test"
+
+[tasks.test-datastores]
+description = "Run the datastore test suites"
+dir = "otoroshi"
+run  = "sbt --java-home $JAVA_HOME ';testOnly functional.PgDatastoreSpec;testOnly functional.LettuceDatastoreSpec'"
 
 # ─── Format ──────────────────────────────────────────────────────────
 
