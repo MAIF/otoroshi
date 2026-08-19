@@ -71,7 +71,7 @@ class NettyHttp3Client(val env: Env) {
   // TODO: support proxy ????
 
   private[netty] val logger = NettyHttp3Client.logger
-  private val group         = new NioEventLoopGroup(Runtime.getRuntime.availableProcessors() + 1)
+  private val group         = new io.netty.channel.MultiThreadIoEventLoopGroup(Runtime.getRuntime.availableProcessors() + 1, io.netty.channel.nio.NioIoHandler.newFactory())
   private val bs            = new Bootstrap().group(group).channel(classOf[NioDatagramChannel])
 
   private val codecs   = Caches.bounded[String, ChannelHandler](999)

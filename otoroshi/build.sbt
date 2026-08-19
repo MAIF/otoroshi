@@ -260,6 +260,7 @@ libraryDependencies ++= Seq(
   "io.netty"                         % "netty-codec-native-quic"                   % nettyVersion,
   "io.netty"                         % "netty-codec-native-quic"                   % nettyVersion classifier "linux-x86_64" classifier "linux-aarch_64" classifier "osx-x86_64" classifier "osx-aarch_64",
   "io.netty"                         % "netty-codec-http3"                         % nettyVersion,
+  "io.netty"                         % "netty-pkitesting"                          % nettyVersion,
   // tests
   "org.scalatestplus.play"          %% "scalatestplus-play"                   % "7.0.2"  % Test,
   "com.networknt"                    % "json-schema-validator"                % "3.0.6" excludeAll (excludeSlf4jAndJackson *),

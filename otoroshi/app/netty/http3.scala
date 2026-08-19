@@ -26,6 +26,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{DurationInt, DurationLong}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Try}
+import java.time.Instant
+import java.time.temporal.TemporalUnit
 
 class Http1RequestHandler(
     handler: HttpRequestHandler,
@@ -592,10 +594,20 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
 
       import java.util.concurrent.TimeUnit
 
-      val cert             = new SelfSignedCertificate()
+      val now = Instant.now()
+      val template = new io.netty.pkitesting.CertificateBuilder()
+        .notBefore(now.minus(365, java.time.temporal.ChronoUnit.DAYS)) 
+        .notAfter(now.plus(10 * 365, java.time.temporal.ChronoUnit.DAYS))
+      val cert = template.copy()
+        .subject("CN=otoroshi-default-cert-h3")
+        .setKeyUsage(true, io.netty.pkitesting.CertificateBuilder.KeyUsage.digitalSignature, io.netty.pkitesting.CertificateBuilder.KeyUsage.keyCertSign)
+        .addExtendedKeyUsage(io.netty.pkitesting.CertificateBuilder.ExtendedKeyUsage.PKIX_KP_SERVER_AUTH)
+        .setIsCertificateAuthority(true)
+        //.addSanDnsName("*")
+        .buildSelfSigned()
       val fakeCtx          = QuicSslContextBuilder
-        .forServer(cert.key(), null, cert.cert())
-        .applicationProtocols(Http3.supportedApplicationProtocols()*)
+        .forServer(cert.getKeyPair.getPrivate, null, cert.getCertificate)
+        .applicationProtocols(Http3.supportedApplicationProtocols()*) 
         .earlyData(true)
         .build()
       val sslContext       = QuicSslContextBuilder.buildForServerWithSni(new Mapping[String, QuicSslContext] {
@@ -702,7 +714,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
           }
         })
         .build()
-      val group            = new NioEventLoopGroup(config.nThread)
+      val group            = new io.netty.channel.MultiThreadIoEventLoopGroup(config.nThread, io.netty.channel.nio.NioIoHandler.newFactory())
       val bs               = new Bootstrap()
       val channel          = bs
         .group(group)
@@ -723,7 +735,7 @@ class NettyHttp3Server(config: ReactorNettyServerConfig, env: Env) {
   }
 }
 
-case class DisposableNettyHttp3Server(group: Option[NioEventLoopGroup]) {
+case class DisposableNettyHttp3Server(group: Option[io.netty.channel.MultiThreadIoEventLoopGroup]) {
   def stop(): Unit = {
     group.foreach(_.shutdownGracefully())
   }
