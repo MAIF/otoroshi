@@ -6,7 +6,7 @@ this is the home of the Otoroshi server app
 
 * git
 * docker
-* jdk 8 at least (jdk 11 recommended)
+* jdk 17 at least
 * sbt
 * node
 * yarn

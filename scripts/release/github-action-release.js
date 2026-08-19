@@ -206,7 +206,7 @@ async function buildDistribution(version, where, releaseDir, releaseFile) {
   sbt ";dist;assembly;Provided / makeBom"
   `, where);
   // await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'server'], where);
-  await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-2.12/otoroshi.jar'), path.resolve(where, releaseDir)], where);
+  await runSystemCommand('cp', ['-v', path.resolve(where, './otoroshi/target/scala-3.8.4/otoroshi.jar'), path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/universal/otoroshi-${version}.zip`),  path.resolve(where, releaseDir)], where);
   await runSystemCommand('cp', ['-v', path.resolve(where, `./otoroshi/target/otoroshi-server.cdx.json`),  path.resolve(where, releaseDir)], where);
 }
@@ -223,7 +223,7 @@ async function buildVersion(version, where, releaseDir, releaseFile) {
 
 async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/universal/otoroshi-${version}.zip`), path.resolve(location, `./docker/build/otoroshi-dist.zip`)], location);
-  await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
+  await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-3.8.4/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'build-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./tools/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./tools/sidecar`));
   //await runSystemCommand('sh', [path.resolve(location, `./tools/otoroshi-wasm-manager/build.sh`), 'push-all', version], path.resolve(location, `./tools/otoroshi-wasm-manager`));

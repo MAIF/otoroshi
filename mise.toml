@@ -108,7 +108,7 @@ run = [
 [tasks.jar]
 description = "Run the built otoroshi jar locally"
 dir = "otoroshi"
-run = "$JAVA_HOME/bin/java -jar target/scala-2.12/otoroshi.jar"
+run = "$JAVA_HOME/bin/java -jar target/scala-3.8.4/otoroshi.jar"
 
 [tasks.jar.env]
 PORT = "8080"
@@ -175,6 +175,6 @@ run = [
 [tasks.clean]
 description = "Clean all build artifacts (backend + frontend + doc)"
 run = [
-  "rm -rf otoroshi/target/scala-2.12/otoroshi.jar",
+  "rm -rf otoroshi/target/scala-3.8.4/otoroshi.jar",
   "rm -rf manual/next/build",
 ]

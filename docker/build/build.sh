@@ -9,7 +9,7 @@ cleanup () {
 }
 
 copy_build () {
-  cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
+  cp ../../otoroshi/target/scala-3.8.4/otoroshi.jar ./otoroshi.jar
 }
 
 prepare_build () {

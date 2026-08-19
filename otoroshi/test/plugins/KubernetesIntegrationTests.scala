@@ -493,7 +493,7 @@ class KubernetesIntegrationTests(parent: PluginsTestSpec) {
       }
 
       sbtContainer.copyFileFromContainer(
-        "/app/otoroshi/target/scala-2.12/otoroshi.jar",
+        "/app/otoroshi/target/scala-3.8.4/otoroshi.jar",
         outputJar.getAbsolutePath
       )
       println(s"✓ JAR built successfully")
