@@ -4,6 +4,7 @@ name := """otoroshi"""
 organization := "fr.maif"
 version := "17.18.0-dev"
 scalaVersion := scalaLangVersion
+maintainer := "mathieu.ancelin@serli.com"
 
 ThisBuild / evictionErrorLevel := Level.Warn
 
@@ -396,8 +397,15 @@ assembly / assemblyMergeStrategy := { e =>
     case PathList(ps @ _*) if ps.contains("jna")                        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("findbugsExclude.xml")        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("reflect-config.json")        => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("okhttp.kotlin_module")       => MergeStrategy.first
+    case PathList(ps @ _*) if ps.contains("MANIFEST.MF")                => MergeStrategy.first
     case path if path.contains("pekko/stream")                          => MergeStrategy.first
     case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
+    case path if path.contains("net/jpountz")                           => MergeStrategy.first
+    case path if path.contains("play/api/libs/functional")              => MergeStrategy.first
+    case path if path.contains("play/api/libs/json")                    => MergeStrategy.first
+    case path if path.startsWith("okhttp3")                             => MergeStrategy.first
     case PathList("javax", xs @ _*)                                     => MergeStrategy.first
     case x                                                              =>
       val oldStrategy = (assembly / assemblyMergeStrategy).value
