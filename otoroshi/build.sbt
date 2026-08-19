@@ -316,6 +316,16 @@ Test / testGrouping := {
     )
   }
 }
+// With forked tests, ScalaTest ships its events back to the sbt JVM through a socket, as plain java
+// serialization. sbt's default layering puts the scala library in its own layer, so the sbt side
+// resolves scala.util.Left from scala-library 3.8.4 while the fork - a flat classpath where the
+// wasm4s "bundle" jar comes first and vendors the whole scala 2.13.16 library - writes the 2.13 one.
+// The serialVersionUIDs differ (-525309787470473293 vs 5957413767938667481), so the very first
+// TestFailed event (the only kind carrying a Left, via TestFailedException.posOrStackDepthFun) dies
+// on InvalidClassException. ScalaTest then closes the socket and waits forever in server.accept()
+// (Framework.scala:906) for a client that never reconnects: sbt hangs until CI kills the job, and
+// the failing test is never reported. Flat layering makes both sides read the same scala library.
+Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
 
 usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
