@@ -202,7 +202,6 @@ libraryDependencies ++= Seq(
   "org.biscuitsec"                   % "biscuit"                              % "4.0.1",
   "org.opensaml"                     % "opensaml-core"                        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-api"                    % "4.0.1",
-  //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
   "org.opensaml"                     % "opensaml-saml-impl"                   % "4.0.1",
   "org.openjdk.jol"                  % "jol-core"                             % "0.17",
   "org.typelevel"                   %% "squants"                              % "1.8.3" excludeAll (excludesJackson: _*),
@@ -215,7 +214,6 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"                % jacksonVersion,
   "com.fasterxml.jackson.module"    %% "jackson-module-scala"                 % jacksonVersion,
   "org.yaml"                         % "snakeyaml"                            % "2.6" excludeAll (excludesJackson: _*),
-  // "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-api"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-bom"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-context"                % openTelemetryVersion excludeAll (excludesJackson: _*),
@@ -228,7 +226,6 @@ libraryDependencies ++= Seq(
   "io.opentelemetry"                 % "opentelemetry-exporter-otlp"          % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-zipkin"        % openTelemetryZipkinVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-exporter-sender-okhttp" % openTelemetryVersion excludeAll (excludesJackson: _*),
-  // "io.opentelemetry"                 % "opentelemetry-exporter-prometheus"         % "1.28.0-alpha" excludeAll (excludesJackson: _*),
   "io.opentelemetry.instrumentation" % "opentelemetry-logback-appender-1.0"   % "2.30.0-alpha" excludeAll (excludesJackson: _*),
   "com.amazonaws"                    % "aws-java-sdk-secretsmanager"          % "1.12.797" excludeAll (excludesJackson: _*),
   "org.apache.logging.log4j"         % "log4j-api"                            % "2.26.1",
@@ -243,9 +240,6 @@ libraryDependencies ++= Seq(
   // swagger-scala-module dropped: no Scala 3 build and pulls Akka. We keep the Java swagger-core
   // above; api.scala already has a fallback when the Scala converter is not registered.
   "org.scala-lang.modules"          %% "scala-java8-compat"                   % "1.0.2",
-  /*"org.sangria-graphql"             %% "sangria-play-json"              % "2.0.1" excludeAll ExclusionRule(
-    organization = "com.typesafe.play"
-  )*/ // TODO - check if needed
   // new http stack ;)
   "io.projectreactor.netty"          % "reactor-netty-core"                        % reactorNettyVersion,
   "io.projectreactor.netty"          % "reactor-netty-http"                        % reactorNettyVersion,
@@ -272,8 +266,6 @@ libraryDependencies ++= Seq(
   // "Cannot find module './../../package.json'" (getPlaywrightVersion in
   // HarTracer.stop), which hangs the JVM test forever. See microsoft/playwright#35727.
   "com.microsoft.playwright"         % "playwright"                           % "1.62.0" % Test
-  // https://github.com/mvel/mvel
-  // "org.mvel"                         % "mvel2"                                     % "2.5.2.Final"
 )
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
