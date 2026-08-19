@@ -57,7 +57,7 @@ lazy val root = (project in file("."))
 
 lazy val scalaLangVersion        = "3.8.4"
 lazy val metricsVersion          = "4.2.39"
-lazy val acme4jVersion           = "3.5.1" // "2.14"
+lazy val acme4jVersion           = "5.1.0"
 lazy val prometheusVersion       = "0.16.0"
 lazy val playJsonVersion         = "3.0.6"
 lazy val webAuthnVersion         = "2.1.0" // using this version for backward compatibility reasons //"1.7.0" //"2.1.0"
@@ -156,7 +156,7 @@ libraryDependencies ++= Seq(
   "io.prometheus"                    % "simpleclient_dropwizard"              % prometheusVersion excludeAll (excludesJackson: _*), // Apache 2.0
   "com.auth0"                        % "java-jwt"                             % "4.6.0" excludeAll (excludesJackson: _*),
   "com.auth0"                        % "jwks-rsa"                             % "0.24.1" excludeAll (excludesJackson: _*), // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"                     % "nimbus-jose-jwt"                      % "9.48",
+  "com.nimbusds"                     % "nimbus-jose-jwt"                      % "10.9.1",
   "de.svenkubiak"                    % "jBCrypt"                              % "0.4.3",
   "io.github.classgraph"             % "classgraph"                           % "4.8.192" excludeAll (excludesJackson: _*),
   "com.comcast"                     %% "ip4s-core"                            % "3.8.0",
@@ -210,7 +210,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"              % jacksonVersion,
   "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"                % jacksonVersion,
   "com.fasterxml.jackson.module"    %% "jackson-module-scala"                 % jacksonVersion,
-  "org.yaml"                         % "snakeyaml"                            % "1.33" excludeAll (excludesJackson: _*),
+  "org.yaml"                         % "snakeyaml"                            % "2.6" excludeAll (excludesJackson: _*),
   // "com.arakelian"                    % "java-jq"                                   % "1.3.0" excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-api"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
   "io.opentelemetry"                 % "opentelemetry-bom"                    % openTelemetryVersion excludeAll (excludesJackson: _*),
