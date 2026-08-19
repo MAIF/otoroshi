@@ -399,6 +399,7 @@ assembly / assemblyMergeStrategy := { e =>
     case PathList(ps @ _*) if ps.contains("okio.kotlin_module")         => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("reflect-config.json")        => MergeStrategy.first
     case PathList(ps @ _*) if ps.contains("okhttp.kotlin_module")       => MergeStrategy.first
+    case PathList("META-INF", "MANIFEST.MF")                            => MergeStrategy.discard
     case PathList(ps @ _*) if ps.contains("MANIFEST.MF")                => MergeStrategy.first
     case path if path.contains("pekko/stream")                          => MergeStrategy.first
     case path if path.contains("org/bouncycastle")                      => MergeStrategy.first
