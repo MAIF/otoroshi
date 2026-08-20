@@ -745,7 +745,13 @@ object WebSocketProxyActor {
       }
     )
 
-    Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, Any] { () =>
+    // Materialize the proxy flow eagerly (as soon as the upgrade future resolves)
+    // instead of deferring until the first client->target element. With
+    // lazyFutureFlow, server-push-first protocols (e.g. RDP streams the screen
+    // before any client input) stalled forever: the target->client side
+    // (Source.fromPublisher) was never wired, so the pekko-http ws client
+    // backpressured and nothing was ever delivered downstream.
+    Flow.futureFlow[PlayWSMessage, PlayWSMessage, NotUsed] {
       connected.flatMap { r =>
         if (logger.isTraceEnabled)
           logger.trace(
