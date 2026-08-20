@@ -63,6 +63,13 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
 
   private val logger = Logger("otoroshi-experimental-netty-server")
 
+  // Max size of an inbound (client->server) websocket frame accepted by the
+  // reactor-netty decoder. Also used as the continuation-frame aggregation
+  // buffer below. Configurable via otoroshi.next.experimental.netty-server.websocket.maxFrameLength
+  // (env OTOROSHI_NEXT_EXPERIMENTAL_NETTY_SERVER_WEBSOCKET_MAX_FRAME_LENGTH). Defaults to 64 KB.
+  private lazy val wsServerSpec: WebsocketServerSpec =
+    WebsocketServerSpec.builder().maxFramePayloadLength(config.webSocketMaxFrameLength).build()
+
   private val engine: ProxyEngine = env.scriptManager
     .getAnyScript[RequestHandler](s"cp:${classOf[ProxyEngine].getName}")
     .toOption
@@ -261,16 +268,23 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
       engine.handleWsWithListener(otoReq, engine.badDefaultRoutingWs, config.exclusive).map {
         case Left(result) => sendResultAsHttpResponse(result, res)
         case Right(flow)  => {
-          res.sendWebsocket { (wsInbound, wsOutbound) =>
-            val processor: Processor[RawMessage, Message] =
-              WebSocketFlowHandler.webSocketProtocol(65536, "ping", scala.concurrent.duration.Duration.Inf).join(flow).toProcessor.run()
-            wsInbound
-              .receiveFrames()
-              .map[RawMessage](frameToRawMessage)
-              .subscribe(processor)
-            val fluxOut: Flux[WebSocketFrame]             = Flux.from(processor).map(messageToFrame)
-            wsOutbound.sendObject(fluxOut)
-          }
+          res.sendWebsocket(
+            (wsInbound, wsOutbound) => {
+              val processor: Processor[RawMessage, Message] =
+                WebSocketFlowHandler
+                  .webSocketProtocol(config.webSocketMaxFrameLength, "ping", scala.concurrent.duration.Duration.Inf)
+                  .join(flow)
+                  .toProcessor
+                  .run()
+              wsInbound
+                .receiveFrames()
+                .map[RawMessage](frameToRawMessage)
+                .subscribe(processor)
+              val fluxOut: Flux[WebSocketFrame] = Flux.from(processor).map(messageToFrame)
+              wsOutbound.sendObject(fluxOut)
+            },
+            wsServerSpec
+          )
         }
       }
     }
@@ -352,16 +366,23 @@ class ReactorNettyServer(config: ReactorNettyServerConfig, env: Env) {
           a.apply(nreq).map {
             case Left(result) => sendResultAsHttpResponse(result, res)
             case Right(flow)  => {
-              res.sendWebsocket { (wsInbound, wsOutbound) =>
-                val processor: Processor[RawMessage, Message] =
-                  WebSocketFlowHandler.webSocketProtocol(65536, "ping", scala.concurrent.duration.Duration.Inf).join(flow).toProcessor.run()
-                wsInbound
-                  .receiveFrames()
-                  .map[RawMessage](frameToRawMessage)
-                  .subscribe(processor)
-                val fluxOut: Flux[WebSocketFrame]             = Flux.from(processor).map(messageToFrame)
-                wsOutbound.sendObject(fluxOut)
-              }
+              res.sendWebsocket(
+                (wsInbound, wsOutbound) => {
+                  val processor: Processor[RawMessage, Message] =
+                    WebSocketFlowHandler
+                      .webSocketProtocol(config.webSocketMaxFrameLength, "ping", scala.concurrent.duration.Duration.Inf)
+                      .join(flow)
+                      .toProcessor
+                      .run()
+                  wsInbound
+                    .receiveFrames()
+                    .map[RawMessage](frameToRawMessage)
+                    .subscribe(processor)
+                  val fluxOut: Flux[WebSocketFrame] = Flux.from(processor).map(messageToFrame)
+                  wsOutbound.sendObject(fluxOut)
+                },
+                wsServerSpec
+              )
             }
           }
         }

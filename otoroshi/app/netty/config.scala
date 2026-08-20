@@ -217,7 +217,8 @@ case class ReactorNettyServerConfig(
     http1: Http1Settings,
     http2: Http2Settings,
     http3: Http3Settings,
-    native: NativeSettings
+    native: NativeSettings,
+    webSocketMaxFrameLength: Int = 65536
 )
 
 object ReactorNettyServerConfig {
@@ -332,7 +333,9 @@ object ReactorNettyServerConfig {
             case _         => NativeDriver.Auto
           }
           .getOrElse(NativeDriver.Auto)
-      )
+      ),
+      webSocketMaxFrameLength =
+        config.getOptionalWithFileSupport[Int]("websocket.maxFrameLength").getOrElse(65536)
     )
   }
 
@@ -366,7 +369,8 @@ object ReactorNettyServerConfig {
           http1 = json.select("http_1").asOpt(using Http1Settings.format).getOrElse(Http1Settings.default),
           http2 = json.select("http_2").asOpt(using Http2Settings.format).getOrElse(Http2Settings.default),
           http3 = json.select("http_3").asOpt(using Http3Settings.format).getOrElse(Http3Settings.default),
-          native = json.select("native").asOpt(using NativeSettings.format).getOrElse(NativeSettings.default)
+          native = json.select("native").asOpt(using NativeSettings.format).getOrElse(NativeSettings.default),
+          webSocketMaxFrameLength = json.select("web_socket_max_frame_length").asOpt[Int].getOrElse(65536)
         )
       } match {
         case Failure(exception) => JsError(exception.getMessage)
@@ -395,7 +399,8 @@ object ReactorNettyServerConfig {
         "parser"             -> o.parser.json,
         "http_2"             -> o.http2.json,
         "http_3"             -> o.http3.json,
-        "native"             -> o.native.json
+        "native"             -> o.native.json,
+        "web_socket_max_frame_length" -> o.webSocketMaxFrameLength
       )
     }
   }
