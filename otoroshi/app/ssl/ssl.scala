@@ -510,6 +510,22 @@ object Cert {
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
 
+  def apply(chain: Seq[X509Certificate], keyPair: KeyPair, client: Boolean): Cert = {
+    val c = Cert(
+      id = IdGenerator.token(32),
+      name = "none",
+      description = "none",
+      chain = chain.map(_.asPem).mkString("\n"),
+      privateKey = keyPair.getPrivate.asPem,
+      caRef = None,
+      autoRenew = false,
+      client = client,
+      exposed = false,
+      revoked = false
+    ).enrich()
+    c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
+  }
+
   def apply(cert: X509Certificate, keyPair: KeyPair, ca: X509Certificate, client: Boolean): Cert = {
     val c = Cert(
       id = IdGenerator.token(32),

@@ -25,6 +25,8 @@ import java.security.{KeyFactory, KeyPair}
 import java.time.{Duration, Instant}
 import java.util.Base64
 import java.util.concurrent.Executors
+import javax.naming.ldap.LdapName
+import javax.security.auth.x500.X500Principal
 import scala.jdk.CollectionConverters.*
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +38,8 @@ case class LetsEncryptSettings(
     emails: Seq[String] = Seq.empty,
     contacts: Seq[String] = Seq.empty,
     publicKey: String = "",
-    privateKey: String = ""
+    privateKey: String = "",
+    preferredChain: Option[String] = None
 ) {
 
   def json: JsValue = LetsEncryptSettings.format.writes(this)
@@ -88,7 +91,8 @@ object LetsEncryptSettings {
             .filter(_.nonEmpty)
             .getOrElse(Seq.empty).toSeq,
           publicKey = (json \ "publicKey").asOpt[String].getOrElse(""),
-          privateKey = (json \ "privateKey").asOpt[String].getOrElse("")
+          privateKey = (json \ "privateKey").asOpt[String].getOrElse(""),
+          preferredChain = (json \ "preferredChain").asOpt[String].map(_.trim).filter(_.nonEmpty)
         )
       } match {
         case Success(s) => JsSuccess(s)
@@ -102,7 +106,8 @@ object LetsEncryptSettings {
         "emails"     -> JsArray(o.emails.map(JsString.apply)),
         "contacts"   -> JsArray(o.contacts.map(JsString.apply)),
         "publicKey"  -> o.publicKey,
-        "privateKey" -> o.privateKey
+        "privateKey" -> o.privateKey,
+        "preferredChain" -> o.preferredChain
       )
   }
 }
@@ -169,11 +174,13 @@ object LetsEncryptHelper {
                       FastFuture.successful(Left("No certificate found !"))
                     case Some(c) => {
                       // env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token"))
-                      val ca: X509Certificate          = c.getCertificateChain.get(1)
-                      val certificate: X509Certificate = c.getCertificate
-                      val cert                         =
-                        Cert.apply(certificate, keyPair, ca, false).copy(letsEncrypt = true, autoRenew = true).enrich()
-                      cert.save().map(_ => Right(cert))
+                      selectCertificateChain(c, domain, letsEncryptSettings.preferredChain).flatMap { chain =>
+                        val cert = Cert
+                          .apply(chain, keyPair, false)
+                          .copy(letsEncrypt = true, autoRenew = true)
+                          .enrich()
+                        cert.save().map(_ => Right(cert))
+                      }
                     }
                   }
                 }
@@ -183,6 +190,74 @@ object LetsEncryptHelper {
         }
       }
     }
+  }
+
+  // Extracts the Common Name (CN) of an X.500 principal, tolerant to the other RDN
+  // components (O, C, ...) that real-world CA certificates always carry. Parsing the
+  // DN is required because raw string equality (as acme4j's Certificate.isIssuedBy does)
+  // never matches a real Let's Encrypt anchor, whose issuer DN is e.g.
+  // "CN=ISRG Root X1,O=Internet Security Research Group,C=US".
+  private def commonNameOf(principal: X500Principal): Option[String] = {
+    Try {
+      new LdapName(principal.getName).getRdns.asScala
+        .find(_.getType.equalsIgnoreCase("CN"))
+        .map(_.getValue.toString.trim)
+    }.toOption.flatten.filter(_.nonEmpty)
+  }
+
+  // The trust anchor a chain terminates at is identified by the issuer of its topmost
+  // certificate: the highest cert included in the bundle is signed by the root, which
+  // is itself usually not bundled. This is the same signal certbot uses for its
+  // `--preferred-chain` option.
+  private def chainAnchorCn(chain: Seq[X509Certificate]): Option[String] = {
+    chain.lastOption.flatMap(top => commonNameOf(top.getIssuerX500Principal))
+  }
+
+  // Selects, among the default chain and the ACME `alternate` chains advertised by the
+  // server, the one whose trust anchor CN matches `preferredChain`. When no preference
+  // is set (or none of the available chains match), the default chain is returned as-is,
+  // preserving the historical behavior. Runs on the blocking pool since fetching the
+  // alternate chains performs network calls.
+  private def selectCertificateChain(
+      certificate: org.shredzone.acme4j.Certificate,
+      domain: String,
+      preferredChain: Option[String]
+  ): Future[Seq[X509Certificate]] = {
+    Future {
+      val defaultChain = certificate.getCertificateChain.asScala.toSeq
+      preferredChain.map(_.trim).filter(_.nonEmpty) match {
+        case None         => defaultChain
+        case Some(anchor) =>
+          // resolving the alternate chains performs extra network calls: any failure here
+          // must never break the issuance, we just fall back to the default chain.
+          Try {
+            val candidateChains = (certificate +: certificate.getAlternateCertificates.asScala.toSeq)
+              .map(_.getCertificateChain.asScala.toSeq)
+            candidateChains.find(chain => chainAnchorCn(chain).exists(_.equalsIgnoreCase(anchor))) match {
+              case Some(chain) =>
+                if (logger.isDebugEnabled)
+                  logger.debug(s"using let's encrypt chain anchored at '$anchor' for $domain")
+                chain
+              case None        =>
+                logger.warn(
+                  s"no let's encrypt chain matching preferred trust anchor '$anchor' for $domain " +
+                  s"(available anchors: ${candidateChains.flatMap(chainAnchorCn).distinct.mkString(", ")}). " +
+                  s"falling back to the default chain"
+                )
+                defaultChain
+            }
+          } match {
+            case Success(chain) => chain
+            case Failure(e)     =>
+              logger.error(
+                s"error while selecting preferred let's encrypt chain '$anchor' for $domain, " +
+                s"falling back to the default chain",
+                e
+              )
+              defaultChain
+          }
+      }
+    }(blockingEc)
   }
 
   def getChallengeForToken(domain: String, token: String)(using

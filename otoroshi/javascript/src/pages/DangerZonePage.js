@@ -957,6 +957,14 @@ export class DangerZonePage extends Component {
         style: { fontFamily: 'monospace' },
       },
     },
+    'letsEncryptSettings.preferredChain': {
+      type: 'string',
+      props: {
+        label: 'Preferred chain',
+        placeholder: 'e.g. ISRG Root X1',
+        help: "CN of the preferred root/trust anchor. When set, Otoroshi presents the ACME alternate chain that terminates at this root (matched on the issuer CN of the topmost certificate, like certbot's --preferred-chain). Leave empty to keep the ACME server's default chain.",
+      },
+    },
     'mailGunSettings.eu': {
       type: 'bool',
       props: {
@@ -1390,6 +1398,7 @@ export class DangerZonePage extends Component {
     'letsEncryptSettings.contacts',
     'letsEncryptSettings.publicKey',
     'letsEncryptSettings.privateKey',
+    'letsEncryptSettings.preferredChain',
     '>>>CleverCloud settings',
     'cleverSettings.consumerKey',
     'cleverSettings.consumerSecret',
