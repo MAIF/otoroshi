@@ -472,15 +472,18 @@ object ElasticWritesAnalytics {
   val clusterInitializedCache = new UnboundedTrieMap[String, (Boolean, ElasticVersion)]()
 
   def toKey(config: ElasticAnalyticsConfig): String = {
-    val index: String  = config.index.getOrElse("otoroshi-events")
-    val `type`: String = config.`type`.getOrElse("event")
-    s"${config.uris.mkString("-")}/$index/${`type`}"
+    val index: String   = config.index.getOrElse("otoroshi-events")
+    val `type`: String  = config.`type`.getOrElse("event")
+    // the configured version is part of the key, changing it in the exporter must not hit a stale entry
+    val version: String = config.version.getOrElse("auto")
+    s"${config.uris.mkString("-")}/$index/${`type`}/$version"
   }
 
   def initialized(config: ElasticAnalyticsConfig, version: ElasticVersion): Unit = {
     val versionIsKnown = version ne ElasticVersion.default
     if (versionIsKnown) {
-      clusterInitializedCache.putIfAbsent(toKey(config), (true, version))
+      // not putIfAbsent, a new detection must be able to fix a previously wrong one
+      clusterInitializedCache.put(toKey(config), (true, version))
     }
   }
 
@@ -489,25 +492,18 @@ object ElasticWritesAnalytics {
       versionConfirmed: Boolean,
       version: ElasticVersion
   ): Boolean = {
-    version.underSeven && (versionConfirmed || config.version.isDefined)
+    config.version match {
+      // an explicitly configured version always wins over anything detected before
+      case Some(rawVersion) => ElasticVersion.parse(rawVersion).underSeven
+      case None             => version.underSeven && versionConfirmed
+    }
   }
 
   def isInitialized(config: ElasticAnalyticsConfig): (Boolean, ElasticVersion) = {
     clusterInitializedCache.getOrElse(
       toKey(config), {
         config.version match {
-          case Some(rawVersion) => {
-            val version = Version(rawVersion) match {
-              case v if v.isAfterEq(Version("8.15.0")) => ElasticVersion.AboveEightFifteen(rawVersion)
-              case v if v.isAfterEq(Version("8.9.0"))  => ElasticVersion.AboveEightNine(rawVersion)
-              case v if v.isAfterEq(Version("8.0.0"))  => ElasticVersion.AboveEight(rawVersion)
-              case v if v.isBefore(Version("7.0.0"))   => ElasticVersion.UnderSeven(rawVersion)
-              case v if v.isAfterEq(Version("7.8.0"))  => ElasticVersion.AboveSevenEight(rawVersion)
-              case v if v.isAfterEq(Version("7.0.0"))  => ElasticVersion.AboveSeven(rawVersion)
-              case _                                   => ElasticVersion.AboveSeven(rawVersion)
-            }
-            (false, version)
-          }
+          case Some(rawVersion) => (false, ElasticVersion.parse(rawVersion))
           case None             => (false, ElasticVersion.default)
         }
       }
@@ -519,6 +515,7 @@ sealed trait ElasticVersion {
   def underSeven: Boolean
   def underEight: Boolean
   def aboveOrEqualsEight: Boolean
+  def isOpenSearch: Boolean
 }
 object ElasticVersion       {
 
@@ -526,35 +523,108 @@ object ElasticVersion       {
     def underSeven: Boolean         = true
     def underEight: Boolean         = true
     def aboveOrEqualsEight: Boolean = false
+    def isOpenSearch: Boolean       = false
   }
   case class AboveSeven(raw: String)        extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = true
     def aboveOrEqualsEight: Boolean = false
+    def isOpenSearch: Boolean       = false
   }
   case class AboveSevenEight(raw: String)   extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = true
     def aboveOrEqualsEight: Boolean = false
+    def isOpenSearch: Boolean       = false
   }
   case class AboveEight(raw: String)        extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
+    def isOpenSearch: Boolean       = false
   }
   case class AboveEightNine(raw: String)    extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
+    def isOpenSearch: Boolean       = false
   }
   case class AboveEightFifteen(raw: String) extends ElasticVersion {
     def underSeven: Boolean         = false
     def underEight: Boolean         = false
     def aboveOrEqualsEight: Boolean = true
+    def isOpenSearch: Boolean       = false
+  }
+  // opensearch is a fork of elasticsearch 7.10 with its own version numbering (1.x, 2.x, 3.x, ...)
+  // so it must never be classified using the elasticsearch version thresholds. it behaves like a
+  // 7.8+ cluster: composable index templates and no mapping type in the bulk api
+  case class OpenSearch(raw: String)        extends ElasticVersion {
+    def underSeven: Boolean         = false
+    def underEight: Boolean         = true
+    def aboveOrEqualsEight: Boolean = false
+    def isOpenSearch: Boolean       = true
   }
 
   val defaultStr: String      = "6.0.0"
   val default: ElasticVersion = UnderSeven(defaultStr)
+
+  val openSearchDistribution: String = "opensearch"
+
+  def isOpenSearchDistribution(distribution: Option[String]): Boolean =
+    distribution.exists(_.trim.toLowerCase().contains(openSearchDistribution))
+
+  // a manually configured version can carry the distribution (like "opensearch-2.19.2") as an
+  // opensearch version number cannot be told apart from an old elasticsearch one
+  def parse(rawVersion: String, distribution: Option[String] = None): ElasticVersion = {
+    if (isOpenSearchDistribution(distribution) || rawVersion.trim.toLowerCase().startsWith(openSearchDistribution)) {
+      OpenSearch(rawVersion)
+    } else {
+      Version(rawVersion) match {
+        case v if v.isAfterEq(Version("8.15.0")) => AboveEightFifteen(rawVersion)
+        case v if v.isAfterEq(Version("8.9.0"))  => AboveEightNine(rawVersion)
+        case v if v.isAfterEq(Version("8.0.0"))  => AboveEight(rawVersion)
+        case v if v.isBefore(Version("7.0.0"))   => UnderSeven(rawVersion)
+        case v if v.isAfterEq(Version("7.8.0"))  => AboveSevenEight(rawVersion)
+        case v if v.isAfterEq(Version("7.0.0"))  => AboveSeven(rawVersion)
+        case _                                   => AboveSeven(rawVersion)
+      }
+    }
+  }
+}
+
+case class ElasticClusterInfo(version: String, distribution: Option[String]) {
+  lazy val isOpenSearch: Boolean          = ElasticVersion.isOpenSearchDistribution(distribution)
+  lazy val elasticVersion: ElasticVersion = ElasticVersion.parse(version, distribution)
+  // the value to store in the exporter config so that the distribution is not lost
+  lazy val configVersion: String          =
+    if (isOpenSearch && !version.trim.toLowerCase().startsWith(ElasticVersion.openSearchDistribution)) {
+      s"${ElasticVersion.openSearchDistribution}-${version}"
+    } else {
+      version
+    }
+  def json: JsObject                      = Json.obj(
+    "version"        -> version,
+    "distribution"   -> distribution.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "config_version" -> configVersion
+  )
+}
+
+object ElasticClusterInfo {
+  // parses the response of a GET / on the cluster
+  def fromRootResponse(json: JsValue, fallbackVersion: Option[String]): ElasticClusterInfo = {
+    val version      =
+      (json \ "version" \ "number").asOpt[String].orElse(fallbackVersion).getOrElse(ElasticVersion.defaultStr)
+    // opensearch advertises its distribution here, its version number alone cannot be trusted
+    val distribution = (json \ "version" \ "distribution")
+      .asOpt[String]
+      .orElse(
+        (json \ "tagline")
+          .asOpt[String]
+          .filter(_.toLowerCase().contains(ElasticVersion.openSearchDistribution))
+          .map(_ => ElasticVersion.openSearchDistribution)
+      )
+    ElasticClusterInfo(version, distribution)
+  }
 }
 
 object ElasticUtils {
@@ -601,61 +671,16 @@ object ElasticUtils {
       ec: ExecutionContext
   ): Future[ElasticVersion] = {
 
-    import otoroshi.jobs.updates.Version
-
     config.version match {
-      case Some(version) => {
-        (Version(version) match {
-          case v if v.isAfterEq(Version("8.15.0")) => ElasticVersion.AboveEightFifteen(version)
-          case v if v.isAfterEq(Version("8.9.0"))  => ElasticVersion.AboveEightNine(version)
-          case v if v.isAfterEq(Version("8.0.0"))  => ElasticVersion.AboveEight(version)
-          case v if v.isBefore(Version("7.0.0"))   => ElasticVersion.UnderSeven(version)
-          case v if v.isAfterEq(Version("7.8.0"))  => ElasticVersion.AboveSevenEight(version)
-          case v if v.isAfterEq(Version("7.0.0"))  => ElasticVersion.AboveSeven(version)
-          case _                                   => ElasticVersion.AboveSeven(version)
-        }).future
-      }
+      case Some(version) => ElasticVersion.parse(version).future
       case None          => {
         ElasticUtils
           .checkVersion(config, logger, env)
           .map {
-            case Left(err) => ElasticVersion.default
-            case Right(_v) => {
-              Version(_v) match {
-                case v if v.isAfterEq(Version("8.15.0")) => ElasticVersion.AboveEightFifteen(_v)
-                case v if v.isAfterEq(Version("8.9.0"))  => ElasticVersion.AboveEightNine(_v)
-                case v if v.isAfterEq(Version("8.0.0"))  => ElasticVersion.AboveEight(_v)
-                case v if v.isBefore(Version("7.0.0"))   => ElasticVersion.UnderSeven(_v)
-                case v if v.isAfterEq(Version("7.8.0"))  => ElasticVersion.AboveSevenEight(_v)
-                case v if v.isAfterEq(Version("7.0.0"))  => ElasticVersion.AboveSeven(_v)
-                case _                                   => ElasticVersion.AboveSeven(_v)
-              }
-            }
+            case Left(err)   => ElasticVersion.default
+            case Right(info) => info.elasticVersion
           }
-
-        //url(urlFromPath("", config), config, env)
-        //  .get()
-        //  .map(_.json)
-        //  .map(json => (json \ "version" \ "number").asOpt[String].orElse(config.version).getOrElse(ElasticVersion.defaultStr))
-        //  // .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
-        //  .map { _v =>
-        //    Version(_v) match {
-        //      case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(_v)
-        //      case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(_v)
-        //      case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(_v)
-        //      case _                                  => ElasticVersion.AboveSeven(_v)
-        //    }
-        // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
-        //   case v if v <= 6 => ElasticVersion.UnderSeven
-        //   case v if v > 6 => {
-        //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
-        //       case v if v >= 8 => ElasticVersion.AboveSevenEight
-        //       case v if v < 8 => ElasticVersion.AboveSeven
-        //     }
-        //   }
-        // }
       }
-      //}
     }
   }
 
@@ -679,6 +704,8 @@ object ElasticUtils {
           (ElasticTemplates.indexTemplate_v8_9, "/_index_template/otoroshi-tpl")
         case ElasticVersion.AboveEightFifteen(_) =>
           (ElasticTemplates.indexTemplate_v8_15, "/_index_template/otoroshi-tpl")
+        case ElasticVersion.OpenSearch(_)        =>
+          (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
       }
       if (logger.isDebugEnabled) logger.debug(s"$version, $indexTemplatePath")
       val tpl: JsValue                = if (config.indexSettings.clientSide) {
@@ -764,15 +791,17 @@ object ElasticUtils {
 
   def checkVersion(config: ElasticAnalyticsConfig, logger: Logger, env: Env)(using
       ec: ExecutionContext
-  ): Future[Either[JsValue, String]] = {
+  ): Future[Either[JsValue, ElasticClusterInfo]] = {
     url(urlFromPath("", config), config, env)
       .get()
       .map { resp =>
         if (resp.status == 200) {
-          val version =
-            (resp.json \ "version" \ "number").asOpt[String].orElse(config.version).getOrElse(ElasticVersion.defaultStr)
-          if (logger.isDebugEnabled) logger.debug(s"elastic version from server is: ${version}")
-          Right(version)
+          val info = ElasticClusterInfo.fromRootResponse(resp.json, config.version)
+          if (logger.isDebugEnabled)
+            logger.debug(
+              s"elastic version from server is: ${info.version} (distribution: ${info.distribution.getOrElse("elasticsearch")})"
+            )
+          Right(info)
         } else {
           logger.error(s"error while fetching elastic version: ${resp.status} - ${resp.json}")
           Left(resp.json)
@@ -828,28 +857,12 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       implicit val ec: scala.concurrent.ExecutionContext = env.otoroshiExecutionContext
       config.version match {
         case Some(versionRaw) => {
-          val version = Version(versionRaw) match {
-            case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(versionRaw)
-            case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(versionRaw)
-            case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(versionRaw)
-            case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(versionRaw)
-            case _                                  => ElasticVersion.AboveSeven(versionRaw)
-          }
-          ElasticWritesAnalytics.initialized(config, version)
+          ElasticWritesAnalytics.initialized(config, ElasticVersion.parse(versionRaw))
         }
         case None             => {
           ElasticUtils.checkVersion(config, logger, env).map {
-            case Left(err)         => ElasticWritesAnalytics.initialized(config, ElasticVersion.default)
-            case Right(versionRaw) => {
-              val version = Version(versionRaw) match {
-                case v if v.isAfterEq(Version("8.0.0")) => ElasticVersion.AboveEight(versionRaw)
-                case v if v.isBefore(Version("7.0.0"))  => ElasticVersion.UnderSeven(versionRaw)
-                case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight(versionRaw)
-                case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven(versionRaw)
-                case _                                  => ElasticVersion.AboveSeven(versionRaw)
-              }
-              ElasticWritesAnalytics.initialized(config, version)
-            }
+            case Left(err)   => ElasticWritesAnalytics.initialized(config, ElasticVersion.default)
+            case Right(info) => ElasticWritesAnalytics.initialized(config, info.elasticVersion)
           }
         }
       }
@@ -952,14 +965,19 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
 object ElasticReadsAnalytics {
   private val cache = new UnboundedTrieMap[String, ElasticVersion]()
   def getElasticVersion(config: ElasticAnalyticsConfig, logger: Logger)(using env: Env): ElasticVersion = {
-    val key: String = config.uris.mkString(",")
+    // the configured version is part of the key, changing it in the exporter must not hit a stale entry
+    val key: String = s"${config.uris.mkString(",")}/${config.version.getOrElse("auto")}"
     cache.get(key) match {
       case Some(version) =>
         version
       case None          => {
         val version =
-          Await.result(ElasticUtils.getElasticVersion(config, logger, env)(using env.otoroshiExecutionContext), 30.seconds)
-        cache.putIfAbsent(key, version)
+          Await
+            .result(ElasticUtils.getElasticVersion(config, logger, env)(using env.otoroshiExecutionContext), 30.seconds)
+        // the fallback sentinel means the cluster could not be reached, it must not be cached forever
+        if (version ne ElasticVersion.default) {
+          cache.put(key, version)
+        }
         version
       }
     }
@@ -994,7 +1012,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   def checkSearch()(using ec: ExecutionContext): Future[Either[JsValue, Long]] =
     ElasticUtils.checkSearch(config, env)
 
-  def checkVersion()(using ec: ExecutionContext): Future[Either[JsValue, String]] =
+  def checkVersion()(using ec: ExecutionContext): Future[Either[JsValue, ElasticClusterInfo]] =
     ElasticUtils.checkVersion(config, logger, env)
 
   def getElasticVersion()(using ec: ExecutionContext): Future[ElasticVersion] =

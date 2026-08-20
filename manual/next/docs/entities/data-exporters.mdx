@@ -334,7 +334,7 @@ Otoroshi provides rules to filter events based on their content. Given this exam
 
 ### Elastic
 
-Sends events in batch to an Elasticsearch cluster. Can be used with the [elastic analytics dashboard](./global-config.md#analytics-elastic-dashboard-datasource-read-).
+Sends events in batch to an Elasticsearch or OpenSearch cluster. Can be used with the [elastic analytics dashboard](./global-config.md#analytics-elastic-dashboard-datasource-read-).
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -343,13 +343,19 @@ Sends events in batch to an Elasticsearch cluster. Can be used with the [elastic
 | `type` | string | Event type (not needed for ES 6.x+) |
 | `user` | string | Username (optional) |
 | `password` | string | Password (optional) |
-| `version` | string | Elasticsearch version (auto-detected if not set) |
+| `version` | string | Cluster version (auto-detected if not set) |
 | `applyTemplate` | boolean | Automatically apply index template |
 | `indexSettings.clientSide` | boolean | Otoroshi manages index creation over time |
 | `indexSettings.interval` | string | Index rotation interval: `Day`, `Week`, `Month`, or `Year` |
 | `indexSettings.numberOfShards` | number | Number of shards |
 | `indexSettings.numberOfReplicas` | number | Number of replicas |
 | `mtlsConfig` | object | Custom TLS settings |
+
+#### OpenSearch
+
+OpenSearch clusters are supported and detected automatically: Otoroshi reads the distribution advertised by the cluster and handles it like an Elasticsearch 7.8+ one (composable index templates, no mapping type in the bulk API).
+
+If you set `version` by hand, keep the distribution in the value (`opensearch-2.19.2`) as an OpenSearch version number (`1.x`, `2.x`, `3.x`) cannot be told apart from an old Elasticsearch one. A bare `2.19.2` makes Otoroshi handle the cluster like Elasticsearch 2, which sends a `_type` in the bulk API and gets rejected with `Action/metadata line [1] contains an unknown parameter [_type]`. The easiest option is to leave `version` empty and let Otoroshi detect it.
 
 ### Webhook
 
