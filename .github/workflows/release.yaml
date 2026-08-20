@@ -95,6 +95,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ inputs.version_to }}
+          prerelease: ${{ inputs.preview }}
           body_path: ./release-${{ inputs.version_to }}/github-release.md
           files: |
             ./release-${{ inputs.version_to }}/otoroshi.jar

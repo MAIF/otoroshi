@@ -331,6 +331,11 @@ usePgpKeyHex("4EFDC6FC2DEC936B13B7478C2F8C0F4E1D397E7F")
 sonatypeProjectHosting := Some(GitHubHosting("MAIF", "otoroshi", "mathieu.ancelin@serli.com"))
 sonatypeRepository := "https://ossrh-staging-api.central.sonatype.com/service/local/"
 sonatypeCredentialHost := sonatypeCentralHost
+// sbt-ci-release 1.11.0 points publishTo at its own local staging directory (target/sona-staging),
+// which only sbt-sonatype 4's sonaRelease knows how to read. We release with sonatypeBundleRelease
+// from sbt-sonatype 3.12.2, so publishSigned must write into sonatypeBundleDirectory instead
+// (target/sonatype-staging/<version>-bundle). Without this, the release fails with BUNDLE_ZIP_ERROR.
+publishTo := sonatypePublishToBundle.value
 licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
 //githubOwner := "MAIF"
 //githubRepository := "otoroshi"
