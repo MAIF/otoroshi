@@ -228,6 +228,27 @@ webhooks:
   # Injects an otoroshi-sidecar container into pods labeled `otoroshi.io/sidecar: inject`.
   sidecarInject: false
 
+# proxy.otoroshi.io/v1 Certificate generated for the Otoroshi services.
+# The in-cluster service names are always part of the certificate — cluster mode mTLS
+# between workers and the leader API relies on them.
+certificate:
+  # DN (or id) of the Otoroshi certificate signing the CSR. It must match an existing
+  # certificate, otherwise Otoroshi silently self-signs the generated one.
+  # The default is the intermediate CA Otoroshi generates on its first boot.
+  issuer: "CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
+  # Public hosts (built from env.domain) added to the certificate. Turn one off when another
+  # certificate already covers that domain: two certificates matching the same host make the
+  # one Otoroshi picks at TLS handshake time non-deterministic.
+  publicHosts:
+    # otoroshi.<env.domain>, the admin UI
+    adminUi: true
+    # otoroshi-api.<env.domain>, the admin API
+    adminApi: true
+    # privateapps.<env.domain>, the private apps authentication callbacks
+    privateApps: true
+  # Additional hosts appended verbatim to the certificate.
+  extraHosts: []
+
 # PodDisruptionBudget.
 pdb:
   enabled: false
