@@ -857,22 +857,31 @@ class WebSocketProxyActor(
         mtlsConfigOpt = Some(target.mtlsConfig).filter(_.mtls),
         clientFlow = Flow
           .fromSinkAndSourceMat(
-            Sink.foreach[org.apache.pekko.http.scaladsl.model.ws.Message] { data =>
-              {
+            Flow[org.apache.pekko.http.scaladsl.model.ws.Message]
+              // Process target->client messages sequentially with mapAsync(1) so
+              // that each message is fully reassembled (incl. the runFold of a
+              // BinaryMessage.Streamed) BEFORE the next one is emitted to `out`.
+              // A plain Sink.foreach here emitted in completion order, letting a
+              // small Strict message overtake a large Streamed one -> message
+              // reordering (e.g. RDP fast-path PDUs decoded out of order).
+              .mapAsync(1) { data =>
                 wsEngine
                   .handleResponse(data)(closeFunction)
-                  .map {
+                  .flatMap {
                     case Left(error) =>
                       Option(queueRef.get()).foreach(_.complete())
-                    case Right(msg)  => {
-                      msg.asPlay.map { msg =>
-                        if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${msg}")
-                        out ! msg
+                      FastFuture.successful(Option.empty[play.api.http.websocket.Message])
+                    case Right(msg)  =>
+                      msg.asPlay.map { m =>
+                        if (logger.isDebugEnabled) logger.debug(s"[WEBSOCKET] message from target: ${m}")
+                        Some(m)
                       }
-                    }
                   }
               }
-            },
+              .toMat(Sink.foreach {
+                case Some(m) => out ! m
+                case None    => ()
+              })(Keep.right),
             source
           )(Keep.both)
           .alsoTo(Sink.onComplete { _ =>
