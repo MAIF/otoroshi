@@ -193,6 +193,12 @@ async function buildDocumentation(version, where, releaseDir, releaseFile) {
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
   await runSystemCommand('zip', ['-r', path.resolve(releaseDir, `otoroshi-manual-${version}.zip`), path.resolve(where, 'docs/manual'), '-x', '*.DS_Store'], where);
+  if (skipDocPublish) {
+    // preview release: the manual archive is still built and shipped, but the published website stays on the previous version
+    console.log('Skipping documentation website publication, restoring docs/manual and docs/manual-root');
+    await runSystemCommand('git', ['checkout', '--', 'docs/manual', 'docs/manual-root'], location);
+    await runSystemCommand('git', ['clean', '-fdq', 'docs/manual', 'docs/manual-root'], location);
+  }
   await runSystemCommand('git', ['add', '--all'], location);
   await runSystemCommand('git', ['commit', '-am', `[release ${version}] Update site documentation before release`], location);
 }
@@ -423,6 +429,7 @@ function printEnv() {
   console.log({
     JAVA_HOME,
     dryRun,
+    skipDocPublish,
     releaseFrom,
     releaseTo,
     releaseNext,
@@ -434,6 +441,7 @@ function printEnv() {
 }
 
 const dryRun = argv.dry || false;
+const skipDocPublish = argv['skip-doc-publish'] || false;
 const releaseFrom = argv.from;
 const releaseTo = argv.to;
 const releaseNext = argv.next;
