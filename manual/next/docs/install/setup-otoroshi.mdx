@@ -133,6 +133,28 @@ import TabItem from '@theme/TabItem';
 </TabItem>
 </Tabs>
 
+### Connecting to a redis over TLS
+
+When the redis exposes a custom certificate, a `rediss://` uri (or `otoroshi.redis.lettuce.startTLS = true`) is not enough: the certificate authority signing it has to be trusted. Instead of jvm wide `javax.net.ssl.trustStore` system properties, otoroshi reads the material from `otoroshi.redis.lettuce.ssl`, so it can come from a config file, an environment variable or a mounted secret. A client certificate can be provided the same way when the redis asks for one (`tls-auth-clients yes`).
+
+Each of those values accepts three shapes: the PEM itself, its base64 encoded form (handy for an environment variable, as a PEM spans several lines), or `file:///path/to/file.pem`.
+
+```sh
+# the certificate authority to trust, read from a mounted file
+export OTOROSHI_REDIS_LETTUCE_SSL_TRUSTED_CERTS="file:///etc/redis-certs/ca.pem"
+# a client certificate and its key, for a redis requiring mTLS
+export OTOROSHI_REDIS_LETTUCE_SSL_CLIENT_CERT="file:///etc/redis-certs/client-cert.pem"
+export OTOROSHI_REDIS_LETTUCE_SSL_CLIENT_KEY="file:///etc/redis-certs/client-key.pem"
+# and the key password when it is encrypted
+export OTOROSHI_REDIS_LETTUCE_SSL_CLIENT_KEY_PASSWORD="..."
+```
+
+`trustedCerts` reads a whole PEM bundle, so an intermediate and its root can be passed together. `clientKey` can be omitted when the `clientCert` bundle also holds the private key. Material that cannot be read makes otoroshi fail at boot rather than silently connecting without it.
+
+:::warning
+Otoroshi does not trust the redis certificate through the system truststore anymore just because it is configured here: the certificate chain the server presents must be signed by one of the `trustedCerts`. Peer verification can still be turned off entirely with `otoroshi.redis.lettuce.verifyPeers = false`, which is only meant for local testing.
+:::
+
 ## Setup your hosts before running
 
 By default, Otoroshi starts with domain `oto.tools` that automatically targets `127.0.0.1` with no changes to your `/etc/hosts` file. Of course you can change the domain value, you have to add the values in your `/etc/hosts` file according to the setting you put in Otoroshi configuration or define the right ip address at the DNS provider level
